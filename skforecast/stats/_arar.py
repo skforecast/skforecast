@@ -334,6 +334,79 @@ def summary_arar(model_tuple):
     print(f"Max: {np.max(Y):.4f}")
 
 
+class LinearRegression:
+    """
+    Fast linear regression with using numpy linalg.solve as primary method and
+    numpy lstsq as fallback method in case of multicollinearity. This class is
+    designed to be a lightweight alternative to sklearn's LinearRegression.
+    
+    Attributes
+    ----------
+    intercept_ : float
+        The intercept term
+    coef_ : np.ndarray
+        The coefficient array
+    """
+    
+    def __init__(self):
+        self.intercept_ = None
+        self.coef_ = None
+    
+    def fit(self, X, y):
+        """
+        Fit the linear regression model.
+        
+        Parameters
+        ----------
+        X : np.ndarray
+            Feature matrix of shape (n_samples, n_features)
+        y : np.ndarray
+            Target values of shape (n_samples,)
+            
+        Returns
+        -------
+        self
+        """
+        X = np.asarray(X)
+        y = np.asarray(y)
+        
+        # Add intercept column
+        X_with_intercept = np.column_stack([np.ones(len(X)), X])
+        
+        try:
+            # Try fastest method: closed-form solution
+            XtX = X_with_intercept.T @ X_with_intercept
+            coefficients = np.linalg.solve(XtX, X_with_intercept.T @ y)
+            
+        except np.linalg.LinAlgError:
+            # Fallback to lstsq (handles rank-deficient matrices)
+            coefficients = np.linalg.lstsq(X_with_intercept, y, rcond=None)[0]
+        
+        self.intercept_ = coefficients[0]
+        self.coef_ = coefficients[1:]
+        
+        return self
+    
+    def predict(self, X):
+        """
+        Predict using the linear model.
+        
+        Parameters
+        ----------
+        X : np.ndarray
+            Feature matrix of shape (n_samples, n_features)
+            
+        Returns
+        -------
+        y_pred : np.ndarray
+            Predicted values of shape (n_samples,)
+        """
+        if self.intercept_ is None or self.coef_ is None:
+            raise ValueError("Model must be fitted before making predictions")
+        
+        X = np.asarray(X)
+        return X @ self.coef_ + self.intercept_
+
 class Arar(BaseEstimator, RegressorMixin):
     """
     Scikit-learn style wrapper for the ARAR time-series model.
@@ -377,27 +450,83 @@ class Arar(BaseEstimator, RegressorMixin):
         Memory-shortening filter.
     sbar_ : float
         Mean of shortened series.
+    exog_model_ : LinearRegression
+        The fitted regression model for the exogenous variables.
+    coef_exog_ : ndarray of shape (n_exog_features,)
+        Coefficients of the exogenous variables regression model.
     n_features_in_ : int
-        For sklearn compatibility (always 1).
+        Number of features in the target series (always 1, for sklearn compatibility).
+    n_exog_features_in_ : int
+        Number of exogenous features seen during fitting (0 if no exog provided).
     fitted_values_ : ndarray of shape (n_samples,)
         In-sample fitted values (NaN for first k-1 terms).
     residuals_in_ : ndarray of shape (n_samples,)
         In-sample residuals (observed - fitted).
     aic_ : float
-        Akaike Information Criterion.
+        Akaike Information Criterion. For models with exogenous variables, this is 
+        an approximate calculation that treats the two-step procedure (regression + 
+        ARAR) as independent. This may underestimate model complexity. Use primarily 
+        for comparing models with the same exogenous structure.
     bic_ : float
-        Bayesian Information Criterion.
+        Bayesian Information Criterion. For models with exogenous variables, this is 
+        an approximate calculation that treats the two-step procedure (regression + 
+        ARAR) as independent. This may underestimate model complexity. Use primarily 
+        for comparing models with the same exogenous structure.
     memory_reduced_ : bool
         Flag indicating whether reduce_memory() has been called.
+    
+    Notes
+    -----
+    When exogenous variables are provided during fitting, the model uses a
+    two-step approach (regression followed by ARAR on residuals). In this
+    approach, the target series is first regressed on the exogenous variables
+    using a linear regression model. The residuals from this regression,
+    representing the portion of the series not explained by the exogenous
+    variables, are then modeled using the ARAR model.
+
+    This design allows the influence of exogenous variables to be incorporated
+    prior to applying the ARAR model, rather than within the ARAR dynamics
+    themselves.
+
+    This two-step approach is necessary because the ARAR model is inherently
+    univariate and does not natively support exogenous variables. By separating
+    the regression step, the method preserves the original ARAR formulation
+    while still capturing the effects of external predictors.
+
+    However, this approach carries important assumptions and implications:
+
+    - The relationship between the target series and the exogenous variables is
+    assumed to be linear and time-invariant.
+    - The ARAR model is applied only to the residual process, meaning its
+    parameters describe the dynamics of the series after removing the
+    contribution of exogenous variables.
+    - As a result, the interpretability of the ARAR parameters changes: they no
+    longer describe the full data-generating process, but rather the behavior
+    of the unexplained component.
+
+    Despite these limitations, this strategy provides a practical and
+    computationally efficient way to incorporate exogenous information into an
+    otherwise univariate ARAR framework.
     """
 
     def __init__(self, max_ar_depth: int | None = None, max_lag: int | None = None, safe: bool = True):
         self.max_ar_depth = max_ar_depth
         self.max_lag = max_lag
         self.safe = safe
+        self.model_ = None
+        self.n_features_in_ = None
+        self.y_ = None
+        self.coef_ = None
+        self.lags_ = None
+        self.sigma2_ = None
+        self.psi_ = None
+        self.sbar_ = None
+        self.exog_model_ = None
+        self.coef_exog_ = None
+        self.n_exog_features_in_ = None
         self.memory_reduced_ = False
 
-    def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> "Arar":
+    def fit(self, y: pd.Series | np.ndarray, exog: pd.DataFrame | np.ndarray | None = None) -> "Arar":
         """
         Fit the ARAR model to a univariate time series.
 
@@ -405,25 +534,76 @@ class Arar(BaseEstimator, RegressorMixin):
         ----------
         y : array-like of shape (n_samples,)
             Time-ordered numeric sequence.
-        exog : None
-            Exogenous variables. Ignored, present for API compatibility.
+        exog : DataFrame, ndarray of shape (n_samples, n_exog_features), default=None
+            Exogenous variables to include in the model. See Notes section for details
+            on how exogenous variables are handled.
 
         Returns
         -------
         self : Arar
             Fitted estimator.
+
+        Notes
+        -----
+        When exogenous variables are provided during fitting, the model uses a
+        two-step approach (regression followed by ARAR on residuals). In this
+        approach, the target series is first regressed on the exogenous variables
+        using a linear regression model. The residuals from this regression,
+        representing the portion of the series not explained by the exogenous
+        variables, are then modeled using the ARAR model.
+
+        This design allows the influence of exogenous variables to be incorporated
+        prior to applying the ARAR model, rather than within the ARAR dynamics
+        themselves.
+
+        This two-step approach is necessary because the ARAR model is inherently
+        univariate and does not natively support exogenous variables. By separating
+        the regression step, the method preserves the original ARAR formulation
+        while still capturing the effects of external predictors.
+
+        However, this approach carries important assumptions and implications:
+
+        - The relationship between the target series and the exogenous variables is
+        assumed to be linear and time-invariant.
+        - The ARAR model is applied only to the residual process, meaning its
+        parameters describe the dynamics of the series after removing the
+        contribution of exogenous variables.
+        - As a result, the interpretability of the ARAR parameters changes: they no
+        longer describe the full data-generating process, but rather the behavior
+        of the unexplained component.
+
+        Despite these limitations, this strategy provides a practical and
+        computationally efficient way to incorporate exogenous information into an
+        otherwise univariate ARAR framework.
         """
         y = np.asarray(y, dtype=float).ravel()
         if y.ndim != 1:
             raise ValueError("`y` must be a 1D array-like sequence.")
-        if y.size < 2 and not self.safe:
+        
+        series_to_arar = y
+        self.exog_model_ = None
+
+        if exog is not None:
+            exog = np.asarray(exog, dtype=float)
+            if exog.ndim == 1:
+                exog = exog.reshape(-1, 1)
+            
+            if len(exog) != len(y):
+                raise ValueError(f"Length of exog ({len(exog)}) must match length of y ({len(y)})")
+
+            self.exog_model_ = LinearRegression()
+            self.exog_model_.fit(exog, y)
+            self.coef_exog_ = self.exog_model_.coef_
+            series_to_arar = y - self.exog_model_.predict(exog)
+
+        if series_to_arar.size < 2 and not self.safe:
             raise ValueError("Series too short to fit ARAR when safe=False.")
 
-        self.model_ = arar(y, max_ar_depth=self.max_ar_depth, max_lag=self.max_lag, safe=self.safe)
+        self.model_ = arar(series_to_arar, max_ar_depth=self.max_ar_depth, max_lag=self.max_lag, safe=self.safe)
 
         (Y, best_phi, best_lag, sigma2, psi, sbar, max_ar_depth, max_lag) = self.model_
 
-        self.y_ = np.asarray(Y, dtype=float)
+        self.y_ = y
         self.coef_ = np.asarray(best_phi, dtype=float)
         self.lags_ = tuple(best_lag)
         self.sigma2_ = float(sigma2)
@@ -431,25 +611,48 @@ class Arar(BaseEstimator, RegressorMixin):
         self.sbar_ = float(sbar)
         self.max_ar_depth = max_ar_depth
         self.max_lag = max_lag
+        self.n_exog_features_in_ = exog.shape[1] if exog is not None else 0
         self.n_features_in_ = 1
+        self.memory_reduced_ = False
 
-        self.fitted_values_ = fitted_arar(self.model_)["fitted"]
-        self.residuals_in_ = residuals_arar(self.model_)
+        arar_fitted = fitted_arar(self.model_)["fitted"]
+        if self.exog_model_ is not None:
+            exog_fitted = self.exog_model_.predict(exog)
+            self.fitted_values_ = exog_fitted + arar_fitted
+        else:
+            self.fitted_values_ = arar_fitted
+        
+        # Residuals: original y minus fitted values
+        self.residuals_in_ = y - self.fitted_values_
 
         # Compute AIC and BIC
+        # Note: For models with exogenous variables, this is an approximate calculation
+        # that treats the two-step procedure (regression + ARAR) as independent stages.
+        # This may underestimate model complexity. Use these criteria primarily for
+        # comparing models with the same exogenous structure.
         max_lag = max(self.lags_)
         valid_residuals = self.residuals_in_[max_lag:]
+        # Remove NaN values for AIC/BIC calculation
+        valid_residuals = valid_residuals[~np.isnan(valid_residuals)]
         n = len(valid_residuals)
-        k = len([lag for lag in self.lags_ if lag > 1]) + 1
-        sigma2 = np.sum(valid_residuals ** 2) / n # log-likelihood (assuming Gaussian errors)
-        loglik = -0.5 * n * (np.log(2 * np.pi) + np.log(sigma2) + 1)
-        self.aic_ = -2 * loglik + 2 * k
-        self.bic_ = -2 * loglik + k * np.log(n)
-        self.memory_reduced_ = False
+        if n > 0:
+            # Count parameters:
+            # - ARAR: 4 AR coefficients + 1 mean parameter (sbar) = 5
+            # - Exog: n_exog coefficients + 1 intercept (if exog present)
+            k_arar = 5  # 4 AR coefficients + sbar
+            k_exog = (self.n_exog_features_in_ + 1) if self.exog_model_ is not None else 0  # +1 for intercept
+            k = k_arar + k_exog
+            sigma2 = max(np.sum(valid_residuals ** 2) / n, 1e-12)  # Ensure positive
+            loglik = -0.5 * n * (np.log(2 * np.pi) + np.log(sigma2) + 1)
+            self.aic_ = -2 * loglik + 2 * k
+            self.bic_ = -2 * loglik + k * np.log(n)
+        else:
+            self.aic_ = np.nan
+            self.bic_ = np.nan
 
         return self
     
-    def predict(self, steps: int, exog: None = None) -> np.ndarray:
+    def predict(self, steps: int, exog: pd.DataFrame | np.ndarray | None = None) -> np.ndarray:
         """
         Generate mean forecasts steps ahead.
 
@@ -457,8 +660,8 @@ class Arar(BaseEstimator, RegressorMixin):
         ----------
         steps : int
             Forecast horizon (must be > 0)
-        exog : None
-            Exogenous variables. Ignored, present for API compatibility.
+        exog : DataFrame, ndarray of shape (steps, n_exog_features), default=None
+            Exogenous variables for prediction.
 
         Returns
         -------
@@ -468,14 +671,42 @@ class Arar(BaseEstimator, RegressorMixin):
         check_is_fitted(self, "model_")
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
-        return forecast(self.model_, h=steps)["mean"]
+
+        # Forecast ARAR component
+        arar_pred = forecast(self.model_, h=steps)["mean"]
+
+        if self.exog_model_ is None and exog is not None:
+            raise ValueError(
+                "Model was fitted without exog, but `exog` was provided for prediction. "
+                "Please refit the model with exogenous variables."
+            )
+
+        if self.exog_model_ is not None:
+            if exog is None:
+                raise ValueError("Model was fitted with exog, so `exog` is required for prediction.")
+            exog = np.asarray(exog, dtype=float)
+            if exog.ndim == 1:
+                exog = exog.reshape(-1, 1)
+            
+            # Check feature consistency
+            if exog.shape[1] != self.n_exog_features_in_:
+                raise ValueError(f"Mismatch in exogenous features: fitted with {self.n_exog_features_in_}, got {exog.shape[1]}.")
+            
+            if len(exog) != steps:
+                raise ValueError(f"Length of exog ({len(exog)}) must match steps ({steps}).")
+
+            # Forecast Regression component
+            exog_pred = self.exog_model_.predict(exog)
+            arar_pred = arar_pred + exog_pred
+        
+        return arar_pred
 
     def predict_interval(
         self,
         steps: int = 1,
         level=(80, 95),
         as_frame: bool = True,
-        exog: None = None
+        exog: pd.DataFrame | np.ndarray | None = None
     ) -> pd.DataFrame | dict:
         """
         Forecast with symmetric normal-theory prediction intervals.
@@ -489,8 +720,8 @@ class Arar(BaseEstimator, RegressorMixin):
         as_frame : bool, default=True
             If True, return a tidy DataFrame with columns:
             'mean', 'lower_<L>', 'upper_<L>' for each level L.
-        exog : None
-            Exogenous variables. Ignored, present for API compatibility.
+        exog : DataFrame, ndarray of shape (steps, n_exog_features), default=None
+            Exogenous variables for prediction.
 
         Returns
         -------
@@ -500,6 +731,34 @@ class Arar(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, "model_")
         out = forecast(self.model_, h=steps, level=level)
+        
+        if self.exog_model_ is None and exog is not None:
+            raise ValueError(
+                "Model was fitted without exog, but `exog` was provided for prediction. "
+                "Please refit the model with exogenous variables."
+            )
+        
+        if self.exog_model_ is not None:
+            if exog is None:
+                raise ValueError("Model was fitted with exog, so `exog` is required for prediction.")
+            exog = np.asarray(exog, dtype=float)
+            if exog.ndim == 1:
+                exog = exog.reshape(-1, 1)
+
+            # Check feature consistency
+            if exog.shape[1] != self.n_exog_features_in_:
+                raise ValueError(f"Mismatch in exogenous features: fitted with {self.n_exog_features_in_}, got {exog.shape[1]}.")
+            
+            if len(exog) != steps:
+                raise ValueError(f"Length of exog ({len(exog)}) must match steps ({steps}).")
+
+            exog_pred = self.exog_model_.predict(exog)
+            
+            out["mean"] = out["mean"] + exog_pred
+            # Broadcast the exog prediction across confidence columns
+            out["upper"] = out["upper"] + exog_pred[:, np.newaxis]
+            out["lower"] = out["lower"] + exog_pred[:, np.newaxis]
+
         if not as_frame:
             return out
 
@@ -540,7 +799,12 @@ class Arar(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, "model_")
         check_memory_reduced(self, 'summary')
-        return summary_arar(self.model_)
+        summary_arar(self.model_)
+        if self.exog_model_ is not None:
+            print("\nExogenous Model (Linear Regression)")
+            print("-----------------------------------")
+            print(f"Intercept: {self.exog_model_.intercept_:.4f}")
+            print(f"Coefficients: {np.round(self.exog_model_.coef_, 4)}")
 
     def score(self, y=None) -> float:
         """

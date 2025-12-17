@@ -177,6 +177,7 @@ class ForecasterStats():
         ]
         self.estimators_support_exog  = [
             'skforecast.stats._sarimax.Sarimax',
+            'skforecast.stats._arar.Arar',
         ]
 
         estimator_type = f"{type(estimator).__module__}.{type(estimator).__name__}"
@@ -1166,3 +1167,34 @@ class ForecasterStats():
         """
         
         print(self)
+
+    def reduce_memory(self) -> None:
+        """
+        Reduce memory usage by removing internal arrays of the estimator not
+        needed for prediction. This method only works for estimators that
+        expose the method `reduce_memory()`.
+        The arrays removed depend on the specific estimator used.
+        
+        Returns
+        -------
+        None
+        
+        """
+        estimators_with_reduce_memory = [
+            'skforecast.stats._arar.Arar',
+            'skforecast.stats._ets.Ets'
+        ]
+        if not self.is_fitted:
+            raise NotFittedError(
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `reduce_memory()`."
+            )
+        if hasattr(self.estimator, 'reduce_memory'):
+            self.estimator.reduce_memory()
+        else:
+            raise NotImplementedError(
+                f"The estimator {self.estimator_type} does not implement "
+                f"`reduce_memory()` method. Currently, this method is only "
+                f"available for the following estimators: "
+                f"{estimators_with_reduce_memory}."
+            )
