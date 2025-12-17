@@ -131,6 +131,22 @@ class DataTransformationWarning(UserWarning):
         return self.message + "\n" + extra_message
 
 
+class ExogenousInterpretationWarning(UserWarning):
+    """
+    Warning used to notify about important implications when using exogenous 
+    variables with models that use a two-step approach (e.g., regression + ARAR).
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=ExogenousInterpretationWarning)"
+        )
+        return self.message + "\n" + extra_message
+
+
 class FeatureOutOfRangeWarning(UserWarning):
     """
     Warning used to notify that a feature is out of the range seen during training.
@@ -327,6 +343,7 @@ class SkforecastVersionWarning(UserWarning):
 warn_skforecast_categories = [
     DataTypeWarning,
     DataTransformationWarning,
+    ExogenousInterpretationWarning,
     FeatureOutOfRangeWarning,
     IgnoredArgumentWarning,
     IndexWarning,

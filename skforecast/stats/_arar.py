@@ -13,6 +13,7 @@ from scipy.stats import norm
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_is_fitted
 from ._utils import check_memory_reduced, FastLinearRegression
+from ..exceptions import ExogenousInterpretationWarning
 
 
 def setup_params(y_in, max_ar_depth: int | None = None, max_lag: int | None = None):
@@ -451,7 +452,8 @@ class Arar(BaseEstimator, RegressorMixin):
         self.n_exog_features_in_ = None
         self.memory_reduced_ = False
 
-    def fit(self, y: pd.Series | np.ndarray, exog: pd.DataFrame | np.ndarray | None = None) -> "Arar":
+    def fit(self, y: pd.Series | np.ndarray, exog: pd.DataFrame | np.ndarray | None = None, 
+            suppress_warnings: bool = False) -> "Arar":
         """
         Fit the ARAR model to a univariate time series.
 
@@ -462,6 +464,9 @@ class Arar(BaseEstimator, RegressorMixin):
         exog : DataFrame, ndarray of shape (n_samples, n_exog_features), default=None
             Exogenous variables to include in the model. See Notes section for details
             on how exogenous variables are handled.
+        suppress_warnings : bool, default=False
+            If True, suppresses the warning about exogenous variables affecting model
+            interpretation.
 
         Returns
         -------
@@ -509,6 +514,18 @@ class Arar(BaseEstimator, RegressorMixin):
         self.exog_model_ = None
 
         if exog is not None:
+            if not suppress_warnings:
+                warnings.warn(
+                    "Exogenous variables are being handled using a two-step approach: "
+                    "(1) linear regression on exog, (2) ARAR on residuals. "
+                    "This affects model interpretation:\n"
+                    "  - ARAR coefficients (coef_) describe residual dynamics, not the original series\n"
+                    "  - Pred intervals reflect only ARAR uncertainty, not exog regression uncertainty\n"
+                    "  - Assumes a linear, time-invariant relationship between exog and target\n"
+                    "For more details, see the fit() method's Notes section of ARAR class. ",
+                    ExogenousInterpretationWarning
+                )
+            
             exog = np.asarray(exog, dtype=float)
             if exog.ndim == 1:
                 exog = exog.reshape(-1, 1)
