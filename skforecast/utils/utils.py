@@ -2399,7 +2399,6 @@ def check_preprocess_series(
                     f"Review series: '{k}'"
                 )
             series_dict[k] = v.iloc[:, 0]
-            v = series_dict[k]
 
         series_dict[k].name = k
         idx = v.index

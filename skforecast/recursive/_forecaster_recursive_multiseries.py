@@ -2345,7 +2345,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return predictions
 
-    # TODO: Delete extra notes and comments?
     def _recursive_predict_bootstrapping(
         self,
         steps: int,
@@ -2392,83 +2391,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         -------
         boot_predictions : numpy ndarray
             Bootstrap predictions with shape (steps, n_levels, n_boot).
-
-        Notes
-        -----
-        **Vectorization Strategy:**
-        
-        This method achieves significant performance gains by predicting all bootstrap
-        samples across all levels in a single batch per step, rather than iterating
-        over each bootstrap iteration separately. This reduces the number of 
-        `estimator.predict()` calls from `(n_boot x steps)` to just `steps`.
-        
-        **Data Structure and Row Ordering:**
-        
-        The feature matrix contains `n_samples = n_boot x n_levels` rows per step,
-        organized with the following row pattern:
-        
-        ```
-        Row Index | Level   | Bootstrap
-        ----------|---------|----------
-        0         | level_0 | boot_0
-        1         | level_1 | boot_0
-        2         | level_2 | boot_0
-        ...       | ...     | ...
-        n_levels  | level_0 | boot_1
-        n_levels+1| level_1 | boot_1
-        ...       | ...     | ...
-        ```
-        
-        This ordering ensures that:
-        
-        1. **Level encodings tile correctly**: When using categorical encoding for
-           levels, the encoding matrix `(n_levels, n_encoded)` is tiled `n_boot`
-           times to create a `(n_boot x n_levels, n_encoded)` matrix that aligns
-           perfectly with this row ordering.
-        
-        2. **Predictions reshape properly**: The 1D prediction array 
-           `(n_boot x n_levels,)` can be reshaped to `(n_boot, n_levels)` and
-           transposed to `(n_levels, n_boot)` for easy storage and residual addition.
-        
-        3. **Memory access is efficient**: Consecutive rows represent different levels
-           for the same bootstrap iteration, which matches the access pattern when
-           building lag features from the 3D `last_window_boot` array.
-        
-        **Recursive Prediction Flow:**
-        
-        For each step `t`:
-        
-        1. **Build features** for all `(n_boot x n_levels)` samples:
-           - Extract lag features from `last_window_boot[:, :, :]`
-           - Compute window features if configured
-           - Tile exogenous variables across all bootstrap samples
-           - Include level encodings (already set during initialization)
-        
-        2. **Batch prediction**: Call `estimator.predict()` once to get predictions
-           for all samples: `pred.shape = (n_boot x n_levels,)`
-        
-        3. **Add residuals**:
-           - Reshape predictions to `(n_levels, n_boot)`
-           - If binned: For each level, determine which bin each prediction falls into,
-             then lookup the corresponding pre-sampled residual for that 
-             (bin, step, boot) combination.
-           - If not binned: Directly add pre-sampled residuals from 
-             `sampled_residuals[step, :, :]`
-        
-        4. **Update state**: Store predictions in `boot_predictions[step, :, :]` and
-           update `last_window_boot` for the next iteration.
-        
-        **Memory Layout Optimization:**
-
-        - `last_window_boot`: C-contiguous `(window_size+steps, n_boot, n_levels)` 
-        for efficient transpose during feature extraction.
-        - `boot_predictions`: C-contiguous `(steps, n_levels, n_boot)` for efficient
-        storage of results.
-        - `features`: C-contiguous `(n_boot x n_levels, n_features)` for row-wise
-        access during prediction.
-        - `sampled_residuals`: 
-          - Binned: C-contiguous `(n_bins, steps, n_boot, n_levels)`
-          - Not binned: C-contiguous `(steps, n_levels, n_boot)`
 
         """
 

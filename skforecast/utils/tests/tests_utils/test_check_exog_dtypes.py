@@ -98,3 +98,103 @@ def test_check_exog_dtypes_pandas_DataFrame():
     _ = check_exog_dtypes(df)
 
     assert _ is None
+
+
+def test_check_exog_dtypes_DataFrame_multiple_categorical_columns():
+    """
+    Test check_exog_dtypes accepts DataFrame with multiple categorical columns
+    containing integer values.
+    """
+    df = pd.DataFrame({
+        'cat1': pd.Categorical([1, 2, 3]),
+        'cat2': pd.Categorical([4, 5, 6]),
+        'float_col': [1.0, 2.0, 3.0]
+    })
+    result = check_exog_dtypes(df, call_check_exog=False)
+    
+    assert result is None
+
+
+def test_check_exog_dtypes_DataFrame_invalid_dtype_with_valid_categorical():
+    """
+    Test check_exog_dtypes raises warning when DataFrame has invalid dtype
+    even if it also has valid categorical columns.
+    """
+    df = pd.DataFrame({
+        'cat_col': pd.Categorical([1, 2, 3]),
+        'str_col': ['a', 'b', 'c']
+    })
+    warn_msg = re.escape(
+        "`exog` may contain only `int`, `float` or `category` dtypes. Most "
+        "machine learning models do not allow other types of values. "
+        "Fitting the forecaster may fail."
+    )
+    with pytest.warns(DataTypeWarning, match=warn_msg):
+        check_exog_dtypes(df, call_check_exog=False)
+
+
+@pytest.mark.parametrize("dtype", 
+                         ['uint8', 'uint16', 'uint32', 'uint64'], 
+                         ids=lambda d: f'dtype: {d}')
+def test_check_exog_dtypes_pandas_Series_uint_dtypes(dtype):
+    """
+    Test check_exog_dtypes accepts unsigned integer dtypes in a pandas Series.
+    """
+    series = pd.Series(np.array([1, 2, 3]), name='exog', dtype=dtype)
+    result = check_exog_dtypes(series, call_check_exog=False)
+
+    assert result is None
+
+
+@pytest.mark.parametrize("dtype", 
+                         ['Int8', 'Int16', 'Int32', 'Int64',
+                          'Float32', 'Float64'], 
+                         ids=lambda d: f'dtype: {d}')
+def test_check_exog_dtypes_pandas_Series_nullable_dtypes(dtype):
+    """
+    Test check_exog_dtypes accepts nullable integer and float dtypes (Int, Float)
+    in a pandas Series.
+    """
+    series = pd.Series([1, 2, 3], name='exog', dtype=dtype)
+    result = check_exog_dtypes(series, call_check_exog=False)
+
+    assert result is None
+
+
+def test_check_exog_dtypes_custom_series_id_in_warning():
+    """
+    Test check_exog_dtypes uses custom series_id in warning message.
+    """
+    exog = pd.Series(['A', 'B', 'C'], name='my_exog')
+    custom_id = "`custom_exog_name`"
+    warn_msg = re.escape(
+        f"{custom_id} may contain only `int`, `float` or `category` dtypes. Most "
+        "machine learning models do not allow other types of values. "
+        "Fitting the forecaster may fail."
+    )
+    with pytest.warns(DataTypeWarning, match=warn_msg):
+        check_exog_dtypes(exog, call_check_exog=False, series_id=custom_id)
+
+
+def test_check_exog_dtypes_categorical_with_negative_integers():
+    """
+    Test check_exog_dtypes accepts categorical Series with negative integer values.
+    """
+    series = pd.Series([-1, -2, 3], name='exog', dtype='category')
+    result = check_exog_dtypes(series, call_check_exog=False)
+
+    assert result is None
+
+
+def test_check_exog_dtypes_DataFrame_uint_and_nullable_dtypes():
+    """
+    Test check_exog_dtypes accepts DataFrame with mixed uint and nullable dtypes.
+    """
+    df = pd.DataFrame({
+        'uint_col': pd.array([1, 2, 3], dtype='uint32'),
+        'nullable_int': pd.array([4, 5, 6], dtype='Int64'),
+        'nullable_float': pd.array([1.0, 2.0, 3.0], dtype='Float64')
+    })
+    result = check_exog_dtypes(df, call_check_exog=False)
+
+    assert result is None
