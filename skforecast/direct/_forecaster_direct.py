@@ -1571,7 +1571,7 @@ class ForecasterDirect(ForecasterBase):
                 Xs_array[i, n_features_autoreg:] = exog_values[(step - 1) * n_exog : step * n_exog]
             
             # Convert to list of row arrays for compatibility with existing code
-            Xs = [Xs_array[i:i+1] for i in range(len(steps))]
+            Xs = [Xs_array[i:i + 1] for i in range(len(steps))]
             
             # HACK: This is not the best way to do it. Can have any problem
             # if the exog_columns are not in the same order as the

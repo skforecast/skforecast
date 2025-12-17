@@ -310,11 +310,8 @@ def _backtesting_forecaster(
             # Select only the steps that need to be predicted if gap > 0
             test_no_gap_iloc_start = fold[4][0]
             test_no_gap_iloc_end   = fold[4][1]
-            steps = list(
-                np.arange(len(range(test_no_gap_iloc_start, test_no_gap_iloc_end)))
-                + gap
-                + 1
-            )
+            n_steps = test_no_gap_iloc_end - test_no_gap_iloc_start
+            steps = list(range(gap + 1, gap + 1 + n_steps))
 
         preds = []
         if is_regression:
@@ -975,11 +972,8 @@ def _backtesting_forecaster_multiseries(
             # Select only the steps that need to be predicted if gap > 0
             test_no_gap_iloc_start = fold[4][0]
             test_no_gap_iloc_end   = fold[4][1]
-            steps = list(
-                np.arange(len(range(test_no_gap_iloc_start, test_no_gap_iloc_end))) 
-                + gap 
-                + 1
-            )
+            n_steps = test_no_gap_iloc_end - test_no_gap_iloc_start
+            steps = list(range(gap + 1, gap + 1 + n_steps))
 
         preds = []
         levels_predict = [level for level in levels if level in last_window_levels]

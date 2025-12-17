@@ -10,22 +10,6 @@ from sklearn.preprocessing import OneHotEncoder
 from skforecast.utils import transform_numpy
 
 
-def test_transform_numpy_TypeError_when_array_is_not_numpy_ndarray():
-    """
-    Test TypeError is raised when `array` is not a numpy ndarray.
-    """
-    array = pd.Series(np.arange(10))
-
-    err_msg = re.escape(f"`array` argument must be a numpy ndarray. Got {type(array)}")
-    with pytest.raises(TypeError, match = err_msg):
-        transform_numpy(
-            array             = array,
-            transformer       = None,
-            fit               = True,
-            inverse_transform = False
-        )
-
-
 def test_transform_numpy_when_transformer_is_None():
     """
     Test the output of transform_numpy when transformer is None.
@@ -42,6 +26,22 @@ def test_transform_numpy_when_transformer_is_None():
     expected = input_array
     
     np.testing.assert_array_almost_equal(results, expected)
+
+
+def test_transform_numpy_TypeError_when_array_is_not_numpy_ndarray():
+    """
+    Test TypeError is raised when `array` is not a numpy ndarray.
+    """
+    array = pd.Series(np.arange(10))
+
+    err_msg = re.escape(f"`array` argument must be a numpy ndarray. Got {type(array)}")
+    with pytest.raises(TypeError, match = err_msg):
+        transform_numpy(
+            array             = array,
+            transformer       = StandardScaler(),
+            fit               = True,
+            inverse_transform = False
+        )
 
 
 def test_transform_numpy_ValueError_when_transformer_is_ColumnTransformer_and_inverse_transform_is_true():
