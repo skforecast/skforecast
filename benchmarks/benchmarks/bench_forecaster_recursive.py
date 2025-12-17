@@ -127,6 +127,13 @@ def run_benchmark_ForecasterRecursive(output_dir):
     def ForecasterRecursive_predict(forecaster, exog):
         forecaster.predict(steps=STEPS, exog=exog)
 
+    def ForecasterRecursive_predict_bootstrapping(forecaster, exog):
+        forecaster.predict_bootstrapping(
+            steps=STEPS,
+            exog=exog,
+            n_boot=250
+        )
+
     def ForecasterRecursive_predict_interval_conformal(forecaster, exog):
         forecaster.predict_interval(
             steps=STEPS,
@@ -181,6 +188,7 @@ def run_benchmark_ForecasterRecursive(output_dir):
     _ = runner.benchmark(ForecasterRecursive_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive_predict, forecaster=forecaster, exog=exog_pred)
+    _ = runner.benchmark(ForecasterRecursive_predict_bootstrapping, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive_predict_interval_conformal, forecaster=forecaster, exog=exog_pred)
 
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir)

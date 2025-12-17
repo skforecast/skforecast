@@ -275,6 +275,14 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
     def ForecasterRecursiveMultiSeries_predict_exog_is_df_long(forecaster, exog):
         forecaster.predict(steps=STEPS, exog=exog, suppress_warnings=True)
 
+    def ForecasterRecursiveMultiSeries_predict_bootstrapping_exog_is_dict(forecaster, exog):
+        forecaster.predict_bootstrapping(
+            steps=STEPS,
+            exog=exog,
+            n_boot=250,
+            suppress_warnings=True
+        )
+
     def ForecasterRecursiveMultiSeries_predict_interval_exog_is_dict_conformal(forecaster, exog):
         forecaster.predict_interval(
             steps=STEPS,
@@ -524,6 +532,12 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
                 forecaster=forecaster,
                 exog=exog_df_long_pred
             )
+    
+    _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries_predict_bootstrapping_exog_is_dict,
+            forecaster=forecaster,
+            exog=exog_dict_pred
+        )
     
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_predict_interval_exog_is_dict_conformal,
