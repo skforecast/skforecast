@@ -16,6 +16,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Refactored the bootstrapped residuals calculation in all recursive forecasters achieving 10x speedup in the interval prediction process. This improvement significantly reduces the time required to generate prediction intervals, enhancing overall performance and user experience.
 
++ <span class="badge text-bg-api-change">API Change</span> [ForecasterSarimax] has been removed, deprecated in version 0.19.0. Use the new [ForecasterStats] class in the [recursive] module, which offers enhanced capabilities and flexibility for statistical time series forecasting.
+
 
 **Added**
 
@@ -29,6 +31,8 @@ The main changes in this release are:
 
 
 **Changed**
+
++ [ForecasterSarimax] has been removed, deprecated in version 0.19.0. Use the new [ForecasterStats] class in the [recursive] module, which offers enhanced capabilities and flexibility for statistical time series forecasting.
 
 + Removed residual handling from `_recursive_predict` methods, separating bootstrap logic into dedicated methods.
 
