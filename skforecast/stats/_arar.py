@@ -7,13 +7,12 @@
 
 import math
 import warnings
-
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_is_fitted
-from ._utils import check_memory_reduced
+from ._utils import check_memory_reduced, FastLinearRegression
 
 
 def setup_params(y_in, max_ar_depth: int | None = None, max_lag: int | None = None):
@@ -333,80 +332,6 @@ def summary_arar(model_tuple):
     print(f"75%: {np.percentile(Y, 75):.4f}")
     print(f"Max: {np.max(Y):.4f}")
 
-
-class LinearRegression:
-    """
-    Fast linear regression with using numpy linalg.solve as primary method and
-    numpy lstsq as fallback method in case of multicollinearity. This class is
-    designed to be a lightweight alternative to sklearn's LinearRegression.
-    
-    Attributes
-    ----------
-    intercept_ : float
-        The intercept term
-    coef_ : np.ndarray
-        The coefficient array
-    """
-    
-    def __init__(self):
-        self.intercept_ = None
-        self.coef_ = None
-    
-    def fit(self, X, y):
-        """
-        Fit the linear regression model.
-        
-        Parameters
-        ----------
-        X : np.ndarray
-            Feature matrix of shape (n_samples, n_features)
-        y : np.ndarray
-            Target values of shape (n_samples,)
-            
-        Returns
-        -------
-        self
-        """
-        X = np.asarray(X)
-        y = np.asarray(y)
-        
-        # Add intercept column
-        X_with_intercept = np.column_stack([np.ones(len(X)), X])
-        
-        try:
-            # Try fastest method: closed-form solution
-            XtX = X_with_intercept.T @ X_with_intercept
-            coefficients = np.linalg.solve(XtX, X_with_intercept.T @ y)
-            
-        except np.linalg.LinAlgError:
-            # Fallback to lstsq (handles rank-deficient matrices)
-            coefficients = np.linalg.lstsq(X_with_intercept, y, rcond=None)[0]
-        
-        self.intercept_ = coefficients[0]
-        self.coef_ = coefficients[1:]
-        
-        return self
-    
-    def predict(self, X):
-        """
-        Predict using the linear model.
-        
-        Parameters
-        ----------
-        X : np.ndarray
-            Feature matrix of shape (n_samples, n_features)
-            
-        Returns
-        -------
-        y_pred : np.ndarray
-            Predicted values of shape (n_samples,)
-        """
-        if self.intercept_ is None or self.coef_ is None:
-            raise ValueError("Model must be fitted before making predictions")
-        
-        X = np.asarray(X)
-        return X @ self.coef_ + self.intercept_
-
 class Arar(BaseEstimator, RegressorMixin):
     """
     Scikit-learn style wrapper for the ARAR time-series model.
@@ -450,7 +375,7 @@ class Arar(BaseEstimator, RegressorMixin):
         Memory-shortening filter.
     sbar_ : float
         Mean of shortened series.
-    exog_model_ : LinearRegression
+    exog_model_ : FastLinearRegression
         The fitted regression model for the exogenous variables.
     coef_exog_ : ndarray of shape (n_exog_features,)
         Coefficients of the exogenous variables regression model.
@@ -591,7 +516,7 @@ class Arar(BaseEstimator, RegressorMixin):
             if len(exog) != len(y):
                 raise ValueError(f"Length of exog ({len(exog)}) must match length of y ({len(y)})")
 
-            self.exog_model_ = LinearRegression()
+            self.exog_model_ = FastLinearRegression()
             self.exog_model_.fit(exog, y)
             self.coef_exog_ = self.exog_model_.coef_
             series_to_arar = y - self.exog_model_.predict(exog)
