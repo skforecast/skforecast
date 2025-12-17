@@ -79,7 +79,7 @@ def _admissible_jit(alpha: float, beta: float, gamma: float, phi: float, m: int)
         P[m] = 1.0
 
         if m <= 24:
-            C = np.zeros((n_coef - 1, n_coef - 1), dtype=np.float64)
+            C = np.zeros((n_coef - 1, n_coef - 1), dtype=np.complex128)
             for j in range(n_coef - 1):
                 C[0, j] = -P[j + 1] / P[0]
             for i in range(1, n_coef - 1):
@@ -342,7 +342,9 @@ def _ets_step(l: float, b: float, s: NDArray[np.float64], y: float,
             t = y / max(q, TOL)
         new_seasonal = s[m-1] + gamma * (t - s[m-1])
         s_new[0] = new_seasonal
-        s_new[1:m] = s[0:m-1]
+
+        for i in range(1, m):
+            s_new[i] = s[i-1]
     else:
         s_new = s  # No copy needed for non-seasonal models
 
@@ -359,7 +361,10 @@ def _ets_likelihood(y: NDArray[np.float64], init_states: NDArray[np.float64],
     l = init_states[0]
     b = init_states[1] if trend > 0 else 0.0
     if season > 0:
-        s = init_states[1 + (1 if trend > 0 else 0):].copy()
+        offset_start = 1 + (1 if trend > 0 else 0)
+        s = np.zeros(m)
+        for j in range(m):
+            s[j] = init_states[offset_start + j]
     else:
         s = np.zeros(max(m, 1))
 
@@ -390,7 +395,8 @@ def _ets_likelihood(y: NDArray[np.float64], init_states: NDArray[np.float64],
         final_state[1] = b
     if season > 0:
         offset = 1 + (1 if trend > 0 else 0)
-        final_state[offset:offset + m] = s[:m]
+        for j in range(m):
+            final_state[offset + j] = s[j]
 
     return loglik, residuals, fitted, final_state
 
@@ -637,7 +643,8 @@ def _ets_objective_jit(x: NDArray[np.float64],
             extra = -seasonal_sum
 
         init_states_full = np.zeros(len(init_states) + 1, dtype=np.float64)
-        init_states_full[:len(init_states)] = init_states
+        for i in range(len(init_states)):
+            init_states_full[i] = init_states[i]
         init_states_full[len(init_states)] = extra
 
         # Check non-negativity for multiplicative seasonality
