@@ -50,10 +50,10 @@ def test_check_exog_dtypes_TypeError_when_exog_is_Series_with_no_int_categories(
     categories.
     """
     err_msg = re.escape(
-        ("Categorical dtypes in exog must contain only integer values. "
-         "See skforecast docs for more info about how to include "
-         "categorical features https://skforecast.org/"
-         "latest/user_guides/categorical-features.html")
+        "Categorical dtypes in exog must contain only integer values. "
+        "See skforecast docs for more info about how to include "
+        "categorical features https://skforecast.org/"
+        "latest/user_guides/categorical-features.html"
     )
     with pytest.raises(TypeError, match = err_msg):
         check_exog_dtypes(pd.Series(['A', 'B', 'C'], dtype='category', name='exog'))
@@ -65,10 +65,10 @@ def test_check_exog_dtypes_TypeError_when_exog_is_DataFrame_with_no_int_categori
     categories.
     """
     err_msg = re.escape(
-        ("Categorical dtypes in exog must contain only integer values. "
-         "See skforecast docs for more info about how to include "
-         "categorical features https://skforecast.org/"
-         "latest/user_guides/categorical-features.html")
+        "Categorical dtypes in exog must contain only integer values. "
+        "See skforecast docs for more info about how to include "
+        "categorical features https://skforecast.org/"
+        "latest/user_guides/categorical-features.html"
     )
     with pytest.raises(TypeError, match = err_msg):
         check_exog_dtypes(pd.Series(['A', 'B', 'C'], dtype='category', name='exog').to_frame())
