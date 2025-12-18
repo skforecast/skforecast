@@ -490,7 +490,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
         transformer_exog=StandardScaler(),
         encoding="ordinal"
     )
-    forecaster.fit(series=series_dict, exog=exog_dict, store_in_sample_residuals = True)
+    forecaster.fit(series=series_dict, exog=exog_dict, store_in_sample_residuals=True)
 
     runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     _ = runner.benchmark(
@@ -514,7 +514,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
     if parse(skforecast_version) >= parse("0.17.0"):
         # NOTE: Only when the forecaster is fitted with a wide dataframe, the exogenous variables can be
         # passed as a wide dataframe.
-        forecaster.fit(series=series_dict, exog=exog_df_wide, store_in_sample_residuals = True)
+        forecaster.fit(series=series_dict, exog=exog_df_wide, store_in_sample_residuals=True)
         _ = runner.benchmark(
                 ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_wide,
                 forecaster=forecaster,
@@ -587,7 +587,9 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
         encoding="ordinal",
         binner_kwargs={'n_bins': 10}
     )
-    forecaster_boot.fit(series=series_dict, exog=exog_dict, store_in_sample_residuals = True)
+    forecaster_boot.fit(series=series_dict, exog=exog_dict, store_in_sample_residuals=True)
+
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_predict_bootstrapping_exog_is_dict,
             forecaster=forecaster_boot,
