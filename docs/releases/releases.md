@@ -39,6 +39,7 @@ The main changes in this release are:
 
 **Fixed**
 
++ Fixed an issue in <code>[QuantileBinner]</code> where duplicate bin edges caused by repeated values in the data led to non-consecutive bin indices. This caused errors in `predict_bootstrapping` when using binned residuals. The fix removes duplicate edges and ensures bins are always numbered consecutively from 0 to `n_bins_-1`. A warning is now issued when the number of bins is reduced.
 
 
 ## 0.19.1 <small>Dec 10, 2025</small> { id="0.19.1" }

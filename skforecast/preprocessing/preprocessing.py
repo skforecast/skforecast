@@ -19,7 +19,7 @@ from sklearn.base import TransformerMixin
 from sklearn.exceptions import NotFittedError
 
 from .. import __version__
-from ..exceptions import MissingValuesWarning
+from ..exceptions import IgnoredArgumentWarning, MissingValuesWarning
 from ..metrics import calculate_coverage
 from ..utils import get_style_repr_html
 
@@ -2294,7 +2294,8 @@ class QuantileBinner:
     random_state : int
         The random seed to use for generating a random subset of the data.
     n_bins_ : int
-        The number of bins learned during fitting.
+        The number of bins learned during fitting. This may be less than `n_bins` 
+        if there are duplicate bin edges due to repeated predicted values.
     bin_edges_ : numpy ndarray
         The edges of the bins learned during fitting.
     internal_edges_ : numpy ndarray
@@ -2400,13 +2401,31 @@ class QuantileBinner:
             rng = np.random.default_rng(self.random_state)
             X = X[rng.integers(0, len(X), self.subsample)]
 
-        self.bin_edges_ = np.percentile(
+        bin_edges = np.percentile(
             a      = X,
             q      = np.linspace(0, 100, self.n_bins + 1),
             method = self.method
         )
 
+        # Remove duplicate edges (can happen when data has many repeated values)
+        # to ensure bins are always numbered 0 to n_bins_-1
+        self.bin_edges_ = np.unique(bin_edges)
+        
+        # Ensure at least 1 bin when all values are identical
+        if len(self.bin_edges_) == 1:
+            # Create artificial edges around the single value
+            self.bin_edges_ = np.array([self.bin_edges_.item(), self.bin_edges_.item()])
+        
         self.n_bins_ = len(self.bin_edges_) - 1
+        
+        if self.n_bins_ != self.n_bins:
+            warnings.warn(
+                f"The number of bins has been reduced from {self.n_bins} to "
+                f"{self.n_bins_} due to duplicated edges caused by repeated predicted "
+                f"values.",
+                IgnoredArgumentWarning
+            )
+        
         # Internal edges for optimized transform with searchsorted
         self.internal_edges_ = self.bin_edges_[1:-1]
         self.intervals_ = {
@@ -2436,8 +2455,7 @@ class QuantileBinner:
             raise NotFittedError(
                 "The model has not been fitted yet. Call 'fit' with training data first."
             )
-
-        # Assign each value to a bin using searchsorted for performance
+        
         bin_indices = np.searchsorted(
             self.internal_edges_, X, side='right'
         ).astype(self.dtype)
@@ -2483,6 +2501,7 @@ class QuantileBinner:
 
         return {
             "n_bins": self.n_bins,
+            "n_bins_": self.n_bins_,
             "method": self.method,
             "subsample": self.subsample,
             "dtype": self.dtype,
