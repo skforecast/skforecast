@@ -24,8 +24,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0            # fetch all history for committing
-          persist-credentials: true # use GITHUB_TOKEN for push
+          fetch-depth: 1             # shallow clone, faster checkout
+          persist-credentials: true  # use GITHUB_TOKEN for push
 
       - name: Show runner context (verbose)
         shell: bash
