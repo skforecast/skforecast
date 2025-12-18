@@ -224,7 +224,8 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
                 cv=cv,
                 metric='mean_squared_error',
                 n_jobs=1,
-                show_progress=False
+                show_progress=False,
+                suppress_warnings=True
             )
         
     runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
@@ -238,8 +239,8 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
     _ = runner.benchmark(ForecasterDirectMultiVariate_fit, forecaster=forecaster, series=series, exog=exog)
     _ = runner.benchmark(ForecasterDirectMultiVariate_fit_series_no_exog, forecaster=forecaster, series=series)
 
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True, suppress_warnings=True)
     runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
-    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     _ = runner.benchmark(ForecasterDirectMultiVariate_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirectMultiVariate_predict, forecaster=forecaster, exog=exog_pred)

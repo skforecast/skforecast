@@ -20,31 +20,51 @@ import skforecast
 
 
 class BenchmarkRunner:
+    """"
+    Class to run benchmarks on skforecast forecasters and save the results.
+    """
     def __init__(self, output_dir="./benchmarks", repeat=10):
+
+        self.results_filename = "benchmark.joblib"
         self.output_dir = output_dir
         self.repeat = repeat
+        self._system_info_cache = None
+
         os.makedirs(self.output_dir, exist_ok=True)
 
     def get_system_info(self):
+        """
+        Collect system and package version information (cached except datetime).
+        """
+        if self._system_info_cache is None:
+            self._system_info_cache = {
+                'python_version': platform.python_version(),
+                'skforecast_version': skforecast.__version__,
+                'numpy_version': np.__version__,
+                'pandas_version': pd.__version__,
+                'sklearn_version': sklearn.__version__,
+                'lightgbm_version': lightgbm.__version__,
+                'platform': platform.platform(),
+                'processor': platform.processor(),
+                'cpu_count': psutil.cpu_count(logical=True),
+                'memory_gb': round(psutil.virtual_memory().total / 1e9, 2),
+            }
         return {
             'datetime': pd.Timestamp.now(),
-            'python_version': platform.python_version(),
-            'skforecast_version': skforecast.__version__,
-            'numpy_version': np.__version__,
-            'pandas_version': pd.__version__,
-            'sklearn_version': sklearn.__version__,
-            'lightgbm_version': lightgbm.__version__,
-            'platform': platform.platform(),
-            'processor': platform.processor(),
-            'cpu_count': psutil.cpu_count(logical=True),
-            'memory_gb': round(psutil.virtual_memory().total / 1e9, 2),
+            **self._system_info_cache
         }
 
     def hash_function_code(self, func):
+        """
+        Generate MD5 hash of a function's source code.
+        """
         src = inspect.getsource(func)
         return hashlib.md5(src.encode()).hexdigest()
 
     def time_function(self, func, *args, **kwargs):
+        """
+        Measure execution time of a function over multiple runs.
+        """
         times = []
         try:
             for _ in range(self.repeat):
@@ -78,14 +98,15 @@ class BenchmarkRunner:
         else:
             estimator_name = type(forecaster.estimator).__name__ if forecaster else np.nan
         
+        timestamp = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
         func_name = func.__name__
         hash_code = self.hash_function_code(func)
         method_name = func_name.replace(f'{forecaster_name}_', '') 
-        timing = self.time_function(func, forecaster, *args, **kwargs)
         system_info = self.get_system_info()
 
-        timestamp = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
-        print(f"[{timestamp}] Benchmarking function: {func_name}")
+        print(f"[{timestamp}] Benchmarking function: {func_name}", flush=True)
+        timing = self.time_function(func, forecaster, *args, **kwargs)
+
         entry = {
             'forecaster_name': forecaster_name,
             'estimator_name': estimator_name,
@@ -100,7 +121,7 @@ class BenchmarkRunner:
             **system_info
         }
 
-        result_file = os.path.join(self.output_dir, "benchmark.joblib")
+        result_file = os.path.join(self.output_dir, self.results_filename)
         df_new = pd.DataFrame([entry])
         if os.path.exists(result_file):
             df_existing = joblib.load(result_file)
