@@ -120,10 +120,10 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
         forecaster._create_train_X_y(series=series)
 
     def ForecasterDirectMultiVariate_fit(forecaster, series, exog):
-        forecaster.fit(series=series, exog=exog)
+        forecaster.fit(series=series, exog=exog, suppress_warnings=True)
 
     def ForecasterDirectMultiVariate_fit_series_no_exog(forecaster, series):
-        forecaster.fit(series=series)
+        forecaster.fit(series=series, suppress_warnings=True)
 
     def ForecasterDirectMultiVariate_check_predict_inputs(forecaster, exog):
         if parse(skforecast_version) >= parse("0.17.0"):

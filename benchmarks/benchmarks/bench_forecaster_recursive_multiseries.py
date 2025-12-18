@@ -212,22 +212,22 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
     # Fit
     # ==========================================================================
     def ForecasterRecursiveMultiSeries_fit_series_is_dict_no_exog(forecaster, series):
-        forecaster.fit(series=series, exog=None)
+        forecaster.fit(series=series, exog=None, suppress_warnings=True)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dict_exog_is_dict(forecaster, series, exog):
-        forecaster.fit(series=series, exog=exog)
+        forecaster.fit(series=series, exog=exog, suppress_warnings=True)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dict_different_length_exog_is_dict(forecaster, series, exog):
-        forecaster.fit(series=series, exog=exog)
+        forecaster.fit(series=series, exog=exog, suppress_warnings=True)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dataframe_no_exog(forecaster, series):
-        forecaster.fit(series=series, exog=None)
+        forecaster.fit(series=series, exog=None, suppress_warnings=True)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dataframe(forecaster, series, exog):
-        forecaster.fit(series=series, exog=exog)
+        forecaster.fit(series=series, exog=exog, suppress_warnings=True)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dict(forecaster, series, exog):
-        forecaster.fit(series=series, exog=exog)
+        forecaster.fit(series=series, exog=exog, suppress_warnings=True)
 
     # Predict
     # ==========================================================================
