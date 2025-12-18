@@ -18,7 +18,7 @@
 - :information_source: [About The Project](#about-the-project)
 - :books: [Documentation](#documentation)
 - :computer: [Installation & Dependencies](#installation--dependencies)
-- :sparkles: [What is new in skforecast 0.19?](#what-is-new-in-skforecast-019)
+- :sparkles: [What is new in skforecast 0.20?](#what-is-new-in-skforecast-020)
 - :crystal_ball: [Forecasters](#forecasters)
 - :mortar_board: [Examples and tutorials](#examples-and-tutorials)
 - :handshake: [How to contribute](#how-to-contribute)
@@ -91,7 +91,7 @@ pip install skforecast
 For more installation options, including dependencies and additional features, check out our [Installation Guide](https://skforecast.org/latest/quick-start/how-to-install.html).
 
 
-# What is new in skforecast 0.19?
+# What is new in skforecast 0.20?
 
 All significant changes to this project are documented in the release file.
 
@@ -151,12 +151,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.20.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.20.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.20.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.20.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **BibTeX**:
@@ -166,7 +166,7 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.20.0) [Compu
   title   = {skforecast},
   version = {0.20.0},
   month   = {12},
-  year    = {2025},
+  year    = {2026},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},
   doi     = {10.5281/zenodo.8382788}
