@@ -57,6 +57,7 @@ def grid_search_forecaster(
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
@@ -103,6 +104,10 @@ def grid_search_forecaster(
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -124,18 +129,19 @@ def grid_search_forecaster(
     param_grid = list(ParameterGrid(param_grid))
 
     results = _evaluate_grid_hyperparameters(
-                  forecaster    = forecaster,
-                  y             = y,
-                  cv            = cv,
-                  param_grid    = param_grid,
-                  metric        = metric,
-                  exog          = exog,
-                  lags_grid     = lags_grid,
-                  return_best   = return_best,
-                  n_jobs        = n_jobs,
-                  verbose       = verbose,
-                  show_progress = show_progress,
-                  output_file   = output_file
+                  forecaster        = forecaster,
+                  y                 = y,
+                  cv                = cv,
+                  param_grid        = param_grid,
+                  metric            = metric,
+                  exog              = exog,
+                  lags_grid         = lags_grid,
+                  return_best       = return_best,
+                  n_jobs            = n_jobs,
+                  verbose           = verbose,
+                  show_progress     = show_progress,
+                  suppress_warnings = suppress_warnings,
+                  output_file       = output_file
               )
 
     return results
@@ -159,6 +165,7 @@ def random_search_forecaster(
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
@@ -210,6 +217,10 @@ def random_search_forecaster(
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -231,18 +242,19 @@ def random_search_forecaster(
     param_grid = list(ParameterSampler(param_distributions, n_iter=n_iter, random_state=random_state))
 
     results = _evaluate_grid_hyperparameters(
-                  forecaster    = forecaster,
-                  y             = y,
-                  cv            = cv,
-                  param_grid    = param_grid,
-                  metric        = metric,
-                  exog          = exog,
-                  lags_grid     = lags_grid,
-                  return_best   = return_best,
-                  n_jobs        = n_jobs,
-                  verbose       = verbose,
-                  show_progress = show_progress,
-                  output_file   = output_file
+                  forecaster        = forecaster,
+                  y                 = y,
+                  cv                = cv,
+                  param_grid        = param_grid,
+                  metric            = metric,
+                  exog              = exog,
+                  lags_grid         = lags_grid,
+                  return_best       = return_best,
+                  n_jobs            = n_jobs,
+                  verbose           = verbose,
+                  show_progress     = show_progress,
+                  suppress_warnings = suppress_warnings,
+                  output_file       = output_file
               )
 
     return results
@@ -264,6 +276,7 @@ def _evaluate_grid_hyperparameters(
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
@@ -309,6 +322,10 @@ def _evaluate_grid_hyperparameters(
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -326,6 +343,8 @@ def _evaluate_grid_hyperparameters(
         - additional n columns with param = value.
 
     """
+
+    set_skforecast_warnings(suppress_warnings, action='ignore')
 
     forecaster_search = deepcopy(forecaster)
     is_regression = forecaster_search.__skforecast_tags__['forecaster_task'] == 'regression'
@@ -514,6 +533,8 @@ def _evaluate_grid_hyperparameters(
             f"  {'Backtesting' if cv_name == 'TimeSeriesFold' else 'One-step-ahead'} "
             f"metric: {best_metric}"
         )
+
+    set_skforecast_warnings(suppress_warnings, action='default')
     
     return results
 
@@ -531,6 +552,7 @@ def bayesian_search_forecaster(
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None,
     kwargs_create_study: dict = {},
     kwargs_study_optimize: dict = {}
@@ -581,6 +603,10 @@ def bayesian_search_forecaster(
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -625,6 +651,7 @@ def bayesian_search_forecaster(
                               n_jobs                = n_jobs,
                               verbose               = verbose,
                               show_progress         = show_progress,
+                              suppress_warnings     = suppress_warnings,
                               output_file           = output_file,
                               kwargs_create_study   = kwargs_create_study,
                               kwargs_study_optimize = kwargs_study_optimize
@@ -646,6 +673,7 @@ def _bayesian_search_optuna(
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None,
     kwargs_create_study: dict = {},
     kwargs_study_optimize: dict = {}
@@ -696,6 +724,10 @@ def _bayesian_search_optuna(
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -720,6 +752,8 @@ def _bayesian_search_optuna(
         The best optimization result returned as an optuna FrozenTrial object.
 
     """
+
+    set_skforecast_warnings(suppress_warnings, action='ignore')
 
     forecaster_search = deepcopy(forecaster)
     forecaster_name = type(forecaster_search).__name__
@@ -959,6 +993,8 @@ def _bayesian_search_optuna(
             f"  {'Backtesting' if cv_name == 'TimeSeriesFold' else 'One-step-ahead'} "
             f"metric: {best_metric}"
         )
+
+    set_skforecast_warnings(suppress_warnings, action='default')
             
     return results, best_trial
 
