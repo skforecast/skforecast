@@ -9,7 +9,6 @@ import time
 import platform
 import joblib
 import os
-import warnings
 import hashlib
 import inspect
 import psutil
@@ -61,7 +60,7 @@ class BenchmarkRunner:
                 'std_time': np.std(times)
             }
         except Exception as e:
-            warnings.warn(f"The function {func.__name__} raised an exception: {e}")
+            print(f"::warning::Benchmark FAILED - {func.__name__}: {e}")
             return {
                 'avg_time': np.nan, 
                 'median_time': np.nan, 
@@ -85,7 +84,8 @@ class BenchmarkRunner:
         timing = self.time_function(func, forecaster, *args, **kwargs)
         system_info = self.get_system_info()
 
-        print(f"Benchmarking function: {func_name}")
+        timestamp = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(f"[{timestamp}] Benchmarking function: {func_name}")
         entry = {
             'forecaster_name': forecaster_name,
             'estimator_name': estimator_name,
@@ -116,9 +116,8 @@ class BenchmarkRunner:
                     .all(axis=1)
                 )
                 if mask.any():
-                    warnings.warn(
-                        f"Benchmark skipped: identical entry already exists in {result_file}, "
-                        f"skipping save."
+                    print(
+                        f"::notice::Benchmark skipped: identical entry already exists in {result_file}"
                     )
                     return df_existing
             
