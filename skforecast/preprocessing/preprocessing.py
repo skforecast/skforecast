@@ -2501,7 +2501,6 @@ class QuantileBinner:
 
         return {
             "n_bins": self.n_bins,
-            "n_bins_": self.n_bins_,
             "method": self.method,
             "subsample": self.subsample,
             "dtype": self.dtype,

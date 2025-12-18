@@ -209,6 +209,7 @@ def test_QuantileBinner_fit_with_duplicate_edges_raises_warning():
     """
     
     # Data with many repeated values that will cause duplicate edges
+    # Two unique values (1 and 2) will result in 2 bins instead of 10
     X = np.array([1, 1, 1, 1, 1, 2, 2, 2, 2, 2])
     binner = QuantileBinner(
         n_bins=10,
@@ -218,14 +219,14 @@ def test_QuantileBinner_fit_with_duplicate_edges_raises_warning():
     )
     
     warn_msg = re.escape(
-        "The number of bins has been reduced from 10 to 1 due to duplicated "
+        "The number of bins has been reduced from 10 to 2 due to duplicated "
         "edges caused by repeated predicted values."
     )
     with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
         binner.fit(X)
     
-    # Check that n_bins_ is reduced
-    assert binner.n_bins_ == 1
+    # Check that n_bins_ is reduced to 2 (one bin per unique value)
+    assert binner.n_bins_ == 2
     assert binner.n_bins_ < binner.n_bins
 
 

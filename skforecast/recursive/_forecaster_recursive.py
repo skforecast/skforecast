@@ -40,6 +40,7 @@ from ..utils import (
     transform_dataframe,
     get_style_repr_html,
     set_cpu_gpu_device,
+    set_skforecast_warnings,
     initialize_estimator
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -960,7 +961,8 @@ class ForecasterRecursive(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
         store_in_sample_residuals: bool = False,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> None:
         """
         Training Forecaster.
@@ -986,12 +988,18 @@ class ForecasterRecursive(ForecasterBase):
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the training 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
         None
         
         """
+
+        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         # TODO: create a method reset_forecaster() to reset all attributes
         # Reset values in case the forecaster has already been fitted.
@@ -1073,6 +1081,8 @@ class ForecasterRecursive(ForecasterBase):
                 .copy()
                 .to_frame(name=y.name if y.name is not None else 'y')
             )
+
+        set_skforecast_warnings(suppress_warnings, action='default')
 
     def _binning_in_sample_residuals(
         self,
