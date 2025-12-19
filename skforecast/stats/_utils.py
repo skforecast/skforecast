@@ -5,9 +5,10 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 import numpy as np
 
-def check_memory_reduced(estimator, method_name: str) -> None:
+def check_memory_reduced(estimator: object, method_name: str) -> None:
     """
     Check if estimator memory has been reduced and raise informative error.
     

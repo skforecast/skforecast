@@ -1,9 +1,5 @@
-################################################################################
-#                     tests_ets_reduce_memory.py                               #
-#                                                                              #
-# This work by skforecast team is licensed under the BSD 3-Clause License.     #
-################################################################################
-# coding=utf-8
+# Unit tests for skforecast.stats.Ets.reduce_memory()
+# ==============================================================================
 
 import pytest
 import numpy as np

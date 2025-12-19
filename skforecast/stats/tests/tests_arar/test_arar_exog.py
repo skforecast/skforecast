@@ -1,10 +1,10 @@
 # Unit test for Arar with exogenous variables
 # ==============================================================================
+
 import numpy as np
 import pandas as pd
 import pytest
-
-from skforecast.stats._arar import Arar
+from ..._arar import Arar
 
 
 def test_arar_fit_with_exog():

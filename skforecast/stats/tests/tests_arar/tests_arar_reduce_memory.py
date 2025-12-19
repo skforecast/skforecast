@@ -1,14 +1,10 @@
-################################################################################
-#                     tests_arar_reduce_memory.py                              #
-#                                                                              #
-# This work by skforecast team is licensed under the BSD 3-Clause License.     #
-################################################################################
-# coding=utf-8
+# Unit tests for skforecast.stats.Arar.reduce_memory()
+# ==============================================================================
 
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.stats import Arar
+from ..._arar import Arar
 
 
 def test_reduce_memory_clears_arrays():
