@@ -79,7 +79,7 @@ def _admissible_jit(alpha: float, beta: float, gamma: float, phi: float, m: int)
         P[m] = 1.0
 
         if m <= 24:
-            C = np.zeros((n_coef - 1, n_coef - 1), dtype=np.complex128)
+            C = np.zeros((n_coef - 1, n_coef - 1), dtype=np.float64)
             for j in range(n_coef - 1):
                 C[0, j] = -P[j + 1] / P[0]
             for i in range(1, n_coef - 1):
