@@ -275,9 +275,9 @@ class Ets(BaseEstimator, RegressorMixin):
 
         return df
 
-    def residuals_(self) -> np.ndarray:
+    def get_residuals(self) -> np.ndarray:
         """
-        In-sample residuals (observed - fitted).
+        Get in-sample residuals (observed - fitted) from the ETS model.
 
         Returns
         -------
@@ -287,9 +287,9 @@ class Ets(BaseEstimator, RegressorMixin):
         check_memory_reduced(self, 'residuals_')
         return self.residuals_in_
 
-    def fitted_(self) -> np.ndarray:
+    def get_fitted_values(self) -> np.ndarray:
         """
-        In-sample fitted values.
+        Get in-sample fitted values from the ETS model.
 
         Returns
         -------

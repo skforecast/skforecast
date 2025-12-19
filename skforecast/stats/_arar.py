@@ -398,9 +398,9 @@ class Arar(BaseEstimator, RegressorMixin):
             df[f"upper_{L}"] = out["upper"][:, i]
         return df
 
-    def residuals_(self) -> np.ndarray:
+    def get_residuals(self) -> np.ndarray:
         """
-        In-sample residuals (observed - fitted).
+        Get in-sample residuals (observed - fitted) from the ARAR model.
 
         Returns
         -------
@@ -410,9 +410,9 @@ class Arar(BaseEstimator, RegressorMixin):
         check_memory_reduced(self, 'residuals_')
         return self.residuals_in_
 
-    def fitted_(self) -> np.ndarray:
+    def get_fitted_values(self) -> np.ndarray:
         """
-        In-sample fitted values.
+        Get in-sample fitted values from the ARAR model.
 
         Returns
         -------
@@ -435,7 +435,7 @@ class Arar(BaseEstimator, RegressorMixin):
             print(f"Intercept: {self.exog_model_.intercept_:.4f}")
             print(f"Coefficients: {np.round(self.exog_model_.coef_, 4)}")
 
-    def score(self, y=None) -> float:
+    def get_score(self, y=None) -> float:
         """
         R^2 using in-sample fitted values (ignores initial NaNs).
 
