@@ -14,8 +14,7 @@ from sklearn.utils.validation import check_is_fitted
 from .arar._arar_base import (
     arar,
     forecast,
-    fitted_arar,
-    summary_arar
+    fitted_arar
 )
 from ._utils import check_memory_reduced, FastLinearRegression
 from ..exceptions import ExogenousInterpretationWarning
@@ -139,7 +138,7 @@ class Arar(BaseEstimator, RegressorMixin):
         self.n_exog_features_in_ = None
         self.memory_reduced_ = False
 
-    def fit(self, y: pd.Series | np.ndarray, exog: pd.DataFrame | np.ndarray | None = None, 
+    def fit(self, y: pd.Series | np.ndarray, exog: pd.Series | pd.DataFrame | np.ndarray | None = None, 
             suppress_warnings: bool = False) -> "Arar":
         """
         Fit the ARAR model to a univariate time series.
@@ -148,7 +147,7 @@ class Arar(BaseEstimator, RegressorMixin):
         ----------
         y : array-like of shape (n_samples,)
             Time-ordered numeric sequence.
-        exog : DataFrame, ndarray of shape (n_samples, n_exog_features), default=None
+        exog : Series, DataFrame, or ndarray of shape (n_samples, n_exog_features), default=None
             Exogenous variables to include in the model. See Notes section for details
             on how exogenous variables are handled.
         suppress_warnings : bool, default=False
@@ -193,8 +192,16 @@ class Arar(BaseEstimator, RegressorMixin):
         computationally efficient way to incorporate exogenous information into an
         otherwise univariate ARAR framework.
         """
-        y = np.asarray(y, dtype=float).ravel()
-        if y.ndim != 1:
+        if not isinstance(y, (pd.Series, np.ndarray)):
+            raise TypeError("`y` must be a pandas Series or numpy ndarray.")
+        
+        if not isinstance(exog, (type(None), pd.Series, pd.DataFrame, np.ndarray)):
+            raise TypeError("`exog` must be None, a pandas Series, pandas DataFrame, or numpy ndarray.")
+        
+        y = np.asarray(y, dtype=float)
+        if y.ndim == 2 and y.shape[1] == 1:
+            y = y.ravel()
+        elif y.ndim != 1:
             raise ValueError("`y` must be a 1D array-like sequence.")
         
         series_to_arar = y
@@ -216,6 +223,8 @@ class Arar(BaseEstimator, RegressorMixin):
             exog = np.asarray(exog, dtype=float)
             if exog.ndim == 1:
                 exog = exog.reshape(-1, 1)
+            elif exog.ndim != 2:
+                raise ValueError("`exog` must be 1D or 2D.")
             
             if len(exog) != len(y):
                 raise ValueError(f"Length of exog ({len(exog)}) must match length of y ({len(y)})")
@@ -259,16 +268,18 @@ class Arar(BaseEstimator, RegressorMixin):
         # that treats the two-step procedure (regression + ARAR) as independent stages.
         # This may underestimate model complexity. Use these criteria primarily for
         # comparing models with the same exogenous structure.
-        max_lag = max(self.lags_)
-        valid_residuals = self.residuals_in_[max_lag:]
+        largest_lag = max(self.lags_)
+        valid_residuals = self.residuals_in_[largest_lag:]
         # Remove NaN values for AIC/BIC calculation
         valid_residuals = valid_residuals[~np.isnan(valid_residuals)]
         n = len(valid_residuals)
         if n > 0:
             # Count parameters:
-            # - ARAR: 4 AR coefficients + 1 mean parameter (sbar) = 5
+            # - ARAR: 4 AR coefficients + 1 mean parameter (sbar) + 1 variance (sigma2) = 6
             # - Exog: n_exog coefficients + 1 intercept (if exog present)
-            k_arar = 5  # 4 AR coefficients + sbar
+            # Note: We count all 4 AR coefficients even if some are zero, as they were
+            # selected during model fitting. The variance parameter sigma2 is also estimated.
+            k_arar = 6  # 4 AR coefficients + sbar + sigma2
             k_exog = (self.n_exog_features_in_ + 1) if self.exog_model_ is not None else 0  # +1 for intercept
             k = k_arar + k_exog
             sigma2 = max(np.sum(valid_residuals ** 2) / n, 1e-12)  # Ensure positive
@@ -281,7 +292,7 @@ class Arar(BaseEstimator, RegressorMixin):
 
         return self
     
-    def predict(self, steps: int, exog: pd.DataFrame | np.ndarray | None = None) -> np.ndarray:
+    def predict(self, steps: int, exog: pd.Series | pd.DataFrame | np.ndarray | None = None) -> np.ndarray:
         """
         Generate mean forecasts steps ahead.
 
@@ -289,7 +300,7 @@ class Arar(BaseEstimator, RegressorMixin):
         ----------
         steps : int
             Forecast horizon (must be > 0)
-        exog : DataFrame, ndarray of shape (steps, n_exog_features), default=None
+        exog : Series, DataFrame, or ndarray of shape (steps, n_exog_features), default=None
             Exogenous variables for prediction.
 
         Returns
@@ -316,6 +327,8 @@ class Arar(BaseEstimator, RegressorMixin):
             exog = np.asarray(exog, dtype=float)
             if exog.ndim == 1:
                 exog = exog.reshape(-1, 1)
+            elif exog.ndim != 2:
+                raise ValueError("`exog` must be 1D or 2D.")
             
             # Check feature consistency
             if exog.shape[1] != self.n_exog_features_in_:
@@ -335,7 +348,7 @@ class Arar(BaseEstimator, RegressorMixin):
         steps: int = 1,
         level=(80, 95),
         as_frame: bool = True,
-        exog: pd.DataFrame | np.ndarray | None = None
+        exog: pd.Series | pd.DataFrame | np.ndarray | None = None
     ) -> pd.DataFrame | dict:
         """
         Forecast with symmetric normal-theory prediction intervals.
@@ -349,14 +362,20 @@ class Arar(BaseEstimator, RegressorMixin):
         as_frame : bool, default=True
             If True, return a tidy DataFrame with columns:
             'mean', 'lower_<L>', 'upper_<L>' for each level L.
-        exog : DataFrame, ndarray of shape (steps, n_exog_features), default=None
+        exog : Series, DataFrame, or ndarray of shape (steps, n_exog_features), default=None
             Exogenous variables for prediction.
 
         Returns
         -------
         DataFrame or dict
-            If as_frame=True: DataFrame indexed by step (1..h).
-            Else: the raw dict from `predict_arar`.
+            If as_frame=True: DataFrame indexed by step (1..steps).
+            Else: the raw dict from `forecast`.
+            
+        Notes
+        -----
+        When exogenous variables are used, prediction intervals account only for 
+        ARAR forecast uncertainty and do not include uncertainty from the regression 
+        coefficients. This may result in **undercoverage** (actual coverage < nominal level).
         """
         check_is_fitted(self, "model_")
         out = forecast(self.model_, h=steps, level=level)
@@ -373,10 +392,14 @@ class Arar(BaseEstimator, RegressorMixin):
             exog = np.asarray(exog, dtype=float)
             if exog.ndim == 1:
                 exog = exog.reshape(-1, 1)
+            elif exog.ndim != 2:
+                raise ValueError("`exog` must be 1D or 2D.")
 
             # Check feature consistency
             if exog.shape[1] != self.n_exog_features_in_:
-                raise ValueError(f"Mismatch in exogenous features: fitted with {self.n_exog_features_in_}, got {exog.shape[1]}.")
+                raise ValueError(
+                    f"Mismatch in exogenous features: fitted with {self.n_exog_features_in_}, "
+                    f"got {exog.shape[1]}.")
             
             if len(exog) != steps:
                 raise ValueError(f"Length of exog ({len(exog)}) must match steps ({steps}).")
@@ -428,10 +451,33 @@ class Arar(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, "model_")
         check_memory_reduced(self, 'summary')
-        summary_arar(self.model_)
+        
+        print("ARAR Model Summary")
+        print("------------------")
+        print(f"Number of observations: {len(self.y_)}")
+        print(f"Selected AR lags: {self.lags_}")
+        print(f"AR coefficients (phi): {np.round(self.coef_, 4)}")
+        print(f"Residual variance (sigma^2): {self.sigma2_:.4f}")
+        print(f"Mean of shortened series (sbar): {self.sbar_:.4f}")
+        print(f"Length of memory-shortening filter (psi): {len(self.psi_)}")
+
+        print("\nTime Series Summary Statistics")
+        print(f"Mean: {np.mean(self.y_):.4f}")
+        print(f"Std Dev: {np.std(self.y_, ddof=1):.4f}")
+        print(f"Min: {np.min(self.y_):.4f}")
+        print(f"25%: {np.percentile(self.y_, 25):.4f}")
+        print(f"Median: {np.median(self.y_):.4f}")
+        print(f"75%: {np.percentile(self.y_, 75):.4f}")
+        print(f"Max: {np.max(self.y_):.4f}")
+        
+        print("\nModel Diagnostics")
+        print(f"AIC: {self.aic_:.4f}")
+        print(f"BIC: {self.bic_:.4f}")
+        
         if self.exog_model_ is not None:
             print("\nExogenous Model (Linear Regression)")
             print("-----------------------------------")
+            print(f"Number of features: {self.n_exog_features_in_}")
             print(f"Intercept: {self.exog_model_.intercept_:.4f}")
             print(f"Coefficients: {np.round(self.exog_model_.coef_, 4)}")
 

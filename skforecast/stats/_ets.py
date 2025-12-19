@@ -142,9 +142,11 @@ class Ets(BaseEstimator, RegressorMixin):
         # Convert to numpy array
         if isinstance(y, pd.Series):
             y = y.values
-        y = np.asarray(y, dtype=np.float64).ravel()
-
-        if y.ndim != 1:
+        y = np.asarray(y, dtype=np.float64)
+        if y.ndim == 2 and y.shape[1] == 1:
+            # Allow (n, 1) shaped arrays and squeeze to 1D
+            y = y.ravel()
+        elif y.ndim != 1:
             raise ValueError("`y` must be a 1D array-like sequence.")
         if len(y) < 1:
             raise ValueError("Series too short to fit ETS model.")

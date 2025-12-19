@@ -13,7 +13,9 @@ from scipy.stats import norm
 def setup_params(y_in, max_ar_depth: int | None = None, max_lag: int | None = None):
     n = len(y_in)
     if n < 10:
-        warnings.warn(f"Training data is too short (length={n}). The model may be unreliable.", UserWarning)
+        warnings.warn(
+            f"Training data is too short (length={n}). The model may be unreliable.", UserWarning
+        )
 
     if max_ar_depth is None:
         if n > 40:
@@ -101,7 +103,9 @@ def arar(y_in, max_ar_depth: int | None = None, max_lag: int | None = None, safe
 
             if best_err <= 8.0 / n or (best_phi1 >= 0.93 and tau > 2):
                 y = y[tau:] - best_phi1 * y[:-tau]
-                psi = np.concatenate([psi, np.zeros(tau)]) - best_phi1 * np.concatenate([np.zeros(tau), psi])
+                psi = np.concatenate(
+                    [psi, np.zeros(tau)]) - best_phi1 * np.concatenate([np.zeros(tau), psi]
+                )
             elif best_phi1 >= 0.93:
                 if n < 3:
                     break
@@ -291,39 +295,4 @@ def residuals_arar(model_tuple):
     Y = np.asarray(model_tuple[0], dtype=float)
     fits = fitted_arar(model_tuple)["fitted"]
     return Y - fits
-
-
-def summary_arar(model_tuple):
-    """
-    Print a simple summary of ARAR model tuple.
-
-    Parameters
-    ----------
-    model_tuple : (Y, best_phi, best_lag, sigma2, psi, sbar)
-
-    Returns
-    -------
-    None
-    
-    """
-    Y, best_phi, best_lag, sigma2, psi, sbar, _, _ = model_tuple
-    Y = np.asarray(Y, dtype=float)
-
-    print("ARAR Model Summary")
-    print("------------------")
-    print(f"Number of observations: {len(Y)}")
-    print(f"Selected AR lags: {best_lag}")
-    print(f"AR coefficients (phi): {np.round(best_phi, 4)}")
-    print(f"Residual variance (sigma^2): {sigma2:.4f}")
-    print(f"Mean of shortened series (sbar): {sbar:.4f}")
-    print(f"Length of memory-shortening filter (psi): {len(psi)}")
-
-    print("\nTime Series Summary Statistics")
-    print(f"Mean: {np.mean(Y):.4f}")
-    print(f"Std Dev: {np.std(Y, ddof=1):.4f}")
-    print(f"Min: {np.min(Y):.4f}")
-    print(f"25%: {np.percentile(Y, 25):.4f}")
-    print(f"Median: {np.median(Y):.4f}")
-    print(f"75%: {np.percentile(Y, 75):.4f}")
-    print(f"Max: {np.max(Y):.4f}")
 

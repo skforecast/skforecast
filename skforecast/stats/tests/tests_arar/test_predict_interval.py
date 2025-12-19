@@ -1,336 +1,480 @@
-# Unit test predict_interval method - Arar
-# ==============================================================================
+################################################################################
+#                                 ETS                                          #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
+# coding=utf-8
+
+from __future__ import annotations
+from typing import Optional, Tuple, Dict, Literal, List
 import numpy as np
 import pandas as pd
-import pytest
-from ..._arar import Arar
+from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.utils.validation import check_is_fitted
+from .exponential_smoothing._ets_base import (
+    ets,
+    auto_ets,
+    forecast_ets
+)
+from ._utils import check_memory_reduced
 
-
-def ar1_series(n=80, phi=0.7, sigma=1.0, seed=123):
-    """Helper function to generate AR(1) series for testing."""
-    rng = np.random.default_rng(seed)
-    e = rng.normal(0.0, sigma, size=n)
-    y = np.zeros(n, dtype=float)
-    for t in range(1, n):
-        y[t] = phi * y[t - 1] + e[t]
-    return y
-
-
-def test_estimator_predict_intervals():
+class Ets(BaseEstimator, RegressorMixin):
     """
-    Test basic predict_interval functionality.
+    Scikit-learn style wrapper for the ETS (Error, Trend, Seasonality) model.
+
+    This estimator treats a univariate time series as input. Call `fit(y)`
+    with a 1D array-like of observations in time order, then produce
+    out-of-sample forecasts via `predict(steps)` and prediction intervals
+    via `predict_interval(steps, level=...)`. In-sample diagnostics are
+    available through `fitted_`, `residuals_()` and `summary()`.
+
+    Parameters
+    ----------
+    m : int, default=1
+        Seasonal period (e.g., 12 for monthly data with yearly seasonality).
+    model : str, default="ZZZ"
+        Three-letter model specification (e.g., "ANN", "AAA", "MAM"):
+        - First letter: Error type (A=Additive, M=Multiplicative, Z=Auto)
+        - Second letter: Trend type (N=None, A=Additive, M=Multiplicative, Z=Auto)
+        - Third letter: Season type (N=None, A=Additive, M=Multiplicative, Z=Auto)
+        Use "ZZZ" for automatic model selection.
+    damped : bool or None, default=None
+        Whether to use damped trend. If None, both damped and non-damped
+        models are tried (only when model="ZZZ").
+    alpha : float, optional
+        Smoothing parameter for level (0 < alpha < 1). If None, estimated.
+    beta : float, optional
+        Smoothing parameter for trend (0 < beta < alpha). If None, estimated.
+    gamma : float, optional
+        Smoothing parameter for seasonality (0 < gamma < 1-alpha). If None, estimated.
+    phi : float, optional
+        Damping parameter (0 < phi < 1). If None, estimated.
+    lambda_param : float, optional
+        Box-Cox transformation parameter. If None, no transformation applied.
+    lambda_auto : bool, default=False
+        If True, automatically select optimal Box-Cox lambda parameter.
+    bias_adjust : bool, default=True
+        Apply bias adjustment when back-transforming forecasts.
+    bounds : str, default="both"
+        Parameter bounds type: "usual", "admissible", or "both".
+    seasonal : bool, default=True
+        Allow seasonal models (only used with model="ZZZ").
+    trend : bool, optional
+        Allow trend models. If None, automatically determined (only with model="ZZZ").
+    ic : {"aic", "aicc", "bic"}, default="aicc"
+        Information criterion for model selection (only with model="ZZZ").
+    allow_multiplicative : bool, default=True
+        Allow multiplicative error and season models (only with model="ZZZ").
+    allow_multiplicative_trend : bool, default=False
+        Allow multiplicative trend models (only with model="ZZZ").
+
+    Attributes
+    ----------
+    model_ : ETSModel
+        Fitted ETS model object containing parameters and diagnostics.
+    y_ : ndarray of shape (n_samples,)
+        Original training series.
+    config_ : ETSConfig
+        Model configuration (error, trend, season types).
+    params_ : ETSParams
+        Fitted smoothing parameters (alpha, beta, gamma, phi) and initial states.
+    n_features_in_ : int
+        For sklearn compatibility (always 1).
+    fitted_values_ : ndarray of shape (n_samples,)
+        In-sample fitted values.
+    residuals_in_ : ndarray of shape (n_samples,)
+        In-sample residuals (observed - fitted).
     """
-    y = ar1_series(120)
-    est = Arar()
-    est.fit(y)
 
-    df = est.predict_interval(steps=5, level=(50, 80, 95), as_frame=True)
-    assert list(df.columns) == ["mean", "lower_50", "upper_50", "lower_80", "upper_80", "lower_95", "upper_95"]
-    assert df.shape == (5, 1 + 2 * 3)
+    def __init__(
+        self,
+        m: int = 1,
+        model: str = "ZZZ",
+        damped: Optional[bool] = None,
+        alpha: Optional[float] = None,
+        beta: Optional[float] = None,
+        gamma: Optional[float] = None,
+        phi: Optional[float] = None,
+        lambda_param: Optional[float] = None,
+        lambda_auto: bool = False,
+        bias_adjust: bool = True,
+        bounds: str = "both",
+        seasonal: bool = True,
+        trend: Optional[bool] = None,
+        ic: Literal["aic", "aicc", "bic"] = "aicc",
+        allow_multiplicative: bool = True,
+        allow_multiplicative_trend: bool = False,
+    ):
+        self.m = m
+        self.model = model
+        self.damped = damped
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.phi = phi
+        self.lambda_param = lambda_param
+        self.lambda_auto = lambda_auto
+        self.bias_adjust = bias_adjust
+        self.bounds = bounds
+        self.seasonal = seasonal
+        self.trend = trend
+        self.ic = ic
+        self.allow_multiplicative = allow_multiplicative
+        self.allow_multiplicative_trend = allow_multiplicative_trend
+        self.memory_reduced_ = False
 
-    raw = est.predict_interval(steps=3, level=(90,), as_frame=False)
-    assert raw["mean"].shape == (3,)
-    assert raw["upper"].shape == (3, 1)
-    assert raw["lower"].shape == (3, 1)
-    assert raw["level"] == [90]
+    def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> "Ets":
+        """
+        Fit the ETS model to a univariate time series.
 
+        Parameters
+        ----------
+        y : array-like of shape (n_samples,)
+            Time-ordered numeric sequence.
+        exog : None
+            Exogenous variables. Ignored, present for API compatibility.
 
-def test_arar_predict_interval_with_exog():
-    """
-    Test Arar predict_interval with exogenous variables.
-    """
-    np.random.seed(42)
-    n = 100
-    y = np.random.randn(n).cumsum()
-    exog_train = np.column_stack([
-        np.random.randn(n),
-        np.sin(np.linspace(0, 4*np.pi, n))
-    ])
-    y = y + 0.5 * exog_train[:, 0] + 2.0 * exog_train[:, 1]
-    
-    model = Arar()
-    model.fit(y, exog=exog_train)
-    
-    exog_future = np.column_stack([
-        np.random.randn(5),
-        np.sin(np.linspace(4*np.pi, 4*np.pi + 0.2*np.pi, 5))
-    ])
-    
-    pred_intervals = model.predict_interval(steps=5, exog=exog_future, level=(80, 95))
-    
-    assert isinstance(pred_intervals, pd.DataFrame)
-    assert pred_intervals.shape == (5, 5)  # mean + 2 lower + 2 upper
-    assert 'mean' in pred_intervals.columns
-    assert 'lower_80' in pred_intervals.columns
-    assert 'upper_80' in pred_intervals.columns
-    assert 'lower_95' in pred_intervals.columns
-    assert 'upper_95' in pred_intervals.columns
+        Returns
+        -------
+        self : Ets
+            Fitted estimator.
+        """
+        # Convert to numpy array
+        if isinstance(y, pd.Series):
+            y = y.values
+        y = np.asarray(y, dtype=np.float64)
+        if y.ndim == 2 and y.shape[1] == 1:
+            # Allow (n, 1) shaped arrays and squeeze to 1D
+            y = y.ravel()
+        elif y.ndim != 1:
+            raise ValueError("`y` must be a 1D array-like sequence.")
+        if len(y) < 1:
+            raise ValueError("Series too short to fit ETS model.")
 
+        # Automatic model selection
+        if self.model == "ZZZ":
+            self.model_ = auto_ets(
+                y,
+                m=self.m,
+                seasonal=self.seasonal,
+                trend=self.trend,
+                damped=self.damped,
+                ic=self.ic,
+                allow_multiplicative=self.allow_multiplicative,
+                allow_multiplicative_trend=self.allow_multiplicative_trend,
+                lambda_auto=self.lambda_auto,
+                verbose=False,
+            )
+        else:
+            # Fit specific model
+            damped_param = False if self.damped is None else self.damped
+            self.model_ = ets(
+                y,
+                m=self.m,
+                model=self.model,
+                damped=damped_param,
+                alpha=self.alpha,
+                beta=self.beta,
+                gamma=self.gamma,
+                phi=self.phi,
+                lambda_param=self.lambda_param,
+                lambda_auto=self.lambda_auto,
+                bias_adjust=self.bias_adjust,
+                bounds=self.bounds,
+            )
 
-def test_arar_predict_interval_without_exog_raises_error_when_fitted_with_exog():
-    """
-    Test that predict_interval raises error when exog is missing but model was fitted with exog.
-    """
-    np.random.seed(42)
-    n = 100
-    y = np.random.randn(n).cumsum()
-    exog = np.random.randn(n, 2)
-    
-    model = Arar()
-    model.fit(y, exog=exog)
-    
-    with pytest.raises(ValueError, match="Model was fitted with exog"):
-        model.predict_interval(steps=5)
+        # Extract model attributes (use references to avoid duplicating arrays)
+        self.config_ = self.model_.config
+        self.params_ = self.model_.params
+        self.y_ = self.model_.y_original
+        self.fitted_values_ = self.model_.fitted
+        self.residuals_in_ = self.model_.residuals
+        self.n_features_in_ = 1
+        self.memory_reduced_ = False
 
+        return self
 
-def test_arar_predict_interval_with_exog_raises_error_when_fitted_without_exog():
-    """
-    Test that predict_interval raises error when exog is provided but model was fitted without exog.
-    """
-    np.random.seed(42)
-    y = np.random.randn(100).cumsum()
-    
-    model = Arar()
-    model.fit(y)
-    
-    exog_future = np.random.randn(5, 2)
-    
-    with pytest.raises(ValueError, match="Model was fitted without exog"):
-        model.predict_interval(steps=5, exog=exog_future)
+    def predict(self, steps: int, exog: None = None) -> np.ndarray:
+        """
+        Generate mean forecasts steps ahead.
 
+        Parameters
+        ----------
+        steps : int
+            Forecast horizon (must be > 0).
+        exog : None
+            Exogenous variables. Ignored, present for API compatibility.
 
-def test_arar_exog_interval_feature_count_mismatch():
-    """
-    Test that predict_interval raises error when exog feature count doesn't match.
-    """
-    np.random.seed(42)
-    n = 100
-    y = np.random.randn(n).cumsum()
-    exog_train = np.random.randn(n, 2)
-    
-    model = Arar()
-    model.fit(y, exog=exog_train)
-    
-    exog_future_wrong = np.random.randn(5, 3)  # Wrong number of features
-    
-    with pytest.raises(ValueError, match="Mismatch in exogenous features"):
-        model.predict_interval(steps=5, exog=exog_future_wrong)
+        Returns
+        -------
+        mean : ndarray of shape (steps,)
+            Point forecasts for steps 1..h.
+        """
+        check_is_fitted(self, "model_")
+        if not isinstance(steps, (int, np.integer)) or steps <= 0:
+            raise ValueError("`steps` must be a positive integer.")
 
+        result = forecast_ets(
+            self.model_,
+            h=steps,
+            bias_adjust=self.bias_adjust,
+            level=None
+        )
+        return result["mean"]
 
-def test_arar_exog_interval_length_mismatch():
-    """
-    Test that predict_interval raises error when exog length doesn't match steps.
-    """
-    np.random.seed(42)
-    n = 100
-    y = np.random.randn(n).cumsum()
-    exog_train = np.random.randn(n, 2)
-    
-    model = Arar()
-    model.fit(y, exog=exog_train)
-    
-    exog_future_wrong = np.random.randn(3, 2)  # Wrong length
-    
-    with pytest.raises(ValueError, match="Length of exog"):
-        model.predict_interval(steps=5, exog=exog_future_wrong)
+    def predict_interval(
+        self,
+        steps: int = 1,
+        level: List[float] | Tuple[float, ...] = (80, 95),
+        as_frame: bool = True,
+        exog: None = None,
+    ) -> pd.DataFrame | Dict:
+        """
+        Forecast with prediction intervals.
 
+        Parameters
+        ----------
+        steps : int, default=1
+            Forecast horizon.
+        level : list or tuple of float, default=(80, 95)
+            Confidence levels in percent.
+        as_frame : bool, default=True
+            If True, return a tidy DataFrame with columns:
+            'mean', 'lower_<L>', 'upper_<L>' for each level L.
+            If False, return raw dict.
+        exog : None
+            Exogenous variables. Ignored, present for API compatibility.
 
-def test_arar_predict_interval_as_frame_false_with_exog():
-    """
-    Test predict_interval with as_frame=False and exogenous variables.
-    """
-    np.random.seed(42)
-    n = 100
-    y = np.random.randn(n).cumsum()
-    exog_train = np.random.randn(n, 2)
-    
-    model = Arar()
-    model.fit(y, exog=exog_train)
-    
-    exog_future = np.random.randn(5, 2)
-    
-    result = model.predict_interval(steps=5, exog=exog_future, level=(80, 95), as_frame=False)
-    
-    assert isinstance(result, dict)
-    assert 'mean' in result
-    assert 'upper' in result
-    assert 'lower' in result
-    assert 'level' in result
-    assert result['mean'].shape == (5,)
-    assert result['upper'].shape == (5, 2)
-    assert result['lower'].shape == (5, 2)
-    assert result['level'] == [80, 95]
+        Returns
+        -------
+        DataFrame or dict
+            If as_frame=True: DataFrame indexed by step (1..steps).
+            Else: dict with keys 'mean', 'lower_XX', 'upper_XX'.
+        """
+        check_is_fitted(self, "model_")
+        if not isinstance(steps, (int, np.integer)) or steps <= 0:
+            raise ValueError("`steps` must be a positive integer.")
 
+        result = forecast_ets(
+            self.model_,
+            h=steps,
+            bias_adjust=self.bias_adjust,
+            level=list(level)
+        )
 
-def test_arar_exog_prediction_intervals_include_uncertainty():
-    """
-    Test that prediction intervals with exog properly account for uncertainty.
-    """
-    np.random.seed(42)
-    n = 100
-    y = np.random.randn(n).cumsum()
-    exog_train = np.random.randn(n, 2)
-    y = y + 0.5 * exog_train[:, 0] + 2.0 * exog_train[:, 1]
-    
-    model = Arar()
-    model.fit(y, exog=exog_train)
-    
-    exog_future = np.random.randn(10, 2)
-    
-    intervals = model.predict_interval(steps=10, exog=exog_future, level=(80, 95))
-    
-    # Check that intervals are wider for 95% than 80%
-    width_80 = intervals['upper_80'] - intervals['lower_80']
-    width_95 = intervals['upper_95'] - intervals['lower_95']
-    
-    assert np.all(width_95 > width_80)
-    
-    # Check that intervals contain the mean
-    assert np.all(intervals['lower_80'] < intervals['mean'])
-    assert np.all(intervals['mean'] < intervals['upper_80'])
-    assert np.all(intervals['lower_95'] < intervals['mean'])
-    assert np.all(intervals['mean'] < intervals['upper_95'])
-    
-    # Check that intervals generally widen over time
-    # (not guaranteed but should be true most of the time)
-    assert width_95.iloc[-1] >= width_95.iloc[0]
+        if not as_frame:
+            return result
 
+        # Convert to DataFrame
+        idx = pd.RangeIndex(1, steps + 1, name="step")
+        df = pd.DataFrame({"mean": result["mean"]}, index=idx)
 
-def test_arar_predict_interval_values_contain_point_forecast():
-    """
-    Test that prediction intervals contain the point forecast and
-    have correct width relationships.
-    """
-    np.random.seed(789)
-    n = 100
-    y = np.random.randn(n).cumsum()
-    exog_train = np.random.randn(n, 2)
-    y = y + 2.0 * exog_train[:, 0] + 3.0 * exog_train[:, 1]
-    
-    model = Arar()
-    model.fit(y, exog=exog_train)
-    
-    exog_future = np.random.randn(10, 2)
-    
-    # Get point predictions
-    pred_point = model.predict(steps=10, exog=exog_future)
-    
-    # Get interval predictions
-    pred_interval = model.predict_interval(steps=10, exog=exog_future, level=(80, 95))
-    
-    # Point predictions should match interval mean
-    np.testing.assert_allclose(pred_point, pred_interval['mean'].values, rtol=1e-10)
-    
-    # All intervals should contain the mean
-    assert np.all(pred_interval['lower_80'] < pred_interval['mean'])
-    assert np.all(pred_interval['mean'] < pred_interval['upper_80'])
-    assert np.all(pred_interval['lower_95'] < pred_interval['mean'])
-    assert np.all(pred_interval['mean'] < pred_interval['upper_95'])
-    
-    # 95% intervals should be wider than 80% intervals
-    width_80 = pred_interval['upper_80'] - pred_interval['lower_80']
-    width_95 = pred_interval['upper_95'] - pred_interval['lower_95']
-    assert np.all(width_95 > width_80)
+        for lv in level:
+            lv_int = int(lv)
+            if f"lower_{lv_int}" in result:
+                df[f"lower_{lv_int}"] = result[f"lower_{lv_int}"]
+                df[f"upper_{lv_int}"] = result[f"upper_{lv_int}"]
 
+        return df
 
-def test_arar_predict_interval_deterministic_with_exog():
-    """
-    Test that prediction intervals are deterministic (same inputs = same outputs).
-    """
-    np.random.seed(111)
-    n = 100
-    y = np.random.randn(n).cumsum()
-    exog_train = np.random.randn(n, 2)
-    y = y + exog_train[:, 0] + 2.0 * exog_train[:, 1]
-    
-    model = Arar()
-    model.fit(y, exog=exog_train)
-    
-    exog_future = np.random.randn(5, 2)
-    
-    # Same for intervals
-    interval1 = model.predict_interval(steps=5, exog=exog_future, level=(90,))
-    interval2 = model.predict_interval(steps=5, exog=exog_future, level=(90,))
-    
-    pd.testing.assert_frame_equal(interval1, interval2)
+    def get_residuals(self) -> np.ndarray:
+        """
+        Get in-sample residuals (observed - fitted) from the ETS model.
 
+        Returns
+        -------
+        residuals : ndarray of shape (n_samples,)
+        """
+        check_is_fitted(self, "model_")
+        check_memory_reduced(self, 'residuals_')
+        return self.residuals_in_
 
-def test_arar_predict_interval_exog_affects_mean_not_width():
-    """
-    Test that changing exog values shifts the intervals but doesn't
-    dramatically change their width (since exog is assumed deterministic).
-    """
-    np.random.seed(333)
-    n = 100
-    y = np.random.randn(n).cumsum()
-    exog_train = np.random.randn(n, 1)
-    y = y + 5.0 * exog_train[:, 0]
-    
-    model = Arar()
-    model.fit(y, exog=exog_train)
-    
-    # Two different exog scenarios
-    exog_scenario1 = np.array([[0.0], [0.0], [0.0]])
-    exog_scenario2 = np.array([[10.0], [10.0], [10.0]])
-    
-    interval1 = model.predict_interval(steps=3, exog=exog_scenario1, level=(90,))
-    interval2 = model.predict_interval(steps=3, exog=exog_scenario2, level=(90,))
-    
-    # Means should be very different
-    mean_diff = np.abs(interval2['mean'].values - interval1['mean'].values)
-    assert np.all(mean_diff > 20.0)  # With coef ~5 and diff of 10, expect ~50
-    
-    # But widths should be similar (exog doesn't add uncertainty)
-    width1 = interval1['upper_90'].values - interval1['lower_90'].values
-    width2 = interval2['upper_90'].values - interval2['lower_90'].values
-    
-    # Widths should be nearly identical
-    np.testing.assert_allclose(width1, width2, rtol=0.01)
+    def get_fitted_values(self) -> np.ndarray:
+        """
+        Get in-sample fitted values from the ETS model.
 
+        Returns
+        -------
+        fitted : ndarray of shape (n_samples,)
+        """
+        check_is_fitted(self, "model_")
+        check_memory_reduced(self, 'fitted_')
+        return self.fitted_values_
 
-def test_arar_predict_interval_as_dict_values():
-    """
-    Test that predict_interval with as_frame=False returns correct
-    dict structure with proper values.
-    """
-    np.random.seed(555)
-    n = 100
-    y = np.random.randn(n).cumsum()
-    exog_train = np.random.randn(n, 2)
-    y = y + exog_train[:, 0] + exog_train[:, 1]
-    
-    model = Arar()
-    model.fit(y, exog=exog_train)
-    
-    exog_future = np.random.randn(5, 2)
-    
-    result = model.predict_interval(
-        steps=5, 
-        exog=exog_future, 
-        level=(80, 95), 
-        as_frame=False
-    )
-    
-    # Check structure
-    assert isinstance(result, dict)
-    assert 'mean' in result
-    assert 'upper' in result
-    assert 'lower' in result
-    assert 'level' in result
-    
-    # Check values
-    assert result['mean'].shape == (5,)
-    assert result['upper'].shape == (5, 2)
-    assert result['lower'].shape == (5, 2)
-    assert result['level'] == [80, 95]
-    
-    # Check value relationships
-    for i in range(5):
-        # Lower < mean < upper for both levels
-        assert result['lower'][i, 0] < result['mean'][i] < result['upper'][i, 0]
-        assert result['lower'][i, 1] < result['mean'][i] < result['upper'][i, 1]
+    def summary(self) -> None:
+        """
+        Print a summary of the fitted ETS model.
+        """
+        check_is_fitted(self, "model_")
+        check_memory_reduced(self, 'summary')
+
+        # Format model name
+        model_name = f"{self.config_.error}{self.config_.trend}{self.config_.season}"
+        if self.config_.damped and self.config_.trend != "N":
+            model_name = f"{self.config_.error}{self.config_.trend}d{self.config_.season}"
+
+        print("ETS Model Summary")
+        print("=" * 60)
+        print(f"Model: ETS({model_name})")
+        print(f"Number of observations: {len(self.y_)}")
+        print(f"Seasonal period (m): {self.config_.m}")
+        print()
+
+        print("Smoothing parameters:")
+        print(f"  alpha (level):       {self.params_.alpha:.4f}")
+        if self.config_.trend != "N":
+            print(f"  beta (trend):        {self.params_.beta:.4f}")
+        if self.config_.season != "N":
+            print(f"  gamma (seasonal):    {self.params_.gamma:.4f}")
+        if self.config_.damped:
+            print(f"  phi (damping):       {self.params_.phi:.4f}")
+        print()
+
+        print("Initial states:")
+        print(f"  Level (l0):          {self.params_.init_states[0]:.4f}")
+        if self.config_.trend != "N" and len(self.params_.init_states) > 1:
+            print(f"  Trend (b0):          {self.params_.init_states[1]:.4f}")
+        print()
+
+        print("Model fit statistics:")
+        print(f"  sigma^2:             {self.model_.sigma2:.6f}")
+        print(f"  Log-likelihood:      {self.model_.loglik:.2f}")
+        print(f"  AIC:                 {self.model_.aic:.2f}")
+        print(f"  BIC:                 {self.model_.bic:.2f}")
+        print()
+
+        print("Residual statistics:")
+        print(f"  Mean:                {np.mean(self.residuals_in_):.6f}")
+        print(f"  Std Dev:             {np.std(self.residuals_in_, ddof=1):.6f}")
+        print(f"  MAE:                 {np.mean(np.abs(self.residuals_in_)):.6f}")
+        print(f"  RMSE:                {np.sqrt(np.mean(self.residuals_in_**2)):.6f}")
+        print()
+
+        print("Time Series Summary Statistics:")
+        print(f"  Mean:                {np.mean(self.y_):.4f}")
+        print(f"  Std Dev:             {np.std(self.y_, ddof=1):.4f}")
+        print(f"  Min:                 {np.min(self.y_):.4f}")
+        print(f"  25%:                 {np.percentile(self.y_, 25):.4f}")
+        print(f"  Median:              {np.median(self.y_):.4f}")
+        print(f"  75%:                 {np.percentile(self.y_, 75):.4f}")
+        print(f"  Max:                 {np.max(self.y_):.4f}")
+
+    def score(self, y: None = None) -> float:
+        """
+        R^2 using in-sample fitted values.
+
+        Parameters
+        ----------
+        y : ignored
+            Present for API compatibility.
+
+        Returns
+        -------
+        score : float
+            Coefficient of determination.
+        """
+        check_is_fitted(self, "model_")
+        check_memory_reduced(self, 'score')
+        y = self.y_
+        fitted = self.fitted_values_
+
+        # Handle NaN values if any
+        mask = ~(np.isnan(y) | np.isnan(fitted))
+        if mask.sum() < 2:
+            return float("nan")
+
+        ss_res = np.sum((y[mask] - fitted[mask]) ** 2)
+        ss_tot = np.sum((y[mask] - y[mask].mean()) ** 2) + np.finfo(float).eps
+        return 1.0 - ss_res / ss_tot
+
+    def get_params(self, deep: bool = True) -> Dict:
+        """
+        Get parameters for this estimator.
+
+        Parameters
+        ----------
+        deep : bool, default=True
+            If True, will return the parameters for this estimator and
+            contained subobjects that are estimators.
+
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their values.
+        """
+        return {
+            "m": self.m,
+            "model": self.model,
+            "damped": self.damped,
+            "alpha": self.alpha,
+            "beta": self.beta,
+            "gamma": self.gamma,
+            "phi": self.phi,
+            "lambda_param": self.lambda_param,
+            "lambda_auto": self.lambda_auto,
+            "bias_adjust": self.bias_adjust,
+            "bounds": self.bounds,
+            "seasonal": self.seasonal,
+            "trend": self.trend,
+            "ic": self.ic,
+            "allow_multiplicative": self.allow_multiplicative,
+            "allow_multiplicative_trend": self.allow_multiplicative_trend,
+        }
+
+    def set_params(self, **params) -> "Ets":
+        """
+        Set the parameters of this estimator.
+
+        Parameters
+        ----------
+        **params : dict
+            Estimator parameters.
+
+        Returns
+        -------
+        self : Ets
+            Estimator instance.
+        """
+        for key, value in params.items():
+            setattr(self, key, value)
+        return self
+
+    def reduce_memory(self) -> "Ets":
+        """
+        Reduce memory usage by removing internal arrays not needed for prediction.
+        This method clears memory-heavy arrays that are only needed for diagnostics
+        but not for prediction. After calling this method, the following methods
+        will raise an error:
         
-        # 95% interval wider than 80%
-        width_80 = result['upper'][i, 0] - result['lower'][i, 0]
-        width_95 = result['upper'][i, 1] - result['lower'][i, 1]
-        assert width_95 > width_80
+        - fitted_(): In-sample fitted values
+        - residuals_(): In-sample residuals
+        - score(): R² coefficient
+        - summary(): Model summary statistics
+        
+        Prediction methods remain fully functional:
+        
+        - predict(): Point forecasts
+        - predict_interval(): Prediction intervals
+        
+        Returns
+        -------
+        self : Ets
+            The estimator with reduced memory usage.
+        
+        """
+        check_is_fitted(self, "model_")
+        
+        # Clear arrays at Ets level
+        self.y_ = None
+        self.fitted_values_ = None
+        self.residuals_in_ = None
+        
+        # Clear arrays at ETSModel level
+        if hasattr(self, 'model_'):
+            self.model_.fitted = None
+            self.model_.residuals = None
+            self.model_.y_original = None
+        
+        self.memory_reduced_ = True
+        
+        return self

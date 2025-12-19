@@ -142,6 +142,24 @@ def test_arar_exog_length_mismatch():
         model.predict(steps=5, exog=exog_future_wrong)
 
 
+def test_arar_predict_exog_3d_raises():
+    """
+    Test that predict raises error for 3D exog input.
+    """
+    np.random.seed(42)
+    n = 100
+    y = np.random.randn(n)
+    exog_train = np.random.randn(n, 2)
+    
+    model = Arar()
+    model.fit(y, exog=exog_train)
+    
+    exog_3d = np.random.randn(5, 2, 3)  # 3D array
+    
+    with pytest.raises(ValueError, match="must be 1D or 2D"):
+        model.predict(steps=5, exog=exog_3d)
+
+
 def test_reduce_memory_preserves_predictions():
     """
     Test that predictions are the same after reduce_memory().
