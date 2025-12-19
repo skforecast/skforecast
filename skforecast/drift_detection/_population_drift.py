@@ -88,13 +88,13 @@ class PopulationDriftDetector:
         assuming a datetime index. If None, analyzes the full dataset as a single
         chunk.
     threshold : int, float, default 3
-        Threshold value for determining drift. Interpretation depends on
+        Threshold for KS, Chi2, and JS statistics. Interpretation depends on
         `threshold_method`:
         
         - If `threshold_method='std'`: number of standard deviations above the mean.
-        - If `threshold_method='quantile'`: quantile threshold (between 0 and 1).
+        - If `threshold_method='quantile'`: quantile value (between 0 and 1).
     threshold_method : str, default 'std'
-        Method for calculating thresholds from empirical distributions:
+        Method for calculating `threshold` from empirical distributions:
         
         - `'std'`: Uses mean + threshold * std of the empirical distribution.
         This is faster since it does not use leave-one-chunk-out.
@@ -102,19 +102,22 @@ class PopulationDriftDetector:
         Thresholds are computed using leave-one-chunk-out cross-validation to
         avoid self-comparison bias. This is statistically more correct for
         quantile-based thresholds but computationally more expensive.
+    threshold_out_of_range : float, default 0.1
+        Threshold for the proportion of observations out of the reference range
+        (for numeric features only). If the proportion of out-of-range observations
+        exceeds this threshold, drift is detected. Must be between 0 and 1.
     
     Attributes
     ----------
     chunk_size : int, str
-        Size of chunks for sequential drift analysis. If int, number of rows per
-        chunk. If str (e.g., 'D' for daily, 'W' for weekly), time-based chunks
-        assuming a datetime index. If None, analyzes the full dataset as a single
-        chunk.
+        Size of chunks for sequential drift analysis.
     threshold : float
-        Threshold value for determining drift. Interpretation depends on
+        Threshold for KS, Chi2, and JS statistics. Interpretation depends on
         `threshold_method`.
     threshold_method : str
-        Method for calculating thresholds ('quantile' or 'std').
+        Method for calculating `threshold` ('quantile' or 'std').
+    threshold_out_of_range : float
+        Proportion threshold for out-of-range observations (numeric features).
     is_fitted : bool
         Indicates if the detector has been fitted with reference data.
     ref_features_ : list
@@ -129,21 +132,21 @@ class PopulationDriftDetector:
         Empirical distributions of Jensen-Shannon distance for each feature in
         reference data (numeric and categorical).
     empirical_threshold_ks_ : dict
-        Thresholds for KS statistics based on empirical distributions for each
-        numeric feature in reference data.
+        Computed thresholds for KS statistics based on empirical distributions 
+        for each numeric feature in reference data.
     empirical_threshold_chi2_ : dict
-        Thresholds for Chi-Square statistics based on empirical distributions for
-        each categorical feature in reference data.
+        Computed thresholds for Chi-Square statistics based on empirical 
+        distributions for each categorical feature in reference data.
     empirical_threshold_js_ : dict
-        Thresholds for Jensen-Shannon distance based on empirical distributions
-        for each feature in reference data (numeric and categorical).
+        Computed thresholds for Jensen-Shannon distance based on empirical 
+        distributions for each feature in reference data (numeric and categorical).
     n_chunks_reference_data_ : int
-        Number of chunks in the reference data used during fitting to compute
+        Number of chunks in reference data used during fitting to compute
         empirical distributions.
     ref_ecdf_ : dict
         Precomputed ECDFs for numeric features in the reference data.
     ref_bins_edges_ : dict
-        Precomputed bin edges for numeric features in the reference data.
+        Precomputed histogram bin edges for numeric features in the reference data.
     ref_hist_ : dict
         Precomputed histograms for numeric features in the reference data.
     ref_probs_ : dict
@@ -173,9 +176,8 @@ class PopulationDriftDetector:
     - It supports multiple time series by fitting separate detectors for each
     series ID when provided with a MultiIndex DataFrame.
 
-    If user requires more advanced features, such as multivariate drift detection
-    or data quality checks, consider using https://nannyml.readthedocs.io/en/stable/
-    directly.
+    For advanced features (multivariate drift, data quality checks), consider
+    using NannyML directly: https://nannyml.readthedocs.io/en/stable/
 
     References
     ----------
@@ -188,7 +190,8 @@ class PopulationDriftDetector:
         self, 
         chunk_size: int | str | None = None,
         threshold: int | float = 3,
-        threshold_method: str = 'std'
+        threshold_method: str = 'std',
+        threshold_out_of_range: float = 0.1
     ) -> None:
         
         self.ref_features_             = []
@@ -251,40 +254,63 @@ class PopulationDriftDetector:
         
         self.threshold = threshold
 
-    def __repr__(self) -> str: # pragma: no cover
+        if not (0 <= threshold_out_of_range <= 1):
+            raise ValueError(
+                f"`threshold_out_of_range` must be between 0 and 1. "
+                f"Got {threshold_out_of_range}."
+            )
+        self.threshold_out_of_range = threshold_out_of_range
+
+    def __repr__(self) -> str:  # pragma: no cover
         """
         Information displayed when a PopulationDriftDetector object is printed.
         """
+        
+        # Convert chunk_size to readable string for DateOffset objects
+        if isinstance(self.chunk_size, pd.DateOffset):
+            chunk_size_display = self.chunk_size.freqstr
+        else:
+            chunk_size_display = self.chunk_size
     
         info = (
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Threshold        = {self.threshold} \n"
-            f"Threshold method = {self.threshold_method} \n"
-            f"Chunk size       = {self.chunk_size} \n"
-            f"Is fitted        = {self.is_fitted} \n"
-            f"Fitted features  = {self.ref_features_}"
+            f"Chunk size             = {chunk_size_display} \n"
+            f"Threshold              = {self.threshold} \n"
+            f"Threshold method       = {self.threshold_method} \n"
+            f"Threshold out of range = {self.threshold_out_of_range} \n"
+            f"Is fitted              = {self.is_fitted} \n"
+            f"Fitted features        = {self.ref_features_}"
         )
 
         return info
     
-    def _repr_html_(self) -> str: # pragma: no cover
+    def _repr_html_(self) -> str:  # pragma: no cover
         """
         HTML representation of the object.
         The "General Information" section is expanded by default.
         """
 
         style, unique_id = get_style_repr_html(self.is_fitted)
+        
+        # Convert chunk_size to string representation safe for HTML
+        # pd.DateOffset objects like <MonthBegin> contain < > which are interpreted as HTML tags
+        if isinstance(self.chunk_size, pd.DateOffset):
+            chunk_size_display = self.chunk_size.freqstr
+        else:
+            chunk_size_display = self.chunk_size
+        
         content = f"""
         <div class="container-{unique_id}">
             <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
             <details open>
                 <summary>General Information</summary>
                 <ul>
+                    <li><strong>Chunk size:</strong> {chunk_size_display}</li>
                     <li><strong>Threshold:</strong> {self.threshold}</li>
                     <li><strong>Threshold method:</strong> {self.threshold_method}</li>
-                    <li><strong>Chunk size:</strong> {self.chunk_size}</li>
+                    <li><strong>Threshold out of range:</strong> {self.threshold_out_of_range}</li>
                     <li><strong>Is fitted:</strong> {self.is_fitted}</li>
                 </ul>
             </details>
@@ -349,8 +375,6 @@ class PopulationDriftDetector:
                 raise ValueError(
                     "`chunk_size` is a pandas frequency but `X` does not have a DatetimeIndex."
                 )
-
-        if self.chunk_size is not None:
             if isinstance(self.chunk_size, int):
                 chunks = [
                     X.iloc[i:i + self.chunk_size]
@@ -421,6 +445,18 @@ class PopulationDriftDetector:
         chunks = self._create_chunks(X)
         self.n_chunks_reference_data_ = len(chunks)
 
+        # NOTE: Precompute Leave One Chunk Out (LOO) indices once per feature 
+        # (only for 'quantile' method)
+        use_loo = self.threshold_method == 'quantile'
+        if use_loo:
+            chunk_indices = [chunk.index for chunk in chunks]
+            # List of indices of the reference DataFrame excluding each time 
+            # one of the chunk in order (Leave One Out)
+            loo_indices = [
+                X.index.difference(chunk_indices[i])
+                for i in range(len(chunks))
+            ]
+
         features = X.columns.tolist()
         for feature in features:
             is_numeric = pd.api.types.is_numeric_dtype(X[feature])
@@ -459,18 +495,6 @@ class PopulationDriftDetector:
                 self.ref_counts_[feature] = counts_raw
                 self.ref_probs_[feature] = counts_norm
                 self.ref_categories_[feature] = counts_raw.index.tolist()
-
-            # NOTE: Precompute Leave One Chunk Out (LOO) indices once per feature 
-            # (only for 'quantile' method)
-            use_loo = self.threshold_method == 'quantile'
-            if use_loo:
-                chunk_indices = [chunk.index for chunk in chunks]
-                # List of indices of the reference DataFrame excluding each time 
-                # one of the chunk in order (Leave One Out)
-                loo_indices = [
-                    X.index.difference(chunk_indices[i])
-                    for i in range(len(chunks))
-                ]
 
             for i, chunk in enumerate(chunks):
 
@@ -546,7 +570,7 @@ class PopulationDriftDetector:
                 self.empirical_dist_js_[feature].append(js_distance)
 
             if self.threshold_method == 'quantile':
-                # Calculate empirical thresholds using the the specified quantile
+                # Calculate empirical thresholds using the specified quantile
                 # Using pandas Series quantile method to handle NaNs properly and warnings
                 self.empirical_threshold_ks_[feature] = pd.Series(
                     self.empirical_dist_ks_[feature]
@@ -596,7 +620,6 @@ class PopulationDriftDetector:
                     self.empirical_threshold_chi2_[feature], 0, None
                 )
 
-
         if self.n_chunks_reference_data_ < 10:
             warnings.warn(
                 f"Only {self.n_chunks_reference_data_} chunks in reference data. "
@@ -641,9 +664,10 @@ class PopulationDriftDetector:
             for idx, group in X:
                 group = group.droplevel(0)
                 self.detectors_[idx] = PopulationDriftDetector(
-                                           chunk_size       = self.chunk_size,
-                                           threshold        = self.threshold,
-                                           threshold_method = self.threshold_method
+                                           chunk_size             = self.chunk_size,
+                                           threshold              = self.threshold,
+                                           threshold_method       = self.threshold_method,
+                                           threshold_out_of_range = self.threshold_out_of_range
                                        )
                 self.detectors_[idx]._fit(group)
         else:
@@ -677,7 +701,7 @@ class PopulationDriftDetector:
         for feature in features:
             if feature not in self.ref_features_:
                 warnings.warn(
-                    f"Feature '{feature}' was not present during fitting. Drift detection skipped."
+                    f"Feature '{feature}' was not present during fitting. Drift detection skipped "
                     f"for this feature.",
                     UnknownLevelWarning
                 )
@@ -701,6 +725,7 @@ class PopulationDriftDetector:
                 ks_stat = np.nan
                 chi2_stat = np.nan
                 js_distance = np.nan
+                prop_out_of_range = np.nan
                 is_out_of_range = np.nan
 
                 if not new.empty:
@@ -719,16 +744,16 @@ class PopulationDriftDetector:
                             ecdf2=new_ecdf,
                             alternative="two-sided"
                         )
-                        is_out_of_range = (
-                            np.min(new) < ref_range[0] or
-                            np.max(new) > ref_range[1]
-                        )
+                        n_out_of_range = np.sum((new < ref_range[0]) | (new > ref_range[1]))
+                        prop_out_of_range = n_out_of_range / len(new)
+                        is_out_of_range = prop_out_of_range > self.threshold_out_of_range
                     else:
                         ref_categories = self.ref_categories_[feature]
-                        ref_probs_ = ref_probs.reindex(ref_categories, fill_value=0).to_numpy()
+                        ref_probs_aligned = ref_probs.reindex(ref_categories, fill_value=0).to_numpy()
 
                         # Map new data to reference categories
-                        new_counts_dict = new.value_counts().to_dict()
+                        new_value_counts = new.value_counts()
+                        new_counts_dict = new_value_counts.to_dict()
                         new_counts_on_ref = [new_counts_dict.get(cat, 0) for cat in ref_categories]
                         new_probs = (
                             np.array(new_counts_on_ref) / len(new) if len(new) > 0
@@ -736,11 +761,11 @@ class PopulationDriftDetector:
                         )
 
                         js_distance = self._compute_js_with_leftover(
-                            ref_probs=ref_probs_, new_probs=new_probs
+                            ref_probs=ref_probs_aligned, new_probs=new_probs
                         )
 
                         all_cats = set(self.ref_categories_[feature]).union(set(new_counts_dict.keys()))
-                        new_counts = new.value_counts().reindex(all_cats, fill_value=0).to_numpy()
+                        new_counts = new_value_counts.reindex(all_cats, fill_value=0).to_numpy()
                         ref_counts_aligned = ref_counts.reindex(all_cats, fill_value=0).to_numpy()
                         if new_counts.sum() > 0 and ref_counts_aligned.sum() > 0:
                             # Create contingency table: rows = [reference, new], columns = categories
@@ -759,6 +784,8 @@ class PopulationDriftDetector:
                     "js_statistic": js_distance,
                     "js_threshold": js_threshold,
                     "reference_range": ref_range,
+                    "prop_out_of_range": prop_out_of_range,
+                    "threshold_out_of_range": self.threshold_out_of_range,
                     "is_out_of_range": is_out_of_range,
                 })
 
@@ -868,10 +895,24 @@ class PopulationDriftDetector:
 
         """
 
+        # Attributes to exclude from aggregation:
+        # - Control attributes: is_fitted, detectors_, series_names_in_
+        # - Configuration parameters (same for all series): chunk_size, threshold,
+        #   threshold_method, threshold_out_of_range
+        excluded_attrs = [
+            'chunk_size',
+            'threshold',
+            'threshold_method',
+            'threshold_out_of_range',
+            'is_fitted', 
+            'detectors_', 
+            'series_names_in_',
+        ]
+        
         attr_names = [
             k 
             for k in self.__dict__.keys() 
-            if k not in ['is_fitted', 'detectors_', 'series_names_in_']
+            if k not in excluded_attrs
         ]
         
         if self.detectors_:
@@ -914,7 +955,8 @@ class PopulationDriftDetector:
                 "feature": [],
                 "ks_threshold": [],
                 "chi2_threshold": [],
-                "js_threshold": []
+                "js_threshold": [],
+                "threshold_out_of_range": []
             }
             for series_id, detector in self.detectors_.items():
                 for feature in detector.ref_features_:
@@ -929,13 +971,17 @@ class PopulationDriftDetector:
                     thresholds["js_threshold"].append(
                         detector.empirical_threshold_js_.get(feature)
                     )
+                    thresholds["threshold_out_of_range"].append(
+                        detector.threshold_out_of_range
+                    )
         else:
             # Single-series case
             thresholds = {
                 "feature": [],
                 "ks_threshold": [],
                 "chi2_threshold": [],
-                "js_threshold": []
+                "js_threshold": [],
+                "threshold_out_of_range": []
             }
             for feature in self.ref_features_:
                 thresholds["feature"].append(feature)
@@ -947,6 +993,9 @@ class PopulationDriftDetector:
                 )
                 thresholds["js_threshold"].append(
                     self.empirical_threshold_js_.get(feature)
+                )
+                thresholds["threshold_out_of_range"].append(
+                    self.threshold_out_of_range
                 )
 
         return pd.DataFrame(thresholds)

@@ -1,4 +1,4 @@
-# Unit test init
+# Unit test PopulationDriftDetector init
 # ==============================================================================
 import re
 import pytest
@@ -78,4 +78,25 @@ def test_init_ValueError_when_threshold_less_than_0_method_std():
     with pytest.raises(ValueError, match=error_msg):
         PopulationDriftDetector(
             chunk_size='MS', threshold=threshold, threshold_method='std'
+        )
+
+
+@pytest.mark.parametrize("threshold_out_of_range", 
+                         [-0.1, 1.1], 
+                         ids = lambda t: f'threshold_out_of_range: {t}')
+def test_init_ValueError_when_threshold_out_of_range_not_between_0_and_1(threshold_out_of_range):
+    """
+    Test that a ValueError is raised when threshold_out_of_range is not between 0 and 1.
+    """
+
+    error_msg = re.escape(
+        f"`threshold_out_of_range` must be between 0 and 1. "
+        f"Got {threshold_out_of_range}."
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        PopulationDriftDetector(
+            chunk_size='MS', 
+            threshold=3, 
+            threshold_method='std',
+            threshold_out_of_range=threshold_out_of_range
         )
