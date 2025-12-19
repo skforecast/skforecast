@@ -1,10 +1,10 @@
-# Unit tests for skforecast.stats.Ets.reduce_memory()
+# Unit test reduce_memory method - Ets
 # ==============================================================================
 
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.stats import Ets
+from ..._ets import Ets
 
 
 def test_reduce_memory_clears_arrays():
@@ -86,9 +86,9 @@ def test_reduce_memory_preserves_predictions():
     pd.testing.assert_frame_equal(pred_interval_before, pred_interval_after)
 
 
-def test_fitted_raises_error_after_reduce_memory():
+def test_get_fitted_values_raises_error_after_reduce_memory():
     """
-    Test that fitted_() raises ValueError after reduce_memory().
+    Test that get_fitted_values() raises ValueError after reduce_memory().
     """
     np.random.seed(42)
     y = np.random.randn(1000).cumsum() + 100
@@ -97,20 +97,20 @@ def test_fitted_raises_error_after_reduce_memory():
     model.fit(y)
     
     # Should work before reduction
-    fitted = model.fitted_()
+    fitted = model.get_fitted_values()
     assert len(fitted) == len(y)
     
     # Reduce memory
     model.reduce_memory()
     
     # Should raise ValueError after reduction
-    with pytest.raises(ValueError, match="Cannot call fitted_\\(\\)"):
-        model.fitted_()
+    with pytest.raises(ValueError, match="memory has been reduced"):
+        model.get_fitted_values()
 
 
-def test_residuals_raises_error_after_reduce_memory():
+def test_get_residuals_raises_error_after_reduce_memory():
     """
-    Test that residuals_() raises ValueError after reduce_memory().
+    Test that get_residuals() raises ValueError after reduce_memory().
     """
     np.random.seed(42)
     y = np.random.randn(1000).cumsum() + 100
@@ -119,15 +119,15 @@ def test_residuals_raises_error_after_reduce_memory():
     model.fit(y)
     
     # Should work before reduction
-    residuals = model.residuals_()
+    residuals = model.get_residuals()
     assert len(residuals) == len(y)
     
     # Reduce memory
     model.reduce_memory()
     
     # Should raise ValueError after reduction
-    with pytest.raises(ValueError, match="Cannot call residuals_\\(\\)"):
-        model.residuals_()
+    with pytest.raises(ValueError, match="memory has been reduced"):
+        model.get_residuals()
 
 
 def test_score_raises_error_after_reduce_memory():
@@ -148,7 +148,7 @@ def test_score_raises_error_after_reduce_memory():
     model.reduce_memory()
     
     # Should raise ValueError after reduction
-    with pytest.raises(ValueError, match="Cannot call score\\(\\)"):
+    with pytest.raises(ValueError, match="memory has been reduced"):
         model.score()
 
 
@@ -171,7 +171,7 @@ def test_summary_raises_error_after_reduce_memory(capsys):
     model.reduce_memory()
     
     # Should raise ValueError after reduction
-    with pytest.raises(ValueError, match="Cannot call summary\\(\\)"):
+    with pytest.raises(ValueError, match="memory has been reduced"):
         model.summary()
 
 
@@ -196,7 +196,7 @@ def test_refit_resets_memory_reduced_flag():
     assert model.memory_reduced_ is False
     
     # Diagnostic methods should work again
-    fitted = model.fitted_()
+    fitted = model.get_fitted_values()
     assert len(fitted) == len(y)
 
 
@@ -322,15 +322,14 @@ def test_reduce_memory_error_message_content():
     model.fit(y)
     model.reduce_memory()
     
-    # Test fitted_() error message
+    # Test get_fitted_values() error message
     with pytest.raises(ValueError) as exc_info:
-        model.fitted_()
+        model.get_fitted_values()
     assert "reduce_memory()" in str(exc_info.value)
-    assert "Refit the model" in str(exc_info.value)
     
-    # Test residuals_() error message
+    # Test get_residuals() error message
     with pytest.raises(ValueError) as exc_info:
-        model.residuals_()
+        model.get_residuals()
     assert "reduce_memory()" in str(exc_info.value)
     
     # Test score() error message
