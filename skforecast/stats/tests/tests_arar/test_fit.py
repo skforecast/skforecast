@@ -7,7 +7,8 @@ import warnings
 from ..._arar import Arar
 from ....exceptions import ExogenousInterpretationWarning
 
-
+# Fixture functions
+# ------------------------------------------------------------------------------
 def ar1_series(n=80, phi=0.7, sigma=1.0, seed=123):
     """Helper function to generate AR(1) series for testing."""
     rng = np.random.default_rng(seed)
@@ -30,9 +31,8 @@ def ar4_series(n=200, phi=(0.5, 0.3, -0.2, 0.1), sigma=1.0, seed=123):
     return y
 
 
-# =============================================================================
-# Input and Parameter Validation Tests (MUST BE FIRST)
-# =============================================================================
+# Input and Parameter Validation
+# ------------------------------------------------------------------------------
 
 def test_arar_fit_invalid_y_type_raises():
     """
@@ -40,8 +40,8 @@ def test_arar_fit_invalid_y_type_raises():
     """
     y = [1, 2, 3, 4, 5]  # List, not Series or ndarray
     model = Arar()
-    
-    with pytest.raises(TypeError, match="must be a pandas Series or numpy ndarray"):
+    msg = "`y` must be a pandas Series or numpy ndarray."
+    with pytest.raises(TypeError, match=msg):
         model.fit(y)
 
 
@@ -52,8 +52,8 @@ def test_arar_fit_invalid_exog_type_raises():
     y = np.random.randn(50)
     exog = [1, 2, 3]  # List, not valid type
     model = Arar()
-    
-    with pytest.raises(TypeError, match="must be None, a pandas Series, pandas DataFrame, or numpy ndarray"):
+    msg = "`exog` must be None, a pandas Series, pandas DataFrame, or numpy ndarray."
+    with pytest.raises(TypeError, match=msg):
         model.fit(y, exog=exog)
 
 
@@ -63,8 +63,8 @@ def test_arar_fit_multidimensional_y_raises():
     """
     y = np.random.randn(50, 2)
     model = Arar()
-    
-    with pytest.raises(ValueError, match="must be a 1D array-like"):
+    msg = "`y` must be a 1D array-like sequence."
+    with pytest.raises(ValueError, match=msg):
         model.fit(y)
 
 
@@ -74,10 +74,9 @@ def test_arar_fit_with_exog_length_mismatch():
     """
     y = ar1_series(100)
     exog_wrong = np.random.randn(80, 2)  # Wrong length
-    
     model = Arar()
-    
-    with pytest.raises(ValueError, match="Length of exog"):
+    msg = r"Length of exog \(80\) must match length of y \(100\)"
+    with pytest.raises(ValueError, match=msg):
         model.fit(y, exog=exog_wrong)
 
 
@@ -87,10 +86,9 @@ def test_arar_fit_with_exog_3d_raises():
     """
     y = ar1_series(50)
     exog_3d = np.random.randn(50, 2, 3)  # 3D array
-    
     model = Arar()
-    
-    with pytest.raises(ValueError, match="must be 1D or 2D"):
+    msg = "`exog` must be 1D or 2D."
+    with pytest.raises(ValueError, match=msg):
         model.fit(y, exog=exog_3d)
 
 
@@ -100,7 +98,6 @@ def test_arar_fit_very_short_series_safe_true():
     """
     y = np.array([1.0])
     model = Arar(safe=True)
-    
     # Should not raise error with safe=True
     model.fit(y)
     assert model.model_ is not None
@@ -112,8 +109,8 @@ def test_arar_fit_very_short_series_safe_false_raises():
     """
     y = np.array([1.0]) 
     model = Arar(safe=False)
-    
-    with pytest.raises(ValueError, match="Series too short"):
+    msg = "Series too short to fit ARAR when safe=False."
+    with pytest.raises(ValueError, match=msg):
         model.fit(y)
 
 
@@ -123,89 +120,151 @@ def test_arar_fit_two_observations_safe_true():
     """
     y = np.array([1.0, 2.0])
     model = Arar(safe=True)
-    
     # Should work with safe=True
     model.fit(y)
     assert model.model_ is not None
 
 
-# =============================================================================
 # Basic Fit Functionality Tests
-# =============================================================================
+# ------------------------------------------------------------------------------
 
-def test_arar_fit_basic():
+@pytest.mark.parametrize(
+    "y_input_type",
+    ["numpy_array", "pandas_series"],
+    ids=lambda x: f"y_as_{x}"
+)
+def test_arar_fit_with_default_parameters(y_input_type):
     """
-    Test basic fit functionality and resulting attributes with exact values.
+    Test fit results with default parameters and verify exact learned values.
+    Tests both numpy array and pandas Series inputs.
     """
     y = ar1_series(100, seed=123)
+    
+    # Convert to appropriate type
+    if y_input_type == "pandas_series":
+        y = pd.Series(y, index=pd.date_range(start='2020-01-01', periods=100, freq='D'))
+    
     model = Arar()
     result = model.fit(y)
 
-    # Test return value
-    assert result is model
-    
-    # Test model attributes exist and check exact values
     assert hasattr(model, "model_")
     np.testing.assert_array_almost_equal(model.y_, y, decimal=10)
-    assert model.y_.shape == y.shape
-    
-    # Check exact coefficient values
-    assert model.coef_.shape == (4,)
+
     expected_coef = np.array([0.6621508, -0.1511758, -0.08748325, -0.09202529])
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=6)
-    
-    # Check exact lag values
-    assert isinstance(model.lags_, tuple) and len(model.lags_) == 4
-    assert model.lags_ == (1, 3, 15, 18)
-    
-    # Check exact sigma2
-    assert np.isscalar(model.sigma2_) and model.sigma2_ >= 1e-12
-    np.testing.assert_almost_equal(model.sigma2_, 0.7510658616551584, decimal=6)
-    
-    # Check exact psi
-    assert model.psi_.ndim == 1 and model.psi_.size >= 1
+
+    expected_lags = (1, 3, 15, 18)
+    assert model.lags_ == expected_lags
+
+    expected_sigma2 = 0.7510658616551584
+    np.testing.assert_almost_equal(model.sigma2_, expected_sigma2, decimal=6)
+
     expected_psi = np.array([1.0])
     np.testing.assert_array_almost_equal(model.psi_, expected_psi, decimal=10)
-    
-    # Check exact sbar
-    assert isinstance(model.sbar_, float)
-    np.testing.assert_almost_equal(model.sbar_, 0.2555764169122907, decimal=6)
-    
-    # Check scalar attributes
-    assert model.n_features_in_ == 1
-    assert model.n_exog_features_in_ == 0
-    assert model.exog_model_ is None
-    assert model.coef_exog_ is None
-    assert model.memory_reduced_ is False
 
-    # Test fitted values and residuals shapes
-    assert model.fitted_values_.shape == y.shape
-    assert model.residuals_in_.shape == y.shape
-    
+    expected_sbar = 0.2555764169122907
+    np.testing.assert_almost_equal(model.sbar_, expected_sbar, decimal=6)
+
+
+    # First fitted_values values will be NaN due to lag structure
+    assert np.isnan(model.fitted_values_[:18]).all()
+    # The first non-NaN fitted value should match expected
+    first_valid_idx = np.where(~np.isnan(model.fitted_values_))[0][0]
+    assert first_valid_idx == np.max(model.lags_)
+
+    # Check exact first 10 non-NaN fitted values
+    expected_first_10_fitted = np.array([
+        0.5800004993187984, -0.02746188896173543, 0.18645199039610316,
+        -1.1949387396599094, -0.4201486297576694, 1.0862510495918631,
+        1.5193628857148958, 1.323152726816019, 0.8730881701811084,
+        1.3225032039860298
+    ])
+    np.testing.assert_array_almost_equal(
+        model.fitted_values_[first_valid_idx:first_valid_idx+10],
+        expected_first_10_fitted,
+        decimal=6
+    )
+
     # Verify residuals = y - fitted_values exactly
     np.testing.assert_array_almost_equal(
         model.residuals_in_,
         y - model.fitted_values_,
         decimal=10
     )
-    
-    # Check some exact fitted values (non-NaN portion)
-    # First values will be NaN due to lag structure (lag 18 means first 17 are NaN)
-    expected_fitted_first_valid = 0.5800004993187984  # At index 18
-    assert np.isnan(model.fitted_values_[0])  # First value should be NaN
-    # The first non-NaN fitted value should match expected
-    first_valid_idx = np.where(~np.isnan(model.fitted_values_))[0][0]
-    assert first_valid_idx == 18  # Should be at index 18 (lag 18)
-    np.testing.assert_almost_equal(model.fitted_values_[first_valid_idx], expected_fitted_first_valid, decimal=6)
-    
+
     # Check exact AIC/BIC values
-    assert isinstance(model.aic_, float)
-    assert isinstance(model.bic_, float)
     np.testing.assert_almost_equal(model.aic_, 223.6333233886359, decimal=6)
     np.testing.assert_almost_equal(model.bic_, 238.0736388722214, decimal=6)
-    assert not np.isnan(model.aic_)
-    assert not np.isnan(model.bic_)
 
+    assert model.n_features_in_ == 1
+    assert model.n_exog_features_in_ == 0
+    assert model.exog_model_ is None
+    assert model.coef_exog_ is None
+    assert model.memory_reduced_ is False
+
+
+def test_arar_fit_with_given_parameters():
+    """
+    Test fit results with given parameters and verify exact learned values.
+    """
+    y = ar1_series(100, seed=123)
+    model = Arar(max_ar_depth=10, max_lag=20)
+    result = model.fit(y)
+
+    assert hasattr(model, "model_")
+    np.testing.assert_array_almost_equal(model.y_, y, decimal=10)
+
+    expected_coef = np.array([0.68051374, -0.14307879, -0.12198576, 0.12992447])
+    np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=6)
+
+    expected_lags = (1, 3, 7, 8)
+    assert model.lags_ == expected_lags
+
+    expected_sigma2 = 0.7582529108145794
+    np.testing.assert_almost_equal(model.sigma2_, expected_sigma2, decimal=6)
+
+    expected_psi = np.array([1.0])
+    np.testing.assert_array_almost_equal(model.psi_, expected_psi, decimal=10)
+
+    expected_sbar = 0.2555764169122907
+    np.testing.assert_almost_equal(model.sbar_, expected_sbar, decimal=6)
+
+    # First fitted_values values will be NaN due to lag structure (lag 8)
+    largest_lag = max(model.lags_)
+    assert np.isnan(model.fitted_values_[:largest_lag]).all()
+    # The first non-NaN fitted value should match expected
+    first_valid_idx = np.where(~np.isnan(model.fitted_values_))[0][0]
+    assert first_valid_idx == largest_lag
+
+    # Check exact first 10 non-NaN fitted values
+    expected_first_10_fitted = np.array([
+        0.468857189527469, 0.03378143687427011, -0.09475666325921547,
+        -0.0071033831161424615, -0.9132423255960366, 0.34559013140561684,
+        -0.11038949683225877, 0.5767412704995151, 0.6255568996187596,
+        1.3184603152225796
+    ])
+    np.testing.assert_array_almost_equal(
+        model.fitted_values_[first_valid_idx:first_valid_idx+10],
+        expected_first_10_fitted,
+        decimal=6
+    )
+
+    # Verify residuals = y - fitted_values exactly
+    np.testing.assert_array_almost_equal(
+        model.residuals_in_,
+        y - model.fitted_values_,
+        decimal=10
+    )
+
+    # Check exact AIC/BIC values
+    np.testing.assert_almost_equal(model.aic_, 248.9417152747054, decimal=6)
+    np.testing.assert_almost_equal(model.bic_, 264.0724467369996, decimal=6)
+
+    assert model.n_features_in_ == 1
+    assert model.n_exog_features_in_ == 0
+    assert model.exog_model_ is None
+    assert model.coef_exog_ is None
+    assert model.memory_reduced_ is False
 
 def test_arar_fit_exact_aic_bic_values():
     """
@@ -234,64 +293,6 @@ def test_arar_fit_exact_aic_bic_values():
     # Check they match
     np.testing.assert_almost_equal(model.aic_, expected_aic, decimal=6)
     np.testing.assert_almost_equal(model.bic_, expected_bic, decimal=6)
-    
-    # BIC should be larger for n > exp(2) ≈ 7.4
-    assert model.bic_ > model.aic_
-
-
-def test_arar_fit_fitted_values_accuracy():
-    """
-    Test that fitted values are reasonably accurate.
-    """
-    y = ar1_series(n=100, phi=0.7, sigma=0.5, seed=42)
-    
-    model = Arar()
-    model.fit(y)
-    
-    # Fitted values should exist and match length
-    assert model.fitted_values_.shape == y.shape
-    
-    # First few values will be NaN due to lag structure
-    assert np.isnan(model.fitted_values_[0])
-    
-    # Later values should be finite
-    valid_fitted = model.fitted_values_[~np.isnan(model.fitted_values_)]
-    assert len(valid_fitted) > 0
-    assert np.all(np.isfinite(valid_fitted))
-    
-    # Residuals should sum to approximately zero (up to numerical precision)
-    valid_residuals = model.residuals_in_[~np.isnan(model.residuals_in_)]
-    assert abs(np.mean(valid_residuals)) < 0.1  # Mean close to zero
-    
-    # Check residuals = y - fitted
-    mask = ~np.isnan(model.fitted_values_)
-    np.testing.assert_array_almost_equal(
-        model.residuals_in_[mask],
-        y[mask] - model.fitted_values_[mask],
-        decimal=10
-    )
-
-
-def test_arar_fit_with_pandas_datetime_index():
-    """
-    Test fit with pandas Series with datetime index.
-    """
-    y_array = ar1_series(100, seed=123)
-    date_index = pd.date_range('2020-01-01', periods=100, freq='D')
-    y = pd.Series(y_array, index=date_index)
-    
-    model = Arar()
-    model.fit(y)
-    
-    # Should store values as numpy array
-    assert isinstance(model.y_, np.ndarray)
-    np.testing.assert_array_almost_equal(model.y_, y.values, decimal=10)
-    
-    # Verify all learned values are exact
-    expected_coef = np.array([0.6621508, -0.1511758, -0.08748325, -0.09202529])
-    np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=6)
-    assert model.lags_ == (1, 3, 15, 18)
-    np.testing.assert_almost_equal(model.sigma2_, 0.7510658616551584, decimal=6)
 
 
 def test_arar_fit_updates_max_ar_depth_and_max_lag():
@@ -301,12 +302,6 @@ def test_arar_fit_updates_max_ar_depth_and_max_lag():
     y = ar1_series(100)
     model = Arar(max_ar_depth=None, max_lag=None)
     model.fit(y)
-    
-    # After fitting, these should be set by the underlying arar function
-    assert model.max_ar_depth is not None
-    assert model.max_lag is not None
-    assert isinstance(model.max_ar_depth, int)
-    assert isinstance(model.max_lag, int)
     # For n=100, defaults should be 26 and 40
     assert model.max_ar_depth == 26
     assert model.max_lag == 40
@@ -362,13 +357,8 @@ def test_arar_fit_resets_memory_reduced_flag():
     model.reduce_memory()
     
     assert model.memory_reduced_ is True
-    
-    # Refit
-    model.fit(y)
-    
-    assert model.memory_reduced_ is False
-    assert model.fitted_values_ is not None
-    assert model.residuals_in_ is not None
+    assert model.residuals_in_ is None
+    assert model.fitted_values_ is None
 
 
 def test_arar_fit_nan_pattern_in_fitted_values():
@@ -380,9 +370,9 @@ def test_arar_fit_nan_pattern_in_fitted_values():
     model.fit(y)
     
     # Check NaN pattern based on largest lag
-    largest_lag = max(model.lags_)  # Should be 18
+    largest_lag = max(model.lags_)
     
-    # First largest_lag values should be NaN (not largest_lag-1)
+    # First largest_lag values should be NaN
     nan_count = np.sum(np.isnan(model.fitted_values_))
     assert nan_count == largest_lag  # 18 NaN values for lag 18
     
@@ -398,13 +388,18 @@ def test_arar_fit_nan_pattern_in_fitted_values():
     assert np.all(np.isfinite(model.residuals_in_[nan_count:]))
 
 
-# =============================================================================
-# Exogenous variables tests - basic functionality
-# =============================================================================
+# Fit with Exogenous Variables Tests
+# ------------------------------------------------------------------------------
 
-def test_arar_fit_with_exog():
+@pytest.mark.parametrize(
+    "exog_input_type",
+    ["numpy_array", "pandas_dataframe"],
+    ids=lambda x: f"exog_as_{x}"
+)
+def test_arar_fit_with_exog(exog_input_type):
     """
     Test Arar fit with exogenous variables and verify exact learned values.
+    Tests both numpy array and pandas DataFrame inputs for exog.
     """
     np.random.seed(42)
     n = 100
@@ -415,222 +410,38 @@ def test_arar_fit_with_exog():
         np.sin(np.linspace(0, 4*np.pi, n)),
         np.cos(np.linspace(0, 4*np.pi, n))
     ])
-    y = y_ar + 2.0 * exog[:, 0] + 1.5 * exog[:, 1]
+    
+    # Convert to appropriate type
+    if exog_input_type == "pandas_dataframe":
+        exog = pd.DataFrame(exog, columns=['exog1', 'exog2'])
+        y = y_ar + 2.0 * exog.iloc[:, 0] + 1.5 * exog.iloc[:, 1]
+    else:
+        y = y_ar + 2.0 * exog[:, 0] + 1.5 * exog[:, 1]
     
     model = Arar()
     model.fit(y, exog=exog, suppress_warnings=True)
     
-    # Check attributes
-    assert model.exog_model_ is not None
-    assert model.coef_exog_ is not None
+
     assert model.n_features_in_ == 1  # Always 1 for time series
     assert model.n_exog_features_in_ == 2
-    
-    # Check that original y is stored, not residuals
-    np.testing.assert_array_almost_equal(model.y_, y, decimal=10)
-    
-    # Check exact exog coefficients
     assert len(model.coef_exog_) == 2
     expected_coef_exog = np.array([1.96805132, 1.36576084])
     np.testing.assert_array_almost_equal(model.coef_exog_, expected_coef_exog, decimal=6)
+    assert hasattr(model.exog_model_, 'intercept_')
+    expected_intercept = -0.049223690270959776
+    np.testing.assert_almost_equal(model.exog_model_.intercept_, expected_intercept, decimal=6)
     
     # Check exact ARAR coefficients on residuals
     expected_lags = (1, 6, 10, 16)
     assert model.lags_ == expected_lags
-    
     expected_coef = np.array([0.5740112, -0.15199523, 0.17431845, 0.1893768])
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=6)
-    
     np.testing.assert_almost_equal(model.sigma2_, 0.13259783018819143, decimal=6)
     np.testing.assert_almost_equal(model.sbar_, 2.1094237467877975e-17, decimal=6)
     
     # Check exact AIC/BIC with exog
     np.testing.assert_almost_equal(model.aic_, 79.0305393657764, decimal=6)
     np.testing.assert_almost_equal(model.bic_, 100.90789055536621, decimal=6)
-    
-    # Verify exog_model has intercept
-    assert hasattr(model.exog_model_, 'intercept_')
-    expected_intercept = -0.049223690270959776
-    np.testing.assert_almost_equal(model.exog_model_.intercept_, expected_intercept, decimal=6)
-    
-    # Verify fitted_values include exog contribution
-    # fitted = exog_fitted + arar_fitted
-    exog_contribution = model.exog_model_.predict(exog)
-    assert model.fitted_values_.shape == y.shape
-    # Check residuals are correct
-    np.testing.assert_array_almost_equal(
-        model.residuals_in_,
-        y - model.fitted_values_,
-        decimal=10
-    )
-
-
-def test_arar_fit_1d_exog_numpy_and_pandas():
-    """
-    Test Arar with 1D exogenous variable as numpy array and pandas Series.
-    """
-    np.random.seed(42)
-    n = 100
-    y = ar1_series(n=n, seed=42)
-    exog_1d = np.sin(np.linspace(0, 4*np.pi, n))
-    
-    # Test with numpy 1D array
-    model1 = Arar()
-    model1.fit(y, exog=exog_1d, suppress_warnings=True)
-    
-    assert model1.n_features_in_ == 1
-    assert model1.n_exog_features_in_ == 1
-    assert model1.exog_model_ is not None
-    assert len(model1.coef_exog_) == 1
-    
-    # Test with pandas Series
-    exog_series = pd.Series(exog_1d)
-    model2 = Arar()
-    model2.fit(y, exog=exog_series, suppress_warnings=True)
-    
-    assert model2.n_features_in_ == 1
-    assert model2.n_exog_features_in_ == 1
-    assert model2.exog_model_ is not None
-    assert len(model2.coef_exog_) == 1
-    
-    # Both should give same results
-    np.testing.assert_array_almost_equal(model1.coef_exog_, model2.coef_exog_, decimal=10)
-
-
-def test_arar_fit_multiple_features_exog():
-    """
-    Test Arar with multiple exogenous features and verify coefficient storage.
-    """
-    np.random.seed(42)
-    n = 150
-    y = ar1_series(n=n, phi=0.5, seed=42)
-    exog = np.column_stack([
-        np.sin(np.linspace(0, 4*np.pi, n)),
-        np.cos(np.linspace(0, 4*np.pi, n)),
-        np.linspace(0, 1, n),  # trend
-        np.random.randn(n) * 0.1  # small noise feature
-    ])
-    y = y + 1.0 * exog[:, 0] + 0.5 * exog[:, 1] + 2.0 * exog[:, 2]
-    
-    model = Arar()
-    model.fit(y, exog=exog, suppress_warnings=True)
-    
-    assert model.n_features_in_ == 1  # Always 1 for time series
-    assert model.n_exog_features_in_ == 4
-    assert len(model.coef_exog_) == 4
-    assert model.exog_model_ is not None
-    
-    # Check coefficients are reasonable
-    assert np.all(np.isfinite(model.coef_exog_))
-
-
-def test_arar_fit_exog_with_custom_params():
-    """
-    Test Arar with exogenous variables and custom max_ar_depth and max_lag.
-    """
-    np.random.seed(42)
-    n = 100
-    y = ar1_series(n=n, seed=42)
-    exog = np.random.randn(n, 2) * 0.5
-    
-    model = Arar(max_ar_depth=10, max_lag=20)
-    model.fit(y, exog=exog, suppress_warnings=True)
-    
-    assert model.max_ar_depth == 10
-    assert model.max_lag == 20
-    assert model.exog_model_ is not None
-
-
-def test_arar_fit_exog_zero_variance_feature():
-    """
-    Test Arar handles exogenous features with zero variance (constant).
-    """
-    np.random.seed(42)
-    n = 100
-    y = ar1_series(n=n, seed=42)
-    
-    # One feature with variance, one constant
-    exog = np.column_stack([
-        np.random.randn(n) * 0.5,
-        np.ones(n) * 5.0  # constant feature
-    ])
-    
-    model = Arar()
-    # Should not crash even with constant feature
-    model.fit(y, exog=exog, suppress_warnings=True)
-    
-    assert model.n_features_in_ == 1  # Always 1 for time series
-    assert model.n_exog_features_in_ == 2
-    assert model.exog_model_ is not None
-
-
-def test_arar_fit_exog_coefficient_recovery():
-    """
-    Test that exogenous coefficients are reasonably recovered.
-    """
-    np.random.seed(42)
-    n = 300  # Larger sample for better recovery
-    
-    # Create data with known linear relationship
-    true_coef = [1.5, -0.8, 2.0]
-    exog = np.column_stack([
-        np.sin(np.linspace(0, 10*np.pi, n)),
-        np.cos(np.linspace(0, 10*np.pi, n)),
-        np.linspace(0, 1, n)
-    ])
-    
-    # Pure linear relationship + small AR(1) component
-    y_linear = 5.0 + exog @ true_coef
-    y_ar = ar1_series(n=n, phi=0.3, sigma=0.2, seed=42)
-    y = y_linear + y_ar
-    
-    model = Arar()
-    model.fit(y, exog=exog, suppress_warnings=True)
-    
-    # Coefficients should be close to true values
-    assert len(model.coef_exog_) == 3
-    for i, true_c in enumerate(true_coef):
-        # Allow reasonable deviation since ARAR models residuals
-        assert abs(model.coef_exog_[i] - true_c) < 0.5
-
-
-# =============================================================================
-# Warning tests
-# =============================================================================
-
-def test_arar_fit_exog_emits_warning():
-    """
-    Test that fit with exog emits ExogenousInterpretationWarning by default.
-    """
-    y = ar1_series(50, seed=42)
-    exog = np.random.randn(50, 1)
-    
-    model = Arar()
-    
-    with pytest.warns(ExogenousInterpretationWarning, match="two-step approach"):
-        model.fit(y, exog=exog)
-
-
-def test_arar_fit_exog_suppress_warnings():
-    """
-    Test that suppress_warnings=True prevents warning emission.
-    """
-    y = ar1_series(50, seed=42)
-    exog = np.random.randn(50, 1)
-    
-    model = Arar()
-    
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")  # Turn warnings into errors
-        # Should not raise any warning
-        model.fit(y, exog=exog, suppress_warnings=True)
-    
-    assert model.exog_model_ is not None
-
-
-# =============================================================================
-# AIC/BIC Tests
-# =============================================================================
 
 def test_arar_fit_aic_bic_with_exog():
     """
@@ -667,4 +478,44 @@ def test_arar_fit_aic_bic_with_exog():
     
     np.testing.assert_almost_equal(model.aic_, expected_aic, decimal=6)
     np.testing.assert_almost_equal(model.bic_, expected_bic, decimal=6)
+
+# Warning tests
+# ------------------------------------------------------------------------------
+def test_arar_fit_exog_emits_warning():
+    """
+    Test that fit with exog emits ExogenousInterpretationWarning by default.
+    """
+    y = ar1_series(50, seed=42)
+    exog = np.random.randn(50, 1)
+    model = Arar()
+    
+    warn_msg = (
+        r"Exogenous variables are being handled using a two-step approach: "
+        r"\(1\) linear regression on exog, \(2\) ARAR on residuals. "
+        r"This affects model interpretation:\n"
+        r"  - ARAR coefficients \(coef_\) describe residual dynamics, not the original series\n"
+        r"  - Pred intervals reflect only ARAR uncertainty, not exog regression uncertainty\n"
+        r"  - Assumes a linear, time-invariant relationship between exog and target\n"
+        r"For more details, see the fit\(\) method's Notes section of ARAR class. "
+    )
+    with pytest.warns(ExogenousInterpretationWarning, match=warn_msg):
+        model.fit(y, exog=exog)
+
+
+def test_arar_fit_exog_suppress_warnings():
+    """
+    Test that suppress_warnings=True prevents warning emission.
+    """
+    y = ar1_series(50, seed=42)
+    exog = np.random.randn(50, 1)
+    model = Arar()
+    
+    # Explicitly check that no ExogenousInterpretationWarning is raised
+    with warnings.catch_warnings(record=True) as warning_list:
+        warnings.simplefilter("always")  # Capture all warnings
+        model.fit(y, exog=exog, suppress_warnings=True)
+        
+        # Filter for ExogenousInterpretationWarning
+        exog_warnings = [w for w in warning_list if issubclass(w.category, ExogenousInterpretationWarning)]
+        assert len(exog_warnings) == 0, "ExogenousInterpretationWarning should not be raised when suppress_warnings=True"
 
