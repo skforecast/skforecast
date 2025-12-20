@@ -359,7 +359,7 @@ class Ets(BaseEstimator, RegressorMixin):
         print(f"  75%:                 {np.percentile(self.y_, 75):.4f}")
         print(f"  Max:                 {np.max(self.y_):.4f}")
 
-    def score(self, y: None = None) -> float:
+    def get_score(self, y: None = None) -> float:
         """
         R^2 using in-sample fitted values.
 
