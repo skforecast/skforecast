@@ -28,6 +28,13 @@ def test_estimator_residuals_helper():
 
     # Residuals should equal y - fitted (approximately)
     assert np.allclose(r, y - f, atol=1e-10)
+    
+    # Check exact residual values (first 10)
+    expected_residuals = np.array([
+        -0.58403773, -0.90187138,  0.58714496,  0.407959,  1.00341891,
+         0.99247986, -0.27350356,  0.10948028, -0.52014891, -0.91011355
+    ])
+    np.testing.assert_array_almost_equal(r[:10], expected_residuals, decimal=6)
 
 
 def test_get_residuals_raises_error_after_reduce_memory():
@@ -45,5 +52,8 @@ def test_get_residuals_raises_error_after_reduce_memory():
     est.reduce_memory()
     
     # get_residuals() should raise error
-    with pytest.raises(ValueError, match="memory has been reduced"):
+    with pytest.raises(
+        ValueError,
+        match="Cannot call residuals_\\(\\): model memory has been reduced"
+    ):
         est.get_residuals()

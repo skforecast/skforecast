@@ -132,7 +132,7 @@ def test_get_residuals_raises_error_after_reduce_memory():
 
 def test_score_raises_error_after_reduce_memory():
     """
-    Test that score() raises ValueError after reduce_memory().
+    Test that get_score() raises ValueError after reduce_memory().
     """
     np.random.seed(42)
     y = np.random.randn(1000).cumsum() + 100
@@ -141,7 +141,7 @@ def test_score_raises_error_after_reduce_memory():
     model.fit(y)
     
     # Should work before reduction
-    score = model.score()
+    score = model.get_score()
     assert isinstance(score, float)
     
     # Reduce memory
@@ -149,7 +149,7 @@ def test_score_raises_error_after_reduce_memory():
     
     # Should raise ValueError after reduction
     with pytest.raises(ValueError, match="memory has been reduced"):
-        model.score()
+        model.get_score()
 
 
 def test_summary_raises_error_after_reduce_memory(capsys):
@@ -332,9 +332,9 @@ def test_reduce_memory_error_message_content():
         model.get_residuals()
     assert "reduce_memory()" in str(exc_info.value)
     
-    # Test score() error message
+    # Test get_score() error message
     with pytest.raises(ValueError) as exc_info:
-        model.score()
+        model.get_score()
     assert "reduce_memory()" in str(exc_info.value)
     
     # Test summary() error message

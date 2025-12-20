@@ -16,30 +16,37 @@ def ar1_series(n=80, phi=0.7, sigma=1.0, seed=123):
 
 
 def test_estimator_score():
-    """Test Ets estimator score method"""
+    """Test Ets estimator get_score method"""
     y = ar1_series(100)
     est = Ets(m=1, model="AAN").fit(y)
 
-    score = est.score()
+    score = est.get_score()
 
     # R^2 should be between -inf and 1
     assert score <= 1.0
     assert np.isfinite(score) or np.isnan(score)
+    
+    # Check exact score value
+    expected_score = -0.12352559113458117
+    np.testing.assert_almost_equal(score, expected_score, decimal=10)
 
 
 def test_score_raises_error_after_reduce_memory():
-    """Test that score() raises error after reduce_memory()"""
+    """Test that get_score() raises error after reduce_memory()"""
     y = ar1_series(100)
     est = Ets(m=1, model="AAN")
     est.fit(y)
     
     # Verify score works before reduction
-    score_before = est.score()
+    score_before = est.get_score()
     assert score_before is not None
     
     # Reduce memory
     est.reduce_memory()
     
-    # score() should raise error
-    with pytest.raises(ValueError, match="memory has been reduced"):
-        est.score()
+    # get_score() should raise error
+    with pytest.raises(
+        ValueError,
+        match="Cannot call score\\(\\): model memory has been reduced"
+    ):
+        est.get_score()

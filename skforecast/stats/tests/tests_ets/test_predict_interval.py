@@ -31,6 +31,19 @@ def test_estimator_predict_interval():
     assert "lower_95" in df.columns
     assert "upper_95" in df.columns
     assert len(df) == 5
+    
+    # Check exact values
+    expected_mean = np.array([-0.21174572, -0.2703575, -0.32896928, -0.38758106, -0.44619284])
+    expected_lower_80 = np.array([-1.93400505, -2.00300517, -2.07389933, -2.14681648, -2.22187478])
+    expected_upper_80 = np.array([1.5105136, 1.46229016, 1.41596077, 1.37165436, 1.3294891])
+    expected_lower_95 = np.array([-2.84571406, -2.92021344, -2.9976095, -3.07809946, -3.16186402])
+    expected_upper_95 = np.array([2.42222262, 2.37949843, 2.33967094, 2.30293734, 2.26947834])
+    
+    np.testing.assert_array_almost_equal(df['mean'].values, expected_mean, decimal=8)
+    np.testing.assert_array_almost_equal(df['lower_80'].values, expected_lower_80, decimal=6)
+    np.testing.assert_array_almost_equal(df['upper_80'].values, expected_upper_80, decimal=6)
+    np.testing.assert_array_almost_equal(df['lower_95'].values, expected_lower_95, decimal=6)
+    np.testing.assert_array_almost_equal(df['upper_95'].values, expected_upper_95, decimal=6)
 
     # Test with as_frame=False
     raw = est.predict_interval(steps=3, level=(90,), as_frame=False)

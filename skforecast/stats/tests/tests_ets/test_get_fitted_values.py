@@ -22,6 +22,13 @@ def test_estimator_fitted_helper():
 
     f = est.get_fitted_values()
     assert f.shape == y.shape
+    
+    # Check exact fitted values
+    expected_fitted = np.array([
+        0.58403773, 0.53408473, 0.44332965, 0.50734765, 0.55752664,
+        0.67728581, 0.80587588, 0.80513257, 0.84378245, 0.81426792
+    ])
+    np.testing.assert_array_almost_equal(f[:10], expected_fitted, decimal=8)
 
 
 def test_get_fitted_values_raises_error_after_reduce_memory():
