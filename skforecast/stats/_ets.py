@@ -423,20 +423,64 @@ class Ets(BaseEstimator, RegressorMixin):
 
     def set_params(self, **params) -> "Ets":
         """
-        Set the parameters of this estimator.
+        Set the parameters of this estimator and reset the fitted state.
+        
+        This method resets the estimator to its unfitted state whenever parameters
+        are changed, requiring the model to be refitted before making predictions.
 
         Parameters
         ----------
         **params : dict
-            Estimator parameters.
+            Estimator parameters. Valid parameter keys are: 'm', 'model', 'damped',
+            'alpha', 'beta', 'gamma', 'phi', 'lambda_param', 'lambda_auto',
+            'bias_adjust', 'bounds', 'seasonal', 'trend', 'ic', 'allow_multiplicative',
+            'allow_multiplicative_trend'.
 
         Returns
         -------
         self : Ets
-            Estimator instance.
+            The estimator with updated parameters and reset state.
+            
+        Raises
+        ------
+        ValueError
+            If any parameter key is invalid.
         """
+        # Validate parameter keys
+        valid_params = {
+            'm', 'model', 'damped', 'alpha', 'beta', 'gamma', 'phi',
+            'lambda_param', 'lambda_auto', 'bias_adjust', 'bounds',
+            'seasonal', 'trend', 'ic', 'allow_multiplicative',
+            'allow_multiplicative_trend'
+        }
+        for key in params.keys():
+            if key not in valid_params:
+                raise ValueError(
+                    f"Invalid parameter '{key}' for estimator {self.__class__.__name__}. "
+                    f"Valid parameters are: {sorted(valid_params)}"
+                )
+        
+        # Set the parameters
         for key, value in params.items():
             setattr(self, key, value)
+        
+        # Reset fitted state - model needs to be refitted with new parameters
+        if hasattr(self, 'model_'):
+            self.model_ = None
+        if hasattr(self, 'config_'):
+            self.config_ = None
+        if hasattr(self, 'params_'):
+            self.params_ = None
+        if hasattr(self, 'y_'):
+            self.y_ = None
+        if hasattr(self, 'fitted_values_'):
+            self.fitted_values_ = None
+        if hasattr(self, 'residuals_in_'):
+            self.residuals_in_ = None
+        if hasattr(self, 'n_features_in_'):
+            self.n_features_in_ = None
+        self.memory_reduced_ = False
+        
         return self
 
     def reduce_memory(self) -> "Ets":

@@ -70,6 +70,8 @@ class Arar(BaseEstimator, RegressorMixin):
         Number of features in the target series (always 1, for sklearn compatibility).
     n_exog_features_in_ : int
         Number of exogenous features seen during fitting (0 if no exog provided).
+    is_fitted_ : bool
+        Flag indicating whether the model has been fitted.
     fitted_values_ : ndarray of shape (n_samples,)
         In-sample fitted values (NaN for first k-1 terms).
     residuals_in_ : ndarray of shape (n_samples,)
@@ -136,6 +138,7 @@ class Arar(BaseEstimator, RegressorMixin):
         self.exog_model_ = None
         self.coef_exog_ = None
         self.n_exog_features_in_ = None
+        self.is_fitted_ = False
         self.memory_reduced_ = False
 
     def fit(self, y: pd.Series | np.ndarray, exog: pd.Series | pd.DataFrame | np.ndarray | None = None, 
@@ -251,6 +254,7 @@ class Arar(BaseEstimator, RegressorMixin):
         self.max_lag = max_lag
         self.n_exog_features_in_ = exog.shape[1] if exog is not None else 0
         self.n_features_in_ = 1
+        self.is_fitted_ = True
         self.memory_reduced_ = False
 
         arar_fitted = fitted_arar(self.model_)["fitted"]
@@ -308,7 +312,11 @@ class Arar(BaseEstimator, RegressorMixin):
         mean : ndarray of shape (h,)
             Point forecasts for steps 1..h.
         """
-        check_is_fitted(self, "model_")
+        if not self.is_fitted_:
+            raise TypeError(
+                "This Arar instance is not fitted yet. "
+                "Call 'fit' with appropriate arguments before using this estimator."
+        )
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
 
@@ -538,3 +546,60 @@ class Arar(BaseEstimator, RegressorMixin):
         self.memory_reduced_ = True
         
         return self
+
+    def set_params(self, **params) -> "Arar":
+        """
+        Set the parameters of this estimator and reset the fitted state.
+        
+        This method resets the estimator to its unfitted state whenever parameters
+        are changed, requiring the model to be refitted before making predictions.
+        
+        Parameters
+        ----------
+        **params : dict
+            Estimator parameters. Valid parameter keys are 'max_ar_depth', 'max_lag',
+            and 'safe'.
+        
+        Returns
+        -------
+        self : Arar
+            The estimator with updated parameters and reset state.
+        
+        Raises
+        ------
+        ValueError
+            If any parameter key is invalid.
+        
+        """
+
+        valid_params = {'max_ar_depth', 'max_lag', 'safe'}
+        for key in params.keys():
+            if key not in valid_params:
+                raise ValueError(
+                    f"Invalid parameter '{key}' for estimator {self.__class__.__name__}. "
+                    f"Valid parameters are: {valid_params}"
+                )
+        
+        for key, value in params.items():
+            setattr(self, key, value)
+        
+        # Reset fitted state
+        self.model_ = None
+        self.n_features_in_ = None
+        self.y_ = None
+        self.coef_ = None
+        self.lags_ = None
+        self.sigma2_ = None
+        self.psi_ = None
+        self.sbar_ = None
+        self.exog_model_ = None
+        self.coef_exog_ = None
+        self.n_exog_features_in_ = None
+        self.fitted_values_ = None
+        self.residuals_in_ = None
+        self.aic_ = None
+        self.bic_ = None
+        self.is_fitted_ = False
+        self.memory_reduced_ = False
+        
+        return
