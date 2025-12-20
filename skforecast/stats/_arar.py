@@ -385,7 +385,14 @@ class Arar(BaseEstimator, RegressorMixin):
         ARAR forecast uncertainty and do not include uncertainty from the regression 
         coefficients. This may result in **undercoverage** (actual coverage < nominal level).
         """
-        check_is_fitted(self, "model_")
+        if not self.is_fitted_:
+            raise TypeError(
+                "This Arar instance is not fitted yet. "
+                "Call 'fit' with appropriate arguments before using this estimator."
+        )
+        if not isinstance(steps, (int, np.integer)) or steps <= 0:
+            raise ValueError("`steps` must be a positive integer.")
+            
         out = forecast(self.model_, h=steps, level=level)
         
         if self.exog_model_ is None and exog is not None:
@@ -602,4 +609,4 @@ class Arar(BaseEstimator, RegressorMixin):
         self.is_fitted_ = False
         self.memory_reduced_ = False
         
-        return
+        return self

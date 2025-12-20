@@ -1,480 +1,286 @@
-################################################################################
-#                                 ETS                                          #
-#                                                                              #
-# This work by skforecast team is licensed under the BSD 3-Clause License.     #
-################################################################################
-# coding=utf-8
-
-from __future__ import annotations
-from typing import Optional, Tuple, Dict, Literal, List
+# Unit test predict_interval method - Arar
+# ==============================================================================
 import numpy as np
 import pandas as pd
-from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.utils.validation import check_is_fitted
-from .exponential_smoothing._ets_base import (
-    ets,
-    auto_ets,
-    forecast_ets
-)
-from ._utils import check_memory_reduced
+import pytest
+from ..._arar import Arar
 
-class Ets(BaseEstimator, RegressorMixin):
+
+def ar1_series(n=80, phi=0.7, sigma=1.0, seed=123):
+    """Helper function to generate AR(1) series for testing."""
+    rng = np.random.default_rng(seed)
+    e = rng.normal(0.0, sigma, size=n)
+    y = np.zeros(n, dtype=float)
+    for t in range(1, n):
+        y[t] = phi * y[t - 1] + e[t]
+    return y
+
+
+def test_predict_interval_raises_errors_for_invalid_steps_and_unfitted_model():
     """
-    Scikit-learn style wrapper for the ETS (Error, Trend, Seasonality) model.
-
-    This estimator treats a univariate time series as input. Call `fit(y)`
-    with a 1D array-like of observations in time order, then produce
-    out-of-sample forecasts via `predict(steps)` and prediction intervals
-    via `predict_interval(steps, level=...)`. In-sample diagnostics are
-    available through `fitted_`, `residuals_()` and `summary()`.
-
-    Parameters
-    ----------
-    m : int, default=1
-        Seasonal period (e.g., 12 for monthly data with yearly seasonality).
-    model : str, default="ZZZ"
-        Three-letter model specification (e.g., "ANN", "AAA", "MAM"):
-        - First letter: Error type (A=Additive, M=Multiplicative, Z=Auto)
-        - Second letter: Trend type (N=None, A=Additive, M=Multiplicative, Z=Auto)
-        - Third letter: Season type (N=None, A=Additive, M=Multiplicative, Z=Auto)
-        Use "ZZZ" for automatic model selection.
-    damped : bool or None, default=None
-        Whether to use damped trend. If None, both damped and non-damped
-        models are tried (only when model="ZZZ").
-    alpha : float, optional
-        Smoothing parameter for level (0 < alpha < 1). If None, estimated.
-    beta : float, optional
-        Smoothing parameter for trend (0 < beta < alpha). If None, estimated.
-    gamma : float, optional
-        Smoothing parameter for seasonality (0 < gamma < 1-alpha). If None, estimated.
-    phi : float, optional
-        Damping parameter (0 < phi < 1). If None, estimated.
-    lambda_param : float, optional
-        Box-Cox transformation parameter. If None, no transformation applied.
-    lambda_auto : bool, default=False
-        If True, automatically select optimal Box-Cox lambda parameter.
-    bias_adjust : bool, default=True
-        Apply bias adjustment when back-transforming forecasts.
-    bounds : str, default="both"
-        Parameter bounds type: "usual", "admissible", or "both".
-    seasonal : bool, default=True
-        Allow seasonal models (only used with model="ZZZ").
-    trend : bool, optional
-        Allow trend models. If None, automatically determined (only with model="ZZZ").
-    ic : {"aic", "aicc", "bic"}, default="aicc"
-        Information criterion for model selection (only with model="ZZZ").
-    allow_multiplicative : bool, default=True
-        Allow multiplicative error and season models (only with model="ZZZ").
-    allow_multiplicative_trend : bool, default=False
-        Allow multiplicative trend models (only with model="ZZZ").
-
-    Attributes
-    ----------
-    model_ : ETSModel
-        Fitted ETS model object containing parameters and diagnostics.
-    y_ : ndarray of shape (n_samples,)
-        Original training series.
-    config_ : ETSConfig
-        Model configuration (error, trend, season types).
-    params_ : ETSParams
-        Fitted smoothing parameters (alpha, beta, gamma, phi) and initial states.
-    n_features_in_ : int
-        For sklearn compatibility (always 1).
-    fitted_values_ : ndarray of shape (n_samples,)
-        In-sample fitted values.
-    residuals_in_ : ndarray of shape (n_samples,)
-        In-sample residuals (observed - fitted).
+    Test that predict_interval raises errors for invalid steps and unfitted model.
     """
+    est = Arar()
+    msg = (
+        "This Arar instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator."
+    )
+    with pytest.raises(TypeError, match=msg):
+        est.predict_interval(steps=1)
 
-    def __init__(
-        self,
-        m: int = 1,
-        model: str = "ZZZ",
-        damped: Optional[bool] = None,
-        alpha: Optional[float] = None,
-        beta: Optional[float] = None,
-        gamma: Optional[float] = None,
-        phi: Optional[float] = None,
-        lambda_param: Optional[float] = None,
-        lambda_auto: bool = False,
-        bias_adjust: bool = True,
-        bounds: str = "both",
-        seasonal: bool = True,
-        trend: Optional[bool] = None,
-        ic: Literal["aic", "aicc", "bic"] = "aicc",
-        allow_multiplicative: bool = True,
-        allow_multiplicative_trend: bool = False,
-    ):
-        self.m = m
-        self.model = model
-        self.damped = damped
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
-        self.phi = phi
-        self.lambda_param = lambda_param
-        self.lambda_auto = lambda_auto
-        self.bias_adjust = bias_adjust
-        self.bounds = bounds
-        self.seasonal = seasonal
-        self.trend = trend
-        self.ic = ic
-        self.allow_multiplicative = allow_multiplicative
-        self.allow_multiplicative_trend = allow_multiplicative_trend
-        self.memory_reduced_ = False
+    y = ar1_series(50)
+    est.fit(y)
+    
+    with pytest.raises(ValueError, match="`steps` must be a positive integer."):
+        est.predict_interval(steps=0)
+    with pytest.raises(ValueError, match="`steps` must be a positive integer."):
+        est.predict_interval(steps=-2)
+    with pytest.raises(ValueError, match="`steps` must be a positive integer."):
+        est.predict_interval(steps=1.5)
 
-    def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> "Ets":
-        """
-        Fit the ETS model to a univariate time series.
 
-        Parameters
-        ----------
-        y : array-like of shape (n_samples,)
-            Time-ordered numeric sequence.
-        exog : None
-            Exogenous variables. Ignored, present for API compatibility.
+def test_arar_predict_interval_without_exog_raises_error_when_fitted_with_exog():
+    """
+    Test that predict_interval raises error when exog is missing but model was fitted with exog.
+    """
+    np.random.seed(42)
+    n = 100
+    y = np.random.randn(n).cumsum()
+    exog = np.random.randn(n, 2)
+    model = Arar()
+    model.fit(y, exog=exog)
+    
+    with pytest.raises(ValueError, match="Model was fitted with exog, so `exog` is required for prediction."):
+        model.predict_interval(steps=5)
 
-        Returns
-        -------
-        self : Ets
-            Fitted estimator.
-        """
-        # Convert to numpy array
-        if isinstance(y, pd.Series):
-            y = y.values
-        y = np.asarray(y, dtype=np.float64)
-        if y.ndim == 2 and y.shape[1] == 1:
-            # Allow (n, 1) shaped arrays and squeeze to 1D
-            y = y.ravel()
-        elif y.ndim != 1:
-            raise ValueError("`y` must be a 1D array-like sequence.")
-        if len(y) < 1:
-            raise ValueError("Series too short to fit ETS model.")
 
-        # Automatic model selection
-        if self.model == "ZZZ":
-            self.model_ = auto_ets(
-                y,
-                m=self.m,
-                seasonal=self.seasonal,
-                trend=self.trend,
-                damped=self.damped,
-                ic=self.ic,
-                allow_multiplicative=self.allow_multiplicative,
-                allow_multiplicative_trend=self.allow_multiplicative_trend,
-                lambda_auto=self.lambda_auto,
-                verbose=False,
-            )
-        else:
-            # Fit specific model
-            damped_param = False if self.damped is None else self.damped
-            self.model_ = ets(
-                y,
-                m=self.m,
-                model=self.model,
-                damped=damped_param,
-                alpha=self.alpha,
-                beta=self.beta,
-                gamma=self.gamma,
-                phi=self.phi,
-                lambda_param=self.lambda_param,
-                lambda_auto=self.lambda_auto,
-                bias_adjust=self.bias_adjust,
-                bounds=self.bounds,
-            )
+def test_arar_predict_interval_with_exog_raises_error_when_fitted_without_exog():
+    """
+    Test that predict_interval raises error when exog is provided but model was fitted without exog.
+    """
+    np.random.seed(42)
+    y = np.random.randn(100).cumsum()
+    model = Arar()
+    model.fit(y)
+    exog_pred = np.random.randn(5, 2)
+    msg = (
+        "Model was fitted without exog, but `exog` was provided for prediction. "
+        "Please refit the model with exogenous variables."
+    )
+    with pytest.raises(ValueError, match=msg):
+        model.predict_interval(steps=5, exog=exog_pred)
 
-        # Extract model attributes (use references to avoid duplicating arrays)
-        self.config_ = self.model_.config
-        self.params_ = self.model_.params
-        self.y_ = self.model_.y_original
-        self.fitted_values_ = self.model_.fitted
-        self.residuals_in_ = self.model_.residuals
-        self.n_features_in_ = 1
-        self.memory_reduced_ = False
 
-        return self
+def test_arar_predict_interval_exog_feature_count_mismatch():
+    """
+    Test that predict_interval raises error when exog has wrong number of features.
+    """
+    np.random.seed(42)
+    n = 100
+    y = np.random.randn(n).cumsum()
+    exog_train = np.random.randn(n, 2)
+    model = Arar()
+    model.fit(y, exog=exog_train)
+    exog_pred = np.random.randn(5, 3)  # Wrong number of features
+    msg = "Mismatch in exogenous features: fitted with 2, got 3."
+    with pytest.raises(ValueError, match=msg):
+        model.predict_interval(steps=5, exog=exog_pred)
 
-    def predict(self, steps: int, exog: None = None) -> np.ndarray:
-        """
-        Generate mean forecasts steps ahead.
 
-        Parameters
-        ----------
-        steps : int
-            Forecast horizon (must be > 0).
-        exog : None
-            Exogenous variables. Ignored, present for API compatibility.
+def test_arar_predict_interval_exog_length_mismatch():
+    """
+    Test that predict_interval raises error when exog length doesn't match steps.
+    """
+    np.random.seed(42)
+    n = 100
+    y = np.random.randn(n).cumsum()
+    exog_train = np.random.randn(n, 2)
+    model = Arar()
+    model.fit(y, exog=exog_train)
+    exog_pred = np.random.randn(3, 2)  # Wrong length
+    
+    msg = r"Length of exog \(3\) must match steps \(5\)\."
+    with pytest.raises(ValueError, match=msg):
+        model.predict_interval(steps=5, exog=exog_pred)
 
-        Returns
-        -------
-        mean : ndarray of shape (steps,)
-            Point forecasts for steps 1..h.
-        """
-        check_is_fitted(self, "model_")
-        if not isinstance(steps, (int, np.integer)) or steps <= 0:
-            raise ValueError("`steps` must be a positive integer.")
 
-        result = forecast_ets(
-            self.model_,
-            h=steps,
-            bias_adjust=self.bias_adjust,
-            level=None
-        )
-        return result["mean"]
+def test_arar_predict_interval_exog_3d_raises():
+    """
+    Test that predict_interval raises error for 3D exog input.
+    """
+    np.random.seed(42)
+    n = 100
+    y = np.random.randn(n)
+    exog_train = np.random.randn(n, 2)
+    model = Arar()
+    model.fit(y, exog=exog_train)
+    exog_3d = np.random.randn(5, 2, 3)  # 3D array
+    
+    with pytest.raises(ValueError, match="`exog` must be 1D or 2D."):
+        model.predict_interval(steps=5, exog=exog_3d)
 
-    def predict_interval(
-        self,
-        steps: int = 1,
-        level: List[float] | Tuple[float, ...] = (80, 95),
-        as_frame: bool = True,
-        exog: None = None,
-    ) -> pd.DataFrame | Dict:
-        """
-        Forecast with prediction intervals.
 
-        Parameters
-        ----------
-        steps : int, default=1
-            Forecast horizon.
-        level : list or tuple of float, default=(80, 95)
-            Confidence levels in percent.
-        as_frame : bool, default=True
-            If True, return a tidy DataFrame with columns:
-            'mean', 'lower_<L>', 'upper_<L>' for each level L.
-            If False, return raw dict.
-        exog : None
-            Exogenous variables. Ignored, present for API compatibility.
+def test_predict_interval_output_as_frame():
+    """
+    Test basic predict_interval functionality returning DataFrame.
+    """
+    y = ar1_series(120)
+    est = Arar()
+    est.fit(y)
+    result = est.predict_interval(steps=8, level=(80, 95), as_frame=True)
+    
+    assert isinstance(result, pd.DataFrame)
+    assert result.shape == (8, 5)
+    assert list(result.columns) == ['mean', 'lower_80', 'upper_80', 'lower_95', 'upper_95']
+    assert result.index.name == 'step'
+    assert list(result.index) == list(range(1, 9))
+    
+    expected_mean = np.array([
+        0.58329928, 0.92906587, 0.90186554, 1.00217975,
+        0.72872694, 0.57427369, 0.38811633, -0.16481327
+    ])
+    np.testing.assert_array_almost_equal(result['mean'].values, expected_mean, decimal=8)
+    
+    expected_lower_80 = np.array([
+        -0.57918853, -0.47313545, -0.5967535, -0.53830729,
+        -0.8117624, -0.97436655, -1.17541415, -1.74349659
+    ])
+    expected_upper_80 = np.array([
+        1.7457871, 2.33126719, 2.40048457, 2.54266678,
+        2.26921628, 2.12291394, 1.95164682, 1.41387004
+    ])
+    expected_lower_95 = np.array([
+        -1.19457241, -1.21541599, -1.39007449, -1.35379186,
+        -1.6272482, -1.79416718, -2.0030972, -2.57920106
+    ])
+    expected_upper_95 = np.array([
+        2.36117097, 3.07354773, 3.19380556, 3.35815135,
+        3.08470208, 2.94271456, 2.77932986, 2.24957451
+    ])
+    
+    np.testing.assert_array_almost_equal(result['lower_80'].values, expected_lower_80, decimal=6)
+    np.testing.assert_array_almost_equal(result['upper_80'].values, expected_upper_80, decimal=6)
+    np.testing.assert_array_almost_equal(result['lower_95'].values, expected_lower_95, decimal=6)
+    np.testing.assert_array_almost_equal(result['upper_95'].values, expected_upper_95, decimal=6)
+    
+    assert np.all(result['lower_80'] < result['mean'])
+    assert np.all(result['mean'] < result['upper_80'])
+    assert np.all(result['lower_95'] < result['mean'])
+    assert np.all(result['mean'] < result['upper_95'])
+    
+    assert np.all(result['lower_95'] < result['lower_80'])
+    assert np.all(result['upper_95'] > result['upper_80'])
 
-        Returns
-        -------
-        DataFrame or dict
-            If as_frame=True: DataFrame indexed by step (1..steps).
-            Else: dict with keys 'mean', 'lower_XX', 'upper_XX'.
-        """
-        check_is_fitted(self, "model_")
-        if not isinstance(steps, (int, np.integer)) or steps <= 0:
-            raise ValueError("`steps` must be a positive integer.")
 
-        result = forecast_ets(
-            self.model_,
-            h=steps,
-            bias_adjust=self.bias_adjust,
-            level=list(level)
-        )
+def test_predict_interval_output_as_dict():
+    """
+    Test predict_interval functionality returning dict.
+    """
+    y = ar1_series(120)
+    est = Arar()
+    est.fit(y)
+    result = est.predict_interval(steps=8, level=(80, 95), as_frame=False)
+    
+    assert isinstance(result, dict)
+    assert 'mean' in result
+    assert 'lower' in result
+    assert 'upper' in result
+    assert 'level' in result
+    
+    assert result['mean'].shape == (8,)
+    assert result['lower'].shape == (8, 2)
+    assert result['upper'].shape == (8, 2)
+    assert result['level'] == [80, 95]
+    
+    expected_mean = np.array([
+        0.58329928, 0.92906587, 0.90186554, 1.00217975,
+        0.72872694, 0.57427369, 0.38811633, -0.16481327
+    ])
+    np.testing.assert_array_almost_equal(result['mean'], expected_mean, decimal=8)
+    
+    expected_lower_80 = np.array([
+        -0.57918853, -0.47313545, -0.5967535, -0.53830729,
+        -0.8117624, -0.97436655, -1.17541415, -1.74349659
+    ])
+    expected_upper_80 = np.array([
+        1.7457871, 2.33126719, 2.40048457, 2.54266678,
+        2.26921628, 2.12291394, 1.95164682, 1.41387004
+    ])
+    np.testing.assert_array_almost_equal(result['lower'][:, 0], expected_lower_80, decimal=6)
+    np.testing.assert_array_almost_equal(result['upper'][:, 0], expected_upper_80, decimal=6)
+    
+    expected_lower_95 = np.array([
+        -1.19457241, -1.21541599, -1.39007449, -1.35379186,
+        -1.6272482, -1.79416718, -2.0030972, -2.57920106
+    ])
+    expected_upper_95 = np.array([
+        2.36117097, 3.07354773, 3.19380556, 3.35815135,
+        3.08470208, 2.94271456, 2.77932986, 2.24957451
+    ])
+    np.testing.assert_array_almost_equal(result['lower'][:, 1], expected_lower_95, decimal=6)
+    np.testing.assert_array_almost_equal(result['upper'][:, 1], expected_upper_95, decimal=6)
 
-        if not as_frame:
-            return result
 
-        # Convert to DataFrame
-        idx = pd.RangeIndex(1, steps + 1, name="step")
-        df = pd.DataFrame({"mean": result["mean"]}, index=idx)
+def test_reduce_memory_preserves_predict_interval():
+    """
+    Test that predict_interval results are the same after reduce_memory().
+    """
+    y = ar1_series(100)
+    est = Arar()
+    est.fit(y)
+    result_before = est.predict_interval(steps=10, level=(80, 95), as_frame=True)
+    est.reduce_memory()
+    result_after = est.predict_interval(steps=10, level=(80, 95), as_frame=True)
+    
+    pd.testing.assert_frame_equal(result_before, result_after)
 
-        for lv in level:
-            lv_int = int(lv)
-            if f"lower_{lv_int}" in result:
-                df[f"lower_{lv_int}"] = result[f"lower_{lv_int}"]
-                df[f"upper_{lv_int}"] = result[f"upper_{lv_int}"]
 
-        return df
-
-    def get_residuals(self) -> np.ndarray:
-        """
-        Get in-sample residuals (observed - fitted) from the ETS model.
-
-        Returns
-        -------
-        residuals : ndarray of shape (n_samples,)
-        """
-        check_is_fitted(self, "model_")
-        check_memory_reduced(self, 'residuals_')
-        return self.residuals_in_
-
-    def get_fitted_values(self) -> np.ndarray:
-        """
-        Get in-sample fitted values from the ETS model.
-
-        Returns
-        -------
-        fitted : ndarray of shape (n_samples,)
-        """
-        check_is_fitted(self, "model_")
-        check_memory_reduced(self, 'fitted_')
-        return self.fitted_values_
-
-    def summary(self) -> None:
-        """
-        Print a summary of the fitted ETS model.
-        """
-        check_is_fitted(self, "model_")
-        check_memory_reduced(self, 'summary')
-
-        # Format model name
-        model_name = f"{self.config_.error}{self.config_.trend}{self.config_.season}"
-        if self.config_.damped and self.config_.trend != "N":
-            model_name = f"{self.config_.error}{self.config_.trend}d{self.config_.season}"
-
-        print("ETS Model Summary")
-        print("=" * 60)
-        print(f"Model: ETS({model_name})")
-        print(f"Number of observations: {len(self.y_)}")
-        print(f"Seasonal period (m): {self.config_.m}")
-        print()
-
-        print("Smoothing parameters:")
-        print(f"  alpha (level):       {self.params_.alpha:.4f}")
-        if self.config_.trend != "N":
-            print(f"  beta (trend):        {self.params_.beta:.4f}")
-        if self.config_.season != "N":
-            print(f"  gamma (seasonal):    {self.params_.gamma:.4f}")
-        if self.config_.damped:
-            print(f"  phi (damping):       {self.params_.phi:.4f}")
-        print()
-
-        print("Initial states:")
-        print(f"  Level (l0):          {self.params_.init_states[0]:.4f}")
-        if self.config_.trend != "N" and len(self.params_.init_states) > 1:
-            print(f"  Trend (b0):          {self.params_.init_states[1]:.4f}")
-        print()
-
-        print("Model fit statistics:")
-        print(f"  sigma^2:             {self.model_.sigma2:.6f}")
-        print(f"  Log-likelihood:      {self.model_.loglik:.2f}")
-        print(f"  AIC:                 {self.model_.aic:.2f}")
-        print(f"  BIC:                 {self.model_.bic:.2f}")
-        print()
-
-        print("Residual statistics:")
-        print(f"  Mean:                {np.mean(self.residuals_in_):.6f}")
-        print(f"  Std Dev:             {np.std(self.residuals_in_, ddof=1):.6f}")
-        print(f"  MAE:                 {np.mean(np.abs(self.residuals_in_)):.6f}")
-        print(f"  RMSE:                {np.sqrt(np.mean(self.residuals_in_**2)):.6f}")
-        print()
-
-        print("Time Series Summary Statistics:")
-        print(f"  Mean:                {np.mean(self.y_):.4f}")
-        print(f"  Std Dev:             {np.std(self.y_, ddof=1):.4f}")
-        print(f"  Min:                 {np.min(self.y_):.4f}")
-        print(f"  25%:                 {np.percentile(self.y_, 25):.4f}")
-        print(f"  Median:              {np.median(self.y_):.4f}")
-        print(f"  75%:                 {np.percentile(self.y_, 75):.4f}")
-        print(f"  Max:                 {np.max(self.y_):.4f}")
-
-    def score(self, y: None = None) -> float:
-        """
-        R^2 using in-sample fitted values.
-
-        Parameters
-        ----------
-        y : ignored
-            Present for API compatibility.
-
-        Returns
-        -------
-        score : float
-            Coefficient of determination.
-        """
-        check_is_fitted(self, "model_")
-        check_memory_reduced(self, 'score')
-        y = self.y_
-        fitted = self.fitted_values_
-
-        # Handle NaN values if any
-        mask = ~(np.isnan(y) | np.isnan(fitted))
-        if mask.sum() < 2:
-            return float("nan")
-
-        ss_res = np.sum((y[mask] - fitted[mask]) ** 2)
-        ss_tot = np.sum((y[mask] - y[mask].mean()) ** 2) + np.finfo(float).eps
-        return 1.0 - ss_res / ss_tot
-
-    def get_params(self, deep: bool = True) -> Dict:
-        """
-        Get parameters for this estimator.
-
-        Parameters
-        ----------
-        deep : bool, default=True
-            If True, will return the parameters for this estimator and
-            contained subobjects that are estimators.
-
-        Returns
-        -------
-        params : dict
-            Parameter names mapped to their values.
-        """
-        return {
-            "m": self.m,
-            "model": self.model,
-            "damped": self.damped,
-            "alpha": self.alpha,
-            "beta": self.beta,
-            "gamma": self.gamma,
-            "phi": self.phi,
-            "lambda_param": self.lambda_param,
-            "lambda_auto": self.lambda_auto,
-            "bias_adjust": self.bias_adjust,
-            "bounds": self.bounds,
-            "seasonal": self.seasonal,
-            "trend": self.trend,
-            "ic": self.ic,
-            "allow_multiplicative": self.allow_multiplicative,
-            "allow_multiplicative_trend": self.allow_multiplicative_trend,
-        }
-
-    def set_params(self, **params) -> "Ets":
-        """
-        Set the parameters of this estimator.
-
-        Parameters
-        ----------
-        **params : dict
-            Estimator parameters.
-
-        Returns
-        -------
-        self : Ets
-            Estimator instance.
-        """
-        for key, value in params.items():
-            setattr(self, key, value)
-        return self
-
-    def reduce_memory(self) -> "Ets":
-        """
-        Reduce memory usage by removing internal arrays not needed for prediction.
-        This method clears memory-heavy arrays that are only needed for diagnostics
-        but not for prediction. After calling this method, the following methods
-        will raise an error:
-        
-        - fitted_(): In-sample fitted values
-        - residuals_(): In-sample residuals
-        - score(): R² coefficient
-        - summary(): Model summary statistics
-        
-        Prediction methods remain fully functional:
-        
-        - predict(): Point forecasts
-        - predict_interval(): Prediction intervals
-        
-        Returns
-        -------
-        self : Ets
-            The estimator with reduced memory usage.
-        
-        """
-        check_is_fitted(self, "model_")
-        
-        # Clear arrays at Ets level
-        self.y_ = None
-        self.fitted_values_ = None
-        self.residuals_in_ = None
-        
-        # Clear arrays at ETSModel level
-        if hasattr(self, 'model_'):
-            self.model_.fitted = None
-            self.model_.residuals = None
-            self.model_.y_original = None
-        
-        self.memory_reduced_ = True
-        
-        return self
+def test_arar_predict_interval_with_multiple_exog_features():
+    """
+    Test predict_interval with multiple exogenous features.
+    """
+    np.random.seed(42)
+    n = 150
+    y = np.random.randn(n).cumsum()
+    exog = np.column_stack([
+        np.random.randn(n),
+        np.sin(np.linspace(0, 4*np.pi, n)),
+        np.cos(np.linspace(0, 4*np.pi, n)),
+        np.arange(n) / n
+    ])
+    y = y + 0.5 * exog[:, 0] + 2.0 * exog[:, 1] + 1.5 * exog[:, 2] + 10.0 * exog[:, 3]
+    
+    model = Arar()
+    model.fit(y, exog=exog, suppress_warnings=True)
+    exog_future = np.column_stack([
+        np.random.randn(10),
+        np.sin(np.linspace(4*np.pi, 5*np.pi, 10)),
+        np.cos(np.linspace(4*np.pi, 5*np.pi, 10)),
+        np.arange(10) / n + 1.0
+    ])
+    
+    result = model.predict_interval(steps=10, exog=exog_future, level=(95,), as_frame=True)
+    
+    assert isinstance(result, pd.DataFrame)
+    assert result.shape == (10, 3)
+    assert list(result.columns) == ['mean', 'lower_95', 'upper_95']
+    
+    expected_mean = np.array([
+        -1.17765989, 0.05214722, 0.77938843, 0.79109465, 0.04091216,
+        -1.00788048, -1.94952114, -4.02466845, -5.16595928, -6.79566385
+    ])
+    np.testing.assert_array_almost_equal(result['mean'].values, expected_mean, decimal=6)
+    
+    expected_lower_95 = np.array([
+        -2.97002526, -2.32986168, -2.02794823, -2.34447531, -3.35877838,
+        -4.70710257, -5.89102004, -8.16906431, -9.4819085, -11.25790565
+    ])
+    expected_upper_95 = np.array([
+        0.61470547, 2.43415613, 3.58672509, 3.92666461, 3.44060271,
+        2.69134161, 1.99197776, 0.11972741, -0.85001106, -2.33342205
+    ])
+    
+    np.testing.assert_array_almost_equal(result['lower_95'].values, expected_lower_95, decimal=6)
+    np.testing.assert_array_almost_equal(result['upper_95'].values, expected_upper_95, decimal=6)
+    
+    assert np.all(result['lower_95'] < result['mean'])
+    assert np.all(result['mean'] < result['upper_95'])
