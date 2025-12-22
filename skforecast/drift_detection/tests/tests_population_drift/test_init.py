@@ -81,22 +81,22 @@ def test_init_ValueError_when_threshold_less_than_0_method_std():
         )
 
 
-@pytest.mark.parametrize("threshold_out_of_range", 
+@pytest.mark.parametrize("max_out_of_range_proportion", 
                          [-0.1, 1.1], 
-                         ids = lambda t: f'threshold_out_of_range: {t}')
-def test_init_ValueError_when_threshold_out_of_range_not_between_0_and_1(threshold_out_of_range):
+                         ids = lambda t: f'max_out_of_range_proportion: {t}')
+def test_init_ValueError_when_max_out_of_range_proportion_not_between_0_and_1(max_out_of_range_proportion):
     """
-    Test that a ValueError is raised when threshold_out_of_range is not between 0 and 1.
+    Test that a ValueError is raised when max_out_of_range_proportion is not between 0 and 1.
     """
 
     error_msg = re.escape(
-        f"`threshold_out_of_range` must be between 0 and 1. "
-        f"Got {threshold_out_of_range}."
+        f"`max_out_of_range_proportion` must be between 0 and 1. "
+        f"Got {max_out_of_range_proportion}."
     )
     with pytest.raises(ValueError, match=error_msg):
         PopulationDriftDetector(
             chunk_size='MS', 
             threshold=3, 
             threshold_method='std',
-            threshold_out_of_range=threshold_out_of_range
+            max_out_of_range_proportion=max_out_of_range_proportion
         )

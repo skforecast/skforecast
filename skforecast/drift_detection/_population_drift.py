@@ -68,11 +68,16 @@ def ks_2samp_from_ecdf(
 class PopulationDriftDetector:
     """
     A class to detect population drift between reference and new datasets.
+
     This implementation computes Kolmogorov-Smirnov (KS) test for numeric features,
     Chi-Square test for categorical features, and Jensen-Shannon (JS) distance
     for all features. It calculates empirical distributions of these statistics
     from the reference data and uses quantile thresholds to determine drift in
     new data.
+
+    Unlike fixed statistical cutoffs, all drift thresholds are calibrated from
+    the reference data itself, allowing the detector to adapt to the natural
+    variability of each feature.
     
     This implementation is inspired by NannyML's DriftDetector. See Notes for
     details.
@@ -83,29 +88,40 @@ class PopulationDriftDetector:
     Parameters
     ----------
     chunk_size : int, str, default None
-        Size of chunks for sequential drift analysis. If int, number of rows per
-        chunk. If str (e.g., 'D' for daily, 'W' for weekly), time-based chunks
-        assuming a datetime index. If None, analyzes the full dataset as a single
-        chunk.
+        Size of chunks for sequential drift analysis.
+
+        - If int, it represents the number of observations per chunk.
+        - If str (e.g., 'D', 'W', 'MS'), it defines time-based chunks assuming a
+        datetime index.
+        - If None, the entire dataset is analyzed as a single chunk.
     threshold : int, float, default 3
         Threshold for KS, Chi2, and JS statistics. Interpretation depends on
         `threshold_method`:
         
-        - If `threshold_method='std'`: number of standard deviations above the mean.
-        - If `threshold_method='quantile'`: quantile value (between 0 and 1).
+        - If `threshold_method='std'`, `threshold` is interpreted as a multiplier
+        of the standard deviation, and thresholds are computed as:
+        `mean + threshold * std`.
+
+        - If `threshold_method='quantile'`, `threshold` represents the quantile
+        level (between 0 and 1) used to compute the empirical threshold.
     threshold_method : str, default 'std'
-        Method for calculating `threshold` from empirical distributions:
+        Strategy used to estimate `threshold` from empirical distributions 
+        computed on the reference data:
         
-        - `'std'`: Uses mean + threshold * std of the empirical distribution.
-        This is faster since it does not use leave-one-chunk-out.
-        - `'quantile'`: Uses the specified quantile of the empirical distribution.
-        Thresholds are computed using leave-one-chunk-out cross-validation to
+        - `'std'`: Thresholds are estimated as a function of the mean and
+        standard deviation of the empirical distribution (`mean + threshold * std`). 
+        This approach is computationally efficient, as it does not rely on 
+        leave-one-chunk-out procedures.
+        - `'quantile'`: Thresholds are derived from a specified quantile of the
+        empirical distribution using leave-one-chunk-out cross-validation to
         avoid self-comparison bias. This is statistically more correct for
         quantile-based thresholds but computationally more expensive.
-    threshold_out_of_range : float, default 0.1
-        Threshold for the proportion of observations out of the reference range
-        (for numeric features only). If the proportion of out-of-range observations
-        exceeds this threshold, drift is detected. Must be between 0 and 1.
+    max_out_of_range_proportion : float, default 0.1
+        Maximum allowed proportion of observations outside the reference value
+        range for numeric features.
+        If the proportion of out-of-range observations in a new data chunk
+        exceeds this value, drift is flagged for the corresponding feature.
+        This parameter must be between 0 and 1.
     
     Attributes
     ----------
@@ -116,7 +132,7 @@ class PopulationDriftDetector:
         `threshold_method`.
     threshold_method : str
         Method for calculating `threshold` ('quantile' or 'std').
-    threshold_out_of_range : float
+    max_out_of_range_proportion : float
         Proportion threshold for out-of-range observations (numeric features).
     is_fitted : bool
         Indicates if the detector has been fitted with reference data.
@@ -191,7 +207,7 @@ class PopulationDriftDetector:
         chunk_size: int | str | None = None,
         threshold: int | float = 3,
         threshold_method: str = 'std',
-        threshold_out_of_range: float = 0.1
+        max_out_of_range_proportion: float = 0.1
     ) -> None:
         
         self.ref_features_             = []
@@ -254,12 +270,12 @@ class PopulationDriftDetector:
         
         self.threshold = threshold
 
-        if not (0 <= threshold_out_of_range <= 1):
+        if not (0 <= max_out_of_range_proportion <= 1):
             raise ValueError(
-                f"`threshold_out_of_range` must be between 0 and 1. "
-                f"Got {threshold_out_of_range}."
+                f"`max_out_of_range_proportion` must be between 0 and 1. "
+                f"Got {max_out_of_range_proportion}."
             )
-        self.threshold_out_of_range = threshold_out_of_range
+        self.max_out_of_range_proportion = max_out_of_range_proportion
 
     def __repr__(self) -> str:  # pragma: no cover
         """
@@ -276,12 +292,12 @@ class PopulationDriftDetector:
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Chunk size             = {chunk_size_display} \n"
-            f"Threshold              = {self.threshold} \n"
-            f"Threshold method       = {self.threshold_method} \n"
-            f"Threshold out of range = {self.threshold_out_of_range} \n"
-            f"Is fitted              = {self.is_fitted} \n"
-            f"Fitted features        = {self.ref_features_}"
+            f"Chunk size                  = {chunk_size_display} \n"
+            f"Threshold                   = {self.threshold} \n"
+            f"Threshold method            = {self.threshold_method} \n"
+            f"Max out of range proportion = {self.max_out_of_range_proportion} \n"
+            f"Is fitted                   = {self.is_fitted} \n"
+            f"Fitted features             = {self.ref_features_}"
         )
 
         return info
@@ -310,7 +326,7 @@ class PopulationDriftDetector:
                     <li><strong>Chunk size:</strong> {chunk_size_display}</li>
                     <li><strong>Threshold:</strong> {self.threshold}</li>
                     <li><strong>Threshold method:</strong> {self.threshold_method}</li>
-                    <li><strong>Threshold out of range:</strong> {self.threshold_out_of_range}</li>
+                    <li><strong>Max out of range proportion:</strong> {self.max_out_of_range_proportion}</li>
                     <li><strong>Is fitted:</strong> {self.is_fitted}</li>
                 </ul>
             </details>
@@ -664,10 +680,10 @@ class PopulationDriftDetector:
             for idx, group in X:
                 group = group.droplevel(0)
                 self.detectors_[idx] = PopulationDriftDetector(
-                                           chunk_size             = self.chunk_size,
-                                           threshold              = self.threshold,
-                                           threshold_method       = self.threshold_method,
-                                           threshold_out_of_range = self.threshold_out_of_range
+                                           chunk_size                  = self.chunk_size,
+                                           threshold                   = self.threshold,
+                                           threshold_method            = self.threshold_method,
+                                           max_out_of_range_proportion = self.max_out_of_range_proportion
                                        )
                 self.detectors_[idx]._fit(group)
         else:
@@ -746,7 +762,7 @@ class PopulationDriftDetector:
                         )
                         n_out_of_range = np.sum((new < ref_range[0]) | (new > ref_range[1]))
                         prop_out_of_range = n_out_of_range / len(new)
-                        is_out_of_range = prop_out_of_range > self.threshold_out_of_range
+                        is_out_of_range = prop_out_of_range > self.max_out_of_range_proportion
                     else:
                         ref_categories = self.ref_categories_[feature]
                         ref_probs_aligned = ref_probs.reindex(ref_categories, fill_value=0).to_numpy()
@@ -785,7 +801,7 @@ class PopulationDriftDetector:
                     "js_threshold": js_threshold,
                     "reference_range": ref_range,
                     "prop_out_of_range": prop_out_of_range,
-                    "threshold_out_of_range": self.threshold_out_of_range,
+                    "max_out_of_range_proportion": self.max_out_of_range_proportion,
                     "is_out_of_range": is_out_of_range,
                 })
 
@@ -895,15 +911,12 @@ class PopulationDriftDetector:
 
         """
 
-        # Attributes to exclude from aggregation:
-        # - Control attributes: is_fitted, detectors_, series_names_in_
-        # - Configuration parameters (same for all series): chunk_size, threshold,
-        #   threshold_method, threshold_out_of_range
+        # Attributes to exclude from aggregation
         excluded_attrs = [
             'chunk_size',
             'threshold',
             'threshold_method',
-            'threshold_out_of_range',
+            'max_out_of_range_proportion',
             'is_fitted', 
             'detectors_', 
             'series_names_in_',
@@ -956,7 +969,7 @@ class PopulationDriftDetector:
                 "ks_threshold": [],
                 "chi2_threshold": [],
                 "js_threshold": [],
-                "threshold_out_of_range": []
+                "max_out_of_range_proportion": []
             }
             for series_id, detector in self.detectors_.items():
                 for feature in detector.ref_features_:
@@ -971,8 +984,8 @@ class PopulationDriftDetector:
                     thresholds["js_threshold"].append(
                         detector.empirical_threshold_js_.get(feature)
                     )
-                    thresholds["threshold_out_of_range"].append(
-                        detector.threshold_out_of_range
+                    thresholds["max_out_of_range_proportion"].append(
+                        detector.max_out_of_range_proportion
                     )
         else:
             # Single-series case
@@ -981,7 +994,7 @@ class PopulationDriftDetector:
                 "ks_threshold": [],
                 "chi2_threshold": [],
                 "js_threshold": [],
-                "threshold_out_of_range": []
+                "max_out_of_range_proportion": []
             }
             for feature in self.ref_features_:
                 thresholds["feature"].append(feature)
@@ -994,8 +1007,8 @@ class PopulationDriftDetector:
                 thresholds["js_threshold"].append(
                     self.empirical_threshold_js_.get(feature)
                 )
-                thresholds["threshold_out_of_range"].append(
-                    self.threshold_out_of_range
+                thresholds["max_out_of_range_proportion"].append(
+                    self.max_out_of_range_proportion
                 )
 
         return pd.DataFrame(thresholds)

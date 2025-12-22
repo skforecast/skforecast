@@ -105,7 +105,7 @@ def test_get_thresholds_single_series():
             0.0,
             0.07087005888035235,
         ],
-        "threshold_out_of_range": [0.1] * 11,
+        "max_out_of_range_proportion": [0.1] * 11,
     }
     )
     results = detector.get_thresholds()
@@ -301,7 +301,7 @@ def test_get_thresholds_multiseries():
             0.0,
             0.07087005888035235,
         ],
-        "threshold_out_of_range": [0.1] * 33,
+        "max_out_of_range_proportion": [0.1] * 33,
     }
     )
     results = detector.get_thresholds()

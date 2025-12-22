@@ -210,7 +210,7 @@ def test_predict_output_when_multiple_series():
         chunk_size="MS",
         threshold=0.95,
         threshold_method='quantile',
-        threshold_out_of_range=0.1
+        max_out_of_range_proportion=0.1
     )
     detector.fit(data_multiseries)
     results, summary = detector.predict(data_multiseries)
@@ -223,7 +223,7 @@ def test_predict_out_of_range_detection():
     """
     Test that out-of-range detection works correctly:
     - prop_out_of_range is calculated correctly
-    - is_out_of_range respects threshold_out_of_range
+    - is_out_of_range respects max_out_of_range_proportion
     - drift_detected includes is_out_of_range
     - Categorical features have NaN for out-of-range columns
     """
@@ -250,12 +250,12 @@ def test_predict_out_of_range_detection():
         data_new['category'], categories=['A', 'B', 'C']
     )
     
-    # Test with threshold_out_of_range=0.1 (~20% > 10%, should trigger)
+    # Test with max_out_of_range_proportion=0.1 (~20% > 10%, should trigger)
     detector = PopulationDriftDetector(
         chunk_size=None,
         threshold=3,
         threshold_method='std',
-        threshold_out_of_range=0.1
+        max_out_of_range_proportion=0.1
     )
     detector.fit(data_ref)
     results, _ = detector.predict(data_new)
@@ -264,13 +264,13 @@ def test_predict_out_of_range_detection():
     expected = pd.DataFrame({
         'feature': ['numeric', 'category'],
         'prop_out_of_range': [10 / 51, np.nan],
-        'threshold_out_of_range': [0.1, 0.1],
+        'max_out_of_range_proportion': [0.1, 0.1],
         'is_out_of_range': [True, np.nan],
         'drift_detected': [True, False],
     })
     
     cols_to_check = [
-        'feature', 'prop_out_of_range', 'threshold_out_of_range', 'is_out_of_range', 'drift_detected'
+        'feature', 'prop_out_of_range', 'max_out_of_range_proportion', 'is_out_of_range', 'drift_detected'
     ]
     results_subset = results[cols_to_check].reset_index(drop=True)
     
