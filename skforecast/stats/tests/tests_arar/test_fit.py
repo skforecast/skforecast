@@ -463,7 +463,6 @@ def test_arar_fit_aic_bic_with_exog():
     
     # With exog, should have k_arar=6 + k_exog=3 (intercept + 2 features)
     # Total = 9 parameters
-    n = len(y)
     residuals = model.residuals_in_
     valid_residuals = residuals[~np.isnan(residuals)]
     n_valid = len(valid_residuals)

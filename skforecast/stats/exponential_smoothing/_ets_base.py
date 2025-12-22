@@ -11,8 +11,7 @@ import numpy as np
 from numpy.typing import NDArray
 from numba import njit
 from scipy.optimize import minimize, minimize_scalar
-from scipy.stats import norm, boxcox, jarque_bera, shapiro
-from scipy.special import inv_boxcox
+from scipy.stats import norm, jarque_bera, shapiro
 import warnings
 import math
 from statsmodels.tsa.seasonal import seasonal_decompose

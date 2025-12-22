@@ -1,7 +1,6 @@
 # Unit tests for skforecast.stats.ets.ets_base
 # ==============================================================================
 import numpy as np
-import pandas as pd
 import pytest
 from .._ets_base import (
     ets,
@@ -304,7 +303,7 @@ def test_ets_seasonal_too_high_frequency():
 
     # m > 24 should raise an error for seasonal models
     with pytest.raises(ValueError, match="Frequency too high"):
-        model = ets(y, m=48, model="AAA")
+        ets(y, m=48, model="AAA")
 
 
 def test_forecast_ets_seasonal_model():
