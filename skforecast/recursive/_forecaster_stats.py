@@ -70,7 +70,7 @@ class ForecasterStats():
     estimator : object
         A statistical model instance.
     params: dict
-        Parameters of the sarimax model.
+        Parameters of the statistical model.
     transformer_y : object transformer (preprocessor)
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
@@ -189,14 +189,7 @@ class ForecasterStats():
         self.estimator_type = estimator_type
 
         self.params = self.estimator.get_params(deep=True)
-
-        if fit_kwargs:
-            warnings.warn(
-                "When using the skforecast Sarimax model, the fit kwargs should "
-                "be passed using the model parameter `sm_fit_kwargs`.",
-                IgnoredArgumentWarning
-            )
-        self.fit_kwargs = {}
+        self.fit_kwargs = fit_kwargs if fit_kwargs is not None else {}
 
         self.__skforecast_tags__ = {
             "library": "skforecast",
@@ -493,12 +486,23 @@ class ForecasterStats():
             self.exog_dtypes_out_ = get_exog_dtypes(exog=exog)
             self.X_train_exog_names_out_ = exog.columns.to_list()
 
+        # Prepare fit_kwargs, warning for SARIMAX if needed
+        fit_kwargs_to_use = self.fit_kwargs.copy() if self.fit_kwargs else {}
+        if fit_kwargs_to_use and self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
+            warnings.warn(
+                "When using the skforecast Sarimax estimator, fit kwargs should be passed "
+                "using the parameter `sm_fit_kwargs` during estimator initialization, "
+                "not via ForecasterStats `fit_kwargs`. The provided `fit_kwargs` will be ignored.",
+                IgnoredArgumentWarning
+            )
+            fit_kwargs_to_use = {}
+        
         if suppress_warnings:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.estimator.fit(y=y, exog=exog)
+                self.estimator.fit(y=y, exog=exog, **fit_kwargs_to_use)
         else:
-            self.estimator.fit(y=y, exog=exog)
+            self.estimator.fit(y=y, exog=exog, **fit_kwargs_to_use)
 
         self.is_fitted = True
         self.series_name_in_ = y.name if y.name is not None else 'y'
@@ -855,12 +859,21 @@ class ForecasterStats():
                                               )
 
         if last_window is not None:
-            self.estimator.append(
-                y     = last_window,
-                exog  = last_window_exog,
-                refit = False
-            )
-            self.extended_index_ = self.estimator.sarimax_res.fittedvalues.index
+            if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
+                self.estimator.append(
+                    y     = last_window,
+                    exog  = last_window_exog,
+                    refit = False
+                )
+                self.extended_index_ = self.estimator.sarimax_res.fittedvalues.index
+            else:
+                raise NotImplementedError(
+                    f"Prediction intervals with `last_window` parameter is only "
+                    f"supported for SARIMAX models. For {self.estimator_type}, "
+                    f"predictions with `last_window` are not yet implemented."
+                    f"It is required that predictions follow directly after the "
+                    f"end of the training data."
+                )
 
         # Get following n steps predictions with intervals
         # Dictionary dispatch for estimator-specific prediction interval methods
@@ -1031,19 +1044,19 @@ class ForecasterStats():
     def _get_feature_importances_ets(self) -> pd.DataFrame:
         """Get feature importances for ETS model."""
         features = ['alpha (level)']
-        importances = [self.estimator.params_.alpha]
+        importances = [self.estimator.params_['alpha']]
         
-        if self.estimator.config_.trend != 'N':
+        if self.estimator.config_['trend'] != 'N':
             features.append('beta (trend)')
-            importances.append(self.estimator.params_.beta)
+            importances.append(self.estimator.params_['beta'])
         
-        if self.estimator.config_.season != 'N':
+        if self.estimator.config_['season'] != 'N':
             features.append('gamma (seasonal)')
-            importances.append(self.estimator.params_.gamma)
+            importances.append(self.estimator.params_['gamma'])
         
-        if self.estimator.config_.damped:
+        if self.estimator.config_['damped']:
             features.append('phi (damping)')
-            importances.append(self.estimator.params_.phi)
+            importances.append(self.estimator.params_['phi'])
         
         return pd.DataFrame({
             'feature': features,
