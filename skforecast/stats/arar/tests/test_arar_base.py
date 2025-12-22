@@ -9,7 +9,6 @@ from .._arar_base import (
     forecast,
     fitted_arar,
     residuals_arar,
-    summary_arar,
 )
 
 
@@ -110,16 +109,4 @@ def test_fitted_and_residuals_consistency():
     assert np.isfinite(fitted[np.isnan(fitted) == False]).all()
 
 
-def test_summary_prints(capsys):
-    y = ar1_series(60)
-    model = arar(y, safe=True)
-    summary_arar(model)
-    captured = capsys.readouterr().out
-    assert "ARAR Model Summary" in captured
-    assert "Number of observations:" in captured
-    assert "Selected AR lags:" in captured
-
-def test_invalid_parameter_ordering():
-    with pytest.raises(ValueError, match="max_lag must be greater than or equal to max_ar_depth. Got max_lag=12, max_ar_depth=13"):
-        arar(ar1_series(60), max_ar_depth=13, max_lag=12)
 

@@ -2,6 +2,8 @@
 # ==============================================================================
 import re
 import pytest
+import pandas as pd
+import numpy as np
 from skforecast.stats import Sarimax
 from skforecast.recursive import ForecasterStats
 from skforecast.exceptions import IgnoredArgumentWarning
@@ -37,17 +39,25 @@ def test_params_are_stored_when_initialization():
 
 def test_IgnoredArgumentWarning_when_fit_kwargs_with_skforecast_stats_model():
     """
-    Test IgnoredArgumentWarning is raised when `fit_kwargs` is not None when
-    using a skforecast statistical model (Sarimax, Arar, Ets).
+    Test IgnoredArgumentWarning is raised when `fit_kwargs` is used with Sarimax estimator during fit.
     """ 
-    warn_msg = re.escape(
-        ("When using the skforecast Sarimax model, the fit kwargs should "
-         "be passed using the model parameter `sm_fit_kwargs`.")
-    )
-    with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
-        forecaster = ForecasterStats(
-                         estimator  = Sarimax(order=(1, 0, 1)),
-                         fit_kwargs = {'warning': 1}
-                     )
+    y = pd.Series(data=np.arange(10), name='y')
+    forecaster = ForecasterStats(
+                     estimator  = Sarimax(order=(1, 0, 1)),
+                     fit_kwargs = {'warning': 1}
+                 )
     
-    assert forecaster.fit_kwargs == {}
+    # fit_kwargs should be stored during initialization
+    assert forecaster.fit_kwargs == {'warning': 1}
+    
+    warn_msg = re.escape(
+        ("When using the skforecast Sarimax estimator, fit kwargs should be passed "
+         "using the parameter `sm_fit_kwargs` during estimator initialization, "
+         "not via ForecasterStats `fit_kwargs`. The provided `fit_kwargs` will be ignored.")
+    )
+    # Warning should be raised during fit
+    with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
+        forecaster.fit(y=y)
+    
+    # fit_kwargs remain stored after fit (but were ignored)
+    assert forecaster.fit_kwargs == {'warning': 1}

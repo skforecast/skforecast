@@ -5,7 +5,7 @@ import pytest
 import platform
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.stats import Sarimax, Arar
+from skforecast.stats import Sarimax, Arar, Ets
 from skforecast.recursive import ForecasterStats
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
@@ -146,26 +146,42 @@ def test_predict_output_ForecasterStats_with_exog(kwargs, data):
     pd.testing.assert_series_equal(predictions, expected)
 
 
-@pytest.mark.parametrize("kwargs, data", 
-                         [({'order': (1, 0, 1), 
-                            'seasonal_order': (0, 0, 0, 0)}, 
-                            {'win': [0.60290703, 0.60568721, 0.60451413, 0.6050091, 0.60480025],
-                            'linux': [0.60290703, 0.60568721, 0.60451413, 0.6050091 , 0.60480025]}
-                        )])
-def test_predict_output_ForecasterStats_with_transform_y(kwargs, data):
+@pytest.mark.parametrize(
+    "estimator, expected_data",
+    [
+        (
+            Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
+            {'win': [0.60290703, 0.60568721, 0.60451413, 0.6050091, 0.60480025],
+             'linux': [0.60290703, 0.60568721, 0.60451413, 0.6050091, 0.60480025]}
+        ),
+        (
+            Arar(),
+            {'win': [0.62548412, 0.63711385, 0.70171521, 0.68564555, 0.72810186],
+             'linux': [0.62548412, 0.63711385, 0.70171521, 0.68564555, 0.72810186]}
+        ),
+        (
+            Ets(trend='add', seasonal=None),
+            {'win': [0.69319696, 0.6939948, 0.69476642, 0.69551268, 0.69623443],
+             'linux': [0.69319696, 0.6939948, 0.69476642, 0.69551268, 0.69623443]}
+        ),
+    ],
+    ids=['Sarimax', 'Arar', 'Ets']
+)
+def test_predict_output_ForecasterStats_with_transform_y(estimator, expected_data):
     """
-    Test predict output of ForecasterStats with a StandardScaler() as transformer_y.
+    Test predict output of ForecasterStats with a StandardScaler() as transformer_y
+    for different estimators.
     """
     system = "win" if platform.system() == "Windows" else 'linux'
-        
+    
     forecaster = ForecasterStats(
-                     estimator     = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs),
+                     estimator     = estimator,
                      transformer_y = StandardScaler()
                  )
     forecaster.fit(y=y)
     predictions = forecaster.predict(steps=5)
     expected = pd.Series(
-                   data  = data[system],
+                   data  = expected_data[system],
                    index = pd.RangeIndex(start=50, stop=55, step=1),
                    name  = 'pred'
                )
@@ -394,63 +410,118 @@ def test_predict_ForecasterStats_updates_extended_index_twice(y, idx):
     pd.testing.assert_index_equal(forecaster.extended_index_, idx)
 
 
-def test_predict_output_ForecasterStats_with_Arar_estimator(y=y):
+@pytest.mark.parametrize(
+    "estimator, expected_data",
+    [
+        (
+            Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
+            [0.60535333, 0.59654171, 0.58785836, 0.5793014, 0.570869]
+        ),
+        (
+            Arar(),
+            [0.65451694, 0.69369274, 0.8018875, 0.82157326, 0.87868702]
+        ),
+        (
+            Ets(trend='add', seasonal=None),
+            [0.60498897, 0.60498083, 0.60497432, 0.60496911, 0.60496495]
+        ),
+    ],
+    ids=['Sarimax', 'Arar', 'Ets']
+)
+def test_predict_output_ForecasterStats_different_estimators(estimator, expected_data, y_datetime=y_datetime):
     """
-    Test output of predict when using Arar as estimator in ForecasterStats
+    Test predict output of ForecasterStats with different estimators (Sarimax, Arar, Ets).
     """
-    y = y.copy()
-    y.index = pd.date_range(start="2000-01-01", periods=len(y), freq="D")
-    estimator = Arar(max_ar_depth=26, max_lag=40)
     forecaster = ForecasterStats(estimator=estimator)
-    forecaster.fit(y=y)
-    predictions = forecaster.predict(steps=10)
-    print(predictions)
-
-    expected_results = pd.Series(
-        data=[
-            0.6545169424155248,
-            0.693692742846921,
-            0.8018875044998569,
-            0.8215732635739413,
-            0.8786870196348286,
-            0.8879849576779746,
-            1.0173957185481672,
-            1.022217168929162,
-            0.5688093026635382,
-            0.6336566288056642,
-        ],
-        name="pred",
-        index=pd.date_range(start="2000-02-20", periods=10, freq="D"),
+    forecaster.fit(y=y_datetime)
+    predictions = forecaster.predict(steps=5)
+    expected = pd.Series(
+        data=expected_data,
+        index=pd.date_range(start='2050', periods=5, freq='YE'),
+        name='pred'
     )
+    
+    pd.testing.assert_series_equal(predictions, expected)
 
-    pd.testing.assert_series_equal(predictions, expected_results)
 
-
-def test_predict_output_ForecasterStats_with_aeon_ARIMA_estimator(y=y):
+@pytest.mark.parametrize(
+    "estimator, expected_data",
+    [
+        (
+            Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
+            [
+                0.6053533305780869,
+                0.5965417125355235,
+                0.5878583577874791,
+                0.5793013993133179,
+                0.5708689972690493,
+                0.5625593385917403,
+                0.5543706366096868,
+                0.5463011306582577,
+                0.5383490857013329,
+                0.5305127919582501,
+            ]
+        ),
+        (
+            Arar(max_ar_depth=26, max_lag=40),
+            [
+                0.6545169424155248,
+                0.693692742846921,
+                0.8018875044998569,
+                0.8215732635739413,
+                0.8786870196348286,
+                0.8879849576779746,
+                1.0173957185481672,
+                1.022217168929162,
+                0.5688093026635382,
+                0.6336566288056642,
+            ]
+        ),
+        (
+            Ets(model='AAN', damped=False),
+            [
+                0.6812318294683052,
+                0.679950896354816,
+                0.6786699632413268,
+                0.6773890301278376,
+                0.6761080970143484,
+                0.6748271639008592,
+                0.67354623078737,
+                0.6722652976738808,
+                0.6709843645603916,
+                0.6697034314469024,
+            ]
+        ),
+        (
+            ARIMA(p=4, d=1, q=1),
+            [
+                0.68329597,
+                0.7153698,
+                0.72118068,
+                0.71875056,
+                0.70465789,
+                0.68932917,
+                0.68087982,
+                0.67748653,
+                0.67828572,
+                0.68193945,
+            ]
+        ),
+    ],
+    ids=['Sarimax', 'Arar', 'Ets', 'aeon_ARIMA']
+)
+def test_predict_output_ForecasterStats_with_multiple_estimators(estimator, expected_data, y=y):
     """
-    Test output of predict when using ARIMA from aeon as estimator in ForecasterStats
+    Test output of predict when using different estimators (Sarimax, Arar, Ets, aeon ARIMA) in ForecasterStats.
     """
     y = y.copy()
     y.index = pd.date_range(start="2000-01-01", periods=len(y), freq="D")
-    estimator = ARIMA(p=4, d=1, q=1)
     forecaster = ForecasterStats(estimator=estimator)
     forecaster.fit(y=y)
     predictions = forecaster.predict(steps=10)
-    print(predictions)
 
     expected_results = pd.Series(
-        data=[
-            0.68329597,
-            0.7153698,
-            0.72118068,
-            0.71875056,
-            0.70465789,
-            0.68932917,
-            0.68087982,
-            0.67748653,
-            0.67828572,
-            0.68193945,
-        ],
+        data=expected_data,
         name="pred",
         index=pd.date_range(start="2000-02-20", periods=10, freq="D"),
     )

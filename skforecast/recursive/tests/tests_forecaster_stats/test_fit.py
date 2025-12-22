@@ -4,7 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.stats import Sarimax, Arar
+from skforecast.stats import Sarimax, Arar, Ets
 from skforecast.recursive import ForecasterStats
 from skforecast.exceptions import IgnoredArgumentWarning
 
@@ -35,7 +35,7 @@ def test_IgnoredArgumentWarning_when_estimator_does_not_support_exog():
     """
     y = pd.Series(data=np.arange(10), name='y')
     exog = pd.Series(data=np.arange(10), name='exog')
-    forecaster = ForecasterStats(estimator=Arar())
+    forecaster = ForecasterStats(estimator=Ets())
 
     warn_msg = re.escape(
         f"The estimator {forecaster.estimator_type} does not support exogenous variables, "
