@@ -101,7 +101,6 @@ class PopulationDriftDetector:
         - If `threshold_method='std'`, `threshold` is interpreted as a multiplier
         of the standard deviation, and thresholds are computed as:
         `mean + threshold * std`.
-
         - If `threshold_method='quantile'`, `threshold` represents the quantile
         level (between 0 and 1) used to compute the empirical threshold.
     threshold_method : str, default 'std'

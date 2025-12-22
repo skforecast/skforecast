@@ -235,7 +235,7 @@ def test_predict_out_of_range_detection():
     }, index=dates_ref)
     data_ref['category'] = data_ref['category'].astype('category')
     
-    # New data: 20% out of range for numeric feature (10 out of 50)
+    # New data: 20% out of range for numeric feature (10 out of 51)
     # Category has exact same distribution as reference (no drift)
     dates_new = pd.date_range('2020-04-11', periods=51, freq='D')
     values_new = np.concatenate([
