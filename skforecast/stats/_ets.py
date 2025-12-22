@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Optional, Tuple, Dict, Literal, List
 import numpy as np
 import pandas as pd
+from dataclasses import asdict
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_is_fitted
 from .exponential_smoothing._ets_base import (
@@ -105,23 +106,23 @@ class Ets(BaseEstimator, RegressorMixin):
         allow_multiplicative: bool = True,
         allow_multiplicative_trend: bool = False,
     ):
-        self.m = m
-        self.model = model
-        self.damped = damped
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
-        self.phi = phi
-        self.lambda_param = lambda_param
-        self.lambda_auto = lambda_auto
-        self.bias_adjust = bias_adjust
-        self.bounds = bounds
-        self.seasonal = seasonal
-        self.trend = trend
-        self.ic = ic
-        self.allow_multiplicative = allow_multiplicative
+        self.m                          = m
+        self.model                      = model
+        self.damped                     = damped
+        self.alpha                      = alpha
+        self.beta                       = beta
+        self.gamma                      = gamma
+        self.phi                        = phi
+        self.lambda_param               = lambda_param
+        self.lambda_auto                = lambda_auto
+        self.bias_adjust                = bias_adjust
+        self.bounds                     = bounds
+        self.seasonal                   = seasonal
+        self.trend                      = trend
+        self.ic                         = ic
+        self.allow_multiplicative       = allow_multiplicative
         self.allow_multiplicative_trend = allow_multiplicative_trend
-        self.memory_reduced_ = False
+        self.memory_reduced_            = False
 
     def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> "Ets":
         """
@@ -139,9 +140,10 @@ class Ets(BaseEstimator, RegressorMixin):
         self : Ets
             Fitted estimator.
         """
-        # Convert to numpy array
-        if isinstance(y, pd.Series):
-            y = y.values
+        
+        if not isinstance(y, (pd.Series, np.ndarray)):
+            raise ValueError("`y` must be a pandas Series or numpy ndarray.")
+        
         y = np.asarray(y, dtype=np.float64)
         if y.ndim == 2 and y.shape[1] == 1:
             # Allow (n, 1) shaped arrays and squeeze to 1D
@@ -149,47 +151,47 @@ class Ets(BaseEstimator, RegressorMixin):
         elif y.ndim != 1:
             raise ValueError("`y` must be a 1D array-like sequence.")
         if len(y) < 1:
-            raise ValueError("Series too short to fit ETS model.")
+            raise ValueError("`y` is too short to fit ETS model.")
 
         # Automatic model selection
         if self.model == "ZZZ":
             self.model_ = auto_ets(
                 y,
-                m=self.m,
-                seasonal=self.seasonal,
-                trend=self.trend,
-                damped=self.damped,
-                ic=self.ic,
-                allow_multiplicative=self.allow_multiplicative,
-                allow_multiplicative_trend=self.allow_multiplicative_trend,
-                lambda_auto=self.lambda_auto,
-                verbose=False,
+                m                          = self.m,
+                seasonal                   = self.seasonal,
+                trend                      = self.trend,
+                damped                     = self.damped,
+                ic                         = self.ic,
+                allow_multiplicative       = self.allow_multiplicative,
+                allow_multiplicative_trend = self.allow_multiplicative_trend,
+                lambda_auto                = self.lambda_auto,
+                verbose                    = False,
             )
         else:
             # Fit specific model
             damped_param = False if self.damped is None else self.damped
             self.model_ = ets(
                 y,
-                m=self.m,
-                model=self.model,
-                damped=damped_param,
-                alpha=self.alpha,
-                beta=self.beta,
-                gamma=self.gamma,
-                phi=self.phi,
-                lambda_param=self.lambda_param,
-                lambda_auto=self.lambda_auto,
-                bias_adjust=self.bias_adjust,
-                bounds=self.bounds,
+                m            = self.m,
+                model        = self.model,
+                damped       = damped_param,
+                alpha        = self.alpha,
+                beta         = self.beta,
+                gamma        = self.gamma,
+                phi          = self.phi,
+                lambda_param = self.lambda_param,
+                lambda_auto  = self.lambda_auto,
+                bias_adjust  = self.bias_adjust,
+                bounds       = self.bounds,
             )
 
         # Extract model attributes (use references to avoid duplicating arrays)
-        self.config_ = self.model_.config
-        self.params_ = self.model_.params
-        self.y_ = self.model_.y_original
-        self.fitted_values_ = self.model_.fitted
-        self.residuals_in_ = self.model_.residuals
-        self.n_features_in_ = 1
+        self.config_         = asdict(self.model_.config)
+        self.params_         = asdict(self.model_.params)
+        self.y_              = self.model_.y_original
+        self.fitted_values_  = self.model_.fitted
+        self.residuals_in_   = self.model_.residuals
+        self.n_features_in_  = 1
         self.memory_reduced_ = False
 
         return self
@@ -216,9 +218,9 @@ class Ets(BaseEstimator, RegressorMixin):
 
         result = forecast_ets(
             self.model_,
-            h=steps,
-            bias_adjust=self.bias_adjust,
-            level=None
+            h           = steps,
+            bias_adjust = self.bias_adjust,
+            level       = None
         )
         return result["mean"]
 
@@ -257,9 +259,9 @@ class Ets(BaseEstimator, RegressorMixin):
 
         result = forecast_ets(
             self.model_,
-            h=steps,
-            bias_adjust=self.bias_adjust,
-            level=list(level)
+            h           = steps,
+            bias_adjust = self.bias_adjust,
+            level       = list(level)
         )
 
         if not as_frame:

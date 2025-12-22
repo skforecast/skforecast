@@ -35,7 +35,6 @@ def test_estimator_predict():
     assert mean.shape == (8,)
     assert np.all(np.isfinite(mean))
     
-    # Check exact predicted values
     expected_mean = np.array([
         -0.21174572, -0.2703575, -0.32896928, -0.38758106, -0.44619284,
         -0.50480462, -0.5634164, -0.62202818
@@ -73,24 +72,19 @@ def test_estimator_seasonal_forecast():
     est = Ets(m=12, model="AAA")
     est.fit(y)
 
-    # Forecast should capture seasonality
     forecasts = est.predict(steps=24)
     assert len(forecasts) == 24
     assert np.all(np.isfinite(forecasts))
     
-    # Check exact forecast values
-    expected_first_12 = np.array([
+    expected = np.array([
         21.79508244, 23.43787498, 24.89522337, 25.42741021, 24.90993587,
         24.00846331, 22.78025097, 21.16618097, 20.23863544, 19.89626461,
-        20.49691337, 21.6713034
-    ])
-    expected_last_12 = np.array([
+        20.49691337, 21.6713034,
         23.12161355, 24.76440609, 26.22175448, 26.75394132, 26.23646698,
         25.33499441, 24.10678208, 22.49271208, 21.56516655, 21.22279572,
         21.82344448, 22.99783451
     ])
-    np.testing.assert_array_almost_equal(forecasts[:12], expected_first_12, decimal=6)
-    np.testing.assert_array_almost_equal(forecasts[12:24], expected_last_12, decimal=6)
+    np.testing.assert_array_almost_equal(forecasts, expected, decimal=6)
 
 
 def test_reduce_memory_preserves_predictions():
@@ -99,21 +93,92 @@ def test_reduce_memory_preserves_predictions():
     est = Ets(m=1, model="AAN")
     est.fit(y)
     
-    # Predict before memory reduction
     pred_before = est.predict(steps=10)
     
-    # Check exact prediction values
     expected_predictions = np.array([
         0.39943144, 0.39595466, 0.39247788, 0.3890011, 0.38552432,
         0.38204754, 0.37857076, 0.37509398, 0.3716172, 0.36814041
     ])
     np.testing.assert_array_almost_equal(pred_before, expected_predictions, decimal=8)
     
-    # Reduce memory
     est.reduce_memory()
     
-    # Predict after memory reduction
     pred_after = est.predict(steps=10)
     
-    # Predictions should be identical
     np.testing.assert_array_equal(pred_before, pred_after)
+
+
+def test_estimator_ann_single_step():
+    """Test ANN model (no trend) single-step prediction"""
+    y = ar1_series(80)
+    est = Ets(m=1, model='ANN')
+    est.fit(y)
+    
+    pred = est.predict(steps=1)
+    assert pred.shape == (1,)
+    
+    expected = np.array([0.4408458])
+    np.testing.assert_array_almost_equal(pred, expected, decimal=7)
+
+
+def test_estimator_ann_no_trend():
+    """Test ANN model (no trend) predictions remain constant"""
+    y = ar1_series(80)
+    est = Ets(m=1, model='ANN')
+    est.fit(y)
+    
+    pred = est.predict(steps=10)
+    assert pred.shape == (10,)
+    assert np.all(np.isfinite(pred))
+    
+    expected = np.array([
+        0.4408458, 0.4408458, 0.4408458, 0.4408458, 0.4408458,
+        0.4408458, 0.4408458, 0.4408458, 0.4408458, 0.4408458
+    ])
+    np.testing.assert_array_almost_equal(pred, expected, decimal=7)
+
+
+def test_estimator_damped_trend():
+    """Test damped trend model predictions"""
+    rng = np.random.default_rng(789)
+    y = 20 + 2 * np.arange(60) * np.exp(-0.05 * np.arange(60)) + rng.normal(0, 0.5, 60)
+    
+    est = Ets(m=1, model='AAN', damped=True)
+    est.fit(y)
+    
+    pred = est.predict(steps=12)
+    assert pred.shape == (12,)
+    assert np.all(np.isfinite(pred))
+    
+    expected = np.array([
+        26.0228922, 25.88284481, 25.7602587, 25.65295676, 25.55903335,
+        25.47682042, 25.40485789, 25.34186773, 25.28673125, 25.23846926,
+        25.19622463, 25.1592471
+    ])
+    np.testing.assert_array_almost_equal(pred, expected, decimal=7)
+    
+    # Verify trend is decreasing (damped)
+    assert np.all(np.diff(pred) < 0)
+
+
+def test_estimator_multiplicative_error():
+    """Test MAN model (multiplicative error, additive trend) predictions"""
+    rng = np.random.default_rng(456)
+    y = 5 + 0.3 * np.arange(50) + rng.normal(0, 0.3, 50)
+    # Ensure positive values for multiplicative error
+    y = np.abs(y) + 1.0
+    
+    est = Ets(m=1, model='MAN')
+    est.fit(y)
+    
+    # Forecast with multiplicative error
+    pred = est.predict(steps=8)
+    assert pred.shape == (8,)
+    assert np.all(np.isfinite(pred))
+    assert np.all(pred > 0)  # Must be positive for multiplicative model
+    
+    expected = np.array([
+        20.93505704, 21.22724504, 21.51943305, 21.81162106, 22.10380907,
+        22.39599708, 22.68818509, 22.9803731
+    ])
+    np.testing.assert_array_almost_equal(pred, expected, decimal=7)

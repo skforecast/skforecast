@@ -21,12 +21,6 @@ def test_estimator_score():
     est = Ets(m=1, model="AAN").fit(y)
 
     score = est.get_score()
-
-    # R^2 should be between -inf and 1
-    assert score <= 1.0
-    assert np.isfinite(score) or np.isnan(score)
-    
-    # Check exact score value
     expected_score = -0.12352559113458117
     np.testing.assert_almost_equal(score, expected_score, decimal=10)
 
