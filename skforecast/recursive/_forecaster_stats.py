@@ -331,13 +331,22 @@ class ForecasterStats():
         params, exog_names_in_ = self._preprocess_repr()
         style, unique_id = get_style_repr_html(self.is_fitted)
 
+        # Get details if applicable to extended estimator name
+        estimator_details = ""
+        if self.estimator_type == 'skforecast.stats._ets.Ets' and self.is_fitted:
+            estimator_details = (
+                f"({self.estimator.config_['error']}"
+                f"{self.estimator.config_['trend']}"
+                f"{self.estimator.config_['season']})"
+            )
+
         content = f"""
         <div class="container-{unique_id}">
             <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Estimator:</strong> {type(self.estimator).__name__}</li>
+                    <li><strong>Estimator:</strong> {type(self.estimator).__name__}{estimator_details}</li>                  
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>

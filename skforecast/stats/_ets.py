@@ -311,31 +311,31 @@ class Ets(BaseEstimator, RegressorMixin):
         check_memory_reduced(self, 'summary')
 
         # Format model name
-        model_name = f"{self.config_.error}{self.config_.trend}{self.config_.season}"
-        if self.config_.damped and self.config_.trend != "N":
-            model_name = f"{self.config_.error}{self.config_.trend}d{self.config_.season}"
+        model_name = f"{self.config_['error']}{self.config_['trend']}{self.config_['season']}"
+        if self.config_['damped'] and self.config_['trend'] != "N":
+            model_name = f"{self.config_['error']}{self.config_['trend']}d{self.config_['season']}"
 
         print("ETS Model Summary")
         print("=" * 60)
         print(f"Model: ETS({model_name})")
         print(f"Number of observations: {len(self.y_)}")
-        print(f"Seasonal period (m): {self.config_.m}")
+        print(f"Seasonal period (m): {self.config_['m']}")
         print()
 
         print("Smoothing parameters:")
-        print(f"  alpha (level):       {self.params_.alpha:.4f}")
-        if self.config_.trend != "N":
-            print(f"  beta (trend):        {self.params_.beta:.4f}")
-        if self.config_.season != "N":
-            print(f"  gamma (seasonal):    {self.params_.gamma:.4f}")
-        if self.config_.damped:
-            print(f"  phi (damping):       {self.params_.phi:.4f}")
+        print(f"  alpha (level):       {self.params_['alpha']:.4f}")
+        if self.config_['trend'] != "N":
+            print(f"  beta (trend):        {self.params_['beta']:.4f}")
+        if self.config_['season'] != "N":
+            print(f"  gamma (seasonal):    {self.params_['gamma']:.4f}")
+        if self.config_['damped']:
+            print(f"  phi (damping):       {self.params_['phi']:.4f}")
         print()
 
         print("Initial states:")
-        print(f"  Level (l0):          {self.params_.init_states[0]:.4f}")
-        if self.config_.trend != "N" and len(self.params_.init_states) > 1:
-            print(f"  Trend (b0):          {self.params_.init_states[1]:.4f}")
+        print(f"  Level (l0):          {self.params_['init_states'][0]:.4f}")
+        if self.config_['trend'] != "N" and len(self.params_['init_states']) > 1:
+            print(f"  Trend (b0):          {self.params_['init_states'][1]:.4f}")
         print()
 
         print("Model fit statistics:")
