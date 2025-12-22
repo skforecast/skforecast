@@ -35,8 +35,9 @@ from ..utils import (
 class ForecasterStats():
     """
     This class turns statistical model into a Forecaster compatible with the skforecast API.
-    Supported statistical models are: skforecast.stats.Sarimax, skforecast.stats.ARAR,
-    aeon.forecasting.stats.ARIMA and aeon.forecasting.stats.ETS.
+    Supported statistical models are: skforecast.stats.Sarimax, skforecast.stats.Arima,
+    skforecast.stats.Arar, skforecast.stats.Ets, aeon.forecasting.stats.ARIMA and
+    aeon.forecasting.stats.ETS.
     
     Parameters
     ----------
@@ -44,7 +45,9 @@ class ForecasterStats():
         A statistical model instance. Supported models are:
         
         - skforecast.stats.Sarimax
-        - skforecast.stats.ARAR
+        - skforecast.stats.Arima
+        - skforecast.stats.Arar
+        - skforecast.stats.Ets
         - aeon.forecasting.stats.ARIMA
         - aeon.forecasting.stats.ETS
     transformer_y : object transformer (preprocessor), default None
@@ -170,6 +173,7 @@ class ForecasterStats():
         self.forecaster_id           = forecaster_id
         self.valid_estimator_types   = [
             'skforecast.stats._sarimax.Sarimax',
+            'skforecast.stats._arima.Arima',
             'skforecast.stats._arar.Arar',
             'skforecast.stats._ets.Ets',
             'aeon.forecasting.stats._arima.ARIMA',
@@ -177,6 +181,7 @@ class ForecasterStats():
         ]
         self.estimators_support_exog  = [
             'skforecast.stats._sarimax.Sarimax',
+            'skforecast.stats._arima.Arima',
             'skforecast.stats._arar.Arar',
         ]
 
@@ -732,6 +737,7 @@ class ForecasterStats():
         # Dictionary dispatch for estimator-specific prediction methods
         predict_dispatch = {
             'skforecast.stats._sarimax.Sarimax': self._predict_sarimax,
+            'skforecast.stats._arima.Arima': self._predict_skforecast_stats,
             'skforecast.stats._arar.Arar': self._predict_skforecast_stats,
             'skforecast.stats._ets.Ets': self._predict_skforecast_stats,
             'aeon.forecasting.stats._arima.ARIMA': self._predict_aeon,
@@ -879,6 +885,7 @@ class ForecasterStats():
         # Dictionary dispatch for estimator-specific prediction interval methods
         predict_interval_dispatch = {
             'skforecast.stats._sarimax.Sarimax': self._predict_interval_sarimax,
+            'skforecast.stats._arima.Arima': self._predict_interval_skforecast_stats,
             'skforecast.stats._arar.Arar': self._predict_interval_skforecast_stats,
             'skforecast.stats._ets.Ets': self._predict_interval_skforecast_stats
         }
