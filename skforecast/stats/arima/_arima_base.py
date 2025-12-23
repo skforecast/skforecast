@@ -296,7 +296,7 @@ def compute_arima_likelihood_core(
     Pn_init: np.ndarray,
     update_start: int,
     give_resid: bool
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Core Kalman filter likelihood computation (Numba-compatible).
 
@@ -327,6 +327,10 @@ def compute_arima_likelihood_core(
         Array [ssq, sumlog, nu] - sum of squares, log-determinant sum, count.
     residuals : np.ndarray
         Standardized residuals (if give_resid=True, else empty).
+    a_final : np.ndarray
+        Final filtered state vector.
+    P_final : np.ndarray
+        Final filtered state covariance.
     """
     n = len(y)
     rd = len(a_init)
@@ -378,7 +382,7 @@ def compute_arima_likelihood_core(
             P = Pnew.copy()
 
     stats = np.array([ssq, sumlog, float(nu)])
-    return stats, rsResid
+    return stats, rsResid, a, P
 
 
 def compute_arima_likelihood(
@@ -409,6 +413,8 @@ def compute_arima_likelihood(
         - 'sumlog': Accumulated log-determinants.
         - 'nu': Number of innovations.
         - 'resid': Standardized residuals (only if give_resid=True).
+        - 'a': Final filtered state vector.
+        - 'P': Final filtered state covariance.
     """
     phi = model['phi'].astype(np.float64)
     theta = model['theta'].astype(np.float64)
@@ -417,14 +423,16 @@ def compute_arima_likelihood(
     P = model['P'].astype(np.float64)
     Pn = model['Pn'].astype(np.float64)
 
-    stats, residuals = compute_arima_likelihood_core(
+    stats, residuals, a_final, P_final = compute_arima_likelihood_core(
         y.astype(np.float64), phi, theta, delta, a, P, Pn, update_start, give_resid
     )
 
     result = {
         'ssq': stats[0],
         'sumlog': stats[1],
-        'nu': int(stats[2])
+        'nu': int(stats[2]),
+        'a': a_final,
+        'P': P_final
     }
 
     if give_resid:
@@ -1610,7 +1618,7 @@ def kalman_forecast_core(
     variances = np.zeros(n_ahead)
 
     a_curr = a.copy()
-    P_curr = Pn.copy()
+    P_curr = P.copy()
 
     for l in range(n_ahead):
         # State prediction
@@ -1668,11 +1676,10 @@ def kalman_forecast(
     Z = mod['Z'].astype(np.float64)
     a = mod['a'].astype(np.float64)
     P = mod['P'].astype(np.float64)
-    Pn = mod['Pn'].astype(np.float64)
     h = float(mod['h'])
 
     forecasts, variances, a_final, P_final = kalman_forecast_core(
-        n_ahead, phi, theta, delta, Z, a, P, Pn, h
+        n_ahead, phi, theta, delta, Z, a, P, P, h
     )
 
     result = {'pred': forecasts, 'var': variances}
@@ -2511,6 +2518,10 @@ def arima(
         val = compute_arima_likelihood(x_work, mod, update_start=0, give_resid=True)
         sigma2 = val['ssq'] / n_used
         resid = val['resid']
+        
+        # Update model state with final filtered state
+        mod['a'] = val['a']
+        mod['P'] = val['P']
 
     # Final computations
     value = 2 * n_used * res['fun'] + n_used + n_used * np.log(2 * np.pi)
