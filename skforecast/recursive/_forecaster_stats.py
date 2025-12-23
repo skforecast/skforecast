@@ -44,10 +44,10 @@ class ForecasterStats():
     estimator : object
         A statistical model instance. Supported models are:
         
-        - skforecast.stats.Sarimax
-        - skforecast.stats.Arima
+        - skforecast.stats.Arima 
         - skforecast.stats.Arar
         - skforecast.stats.Ets
+        - skforecast.stats.Sarimax (statsmodels wrapper)
         - aeon.forecasting.stats.ARIMA
         - aeon.forecasting.stats.ETS
     transformer_y : object transformer (preprocessor), default None
@@ -172,17 +172,17 @@ class ForecasterStats():
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
         self.valid_estimator_types   = [
-            'skforecast.stats._sarimax.Sarimax',
             'skforecast.stats._arima.Arima',
             'skforecast.stats._arar.Arar',
             'skforecast.stats._ets.Ets',
+            'skforecast.stats._sarimax.Sarimax',
             'aeon.forecasting.stats._arima.ARIMA',
             'aeon.forecasting.stats._ets.ETS'
         ]
         self.estimators_support_exog  = [
-            'skforecast.stats._sarimax.Sarimax',
             'skforecast.stats._arima.Arima',
             'skforecast.stats._arar.Arar',
+            'skforecast.stats._sarimax.Sarimax',
         ]
 
         estimator_type = f"{type(estimator).__module__}.{type(estimator).__name__}"
@@ -719,6 +719,7 @@ class ForecasterStats():
                                                   exog             = exog,
                                               )
         
+        # TODO: evaluate if this can be moved to _create_predict_inputs
         if last_window is not None:
             if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
                 self.estimator.append(
@@ -728,24 +729,24 @@ class ForecasterStats():
                 )
                 self.extended_index_ = self.estimator.sarimax_res.fittedvalues.index
             else:
-                raise ValueError(
-                    "`last_window` is only supported for the skforecast.Sarimax estimator (statsmodels)."
-                    "For other models, predictions must follow directly after the end of the "
-                    "training data."
+                raise NotImplementedError(
+                    f"Prediction with `last_window` parameter is only "
+                    f"supported for SARIMAX models. For {self.estimator_type}, "
+                    f"predictions with `last_window` are not yet implemented."
+                    f"It is required that predictions follow directly after the "
+                    f"end of the training data."
                 )
 
-        # Dictionary dispatch for estimator-specific prediction methods
         predict_dispatch = {
-            'skforecast.stats._sarimax.Sarimax': self._predict_sarimax,
             'skforecast.stats._arima.Arima': self._predict_skforecast_stats,
             'skforecast.stats._arar.Arar': self._predict_skforecast_stats,
             'skforecast.stats._ets.Ets': self._predict_skforecast_stats,
+            'skforecast.stats._sarimax.Sarimax': self._predict_sarimax,
             'aeon.forecasting.stats._arima.ARIMA': self._predict_aeon,
             'aeon.forecasting.stats._ets.ETS': self._predict_aeon
         }
         
-        predict_method = predict_dispatch[self.estimator_type]
-        predictions = predict_method(steps, exog)
+        predictions = predict_dispatch[self.estimator_type](steps, exog)
 
         return predictions
 
@@ -753,9 +754,9 @@ class ForecasterStats():
         """Generate predictions using SARIMAX model."""
         predictions = self.estimator.predict(steps=steps, exog=exog).iloc[:, 0]
         predictions = transform_series(
-            series=predictions,
-            transformer=self.transformer_y,
-            fit=False,
+            series      = predictions,
+            transformer = self.transformer_y,
+            fit         = False,
             inverse_transform=True
         )
         predictions.name = 'pred'
@@ -874,7 +875,7 @@ class ForecasterStats():
                 self.extended_index_ = self.estimator.sarimax_res.fittedvalues.index
             else:
                 raise NotImplementedError(
-                    f"Prediction intervals with `last_window` parameter is only "
+                    f"Prediction with `last_window` parameter is only "
                     f"supported for SARIMAX models. For {self.estimator_type}, "
                     f"predictions with `last_window` are not yet implemented."
                     f"It is required that predictions follow directly after the "
@@ -898,9 +899,9 @@ class ForecasterStats():
         predict_interval_method = predict_interval_dispatch[self.estimator_type]
         predictions = predict_interval_method(steps, exog, alpha)
 
+        # TODO: verify this is aligned with recursive forecasters
         if self.transformer_y:
-            # Transform all columns with the same transformer
-            predictions_values = self.transformer_y.inverse_transform(predictions.values)
+            predictions_values = self.transformer_y.inverse_transform(predictions.to_numpy())
             if hasattr(predictions_values, 'toarray'):
                 predictions_values = predictions_values.toarray()
             predictions = pd.DataFrame(
