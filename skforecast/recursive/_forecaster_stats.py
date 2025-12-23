@@ -754,10 +754,10 @@ class ForecasterStats():
         """Generate predictions using SARIMAX model."""
         predictions = self.estimator.predict(steps=steps, exog=exog).iloc[:, 0]
         predictions = transform_series(
-            series      = predictions,
-            transformer = self.transformer_y,
-            fit         = False,
-            inverse_transform=True
+            series            = predictions,
+            transformer       = self.transformer_y,
+            fit               = False,
+            inverse_transform = True
         )
         predictions.name = 'pred'
         return predictions
@@ -766,10 +766,10 @@ class ForecasterStats():
         """Generate predictions using skforecast ARAR/ETS models."""
         predictions = self.estimator.predict(steps=steps, exog=exog)
         predictions = transform_numpy(
-            array=predictions,
-            transformer=self.transformer_y,
-            fit=False,
-            inverse_transform=True
+            array             = predictions,
+            transformer       = self.transformer_y,
+            fit               = False,
+            inverse_transform = True
         )
         predictions_index = expand_index(index=self.extended_index_, steps=steps)
         return pd.Series(predictions, index=predictions_index, name='pred')
@@ -777,14 +777,14 @@ class ForecasterStats():
     def _predict_aeon(self, steps: int, exog: pd.Series | pd.DataFrame | None) -> pd.Series:
         """Generate predictions using AEON models."""
         predictions = self.estimator.iterative_forecast(
-            y=self.last_window_.to_numpy(),
-            prediction_horizon=steps
+            y = self.last_window_.to_numpy(),
+            prediction_horizon = steps
         )
         predictions = transform_numpy(
-            array=predictions,
-            transformer=self.transformer_y,
-            fit=False,
-            inverse_transform=True
+            array             = predictions,
+            transformer       = self.transformer_y,
+            fit               = False,
+            inverse_transform = True
         )
         predictions_index = expand_index(index=self.extended_index_, steps=steps)
         return pd.Series(predictions, index=predictions_index, name='pred')
@@ -905,9 +905,9 @@ class ForecasterStats():
             if hasattr(predictions_values, 'toarray'):
                 predictions_values = predictions_values.toarray()
             predictions = pd.DataFrame(
-                predictions_values,
-                index=predictions.index,
-                columns=predictions.columns
+                data    = predictions_values,
+                index   = predictions.index,
+                columns = predictions.columns
             )
 
         return predictions
@@ -1031,7 +1031,8 @@ class ForecasterStats():
 
         if sort_importance:
             feature_importances = feature_importances.sort_values(
-                                      by='importance', ascending=False
+                                      by='importance',
+                                      ascending=False
                                   ).reset_index(drop=True)
 
         return feature_importances

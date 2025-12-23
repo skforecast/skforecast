@@ -1700,6 +1700,8 @@ class ForecasterRecursive(ForecasterBase):
             )
         
         if self.transformer_y:
+            # TODO: check if is possible to call transform_numpy only once for the full array
+            # instead of applying it column by column
             boot_predictions = np.apply_along_axis(
                                    func1d            = transform_numpy,
                                    axis              = 0,
