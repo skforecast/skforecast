@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import inspect
 from copy import copy, deepcopy
+import sklearn
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
@@ -44,6 +45,10 @@ from ..utils import (
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
+linear_estimators = frozenset(
+    name for name in dir(sklearn.linear_model)
+    if not name.startswith('_')
+)
 
 class ForecasterRecursive(ForecasterBase):
     """
@@ -1337,6 +1342,15 @@ class ForecasterRecursive(ForecasterBase):
         predictions = np.full(shape=steps, fill_value=np.nan, dtype=float)
         last_window = np.concatenate((last_window_values, predictions))
 
+        is_linear_estimator = type(self.estimator).__name__ in linear_estimators
+        if is_linear_estimator:
+            coef = self.estimator.coef_
+            intercept = self.estimator.intercept_
+        is_lightgbm_estimator = type(self.estimator).__name__ == 'LGBMRegressor'
+        if is_lightgbm_estimator:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore",  category=UserWarning)
+                booster = self.estimator.booster_
         for i in range(steps):
 
             if self.lags is not None:
@@ -1351,7 +1365,12 @@ class ForecasterRecursive(ForecasterBase):
             if exog_values is not None:
                 X[n_lags + n_window_features:] = exog_values[i]
         
-            pred = self.estimator.predict(X.reshape(1, -1)).ravel()
+            if is_linear_estimator:
+                pred = np.dot(X, coef) + intercept
+            elif is_lightgbm_estimator:
+                pred = booster.predict(X.reshape(1, -1))
+            else:
+                pred = self.estimator.predict(X.reshape(1, -1)).ravel()
             
             if residuals is not None:
                 if use_binned_residuals:
