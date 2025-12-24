@@ -6,7 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
-from typing import Optional, Tuple, Dict, Literal, List
+from typing import Literal
 import numpy as np
 import pandas as pd
 from dataclasses import asdict
@@ -21,8 +21,6 @@ from .exponential_smoothing._ets_base import (
 from ._utils import check_memory_reduced
 
 
-# TODO: Complete docstring, parameters and attributes descriptions.
-# TODO: Update typing to new format
 class Ets(BaseEstimator, RegressorMixin):
     """
     Scikit-learn style wrapper for the ETS (Error, Trend, Seasonality) model.
@@ -75,37 +73,101 @@ class Ets(BaseEstimator, RegressorMixin):
 
     Attributes
     ----------
-    model_ : ETSModel
-        Fitted ETS model object containing parameters and diagnostics.
-    y_ : ndarray of shape (n_samples,)
-        Original training series.
-    model_config_ : ETSConfig
-        Model configuration (error, trend, season types).
-    params_ : ETSParams
-        Fitted smoothing parameters (alpha, beta, gamma, phi) and initial states.
-    n_features_in_ : int
-        For sklearn compatibility (always 1).
-    fitted_values_ : ndarray of shape (n_samples,)
-        In-sample fitted values.
-    residuals_in_ : ndarray of shape (n_samples,)
-        In-sample residuals (observed - fitted).
+    m : int
+        Seasonal period (e.g., 12 for monthly data with yearly seasonality).
+    model : str
+        Three-letter model specification (e.g., "ANN", "AAA", "MAM"). Each letter
+        represents error, trend, and season types respectively, using A (Additive),
+        M (Multiplicative), N (None), or Z (Auto-select).
+    damped : bool or None
+        Whether to apply damping to the trend component. If None with model="ZZZ",
+        both damped and non-damped models are evaluated during automatic selection.
+    alpha : float or None
+        User-provided smoothing parameter for the level component (0 < alpha < 1).
+        When None, the parameter is estimated during fitting.
+    beta : float or None
+        User-provided smoothing parameter for the trend component (0 < beta < alpha).
+        When None, the parameter is estimated during fitting if trend is present.
+    gamma : float or None
+        User-provided smoothing parameter for the seasonal component (0 < gamma < 1-alpha).
+        When None, the parameter is estimated during fitting if seasonality is present.
+    phi : float or None
+        User-provided damping parameter (0 < phi < 1). When None, the parameter is
+        estimated during fitting if damped trend is used.
+    lambda_param : float or None
+        Box-Cox transformation parameter applied to the time series before fitting.
+        When None, no transformation is applied unless lambda_auto is True.
+    lambda_auto : bool
+        Whether to automatically determine the optimal Box-Cox transformation parameter
+        during model fitting.
+    bias_adjust : bool
+        Whether to apply bias adjustment when back-transforming forecasts from the
+        Box-Cox transformed scale to the original scale.
+    bounds : str
+        Type of parameter bounds used during optimization: "usual" for standard bounds,
+        "admissible" for stability-ensuring bounds, or "both" for their intersection.
+    seasonal : bool
+        Whether seasonal models are considered during automatic model selection
+        (only applicable when model="ZZZ").
+    trend : bool or None
+        Whether trend models are considered during automatic model selection. When None
+        with model="ZZZ", this is determined automatically based on the data.
+    ic : {"aic", "aicc", "bic"}
+        Information criterion used to compare and select the best model during automatic
+        model selection (only applicable when model="ZZZ").
+    allow_multiplicative : bool
+        Whether multiplicative error and seasonal components are allowed during automatic
+        model selection (only applicable when model="ZZZ").
+    allow_multiplicative_trend : bool
+        Whether multiplicative trend components are allowed during automatic model
+        selection (only applicable when model="ZZZ").
+    model_ : ETSModel or None
+        The fitted ETS model object containing parameters, diagnostics, and state space
+        representation. Available after calling `fit()`.
+    model_config_ : dict or None
+        Dictionary containing the model configuration including error type, trend type,
+        seasonal type, damping flag, and seasonal period. Available after calling `fit()`.
+    params_ : dict or None
+        Dictionary of estimated model parameters including smoothing parameters (alpha, 
+        beta, gamma, phi) and initial state values. Available after calling `fit()`.
+    aic_ : float or None
+        Akaike Information Criterion of the fitted model, measuring the quality of fit
+        while penalizing model complexity. Available after calling `fit()`.
+    bic_ : float or None
+        Bayesian Information Criterion of the fitted model, similar to AIC but with a
+        stronger penalty for model complexity. Available after calling `fit()`.
+    y_train_ : ndarray of shape (n_samples,) or None
+        The original training time series used to fit the model.
+    fitted_values_ : ndarray of shape (n_samples,) or None
+        One-step-ahead in-sample fitted values from the model.
+    in_sample_residuals_ : ndarray of shape (n_samples,) or None
+        In-sample residuals calculated as the difference between observed values and
+        fitted values.
+    n_features_in_ : int or None
+        Number of features (time series) seen during `fit()`. For ETS, this is always 1
+        as it handles univariate time series. Available after calling `fit()`.
+    is_memory_reduced : bool
+        Flag indicating whether `reduce_memory()` has been called to clear diagnostic
+        arrays (y_train_, fitted_values_, in_sample_residuals_).
+    is_fitted : bool
+        Flag indicating whether the model has been successfully fitted to data.
     """
 
     def __init__(
         self,
         m: int = 1,
         model: str = "ZZZ",
-        damped: Optional[bool] = None,
-        alpha: Optional[float] = None,
-        beta: Optional[float] = None,
-        gamma: Optional[float] = None,
-        phi: Optional[float] = None,
-        lambda_param: Optional[float] = None,
+        damped: bool | None = None,
+        alpha: float | None = None,
+        beta: float | None = None,
+        gamma: float | None = None,
+        phi: float | None = None,
+        lambda_param: float | None = None,
         lambda_auto: bool = False,
         bias_adjust: bool = True,
         bounds: str = "both",
         seasonal: bool = True,
-        trend: Optional[bool] = None,
+        trend: bool | None = None,
         ic: Literal["aic", "aicc", "bic"] = "aicc",
         allow_multiplicative: bool = True,
         allow_multiplicative_trend: bool = False,
@@ -139,7 +201,7 @@ class Ets(BaseEstimator, RegressorMixin):
         self.is_memory_reduced          = False
         self.is_fitted                  = False
 
-    def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> "Ets":
+    def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> Ets:
         """
         Fit the ETS model to a univariate time series.
 
@@ -257,10 +319,10 @@ class Ets(BaseEstimator, RegressorMixin):
     def predict_interval(
         self,
         steps: int = 1,
-        level: List[float] | Tuple[float, ...] = (80, 95),
+        level: list[float] | tuple[float, ...] = (80, 95),
         as_frame: bool = True,
         exog: None = None,
-    ) -> pd.DataFrame | Dict:
+    ) -> pd.DataFrame | dict:
         """
         Forecast with prediction intervals.
 
@@ -419,7 +481,7 @@ class Ets(BaseEstimator, RegressorMixin):
         ss_tot = np.sum((y[mask] - y[mask].mean()) ** 2) + np.finfo(float).eps
         return 1.0 - ss_res / ss_tot
 
-    def get_params(self, deep: bool = True) -> Dict:
+    def get_params(self, deep: bool = True) -> dict:
         """
         Get parameters for this estimator.
 
@@ -453,7 +515,7 @@ class Ets(BaseEstimator, RegressorMixin):
             "allow_multiplicative_trend": self.allow_multiplicative_trend,
         }
 
-    def set_params(self, **params) -> "Ets":
+    def set_params(self, **params) -> Ets:
         """
         Set the parameters of this estimator and reset the fitted state.
         
@@ -509,7 +571,7 @@ class Ets(BaseEstimator, RegressorMixin):
         
         return self
 
-    def reduce_memory(self) -> "Ets":
+    def reduce_memory(self) -> Ets:
         """
         Reduce memory usage by removing internal arrays not needed for prediction.
         This method clears memory-heavy arrays that are only needed for diagnostics

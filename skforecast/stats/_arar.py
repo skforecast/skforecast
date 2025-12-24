@@ -21,8 +21,6 @@ from .arar._arar_base import (
 from ._utils import check_memory_reduced, FastLinearRegression
 
 
-# TODO: Complete docstring, parameters and attributes descriptions.
-# TODO: Update typing to new format
 class Arar(BaseEstimator, RegressorMixin):
     """
     Scikit-learn style wrapper for the ARAR time-series model.
@@ -45,53 +43,80 @@ class Arar(BaseEstimator, RegressorMixin):
 
     Attributes
     ----------
-    max_ar_depth : int,
-        Maximum AR depth considered for the (1, i, j, k) AR selection stage.
-    max_lag : int
-        Maximum lag used when estimating autocovariances.
+    max_ar_depth : int or None
+        Maximum AR depth considered for the (1, i, j, k) AR selection stage during 
+        model fitting. When None, a default value is determined automatically based 
+        on the series length.
+    max_lag : int or None
+        Maximum lag used when estimating autocovariances during the memory-shortening 
+        step. When None, a default value is determined automatically based on the 
+        series length.
     safe : bool
-        If True, falls back to a mean-only model on numerical issues or very
-        short series; otherwise errors are raised.
-    model_ : tuple
-        Raw tuple returned by `arar(...)`: (Y, best_phi, best_lag, sigma2, psi, sbar).
-    y_ : ndarray of shape (n_samples,)
-        Original training series (float).
-    coef_ : ndarray of shape (4,)
-        Selected AR coefficients for lags (1, i, j, k).
-    lags_ : tuple
-        Selected lags (1, i, j, k).
-    sigma2_ : float
-        Innovation variance.
-    psi_ : ndarray
-        Memory-shortening filter.
-    sbar_ : float
-        Mean of shortened series.
-    exog_model_ : FastLinearRegression
-        The fitted regression model for the exogenous variables.
-    coef_exog_ : ndarray of shape (n_exog_features,)
-        Coefficients of the exogenous variables regression model.
-    n_features_in_ : int
-        Number of features in the target series (always 1, for sklearn compatibility).
-    n_exog_features_in_ : int
-        Number of exogenous features seen during fitting (0 if no exog provided).
-    is_fitted_ : bool
-        Flag indicating whether the model has been fitted.
-    fitted_values_ : ndarray of shape (n_samples,)
-        In-sample fitted values (NaN for first k-1 terms).
-    residuals_in_ : ndarray of shape (n_samples,)
-        In-sample residuals (observed - fitted).
-    aic_ : float
-        Akaike Information Criterion. For models with exogenous variables, this is 
-        an approximate calculation that treats the two-step procedure (regression + 
-        ARAR) as independent. This may underestimate model complexity. Use primarily 
-        for comparing models with the same exogenous structure.
-    bic_ : float
-        Bayesian Information Criterion. For models with exogenous variables, this is 
-        an approximate calculation that treats the two-step procedure (regression + 
-        ARAR) as independent. This may underestimate model complexity. Use primarily 
-        for comparing models with the same exogenous structure.
+        Whether to use safe mode. When True, the model falls back to a mean-only 
+        forecast on numerical issues or very short series. When False, errors are 
+        raised instead.
+    model_ : tuple or None
+        Raw tuple returned by the underlying ARAR algorithm containing: 
+        (Y, best_phi, best_lag, sigma2, psi, sbar, max_ar_depth, max_lag). 
+        Available after calling `fit()`.
+    coef_ : ndarray of shape (4,) or None
+        Estimated AR coefficients for the selected lags (1, i, j, k). Some 
+        coefficients may be zero if the corresponding lag was not selected. 
+        Available after calling `fit()`.
+    lags_ : tuple or None
+        Selected lag indices (1, i, j, k) used in the AR model, where each 
+        represents which past observations contribute to the forecast. 
+        Available after calling `fit()`.
+    sigma2_ : float or None
+        Estimated innovation variance (one-step-ahead forecast error variance) 
+        from the fitted ARAR model. Available after calling `fit()`.
+    psi_ : ndarray or None
+        Memory-shortening filter coefficients used to transform the original 
+        series into one with shorter memory before AR fitting. Available after 
+        calling `fit()`.
+    sbar_ : float or None
+        Mean of the memory-shortened series, used as the long-run mean in 
+        forecasting. Available after calling `fit()`.
+    aic_ : float or None
+        Akaike Information Criterion measuring model fit quality while penalizing 
+        complexity. For models with exogenous variables, this is an approximate 
+        calculation that treats the two-step procedure (regression + ARAR) as 
+        independent stages, which may underestimate total model complexity. 
+        Available after calling `fit()`.
+    bic_ : float or None
+        Bayesian Information Criterion, similar to AIC but with a stronger penalty 
+        for model complexity. For models with exogenous variables, this is an 
+        approximate calculation that treats the two-step procedure (regression + 
+        ARAR) as independent stages, which may underestimate total model complexity. 
+        Available after calling `fit()`.
+    exog_model_ : FastLinearRegression or None
+        Fitted linear regression model for exogenous variables. When exogenous 
+        variables are provided during fitting, this model captures their linear 
+        relationship with the target series. Available after calling `fit()` with 
+        exogenous variables.
+    coef_exog_ : ndarray of shape (n_exog_features,) or None
+        Coefficients from the exogenous variables regression model, excluding the 
+        intercept. Available after calling `fit()` with exogenous variables.
+    n_exog_features_in_ : int or None
+        Number of exogenous features used during fitting. Zero if no exogenous 
+        variables were provided. Available after calling `fit()`.
+    y_train_ : ndarray of shape (n_samples,) or None
+        Original training time series used to fit the model.
+    fitted_values_ : ndarray of shape (n_samples,) or None
+        One-step-ahead in-sample fitted values. The first k-1 values may be NaN 
+        where k is the largest lag used.
+    in_sample_residuals_ : ndarray of shape (n_samples,) or None
+        In-sample residuals calculated as the difference between observed values 
+        and fitted values.
+    n_features_in_ : int or None
+        Number of features (time series) seen during `fit()`. For ARAR, this is 
+        always 1 as it handles univariate time series (present for scikit-learn 
+        compatibility). Available after calling `fit()`.
     is_memory_reduced : bool
-        Flag indicating whether reduce_memory() has been called.
+        Flag indicating whether `reduce_memory()` has been called to clear diagnostic 
+        arrays (y_train_, fitted_values_, in_sample_residuals_).
+    is_fitted : bool
+        Flag indicating whether the model has been successfully fitted to data.
     
     Notes
     -----
@@ -284,19 +309,18 @@ class Arar(BaseEstimator, RegressorMixin):
 
         (Y, best_phi, best_lag, sigma2, psi, sbar, max_ar_depth, max_lag) = self.model_
 
-        self.max_ar_depth = max_ar_depth
-        self.max_lag = max_lag
-        self.lags_ = tuple(best_lag)
-        self.sigma2_ = float(sigma2)
-        self.psi_ = np.asarray(psi, dtype=float)
-        self.sbar_ = float(sbar)
-
-        self.coef_ = np.asarray(best_phi, dtype=float)
-        self.y_train_ = y
+        self.max_ar_depth        = max_ar_depth
+        self.max_lag             = max_lag
+        self.lags_               = tuple(best_lag)
+        self.sigma2_             = float(sigma2)
+        self.psi_                = np.asarray(psi, dtype=float)
+        self.sbar_               = float(sbar)
+        self.coef_               = np.asarray(best_phi, dtype=float)
+        self.y_train_            = y
         self.n_exog_features_in_ = exog.shape[1] if exog is not None else 0
-        self.n_features_in_ = 1       
-        self.is_memory_reduced = False
-        self.is_fitted = True
+        self.n_features_in_      = 1       
+        self.is_memory_reduced   = False
+        self.is_fitted           = True
 
         arar_fitted = fitted_arar(self.model_)["fitted"]
         if self.exog_model_ is not None:
