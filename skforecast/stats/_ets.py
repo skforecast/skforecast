@@ -1,5 +1,5 @@
 ################################################################################
-#                                 ETS                                          #
+#                                      ETS                                     #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
@@ -12,6 +12,7 @@ import pandas as pd
 from dataclasses import asdict
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_is_fitted
+
 from .exponential_smoothing._ets_base import (
     ets,
     auto_ets,
@@ -19,6 +20,9 @@ from .exponential_smoothing._ets_base import (
 )
 from ._utils import check_memory_reduced
 
+
+# TODO: Complete docstring, parameters and attributes descriptions.
+# TODO: Update typing to new format
 class Ets(BaseEstimator, RegressorMixin):
     """
     Scikit-learn style wrapper for the ETS (Error, Trend, Seasonality) model.
@@ -75,7 +79,7 @@ class Ets(BaseEstimator, RegressorMixin):
         Fitted ETS model object containing parameters and diagnostics.
     y_ : ndarray of shape (n_samples,)
         Original training series.
-    config_ : ETSConfig
+    model_config_ : ETSConfig
         Model configuration (error, trend, season types).
     params_ : ETSParams
         Fitted smoothing parameters (alpha, beta, gamma, phi) and initial states.
@@ -122,7 +126,18 @@ class Ets(BaseEstimator, RegressorMixin):
         self.ic                         = ic
         self.allow_multiplicative       = allow_multiplicative
         self.allow_multiplicative_trend = allow_multiplicative_trend
-        self.memory_reduced_            = False
+        
+        self.model_                     = None
+        self.model_config_              = None
+        self.params_                    = None
+        self.aic_                       = None
+        self.bic_                       = None
+        self.y_train_                   = None
+        self.fitted_values_             = None
+        self.in_sample_residuals_       = None
+        self.n_features_in_             = None
+        self.is_memory_reduced          = False
+        self.is_fitted                  = False
 
     def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> "Ets":
         """
@@ -139,7 +154,20 @@ class Ets(BaseEstimator, RegressorMixin):
         -------
         self : Ets
             Fitted estimator.
+            
         """
+
+        self.model_               = None
+        self.model_config_        = None
+        self.params_              = None
+        self.aic_                 = None
+        self.bic_                 = None
+        self.y_train_             = None
+        self.fitted_values_       = None
+        self.in_sample_residuals_ = None
+        self.n_features_in_       = None
+        self.is_memory_reduced    = False
+        self.is_fitted            = False
         
         if not isinstance(y, (pd.Series, np.ndarray)):
             raise ValueError("`y` must be a pandas Series or numpy ndarray.")
@@ -186,13 +214,15 @@ class Ets(BaseEstimator, RegressorMixin):
             )
 
         # Extract model attributes (use references to avoid duplicating arrays)
-        self.config_         = asdict(self.model_.config)
-        self.params_         = asdict(self.model_.params)
-        self.y_              = self.model_.y_original
-        self.fitted_values_  = self.model_.fitted
-        self.residuals_in_   = self.model_.residuals
-        self.n_features_in_  = 1
-        self.memory_reduced_ = False
+        self.model_config_        = asdict(self.model_.config)
+        self.params_              = asdict(self.model_.params)
+        self.aic_                 = self.model_.aic
+        self.bic_                 = self.model_.bic
+        self.y_train_             = self.model_.y_original
+        self.fitted_values_       = self.model_.fitted
+        self.in_sample_residuals_ = self.model_.residuals
+        self.n_features_in_       = 1
+        self.is_fitted            = True
 
         return self
 
@@ -289,7 +319,7 @@ class Ets(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, "model_")
         check_memory_reduced(self, 'residuals_')
-        return self.residuals_in_
+        return self.in_sample_residuals_
 
     def get_fitted_values(self) -> np.ndarray:
         """
@@ -311,55 +341,55 @@ class Ets(BaseEstimator, RegressorMixin):
         check_memory_reduced(self, 'summary')
 
         # Format model name
-        model_name = f"{self.config_['error']}{self.config_['trend']}{self.config_['season']}"
-        if self.config_['damped'] and self.config_['trend'] != "N":
-            model_name = f"{self.config_['error']}{self.config_['trend']}d{self.config_['season']}"
+        model_name = f"{self.model_config_['error']}{self.model_config_['trend']}{self.model_config_['season']}"
+        if self.model_config_['damped'] and self.model_config_['trend'] != "N":
+            model_name = f"{self.model_config_['error']}{self.model_config_['trend']}d{self.model_config_['season']}"
 
         print("ETS Model Summary")
         print("=" * 60)
         print(f"Model: ETS({model_name})")
-        print(f"Number of observations: {len(self.y_)}")
-        print(f"Seasonal period (m): {self.config_['m']}")
+        print(f"Number of observations: {len(self.y_train_)}")
+        print(f"Seasonal period (m): {self.model_config_['m']}")
         print()
 
         print("Smoothing parameters:")
         print(f"  alpha (level):       {self.params_['alpha']:.4f}")
-        if self.config_['trend'] != "N":
+        if self.model_config_['trend'] != "N":
             print(f"  beta (trend):        {self.params_['beta']:.4f}")
-        if self.config_['season'] != "N":
+        if self.model_config_['season'] != "N":
             print(f"  gamma (seasonal):    {self.params_['gamma']:.4f}")
-        if self.config_['damped']:
+        if self.model_config_['damped']:
             print(f"  phi (damping):       {self.params_['phi']:.4f}")
         print()
 
         print("Initial states:")
         print(f"  Level (l0):          {self.params_['init_states'][0]:.4f}")
-        if self.config_['trend'] != "N" and len(self.params_['init_states']) > 1:
+        if self.model_config_['trend'] != "N" and len(self.params_['init_states']) > 1:
             print(f"  Trend (b0):          {self.params_['init_states'][1]:.4f}")
         print()
 
         print("Model fit statistics:")
         print(f"  sigma^2:             {self.model_.sigma2:.6f}")
         print(f"  Log-likelihood:      {self.model_.loglik:.2f}")
-        print(f"  AIC:                 {self.model_.aic:.2f}")
-        print(f"  BIC:                 {self.model_.bic:.2f}")
+        print(f"  AIC:                 {self.aic_:.2f}")
+        print(f"  BIC:                 {self.bic_:.2f}")
         print()
 
         print("Residual statistics:")
-        print(f"  Mean:                {np.mean(self.residuals_in_):.6f}")
-        print(f"  Std Dev:             {np.std(self.residuals_in_, ddof=1):.6f}")
-        print(f"  MAE:                 {np.mean(np.abs(self.residuals_in_)):.6f}")
-        print(f"  RMSE:                {np.sqrt(np.mean(self.residuals_in_**2)):.6f}")
+        print(f"  Mean:                {np.mean(self.in_sample_residuals_):.6f}")
+        print(f"  Std Dev:             {np.std(self.in_sample_residuals_, ddof=1):.6f}")
+        print(f"  MAE:                 {np.mean(np.abs(self.in_sample_residuals_)):.6f}")
+        print(f"  RMSE:                {np.sqrt(np.mean(self.in_sample_residuals_**2)):.6f}")
         print()
 
         print("Time Series Summary Statistics:")
-        print(f"  Mean:                {np.mean(self.y_):.4f}")
-        print(f"  Std Dev:             {np.std(self.y_, ddof=1):.4f}")
-        print(f"  Min:                 {np.min(self.y_):.4f}")
-        print(f"  25%:                 {np.percentile(self.y_, 25):.4f}")
-        print(f"  Median:              {np.median(self.y_):.4f}")
-        print(f"  75%:                 {np.percentile(self.y_, 75):.4f}")
-        print(f"  Max:                 {np.max(self.y_):.4f}")
+        print(f"  Mean:                {np.mean(self.y_train_):.4f}")
+        print(f"  Std Dev:             {np.std(self.y_train_, ddof=1):.4f}")
+        print(f"  Min:                 {np.min(self.y_train_):.4f}")
+        print(f"  25%:                 {np.percentile(self.y_train_, 25):.4f}")
+        print(f"  Median:              {np.median(self.y_train_):.4f}")
+        print(f"  75%:                 {np.percentile(self.y_train_, 75):.4f}")
+        print(f"  Max:                 {np.max(self.y_train_):.4f}")
 
     def get_score(self, y: None = None) -> float:
         """
@@ -377,7 +407,7 @@ class Ets(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, "model_")
         check_memory_reduced(self, 'score')
-        y = self.y_
+        y = self.y_train_
         fitted = self.fitted_values_
 
         # Handle NaN values if any
@@ -467,21 +497,15 @@ class Ets(BaseEstimator, RegressorMixin):
             setattr(self, key, value)
         
         # Reset fitted state - model needs to be refitted with new parameters
-        if hasattr(self, 'model_'):
-            self.model_ = None
-        if hasattr(self, 'config_'):
-            self.config_ = None
-        if hasattr(self, 'params_'):
-            self.params_ = None
-        if hasattr(self, 'y_'):
-            self.y_ = None
-        if hasattr(self, 'fitted_values_'):
-            self.fitted_values_ = None
-        if hasattr(self, 'residuals_in_'):
-            self.residuals_in_ = None
-        if hasattr(self, 'n_features_in_'):
-            self.n_features_in_ = None
-        self.memory_reduced_ = False
+        self.model_               = None
+        self.model_config_        = None
+        self.params_              = None
+        self.y_train_             = None
+        self.fitted_values_       = None
+        self.in_sample_residuals_ = None
+        self.n_features_in_       = None
+        self.is_memory_reduced    = False
+        self.is_fitted            = False
         
         return self
 
@@ -511,9 +535,9 @@ class Ets(BaseEstimator, RegressorMixin):
         check_is_fitted(self, "model_")
         
         # Clear arrays at Ets level
-        self.y_ = None
+        self.y_train_ = None
         self.fitted_values_ = None
-        self.residuals_in_ = None
+        self.in_sample_residuals_ = None
         
         # Clear arrays at ETSModel level
         if hasattr(self, 'model_'):
@@ -521,6 +545,6 @@ class Ets(BaseEstimator, RegressorMixin):
             self.model_.residuals = None
             self.model_.y_original = None
         
-        self.memory_reduced_ = True
+        self.is_memory_reduced = True
         
         return self
