@@ -85,7 +85,7 @@ class Arima(BaseEstimator, RegressorMixin):
         - 'converged': Convergence status
         - 'model': State-space model dict
         - 'method': Estimation method string
-    y_ : ndarray of shape (n_samples,)
+    y_train_ : ndarray of shape (n_samples,)
         Original training series.
     coef_ : ndarray
         Flattened array of fitted coefficients (AR, MA, xreg, intercept).
@@ -109,11 +109,11 @@ class Arima(BaseEstimator, RegressorMixin):
         Number of exogenous features seen during fitting (0 if no exog provided).
     fitted_values_ : ndarray of shape (n_samples,)
         In-sample fitted values.
-    residuals_in_ : ndarray of shape (n_samples,)
+    in_sample_residuals_ : ndarray of shape (n_samples,)
         In-sample residuals (observed - fitted).
     var_coef_ : ndarray
         Variance-covariance matrix of coefficients.
-    memory_reduced_ : bool
+    is_memory_reduced : bool
         Flag indicating whether reduce_memory() has been called.
 
     Notes
@@ -182,7 +182,7 @@ class Arima(BaseEstimator, RegressorMixin):
         self.optim_method    = optim_method
         self.optim_control   = optim_control
         self.kappa           = kappa
-        self.memory_reduced_ = False
+        self.is_memory_reduced = False
 
     def __repr__(self) -> str:
         """
@@ -268,7 +268,7 @@ class Arima(BaseEstimator, RegressorMixin):
         )
         
         # Extract and store model attributes
-        self.y_                  = self.model_['y']
+        self.y_train_            = self.model_['y']
         self.coef_               = self.model_['coef'].values.flatten()
         self.coef_names_         = list(self.model_['coef'].columns)
         self.sigma2_             = self.model_['sigma2']
@@ -278,11 +278,11 @@ class Arima(BaseEstimator, RegressorMixin):
         self.arma_               = self.model_['arma']
         self.converged_          = self.model_['converged']
         self.fitted_values_      = self.model_['fitted']
-        self.residuals_in_       = self.model_['residuals']
+        self.in_sample_residuals_ = self.model_['residuals']
         self.var_coef_           = self.model_['var_coef']
         self.n_exog_features_in_ = exog.shape[1] if exog is not None else 0
         self.n_features_in_      = 1
-        self.memory_reduced_     = False
+        self.is_memory_reduced   = False
         
         return self
 
@@ -507,7 +507,7 @@ class Arima(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, "model_")
         check_memory_reduced(self, 'get_residuals')
-        return self.residuals_in_
+        return self.in_sample_residuals_
 
     def get_fitted_values(self) -> np.ndarray:
         """
@@ -552,7 +552,7 @@ class Arima(BaseEstimator, RegressorMixin):
         print("=" * 60)
         print(f"Model: ARIMA({p},{d},{q})({P},{D},{Q})[{m}]")
         print(f"Method: {self.model_['method']}")
-        print(f"Number of observations: {len(self.y_)}")
+        print(f"Number of observations: {len(self.y_train_)}")
         print(f"Converged: {self.converged_}")
         print()
         
@@ -579,20 +579,20 @@ class Arima(BaseEstimator, RegressorMixin):
         print()
         
         print("Residual statistics:")
-        print(f"  Mean:                {np.mean(self.residuals_in_):.6f}")
-        print(f"  Std Dev:             {np.std(self.residuals_in_, ddof=1):.6f}")
-        print(f"  MAE:                 {np.mean(np.abs(self.residuals_in_)):.6f}")
-        print(f"  RMSE:                {np.sqrt(np.mean(self.residuals_in_**2)):.6f}")
+        print(f"  Mean:                {np.mean(self.in_sample_residuals_):.6f}")
+        print(f"  Std Dev:             {np.std(self.in_sample_residuals_, ddof=1):.6f}")
+        print(f"  MAE:                 {np.mean(np.abs(self.in_sample_residuals_)):.6f}")
+        print(f"  RMSE:                {np.sqrt(np.mean(self.in_sample_residuals_**2)):.6f}")
         print()
         
         print("Time Series Summary Statistics:")
-        print(f"  Mean:                {np.mean(self.y_):.4f}")
-        print(f"  Std Dev:             {np.std(self.y_, ddof=1):.4f}")
-        print(f"  Min:                 {np.min(self.y_):.4f}")
-        print(f"  25%:                 {np.percentile(self.y_, 25):.4f}")
-        print(f"  Median:              {np.median(self.y_):.4f}")
-        print(f"  75%:                 {np.percentile(self.y_, 75):.4f}")
-        print(f"  Max:                 {np.max(self.y_):.4f}")
+        print(f"  Mean:                {np.mean(self.y_train_):.4f}")
+        print(f"  Std Dev:             {np.std(self.y_train_, ddof=1):.4f}")
+        print(f"  Min:                 {np.min(self.y_train_):.4f}")
+        print(f"  25%:                 {np.percentile(self.y_train_, 25):.4f}")
+        print(f"  Median:              {np.median(self.y_train_):.4f}")
+        print(f"  75%:                 {np.percentile(self.y_train_, 75):.4f}")
+        print(f"  Max:                 {np.max(self.y_train_):.4f}")
 
     def params(self) -> np.ndarray:
         """
@@ -679,7 +679,7 @@ class Arima(BaseEstimator, RegressorMixin):
         check_is_fitted(self, "model_")
         check_memory_reduced(self, 'get_score')
         
-        y = self.y_
+        y = self.y_train_
         fitted = self.fitted_values_
         
         # Handle NaN values if any
@@ -801,15 +801,15 @@ class Arima(BaseEstimator, RegressorMixin):
         
         # Reset fitted state - remove fitted attributes if they exist
         fitted_attrs = [
-            'model_', 'y_', 'coef_', 'coef_names_', 'sigma2_', 'loglik_',
+            'model_', 'y_train_', 'coef_', 'coef_names_', 'sigma2_', 'loglik_',
             'aic_', 'bic_', 'arma_', 'converged_', 'fitted_values_',
-            'residuals_in_', 'var_coef_', 'n_features_in_', 'n_exog_features_in_'
+            'in_sample_residuals_', 'var_coef_', 'n_features_in_', 'n_exog_features_in_'
         ]
         for attr in fitted_attrs:
             if hasattr(self, attr):
                 delattr(self, attr)
         
-        self.memory_reduced_ = False
+        self.is_memory_reduced = False
         
         return self
 
@@ -843,7 +843,7 @@ class Arima(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, "model_")
         
-        if self.memory_reduced_:
+        if self.is_memory_reduced:
             warnings.warn(
                 "Memory has already been reduced. No further reduction possible.",
                 UserWarning
@@ -852,14 +852,14 @@ class Arima(BaseEstimator, RegressorMixin):
         
         # Delete large memory-consuming attributes, but keep model_ for predictions
         attrs_to_delete = [
-            'y_', 'fitted_values_', 'residuals_in_', 'var_coef_'
+            'y_train_', 'fitted_values_', 'in_sample_residuals_', 'var_coef_'
         ]
         
         for attr in attrs_to_delete:
             if hasattr(self, attr):
                 delattr(self, attr)
         
-        self.memory_reduced_ = True
+        self.is_memory_reduced = True
         
         warnings.warn(
             "Memory reduced. Diagnostic methods (get_residuals, get_fitted_values, "

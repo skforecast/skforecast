@@ -82,7 +82,7 @@ def test_get_residuals_equals_observed_minus_fitted():
     residuals = model.get_residuals()
     fitted = model.get_fitted_values()
     
-    expected_residuals = model.y_ - fitted
+    expected_residuals = model.y_train_ - fitted
     
     np.testing.assert_array_almost_equal(residuals, expected_residuals)
 
