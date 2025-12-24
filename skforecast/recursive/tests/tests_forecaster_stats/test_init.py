@@ -18,9 +18,10 @@ def test_TypeError_when_estimator_is_not_valid_stats_model_when_initialization()
     estimator = LinearRegression()
 
     err_msg = re.escape(
-        (f"`estimator` must be an instance of type ['skforecast.stats._sarimax.Sarimax', "
+        (f"`estimator` must be an instance of type ('skforecast.stats._arima.Arima', "
          f"'skforecast.stats._arar.Arar', 'skforecast.stats._ets.Ets', "
-         f"'aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']. "
+         f"'skforecast.stats._sarimax.Sarimax', 'aeon.forecasting.stats._arima.ARIMA', "
+         f"'aeon.forecasting.stats._ets.ETS'). "
          f"Got '{type(estimator)}'.")
     )
     with pytest.raises(TypeError, match = err_msg):

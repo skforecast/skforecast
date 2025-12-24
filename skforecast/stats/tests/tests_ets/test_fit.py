@@ -65,8 +65,8 @@ def test_ets_fit_2d_single_column_array():
     model = Ets(m=1, model="ANN")
     model.fit(y)
     
-    assert model.y_.shape == (50,)
-    assert model.y_.ndim == 1
+    assert model.y_train_.shape == (50,)
+    assert model.y_train_.ndim == 1
 
 def test_ets_fit_single_column_dataframe():
     """
@@ -76,8 +76,8 @@ def test_ets_fit_single_column_dataframe():
     model = Ets(m=1, model="ANN")
     model.fit(y)
     
-    assert model.y_.shape == (50,)
-    assert model.y_.ndim == 1
+    assert model.y_train_.shape == (50,)
+    assert model.y_train_.ndim == 1
 
 def test_ets_fit_and_attributes():
     """Test Ets estimator fit and attributes"""
@@ -86,16 +86,16 @@ def test_ets_fit_and_attributes():
     model.fit(y)
 
     assert hasattr(model, "model_")
-    assert hasattr(model, "y_")
-    assert hasattr(model, "config_")
+    assert hasattr(model, "y_train_")
+    assert hasattr(model, "model_config_")
     assert hasattr(model, "params_")
     assert hasattr(model, "fitted_values_")
-    assert hasattr(model, "residuals_in_")
+    assert hasattr(model, "in_sample_residuals_")
     assert hasattr(model, "n_features_in_")
 
-    assert model.y_.shape == y.shape
+    assert model.y_train_.shape == y.shape
     assert model.fitted_values_.shape == y.shape
-    assert model.residuals_in_.shape == y.shape
+    assert model.in_sample_residuals_.shape == y.shape
     assert model.n_features_in_ == 1
 
 def test_fit_ets_ann():
@@ -108,14 +108,14 @@ def test_fit_ets_ann():
     model.fit(y)
     
     expected_config = {'error': 'A', 'trend': 'N', 'season': 'N', 'damped': False, 'm': 1}
-    assert model.config_ == expected_config
+    assert model.model_config_ == expected_config
     assert model.params_['alpha'] == 0.1
     assert model.params_['beta'] == 0.0
     assert model.params_['gamma'] == 0.0
     assert model.params_['phi'] == 1.0
     assert 'init_states' in model.params_
     
-    np.testing.assert_almost_equal(model.y_, y, decimal=8)
+    np.testing.assert_almost_equal(model.y_train_, y, decimal=8)
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
@@ -128,7 +128,7 @@ def test_fit_ets_ann():
         decimal=8
     )
     np.testing.assert_array_almost_equal(
-        model.residuals_in_,
+        model.in_sample_residuals_,
         y - model.fitted_values_,
         decimal=8
     )
@@ -144,14 +144,14 @@ def test_fit_ets_aan():
     model.fit(y)
     
     expected_config = {'error': 'A', 'trend': 'A', 'season': 'N', 'damped': False, 'm': 1}
-    assert model.config_ == expected_config
+    assert model.model_config_ == expected_config
     assert model.params_['alpha'] == 0.1
     assert model.params_['beta'] > 0.0  # Beta should be estimated for trend model
     assert model.params_['gamma'] == 0.0
     assert model.params_['phi'] == 1.0
     assert 'init_states' in model.params_
     
-    np.testing.assert_almost_equal(model.y_, y, decimal=8)
+    np.testing.assert_almost_equal(model.y_train_, y, decimal=8)
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
@@ -164,7 +164,7 @@ def test_fit_ets_aan():
         decimal=8
     )
     np.testing.assert_array_almost_equal(
-        model.residuals_in_,
+        model.in_sample_residuals_,
         y - model.fitted_values_,
         decimal=8
     )
@@ -181,14 +181,14 @@ def test_fit_ets_aaa():
     model.fit(y)
     
     expected_config = {'error': 'A', 'trend': 'A', 'season': 'A', 'damped': False, 'm': 12}
-    assert model.config_ == expected_config
+    assert model.model_config_ == expected_config
     assert model.params_['alpha'] == 0.1
     assert model.params_['beta'] > 0.0  # Beta should be estimated for trend model
     assert model.params_['gamma'] > 0.0  # Gamma should be estimated for seasonal model
     assert model.params_['phi'] == 1.0
     assert 'init_states' in model.params_
     
-    np.testing.assert_almost_equal(model.y_, y, decimal=8)
+    np.testing.assert_almost_equal(model.y_train_, y, decimal=8)
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
@@ -201,7 +201,7 @@ def test_fit_ets_aaa():
         decimal=8
     )
     np.testing.assert_array_almost_equal(
-        model.residuals_in_,
+        model.in_sample_residuals_,
         y - model.fitted_values_,
         decimal=8
     )
@@ -218,14 +218,14 @@ def test_fit_ets_ana():
     model.fit(y)
     
     expected_config = {'error': 'A', 'trend': 'N', 'season': 'A', 'damped': False, 'm': 12}
-    assert model.config_ == expected_config
+    assert model.model_config_ == expected_config
     assert model.params_['alpha'] == 0.1
     assert model.params_['beta'] == 0.0
     assert model.params_['gamma'] > 0.0  # Gamma should be estimated for seasonal model
     assert model.params_['phi'] == 1.0
     assert 'init_states' in model.params_
     
-    np.testing.assert_almost_equal(model.y_, y, decimal=8)
+    np.testing.assert_almost_equal(model.y_train_, y, decimal=8)
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
@@ -238,7 +238,7 @@ def test_fit_ets_ana():
         decimal=8
     )
     np.testing.assert_array_almost_equal(
-        model.residuals_in_,
+        model.in_sample_residuals_,
         y - model.fitted_values_,
         decimal=8
     )
@@ -257,14 +257,14 @@ def test_fit_ets_man():
     model.fit(y)
     
     expected_config = {'error': 'M', 'trend': 'A', 'season': 'N', 'damped': False, 'm': 1}
-    assert model.config_ == expected_config
+    assert model.model_config_ == expected_config
     assert model.params_['alpha'] == 0.1
     assert model.params_['beta'] > 0.0  # Beta should be estimated for trend model
     assert model.params_['gamma'] == 0.0
     assert model.params_['phi'] == 1.0
     assert 'init_states' in model.params_
     
-    np.testing.assert_almost_equal(model.y_, y, decimal=8)
+    np.testing.assert_almost_equal(model.y_train_, y, decimal=8)
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
@@ -277,7 +277,7 @@ def test_fit_ets_man():
         decimal=8
     )
     np.testing.assert_array_almost_equal(
-        model.residuals_in_,
+        model.in_sample_residuals_,
         y - model.fitted_values_,
         decimal=8
     )
@@ -296,14 +296,14 @@ def test_fit_ets_auto_selection():
     model.fit(y)
     
     expected_config = {'error': 'A', 'trend': 'A', 'season': 'N', 'damped': False, 'm': 1}
-    assert model.config_ == expected_config
+    assert model.model_config_ == expected_config
     assert model.params_['alpha'] == 0.1
     assert model.params_['beta'] == 0.01
     assert model.params_['gamma'] == 0.0
     assert model.params_['phi'] == 1.0
     assert 'init_states' in model.params_
     
-    np.testing.assert_almost_equal(model.y_, y, decimal=8)
+    np.testing.assert_almost_equal(model.y_train_, y, decimal=8)
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
@@ -316,7 +316,7 @@ def test_fit_ets_auto_selection():
         decimal=8
     )
     np.testing.assert_array_almost_equal(
-        model.residuals_in_,
+        model.in_sample_residuals_,
         y - model.fitted_values_,
         decimal=8
     )
@@ -333,14 +333,14 @@ def test_fit_ets_aan_damped_trend():
     model.fit(y)
     
     expected_config = {'error': 'A', 'trend': 'A', 'season': 'N', 'damped': True, 'm': 1}
-    assert model.config_ == expected_config
+    assert model.model_config_ == expected_config
     assert 0.0 < model.params_['phi'] <= 1.0  # Damping parameter should be estimated
     assert 'alpha' in model.params_
     assert 'beta' in model.params_
     assert model.params_['gamma'] == 0.0
     assert 'init_states' in model.params_
     
-    np.testing.assert_almost_equal(model.y_, y, decimal=8)
+    np.testing.assert_almost_equal(model.y_train_, y, decimal=8)
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
@@ -353,7 +353,7 @@ def test_fit_ets_aan_damped_trend():
         decimal=8
     )
     np.testing.assert_array_almost_equal(
-        model.residuals_in_,
+        model.in_sample_residuals_,
         y - model.fitted_values_,
         decimal=8
     )

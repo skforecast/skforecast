@@ -148,7 +148,7 @@ def test_arar_fit_with_default_parameters(y_input_type):
     result = model.fit(y)
 
     assert hasattr(model, "model_")
-    np.testing.assert_array_almost_equal(model.y_, y, decimal=10)
+    np.testing.assert_array_almost_equal(model.y_train_, y, decimal=10)
 
     expected_coef = np.array([0.6621508, -0.1511758, -0.08748325, -0.09202529])
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=6)
@@ -187,7 +187,7 @@ def test_arar_fit_with_default_parameters(y_input_type):
 
     # Verify residuals = y - fitted_values exactly
     np.testing.assert_array_almost_equal(
-        model.residuals_in_,
+        model.in_sample_residuals_,
         y - model.fitted_values_,
         decimal=10
     )
@@ -200,7 +200,7 @@ def test_arar_fit_with_default_parameters(y_input_type):
     assert model.n_exog_features_in_ == 0
     assert model.exog_model_ is None
     assert model.coef_exog_ is None
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
 
 
 def test_arar_fit_with_given_parameters():
@@ -212,7 +212,7 @@ def test_arar_fit_with_given_parameters():
     result = model.fit(y)
 
     assert hasattr(model, "model_")
-    np.testing.assert_array_almost_equal(model.y_, y, decimal=10)
+    np.testing.assert_array_almost_equal(model.y_train_, y, decimal=10)
 
     expected_coef = np.array([0.68051374, -0.14307879, -0.12198576, 0.12992447])
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=6)
@@ -251,7 +251,7 @@ def test_arar_fit_with_given_parameters():
 
     # Verify residuals = y - fitted_values exactly
     np.testing.assert_array_almost_equal(
-        model.residuals_in_,
+        model.in_sample_residuals_,
         y - model.fitted_values_,
         decimal=10
     )
@@ -264,7 +264,7 @@ def test_arar_fit_with_given_parameters():
     assert model.n_exog_features_in_ == 0
     assert model.exog_model_ is None
     assert model.coef_exog_ is None
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
 
 def test_arar_fit_exact_aic_bic_values():
     """
@@ -278,7 +278,7 @@ def test_arar_fit_exact_aic_bic_values():
     # Manual AIC/BIC calculation
     n = len(y)
     k_arar = 6  # 4 AR coefficients + sbar + sigma2
-    residuals = model.residuals_in_
+    residuals = model.in_sample_residuals_
     valid_residuals = residuals[~np.isnan(residuals)]
     n_valid = len(valid_residuals)
     
@@ -337,7 +337,7 @@ def test_arar_fit_model_tuple_structure():
     Y, best_phi, best_lag, sigma2, psi, sbar, max_ar_depth, max_lag = model.model_
     
     # Verify each component matches class attributes
-    np.testing.assert_array_almost_equal(Y, model.y_, decimal=10)
+    np.testing.assert_array_almost_equal(Y, model.y_train_, decimal=10)
     np.testing.assert_array_almost_equal(best_phi, model.coef_, decimal=10)
     assert best_lag == model.lags_
     np.testing.assert_almost_equal(sigma2, model.sigma2_, decimal=10)
@@ -356,8 +356,8 @@ def test_arar_fit_resets_memory_reduced_flag():
     model.fit(y)
     model.reduce_memory()
     
-    assert model.memory_reduced_ is True
-    assert model.residuals_in_ is None
+    assert model.is_memory_reduced is True
+    assert model.in_sample_residuals_ is None
     assert model.fitted_values_ is None
 
 
@@ -383,9 +383,9 @@ def test_arar_fit_nan_pattern_in_fitted_values():
     assert np.all(np.isfinite(model.fitted_values_[nan_count:]))
     
     # Same pattern for residuals
-    assert np.sum(np.isnan(model.residuals_in_)) == nan_count
-    assert np.all(np.isnan(model.residuals_in_[:nan_count]))
-    assert np.all(np.isfinite(model.residuals_in_[nan_count:]))
+    assert np.sum(np.isnan(model.in_sample_residuals_)) == nan_count
+    assert np.all(np.isnan(model.in_sample_residuals_[:nan_count]))
+    assert np.all(np.isfinite(model.in_sample_residuals_[nan_count:]))
 
 
 # Fit with Exogenous Variables Tests
@@ -463,7 +463,7 @@ def test_arar_fit_aic_bic_with_exog():
     
     # With exog, should have k_arar=6 + k_exog=3 (intercept + 2 features)
     # Total = 9 parameters
-    residuals = model.residuals_in_
+    residuals = model.in_sample_residuals_
     valid_residuals = residuals[~np.isnan(residuals)]
     n_valid = len(valid_residuals)
     
