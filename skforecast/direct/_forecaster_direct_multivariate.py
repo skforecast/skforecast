@@ -2248,10 +2248,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             )
 
         if self.transformer_series_[self.level]:
-            boot_predictions = np.apply_along_axis(
-                                   func1d            = transform_numpy,
-                                   axis              = 0,
-                                   arr               = boot_predictions,
+            boot_predictions = transform_numpy(
+                                   array             = boot_predictions,
                                    transformer       = self.transformer_series_[self.level],
                                    fit               = False,
                                    inverse_transform = True
@@ -2388,10 +2386,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             )
 
         if self.transformer_series_[self.level]:
-            predictions = np.apply_along_axis(
-                              func1d            = transform_numpy,
-                              axis              = 0,
-                              arr               = predictions,
+            predictions = transform_numpy(
+                              array             = predictions,
                               transformer       = self.transformer_series_[self.level],
                               fit               = False,
                               inverse_transform = True
