@@ -920,7 +920,7 @@ class ForecasterStats():
             steps=steps, exog=exog, alpha=alpha
         )
 
-        # TODO: verify this is aligned with recursive forecasters
+        # TODO: Adapt to the new version of transform_numpy
         if self.transformer_y:
             predictions_values = self.transformer_y.inverse_transform(predictions.to_numpy())
             if hasattr(predictions_values, 'toarray'):
