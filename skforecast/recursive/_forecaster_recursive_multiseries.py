@@ -2937,10 +2937,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                     self.transformer_series_['_unknown_level']
                                 )
             if transformer_level is not None:
-                boot_predictions[:, i, :] = np.apply_along_axis(
-                    func1d            = transform_numpy,
-                    axis              = 0,
-                    arr               = boot_predictions[:, i, :],
+                boot_predictions[:, i, :] = transform_numpy(
+                    array             = boot_predictions[:, i, :],
                     transformer       = transformer_level,
                     fit               = False,
                     inverse_transform = True
@@ -3097,10 +3095,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                     self.transformer_series_['_unknown_level']
                                 )
             if transformer_level is not None:
-                predictions[i, :, :] = np.apply_along_axis(
-                    func1d            = transform_numpy,
-                    axis              = 0,
-                    arr               = predictions[i, :, :],
+                predictions[i, :, :] = transform_numpy(
+                    array             = predictions[i, :, :],
                     transformer       = transformer_level,
                     fit               = False,
                     inverse_transform = True

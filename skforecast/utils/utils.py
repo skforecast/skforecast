@@ -1738,8 +1738,11 @@ def transform_numpy(
             f"`array` argument must be a numpy ndarray. Got {type(array)}"
         )
     
-    array_ndim = array.ndim
-    if array_ndim == 1:
+    original_ndim = array.ndim
+    original_shape = array.shape
+    reshaped_for_inverse = False
+    
+    if original_ndim == 1:
         array = array.reshape(-1, 1)
 
     if inverse_transform and isinstance(transformer, ColumnTransformer):
@@ -1759,6 +1762,12 @@ def transform_numpy(
             else:
                 array_transformed = transformer.transform(array)
         else:
+            # Vectorized inverse transformation for 2D arrays with multiple columns.
+            # Reshape to single column, transform, and reshape back.
+            # This is faster than applying the transformer column by column.
+            if array.shape[1] > 1:
+                array = array.reshape(-1, 1)
+                reshaped_for_inverse = True
             array_transformed = transformer.inverse_transform(array)
 
     if hasattr(array_transformed, 'toarray'):
@@ -1768,7 +1777,11 @@ def transform_numpy(
     if isinstance(array_transformed, (pd.Series, pd.DataFrame)):
         array_transformed = array_transformed.to_numpy()
 
-    if array_ndim == 1:
+    # Reshape back to original shape only if we reshaped for inverse_transform
+    if reshaped_for_inverse:
+        array_transformed = array_transformed.reshape(original_shape)
+
+    if original_ndim == 1:
         array_transformed = array_transformed.ravel()
 
     return array_transformed

@@ -1593,10 +1593,8 @@ class ForecasterRnn(ForecasterBase):
             if level in levels:
                 transformer_level = self.transformer_series_[level]
                 if transformer_level is not None:
-                    predictions[i, :, :] = np.apply_along_axis(
-                        func1d            = transform_numpy,
-                        axis              = 0,
-                        arr               = predictions[i, :, :],
+                    predictions[i, :, :] = transform_numpy(
+                        array             = predictions[i, :, :],
                         transformer       = transformer_level,
                         fit               = False,
                         inverse_transform = True

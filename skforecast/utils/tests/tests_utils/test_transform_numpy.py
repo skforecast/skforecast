@@ -67,7 +67,9 @@ def test_transform_numpy_ValueError_when_transformer_is_ColumnTransformer_and_in
                       verbose_feature_names_out = False
                   )
 
-    err_msg = re.escape("`inverse_transform` is not available when using ColumnTransformers.")
+    err_msg = re.escape(
+        "`inverse_transform` is not available when using ColumnTransformers."
+    )
     with pytest.raises(ValueError, match = err_msg):
         transform_numpy(
             array             = array,
@@ -212,3 +214,67 @@ def test_transform_numpy_when_transformer_set_output_is_pandas():
     )
     
     np.testing.assert_array_almost_equal(results, expected)
+
+
+def test_transform_numpy_inverse_transform_multiple_columns_equivalent_to_column_by_column():
+    """
+    Test that transform_numpy with inverse_transform=True on a 2D array with 
+    multiple columns produces the same result as applying inverse_transform 
+    column by column with a for loop.
+    """
+    
+    np.random.seed(123)
+    train_data = np.random.rand(100)
+    transformer = StandardScaler()
+    _ = transform_numpy(
+            array             = train_data,
+            transformer       = transformer,
+            fit               = True,
+            inverse_transform = False
+        )
+    
+    # Create 2D array with multiple columns
+    n_rows = 48
+    n_cols = 250
+    input_array = np.random.rand(n_rows, n_cols)
+    
+    # Method 1: Column by column with for loop
+    expected = np.empty_like(input_array, order='F')
+    for i in range(n_cols):
+        expected[:, i] = transformer.inverse_transform(
+            input_array[:, i].reshape(-1, 1)
+        ).ravel()
+    
+    # Method 2: Using transform_numpy
+    results = transform_numpy(
+                  array             = input_array,
+                  transformer       = transformer,
+                  fit               = False,
+                  inverse_transform = True
+              )
+    
+    np.testing.assert_array_almost_equal(results, expected)
+
+
+def test_transform_numpy_inverse_transform_preserves_shape():
+    """
+    Test that transform_numpy with inverse_transform=True preserves the 
+    original shape of the input array.
+    """
+    np.random.seed(456)
+    train_data = np.random.rand(100, 1)
+    transformer = StandardScaler()
+    transformer.fit(train_data)
+    
+    # Test various shapes
+    shapes_to_test = [(10, 1), (10, 3), (48, 100), (24, 250)]
+    
+    for shape in shapes_to_test:
+        input_array = np.random.rand(*shape)
+        results = transform_numpy(
+                      array             = input_array,
+                      transformer       = transformer,
+                      fit               = False,
+                      inverse_transform = True
+                  )
+        assert results.shape == shape, f"Shape mismatch: expected {shape}, got {results.shape}"

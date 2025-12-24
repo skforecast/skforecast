@@ -1776,10 +1776,8 @@ class ForecasterRecursive(ForecasterBase):
             )
         
         if self.transformer_y:
-            boot_predictions = np.apply_along_axis(
-                                   func1d            = transform_numpy,
-                                   axis              = 0,
-                                   arr               = boot_predictions,
+            boot_predictions = transform_numpy(
+                                   array             = boot_predictions,
                                    transformer       = self.transformer_y,
                                    fit               = False,
                                    inverse_transform = True
@@ -1906,10 +1904,8 @@ class ForecasterRecursive(ForecasterBase):
             )
         
         if self.transformer_y:
-            predictions = np.apply_along_axis(
-                              func1d            = transform_numpy,
-                              axis              = 0,
-                              arr               = predictions,
+            predictions = transform_numpy(
+                              array             = predictions,
                               transformer       = self.transformer_y,
                               fit               = False,
                               inverse_transform = True

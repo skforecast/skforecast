@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.stats import Sarimax, Arar
+from skforecast.stats import Sarimax, Arar, Ets
 from skforecast.recursive import ForecasterStats
 from skforecast.utils import expand_index
 from sklearn.compose import ColumnTransformer
@@ -435,35 +435,66 @@ def test_predict_interval_ForecasterStats_updates_extended_index_twice(y, idx):
     pd.testing.assert_index_equal(forecaster.extended_index_, idx)
 
 
-def test_predict_interval_output_ForecasterStats_Arar_estimator(y=y):
+@pytest.mark.parametrize(
+    "estimator, expected_data",
+    [
+        (
+            Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
+            np.array([[0.605353  , 0.352368  , 0.858338  ],
+                      [0.596542  , 0.243767  , 0.949317  ],
+                      [0.587858  , 0.159896  , 1.015821  ],
+                      [0.579301  , 0.089243  , 1.069360  ],
+                      [0.570869  , 0.027256  , 1.114482  ],
+                      [0.562559  , -0.028434 , 1.153553  ],
+                      [0.554371  , -0.079252 , 1.187993  ],
+                      [0.546301  , -0.126137 , 1.218740  ],
+                      [0.538349  , -0.169750 , 1.246448  ],
+                      [0.530513  , -0.210575 , 1.271601  ]])
+        ),
+        (
+            Arar(max_ar_depth=26, max_lag=40),
+            np.array([[0.65451694, 0.56798138, 0.7410525 ],
+                      [0.69369274, 0.60112468, 0.78626081],
+                      [0.8018875 , 0.70848121, 0.8952938 ],
+                      [0.82157326, 0.72804665, 0.91509988],
+                      [0.87868702, 0.78514306, 0.97223098],
+                      [0.88798496, 0.79443849, 0.98153142],
+                      [1.01739572, 0.92384889, 1.11094254],
+                      [1.02221717, 0.92867029, 1.11576405],
+                      [0.5688093 , 0.47526242, 0.66235619],
+                      [0.63365663, 0.54010974, 0.72720352]])
+        ),
+        (
+            Ets(model='AAN', damped=False),
+            np.array([[0.681232  , 0.290318  , 1.072146  ],
+                      [0.679951  , 0.286679  , 1.073223  ],
+                      [0.678670  , 0.282610  , 1.074730  ],
+                      [0.677389  , 0.278082  , 1.076696  ],
+                      [0.676108  , 0.273068  , 1.079148  ],
+                      [0.674827  , 0.267544  , 1.082110  ],
+                      [0.673546  , 0.261489  , 1.085604  ],
+                      [0.672265  , 0.254883  , 1.089647  ],
+                      [0.670984  , 0.247713  , 1.094256  ],
+                      [0.669703  , 0.239965  , 1.099442  ]])
+        ),
+    ],
+    ids=['Sarimax', 'Arar', 'Ets']
+)
+def test_predict_interval_output_ForecasterStats_multiple_estimators(estimator, expected_data, y=y):
     """
-    Test output of predict_interval when using Arar as estimator in ForecasterStats
+    Test output of predict_interval when using different estimators (Sarimax, Arar, Ets) in ForecasterStats.
     """
     y = y.copy()
     y.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
-    estimator = Arar(max_ar_depth=26, max_lag=40)
-    forecaster = ForecasterStats(
-        estimator = estimator
-    )
+    forecaster = ForecasterStats(estimator=estimator)
     forecaster.fit(y=y)
     predictions = forecaster.predict_interval(steps=10, alpha=0.05)
 
     expected_results = pd.DataFrame(
-        data = np.array([[0.65451694, 0.56798138, 0.7410525 ],
-        [0.69369274, 0.60112468, 0.78626081],
-        [0.8018875 , 0.70848121, 0.8952938 ],
-        [0.82157326, 0.72804665, 0.91509988],
-        [0.87868702, 0.78514306, 0.97223098],
-        [0.88798496, 0.79443849, 0.98153142],
-        [1.01739572, 0.92384889, 1.11094254],
-        [1.02221717, 0.92867029, 1.11576405],
-        [0.5688093 , 0.47526242, 0.66235619],
-        [0.63365663, 0.54010974, 0.72720352]],
-        dtype=float),
-        columns = ['pred', 'lower_bound', 'upper_bound'],
-        index = pd.date_range(start="2000-02-20", periods=10, freq='D')
-        
+        data=expected_data,
+        columns=['pred', 'lower_bound', 'upper_bound'],
+        index=pd.date_range(start="2000-02-20", periods=10, freq='D')
     )
 
-    pd.testing.assert_frame_equal(predictions, expected_results)
+    pd.testing.assert_frame_equal(predictions, expected_results, atol=0.0001)
 
