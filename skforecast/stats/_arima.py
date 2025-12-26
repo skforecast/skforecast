@@ -115,6 +115,8 @@ class Arima(BaseEstimator, RegressorMixin):
         Variance-covariance matrix of coefficients.
     is_memory_reduced : bool
         Flag indicating whether reduce_memory() has been called.
+    estimator_id : str
+        String identifier for the model configuration (e.g., "Arima(1,1,1)(0,0,0)[1]").
 
     Notes
     -----
@@ -171,31 +173,31 @@ class Arima(BaseEstimator, RegressorMixin):
                 f"`seasonal_order` must be a tuple of length 3, got length {len(seasonal_order)}"
             )
         
-        self.order           = order
-        self.seasonal_order  = seasonal_order
-        self.m               = m
-        self.include_mean    = include_mean
-        self.transform_pars  = transform_pars
-        self.method          = method
-        self.n_cond          = n_cond
-        self.SSinit          = SSinit
-        self.optim_method    = optim_method
-        self.optim_control   = optim_control
-        self.kappa           = kappa
+        self.order             = order
+        self.seasonal_order    = seasonal_order
+        self.m                 = m
+        self.include_mean      = include_mean
+        self.transform_pars    = transform_pars
+        self.method            = method
+        self.n_cond            = n_cond
+        self.SSinit            = SSinit
+        self.optim_method      = optim_method
+        self.optim_control     = optim_control
+        self.kappa             = kappa
         self.is_memory_reduced = False
+
+        p, d, q = self.order
+        P, D, Q = self.seasonal_order
+        if P == 0 and D == 0 and Q == 0:
+            self.estimator_id = f"Arima({p},{d},{q})"
+        else:
+            self.estimator_id = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
 
     def __repr__(self) -> str:
         """
         Information displayed when an Arima object is printed.
         """
-        p, d, q = self.order
-        P, D, Q = self.seasonal_order
-        m = self.m
-        
-        if P == 0 and D == 0 and Q == 0:
-            return f"Arima({p},{d},{q})"
-        else:
-            return f"Arima({p},{d},{q})({P},{D},{Q})[{m}]"
+        return self.estimator_id
 
     def fit(
         self, 
@@ -268,21 +270,21 @@ class Arima(BaseEstimator, RegressorMixin):
         )
         
         # Extract and store model attributes
-        self.y_train_            = self.model_['y']
-        self.coef_               = self.model_['coef'].values.flatten()
-        self.coef_names_         = list(self.model_['coef'].columns)
-        self.sigma2_             = self.model_['sigma2']
-        self.loglik_             = self.model_['loglik']
-        self.aic_                = self.model_['aic']
-        self.bic_                = self.model_['bic']
-        self.arma_               = self.model_['arma']
-        self.converged_          = self.model_['converged']
-        self.fitted_values_      = self.model_['fitted']
+        self.y_train_             = self.model_['y']
+        self.coef_                = self.model_['coef'].values.flatten()
+        self.coef_names_          = list(self.model_['coef'].columns)
+        self.sigma2_              = self.model_['sigma2']
+        self.loglik_              = self.model_['loglik']
+        self.aic_                 = self.model_['aic']
+        self.bic_                 = self.model_['bic']
+        self.arma_                = self.model_['arma']
+        self.converged_           = self.model_['converged']
+        self.fitted_values_       = self.model_['fitted']
         self.in_sample_residuals_ = self.model_['residuals']
-        self.var_coef_           = self.model_['var_coef']
-        self.n_exog_features_in_ = exog.shape[1] if exog is not None else 0
-        self.n_features_in_      = 1
-        self.is_memory_reduced   = False
+        self.var_coef_            = self.model_['var_coef']
+        self.n_exog_features_in_  = exog.shape[1] if exog is not None else 0
+        self.n_features_in_       = 1
+        self.is_memory_reduced    = False
         
         return self
 
@@ -346,7 +348,7 @@ class Arima(BaseEstimator, RegressorMixin):
             model   = self.model_,
             n_ahead = steps,
             newxreg = exog,
-            se_fit  =  False
+            se_fit  = False
         )
         
         return result['pred']
@@ -454,7 +456,7 @@ class Arima(BaseEstimator, RegressorMixin):
             model   = self.model_,
             n_ahead = steps,
             newxreg = exog,
-            se_fit  =  True
+            se_fit  = True
         )
         
         mean = result['pred']
@@ -544,13 +546,10 @@ class Arima(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, "model_")
         check_memory_reduced(self, 'summary')
-        
-        # Extract ARIMA orders
-        p, q, P, Q, m, d, D = self.arma_
-        
+                
         print("ARIMA Model Summary")
         print("=" * 60)
-        print(f"Model: ARIMA({p},{d},{q})({P},{D},{Q})[{m}]")
+        print(f"Model: {self.estimator_id}")
         print(f"Method: {self.model_['method']}")
         print(f"Number of observations: {len(self.y_train_)}")
         print(f"Converged: {self.converged_}")
@@ -614,46 +613,6 @@ class Arima(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, "model_")
         return self.coef_
-
-    def get_info_criteria(self, criteria: str = 'aic') -> float:
-        """
-        Get the selected information criterion.
-
-        Parameters
-        ----------
-        criteria : str, default='aic'
-            The information criterion to retrieve. Valid options are 
-            {'aic', 'bic'}.
-
-        Returns
-        -------
-        metric : float
-            The value of the selected information criterion.
-        
-        Raises
-        ------
-        ValueError
-            If an invalid criteria is specified or BIC is not available.
-        NotFittedError
-            If the model has not been fitted.
-        """
-        check_is_fitted(self, "model_")
-        
-        if criteria not in ['aic', 'bic']:
-            raise ValueError(
-                f"Invalid value for `criteria`: '{criteria}'. "
-                f"Valid options are 'aic' and 'bic'."
-            )
-        
-        if criteria == 'aic':
-            return self.aic_
-        elif criteria == 'bic':
-            if self.bic_ is None:
-                raise ValueError(
-                    "BIC is not available for this model. This may occur when "
-                    "the model did not converge or other estimation issues."
-                )
-            return self.bic_
 
     def get_score(self, y: None = None) -> float:
         """

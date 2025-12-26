@@ -234,6 +234,9 @@ class Sarimax(BaseEstimator, RegressorMixin):
         created by statsmodels after fitting the SARIMAX model.
     training_index : pandas Index
         Index of the training series as long as it is a pandas Series or Dataframe.
+    estimator_id : str
+        String identifier for the model configuration (e.g., "Sarimax(1,0,0)(0,0,0)[0]").
+    
 
     References
     ----------
@@ -320,17 +323,19 @@ class Sarimax(BaseEstimator, RegressorMixin):
         self.sarimax_res    = None
         self.training_index = None
 
+        p, d, q = self.order
+        P, D, Q, m = self.seasonal_order
+        
+        self.estimator_id = f"Sarimax({p},{d},{q})({P},{D},{Q})[{m}]"
+
     def __repr__(
         self
     ) -> str:
         """
         Information displayed when a Sarimax object is printed.
         """
-
-        p, d, q = self.order
-        P, D, Q, m = self.seasonal_order
         
-        return f"Sarimax({p},{d},{q})({P},{D},{Q})[{m}]"
+        return self.estimator_id
 
     def _consolidate_kwargs(
         self

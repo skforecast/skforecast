@@ -117,6 +117,8 @@ class Arar(BaseEstimator, RegressorMixin):
         arrays (y_train_, fitted_values_, in_sample_residuals_).
     is_fitted : bool
         Flag indicating whether the model has been successfully fitted to data.
+    estimator_id : str
+        String identifier for the model configuration (e.g., "Arar").
     
     Notes
     -----
@@ -150,6 +152,7 @@ class Arar(BaseEstimator, RegressorMixin):
     Despite these limitations, this strategy provides a practical and
     computationally efficient way to incorporate exogenous information into an
     otherwise univariate ARAR framework.
+
     """
 
     def __init__(
@@ -179,6 +182,13 @@ class Arar(BaseEstimator, RegressorMixin):
         self.n_features_in_       = None
         self.is_memory_reduced    = False
         self.is_fitted            = False
+        self.estimator_id         = "Arar"
+
+    def __repr__(self) -> str:
+        """
+        Information displayed when an Arar object is printed.
+        """
+        return self.estimator_id
 
     def fit(
         self, 
@@ -532,12 +542,12 @@ class Arar(BaseEstimator, RegressorMixin):
 
     def summary(self) -> None:
         """
-        Print a simple textual summary of the fitted ARAR model.
+        Print a simple textual summary of the fitted Arar model.
         """
         check_is_fitted(self, "model_")
         check_memory_reduced(self, 'summary')
         
-        print("ARAR Model Summary")
+        print(f"{self.estimator_id} Model Summary")
         print("------------------")
         print(f"Number of observations: {len(self.y_train_)}")
         print(f"Selected AR lags: {self.lags_}")

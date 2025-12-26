@@ -151,6 +151,9 @@ class Ets(BaseEstimator, RegressorMixin):
         arrays (y_train_, fitted_values_, in_sample_residuals_).
     is_fitted : bool
         Flag indicating whether the model has been successfully fitted to data.
+    estimator_id : str
+        String identifier for the model configuration (e.g., "Ets(ANN)").
+    
     """
 
     def __init__(
@@ -200,6 +203,13 @@ class Ets(BaseEstimator, RegressorMixin):
         self.n_features_in_             = None
         self.is_memory_reduced          = False
         self.is_fitted                  = False
+        self.estimator_id               = f"Ets({self.model})"
+
+    def __repr__(self) -> str:
+        """
+        Information displayed when an Ets object is printed.
+        """
+        return self.estimator_id
 
     def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> Ets:
         """
@@ -285,6 +295,12 @@ class Ets(BaseEstimator, RegressorMixin):
         self.in_sample_residuals_ = self.model_.residuals
         self.n_features_in_       = 1
         self.is_fitted            = True
+
+        model_name = f"{self.model_config_['error']}{self.model_config_['trend']}{self.model_config_['season']}"
+        if self.model_config_['damped'] and self.model_config_['trend'] != "N":
+            model_name = f"{self.model_config_['error']}{self.model_config_['trend']}d{self.model_config_['season']}"
+
+        self.estimator_id = f"Ets({model_name})"
 
         return self
 
@@ -402,14 +418,9 @@ class Ets(BaseEstimator, RegressorMixin):
         check_is_fitted(self, "model_")
         check_memory_reduced(self, 'summary')
 
-        # Format model name
-        model_name = f"{self.model_config_['error']}{self.model_config_['trend']}{self.model_config_['season']}"
-        if self.model_config_['damped'] and self.model_config_['trend'] != "N":
-            model_name = f"{self.model_config_['error']}{self.model_config_['trend']}d{self.model_config_['season']}"
-
-        print("ETS Model Summary")
+        print("Ets Model Summary")
         print("=" * 60)
-        print(f"Model: ETS({model_name})")
+        print(f"Model: {self.estimator_id}")
         print(f"Number of observations: {len(self.y_train_)}")
         print(f"Seasonal period (m): {self.model_config_['m']}")
         print()
