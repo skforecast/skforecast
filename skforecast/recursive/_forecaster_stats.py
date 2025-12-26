@@ -6,6 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
+from typing import Any
 import warnings
 import sys
 from copy import copy
@@ -31,21 +32,27 @@ from ..utils import (
     transform_numpy,
     transform_dataframe,
     get_style_repr_html,
+    set_skforecast_warnings,
     initialize_estimator
 )
 
 
 class ForecasterStats():
     """
-    This class turns statistical model into a Forecaster compatible with the skforecast API.
+    This class turns statistical models into a Forecaster compatible with the 
+    skforecast API. It supports single or multiple statistical models for the 
+    same time series, enabling model comparison and ensemble predictions.
+    
     Supported statistical models are: skforecast.stats.Sarimax, skforecast.stats.Arima,
     skforecast.stats.Arar, skforecast.stats.Ets, aeon.forecasting.stats.ARIMA and
     aeon.forecasting.stats.ETS.
     
     Parameters
     ----------
-    estimator : object
-        A statistical model instance. Supported models are:
+    estimator : object, list of objects
+        A statistical model instance or a list of statistical model instances. 
+        When a list is provided, all models are fitted to the same time series 
+        and predictions from all models are returned. Supported models are:
         
         - skforecast.stats.Arima 
         - skforecast.stats.Arar
@@ -62,21 +69,30 @@ class ForecasterStats():
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
-    fit_kwargs : dict, default None
-        Additional arguments to be passed to the `fit` method of the estimator. 
-        When using the skforecast Sarimax model, the fit kwargs should be passed 
-        using the model parameter `sm_fit_kwargs` and not this one.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
     regressor : estimator or pipeline compatible with the Keras API
         **Deprecated**, alias for `estimator`.
+    fit_kwargs : Ignored
+        Not used, present here for API consistency by convention.
     
     Attributes
     ----------
-    estimator : object
-        A statistical model instance.
-    params: dict
-        Parameters of the statistical model.
+    estimators : list
+        List of the original statistical model instances provided by the user 
+        without being fitted.
+    estimators_ : list
+        List of statistical model instances. These are the estimators that will
+        be trained when `fit()` is called.
+    estimator_names_ : list
+        Descriptive names for each estimator, generated from model parameters
+        (e.g., 'Arima(1,1,1)', 'Ets(AAN)'). Used to identify predictions from
+        each model.
+    estimator_types_ : tuple
+        Full qualified type string for each estimator (e.g., 
+        'skforecast.stats._arima.Arima').
+    n_estimators : int
+        Number of estimators in the forecaster.
     transformer_y : object transformer (preprocessor)
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
@@ -120,8 +136,6 @@ class ForecasterStats():
         Names of the exogenous variables included in the matrix `X_train` created
         internally for training. It can be different from `exog_names_in_` if
         some exogenous variables are transformed during the training process.
-    fit_kwargs : dict
-        Additional arguments to be passed to the `fit` method of the estimator.
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -144,21 +158,76 @@ class ForecasterStats():
         Name used as an identifier of the forecaster.
     __skforecast_tags__ : dict
         Tags associated with the forecaster.
+    fit_kwargs : Ignored
+        Not used, present here for API consistency by convention.
     
     """
     
     def __init__(
         self,
-        estimator: object = None,
+        estimator: object | list[object] = None,
         transformer_y: object | None = None,
         transformer_exog: object | None = None,
-        fit_kwargs: dict[str, object] | None = None,
         forecaster_id: str | int | None = None,
-        regressor: object = None
+        regressor: object = None,
+        fit_kwargs: Any = None,
     ) -> None:
         
-        self.estimator               = copy(initialize_estimator(estimator, regressor))
-        self.estimator_type          = None
+        # Valid estimator types (class-level constant)
+        self.valid_estimator_types = (
+            'skforecast.stats._arima.Arima',
+            'skforecast.stats._arar.Arar',
+            'skforecast.stats._ets.Ets',
+            'skforecast.stats._sarimax.Sarimax',
+            'aeon.forecasting.stats._arima.ARIMA',
+            'aeon.forecasting.stats._ets.ETS'
+        )
+        self.estimators_support_exog = (
+            'skforecast.stats._arima.Arima',
+            'skforecast.stats._arar.Arar',
+            'skforecast.stats._sarimax.Sarimax',
+        )
+        self.estimators_support_interval = (
+            'skforecast.stats._arima.Arima',
+            'skforecast.stats._arar.Arar',
+            'skforecast.stats._ets.Ets',
+            'skforecast.stats._sarimax.Sarimax'
+        )
+        self.estimators_support_reduce_memory = (
+            'skforecast.stats._arima.Arima',
+            'skforecast.stats._arar.Arar',
+            'skforecast.stats._ets.Ets'
+        )
+
+        # TODO: Remove 0.20. Handle deprecated 'regressor' argument
+        estimator = initialize_estimator(estimator, regressor)
+        
+        if not isinstance(estimator, list):
+            estimator = [estimator]
+        else:
+            if len(estimator) == 0:
+                raise ValueError("`estimator` list cannot be empty.")
+        
+        # Validate all estimators and collect types
+        estimator_types_ = []
+        for i, est in enumerate(estimator):
+            est_type = f"{type(est).__module__}.{type(est).__name__}"
+            if est_type not in self.valid_estimator_types:
+                raise TypeError(
+                    f"Estimator at index {i} must be an instance of type "
+                    f"{self.valid_estimator_types}. Got '{type(est)}'."
+                )
+            estimator_types_.append(est_type)
+        
+        # TODO: Review window_size for statistical models
+        # TODO Review _search functions, they only work for single estimator
+        # TODO: Decide if include 'aggregate' parameter for multiple estimators, it
+        # aggregates predictions from all estimators.
+        self.estimators              = estimator
+        self.estimators_             = None
+        self.estimator_names_        = self._generate_estimator_names(self.estimators)
+        self.estimator_types_        = tuple(estimator_types_)
+        self.n_estimators            = len(self.estimators)
         self.transformer_y           = transformer_y
         self.transformer_exog        = transformer_exog
         self.window_size             = 1
@@ -180,43 +249,9 @@ class ForecasterStats():
         self.skforecast_version      = __version__
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
+        self.fit_kwargs              = None  # Ignored, present for API consistency
 
-        self.valid_estimator_types   = (
-            'skforecast.stats._arima.Arima',
-            'skforecast.stats._arar.Arar',
-            'skforecast.stats._ets.Ets',
-            'skforecast.stats._sarimax.Sarimax',
-            'aeon.forecasting.stats._arima.ARIMA',
-            'aeon.forecasting.stats._ets.ETS'
-        )
-        self.estimators_support_exog  = (
-            'skforecast.stats._arima.Arima',
-            'skforecast.stats._arar.Arar',
-            'skforecast.stats._sarimax.Sarimax',
-        )
-        self.estimators_support_interval = (
-            'skforecast.stats._arima.Arima',
-            'skforecast.stats._arar.Arar',
-            'skforecast.stats._ets.Ets',
-            'skforecast.stats._sarimax.Sarimax'
-        )
-        self.estimators_support_reduce_memory = (
-            'skforecast.stats._arima.Arima',
-            'skforecast.stats._arar.Arar',
-            'skforecast.stats._ets.Ets'
-        )
-
-        estimator_type = f"{type(estimator).__module__}.{type(estimator).__name__}"
-        if estimator_type not in self.valid_estimator_types:
-            raise TypeError(
-                f"`estimator` must be an instance of type {self.valid_estimator_types}. "
-                f"Got '{type(estimator)}'."
-            )
-        self.estimator_type = estimator_type
-
-        self.params = self.estimator.get_params(deep=True)
-        self.fit_kwargs = fit_kwargs if fit_kwargs is not None else {}
-
+        # TODO: Review, multiple_estimator flag?
         self.__skforecast_tags__ = {
             "library": "skforecast",
             "forecaster_name": "ForecasterStats",
@@ -274,7 +309,99 @@ class ForecasterStats():
             "versions. Use `estimator` instead.",
             FutureWarning
         )
-        return self.estimator
+        return self.estimators
+
+    def _generate_estimator_name(self, estimator: object) -> str:
+        """
+        Generate a descriptive name for a single estimator based on its 
+        parameters and type.
+        
+        Parameters
+        ----------
+        estimator : object
+            A statistical model instance.
+        
+        Returns
+        -------
+        estimator_id : str
+            Descriptive name for the estimator.
+        
+        """
+        # Check if estimator has estimator_id attribute (skforecast models)
+        if hasattr(estimator, 'estimator_id') and estimator.estimator_id is not None:
+            estimator_id = estimator.estimator_id
+        else:
+            estimator_id = f"{type(estimator).__module__.split('.')[0]}.{type(estimator).__name__}"
+        
+        return estimator_id
+
+    def _generate_estimator_names(self, estimators: list) -> list[str]:
+        """
+        Generate unique, descriptive names for a list of estimators.
+        
+        Handles duplicate names by appending a numeric suffix.
+        
+        Parameters
+        ----------
+        estimators : list
+            List of statistical model instances.
+        
+        Returns
+        -------
+        names : list[str]
+            List of unique names for each estimator.
+        
+        """
+        names = []
+        name_counts = {}
+        
+        for est in estimators:
+            base_name = self._generate_estimator_name(est)
+            
+            # Track occurrences and add suffix for duplicates
+            if base_name in name_counts:
+                name_counts[base_name] += 1
+                unique_name = f"{base_name}_{name_counts[base_name]}"
+            else:
+                name_counts[base_name] = 1
+                unique_name = base_name
+            
+            names.append(unique_name)
+        
+        return names
+
+    def get_estimator(self, name: str) -> object:
+        """
+        Get a specific estimator by its name.
+        
+        Parameters
+        ----------
+        name : str
+            The name of the estimator to retrieve.
+        
+        Returns
+        -------
+        estimator : object
+            The requested estimator instance.
+        
+        """
+
+        if not self.is_fitted:
+            raise NotFittedError(
+                "This ForecasterStats instance is not fitted yet. "
+                "Call 'fit' with appropriate arguments before using "
+                "this method."
+            )
+        
+        if name not in self.estimator_names_:
+            raise KeyError(
+                f"No estimator named '{name}'. "
+                f"Available estimators: {self.estimator_names_}"
+            )
+        
+        idx = self.estimator_names_.index(name)
+
+        return self.estimators_[idx]
     
     def _preprocess_repr(self) -> tuple[str, str]:
         """
@@ -305,6 +432,7 @@ class ForecasterStats():
         
         return params, exog_names_in_
 
+    # TODO: Adapt for multiple estimators
     def __repr__(
         self
     ) -> str:
@@ -429,8 +557,8 @@ class ForecasterStats():
         """
         Training Forecaster.
 
-        Additional arguments to be passed to the `fit` method of the estimator 
-        can be added with the `fit_kwargs` argument when initializing the forecaster.
+        Fits all estimators to the same time series. Each estimator is trained
+        independently on the transformed data.
         
         Parameters
         ----------
@@ -451,22 +579,10 @@ class ForecasterStats():
         
         """
 
-        check_y(y=y)
-        if exog is not None:
-            if self.estimator_type not in self.estimators_support_exog:
-                warnings.warn(
-                    f"The estimator {self.estimator_type} does not support exogenous variables, "
-                    f"they will be ignored during fit.",
-                    IgnoredArgumentWarning
-                )
-            if len(exog) != len(y):
-                raise ValueError(
-                    f"`exog` must have same number of samples as `y`. "
-                    f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
-                )
-            check_exog(exog=exog)
+        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         # Reset values in case the forecaster has already been fitted.
+        self.estimators_             = [copy(est) for est in self.estimators]
         self.last_window_            = None
         self.extended_index_         = None
         self.index_type_             = None
@@ -482,13 +598,28 @@ class ForecasterStats():
         self.in_sample_residuals_    = None
         self.is_fitted               = False
         self.fit_date                = None
+
+        check_y(y=y)
         
         if exog is not None:
-            self.exog_in_ = True
-            self.exog_type_in_ = type(exog)
-            self.exog_dtypes_in_ = get_exog_dtypes(exog=exog)
-            self.exog_names_in_ = \
-                exog.columns.to_list() if isinstance(exog, pd.DataFrame) else [exog.name]
+
+            check_exog(exog=exog, allow_nans=False)
+            if len(exog) != len(y):
+                raise ValueError(
+                    f"`exog` must have same number of samples as `y`. "
+                    f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
+                )
+            
+            unsupported_exog = [
+                name for name, est_type in zip(self.estimator_names_, self.estimator_types_)
+                if est_type not in self.estimators_support_exog
+            ]
+            if unsupported_exog:
+                warnings.warn(
+                    f"The following estimators do not support exogenous variables and "
+                    f"will ignore them during fit: {unsupported_exog}",
+                    IgnoredArgumentWarning
+                )
 
         y = transform_series(
                 series            = y,
@@ -509,28 +640,20 @@ class ForecasterStats():
                    )
             
             check_exog_dtypes(exog, call_check_exog=True)
-            self.exog_dtypes_out_ = get_exog_dtypes(exog=exog)
-            self.X_train_exog_names_out_ = exog.columns.to_list()
+            exog_dtypes_out_ = get_exog_dtypes(exog=exog)
+            X_train_exog_names_out_ = exog.columns.to_list()
 
-        # Prepare fit_kwargs, warning for SARIMAX if needed
-        fit_kwargs_to_use = self.fit_kwargs.copy() if self.fit_kwargs else {}
-        if fit_kwargs_to_use and self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
-            warnings.warn(
-                "When using the skforecast Sarimax estimator, fit kwargs should be passed "
-                "using the parameter `sm_fit_kwargs` during estimator initialization, "
-                "not via ForecasterStats `fit_kwargs`. The provided `fit_kwargs` will be ignored.",
-                IgnoredArgumentWarning
-            )
-            fit_kwargs_to_use = {}
-        
         if suppress_warnings:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.estimator.fit(y=y, exog=exog, **fit_kwargs_to_use)
+                for estimator in self.estimators_:
+                    estimator.fit(y=y, exog=exog)
         else:
-            self.estimator.fit(y=y, exog=exog, **fit_kwargs_to_use)
+            for estimator in self.estimators_:
+                estimator.fit(y=y, exog=exog)
 
         self.is_fitted = True
+        self.estimator_names_ = self._generate_estimator_names(self.estimators_)
         self.series_name_in_ = y.name if y.name is not None else 'y'
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.training_range_ = y.index[[0, -1]]
@@ -539,15 +662,33 @@ class ForecasterStats():
             self.index_freq_ = y.index.freqstr
         else: 
             self.index_freq_ = y.index.step
+        
+        if exog is not None:
+            self.exog_in_ = True
+            self.exog_type_in_ = type(exog)
+            self.exog_names_in_ = (
+                exog.columns.to_list() if isinstance(exog, pd.DataFrame) else [exog.name]
+            )
+            self.exog_dtypes_in_ = get_exog_dtypes(exog=exog)
+            self.exog_dtypes_out_ = exog_dtypes_out_
+            self.X_train_exog_names_out_ = X_train_exog_names_out_
 
+        # TODO: Check when multiple series are supported
         if store_last_window:
             self.last_window_ = y.copy()
 
-        if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
-            self.extended_index_ = self.estimator.sarimax_res.fittedvalues.index.copy()
+        # Set extended_index_ based on first SARIMAX estimator or default to y.index
+        first_sarimax = next(
+            (est for est, est_type in zip(self.estimators_, self.estimator_types_)
+             if est_type == 'skforecast.stats._sarimax.Sarimax'),
+            None
+        )
+        if first_sarimax is not None:
+            self.extended_index_ = first_sarimax.sarimax_res.fittedvalues.index.copy()
         else:
             self.extended_index_ = y.index
-        self.params = self.estimator.get_params(deep=True)
+
+        set_skforecast_warnings(suppress_warnings, action='default')
 
     def _create_predict_inputs(
         self,
@@ -697,13 +838,14 @@ class ForecasterStats():
         last_window: pd.Series | None = None,
         last_window_exog: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None
-    ) -> pd.Series:
+    ) -> pd.DataFrame:
         """
         Forecast future values.
 
-        Generate predictions (forecasts) n steps in the future. Note that if 
-        exogenous variables were used in the model fit, they will be expected 
-        for the predict procedure and will fail otherwise.
+        Generate predictions (forecasts) n steps in the future using all 
+        fitted estimators. Note that if exogenous variables were used in the 
+        model fit, they will be expected for the predict procedure and will 
+        fail otherwise.
         
         When predicting using `last_window` and `last_window_exog`, they must
         start right after the end of the index seen by the forecaster during
@@ -728,8 +870,9 @@ class ForecasterStats():
 
         Returns
         -------
-        predictions : pandas Series
-            Predicted values.
+        predictions : pandas DataFrame
+            Predicted values from all estimators in long format with columns:
+            'estimator' (estimator name) and 'pred' (predicted value).
         
         """
 
@@ -740,23 +883,37 @@ class ForecasterStats():
                                                   exog             = exog,
                                               )
         
-        # TODO: evaluate if this can be moved to _create_predict_inputs
+        sarimax_indices = [
+            i for i, estimator_type in enumerate(self.estimator_types_) 
+            if estimator_type == 'skforecast.stats._sarimax.Sarimax'
+        ]
         if last_window is not None:
-            if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
-                self.estimator.append(
+            if not sarimax_indices:
+                raise NotImplementedError(
+                    "Prediction with `last_window` parameter is only supported for "
+                    "skforecast.Sarimax estimator. The forecaster does not contain any "
+                    "estimator that supports this feature."
+                )
+            
+            non_sarimax_names = [
+                name for name, estimator_type in zip(self.estimator_names_, self.estimator_types_)
+                if estimator_type != 'skforecast.stats._sarimax.Sarimax'
+            ]
+            if non_sarimax_names:
+                warnings.warn(
+                    f"Prediction with `last_window` is only supported for skforecast.Sarimax estimator. "
+                    f"The following estimators will ignore `last_window` and predict from "
+                    f"the end of the training data: {non_sarimax_names}",
+                    IgnoredArgumentWarning
+                )
+            
+            for i in sarimax_indices:
+                self.estimators_[i].append(
                     y     = last_window,
                     exog  = last_window_exog,
                     refit = False
                 )
-                self.extended_index_ = self.estimator.sarimax_res.fittedvalues.index
-            else:
-                raise NotImplementedError(
-                    f"Prediction with `last_window` parameter is only "
-                    f"supported for SARIMAX models. For {self.estimator_type}, "
-                    f"predictions with `last_window` are not yet implemented."
-                    f"It is required that predictions follow directly after the "
-                    f"end of the training data."
-                )
+            self.extended_index_ = self.estimators_[sarimax_indices[0]].sarimax_res.fittedvalues.index
 
         predict_dispatch = {
             'skforecast.stats._arima.Arima': self._predict_skforecast_stats,
@@ -767,13 +924,31 @@ class ForecasterStats():
             'aeon.forecasting.stats._ets.ETS': self._predict_aeon
         }
         
-        predictions = predict_dispatch[self.estimator_type](steps=steps, exog=exog)
+        all_predictions = []
+        for estimator, est_name, est_type in zip(
+            self.estimators_, self.estimator_names_, self.estimator_types_
+        ):
+            pred_func = predict_dispatch[est_type]
+            preds = pred_func(estimator=estimator, steps=steps, exog=exog)
+            preds_df = preds.to_frame(name='pred')
+            preds_df.insert(0, 'estimator', est_name)
+            all_predictions.append(preds_df)
+
+        if len(all_predictions) == 1:
+            predictions = all_predictions[0]['pred']
+        else:
+            predictions = pd.concat(all_predictions, axis=0)
 
         return predictions
 
-    def _predict_sarimax(self, steps: int, exog: pd.Series | pd.DataFrame | None) -> pd.Series:
+    def _predict_sarimax(
+        self, 
+        estimator: object, 
+        steps: int, 
+        exog: pd.Series | pd.DataFrame | None
+    ) -> pd.Series:
         """Generate predictions using SARIMAX statsmodels model."""
-        predictions = self.estimator.predict(steps=steps, exog=exog).iloc[:, 0]
+        predictions = estimator.predict(steps=steps, exog=exog).iloc[:, 0]
         predictions = transform_series(
             series            = predictions,
             transformer       = self.transformer_y,
@@ -783,9 +958,14 @@ class ForecasterStats():
         predictions.name = 'pred'
         return predictions
 
-    def _predict_skforecast_stats(self, steps: int, exog: pd.Series | pd.DataFrame | None) -> pd.Series:
-        """Generate predictions using skforecast ARAR/ETS models."""
-        predictions = self.estimator.predict(steps=steps, exog=exog)
+    def _predict_skforecast_stats(
+        self, 
+        estimator: object, 
+        steps: int, 
+        exog: pd.Series | pd.DataFrame | None
+    ) -> pd.Series:
+        """Generate predictions using skforecast Arima/Arar/Ets models."""
+        predictions = estimator.predict(steps=steps, exog=exog)
         predictions = transform_numpy(
             array             = predictions,
             transformer       = self.transformer_y,
@@ -795,9 +975,14 @@ class ForecasterStats():
         predictions_index = expand_index(index=self.extended_index_, steps=steps)
         return pd.Series(predictions, index=predictions_index, name='pred')
 
-    def _predict_aeon(self, steps: int, exog: pd.Series | pd.DataFrame | None) -> pd.Series:
+    def _predict_aeon(
+        self, 
+        estimator: object, 
+        steps: int, 
+        exog: pd.Series | pd.DataFrame | None
+    ) -> pd.Series:
         """Generate predictions using AEON models."""
-        predictions = self.estimator.iterative_forecast(
+        predictions = estimator.iterative_forecast(
             y = self.last_window_.to_numpy(),
             prediction_horizon = steps
         )
@@ -1015,8 +1200,8 @@ class ForecasterStats():
 
         if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
             warnings.warn(
-                ("When using the skforecast Sarimax model, the fit kwargs should "
-                 "be passed using the model parameter `sm_fit_kwargs`."),
+                "When using the skforecast Sarimax model, the fit kwargs should "
+                "be passed using the model parameter `sm_fit_kwargs`.",
                 IgnoredArgumentWarning
             )
 
@@ -1070,7 +1255,6 @@ class ForecasterStats():
         feature_importances = self.estimator.params().to_frame().reset_index()
         feature_importances.columns = ['feature', 'importance']
         return feature_importances
-
 
     def _get_feature_importances_arar(self) -> pd.DataFrame:
         """Get feature importances for ARAR model."""
