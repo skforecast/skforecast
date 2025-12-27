@@ -389,7 +389,7 @@ class ForecasterStats():
         if not self.is_fitted:
             raise NotFittedError(
                 "This ForecasterStats instance is not fitted yet. "
-                "Call 'fit' with appropriate arguments before using "
+                "Call `fit` with appropriate arguments before using "
                 "this method."
             )
         
@@ -582,6 +582,8 @@ class ForecasterStats():
         set_skforecast_warnings(suppress_warnings, action='ignore')
 
         # Reset values in case the forecaster has already been fitted.
+        # Not reset estimator_names_ and estimator_types_ since they
+        # are needed to identify each estimator.
         self.estimators_             = [copy(est) for est in self.estimators]
         self.last_window_            = None
         self.extended_index_         = None
@@ -603,7 +605,7 @@ class ForecasterStats():
         
         if exog is not None:
 
-            check_exog(exog=exog, allow_nans=False)
+            check_exog(exog=exog, allow_nan=False)
             if len(exog) != len(y):
                 raise ValueError(
                     f"`exog` must have same number of samples as `y`. "
