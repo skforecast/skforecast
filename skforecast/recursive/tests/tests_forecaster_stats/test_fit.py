@@ -73,7 +73,7 @@ def test_forecaster_y_exog_features_stored():
     estimator_names_ = ['Sarimax(1,1,1)(0,0,0)[0]', 'Ets(AAN)']
     series_name_in_ = 'y_sarimax'
     exog_in_ = True
-    exog_type_in_ = pd.DataFrame  # exog is converted to DataFrame internally
+    exog_type_in_ = type(exog)
     exog_names_in_ = ['exog']
     exog_dtypes_in_ = {'exog': exog.dtype}
     exog_dtypes_out_ = {'exog': exog.dtype}
