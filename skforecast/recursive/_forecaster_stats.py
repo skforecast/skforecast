@@ -604,8 +604,9 @@ class ForecasterStats():
         check_y(y=y)
         
         if exog is not None:
-
-            check_exog(exog=exog, allow_nan=False)
+            
+            # NaNs are checked later
+            check_exog(exog=exog)
             if len(exog) != len(y):
                 raise ValueError(
                     f"`exog` must have same number of samples as `y`. "
@@ -631,6 +632,15 @@ class ForecasterStats():
             )
 
         if exog is not None:
+
+            # NOTE: This must be here, before transforming exog
+            self.exog_in_ = True
+            self.exog_type_in_ = type(exog)
+            self.exog_names_in_ = (
+                exog.columns.to_list() if isinstance(exog, pd.DataFrame) else [exog.name]
+            )
+            self.exog_dtypes_in_ = get_exog_dtypes(exog=exog)
+
             if isinstance(exog, pd.Series):
                 exog = exog.to_frame()
             
@@ -642,8 +652,8 @@ class ForecasterStats():
                    )
             
             check_exog_dtypes(exog, call_check_exog=True)
-            exog_dtypes_out_ = get_exog_dtypes(exog=exog)
-            X_train_exog_names_out_ = exog.columns.to_list()
+            self.exog_dtypes_out_ = get_exog_dtypes(exog=exog)
+            self.X_train_exog_names_out_ = exog.columns.to_list()
 
         if suppress_warnings:
             with warnings.catch_warnings():
@@ -664,16 +674,6 @@ class ForecasterStats():
             self.index_freq_ = y.index.freqstr
         else: 
             self.index_freq_ = y.index.step
-        
-        if exog is not None:
-            self.exog_in_ = True
-            self.exog_type_in_ = type(exog)
-            self.exog_names_in_ = (
-                exog.columns.to_list() if isinstance(exog, pd.DataFrame) else [exog.name]
-            )
-            self.exog_dtypes_in_ = get_exog_dtypes(exog=exog)
-            self.exog_dtypes_out_ = exog_dtypes_out_
-            self.X_train_exog_names_out_ = X_train_exog_names_out_
 
         # TODO: Check when multiple series are supported
         if store_last_window:
@@ -698,27 +698,30 @@ class ForecasterStats():
         last_window: pd.Series | None = None,
         last_window_exog: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None
-    ) -> tuple[pd.Series, pd.DataFrame | None, pd.DataFrame | None]:
+    ) -> tuple[pd.Series, pd.DataFrame | None, pd.DataFrame | None, pd.Index]:
         """
-        Create inputs needed for the first iteration of the prediction process. 
-        Since it is a recursive process, last window is updated at each 
-        iteration of the prediction process.
+        Create and validate inputs needed for the prediction process.
+
+        This method prepares the inputs required by the predict methods,
+        including validation of `last_window` and `exog`, and applying
+        transformations if configured.
         
         Parameters
         ----------
         steps : int
             Number of steps to predict. 
         last_window : pandas Series, default None
-            Series values used to create the predictors (lags) needed in the 
-            first iteration of the prediction (t + 1).
-            If `last_window = None`, the values stored in `self.last_window_` are
-            used to calculate the initial predictors, and the predictions start
-            right after training data.
+            Series values used to create the predictors needed in the 
+            predictions. If `last_window = None`, the values stored in 
+            `self.last_window_` are used. 
+            
+            When provided, `last_window` must start right after the end of the 
+            index seen by the forecaster during training. This is only supported 
+            for skforecast.Sarimax estimator.
         last_window_exog : pandas Series, pandas DataFrame, default None
             Values of the exogenous variables aligned with `last_window`. Only
             needed when `last_window` is not None and the forecaster has been
-            trained including exogenous variables. Used to make predictions 
-            unrelated to the original data. Values have to start at the end 
+            trained including exogenous variables. Must start at the end 
             of the training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
@@ -726,11 +729,14 @@ class ForecasterStats():
         Returns
         -------
         last_window : pandas Series
-            Series predictors.
+            Transformed series values for prediction.
         last_window_exog : pandas DataFrame, None
-            Values of the exogenous variables aligned with `last_window`.
+            Transformed exogenous variables aligned with `last_window`.
         exog : pandas DataFrame, None
-            Exogenous variable/s included as predictor/s.
+            Transformed exogenous variable/s for prediction.
+        prediction_index : pandas Index
+            Index for the predicted values, starting right after the end of 
+            the training data.
         
         """
 
@@ -753,12 +759,7 @@ class ForecasterStats():
             interval         = None,
             alpha            = None
         )
-        
-        # If not last_window is provided, last_window needs to be None
-        if last_window is not None:
-            last_window = last_window.copy()
 
-        # When last_window_exog is provided but no last_window
         if last_window is None and last_window_exog is not None:
             raise ValueError(
                 "To make predictions unrelated to the original data, both "
@@ -774,12 +775,11 @@ class ForecasterStats():
             )
 
         if last_window is not None:
+
             # If predictions do not follow directly from the end of the training 
             # data. The internal statsmodels SARIMAX model needs to be updated 
             # using its append method. The data needs to start at the end of the 
             # training series.
-
-            # Check index append values
             expected_index = expand_index(index=self.extended_index_, steps=1)[0]
             if expected_index != last_window.index[0]:
                 raise ValueError(
@@ -790,6 +790,7 @@ class ForecasterStats():
                     f"    `last_window` index start : {last_window.index[0]}."
                 )
             
+            last_window = last_window.copy()
             last_window = transform_series(
                               series            = last_window,
                               transformer       = self.transformer_y,
@@ -797,9 +798,7 @@ class ForecasterStats():
                               inverse_transform = False
                           )
             
-            # Transform last_window_exog
             if last_window_exog is not None:
-                # check index last_window_exog
                 if expected_index != last_window_exog.index[0]:
                     raise ValueError(
                         f"To make predictions unrelated to the original data, `last_window_exog` "
@@ -818,8 +817,7 @@ class ForecasterStats():
                                        fit               = False,
                                        inverse_transform = False
                                    )
-                
-        # Exog
+        
         if exog is not None:
             if isinstance(exog, pd.Series):
                 exog = exog.to_frame()
@@ -831,27 +829,34 @@ class ForecasterStats():
                        inverse_transform = False
                    )  
             exog = exog.iloc[:steps, ]
+        
+        # TODO: This doesn't make sense for Sarimax with last_window but saves
+        # time for other estimators.
+        # Prediction index starting right after the end of the training data
+        prediction_index = expand_index(index=self.extended_index_, steps=steps)
 
-        return last_window, last_window_exog, exog
+        return last_window, last_window_exog, exog, prediction_index
 
     def predict(
         self,
         steps: int,
         last_window: pd.Series | None = None,
         last_window_exog: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None
-    ) -> pd.DataFrame:
+        exog: pd.Series | pd.DataFrame | None = None,
+        suppress_warnings: bool = False
+    ) -> pd.Series | pd.DataFrame:
         """
         Forecast future values.
 
         Generate predictions (forecasts) n steps in the future using all 
-        fitted estimators. Note that if exogenous variables were used in the 
-        model fit, they will be expected for the predict procedure and will 
-        fail otherwise.
+        fitted estimators. If exogenous variables were used during training, 
+        they must be provided for prediction.
         
-        When predicting using `last_window` and `last_window_exog`, they must
-        start right after the end of the index seen by the forecaster during
-        training.
+        When using `last_window` and `last_window_exog`, they must start right 
+        after the end of the index seen by the forecaster during training. 
+        This feature is only supported for skforecast.Sarimax estimator; 
+        other estimators will ignore `last_window` and predict from the end 
+        of the training data.
         
         Parameters
         ----------
@@ -860,36 +865,48 @@ class ForecasterStats():
         last_window : pandas Series, default None
             Series values used to create the predictors needed in the 
             predictions. Used to make predictions unrelated to the original data. 
-            Values have to start at the end of the training data.
+            Values must start at the end of the training data. Only supported 
+            for skforecast.Sarimax estimator.
         last_window_exog : pandas Series, pandas DataFrame, default None
             Values of the exogenous variables aligned with `last_window`. Only
             needed when `last_window` is not None and the forecaster has been
-            trained including exogenous variables. Used to make predictions 
-            unrelated to the original data. Values have to start at the end 
+            trained including exogenous variables. Values must start at the end 
             of the training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
-        predictions : pandas DataFrame
-            Predicted values from all estimators in long format with columns:
+        predictions : pandas Series, pandas DataFrame
+            Predicted values from all estimators:
+
+            - For multiple estimators: long format DataFrame with columns 
             'estimator' (estimator name) and 'pred' (predicted value).
+            - For a single estimator: pandas Series with predicted values.
         
         """
 
-        last_window, last_window_exog, exog = self._create_predict_inputs(
-                                                  steps            = steps,
-                                                  last_window      = last_window,
-                                                  last_window_exog = last_window_exog,
-                                                  exog             = exog,
-                                              )
+        set_skforecast_warnings(suppress_warnings, action='ignore')
+
+        last_window, last_window_exog, exog, prediction_index = (
+            self._create_predict_inputs(
+                steps            = steps,
+                last_window      = last_window,
+                last_window_exog = last_window_exog,
+                exog             = exog,
+            )
+        )
         
-        sarimax_indices = [
-            i for i, estimator_type in enumerate(self.estimator_types_) 
-            if estimator_type == 'skforecast.stats._sarimax.Sarimax'
-        ]
         if last_window is not None:
+
+            sarimax_indices = [
+                i for i, estimator_type in enumerate(self.estimator_types_) 
+                if estimator_type == 'skforecast.stats._sarimax.Sarimax'
+            ]
             if not sarimax_indices:
                 raise NotImplementedError(
                     "Prediction with `last_window` parameter is only supported for "
@@ -915,7 +932,11 @@ class ForecasterStats():
                     exog  = last_window_exog,
                     refit = False
                 )
-            self.extended_index_ = self.estimators_[sarimax_indices[0]].sarimax_res.fittedvalues.index
+
+            # TODO Esto está mal, rompe el prediction index de futuros predicts
+            # para estimators que no son sarimax.
+            # Merece la pena guardarlo?
+            # self.extended_index_ = self.estimators_[sarimax_indices[0]].sarimax_res.fittedvalues.index
 
         predict_dispatch = {
             'skforecast.stats._arima.Arima': self._predict_skforecast_stats,
@@ -931,15 +952,20 @@ class ForecasterStats():
             self.estimators_, self.estimator_names_, self.estimator_types_
         ):
             pred_func = predict_dispatch[est_type]
-            preds = pred_func(estimator=estimator, steps=steps, exog=exog)
+            preds = pred_func(estimator=estimator, steps=steps, exog=exog, prediction_index=prediction_index)
             preds_df = preds.to_frame(name='pred')
             preds_df.insert(0, 'estimator', est_name)
             all_predictions.append(preds_df)
+
+        # TODO: Si los estimators devolviesen un numpy, podríamos optimizar esto
+        # Transform numpy puede inverse_transform de todo a la vez
 
         if len(all_predictions) == 1:
             predictions = all_predictions[0]['pred']
         else:
             predictions = pd.concat(all_predictions, axis=0)
+        
+        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
@@ -947,9 +973,13 @@ class ForecasterStats():
         self, 
         estimator: object, 
         steps: int, 
-        exog: pd.Series | pd.DataFrame | None
+        exog: pd.Series | pd.DataFrame | None,
+        prediction_index: Any
     ) -> pd.Series:
-        """Generate predictions using SARIMAX statsmodels model."""
+        """
+        Generate predictions using SARIMAX statsmodels model. Prediction index
+        is ignored since SARIMAX handles it internally.
+        """
         predictions = estimator.predict(steps=steps, exog=exog).iloc[:, 0]
         predictions = transform_series(
             series            = predictions,
@@ -964,7 +994,8 @@ class ForecasterStats():
         self, 
         estimator: object, 
         steps: int, 
-        exog: pd.Series | pd.DataFrame | None
+        exog: pd.Series | pd.DataFrame | None,
+        prediction_index: pd.Index
     ) -> pd.Series:
         """Generate predictions using skforecast Arima/Arar/Ets models."""
         predictions = estimator.predict(steps=steps, exog=exog)
@@ -974,14 +1005,14 @@ class ForecasterStats():
             fit               = False,
             inverse_transform = True
         )
-        predictions_index = expand_index(index=self.extended_index_, steps=steps)
-        return pd.Series(predictions, index=predictions_index, name='pred')
+        return pd.Series(predictions, index=prediction_index, name='pred')
 
     def _predict_aeon(
         self, 
         estimator: object, 
         steps: int, 
-        exog: pd.Series | pd.DataFrame | None
+        exog: pd.Series | pd.DataFrame | None,
+        prediction_index: pd.Index
     ) -> pd.Series:
         """Generate predictions using AEON models."""
         predictions = estimator.iterative_forecast(
@@ -994,8 +1025,7 @@ class ForecasterStats():
             fit               = False,
             inverse_transform = True
         )
-        predictions_index = expand_index(index=self.extended_index_, steps=steps)
-        return pd.Series(predictions, index=predictions_index, name='pred')
+        return pd.Series(predictions, index=prediction_index, name='pred')
 
     def predict_interval(
         self,
@@ -1005,21 +1035,25 @@ class ForecasterStats():
         exog: pd.Series | pd.DataFrame | None = None,
         alpha: float = 0.05,
         interval: list[float] | tuple[float] | None = None,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Forecast future values and their confidence intervals.
 
         Generate predictions (forecasts) n steps in the future with confidence
-        intervals. Note that if exogenous variables were used in the model fit, 
-        they will be expected for the predict procedure and will fail otherwise.
+        intervals using fitted estimators that support prediction intervals. 
+        If exogenous variables were used during training, they must be provided 
+        for prediction.
+        
+        Estimators that do not support prediction intervals will be skipped 
+        with a warning. Supported estimators for intervals are the ones listed
+        in the attribute `estimators_support_intervals`.
 
-        When predicting using `last_window` and `last_window_exog`, the internal
-        statsmodels SARIMAX will be updated using its append method. To do this,
-        `last_window` data must start at the end of the index seen by the 
-        forecaster, this is stored in forecaster.extended_index_.
-
-        Check https://www.statsmodels.org/dev/generated/statsmodels.tsa.arima.model.ARIMAResults.append.html
-        to know more about statsmodels append method.
+        When using `last_window` and `last_window_exog`, they must start right 
+        after the end of the index seen by the forecaster during training. 
+        This feature is only supported for skforecast.Sarimax estimator; 
+        other estimators will ignore `last_window` and predict from the end 
+        of the training data.
 
         Parameters
         ----------
@@ -1028,10 +1062,11 @@ class ForecasterStats():
         last_window : pandas Series, default None
             Series values used to create the predictors needed in the 
             predictions. Used to make predictions unrelated to the original data. 
-            Values have to start at the end of the training data.
+            Values must start at the end of the training data. Only supported 
+            for skforecast.Sarimax estimator.
         last_window_exog : pandas Series, pandas DataFrame, default None
             Values of the exogenous variables aligned with `last_window`. Only
-            need when `last_window` is not None and the forecaster has been
+            needed when `last_window` is not None and the forecaster has been
             trained including exogenous variables.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
@@ -1044,17 +1079,25 @@ class ForecasterStats():
             0 and 100 inclusive. For example, interval of 95% should be as 
             `interval = [2.5, 97.5]`. If both, `alpha` and `interval` are 
             provided, `alpha` will be used.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
         predictions : pandas DataFrame
-            Values predicted by the forecaster and their estimated interval.
-
-            - pred: predictions.
-            - lower_bound: lower bound of the interval.
-            - upper_bound: upper bound of the interval.
+            Predicted values from estimators that support intervals and their 
+            estimated intervals:
+            
+            - For multiple estimators: long format DataFrame with columns
+              'estimator', 'pred', 'lower_bound', 'upper_bound'.
+            - For a single estimator: DataFrame with columns
+              'pred', 'lower_bound', 'upper_bound'.
 
         """
+
+        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         # If interval and alpha take alpha, if interval transform to alpha
         if alpha is None:
@@ -1066,32 +1109,52 @@ class ForecasterStats():
                 )
             alpha = 2 * (100 - interval[1]) / 100
 
-        last_window, last_window_exog, exog = self._create_predict_inputs(
-                                                  steps            = steps,
-                                                  last_window      = last_window,
-                                                  last_window_exog = last_window_exog,
-                                                  exog             = exog,
-                                              )
+        last_window, last_window_exog, exog, prediction_index = (
+            self._create_predict_inputs(
+                steps            = steps,
+                last_window      = last_window,
+                last_window_exog = last_window_exog,
+                exog             = exog,
+            )
+        )
 
         if last_window is not None:
-            if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
-                self.estimator.append(
+            # Handle last_window for SARIMAX estimators (same pattern as predict)
+            sarimax_indices = [
+                i for i, estimator_type in enumerate(self.estimator_types_) 
+                if estimator_type == 'skforecast.stats._sarimax.Sarimax'
+            ]
+            if not sarimax_indices:
+                raise NotImplementedError(
+                    "Prediction with `last_window` parameter is only supported for "
+                    "skforecast.Sarimax estimator. The forecaster does not contain any "
+                    "estimator that supports this feature."
+                )
+            
+            non_sarimax_names = [
+                name for name, estimator_type in zip(self.estimator_names_, self.estimator_types_)
+                if estimator_type != 'skforecast.stats._sarimax.Sarimax'
+            ]
+            if non_sarimax_names:
+                warnings.warn(
+                    f"Prediction with `last_window` is only supported for skforecast.Sarimax estimator. "
+                    f"The following estimators will ignore `last_window` and predict from "
+                    f"the end of the training data: {non_sarimax_names}",
+                    IgnoredArgumentWarning
+                )
+            
+            for i in sarimax_indices:
+                self.estimators_[i].append(
                     y     = last_window,
                     exog  = last_window_exog,
                     refit = False
                 )
-                self.extended_index_ = self.estimator.sarimax_res.fittedvalues.index
-            else:
-                raise NotImplementedError(
-                    f"Prediction with `last_window` parameter is only "
-                    f"supported for SARIMAX models. For {self.estimator_type}, "
-                    f"predictions with `last_window` are not yet implemented."
-                    f"It is required that predictions follow directly after the "
-                    f"end of the training data."
-                )
 
-        # Get following n steps predictions with intervals
-        # Dictionary dispatch for estimator-specific prediction interval methods
+            # TODO Esto está mal, rompe el prediction index de futuros predicts
+            # para estimators que no son sarimax.
+            # Merece la pena guardarlo?           
+            # self.extended_index_ = self.estimators_[sarimax_indices[0]].sarimax_res.fittedvalues.index
+
         predict_interval_dispatch = {
             'skforecast.stats._sarimax.Sarimax': self._predict_interval_sarimax,
             'skforecast.stats._arima.Arima': self._predict_interval_skforecast_stats,
@@ -1099,42 +1162,76 @@ class ForecasterStats():
             'skforecast.stats._ets.Ets': self._predict_interval_skforecast_stats
         }
         
-        if self.estimator_type not in self.estimators_support_interval:
-            raise NotImplementedError(
-                f"Prediction intervals is not implemented for {self.estimator_type} estimator."
-                f"Available estimators for prediction intervals are: "
-                f"{list(self.estimators_support_interval)}."
+        # Warn about estimators that don't support intervals (they will be skipped)
+        unsupported = [
+            name for name, est_type in zip(self.estimator_names_, self.estimator_types_)
+            if est_type not in self.estimators_support_interval
+        ]
+        if unsupported:
+            warnings.warn(
+                f"Prediction intervals are not implemented for estimators: {unsupported}. "
+                f"These estimators will be skipped. Available estimators for prediction "
+                f"intervals are: {list(self.estimators_support_interval)}.",
+                IgnoredArgumentWarning
             )
         
-        predictions = predict_interval_dispatch[self.estimator_type](
-            steps=steps, exog=exog, alpha=alpha
-        )
-       
-        if self.transformer_y:
-            predictions_index = predictions.index
-            predictions_columns = predictions.columns
-            predictions = transform_numpy(
-                array             = predictions.to_numpy(),
-                transformer       = self.transformer_y,
-                fit               = False,
-                inverse_transform = True
-            )
-            predictions = pd.DataFrame(
-                data    = predictions,
-                index   = predictions_index,
-                columns = predictions_columns
-            )
+        all_predictions = []
+        for estimator, est_name, est_type in zip(
+            self.estimators_, self.estimator_names_, self.estimator_types_
+        ):
+            if est_type not in self.estimators_support_interval:
+                continue
+                
+            pred_func = predict_interval_dispatch[est_type]
+            preds = pred_func(
+                        estimator        = estimator, 
+                        steps            = steps, 
+                        exog             = exog, 
+                        prediction_index = prediction_index, 
+                        alpha            = alpha
+                    )
+            
+            if self.transformer_y:
+                predictions_index = preds.index
+                predictions_columns = preds.columns
+                preds = transform_numpy(
+                    array             = preds.to_numpy(),
+                    transformer       = self.transformer_y,
+                    fit               = False,
+                    inverse_transform = True
+                )
+                preds = pd.DataFrame(
+                            data    = preds,
+                            index   = predictions_index,
+                            columns = predictions_columns
+                        )
+            
+            preds.insert(0, 'estimator', est_name)
+            all_predictions.append(preds)
+
+        # TODO: Si los estimators devolviesen un numpy, podríamos optimizar esto
+        # Transform numpy puede inverse_transform de todo a la vez
+
+        if len(all_predictions) == 1:
+            predictions = all_predictions[0].drop(columns='estimator')
+        else:
+            predictions = pd.concat(all_predictions, axis=0)
+        
+        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
     def _predict_interval_sarimax(
-        self, 
+        self,
+        estimator: object,
         steps: int, 
-        exog: pd.Series | pd.DataFrame | None, 
+        exog: pd.Series | pd.DataFrame | None,
+        prediction_index: Any, 
         alpha: float
     ) -> pd.DataFrame:
-        """Generate prediction intervals using SARIMAX statsmodels model."""
-        return self.estimator.predict(
+        """Generate prediction intervals using SARIMAX statsmodels model. 
+        Prediction index is ignored since SARIMAX handles it internally."""
+        return estimator.predict(
             steps=steps,
             exog=exog,
             return_conf_int=True,
@@ -1142,20 +1239,21 @@ class ForecasterStats():
         )
 
     def _predict_interval_skforecast_stats(
-        self, 
+        self,
+        estimator: object,
         steps: int, 
-        exog: pd.Series | pd.DataFrame | None, 
+        exog: pd.Series | pd.DataFrame | None,
+        prediction_index: pd.Index, 
         alpha: float
     ) -> pd.DataFrame:
-        """Generate prediction intervals using skforecast ARAR/ETS models."""
-        predictions = self.estimator.predict_interval(
+        """Generate prediction intervals using skforecast Arima/Arar/Ets models."""
+        predictions = estimator.predict_interval(
             steps=steps,
             exog=exog,
             level=[100 * (1 - alpha)],
             as_frame=True
         )
-        predictions_index = expand_index(index=self.extended_index_, steps=steps)
-        predictions.index = predictions_index
+        predictions.index = prediction_index
         predictions.columns = ['pred', 'lower_bound', 'upper_bound']
         return predictions
 
