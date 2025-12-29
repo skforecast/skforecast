@@ -36,7 +36,7 @@ from ..utils import (
     initialize_estimator
 )
 
-
+# TODO: Create methods remove estimator, list estimators
 class ForecasterStats():
     """
     This class turns statistical models into a Forecaster compatible with the 
@@ -109,7 +109,9 @@ class ForecasterStats():
         values needed to predict the next `step` immediately after the training data. In the
         statistical models it stores all the training data.
     extended_index_ : pandas Index
-        Index the forecaster has seen during training.
+        Index the forecaster has seen during training and prediction. This 
+        attribute's initial value is the index of the training data, but this 
+        is extended after predictions are made using an external 'last_window'.
     index_type_ : type
         Type of index of the input used in training.
     index_freq_ : str
@@ -144,6 +146,8 @@ class ForecasterStats():
         Date of last fit.
     valid_estimator_types : tuple
         Valid estimator types.
+    estimators_support_last_window : tuple
+        Estimators that support last_window argument in prediction methods.
     estimators_support_exog : tuple
         Estimators that support exogenous variables.
     estimators_support_interval : tuple
@@ -181,6 +185,9 @@ class ForecasterStats():
             'skforecast.stats._sarimax.Sarimax',
             'aeon.forecasting.stats._arima.ARIMA',
             'aeon.forecasting.stats._ets.ETS'
+        )
+        self.estimators_support_last_window = (
+            'skforecast.stats._sarimax.Sarimax',
         )
         self.estimators_support_exog = (
             'skforecast.stats._arima.Arima',
@@ -830,10 +837,8 @@ class ForecasterStats():
                    )  
             exog = exog.iloc[:steps, ]
         
-        # TODO: This doesn't make sense for Sarimax with last_window but saves
-        # time for other estimators.
         # Prediction index starting right after the end of the training data
-        prediction_index = expand_index(index=self.extended_index_, steps=steps)
+        prediction_index = expand_index(index=self.last_window_.index, steps=steps)
 
         return last_window, last_window_exog, exog, prediction_index
 
@@ -914,15 +919,15 @@ class ForecasterStats():
                     "estimator that supports this feature."
                 )
             
-            non_sarimax_names = [
+            unsupported_last_window = [
                 name for name, estimator_type in zip(self.estimator_names_, self.estimator_types_)
-                if estimator_type != 'skforecast.stats._sarimax.Sarimax'
+                if estimator_type not in self.estimators_support_last_window
             ]
-            if non_sarimax_names:
+            if unsupported_last_window:
                 warnings.warn(
-                    f"Prediction with `last_window` is only supported for skforecast.Sarimax estimator. "
-                    f"The following estimators will ignore `last_window` and predict from "
-                    f"the end of the training data: {non_sarimax_names}",
+                    f"Prediction with `last_window` is not implemented for estimators: {unsupported_last_window}. "
+                    f"These estimators will be skipped. Available estimators for prediction "
+                    f"using `last_window` are: {list(self.estimators_support_last_window)}.",
                     IgnoredArgumentWarning
                 )
             
@@ -933,10 +938,7 @@ class ForecasterStats():
                     refit = False
                 )
 
-            # TODO Esto está mal, rompe el prediction index de futuros predicts
-            # para estimators que no son sarimax.
-            # Merece la pena guardarlo?
-            # self.extended_index_ = self.estimators_[sarimax_indices[0]].sarimax_res.fittedvalues.index
+            self.extended_index_ = self.estimators_[sarimax_indices[0]].sarimax_res.fittedvalues.index
 
         predict_dispatch = {
             'skforecast.stats._arima.Arima': self._predict_skforecast_stats,
@@ -948,22 +950,41 @@ class ForecasterStats():
         }
         
         all_predictions = []
+        estimator_names = []
         for estimator, est_name, est_type in zip(
             self.estimators_, self.estimator_names_, self.estimator_types_
         ):
+            if last_window is not None:
+                if est_type not in self.estimators_support_last_window:
+                    continue
+                else:
+                    prediction_index = expand_index(
+                        index=self.extended_index_, steps=steps
+                    )
+            
             pred_func = predict_dispatch[est_type]
-            preds = pred_func(estimator=estimator, steps=steps, exog=exog, prediction_index=prediction_index)
-            preds_df = preds.to_frame(name='pred')
-            preds_df.insert(0, 'estimator', est_name)
-            all_predictions.append(preds_df)
+            preds = pred_func(estimator=estimator, steps=steps, exog=exog)
+            all_predictions.append(preds)
+            estimator_names.append(est_name)
 
-        # TODO: Si los estimators devolviesen un numpy, podríamos optimizar esto
-        # Transform numpy puede inverse_transform de todo a la vez
+        predictions = transform_numpy(
+                          array             = np.concatenate(all_predictions),
+                          transformer       = self.transformer_y,
+                          fit               = False,
+                          inverse_transform = True
+                      )
 
-        if len(all_predictions) == 1:
-            predictions = all_predictions[0]['pred']
+        if len(self.estimator_names_) == 1:
+            predictions = pd.Series(
+                              data  = predictions.ravel(),
+                              index = prediction_index,
+                              name  = 'pred'
+                          )
         else:
-            predictions = pd.concat(all_predictions, axis=0)
+            predictions = pd.DataFrame(
+                {"estimator": np.tile(estimator_names, steps), "pred": predictions.ravel()},
+                index = np.repeat(prediction_index, len(estimator_names)),
+            )
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
@@ -973,59 +994,34 @@ class ForecasterStats():
         self, 
         estimator: object, 
         steps: int, 
-        exog: pd.Series | pd.DataFrame | None,
-        prediction_index: Any
+        exog: pd.Series | pd.DataFrame | None
     ) -> pd.Series:
-        """
-        Generate predictions using SARIMAX statsmodels model. Prediction index
-        is ignored since SARIMAX handles it internally.
-        """
-        predictions = estimator.predict(steps=steps, exog=exog).iloc[:, 0]
-        predictions = transform_series(
-            series            = predictions,
-            transformer       = self.transformer_y,
-            fit               = False,
-            inverse_transform = True
-        )
-        predictions.name = 'pred'
-        return predictions
+        """Generate predictions using SARIMAX statsmodels model."""
+        preds = estimator.predict(steps=steps, exog=exog)['pred'].to_numpy()
+        return preds
 
     def _predict_skforecast_stats(
         self, 
         estimator: object, 
         steps: int, 
-        exog: pd.Series | pd.DataFrame | None,
-        prediction_index: pd.Index
-    ) -> pd.Series:
+        exog: pd.Series | pd.DataFrame | None
+    ) -> np.ndarray:
         """Generate predictions using skforecast Arima/Arar/Ets models."""
-        predictions = estimator.predict(steps=steps, exog=exog)
-        predictions = transform_numpy(
-            array             = predictions,
-            transformer       = self.transformer_y,
-            fit               = False,
-            inverse_transform = True
-        )
-        return pd.Series(predictions, index=prediction_index, name='pred')
+        preds = estimator.predict(steps=steps, exog=exog)
+        return preds
 
     def _predict_aeon(
         self, 
         estimator: object, 
         steps: int, 
-        exog: pd.Series | pd.DataFrame | None,
-        prediction_index: pd.Index
+        exog: pd.Series | pd.DataFrame | None
     ) -> pd.Series:
         """Generate predictions using AEON models."""
-        predictions = estimator.iterative_forecast(
+        preds = estimator.iterative_forecast(
             y = self.last_window_.to_numpy(),
             prediction_horizon = steps
         )
-        predictions = transform_numpy(
-            array             = predictions,
-            transformer       = self.transformer_y,
-            fit               = False,
-            inverse_transform = True
-        )
-        return pd.Series(predictions, index=prediction_index, name='pred')
+        return preds
 
     def predict_interval(
         self,
@@ -1149,11 +1145,8 @@ class ForecasterStats():
                     exog  = last_window_exog,
                     refit = False
                 )
-
-            # TODO Esto está mal, rompe el prediction index de futuros predicts
-            # para estimators que no son sarimax.
-            # Merece la pena guardarlo?           
-            # self.extended_index_ = self.estimators_[sarimax_indices[0]].sarimax_res.fittedvalues.index
+             
+            self.extended_index_ = self.estimators_[sarimax_indices[0]].sarimax_res.fittedvalues.index
 
         predict_interval_dispatch = {
             'skforecast.stats._sarimax.Sarimax': self._predict_interval_sarimax,
@@ -1163,13 +1156,13 @@ class ForecasterStats():
         }
         
         # Warn about estimators that don't support intervals (they will be skipped)
-        unsupported = [
+        unsupported_interval = [
             name for name, est_type in zip(self.estimator_names_, self.estimator_types_)
             if est_type not in self.estimators_support_interval
         ]
-        if unsupported:
+        if unsupported_interval:
             warnings.warn(
-                f"Prediction intervals are not implemented for estimators: {unsupported}. "
+                f"Interval prediction is not implemented for estimators: {unsupported_interval}. "
                 f"These estimators will be skipped. Available estimators for prediction "
                 f"intervals are: {list(self.estimators_support_interval)}.",
                 IgnoredArgumentWarning

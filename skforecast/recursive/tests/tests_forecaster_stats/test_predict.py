@@ -239,11 +239,11 @@ def test_predict_ValueError_when_last_window_index_does_not_follow_training_set(
     forecaster.fit(y=y_test)
 
     err_msg = re.escape(
-        (f"To make predictions unrelated to the original data, `last_window` "
-         f"has to start at the end of the index seen by the forecaster.\n"
-         f"    Series last index         : 2022-02-19 00:00:00.\n"
-         f"    Expected index            : 2022-02-20 00:00:00.\n"
-         f"    `last_window` index start : 2022-03-01 00:00:00.")
+        "To make predictions unrelated to the original data, `last_window` "
+        "has to start at the end of the index seen by the forecaster.\n"
+        "    Series last index         : 2022-02-19 00:00:00.\n"
+        "    Expected index            : 2022-02-20 00:00:00.\n"
+        "    `last_window` index start : 2022-03-01 00:00:00."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict(steps=5, last_window=lw_test)
@@ -270,11 +270,11 @@ def test_predict_ValueError_when_last_window_exog_index_does_not_follow_training
     forecaster.fit(y=y_test, exog=exog_test)
 
     err_msg = re.escape(
-        (f"To make predictions unrelated to the original data, `last_window_exog` "
-         f"has to start at the end of the index seen by the forecaster.\n"
-         f"    Series last index              : 2022-02-19 00:00:00.\n"
-         f"    Expected index                 : 2022-02-20 00:00:00.\n"
-         f"    `last_window_exog` index start : 2022-03-01 00:00:00.")
+        "To make predictions unrelated to the original data, `last_window_exog` "
+        "has to start at the end of the index seen by the forecaster.\n"
+        "    Series last index              : 2022-02-19 00:00:00.\n"
+        "    Expected index                 : 2022-02-20 00:00:00.\n"
+        "    `last_window_exog` index start : 2022-03-01 00:00:00."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict(
