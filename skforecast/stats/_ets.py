@@ -35,13 +35,13 @@ class Ets(BaseEstimator, RegressorMixin):
     ----------
     m : int, default=1
         Seasonal period (e.g., 12 for monthly data with yearly seasonality).
-    model : str, default="ZZZ"
+    model : str, None, default "ZZZ"
         Three-letter model specification (e.g., "ANN", "AAA", "MAM"):
         - First letter: Error type (A=Additive, M=Multiplicative, Z=Auto)
         - Second letter: Trend type (N=None, A=Additive, M=Multiplicative, Z=Auto)
         - Third letter: Season type (N=None, A=Additive, M=Multiplicative, Z=Auto)
-        Use "ZZZ" for automatic model selection.
-    damped : bool or None, default=None
+        Use "ZZZ" or None for automatic model selection.
+    damped : bool or None, default None
         Whether to use damped trend. If None, both damped and non-damped
         models are tried (only when model="ZZZ").
     alpha : float, optional
@@ -159,7 +159,7 @@ class Ets(BaseEstimator, RegressorMixin):
     def __init__(
         self,
         m: int = 1,
-        model: str = "ZZZ",
+        model: str | None = "ZZZ",
         damped: bool | None = None,
         alpha: float | None = None,
         beta: float | None = None,
@@ -175,8 +175,9 @@ class Ets(BaseEstimator, RegressorMixin):
         allow_multiplicative: bool = True,
         allow_multiplicative_trend: bool = False,
     ):
+
         self.m                          = m
-        self.model                      = model
+        self.model                      = model if model is not None else "ZZZ"
         self.damped                     = damped
         self.alpha                      = alpha
         self.beta                       = beta
@@ -219,7 +220,7 @@ class Ets(BaseEstimator, RegressorMixin):
         ----------
         y : array-like of shape (n_samples,)
             Time-ordered numeric sequence.
-        exog : None
+        exog : Ignored
             Exogenous variables. Ignored, present for API compatibility.
 
         Returns
