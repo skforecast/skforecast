@@ -1240,10 +1240,7 @@ class ForecasterStats():
     ) -> np.ndarray:
         """Generate prediction intervals using SARIMAX statsmodels model."""
         preds = estimator.predict(
-            steps=steps,
-            exog=exog,
-            return_conf_int=True,
-            alpha=alpha
+            steps=steps, exog=exog, return_conf_int=True, alpha=alpha
         ).to_numpy()
         return preds
 
