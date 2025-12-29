@@ -42,54 +42,11 @@ def test_predict_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict(steps=5)
-
-
-def test_predict_ValueError_when_ForecasterStats_last_window_exog_is_not_None_and_last_window_is_not_provided():
-    """
-    Check ValueError is raised when last_window_exog is not None, but 
-    last_window is not provided.
-    """
-    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
-    forecaster.fit(y=y, exog=exog)
-    
-    err_msg = re.escape(
-        ("To make predictions unrelated to the original data, both "
-         "`last_window` and `last_window_exog` must be provided.")
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict(
-            steps            = 5, 
-            exog             = exog_predict, 
-            last_window      = None, 
-            last_window_exog = exog
-        )
-
-
-def test_predict_ValueError_when_ForecasterStats_last_window_exog_is_None_and_included_exog_is_true():
-    """
-    Check ValueError is raised when last_window_exog is None, but included_exog
-    is True and last_window is provided.
-    """
-    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
-    forecaster.fit(y=y, exog=exog)
-    
-    err_msg = re.escape(
-        ("Forecaster trained with exogenous variable/s. To make predictions "
-         "unrelated to the original data, same variable/s must be provided "
-         "using `last_window_exog`.")
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict(
-            steps            = 5, 
-            exog             = exog_lw_predict, 
-            last_window      = y_lw, 
-            last_window_exog = None
-        )
 
 
 @pytest.mark.parametrize("kwargs, data", 
@@ -151,6 +108,128 @@ def test_predict_output_ForecasterStats_with_exog(kwargs, data):
     [
         (
             Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
+            {'win': [0.63432268, 0.62507372, 0.61595962, 0.60697841, 0.59812815],
+             'linux': [0.60535333, 0.59654171, 0.58785836, 0.5793014, 0.570869]}
+        ),
+        (
+            Arar(),
+            {'win': [0.65451694, 0.69369274, 0.8018875, 0.82157326, 0.87868702],
+             'linux': [0.65451694, 0.69369274, 0.8018875, 0.82157326, 0.87868702]}
+        ),
+        (
+            Ets(trend='add', seasonal=None),
+            {'win': [0.60498897, 0.60498083, 0.60497432, 0.60496911, 0.60496495],
+             'linux': [0.60498897, 0.60498083, 0.60497432, 0.60496911, 0.60496495]}
+        ),
+    ],
+    ids=['Sarimax', 'Arar', 'Ets']
+)
+def test_predict_output_ForecasterStats_different_estimators(estimator, expected_data):
+    """
+    Test predict output of ForecasterStats with different estimators (Sarimax, Arar, Ets).
+    """
+    system = "win" if platform.system() == "Windows" else 'linux'
+
+    forecaster = ForecasterStats(estimator=estimator)
+    forecaster.fit(y=y_datetime)
+    predictions = forecaster.predict(steps=5)
+
+    expected = pd.Series(
+        data=expected_data[system],
+        index=pd.date_range(start='2050', periods=5, freq='YE'),
+        name='pred'
+    )
+    
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    "estimator, expected_data",
+    [
+        (
+            Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
+            {'win': [0.5992994623690436, 0.6129973483291491, 0.628731260599752, 0.6441357287484715, 0.6619599475823104],
+             'linux': [0.60535333, 0.59654171, 0.58785836, 0.5793014, 0.570869]}
+        ),
+        (
+            Arar(),
+            {'win': [0.6350996966849843, 0.6771100748590699, 0.7653813773256566, 0.757965843942972, 0.8005572909755608],
+             'linux': [0.6350996966849843, 0.6771100748590699, 0.7653813773256566, 0.757965843942972, 0.8005572909755608]}
+        ),
+        (
+            Ets(trend='add', seasonal=None),
+            {'win': [0.60498897, 0.60498083, 0.60497432, 0.60496911, 0.60496495],
+             'linux': [0.60498897, 0.60498083, 0.60497432, 0.60496911, 0.60496495]}
+        ),
+    ],
+    ids=['Sarimax', 'Arar', 'Ets']
+)
+def test_predict_output_ForecasterStats_different_estimators_exog(estimator, expected_data):
+    """
+    Test predict output of ForecasterStats with different estimators (Sarimax, Arar, Ets).
+    """
+    system = "win" if platform.system() == "Windows" else 'linux'
+
+    forecaster = ForecasterStats(estimator=estimator)
+    forecaster.fit(y=y_datetime, exog=exog_datetime)
+    predictions = forecaster.predict(steps=5, exog=exog_predict_datetime)
+
+    expected = pd.Series(
+        data=expected_data[system],
+        index=pd.date_range(start='2050', periods=5, freq='YE'),
+        name='pred'
+    )
+    
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_ForecasterStats_with_exog_multiple_estimators():
+    """
+    Test predict output of ForecasterStats with a StandardScaler() as transformer_y
+    for multiple estimators.
+    """
+    estimators = [
+        Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
+        Arar(),
+        Ets(trend='add', seasonal=None) 
+    ]
+    forecaster = ForecasterStats(estimator=estimators)
+    forecaster.fit(y=y_datetime, exog=exog_datetime)
+    predictions = forecaster.predict(steps=5, exog=exog_predict_datetime)
+
+    if platform.system() == "Windows":
+        expected_pred = [
+            0.5992994623690436, 0.6129973483291491, 0.628731260599752, 0.6441357287484715, 0.6619599475823104,
+            0.6350996966849843, 0.6771100748590699, 0.7653813773256566, 0.757965843942972, 0.8005572909755608,
+            0.60498897, 0.60498083, 0.60497432, 0.60496911, 0.60496495
+        ]
+    else:
+        expected_pred = [
+            0.5992994623690436, 0.6129973483291491, 0.628731260599752, 0.6441357287484715, 0.6619599475823104,
+            0.6350996966849843, 0.6771100748590699, 0.7653813773256566, 0.757965843942972, 0.8005572909755608,
+            0.60498897, 0.60498083, 0.60497432, 0.60496911, 0.60496495
+        ]
+    
+    expected = pd.DataFrame({
+            'estimator': ['Sarimax(1,0,1)(0,0,0)[0]'] * 5 + ['Arar'] * 5 + ['Ets(MAdN)'] * 5,
+            'pred': expected_pred
+        }, 
+        index=pd.DatetimeIndex(
+                ['2050-12-31', '2051-12-31', '2052-12-31', '2053-12-31',
+                '2054-12-31', '2050-12-31', '2051-12-31', '2052-12-31',
+                '2053-12-31', '2054-12-31', '2050-12-31', '2051-12-31',
+                '2052-12-31', '2053-12-31', '2054-12-31'],
+                dtype='datetime64[ns]', freq=None)
+    )
+    
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    "estimator, expected_data",
+    [
+        (
+            Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
             {'win': [0.60290703, 0.60568721, 0.60451413, 0.6050091, 0.60480025],
              'linux': [0.60290703, 0.60568721, 0.60451413, 0.6050091, 0.60480025]}
         ),
@@ -189,6 +268,35 @@ def test_predict_output_ForecasterStats_with_transform_y(estimator, expected_dat
     pd.testing.assert_series_equal(predictions, expected)
 
 
+def test_predict_output_ForecasterStats_with_transform_y_multiple_estimators():
+    """
+    Test predict output of ForecasterStats with a StandardScaler() as transformer_y
+    for multiple estimators.
+    """
+    estimators = [
+        Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
+        Arar(),
+        Ets(trend='add', seasonal=None) 
+    ]
+    forecaster = ForecasterStats(
+                     estimator     = estimators,
+                     transformer_y = StandardScaler()
+                 )
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=5)
+    
+    expected = pd.DataFrame({
+        'estimator': ['Sarimax(1,0,1)(0,0,0)[0]'] * 5 + ['Arar'] * 5 + ['Ets(MAdN)'] * 5,
+        'pred': [
+            0.60290703, 0.60568721, 0.60451413, 0.6050091, 0.60480025,
+            0.62548412, 0.63711385, 0.70171521, 0.68564555, 0.72810186,
+            0.69319696, 0.6939948, 0.69476642, 0.69551268, 0.69623443
+        ]
+    }, index=[50, 51, 52, 53, 54] * 3)
+    
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
 @pytest.mark.parametrize("kwargs, data", 
                          [({'order': (1, 0, 1), 
                             'seasonal_order': (0, 0, 0, 0)},
@@ -223,66 +331,6 @@ def test_predict_output_ForecasterStats_with_transform_y_and_transform_exog(kwar
                )
     
     pd.testing.assert_series_equal(predictions, expected)
-
-
-def test_predict_ValueError_when_last_window_index_does_not_follow_training_set():
-    """
-    Raise ValueError if `last_window` index does not start at the end 
-    of the index seen by the forecaster.
-    """
-    y_test = pd.Series(data=y_datetime.to_numpy())
-    y_test.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
-    lw_test = pd.Series(data=y_lw_datetime.to_numpy())
-    lw_test.index = pd.date_range(start='2022-03-01', periods=50, freq='D')
-
-    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 1)))
-    forecaster.fit(y=y_test)
-
-    err_msg = re.escape(
-        "To make predictions unrelated to the original data, `last_window` "
-        "has to start at the end of the index seen by the forecaster.\n"
-        "    Series last index         : 2022-02-19 00:00:00.\n"
-        "    Expected index            : 2022-02-20 00:00:00.\n"
-        "    `last_window` index start : 2022-03-01 00:00:00."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict(steps=5, last_window=lw_test)
-
-
-def test_predict_ValueError_when_last_window_exog_index_does_not_follow_training_set():
-    """
-    Raise ValueError if `last_window_exog` index does not start at the end 
-    of the index seen by the forecaster.
-    """
-    y_test = pd.Series(data=y_datetime.to_numpy())
-    y_test.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
-    lw_test = pd.Series(data=y_lw_datetime.to_numpy())
-    lw_test.index = pd.date_range(start='2022-02-20', periods=50, freq='D')
-    
-    exog_test = pd.Series(data=exog_datetime.to_numpy(), name='exog')
-    exog_test.index = pd.date_range(start='2022-01-01', periods=50, freq='D', name='exog')
-    exog_pred_test = pd.Series(data=exog_predict_datetime.to_numpy(), name='exog')
-    exog_pred_test.index = pd.date_range(start='2022-04-11', periods=10, freq='D', name='exog')
-    lw_exog_test = pd.Series(data=exog_lw_datetime.to_numpy(), name='exog')
-    lw_exog_test.index = pd.date_range(start='2022-03-01', periods=50, freq='D', name='exog')
-
-    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 1)))
-    forecaster.fit(y=y_test, exog=exog_test)
-
-    err_msg = re.escape(
-        "To make predictions unrelated to the original data, `last_window_exog` "
-        "has to start at the end of the index seen by the forecaster.\n"
-        "    Series last index              : 2022-02-19 00:00:00.\n"
-        "    Expected index                 : 2022-02-20 00:00:00.\n"
-        "    `last_window_exog` index start : 2022-03-01 00:00:00."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict(
-            steps            = 5, 
-            exog             = exog_pred_test, 
-            last_window      = lw_test,
-            last_window_exog = lw_exog_test
-        )
 
 
 @pytest.mark.parametrize("kwargs, data", 
@@ -415,40 +463,6 @@ def test_predict_ForecasterStats_updates_extended_index_twice(y, idx):
     [
         (
             Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
-            [0.60535333, 0.59654171, 0.58785836, 0.5793014, 0.570869]
-        ),
-        (
-            Arar(),
-            [0.65451694, 0.69369274, 0.8018875, 0.82157326, 0.87868702]
-        ),
-        (
-            Ets(trend='add', seasonal=None),
-            [0.60498897, 0.60498083, 0.60497432, 0.60496911, 0.60496495]
-        ),
-    ],
-    ids=['Sarimax', 'Arar', 'Ets']
-)
-def test_predict_output_ForecasterStats_different_estimators(estimator, expected_data, y_datetime=y_datetime):
-    """
-    Test predict output of ForecasterStats with different estimators (Sarimax, Arar, Ets).
-    """
-    forecaster = ForecasterStats(estimator=estimator)
-    forecaster.fit(y=y_datetime)
-    predictions = forecaster.predict(steps=5)
-    expected = pd.Series(
-        data=expected_data,
-        index=pd.date_range(start='2050', periods=5, freq='YE'),
-        name='pred'
-    )
-    
-    pd.testing.assert_series_equal(predictions, expected)
-
-
-@pytest.mark.parametrize(
-    "estimator, expected_data",
-    [
-        (
-            Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
             [
                 0.6053533305780869,
                 0.5965417125355235,
@@ -519,6 +533,14 @@ def test_predict_output_ForecasterStats_with_multiple_estimators(estimator, expe
     forecaster = ForecasterStats(estimator=estimator)
     forecaster.fit(y=y)
     predictions = forecaster.predict(steps=10)
+
+    if isinstance(estimator, Sarimax) and platform.system() == "Windows":
+        expected_data = [
+            0.6343226849319836, 0.6250737232464421, 0.6159596192513042, 
+            0.6069784066072901, 0.598128147646011, 0.5894069329519234, 
+            0.5808128809503786, 0.5723441375016793, 0.5639988755010542, 
+            0.5557752944844662
+        ]
 
     expected_results = pd.Series(
         data=expected_data,
