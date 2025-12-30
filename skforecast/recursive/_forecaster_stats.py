@@ -1226,6 +1226,9 @@ class ForecasterStats():
         
         if len(self.estimator_names_) > 1:
             predictions.insert(0, 'estimator', np.repeat(estimator_names, steps))
+        else:
+            # This is done to restore the frequency
+            predictions.index = prediction_index
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
@@ -1271,7 +1274,14 @@ class ForecasterStats():
         Parameters
         ----------
         params : dict
-            Parameters values.
+            Parameters values. The expected format depends on the number of
+            estimators in the forecaster:
+            
+            - Single estimator: A dictionary with parameter names as keys 
+            and their new values as values.
+            - Multiple estimators: A dictionary where each key is an 
+            estimator name (as shown in `estimator_names_`) and each value 
+            is a dictionary of parameters for that estimator.
 
         Returns
         -------
@@ -1279,18 +1289,38 @@ class ForecasterStats():
         
         """
         
-        # TODO: Adapt to multiple estimators
-        # Si solo tengo 1 estimator, len(estimator) == 1
-        # Funciono como siempre, cambio los params del unico estimator
-        # Si tengo varios, espero recibir un dict con estimator_name como key
-        # y otro dict con los params como value para cada estimator
-        # Si no coincide ninguna key con un estimator_name, error
-        # Si coincide con alguno, cambio solo esos y warning de los que no coinciden
-        # Si coinciden todos, perfecto, cambio todos sin warning
-
-        self.estimator = clone(self.estimator)
-        self.estimator.set_params(**params)
-        self.params = self.estimator.get_params(deep=True)
+        if self.n_estimators == 1:
+            # Single estimator: params is a simple dict of parameter values
+            self.estimators[0] = clone(self.estimators[0])
+            self.estimators[0].set_params(**params)
+        else:
+            # Multiple estimators: params must be a dict of dicts keyed by estimator name
+            if not isinstance(params, dict):
+                raise TypeError(
+                    f"`params` must be a dictionary. Got {type(params).__name__}."
+                )
+            
+            provided_names = set(params.keys())
+            valid_names = set(self.estimator_names_)
+            invalid_names = provided_names - valid_names
+            if invalid_names == provided_names:
+                raise ValueError(
+                    f"None of the provided estimator names {list(invalid_names)} "
+                    f"match the available estimator names: {self.estimator_names_}."
+                )
+            if invalid_names:
+                warnings.warn(
+                    f"The following estimator names do not match any estimator "
+                    f"in the forecaster and will be ignored: {list(invalid_names)}. "
+                    f"Available estimator names are: {self.estimator_names_}.",
+                    IgnoredArgumentWarning
+                )
+            
+            for name, est_params in params.items():
+                if name in valid_names:
+                    idx = self.estimator_names_.index(name)
+                    self.estimators[idx] = clone(self.estimators[idx])
+                    self.estimators[idx].set_params(**est_params)
 
     def set_fit_kwargs(
         self, 
