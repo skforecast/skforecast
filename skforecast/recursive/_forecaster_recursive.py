@@ -1342,37 +1342,50 @@ class ForecasterRecursive(ForecasterBase):
         predictions = np.full(shape=steps, fill_value=np.nan, dtype=float)
         last_window = np.concatenate((last_window_values, predictions))
 
-        is_linear_estimator = type(self.estimator).__name__ in linear_estimators
-        if is_linear_estimator:
+        estimator_name = type(self.estimator).__name__
+        is_linear = estimator_name in linear_estimators
+        is_lightgbm = estimator_name == 'LGBMRegressor'
+        is_xgboost = estimator_name == 'XGBRegressor'
+        
+        if is_linear:
             coef = self.estimator.coef_
             intercept = self.estimator.intercept_
-        is_lightgbm_estimator = type(self.estimator).__name__ == 'LGBMRegressor'
-        if is_lightgbm_estimator:
+        elif is_lightgbm:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore",  category=UserWarning)
                 booster = self.estimator.booster_
+        elif is_xgboost:
+            booster = self.estimator.get_booster()
+        
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values is not None
+        has_residuals = residuals is not None
+        
         for i in range(steps):
 
-            if self.lags is not None:
+            if has_lags:
                 X[:n_lags] = last_window[-self.lags - (steps - i)]
-            if self.window_features is not None:
+            if has_window_features:
                 X[n_lags : n_lags + n_window_features] = np.concatenate(
                     [
                         wf.transform(last_window[i : -(steps - i)])
                         for wf in self.window_features
                     ]
                 )
-            if exog_values is not None:
+            if has_exog:
                 X[n_lags + n_window_features:] = exog_values[i]
         
-            if is_linear_estimator:
+            if is_linear:
                 pred = np.dot(X, coef) + intercept
-            elif is_lightgbm_estimator:
+            elif is_lightgbm:
                 pred = booster.predict(X.reshape(1, -1))
+            elif is_xgboost:
+                pred = booster.inplace_predict(X.reshape(1, -1))
             else:
                 pred = self.estimator.predict(X.reshape(1, -1)).ravel()
             
-            if residuals is not None:
+            if has_residuals:
                 if use_binned_residuals:
                     predicted_bin = self.binner.transform(pred).item()
                     step_residual = residuals[predicted_bin][i]
