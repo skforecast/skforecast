@@ -59,6 +59,10 @@ from ..utils import (
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..model_selection._utils import _extract_data_folds_multiseries
 
+linear_estimators = frozenset(
+    name for name in dir(sklearn.linear_model)
+    if not name.startswith('_')
+)
 
 class ForecasterRecursiveMultiSeries(ForecasterBase):
     """
@@ -2323,29 +2327,57 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         last_window = np.concatenate((last_window.to_numpy(), predictions), axis=0)
 
+        estimator_name = type(self.estimator).__name__
+        is_linear = estimator_name in linear_estimators
+        is_lightgbm = estimator_name == 'LGBMRegressor'
+        is_xgboost = estimator_name == 'XGBRegressor'
+
+        if is_linear:
+            coef = self.estimator.coef_
+            intercept = self.estimator.intercept_
+        elif is_lightgbm:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning)
+                booster = self.estimator.booster_
+        elif is_xgboost:
+            booster = self.estimator.get_booster()
+
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values_dict is not None
+        has_residuals = residuals is not None
+
         for i in range(steps):
-            
-            if self.lags is not None:
+
+            if has_lags:
                 features[:, :n_lags] = last_window[
                     -self.lags - (steps - i), :
                 ].transpose()
-            if self.window_features is not None:
+            if has_window_features:
                 features[:, n_lags:n_autoreg] = np.concatenate(
                     [
-                        wf.transform(last_window[i:-(steps - i), :]) 
+                        wf.transform(last_window[i:-(steps - i), :])
                         for wf in self.window_features
                     ],
                     axis=1
                 )
-            if exog_values_dict is not None:
+            if has_exog:
                 features[:, -n_exog:] = exog_values_dict[i + 1]
 
-            pred = self.estimator.predict(features)
-            # NOTE: CatBoost makes the input array read-only.
+            if is_linear:
+                pred = features.dot(coef) + intercept
+            elif is_lightgbm:
+                pred = booster.predict(features)
+            elif is_xgboost:
+                pred = booster.inplace_predict(features)
+            else:
+                pred = self.estimator.predict(features)
+
+            # NOTE: CatBoost may make the input array read-only after predict
             if not features.flags.writeable:
                 features.flags.writeable = True
-            
-            if residuals is not None:
+
+            if has_residuals:
 
                 if use_binned_residuals:
                     step_residual = np.full(
