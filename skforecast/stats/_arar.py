@@ -447,17 +447,16 @@ class Arar(BaseEstimator, RegressorMixin):
         level : iterable of int, default=(80, 95)
             Confidence levels in percent.
         as_frame : bool, default=True
-            If True, return a tidy DataFrame with columns: 'mean', 'lower_<L>', 'upper_<L>' for each level L.
-            If False, return a NumPy ndarray with columns ordered as within the DataFrame.
+            If True, return a tidy DataFrame with columns 'mean', 'lower_<L>',
+            'upper_<L>' for each level L. If False, return a NumPy ndarray.
         exog : Series, DataFrame, or ndarray of shape (steps, n_exog_features), default=None
             Exogenous variables for prediction.
 
         Returns
         -------
-        pd.DataFrame or np.ndarray
-            If as_frame=True: DataFrame indexed by step (1..steps) with columns
-            ordered as: ['mean', 'lower_<L1>', 'upper_<L1>', 'lower_<L2>', 'upper_<L2>', ...].
-            If as_frame=False: ndarray with columns ordered as within the DataFrame.
+        pandas DataFrame or numpy ndarray
+            If as_frame=True, pandas DataFrame with columns 'mean', 'lower_<L>',
+            'upper_<L>' for each level L. If as_frame=False, numpy ndarray.
             
         Notes
         -----
@@ -516,11 +515,11 @@ class Arar(BaseEstimator, RegressorMixin):
 
         if as_frame:
             index = pd.RangeIndex(1, steps + 1, name="step")
-            cols_names = ["mean"]
-            for level in levels:
-                cols_names.append(f"lower_{level}")
-                cols_names.append(f"upper_{level}")
-            results = pd.DataFrame(results, index=index, columns=cols_names)
+            col_names = ["mean"]
+            for int(level) in levels:
+                col_names.append(f"lower_{level}")
+                col_names.append(f"upper_{level}")
+            results = pd.DataFrame(results, index=index, columns=col_names)
         
         return results
 

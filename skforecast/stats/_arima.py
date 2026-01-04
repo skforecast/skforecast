@@ -379,18 +379,16 @@ class Arima(BaseEstimator, RegressorMixin):
             For example, alpha=0.05 gives 95% intervals.
             Cannot be specified together with `level`.
         as_frame : bool, default=True
-            If True, return a tidy DataFrame with columns:
-            'mean', 'lower_<L>', 'upper_<L>' for each level L.
-            If False, return a NumPy ndarray with columns ordered as in the DataFrame.
+            If True, return a tidy DataFrame with columns 'mean', 'lower_<L>',
+            'upper_<L>' for each level L. If False, return a NumPy ndarray.
         exog : Series, DataFrame, or ndarray of shape (steps, n_exog_features), default=None
             Exogenous regressors for the forecast period.
 
         Returns
         -------
-        DataFrame or ndarray
-            If as_frame=True: DataFrame indexed by step (1..steps) with columns:
-            'mean', 'lower_<L>', 'upper_<L>' for each level L.
-            If as_frame=False: NumPy ndarray with columns ordered as in the DataFrame.
+        pandas DataFrame or numpy ndarray
+            If as_frame=True, pandas DataFrame with columns 'mean', 'lower_<L>',
+            'upper_<L>' for each level L. If as_frame=False, numpy ndarray.
 
         Raises
         ------
@@ -484,7 +482,7 @@ class Arima(BaseEstimator, RegressorMixin):
         if as_frame:
             idx = pd.RangeIndex(1, steps + 1, name="step")
             col_names = ["mean"]
-            for level in levels:
+            for int(level) in levels:
                 col_names.append(f"lower_{int(level)}")
                 col_names.append(f"upper_{int(level)}")
             results = pd.DataFrame(results, index=idx, columns=col_names)

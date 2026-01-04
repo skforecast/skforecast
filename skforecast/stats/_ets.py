@@ -350,18 +350,16 @@ class Ets(BaseEstimator, RegressorMixin):
         level : list or tuple of float, default=(80, 95)
             Confidence levels in percent.
         as_frame : bool, default=True
-            If True, return a tidy DataFrame with columns:
-            'mean', 'lower_<L>', 'upper_<L>' for each level L.
-            If False, return a NumPy ndarray with columns ordered as in the DataFrame.
+            If True, return a tidy DataFrame with columns 'mean', 'lower_<L>',
+            'upper_<L>' for each level L. If False, return a NumPy ndarray.
         exog : None
             Exogenous variables. Ignored, present for API compatibility.
 
         Returns
         -------
-        DataFrame or ndarray
-            If as_frame=True: DataFrame indexed by step (1..steps) with columns:
-            'mean', 'lower_<L>', 'upper_<L>' for each level L.
-            If as_frame=False: NumPy ndarray with columns ordered as in the DataFrame.
+        pandas DataFrame or numpy ndarray
+            If as_frame=True, pandas DataFrame with columns 'mean', 'lower_<L>',
+            'upper_<L>' for each level L. If as_frame=False, numpy ndarray.
         """
         check_is_fitted(self, "model_")
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
@@ -390,7 +388,7 @@ class Ets(BaseEstimator, RegressorMixin):
 
         if as_frame:
             col_names = ["mean"]
-            for level in levels:
+            for int(level) in levels:
                 col_names.append(f"lower_{level}")
                 col_names.append(f"upper_{level}")
             index = pd.RangeIndex(1, steps + 1, name="step")
