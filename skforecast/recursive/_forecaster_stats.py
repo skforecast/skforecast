@@ -1265,7 +1265,6 @@ class ForecasterStats():
         ).to_numpy()
         return preds
 
-    # TODO: Update skforecast wrappers to return a np array directly
     def _predict_interval_skforecast_stats(
         self,
         estimator: object,
@@ -1275,11 +1274,11 @@ class ForecasterStats():
     ) -> np.ndarray:
         """Generate prediction intervals using skforecast Arima/Arar/Ets models."""
         preds = estimator.predict_interval(
-            steps=steps,
-            exog=exog,
-            level=[100 * (1 - alpha)],
-            as_frame=True
-        ).to_numpy()
+            steps    = steps,
+            exog     = exog,
+            level    = [100 * (1 - alpha)],
+            as_frame = False
+        )
         return preds
     
     def _predict_interval_sktime_arima(

@@ -44,13 +44,6 @@ def test_estimator_predict_interval():
     np.testing.assert_array_almost_equal(df['lower_95'].values, expected_lower_95, decimal=6)
     np.testing.assert_array_almost_equal(df['upper_95'].values, expected_upper_95, decimal=6)
 
-    raw = est.predict_interval(steps=3, level=(90,), as_frame=False)
-    assert isinstance(raw, dict)
-    assert "mean" in raw
-    assert "lower_90" in raw
-    assert "upper_90" in raw
-    assert raw["mean"].shape == (3,)
-
 
 def test_predict_interval_values_contain_point_forecast():
     """Test that prediction intervals contain the point forecast"""

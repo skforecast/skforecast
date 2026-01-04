@@ -9,6 +9,7 @@ from __future__ import annotations
 import warnings
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_is_fitted
 from .arima._arima_base import (
@@ -360,7 +361,7 @@ class Arima(BaseEstimator, RegressorMixin):
         alpha: float | None = None,
         as_frame: bool = True,
         exog: pd.Series | pd.DataFrame | np.ndarray | None = None,
-    ) -> pd.DataFrame | dict:
+    ) -> pd.DataFrame | np.ndarray:
         """
         Forecast with prediction intervals.
 
@@ -380,16 +381,16 @@ class Arima(BaseEstimator, RegressorMixin):
         as_frame : bool, default=True
             If True, return a tidy DataFrame with columns:
             'mean', 'lower_<L>', 'upper_<L>' for each level L.
-            If False, return a dict with keys 'mean', 'lower', 'upper', 'level'.
+            If False, return a NumPy ndarray with columns ordered as in the DataFrame.
         exog : Series, DataFrame, or ndarray of shape (steps, n_exog_features), default=None
             Exogenous regressors for the forecast period.
 
         Returns
         -------
-        DataFrame or dict
-            If as_frame=True: DataFrame indexed by step (1..steps).
-            Else: dict with keys 'mean' (ndarray), 'lower' (dict of ndarrays), 
-            'upper' (dict of ndarrays), 'level' (list).
+        DataFrame or ndarray
+            If as_frame=True: DataFrame indexed by step (1..steps) with columns:
+            'mean', 'lower_<L>', 'upper_<L>' for each level L.
+            If as_frame=False: NumPy ndarray with columns ordered as in the DataFrame.
 
         Raises
         ------
@@ -459,37 +460,36 @@ class Arima(BaseEstimator, RegressorMixin):
             se_fit  = True
         )
         
-        mean = result['pred']
-        se = result['se']
-        
-        # Compute prediction intervals
-        from scipy.stats import norm
-        
-        lower = {}
-        upper = {}
-        for lv in level:
-            alpha = 1 - lv / 100
-            z = norm.ppf(1 - alpha / 2)
-            lower[lv] = mean - z * se
-            upper[lv] = mean + z * se
-        
-        if not as_frame:
-            return {
-                'mean': mean,
-                'lower': lower,
-                'upper': upper,
-                'level': list(level)
-            }
-        
-        # Convert to DataFrame
-        idx = pd.RangeIndex(1, steps + 1, name="step")
-        df = pd.DataFrame({"mean": mean}, index=idx)
-        
-        for lv in level:
-            df[f"lower_{int(lv)}"] = lower[lv]
-            df[f"upper_{int(lv)}"] = upper[lv]
-        
-        return df
+        mean = np.asarray(result['pred'])
+        se = np.asarray(result['se'])
+        levels = list(level)
+        n_levels = len(levels)
+
+        # Preallocate and compute intervals
+        lower = np.empty((steps, n_levels), dtype=float)
+        upper = np.empty((steps, n_levels), dtype=float)
+        for i, lv in enumerate(levels):
+            alpha_lvl = 1 - lv / 100
+            z = norm.ppf(1 - alpha_lvl / 2)
+            lower[:, i] = mean - z * se
+            upper[:, i] = mean + z * se
+
+        results = np.empty((steps, 1 + 2 * n_levels), dtype=float)
+        results[:, 0] = mean
+        for i in range(n_levels):
+            results[:, 1 + 2 * i] = lower[:, i]
+            results[:, 1 + 2 * i + 1] = upper[:, i]
+
+
+        if as_frame:
+            idx = pd.RangeIndex(1, steps + 1, name="step")
+            col_names = ["mean"]
+            for level in levels:
+                col_names.append(f"lower_{int(level)}")
+                col_names.append(f"upper_{int(level)}")
+            results = pd.DataFrame(results, index=idx, columns=col_names)
+
+        return results
 
     def get_residuals(self) -> np.ndarray:
         """

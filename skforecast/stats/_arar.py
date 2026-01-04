@@ -182,7 +182,7 @@ class Arar(BaseEstimator, RegressorMixin):
         self.n_features_in_       = None
         self.is_memory_reduced    = False
         self.is_fitted            = False
-        self.estimator_id         = "Arar"
+        self.estimator_id         = "ARAR"
 
     def __repr__(self) -> str:
         """
@@ -436,7 +436,7 @@ class Arar(BaseEstimator, RegressorMixin):
         level=(80, 95),
         as_frame: bool = True,
         exog: pd.Series | pd.DataFrame | np.ndarray | None = None
-    ) -> pd.DataFrame | dict:
+    ) -> pd.DataFrame | np.ndarray:
         """
         Forecast with symmetric normal-theory prediction intervals.
 
@@ -447,16 +447,17 @@ class Arar(BaseEstimator, RegressorMixin):
         level : iterable of int, default=(80, 95)
             Confidence levels in percent.
         as_frame : bool, default=True
-            If True, return a tidy DataFrame with columns:
-            'mean', 'lower_<L>', 'upper_<L>' for each level L.
+            If True, return a tidy DataFrame with columns: 'mean', 'lower_<L>', 'upper_<L>' for each level L.
+            If False, return a NumPy ndarray with columns ordered as within the DataFrame.
         exog : Series, DataFrame, or ndarray of shape (steps, n_exog_features), default=None
             Exogenous variables for prediction.
 
         Returns
         -------
-        DataFrame or dict
-            If as_frame=True: DataFrame indexed by step (1..steps).
-            Else: the raw dict from `forecast`.
+        pd.DataFrame or np.ndarray
+            If as_frame=True: DataFrame indexed by step (1..steps) with columns
+            ordered as: ['mean', 'lower_<L1>', 'upper_<L1>', 'lower_<L2>', 'upper_<L2>', ...].
+            If as_frame=False: ndarray with columns ordered as within the DataFrame.
             
         Notes
         -----
@@ -505,16 +506,23 @@ class Arar(BaseEstimator, RegressorMixin):
             out["upper"] = out["upper"] + exog_pred[:, np.newaxis]
             out["lower"] = out["lower"] + exog_pred[:, np.newaxis]
 
-        if not as_frame:
-            return out
+        levels = out["level"]
+        n_levels = len(levels)
+        cols = [out["mean"]]
+        for i in range(n_levels):
+            cols.append(out["lower"][:, i])
+            cols.append(out["upper"][:, i])
+        results = np.column_stack(cols)
 
-        idx = pd.RangeIndex(1, steps + 1, name="step")
-        df = pd.DataFrame({"mean": out["mean"]}, index=idx)
-        for i, L in enumerate(out["level"]):
-            df[f"lower_{L}"] = out["lower"][:, i]
-            df[f"upper_{L}"] = out["upper"][:, i]
+        if as_frame:
+            index = pd.RangeIndex(1, steps + 1, name="step")
+            cols_names = ["mean"]
+            for level in levels:
+                cols_names.append(f"lower_{level}")
+                cols_names.append(f"upper_{level}")
+            results = pd.DataFrame(results, index=index, columns=cols_names)
         
-        return df
+        return results
 
     def get_residuals(self) -> np.ndarray:
         """
