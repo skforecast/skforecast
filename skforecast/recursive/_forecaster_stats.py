@@ -192,7 +192,8 @@ class ForecasterStats():
             'skforecast.stats._ets.Ets',
             'skforecast.stats._sarimax.Sarimax',
             'aeon.forecasting.stats._arima.ARIMA',
-            'aeon.forecasting.stats._ets.ETS'
+            'aeon.forecasting.stats._ets.ETS',
+            'sktime.forecasting.arima._pmdarima.ARIMA'
         )
 
         # TODO: Remove 0.20. Handle deprecated 'regressor' argument
@@ -254,12 +255,14 @@ class ForecasterStats():
             'skforecast.stats._arima.Arima',
             'skforecast.stats._arar.Arar',
             'skforecast.stats._sarimax.Sarimax',
+            'sktime.forecasting.arima._pmdarima.ARIMA',
         )
         self.estimators_support_interval = (
             'skforecast.stats._arima.Arima',
             'skforecast.stats._arar.Arar',
             'skforecast.stats._ets.Ets',
-            'skforecast.stats._sarimax.Sarimax'
+            'skforecast.stats._sarimax.Sarimax',
+            'sktime.forecasting.arima._pmdarima.ARIMA'
         )
         self.estimators_support_reduce_memory = (
             'skforecast.stats._arima.Arima',
@@ -272,13 +275,15 @@ class ForecasterStats():
             'skforecast.stats._ets.Ets': self._predict_skforecast_stats,
             'skforecast.stats._sarimax.Sarimax': self._predict_sarimax,
             'aeon.forecasting.stats._arima.ARIMA': self._predict_aeon,
-            'aeon.forecasting.stats._ets.ETS': self._predict_aeon
+            'aeon.forecasting.stats._ets.ETS': self._predict_aeon,
+            'sktime.forecasting.arima._pmdarima.ARIMA': self._predict_sktime_arima
         }
         self._predict_interval_dispatch = {
             'skforecast.stats._arima.Arima': self._predict_interval_skforecast_stats,
             'skforecast.stats._arar.Arar': self._predict_interval_skforecast_stats,
             'skforecast.stats._ets.Ets': self._predict_interval_skforecast_stats,
             'skforecast.stats._sarimax.Sarimax': self._predict_interval_sarimax,
+            'sktime.forecasting.arima._pmdarima.ARIMA': self._predict_interval_sktime_arima,
         }
         self._feature_importances_dispatch = {
             'skforecast.stats._arima.Arima': self._get_feature_importances_arima,
@@ -286,7 +291,8 @@ class ForecasterStats():
             'skforecast.stats._ets.Ets': self._get_feature_importances_ets,
             'skforecast.stats._sarimax.Sarimax': self._get_feature_importances_sarimax,
             'aeon.forecasting.stats._arima.ARIMA': self._get_feature_importances_aeon_arima,
-            'aeon.forecasting.stats._ets.ETS': self._get_feature_importances_aeon_ets
+            'aeon.forecasting.stats._ets.ETS': self._get_feature_importances_aeon_ets,
+            'sktime.forecasting.arima._pmdarima.ARIMA': self._get_feature_importances_sktime_arima
         }
         self._info_criteria_dispatch = {
             'skforecast.stats._arima.Arima': self._get_info_criteria_arima,
@@ -294,7 +300,8 @@ class ForecasterStats():
             'skforecast.stats._ets.Ets': self._get_info_criteria_ets,
             'skforecast.stats._sarimax.Sarimax': self._get_info_criteria_sarimax,
             'aeon.forecasting.stats._arima.ARIMA': self._get_info_criteria_aeon,
-            'aeon.forecasting.stats._ets.ETS': self._get_info_criteria_aeon
+            'aeon.forecasting.stats._ets.ETS': self._get_info_criteria_aeon,
+            'sktime.forecasting.arima._pmdarima.ARIMA': self._get_info_criteria_sktime_arima
         }
 
         # TODO: Review, multiple_estimator flag?
@@ -1085,6 +1092,17 @@ class ForecasterStats():
         )
         return preds
 
+    def _predict_sktime_arima(
+        self,
+        estimator: object,
+        steps: int,
+        exog: pd.Series | pd.DataFrame | None
+    ) -> np.ndarray:
+        """Generate predictions using sktime ARIMA model."""
+        fh = np.arange(1, steps + 1)
+        preds = estimator.predict(fh=fh, X=exog).to_numpy()
+        return preds
+
     def predict_interval(
         self,
         steps: int,
@@ -1263,6 +1281,18 @@ class ForecasterStats():
             as_frame=True
         ).to_numpy()
         return preds
+    
+    def _predict_interval_sktime_arima(
+        self,
+        estimator: object,
+        steps: int,
+        exog: pd.Series | pd.DataFrame | None,
+        alpha: float
+    ) -> np.ndarray:
+        """Generate prediction intervals using sktime ARIMA model."""
+        fh = np.arange(1, steps + 1)
+        preds = estimator.predict_interval(fh=fh, X=exog, coverage=1 - alpha).to_numpy()
+        return preds
 
     def set_params(
         self, 
@@ -1389,7 +1419,7 @@ class ForecasterStats():
         feature_importances = self.estimator.params().to_frame().reset_index()
         feature_importances.columns = ['feature', 'importance']
         return feature_importances
-
+    
     # TODO: Update skforecast Arima wrapper to include feature importances method
     def _get_feature_importances_arima(self) -> pd.DataFrame:
         """Get feature importances for Arima model."""
@@ -1452,6 +1482,12 @@ class ForecasterStats():
         """Get feature importances for AEON ETS model."""
         warnings.warn("Feature importances is not available for the AEON ETS model.")
         return pd.DataFrame(columns=['feature', 'importance'])
+    
+    def _get_feature_importances_sktime_arima(self) -> pd.DataFrame:
+        """Get feature importances for sktime ARIMA model."""
+        feature_importances = self.estimator._forecaster.params().to_frame().reset_index()
+        feature_importances.columns = ['feature', 'importance']
+        return feature_importances
 
     def get_info_criteria(
         self, 
@@ -1507,6 +1543,15 @@ class ForecasterStats():
             )
         
         return self.estimator.get_info_criteria(criteria=criteria, method=method)
+    
+    def _get_info_criteria_sktime_arima(self, criteria: str, method: str) -> float:
+        """Get information criteria for sktime ARIMA model."""
+        if criteria not in {'aic', 'bic', 'hqic'}:
+            raise ValueError("`criteria` must be one of {'aic','bic','hqic'}")
+        if method not in {'standard', 'lutkepohl'}:
+            raise ValueError("`method` must be either 'standard' or 'lutkepohl'")
+
+        return self.estimator._forecaster.arima_res_.info_criteria(criteria=criteria, method=method)
 
     # TODO: Update skforecast Arima wrapper to include info_criteria method
     def _get_info_criteria_arima(self, criteria: str, method: str) -> float:

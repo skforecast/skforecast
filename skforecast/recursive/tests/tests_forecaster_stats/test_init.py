@@ -20,7 +20,8 @@ def test_TypeError_when_estimator_is_not_valid_stats_model_single_estimator():
         'skforecast.stats._ets.Ets',
         'skforecast.stats._sarimax.Sarimax',
         'aeon.forecasting.stats._arima.ARIMA',
-        'aeon.forecasting.stats._ets.ETS'
+        'aeon.forecasting.stats._ets.ETS',
+        'sktime.forecasting.arima._pmdarima.ARIMA'
     )
 
     err_msg = re.escape(
@@ -45,7 +46,8 @@ def test_TypeError_when_estimator_is_not_valid_stats_model_in_list():
         'skforecast.stats._ets.Ets',
         'skforecast.stats._sarimax.Sarimax',
         'aeon.forecasting.stats._arima.ARIMA',
-        'aeon.forecasting.stats._ets.ETS'
+        'aeon.forecasting.stats._ets.ETS',
+        'sktime.forecasting.arima._pmdarima.ARIMA'
     )
 
     err_msg = re.escape(
