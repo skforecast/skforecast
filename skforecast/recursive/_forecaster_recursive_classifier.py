@@ -1461,11 +1461,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 pred = self.class_codes_[np.argmax(proba)]
             else:
                 if is_lightgbm:
-                    pred = booster.predict(X.reshape(1, -1)).item()
+                    pred = booster.predict(X.reshape(1, -1))
                 elif is_xgboost:
-                    pred = booster.inplace_predict(X.reshape(1, -1)).item()
+                    pred = booster.inplace_predict(X.reshape(1, -1))
                 else:
-                    pred = self.estimator.predict(X.reshape(1, -1)).ravel().item()
+                    pred = self.estimator.predict(X.reshape(1, -1)).ravel()
+                pred = pred.item()
                 predictions[i] = pred
 
             # Update `last_window` values. The first position is discarded and 
