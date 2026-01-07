@@ -204,7 +204,7 @@ class Ets(BaseEstimator, RegressorMixin):
         self.n_features_in_             = None
         self.is_memory_reduced          = False
         self.is_fitted                  = False
-        self.estimator_id               = f"Ets({self.model})"
+        self.estimator_id               = f"ETS({self.model})"
 
     def __repr__(self) -> str:
         """
@@ -301,7 +301,7 @@ class Ets(BaseEstimator, RegressorMixin):
         if self.model_config_['damped'] and self.model_config_['trend'] != "N":
             model_name = f"{self.model_config_['error']}{self.model_config_['trend']}d{self.model_config_['season']}"
 
-        self.estimator_id = f"Ets({model_name})"
+        self.estimator_id = f"ETS({model_name})"
 
         return self
 
@@ -339,7 +339,7 @@ class Ets(BaseEstimator, RegressorMixin):
         level: list[float] | tuple[float, ...] = (80, 95),
         as_frame: bool = True,
         exog: None = None,
-    ) -> pd.DataFrame | dict:
+    ) -> pd.DataFrame | np.ndarray:
         """
         Forecast with prediction intervals.
 
@@ -350,17 +350,16 @@ class Ets(BaseEstimator, RegressorMixin):
         level : list or tuple of float, default=(80, 95)
             Confidence levels in percent.
         as_frame : bool, default=True
-            If True, return a tidy DataFrame with columns:
-            'mean', 'lower_<L>', 'upper_<L>' for each level L.
-            If False, return raw dict.
+            If True, return a tidy DataFrame with columns 'mean', 'lower_<L>',
+            'upper_<L>' for each level L. If False, return a NumPy ndarray.
         exog : None
             Exogenous variables. Ignored, present for API compatibility.
 
         Returns
         -------
-        DataFrame or dict
-            If as_frame=True: DataFrame indexed by step (1..steps).
-            Else: dict with keys 'mean', 'lower_XX', 'upper_XX'.
+        pandas DataFrame or numpy ndarray
+            If as_frame=True, pandas DataFrame with columns 'mean', 'lower_<L>',
+            'upper_<L>' for each level L. If as_frame=False, numpy ndarray.
         """
         check_is_fitted(self, "model_")
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
@@ -373,20 +372,29 @@ class Ets(BaseEstimator, RegressorMixin):
             level       = list(level)
         )
 
-        if not as_frame:
-            return result
-
-        # Convert to DataFrame
-        idx = pd.RangeIndex(1, steps + 1, name="step")
-        df = pd.DataFrame({"mean": result["mean"]}, index=idx)
-
-        for lv in level:
+        levels = list(level) if level is not None else []
+        n_levels = len(levels)
+        mean = np.asarray(result["mean"])
+        results = np.empty((steps, 1 + 2 * n_levels), dtype=float)
+        results[:, 0] = mean
+        for i, lv in enumerate(levels):
             lv_int = int(lv)
-            if f"lower_{lv_int}" in result:
-                df[f"lower_{lv_int}"] = result[f"lower_{lv_int}"]
-                df[f"upper_{lv_int}"] = result[f"upper_{lv_int}"]
+            lower_key = f"lower_{lv_int}"
+            upper_key = f"upper_{lv_int}"
+            lower_arr = np.asarray(result[lower_key])
+            upper_arr = np.asarray(result[upper_key])
+            results[:, 1 + 2 * i] = lower_arr
+            results[:, 1 + 2 * i + 1] = upper_arr
 
-        return df
+        if as_frame:
+            col_names = ["mean"]
+            for int(level) in levels:
+                col_names.append(f"lower_{level}")
+                col_names.append(f"upper_{level}")
+            index = pd.RangeIndex(1, steps + 1, name="step")
+            results = pd.DataFrame(results, columns=col_names, index=index)
+
+        return results
 
     def get_residuals(self) -> np.ndarray:
         """
@@ -419,7 +427,7 @@ class Ets(BaseEstimator, RegressorMixin):
         check_is_fitted(self, "model_")
         check_memory_reduced(self, 'summary')
 
-        print("Ets Model Summary")
+        print("ETS Model Summary")
         print("=" * 60)
         print(f"Model: {self.estimator_id}")
         print(f"Number of observations: {len(self.y_train_)}")
