@@ -64,6 +64,7 @@ linear_estimators = frozenset(
     if not name.startswith('_')
 )
 
+
 class ForecasterRecursiveMultiSeries(ForecasterBase):
     """
     This class turns any estimator compatible with the scikit-learn API into a
@@ -2336,9 +2337,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             coef = self.estimator.coef_
             intercept = self.estimator.intercept_
         elif is_lightgbm:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=UserWarning)
-                booster = self.estimator.booster_
+            booster = self.estimator.booster_
         elif is_xgboost:
             booster = self.estimator.get_booster()
 
