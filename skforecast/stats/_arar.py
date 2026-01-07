@@ -391,11 +391,8 @@ class Arar(BaseEstimator, RegressorMixin):
         mean : ndarray of shape (h,)
             Point forecasts for steps 1..h.
         """
-        if not self.is_fitted:
-            raise TypeError(
-                "This Arar instance is not fitted yet. "
-                "Call 'fit' with appropriate arguments before using this estimator."
-        )
+        
+        check_is_fitted(self, "model_")
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
 
@@ -442,11 +439,11 @@ class Arar(BaseEstimator, RegressorMixin):
 
         Parameters
         ----------
-        steps : int, default=1
+        steps : int, default 1
             Forecast horizon.
-        level : iterable of int, default=(80, 95)
+        level : iterable of int, default (80, 95)
             Confidence levels in percent.
-        as_frame : bool, default=True
+        as_frame : bool, default True
             If True, return a tidy DataFrame with columns 'mean', 'lower_<L>',
             'upper_<L>' for each level L. If False, return a NumPy ndarray.
         exog : Series, DataFrame, or ndarray of shape (steps, n_exog_features), default=None
@@ -463,12 +460,10 @@ class Arar(BaseEstimator, RegressorMixin):
         When exogenous variables are used, prediction intervals account only for 
         ARAR forecast uncertainty and do not include uncertainty from the regression 
         coefficients. This may result in **undercoverage** (actual coverage < nominal level).
+
         """
-        if not self.is_fitted:
-            raise TypeError(
-                "This Arar instance is not fitted yet. "
-                "Call 'fit' with appropriate arguments before using this estimator."
-        )
+
+        check_is_fitted(self, "model_")
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
             
@@ -516,7 +511,8 @@ class Arar(BaseEstimator, RegressorMixin):
         if as_frame:
             index = pd.RangeIndex(1, steps + 1, name="step")
             col_names = ["mean"]
-            for int(level) in levels:
+            for level in levels:
+                level = int(level)
                 col_names.append(f"lower_{level}")
                 col_names.append(f"upper_{level}")
             results = pd.DataFrame(results, index=index, columns=col_names)
