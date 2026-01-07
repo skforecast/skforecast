@@ -1428,15 +1428,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 shape=(steps, self.n_classes_), fill_value=np.nan, dtype=float
             )
 
-        estimator_name = type(self.estimator).__name__
-        is_lightgbm = estimator_name == 'LGBMClassifier'
-        is_xgboost = estimator_name == 'XGBClassifier'
-
-        if is_lightgbm:
-            booster = self.estimator.booster_
-        elif is_xgboost:
-            booster = self.estimator.get_booster()
-
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
@@ -1460,13 +1451,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 predictions[i, :] = proba
                 pred = self.class_codes_[np.argmax(proba)]
             else:
-                if is_lightgbm:
-                    pred = booster.predict(X.reshape(1, -1))
-                elif is_xgboost:
-                    pred = booster.inplace_predict(X.reshape(1, -1))
-                else:
-                    pred = self.estimator.predict(X.reshape(1, -1)).ravel()
-                pred = pred.item()
+                pred = self.estimator.predict(X.reshape(1, -1)).ravel().item()
                 predictions[i] = pred
 
             # Update `last_window` values. The first position is discarded and 
