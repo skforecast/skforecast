@@ -18,7 +18,6 @@ from .arima._arima_base import (
 )
 from ._utils import check_memory_reduced
 
-
 class Arima(BaseEstimator, RegressorMixin):
     """
     Scikit-learn style wrapper for the ARIMA (AutoRegressive Integrated Moving Average) model.
@@ -71,6 +70,28 @@ class Arima(BaseEstimator, RegressorMixin):
 
     Attributes
     ----------
+    order : tuple of int
+        (p, d, q) non-seasonal ARIMA order stored on the estimator.
+    seasonal_order : tuple of int
+        (P, D, Q) seasonal ARIMA order stored on the estimator.
+    m : int
+        Seasonal period (e.g., 12 for monthly data).
+    include_mean : bool
+        Whether a mean/intercept term is included in the model.
+    transform_pars : bool
+        Whether parameters are transformed to enforce stationarity/invertibility.
+    method : str
+        Estimation method (e.g., "CSS-ML", "ML", "CSS").
+    n_cond : int or None
+        Number of observations used for conditional sum of squares (if any).
+    SSinit : str
+        State-space initialization method (e.g., "Gardner1980").
+    optim_method : str
+        Optimization method passed to the optimizer (e.g., "BFGS").
+    optim_control : dict or None
+        Additional optimizer options.
+    kappa : float
+        Prior variance for diffuse states in the Kalman filter.
     model_ : dict
         Dictionary containing the fitted ARIMA model with keys:
         - 'y': Original training series
@@ -87,9 +108,9 @@ class Arima(BaseEstimator, RegressorMixin):
         - 'model': State-space model dict
         - 'method': Estimation method string
     y_train_ : ndarray of shape (n_samples,)
-        Original training series.
+        Original training series used for fitting.
     coef_ : ndarray
-        Flattened array of fitted coefficients (AR, MA, xreg, intercept).
+        Flattened array of fitted coefficients (AR, MA, exogenous, intercept if present).
     coef_names_ : list of str
         Names of coefficients in coef_.
     sigma2_ : float
@@ -97,9 +118,9 @@ class Arima(BaseEstimator, RegressorMixin):
     loglik_ : float
         Log-likelihood of the fitted model.
     aic_ : float
-        Akaike Information Criterion.
-    bic_ : float
-        Bayesian Information Criterion.
+        Akaike Information Criterion value.
+    bic_ : float or None
+        Bayesian Information Criterion value (may be ``None`` if not available).
     arma_ : list of int
         ARIMA specification: [p, q, P, Q, m, d, D].
     converged_ : bool
@@ -116,12 +137,14 @@ class Arima(BaseEstimator, RegressorMixin):
         Variance-covariance matrix of coefficients.
     is_memory_reduced : bool
         Flag indicating whether reduce_memory() has been called.
+    is_fitted : bool
+        Flag indicating whether the estimator has been fitted.
     estimator_id : str
-        String identifier for the model configuration (e.g., "Arima(1,1,1)(0,0,0)[1]").
+        String identifier for the model configuration (e.g., ``"Arima(1,1,1)(0,0,0)[1]"``).
 
     Notes
     -----
-    The ARIMA model supports exogenous regressors (xreg) which are incorporated 
+    The ARIMA model supports exogenous regressors which are incorporated 
     directly into the likelihood function, unlike the two-step approach used in 
     the ARAR model. This means the exogenous variables are modeled jointly with 
     the ARMA errors, providing a more integrated treatment.
@@ -130,24 +153,6 @@ class Arima(BaseEstimator, RegressorMixin):
     likelihood computation and forecasting, which allows handling of missing 
     values and provides efficient recursive prediction.
 
-    Examples
-    --------
-    >>> from skforecast.stats import Arima
-    >>> import numpy as np
-    >>> 
-    >>> # Generate sample data
-    >>> np.random.seed(42)
-    >>> y = np.cumsum(np.random.randn(100)) + 50
-    >>> 
-    >>> # Fit ARIMA(1,1,1) model
-    >>> model = Arima(order=(1, 1, 1))
-    >>> model.fit(y)
-    >>> 
-    >>> # Forecast 10 steps ahead
-    >>> predictions = model.predict(steps=10)
-    >>> 
-    >>> # Get prediction intervals
-    >>> intervals = model.predict_interval(steps=10, level=(80, 95))
     """
 
     def __init__(
@@ -173,19 +178,38 @@ class Arima(BaseEstimator, RegressorMixin):
             raise ValueError(
                 f"`seasonal_order` must be a tuple of length 3, got length {len(seasonal_order)}"
             )
+        if m < 1 or not isinstance(m, int):
+            raise ValueError("`m` must be a positive integer (seasonal period).")
         
-        self.order             = order
-        self.seasonal_order    = seasonal_order
-        self.m                 = m
-        self.include_mean      = include_mean
-        self.transform_pars    = transform_pars
-        self.method            = method
-        self.n_cond            = n_cond
-        self.SSinit            = SSinit
-        self.optim_method      = optim_method
-        self.optim_control     = optim_control
-        self.kappa             = kappa
-        self.is_memory_reduced = False
+        self.order                = order
+        self.seasonal_order       = seasonal_order
+        self.m                    = m
+        self.include_mean         = include_mean
+        self.transform_pars       = transform_pars
+        self.method               = method
+        self.n_cond               = n_cond
+        self.SSinit               = SSinit
+        self.optim_method         = optim_method
+        self.optim_control        = optim_control
+        self.kappa                = kappa
+        self.is_memory_reduced    = False
+        self.is_fitted            = False
+
+        self.model_               = None
+        self.y_train_             = None
+        self.coef_                = None
+        self.coef_names_          = None
+        self.sigma2_              = None
+        self.loglik_              = None
+        self.aic_                 = None
+        self.bic_                 = None
+        self.arma_                = None
+        self.converged_           = None
+        self.fitted_values_       = None
+        self.in_sample_residuals_ = None
+        self.var_coef_            = None
+        self.n_features_in_       = None
+        self.n_exog_features_in_  = None
 
         p, d, q = self.order
         P, D, Q = self.seasonal_order
@@ -210,9 +234,9 @@ class Arima(BaseEstimator, RegressorMixin):
 
         Parameters
         ----------
-        y : array-like of shape (n_samples,)
+        y : pandas Series, numpy ndarray of shape (n_samples,)
             Time-ordered numeric sequence.
-        exog : Series, DataFrame, or ndarray of shape (n_samples, n_exog_features), default=None
+        exog : pandas Series, pandas DataFrame,  numpy ndarray of shape (n_samples, n_exog_features), default=None
             Exogenous regressors to include in the model. These are incorporated 
             directly into the ARIMA likelihood function.
 
@@ -221,12 +245,6 @@ class Arima(BaseEstimator, RegressorMixin):
         self : Arima
             Fitted estimator.
 
-        Notes
-        -----
-        Unlike the ARAR model, ARIMA natively supports exogenous regressors which 
-        are incorporated directly into the likelihood function. This provides a 
-        more integrated treatment where the exogenous variables and ARMA dynamics 
-        are jointly estimated.
         """
         if not isinstance(y, (pd.Series, np.ndarray)):
             raise TypeError("`y` must be a pandas Series or numpy array.")
@@ -270,7 +288,6 @@ class Arima(BaseEstimator, RegressorMixin):
             kappa          = self.kappa
         )
         
-        # Extract and store model attributes
         self.y_train_             = self.model_['y']
         self.coef_                = self.model_['coef'].values.flatten()
         self.coef_names_          = list(self.model_['coef'].columns)
@@ -286,6 +303,7 @@ class Arima(BaseEstimator, RegressorMixin):
         self.n_exog_features_in_  = exog.shape[1] if exog is not None else 0
         self.n_features_in_       = 1
         self.is_memory_reduced    = False
+        self.is_fitted            = True
         
         return self
 
@@ -320,7 +338,6 @@ class Arima(BaseEstimator, RegressorMixin):
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
         
-        # Convert exog to numpy array if needed
         if exog is not None:
             exog = np.asarray(exog, dtype=float)
             if exog.ndim == 1:
@@ -344,7 +361,6 @@ class Arima(BaseEstimator, RegressorMixin):
                 f"but `exog` was not provided for prediction."
             )
         
-        # Generate predictions using base implementation
         result = predict_arima(
             model   = self.model_,
             n_ahead = steps,
@@ -407,7 +423,6 @@ class Arima(BaseEstimator, RegressorMixin):
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
         
-        # Handle level and alpha parameters
         if level is not None and alpha is not None:
             raise ValueError(
                 "Cannot specify both `level` and `alpha`. Use one or the other."
@@ -420,13 +435,11 @@ class Arima(BaseEstimator, RegressorMixin):
         elif level is None:
             level = (80, 95)
         
-        # Ensure level is iterable
         if isinstance(level, (int, float, np.number)):
             level = [level]
         else:
             level = list(level)
         
-        # Convert exog to numpy array if needed
         if exog is not None:
             exog = np.asarray(exog, dtype=float)
             if exog.ndim == 1:
@@ -450,7 +463,6 @@ class Arima(BaseEstimator, RegressorMixin):
                 f"but `exog` was not provided for prediction."
             )
         
-        # Generate predictions with standard errors
         result = predict_arima(
             model   = self.model_,
             n_ahead = steps,
@@ -463,7 +475,6 @@ class Arima(BaseEstimator, RegressorMixin):
         levels = list(level)
         n_levels = len(levels)
 
-        # Preallocate and compute intervals
         lower = np.empty((steps, n_levels), dtype=float)
         upper = np.empty((steps, n_levels), dtype=float)
         for i, lv in enumerate(levels):
@@ -741,7 +752,7 @@ class Arima(BaseEstimator, RegressorMixin):
         ValueError
             If any parameter key is invalid.
         """
-        # Validate parameter keys
+
         valid_params = {
             'order', 'seasonal_order', 'm', 'include_mean', 'transform_pars',
             'method', 'n_cond', 'SSinit', 'optim_method', 'optim_control', 'kappa'
@@ -752,11 +763,9 @@ class Arima(BaseEstimator, RegressorMixin):
                     f"Invalid parameter '{key}'. Valid parameters are: {valid_params}"
                 )
         
-        # Set the parameters
         for key, value in params.items():
             setattr(self, key, value)
         
-        # Reset fitted state - remove fitted attributes if they exist
         fitted_attrs = [
             'model_', 'y_train_', 'coef_', 'coef_names_', 'sigma2_', 'loglik_',
             'aic_', 'bic_', 'arma_', 'converged_', 'fitted_values_',
@@ -807,7 +816,6 @@ class Arima(BaseEstimator, RegressorMixin):
             )
             return self
         
-        # Delete large memory-consuming attributes, but keep model_ for predictions
         attrs_to_delete = [
             'y_train_', 'fitted_values_', 'in_sample_residuals_', 'var_coef_'
         ]
