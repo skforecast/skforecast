@@ -33,6 +33,8 @@ The main changes in this release are:
 
 + Added parameter `max_out_of_range_proportion` to <code>[PopulationDriftDetector]</code> to set the maximum allowed proportion of out-of-range observations (for numeric features) before triggering drift detection.
 
++ Introduced optimized prediction paths for linear models (using numpy dot product), LightGBM (using booster API), and XGBoost (using inplace_predict)
+
 
 **Changed**
 
