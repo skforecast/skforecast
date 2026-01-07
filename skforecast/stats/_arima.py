@@ -478,13 +478,13 @@ class Arima(BaseEstimator, RegressorMixin):
             results[:, 1 + 2 * i] = lower[:, i]
             results[:, 1 + 2 * i + 1] = upper[:, i]
 
-
         if as_frame:
             idx = pd.RangeIndex(1, steps + 1, name="step")
             col_names = ["mean"]
-            for int(level) in levels:
-                col_names.append(f"lower_{int(level)}")
-                col_names.append(f"upper_{int(level)}")
+            for level in levels:
+                level = int(level)
+                col_names.append(f"lower_{level}")
+                col_names.append(f"upper_{level}")
             results = pd.DataFrame(results, index=idx, columns=col_names)
 
         return results

@@ -388,7 +388,8 @@ class Ets(BaseEstimator, RegressorMixin):
 
         if as_frame:
             col_names = ["mean"]
-            for int(level) in levels:
+            for level in levels:
+                level = int(level)
                 col_names.append(f"lower_{level}")
                 col_names.append(f"upper_{level}")
             index = pd.RangeIndex(1, steps + 1, name="step")
