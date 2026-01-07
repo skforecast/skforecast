@@ -693,3 +693,26 @@ class Arar(BaseEstimator, RegressorMixin):
         self.is_fitted            = False
         
         return self
+    
+    def get_params(self, deep: bool = True) -> dict:
+        """
+        Get parameters for this estimator.
+
+        Parameters
+        ----------
+        deep : bool, default=True
+            If True, will return the parameters for this estimator and
+            contained subobjects that are estimators.
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their values.
+        """
+
+        check_is_fitted(self, "model_")
+        
+        return {
+            "max_ar_depth": self.max_ar_depth,
+            "max_lag": self.max_lag,
+            "safe": self.safe
+        }
