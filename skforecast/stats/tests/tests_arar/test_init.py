@@ -39,7 +39,7 @@ def test_arar_init_all_attributes():
     # Model state attributes (should be None before fitting)
     assert model.model_ is None
     assert model.n_features_in_ is None
-    assert model.y_ is None
+    assert model.y_train_ is None
     assert model.coef_ is None
     assert model.lags_ is None
     assert model.sigma2_ is None
@@ -52,4 +52,4 @@ def test_arar_init_all_attributes():
     assert model.n_exog_features_in_ is None
     
     # Memory management attribute
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False

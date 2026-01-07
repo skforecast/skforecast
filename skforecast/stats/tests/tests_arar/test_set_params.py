@@ -67,37 +67,37 @@ def test_set_params_resets_fitted_state():
     model.fit(y)
     
     # Verify model is fitted
-    assert model.is_fitted_ is True
+    assert model.is_fitted is True
     assert model.model_ is not None
-    assert model.y_ is not None
+    assert model.y_train_ is not None
     assert model.coef_ is not None
     assert model.lags_ is not None
     assert model.sigma2_ is not None
     assert model.psi_ is not None
     assert model.sbar_ is not None
     assert model.fitted_values_ is not None
-    assert model.residuals_in_ is not None
+    assert model.in_sample_residuals_ is not None
     assert model.aic_ is not None
     assert model.bic_ is not None
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
     
     # Set params - should reset fitted state
     model.set_params(max_ar_depth=15)
     
     # Verify all fitted attributes are reset
-    assert model.is_fitted_ is False
+    assert model.is_fitted is False
     assert model.model_ is None
-    assert model.y_ is None
+    assert model.y_train_ is None
     assert model.coef_ is None
     assert model.lags_ is None
     assert model.sigma2_ is None
     assert model.psi_ is None
     assert model.sbar_ is None
     assert model.fitted_values_ is None
-    assert model.residuals_in_ is None
+    assert model.in_sample_residuals_ is None
     assert model.aic_ is None
     assert model.bic_ is None
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
 
 
 def test_set_params_resets_fitted_state_with_exog():
@@ -194,7 +194,7 @@ def test_set_params_method_chaining():
     
     assert predictions.shape == (5,)
     assert model.max_ar_depth == 15
-    assert model.is_fitted_ is True
+    assert model.is_fitted is True
 
 
 def test_set_params_preserves_unchanged_parameters():
@@ -224,14 +224,14 @@ def test_set_params_with_empty_dict():
     model = Arar()
     model.fit(y)
     
-    assert model.is_fitted_ is True
+    assert model.is_fitted is True
     
     # Call set_params with no arguments
     result = model.set_params()
     
     # Should still reset fitted state
     assert result is model
-    assert model.is_fitted_ is False
+    assert model.is_fitted is False
     assert model.model_ is None
 
 
@@ -244,11 +244,11 @@ def test_set_params_after_reduce_memory():
     model.fit(y)
     model.reduce_memory()
     
-    assert model.memory_reduced_ is True
+    assert model.is_memory_reduced is True
     assert model.fitted_values_ is None
     
-    # Set params should reset memory_reduced_ flag
+    # Set params should reset is_memory_reduced flag
     model.set_params(max_ar_depth=20)
     
-    assert model.memory_reduced_ is False
-    assert model.is_fitted_ is False
+    assert model.is_memory_reduced is False
+    assert model.is_fitted is False

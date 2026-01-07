@@ -8,15 +8,18 @@
 from __future__ import annotations
 import warnings
 import sys
-import pandas as pd
 from copy import copy
 import textwrap
 import numpy as np
+import pandas as pd
 from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 
 from .. import __version__
-from ..exceptions import IgnoredArgumentWarning
+from ..exceptions import (
+    IgnoredArgumentWarning,
+    ExogenousInterpretationWarning
+)
 from ..utils import (
     check_y,
     check_exog,
@@ -125,8 +128,14 @@ class ForecasterStats():
         Tag to identify if the estimator has been fitted (trained).
     fit_date : str
         Date of last fit.
-    valid_estimator_types : list
-        List of valid estimator types.
+    valid_estimator_types : tuple
+        Valid estimator types.
+    estimators_support_exog : tuple
+        Estimators that support exogenous variables.
+    estimators_support_interval : tuple
+        Estimators that support prediction intervals.
+    estimators_support_reduce_memory : tuple
+        Estimators that support reduce memory method.
     skforecast_version : str
         Version of skforecast library used to create the forecaster.
     python_version : str
@@ -171,19 +180,31 @@ class ForecasterStats():
         self.skforecast_version      = __version__
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
-        self.valid_estimator_types   = [
+
+        self.valid_estimator_types   = (
             'skforecast.stats._arima.Arima',
             'skforecast.stats._arar.Arar',
             'skforecast.stats._ets.Ets',
             'skforecast.stats._sarimax.Sarimax',
             'aeon.forecasting.stats._arima.ARIMA',
             'aeon.forecasting.stats._ets.ETS'
-        ]
-        self.estimators_support_exog  = [
+        )
+        self.estimators_support_exog  = (
             'skforecast.stats._arima.Arima',
             'skforecast.stats._arar.Arar',
             'skforecast.stats._sarimax.Sarimax',
-        ]
+        )
+        self.estimators_support_interval = (
+            'skforecast.stats._arima.Arima',
+            'skforecast.stats._arar.Arar',
+            'skforecast.stats._ets.Ets',
+            'skforecast.stats._sarimax.Sarimax'
+        )
+        self.estimators_support_reduce_memory = (
+            'skforecast.stats._arima.Arima',
+            'skforecast.stats._arar.Arar',
+            'skforecast.stats._ets.Ets'
+        )
 
         estimator_type = f"{type(estimator).__module__}.{type(estimator).__name__}"
         if estimator_type not in self.valid_estimator_types:
@@ -333,9 +354,9 @@ class ForecasterStats():
         estimator_details = ""
         if self.estimator_type == 'skforecast.stats._ets.Ets' and self.is_fitted:
             estimator_details = (
-                f"({self.estimator.config_['error']}"
-                f"{self.estimator.config_['trend']}"
-                f"{self.estimator.config_['season']})"
+                f"({self.estimator.model_config_['error']}"
+                f"{self.estimator.model_config_['trend']}"
+                f"{self.estimator.model_config_['season']})"
             )
 
         content = f"""
@@ -746,12 +767,12 @@ class ForecasterStats():
             'aeon.forecasting.stats._ets.ETS': self._predict_aeon
         }
         
-        predictions = predict_dispatch[self.estimator_type](steps, exog)
+        predictions = predict_dispatch[self.estimator_type](steps=steps, exog=exog)
 
         return predictions
 
     def _predict_sarimax(self, steps: int, exog: pd.Series | pd.DataFrame | None) -> pd.Series:
-        """Generate predictions using SARIMAX model."""
+        """Generate predictions using SARIMAX statsmodels model."""
         predictions = self.estimator.predict(steps=steps, exog=exog).iloc[:, 0]
         predictions = transform_series(
             series            = predictions,
@@ -891,23 +912,30 @@ class ForecasterStats():
             'skforecast.stats._ets.Ets': self._predict_interval_skforecast_stats
         }
         
-        if self.estimator_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
+        if self.estimator_type not in self.estimators_support_interval:
             raise NotImplementedError(
-                "Prediction intervals is not implemented for AEON ARIMA and ETS models yet."
+                f"Prediction intervals is not implemented for {self.estimator_type} estimator."
+                f"Available estimators for prediction intervals are: "
+                f"{list(self.estimators_support_interval)}."
             )
         
-        predict_interval_method = predict_interval_dispatch[self.estimator_type]
-        predictions = predict_interval_method(steps, exog, alpha)
-
-        # TODO: verify this is aligned with recursive forecasters
+        predictions = predict_interval_dispatch[self.estimator_type](
+            steps=steps, exog=exog, alpha=alpha
+        )
+       
         if self.transformer_y:
-            predictions_values = self.transformer_y.inverse_transform(predictions.to_numpy())
-            if hasattr(predictions_values, 'toarray'):
-                predictions_values = predictions_values.toarray()
+            predictions_index = predictions.index
+            predictions_columns = predictions.columns
+            predictions = transform_numpy(
+                array             = predictions.to_numpy(),
+                transformer       = self.transformer_y,
+                fit               = False,
+                inverse_transform = True
+            )
             predictions = pd.DataFrame(
-                data    = predictions_values,
-                index   = predictions.index,
-                columns = predictions.columns
+                data    = predictions,
+                index   = predictions_index,
+                columns = predictions_columns
             )
 
         return predictions
@@ -918,7 +946,7 @@ class ForecasterStats():
         exog: pd.Series | pd.DataFrame | None, 
         alpha: float
     ) -> pd.DataFrame:
-        """Generate prediction intervals using SARIMAX model."""
+        """Generate prediction intervals using SARIMAX statsmodels model."""
         return self.estimator.predict(
             steps=steps,
             exog=exog,
@@ -985,12 +1013,12 @@ class ForecasterStats():
         
         """
 
-        warnings.warn(
-            "When using the skforecast Sarimax model, the fit kwargs should "
-            "be passed using the model parameter `sm_fit_kwargs`.",
-            IgnoredArgumentWarning
-        )
-        self.fit_kwargs = {}
+        if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
+            warnings.warn(
+                ("When using the skforecast Sarimax model, the fit kwargs should "
+                 "be passed using the model parameter `sm_fit_kwargs`."),
+                IgnoredArgumentWarning
+            )
 
     def get_feature_importances(
         self,
@@ -1038,32 +1066,50 @@ class ForecasterStats():
         return feature_importances
 
     def _get_feature_importances_sarimax(self) -> pd.DataFrame:
-        """Get feature importances for SARIMAX model."""
+        """Get feature importances for SARIMAX statsmodels model."""
         feature_importances = self.estimator.params().to_frame().reset_index()
         feature_importances.columns = ['feature', 'importance']
         return feature_importances
 
+
     def _get_feature_importances_arar(self) -> pd.DataFrame:
         """Get feature importances for ARAR model."""
-        return pd.DataFrame({
+        importances = pd.DataFrame({
             'feature': [f'lag_{lag}' for lag in self.estimator.lags_],
             'importance': self.estimator.coef_
         })
+
+        if self.estimator.coef_exog_ is not None:
+            exog_importances = pd.DataFrame({
+                'feature': [f'exog_{i}' for i in range(self.estimator.coef_exog_.shape[0])],
+                'importance': self.estimator.coef_exog_
+            })
+            importances = pd.concat([importances, exog_importances], ignore_index=True)
+            warnings.warn(
+                    "Exogenous variables are being handled using a two-step approach: "
+                    "(1) linear regression on exog, (2) ARAR on residuals. "
+                    "This affects model interpretation:\n"
+                    "  - ARAR coefficients (coef_) describe residual dynamics, not the original series\n"
+                    "  - Exogenous coefficients (coef_exog_) describe exogenous impact on original series",
+                ExogenousInterpretationWarning
+            )
+
+        return importances
 
     def _get_feature_importances_ets(self) -> pd.DataFrame:
         """Get feature importances for ETS model."""
         features = ['alpha (level)']
         importances = [self.estimator.params_['alpha']]
         
-        if self.estimator.config_['trend'] != 'N':
+        if self.estimator.model_config_['trend'] != 'N':
             features.append('beta (trend)')
             importances.append(self.estimator.params_['beta'])
         
-        if self.estimator.config_['season'] != 'N':
+        if self.estimator.model_config_['season'] != 'N':
             features.append('gamma (seasonal)')
             importances.append(self.estimator.params_['gamma'])
         
-        if self.estimator.config_['damped']:
+        if self.estimator.model_config_['damped']:
             features.append('phi (damping)')
             importances.append(self.estimator.params_['phi'])
         
@@ -1112,7 +1158,6 @@ class ForecasterStats():
 
         """
 
-        # Dictionary dispatch for estimator-specific info criteria methods
         info_criteria_dispatch = {
             'skforecast.stats._sarimax.Sarimax': self._get_info_criteria_sarimax,
             'skforecast.stats._arar.Arar': self._get_info_criteria_arar,
@@ -1127,14 +1172,14 @@ class ForecasterStats():
         return metric
 
     def _get_info_criteria_sarimax(self, criteria: str, method: str) -> float:
-        """Get information criteria for SARIMAX model."""
-        if criteria not in ['aic', 'bic', 'hqic']:
+        """Get information criteria for SARIMAX statsmodels model."""
+        if criteria not in {'aic', 'bic', 'hqic'}:
             raise ValueError(
                 "Invalid value for `criteria`. Valid options are 'aic', 'bic', "
                 "and 'hqic'."
             )
         
-        if method not in ['standard', 'lutkepohl']:
+        if method not in {'standard', 'lutkepohl'}:
             raise ValueError(
                 "Invalid value for `method`. Valid options are 'standard' and "
                 "'lutkepohl'."
@@ -1144,7 +1189,7 @@ class ForecasterStats():
 
     def _get_info_criteria_arar(self, criteria: str, method: str) -> float:
         """Get information criteria for ARAR model."""
-        if criteria not in ['aic', 'bic']:
+        if criteria not in {'aic', 'bic'}:
             raise ValueError(
                 "Invalid value for `criteria`. Valid options are 'aic' and 'bic' "
                 "for ARAR model."
@@ -1160,7 +1205,7 @@ class ForecasterStats():
 
     def _get_info_criteria_ets(self, criteria: str, method: str) -> float:
         """Get information criteria for skforecast ETS model."""
-        if criteria not in ['aic', 'bic']:
+        if criteria not in {'aic', 'bic'}:
             raise ValueError(
                 "Invalid value for `criteria`. Valid options are 'aic' and 'bic' "
                 "for ETS model."
@@ -1211,21 +1256,19 @@ class ForecasterStats():
         None
         
         """
-        estimators_with_reduce_memory = [
-            'skforecast.stats._arar.Arar',
-            'skforecast.stats._ets.Ets'
-        ]
+        
         if not self.is_fitted:
             raise NotFittedError(
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `reduce_memory()`."
             )
-        if hasattr(self.estimator, 'reduce_memory'):
-            self.estimator.reduce_memory()
-        else:
+        
+        if self.estimator_type not in self.estimators_support_reduce_memory:
             raise NotImplementedError(
-                f"The estimator {self.estimator_type} does not implement "
+                f"The estimator {self.estimator_type} does not support the "
                 f"`reduce_memory()` method. Currently, this method is only "
                 f"available for the following estimators: "
-                f"{estimators_with_reduce_memory}."
+                f"{self.estimators_support_reduce_memory}."
             )
+        
+        self.estimator.reduce_memory()

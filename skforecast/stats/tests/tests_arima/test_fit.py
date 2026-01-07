@@ -116,7 +116,7 @@ def test_arima_fit_with_default_parameters(y_input_type):
     
     # Check that all fitted attributes are set with correct types/values
     assert model.model_ is not None
-    assert len(model.y_) == 100
+    assert len(model.y_train_) == 100
     assert isinstance(model.coef_, np.ndarray)
     assert isinstance(model.coef_names_, list)
     assert len(model.coef_names_) == len(model.coef_)
@@ -130,9 +130,9 @@ def test_arima_fit_with_default_parameters(y_input_type):
     assert model.n_features_in_ == 1
     assert model.n_exog_features_in_ == 0
     assert len(model.fitted_values_) == 100
-    assert len(model.residuals_in_) == 100
+    assert len(model.in_sample_residuals_) == 100
     assert model.var_coef_ is not None
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
 
 
 def test_arima_fit_ar_model():
@@ -296,8 +296,8 @@ def test_arima_fit_2d_y_with_single_column():
     np.testing.assert_almost_equal(model.sigma2_, 0.9363021000223529, decimal=6)
     np.testing.assert_almost_equal(model.aic_, 145.2596115789171, decimal=5)
     
-    assert model.y_.ndim == 1
-    assert len(model.y_) == 50
+    assert model.y_train_.ndim == 1
+    assert len(model.y_train_) == 50
     assert len(model.coef_) == 2  # AR + intercept
     assert model.converged_ is True
 

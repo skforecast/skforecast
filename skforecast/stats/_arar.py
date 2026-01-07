@@ -1,5 +1,5 @@
 ################################################################################
-#                                 ARAR                                         #
+#                                     ARAR                                     #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
@@ -11,13 +11,15 @@ import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_is_fitted
+
+from ..exceptions import ExogenousInterpretationWarning
 from .arar._arar_base import (
     arar,
     forecast,
     fitted_arar
 )
 from ._utils import check_memory_reduced, FastLinearRegression
-from ..exceptions import ExogenousInterpretationWarning
+
 
 class Arar(BaseEstimator, RegressorMixin):
     """
@@ -41,53 +43,80 @@ class Arar(BaseEstimator, RegressorMixin):
 
     Attributes
     ----------
-    max_ar_depth : int,
-        Maximum AR depth considered for the (1, i, j, k) AR selection stage.
-    max_lag : int
-        Maximum lag used when estimating autocovariances.
+    max_ar_depth : int or None
+        Maximum AR depth considered for the (1, i, j, k) AR selection stage during 
+        model fitting. When None, a default value is determined automatically based 
+        on the series length.
+    max_lag : int or None
+        Maximum lag used when estimating autocovariances during the memory-shortening 
+        step. When None, a default value is determined automatically based on the 
+        series length.
     safe : bool
-        If True, falls back to a mean-only model on numerical issues or very
-        short series; otherwise errors are raised.
-    model_ : tuple
-        Raw tuple returned by `arar(...)`: (Y, best_phi, best_lag, sigma2, psi, sbar).
-    y_ : ndarray of shape (n_samples,)
-        Original training series (float).
-    coef_ : ndarray of shape (4,)
-        Selected AR coefficients for lags (1, i, j, k).
-    lags_ : tuple
-        Selected lags (1, i, j, k).
-    sigma2_ : float
-        Innovation variance.
-    psi_ : ndarray
-        Memory-shortening filter.
-    sbar_ : float
-        Mean of shortened series.
-    exog_model_ : FastLinearRegression
-        The fitted regression model for the exogenous variables.
-    coef_exog_ : ndarray of shape (n_exog_features,)
-        Coefficients of the exogenous variables regression model.
-    n_features_in_ : int
-        Number of features in the target series (always 1, for sklearn compatibility).
-    n_exog_features_in_ : int
-        Number of exogenous features seen during fitting (0 if no exog provided).
-    is_fitted_ : bool
-        Flag indicating whether the model has been fitted.
-    fitted_values_ : ndarray of shape (n_samples,)
-        In-sample fitted values (NaN for first k-1 terms).
-    residuals_in_ : ndarray of shape (n_samples,)
-        In-sample residuals (observed - fitted).
-    aic_ : float
-        Akaike Information Criterion. For models with exogenous variables, this is 
-        an approximate calculation that treats the two-step procedure (regression + 
-        ARAR) as independent. This may underestimate model complexity. Use primarily 
-        for comparing models with the same exogenous structure.
-    bic_ : float
-        Bayesian Information Criterion. For models with exogenous variables, this is 
-        an approximate calculation that treats the two-step procedure (regression + 
-        ARAR) as independent. This may underestimate model complexity. Use primarily 
-        for comparing models with the same exogenous structure.
-    memory_reduced_ : bool
-        Flag indicating whether reduce_memory() has been called.
+        Whether to use safe mode. When True, the model falls back to a mean-only 
+        forecast on numerical issues or very short series. When False, errors are 
+        raised instead.
+    model_ : tuple or None
+        Raw tuple returned by the underlying ARAR algorithm containing: 
+        (Y, best_phi, best_lag, sigma2, psi, sbar, max_ar_depth, max_lag). 
+        Available after calling `fit()`.
+    coef_ : ndarray of shape (4,) or None
+        Estimated AR coefficients for the selected lags (1, i, j, k). Some 
+        coefficients may be zero if the corresponding lag was not selected. 
+        Available after calling `fit()`.
+    lags_ : tuple or None
+        Selected lag indices (1, i, j, k) used in the AR model, where each 
+        represents which past observations contribute to the forecast. 
+        Available after calling `fit()`.
+    sigma2_ : float or None
+        Estimated innovation variance (one-step-ahead forecast error variance) 
+        from the fitted ARAR model. Available after calling `fit()`.
+    psi_ : ndarray or None
+        Memory-shortening filter coefficients used to transform the original 
+        series into one with shorter memory before AR fitting. Available after 
+        calling `fit()`.
+    sbar_ : float or None
+        Mean of the memory-shortened series, used as the long-run mean in 
+        forecasting. Available after calling `fit()`.
+    aic_ : float or None
+        Akaike Information Criterion measuring model fit quality while penalizing 
+        complexity. For models with exogenous variables, this is an approximate 
+        calculation that treats the two-step procedure (regression + ARAR) as 
+        independent stages, which may underestimate total model complexity. 
+        Available after calling `fit()`.
+    bic_ : float or None
+        Bayesian Information Criterion, similar to AIC but with a stronger penalty 
+        for model complexity. For models with exogenous variables, this is an 
+        approximate calculation that treats the two-step procedure (regression + 
+        ARAR) as independent stages, which may underestimate total model complexity. 
+        Available after calling `fit()`.
+    exog_model_ : FastLinearRegression or None
+        Fitted linear regression model for exogenous variables. When exogenous 
+        variables are provided during fitting, this model captures their linear 
+        relationship with the target series. Available after calling `fit()` with 
+        exogenous variables.
+    coef_exog_ : ndarray of shape (n_exog_features,) or None
+        Coefficients from the exogenous variables regression model, excluding the 
+        intercept. Available after calling `fit()` with exogenous variables.
+    n_exog_features_in_ : int or None
+        Number of exogenous features used during fitting. Zero if no exogenous 
+        variables were provided. Available after calling `fit()`.
+    y_train_ : ndarray of shape (n_samples,) or None
+        Original training time series used to fit the model.
+    fitted_values_ : ndarray of shape (n_samples,) or None
+        One-step-ahead in-sample fitted values. The first k-1 values may be NaN 
+        where k is the largest lag used.
+    in_sample_residuals_ : ndarray of shape (n_samples,) or None
+        In-sample residuals calculated as the difference between observed values 
+        and fitted values.
+    n_features_in_ : int or None
+        Number of features (time series) seen during `fit()`. For ARAR, this is 
+        always 1 as it handles univariate time series (present for scikit-learn 
+        compatibility). Available after calling `fit()`.
+    is_memory_reduced : bool
+        Flag indicating whether `reduce_memory()` has been called to clear diagnostic 
+        arrays (y_train_, fitted_values_, in_sample_residuals_).
+    is_fitted : bool
+        Flag indicating whether the model has been successfully fitted to data.
     
     Notes
     -----
@@ -123,26 +152,40 @@ class Arar(BaseEstimator, RegressorMixin):
     otherwise univariate ARAR framework.
     """
 
-    def __init__(self, max_ar_depth: int | None = None, max_lag: int | None = None, safe: bool = True):
-        self.max_ar_depth = max_ar_depth
-        self.max_lag = max_lag
-        self.safe = safe
-        self.model_ = None
-        self.n_features_in_ = None
-        self.y_ = None
-        self.coef_ = None
-        self.lags_ = None
-        self.sigma2_ = None
-        self.psi_ = None
-        self.sbar_ = None
-        self.exog_model_ = None
-        self.coef_exog_ = None
-        self.n_exog_features_in_ = None
-        self.is_fitted_ = False
-        self.memory_reduced_ = False
+    def __init__(
+        self, 
+        max_ar_depth: int | None = None, 
+        max_lag: int | None = None, 
+        safe: bool = True
+    ):
+        self.max_ar_depth         = max_ar_depth
+        self.max_lag              = max_lag
+        self.safe                 = safe
+        self.lags_                = None
+        self.sigma2_              = None
+        self.psi_                 = None
+        self.sbar_                = None
 
-    def fit(self, y: pd.Series | np.ndarray, exog: pd.Series | pd.DataFrame | np.ndarray | None = None, 
-            suppress_warnings: bool = False) -> "Arar":
+        self.model_               = None
+        self.coef_                = None
+        self.aic_                 = None
+        self.bic_                 = None
+        self.exog_model_          = None
+        self.coef_exog_           = None
+        self.n_exog_features_in_  = None
+        self.y_train_             = None
+        self.fitted_values_       = None
+        self.in_sample_residuals_ = None
+        self.n_features_in_       = None
+        self.is_memory_reduced    = False
+        self.is_fitted            = False
+
+    def fit(
+        self, 
+        y: pd.Series | np.ndarray, 
+        exog: pd.Series | pd.DataFrame | np.ndarray | None = None, 
+        suppress_warnings: bool = False
+    ) -> "Arar":
         """
         Fit the ARAR model to a univariate time series.
 
@@ -194,7 +237,28 @@ class Arar(BaseEstimator, RegressorMixin):
         Despite these limitations, this strategy provides a practical and
         computationally efficient way to incorporate exogenous information into an
         otherwise univariate ARAR framework.
+
         """
+
+        self.lags_                = None
+        self.sigma2_              = None
+        self.psi_                 = None
+        self.sbar_                = None
+
+        self.model_               = None
+        self.coef_                = None
+        self.aic_                 = None
+        self.bic_                 = None
+        self.exog_model_          = None
+        self.coef_exog_           = None
+        self.n_exog_features_in_  = None
+        self.y_train_             = None
+        self.fitted_values_       = None
+        self.in_sample_residuals_ = None
+        self.n_features_in_       = None
+        self.is_memory_reduced    = False
+        self.is_fitted            = False
+
         if not isinstance(y, (pd.Series, np.ndarray)):
             raise TypeError("`y` must be a pandas Series or numpy ndarray.")
         
@@ -208,7 +272,6 @@ class Arar(BaseEstimator, RegressorMixin):
             raise ValueError("`y` must be a 1D array-like sequence.")
         
         series_to_arar = y
-        self.exog_model_ = None
 
         if exog is not None:
             if not suppress_warnings:
@@ -240,22 +303,24 @@ class Arar(BaseEstimator, RegressorMixin):
         if series_to_arar.size < 2 and not self.safe:
             raise ValueError("Series too short to fit ARAR when safe=False.")
 
-        self.model_ = arar(series_to_arar, max_ar_depth=self.max_ar_depth, max_lag=self.max_lag, safe=self.safe)
+        self.model_ = arar(
+            series_to_arar, max_ar_depth=self.max_ar_depth, max_lag=self.max_lag, safe=self.safe
+        )
 
         (Y, best_phi, best_lag, sigma2, psi, sbar, max_ar_depth, max_lag) = self.model_
 
-        self.y_ = y
-        self.coef_ = np.asarray(best_phi, dtype=float)
-        self.lags_ = tuple(best_lag)
-        self.sigma2_ = float(sigma2)
-        self.psi_ = np.asarray(psi, dtype=float)
-        self.sbar_ = float(sbar)
-        self.max_ar_depth = max_ar_depth
-        self.max_lag = max_lag
+        self.max_ar_depth        = max_ar_depth
+        self.max_lag             = max_lag
+        self.lags_               = tuple(best_lag)
+        self.sigma2_             = float(sigma2)
+        self.psi_                = np.asarray(psi, dtype=float)
+        self.sbar_               = float(sbar)
+        self.coef_               = np.asarray(best_phi, dtype=float)
+        self.y_train_            = y
         self.n_exog_features_in_ = exog.shape[1] if exog is not None else 0
-        self.n_features_in_ = 1
-        self.is_fitted_ = True
-        self.memory_reduced_ = False
+        self.n_features_in_      = 1       
+        self.is_memory_reduced   = False
+        self.is_fitted           = True
 
         arar_fitted = fitted_arar(self.model_)["fitted"]
         if self.exog_model_ is not None:
@@ -265,7 +330,7 @@ class Arar(BaseEstimator, RegressorMixin):
             self.fitted_values_ = arar_fitted
         
         # Residuals: original y minus fitted values
-        self.residuals_in_ = y - self.fitted_values_
+        self.in_sample_residuals_ = y - self.fitted_values_
 
         # Compute AIC and BIC
         # Note: For models with exogenous variables, this is an approximate calculation
@@ -273,7 +338,7 @@ class Arar(BaseEstimator, RegressorMixin):
         # This may underestimate model complexity. Use these criteria primarily for
         # comparing models with the same exogenous structure.
         largest_lag = max(self.lags_)
-        valid_residuals = self.residuals_in_[largest_lag:]
+        valid_residuals = self.in_sample_residuals_[largest_lag:]
         # Remove NaN values for AIC/BIC calculation
         valid_residuals = valid_residuals[~np.isnan(valid_residuals)]
         n = len(valid_residuals)
@@ -296,7 +361,11 @@ class Arar(BaseEstimator, RegressorMixin):
 
         return self
     
-    def predict(self, steps: int, exog: pd.Series | pd.DataFrame | np.ndarray | None = None) -> np.ndarray:
+    def predict(
+        self, 
+        steps: int, 
+        exog: pd.Series | pd.DataFrame | np.ndarray | None = None
+    ) -> np.ndarray:
         """
         Generate mean forecasts steps ahead.
 
@@ -312,7 +381,7 @@ class Arar(BaseEstimator, RegressorMixin):
         mean : ndarray of shape (h,)
             Point forecasts for steps 1..h.
         """
-        if not self.is_fitted_:
+        if not self.is_fitted:
             raise TypeError(
                 "This Arar instance is not fitted yet. "
                 "Call 'fit' with appropriate arguments before using this estimator."
@@ -385,7 +454,7 @@ class Arar(BaseEstimator, RegressorMixin):
         ARAR forecast uncertainty and do not include uncertainty from the regression 
         coefficients. This may result in **undercoverage** (actual coverage < nominal level).
         """
-        if not self.is_fitted_:
+        if not self.is_fitted:
             raise TypeError(
                 "This Arar instance is not fitted yet. "
                 "Call 'fit' with appropriate arguments before using this estimator."
@@ -434,6 +503,7 @@ class Arar(BaseEstimator, RegressorMixin):
         for i, L in enumerate(out["level"]):
             df[f"lower_{L}"] = out["lower"][:, i]
             df[f"upper_{L}"] = out["upper"][:, i]
+        
         return df
 
     def get_residuals(self) -> np.ndarray:
@@ -446,7 +516,7 @@ class Arar(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, "model_")
         check_memory_reduced(self, 'residuals_')
-        return self.residuals_in_
+        return self.in_sample_residuals_
 
     def get_fitted_values(self) -> np.ndarray:
         """
@@ -469,7 +539,7 @@ class Arar(BaseEstimator, RegressorMixin):
         
         print("ARAR Model Summary")
         print("------------------")
-        print(f"Number of observations: {len(self.y_)}")
+        print(f"Number of observations: {len(self.y_train_)}")
         print(f"Selected AR lags: {self.lags_}")
         print(f"AR coefficients (phi): {np.round(self.coef_, 4)}")
         print(f"Residual variance (sigma^2): {self.sigma2_:.4f}")
@@ -477,13 +547,13 @@ class Arar(BaseEstimator, RegressorMixin):
         print(f"Length of memory-shortening filter (psi): {len(self.psi_)}")
 
         print("\nTime Series Summary Statistics")
-        print(f"Mean: {np.mean(self.y_):.4f}")
-        print(f"Std Dev: {np.std(self.y_, ddof=1):.4f}")
-        print(f"Min: {np.min(self.y_):.4f}")
-        print(f"25%: {np.percentile(self.y_, 25):.4f}")
-        print(f"Median: {np.median(self.y_):.4f}")
-        print(f"75%: {np.percentile(self.y_, 75):.4f}")
-        print(f"Max: {np.max(self.y_):.4f}")
+        print(f"Mean: {np.mean(self.y_train_):.4f}")
+        print(f"Std Dev: {np.std(self.y_train_, ddof=1):.4f}")
+        print(f"Min: {np.min(self.y_train_):.4f}")
+        print(f"25%: {np.percentile(self.y_train_, 25):.4f}")
+        print(f"Median: {np.median(self.y_train_):.4f}")
+        print(f"75%: {np.percentile(self.y_train_, 75):.4f}")
+        print(f"Max: {np.max(self.y_train_):.4f}")
         
         print("\nModel Diagnostics")
         print(f"AIC: {self.aic_:.4f}")
@@ -512,7 +582,7 @@ class Arar(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, "model_")
         check_memory_reduced(self, 'score')
-        y = self.y_
+        y = self.y_train_
         fitted = self.fitted_values_
         mask = ~np.isnan(fitted)
         if mask.sum() < 2:
@@ -546,11 +616,10 @@ class Arar(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, "model_")
         
-        # Clear arrays at Arar level
         self.fitted_values_ = None
-        self.residuals_in_ = None
+        self.in_sample_residuals_ = None
 
-        self.memory_reduced_ = True
+        self.is_memory_reduced = True
         
         return self
 
@@ -591,22 +660,23 @@ class Arar(BaseEstimator, RegressorMixin):
             setattr(self, key, value)
         
         # Reset fitted state
-        self.model_ = None
-        self.n_features_in_ = None
-        self.y_ = None
-        self.coef_ = None
-        self.lags_ = None
-        self.sigma2_ = None
-        self.psi_ = None
-        self.sbar_ = None
-        self.exog_model_ = None
-        self.coef_exog_ = None
-        self.n_exog_features_in_ = None
-        self.fitted_values_ = None
-        self.residuals_in_ = None
-        self.aic_ = None
-        self.bic_ = None
-        self.is_fitted_ = False
-        self.memory_reduced_ = False
+        self.lags_                = None
+        self.sigma2_              = None
+        self.psi_                 = None
+        self.sbar_                = None
+
+        self.model_               = None
+        self.coef_                = None
+        self.aic_                 = None
+        self.bic_                 = None
+        self.exog_model_          = None
+        self.coef_exog_           = None
+        self.n_exog_features_in_  = None
+        self.y_train_             = None
+        self.fitted_values_       = None
+        self.in_sample_residuals_ = None
+        self.n_features_in_       = None
+        self.is_memory_reduced    = False
+        self.is_fitted            = False
         
         return self

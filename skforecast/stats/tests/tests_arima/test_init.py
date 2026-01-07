@@ -20,7 +20,7 @@ def test_arima_init_default_params():
     assert model.optim_method == "BFGS"
     assert model.optim_control is None
     assert model.kappa == 1e6
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
 
 
 def test_arima_init_with_explicit_params():
@@ -96,11 +96,11 @@ def test_arima_init_all_attributes_before_fitting():
     assert model.order == (1, 0, 1)
     assert model.seasonal_order == (0, 0, 0)
     assert model.m == 1
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
     
     # Model state attributes should not exist before fitting
     assert not hasattr(model, 'model_')
-    assert not hasattr(model, 'y_')
+    assert not hasattr(model, 'y_train_')
     assert not hasattr(model, 'coef_')
     assert not hasattr(model, 'coef_names_')
     assert not hasattr(model, 'sigma2_')
@@ -112,7 +112,7 @@ def test_arima_init_all_attributes_before_fitting():
     assert not hasattr(model, 'n_features_in_')
     assert not hasattr(model, 'n_exog_features_in_')
     assert not hasattr(model, 'fitted_values_')
-    assert not hasattr(model, 'residuals_in_')
+    assert not hasattr(model, 'in_sample_residuals_')
     assert not hasattr(model, 'var_coef_')
 
 

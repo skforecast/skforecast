@@ -46,17 +46,17 @@ def test_reduce_memory_returns_self():
 
 def test_reduce_memory_sets_flag():
     """
-    Test that reduce_memory sets memory_reduced_ flag to True.
+    Test that reduce_memory sets is_memory_reduced flag to True.
     """
     y = ar1_series(100, seed=42)
     model = Arima(order=(1, 0, 1))
     model.fit(y)
     
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
     
     model.reduce_memory()
     
-    assert model.memory_reduced_ is True
+    assert model.is_memory_reduced is True
 
 
 def test_reduce_memory_emits_warning():
@@ -85,17 +85,17 @@ def test_reduce_memory_deletes_large_attributes():
     model.fit(y)
     
     # Check attributes exist before
-    assert hasattr(model, 'y_')
+    assert hasattr(model, 'y_train_')
     assert hasattr(model, 'fitted_values_')
-    assert hasattr(model, 'residuals_in_')
+    assert hasattr(model, 'in_sample_residuals_')
     assert hasattr(model, 'var_coef_')
     
     model.reduce_memory()
     
     # Check attributes are deleted
-    assert not hasattr(model, 'y_')
+    assert not hasattr(model, 'y_train_')
     assert not hasattr(model, 'fitted_values_')
-    assert not hasattr(model, 'residuals_in_')
+    assert not hasattr(model, 'in_sample_residuals_')
     assert not hasattr(model, 'var_coef_')
 
 

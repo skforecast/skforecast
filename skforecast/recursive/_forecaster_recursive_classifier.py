@@ -1437,9 +1437,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             if has_lags:
                 X[:n_lags] = last_window[-self.lags - (steps - i)]
             if has_window_features:
+                window_data = last_window[i : -(steps - i)]
                 X[n_lags : n_lags + n_window_features] = np.concatenate(
                     [
-                        wf.transform(last_window[i : -(steps - i)])
+                        wf.transform(window_data)
                         for wf in self.window_features
                     ]
                 )

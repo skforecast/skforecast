@@ -16,13 +16,13 @@ def test_reduce_memory_clears_arrays():
     
     model = Arar()
     model.fit(y)
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
     assert model.fitted_values_ is not None
-    assert model.residuals_in_ is not None
+    assert model.in_sample_residuals_ is not None
     result = model.reduce_memory()
     assert model.fitted_values_ is None
-    assert model.residuals_in_ is None
-    assert model.memory_reduced_ is True
+    assert model.in_sample_residuals_ is None
+    assert model.is_memory_reduced is True
 
 
 def test_reduce_memory_preserves_predictions():
@@ -133,8 +133,8 @@ def test_refit_resets_memory_reduced_flag():
     model = Arar()
     model.fit(y)
     model.reduce_memory()
-    
-    assert model.memory_reduced_ is True
-    
+
+    assert model.is_memory_reduced is True
+
     model.fit(y)
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
