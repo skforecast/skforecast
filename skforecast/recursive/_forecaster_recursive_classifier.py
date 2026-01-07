@@ -1428,18 +1428,31 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 shape=(steps, self.n_classes_), fill_value=np.nan, dtype=float
             )
 
+        estimator_name = type(self.estimator).__name__
+        is_lightgbm = estimator_name == 'LGBMClassifier'
+        is_xgboost = estimator_name == 'XGBClassifier'
+
+        if is_lightgbm:
+            booster = self.estimator.booster_
+        elif is_xgboost:
+            booster = self.estimator.get_booster()
+
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values is not None
+
         for i in range(steps):
 
-            if self.lags is not None:
+            if has_lags:
                 X[:n_lags] = last_window[-self.lags - (steps - i)]
-            if self.window_features is not None:
+            if has_window_features:
                 X[n_lags : n_lags + n_window_features] = np.concatenate(
                     [
                         wf.transform(last_window[i : -(steps - i)])
                         for wf in self.window_features
                     ]
                 )
-            if exog_values is not None:
+            if has_exog:
                 X[n_lags + n_window_features:] = exog_values[i]
 
             if predict_proba:
@@ -1447,7 +1460,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 predictions[i, :] = proba
                 pred = self.class_codes_[np.argmax(proba)]
             else:
-                pred = self.estimator.predict(X.reshape(1, -1)).ravel().item()
+                if is_lightgbm:
+                    pred = booster.predict(X.reshape(1, -1)).item()
+                elif is_xgboost:
+                    pred = booster.inplace_predict(X.reshape(1, -1)).item()
+                else:
+                    pred = self.estimator.predict(X.reshape(1, -1)).ravel().item()
                 predictions[i] = pred
 
             # Update `last_window` values. The first position is discarded and 
