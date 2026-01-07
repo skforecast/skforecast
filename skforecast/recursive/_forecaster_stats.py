@@ -37,6 +37,7 @@ from ..utils import (
 )
 
 # TODO: Create methods remove estimator, list estimators
+# TODO: all wrapers show have method get_params and set_params
 class ForecasterStats():
     """
     This class turns statistical models into a Forecaster compatible with the 
@@ -91,6 +92,8 @@ class ForecasterStats():
     estimator_types_ : tuple
         Full qualified type string for each estimator (e.g., 
         'skforecast.stats._arima.Arima').
+    estimator_parms_ : dict
+        Dictionary containing the parameters of each estimator.
     n_estimators : int
         Number of estimators in the forecaster.
     transformer_y : object transformer (preprocessor)
@@ -225,6 +228,7 @@ class ForecasterStats():
         self.estimator_names_        = self._generate_estimator_names(self.estimators)
         self.estimator_types_        = tuple(estimator_types_)
         self.n_estimators            = len(self.estimators)
+        self.estimator_params_       = None
         self.transformer_y           = transformer_y
         self.transformer_exog        = transformer_exog
         self.window_size             = 1
@@ -456,6 +460,7 @@ class ForecasterStats():
 
         return self.estimators_[idx]
     
+    # TODO: Adapt for multiple estimators: parms does not exist
     def _preprocess_repr(self) -> tuple[str, str]:
         """
         Format text for __repr__ method.
@@ -508,7 +513,7 @@ class ForecasterStats():
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
-            f"Estimator parameters: {params} \n"
+            f"Estimator parameters: {params} \n" # TODO: params does not exist
             f"fit_kwargs: {self.fit_kwargs} \n"
             f"Creation date: {self.creation_date} \n"
             f"Last fit date: {self.fit_date} \n"
@@ -638,6 +643,7 @@ class ForecasterStats():
         # Not reset estimator_names_ and estimator_types_ since they
         # are needed to identify each estimator.
         self.estimators_             = [copy(est) for est in self.estimators]
+        self.estimator_params_       = None
         self.last_window_            = None
         self.extended_index_         = None
         self.index_type_             = None
@@ -719,6 +725,9 @@ class ForecasterStats():
 
         self.is_fitted = True
         self.estimator_names_ = self._generate_estimator_names(self.estimators_)
+        self.estimator_params_ = {
+            name: est.get_params() for name, est in zip(self.estimator_names_, self.estimators_)
+        }
         self.series_name_in_ = y.name if y.name is not None else 'y'
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.training_range_ = y.index[[0, -1]]
@@ -1293,6 +1302,7 @@ class ForecasterStats():
         preds = estimator.predict_interval(fh=fh, X=exog, coverage=1 - alpha).to_numpy()
         return preds
 
+    #TODO: Add get_params and set_params for each estimator when multiple estimators are supported
     def set_params(
         self, 
         params: dict[str, object] | dict[str, dict[str, object]]
