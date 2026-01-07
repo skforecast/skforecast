@@ -49,11 +49,6 @@ from ..utils import (
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
-linear_estimators = frozenset(
-    name for name in dir(sklearn.linear_model)
-    if not name.startswith('_')
-)
-
 
 class ForecasterDirect(ForecasterBase):
     """
@@ -1745,7 +1740,7 @@ class ForecasterDirect(ForecasterBase):
         estimators = [self.estimators_[step] for step in steps]
         
         estimator_name = type(self.estimator).__name__
-        is_linear = estimator_name in linear_estimators
+        is_linear = isinstance(self.estimator, sklearn.linear_model._base.LinearModel)
         is_lightgbm = estimator_name == 'LGBMRegressor'
         is_xgboost = estimator_name == 'XGBRegressor'
         

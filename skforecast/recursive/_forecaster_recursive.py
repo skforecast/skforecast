@@ -46,11 +46,6 @@ from ..utils import (
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
-linear_estimators = frozenset(
-    name for name in dir(sklearn.linear_model)
-    if not name.startswith('_')
-)
-
 
 class ForecasterRecursive(ForecasterBase):
     """
@@ -1346,7 +1341,7 @@ class ForecasterRecursive(ForecasterBase):
         last_window = np.concatenate((last_window_values, predictions))
 
         estimator_name = type(self.estimator).__name__
-        is_linear = estimator_name in linear_estimators
+        is_linear = isinstance(self.estimator, sklearn.linear_model._base.LinearModel)
         is_lightgbm = estimator_name == 'LGBMRegressor'
         is_xgboost = estimator_name == 'XGBRegressor'
         
@@ -1361,7 +1356,6 @@ class ForecasterRecursive(ForecasterBase):
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
-        has_residuals = residuals is not None
         
         for i in range(steps):
 
@@ -1386,15 +1380,6 @@ class ForecasterRecursive(ForecasterBase):
                 pred = booster.inplace_predict(X.reshape(1, -1))
             else:
                 pred = self.estimator.predict(X.reshape(1, -1)).ravel()
-            
-            if has_residuals:
-                if use_binned_residuals:
-                    predicted_bin = self.binner.transform(pred).item()
-                    step_residual = residuals[predicted_bin][i]
-                else:
-                    step_residual = residuals[i]
-                
-                pred += step_residual
             
             pred = pred.item()
             predictions[i] = pred

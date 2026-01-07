@@ -59,11 +59,6 @@ from ..utils import (
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..model_selection._utils import _extract_data_folds_multiseries
 
-linear_estimators = frozenset(
-    name for name in dir(sklearn.linear_model)
-    if not name.startswith('_')
-)
-
 
 class ForecasterRecursiveMultiSeries(ForecasterBase):
     """
@@ -2318,7 +2313,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window = np.concatenate((last_window.to_numpy(), predictions), axis=0)
 
         estimator_name = type(self.estimator).__name__
-        is_linear = estimator_name in linear_estimators
+        is_linear = isinstance(self.estimator, sklearn.linear_model._base.LinearModel)
         is_lightgbm = estimator_name == 'LGBMRegressor'
         is_xgboost = estimator_name == 'XGBRegressor'
 
@@ -2333,7 +2328,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values_dict is not None
-        has_residuals = residuals is not None
 
         for i in range(steps):
 
@@ -2362,31 +2356,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             else:
                 pred = self.estimator.predict(features)
 
+            predictions[i, :] = pred
+
             # NOTE: CatBoost may make the input array read-only after predict
             if not features.flags.writeable:
                 features.flags.writeable = True
-
-            if has_residuals:
-
-                if use_binned_residuals:
-                    step_residual = np.full(
-                        shape=n_levels, fill_value=np.nan, dtype=float
-                    )
-                    for j, level in enumerate(levels):
-                        predicted_bin = (
-                            self.binner
-                            .get(level, self.binner['_unknown_level'])
-                            .transform(pred[j])
-                            .item()
-                        )
-                        step_residual[j] = residuals[predicted_bin][i, j]
-                else:
-                    step_residual = residuals[i, :]
-                
-                pred += step_residual
             
-            predictions[i, :] = pred 
-
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
             last_window[-(steps - i), :] = pred
