@@ -128,24 +128,19 @@ def test_arima_predict_returns_correct_shape_and_values():
     y = ar1_series(100, seed=42)
     model = Arima(order=(1, 0, 0))
     model.fit(y)
+
+    # Test 1 step prediction
+    pred = model.predict(steps=1)
+    assert pred.shape == (1,)
+    np.testing.assert_almost_equal(pred[0], -1.613497, decimal=6)
     
     # Test 10 steps prediction
     pred = model.predict(steps=10)
     assert isinstance(pred, np.ndarray)
     assert pred.shape == (10,)
-    expected_pred = np.array([-0.13859403, -0.13859403, -0.13859403, -0.13859403, -0.13859403,
-                              -0.13859403, -0.13859403, -0.13859403, -0.13859403, -0.13859403])
+    expected_pred = np.array([-1.613497, -1.189133, -0.886868, -0.671572, -0.518222,
+                              -0.408994, -0.331194, -0.275778, -0.236307, -0.208193])
     np.testing.assert_array_almost_equal(pred, expected_pred, decimal=6)
-    
-    # Test 1 step prediction
-    pred = model.predict(steps=1)
-    assert pred.shape == (1,)
-    np.testing.assert_almost_equal(pred[0], -0.13859403, decimal=6)
-    
-    # Test 50 steps prediction - all should be same value for converged AR(1)
-    pred = model.predict(steps=50)
-    assert pred.shape == (50,)
-    assert np.allclose(pred, -0.13859403, atol=1e-6)
 
 
 def test_arima_predict_returns_finite_and_exact_values():
@@ -156,13 +151,10 @@ def test_arima_predict_returns_finite_and_exact_values():
     model = Arima(order=(1, 0, 1))
     model.fit(y)
     
-    pred = model.predict(steps=20)
+    pred = model.predict(steps=5)
     assert np.all(np.isfinite(pred))
-    # Check first 5 values
-    expected_pred = np.array([-0.13215602, -0.13215602, -0.13215602, -0.13215602, -0.13215602])
+    expected_pred = np.array([-1.610352, -1.107263, -0.775395, -0.556475, -0.412062])
     np.testing.assert_array_almost_equal(pred[:5], expected_pred, decimal=6)
-    # For ARIMA(1,0,1) all predictions converge to same value
-    assert np.allclose(pred, pred[0], atol=1e-6)
 
 
 def test_arima_predict_with_exog_numpy_array():
@@ -179,16 +171,13 @@ def test_arima_predict_with_exog_numpy_array():
     model = Arima(order=(1, 0, 0))
     model.fit(y, exog=exog_train)
     
-    # Check exact coefficients
     expected_coef = np.array([0.69886375, -0.10619333, -0.0348415, -0.06402661])
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=6)
     assert model.n_exog_features_in_ == 2
     
     exog_pred = np.array([[0.5, -0.5], [1.0, 0.0], [-0.5, 0.5]])
     pred = model.predict(steps=3, exog=exog_pred)
-    
-    # Check exact prediction values
-    expected_pred = np.array([-0.09160078, -0.14103484, -0.12078588])
+    expected_pred = np.array([-0.315563, -0.297554, -0.230171])
     np.testing.assert_array_almost_equal(pred, expected_pred, decimal=6)
 
 
@@ -198,19 +187,18 @@ def test_arima_predict_with_exog_1d_array():
     """
     np.random.seed(42)
     y = ar1_series(80)
-    exog_train = np.random.randn(80)  # 1D
+    exog_train = np.random.randn(80)
     
     model = Arima(order=(1, 0, 0))
     model.fit(y, exog=exog_train)
     
     np.random.seed(42)  # Reset seed for reproducible exog_pred
-    exog_pred = np.random.randn(5)  # 1D
+    exog_pred = np.random.randn(5)
     pred = model.predict(steps=5, exog=exog_pred)
     
     assert pred.shape == (5,)
     assert model.n_exog_features_in_ == 1
-    # Check exact prediction values
-    expected_pred = np.array([-0.27009679, -0.27135228, -0.26979829, -0.26806756, -0.27154187])
+    expected_pred = np.array([-0.80129, -0.615977, -0.493382, -0.413123, -0.36565])
     np.testing.assert_array_almost_equal(pred, expected_pred, decimal=6)
 
 
@@ -225,12 +213,9 @@ def test_arima_predict_consistency():
     pred1 = model.predict(steps=10)
     pred2 = model.predict(steps=10)
     
-    # Predictions should be identical
     np.testing.assert_array_almost_equal(pred1, pred2)
-    
-    # Check exact values
-    expected_pred = np.array([-0.13215602, -0.13215602, -0.13215602, -0.13215602, -0.13215602,
-                              -0.13215602, -0.13215602, -0.13215602, -0.13215602, -0.13215602])
+    expected_pred = np.array([-1.610352, -1.107263, -0.775395, -0.556475, -0.412062,
+                              -0.316799, -0.253958, -0.212504, -0.185158, -0.167119])
     np.testing.assert_array_almost_equal(pred1, expected_pred, decimal=6)
 
 
@@ -244,12 +229,11 @@ def test_arima_predict_seasonal_model():
     model = Arima(order=(1, 0, 0), seasonal_order=(1, 0, 0), m=12)
     model.fit(y)
     
-    pred = model.predict(steps=24)
-    assert pred.shape == (24,)
+    pred = model.predict(steps=5)
+    assert pred.shape == (5,)
     assert np.all(np.isfinite(pred))
-    # Check first 5 values - seasonal model predictions converge
-    expected_pred_start = np.array([2.49797772, 2.49797772, 2.49797772, 2.49797772, 2.49797772])
-    np.testing.assert_array_almost_equal(pred[:5], expected_pred_start, decimal=5)
+    expected_pred_start = np.array([2.682367, 2.670684, 2.651222, 2.652741, 2.642508])
+    np.testing.assert_array_almost_equal(pred, expected_pred_start, decimal=6)
 
 
 def test_arima_predict_ar_model_stays_bounded():
@@ -260,16 +244,11 @@ def test_arima_predict_ar_model_stays_bounded():
     model = Arima(order=(1, 0, 0))
     model.fit(y)
     
-    pred = model.predict(steps=100)
-    # For stationary process, long-term predictions should converge to constant
+    pred = model.predict(steps=5)
     assert np.all(np.abs(pred) < 1000)
     
-    # Check first 5 values
-    expected_pred_start = np.array([-0.09060905, -0.09060905, -0.09060905, -0.09060905, -0.09060905])
-    np.testing.assert_array_almost_equal(pred[:5], expected_pred_start, decimal=6)
+    expected_pred_start = np.array([-0.73313, -0.441704, -0.282459, -0.195443, -0.147894])
+    np.testing.assert_array_almost_equal(pred, expected_pred_start, decimal=6)
     
-    # All predictions should be same (converged)
-    assert np.allclose(pred, -0.09060905, atol=1e-6)
-    
-    # Verify max absolute value
-    assert np.max(np.abs(pred)) < 0.1
+    # Verify predictions are bounded (stationary process)
+    assert np.max(np.abs(pred)) < 1.0

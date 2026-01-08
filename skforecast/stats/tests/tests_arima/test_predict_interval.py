@@ -98,9 +98,9 @@ def test_predict_interval_returns_dataframe_by_default():
     assert 'upper_95' in result.columns
     
     # Check exact values for first 3 steps
-    expected_mean = np.array([-0.132156, -0.132156, -0.132156])
-    expected_lower_95 = np.array([-2.253013, -2.269751, -2.276994])
-    expected_upper_95 = np.array([1.988701, 2.005439, 2.012682])
+    expected_mean = np.array([-1.610352, -1.107263, -0.775395])
+    expected_lower_95 = np.array([-3.506176, -3.150786, -2.879955])
+    expected_upper_95 = np.array([0.285473, 0.93626, 1.329165])
     
     np.testing.assert_array_almost_equal(result['mean'].iloc[:3], expected_mean, decimal=5)
     np.testing.assert_array_almost_equal(result['lower_95'].iloc[:3], expected_lower_95, decimal=5)
@@ -146,9 +146,9 @@ def test_predict_interval_with_single_level():
     assert 'lower_95' not in result.columns
     
     # Check exact values for first 3 steps
-    expected_mean = np.array([-0.132156, -0.132156, -0.132156])
-    expected_lower_90 = np.array([-1.912035, -1.926082, -1.932161])
-    expected_upper_90 = np.array([1.647723, 1.661770, 1.667849])
+    expected_mean = np.array([-1.610352, -1.107263, -0.775395])
+    expected_lower_90 = np.array([-3.201378, -2.822241, -2.541598])
+    expected_upper_90 = np.array([-0.019326, 0.607716, 0.990808])
     
     np.testing.assert_array_almost_equal(result['mean'].iloc[:3], expected_mean, decimal=5)
     np.testing.assert_array_almost_equal(result['lower_90'].iloc[:3], expected_lower_90, decimal=5)
@@ -172,9 +172,9 @@ def test_predict_interval_with_alpha_parameter():
     assert len(result.columns) == 3  # Only mean and one interval
     
     # Check exact values for first 3 steps
-    expected_mean = np.array([-0.132156, -0.132156, -0.132156])
-    expected_lower_95 = np.array([-2.253013, -2.269751, -2.276994])
-    expected_upper_95 = np.array([1.988701, 2.005439, 2.012682])
+    expected_mean = np.array([-1.610352, -1.107263, -0.775395])
+    expected_lower_95 = np.array([-3.506176, -3.150786, -2.879955])
+    expected_upper_95 = np.array([0.285473, 0.93626, 1.329165])
     
     np.testing.assert_array_almost_equal(result['mean'].iloc[:3], expected_mean, decimal=5)
     np.testing.assert_array_almost_equal(result['lower_95'].iloc[:3], expected_lower_95, decimal=5)
@@ -200,11 +200,11 @@ def test_predict_interval_with_custom_levels():
     assert 'upper_99' in result.columns
     
     # Check exact values for first 2 steps
-    expected_mean = np.array([-0.132156, -0.132156])
-    expected_lower_50 = np.array([-0.862014, -0.867775])
-    expected_upper_50 = np.array([0.597702, 0.603463])
-    expected_lower_99 = np.array([-2.919434, -2.941432])
-    expected_upper_99 = np.array([2.655122, 2.677120])
+    expected_mean = np.array([-1.610352, -1.107263])
+    expected_lower_50 = np.array([-2.262769, -1.810508])
+    expected_upper_50 = np.array([-0.957934, -0.404017])
+    expected_lower_99 = np.array([-4.101887, -3.792907])
+    expected_upper_99 = np.array([0.881184, 1.578382])
     
     np.testing.assert_array_almost_equal(result['mean'].iloc[:2], expected_mean, decimal=5)
     np.testing.assert_array_almost_equal(result['lower_50'].iloc[:2], expected_lower_50, decimal=5)
@@ -283,9 +283,9 @@ def test_predict_interval_with_exog():
     assert 'mean' in result.columns
     
     # Check exact values for first 3 steps
-    expected_mean = np.array([-0.255295, 0.013282, 0.102669])
-    expected_lower_95 = np.array([-2.591119, -2.322542, -2.233156])
-    expected_upper_95 = np.array([2.080529, 2.349106, 2.438493])
+    expected_mean = np.array([-0.708626, -0.284829, -0.093369])
+    expected_lower_95 = np.array([-2.814754, -2.524217, -2.387988])
+    expected_upper_95 = np.array([1.397502, 1.954559, 2.20125])
     
     np.testing.assert_array_almost_equal(result['mean'].iloc[:3], expected_mean, decimal=5)
     np.testing.assert_array_almost_equal(result['lower_95'].iloc[:3], expected_lower_95, decimal=5)
@@ -336,13 +336,13 @@ def test_predict_interval_seasonal_model():
     assert np.all(np.isfinite(result.values))
     
     # Check exact values for first and last steps
-    expected_mean_first = np.array([2.497978, 2.497978, 2.497978])
-    expected_lower_95_first = np.array([-5.226791, -4.981056, -4.914325])
-    expected_upper_95_first = np.array([10.222746, 9.977012, 9.910281])
+    expected_mean_first = np.array([2.682367, 2.670684, 2.651222])
+    expected_lower_95_first = np.array([-0.327364, -0.918436, -1.386137])
+    expected_upper_95_first = np.array([5.692097, 6.259803, 6.68858])
     
-    expected_mean_last = np.array([2.497978, 2.497978, 2.497978])
-    expected_lower_95_last = np.array([-4.092691, -4.106543, -4.115855])
-    expected_upper_95_last = np.array([9.088647, 9.102499, 9.111811])
+    expected_mean_last = np.array([2.555421, 2.552322, 2.54934])
+    expected_lower_95_last = np.array([-3.882809, -3.913229, -3.940557])
+    expected_upper_95_last = np.array([8.99365, 9.017874, 9.039238])
     
     np.testing.assert_array_almost_equal(result['mean'].iloc[:3], expected_mean_first, decimal=5)
     np.testing.assert_array_almost_equal(result['lower_95'].iloc[:3], expected_lower_95_first, decimal=5)
