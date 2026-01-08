@@ -169,7 +169,7 @@ class Arar(BaseEstimator, RegressorMixin):
         self.psi_                 = None
         self.sbar_                = None
 
-        self.model_               = None
+        #self.model_               = None # TODO: si se inicializa a None, el metodo check_is_fitted falla
         self.coef_                = None
         self.aic_                 = None
         self.bic_                 = None

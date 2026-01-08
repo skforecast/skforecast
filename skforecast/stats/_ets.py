@@ -193,7 +193,7 @@ class Ets(BaseEstimator, RegressorMixin):
         self.allow_multiplicative       = allow_multiplicative
         self.allow_multiplicative_trend = allow_multiplicative_trend
         
-        self.model_                     = None
+        # self.model_                     = None # TODO: si se inicializa a None, el metodo check_is_fitted falla
         self.model_config_              = None
         self.params_                    = None
         self.aic_                       = None

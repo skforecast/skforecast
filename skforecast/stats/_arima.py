@@ -195,7 +195,7 @@ class Arima(BaseEstimator, RegressorMixin):
         self.is_memory_reduced    = False
         self.is_fitted            = False
 
-        self.model_               = None
+        #self.model_               = None # TODO: si se inicializa a None, el metodo check_is_fitted falla
         self.y_train_             = None
         self.coef_                = None
         self.coef_names_          = None
