@@ -2390,12 +2390,14 @@ def arima(
                 armaCSS,
                 init[mask],
                 method=optim_method,
-                options={'maxiter': optim_control.get('maxit', 1000)}
+                options={'maxiter': optim_control.get('maxiter', 1000)}
             )
             res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
 
         if not res['converged']:
-            warnings.warn("CSS optimization convergence issue")
+            warnings.warn(
+                "CSS optimization convergence issue. Try to increase 'maxiter' or change the optimization method."
+            )
 
         coef[mask] = res['x']
 
@@ -2429,7 +2431,7 @@ def arima(
                     armaCSS,
                     init[mask],
                     method=optim_method,
-                    options={'maxiter': optim_control.get('maxit', 1000)}
+                    options={'maxiter': optim_control.get('maxiter', 1000)}
                 )
                 res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
 
@@ -2468,12 +2470,15 @@ def arima(
                 lambda p: armafn(p, transform_pars),
                 init[mask],
                 method=optim_method,
-                options={'maxiter': optim_control.get('maxit', 1000)}
+                options={'maxiter': optim_control.get('maxiter', 1000)}
             )
             res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
 
         if not res['converged']:
-            warnings.warn("Possible convergence problem")
+            warnings.warn(
+                "Possible convergence problem."
+                "Try to increase 'maxiter' or change the optimization method."
+            )
 
         coef[mask] = res['x']
 
