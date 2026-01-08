@@ -1425,40 +1425,51 @@ class ForecasterStats():
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `get_feature_importances()`."
             )
-        
-        get_importances_method = self._feature_importances_dispatch[self.estimator_type]
-        feature_importances = get_importances_method()
+        feature_importances = []
+        for estimator, estimator_type, estimator_name in zip(
+            self.estimators_, self.estimator_types_, self.estimator_names_
+        ):
+            get_importances_method = self._feature_importances_dispatch[estimator_type]
+            importance = get_importances_method(estimator)
+            if importance is not None:
+                importance["estimator_id"] = estimator_name
+                feature_importances.append(importance)
+
+        feature_importances = pd.concat(feature_importances, ignore_index=True)
 
         if sort_importance:
             feature_importances = feature_importances.sort_values(
-                                      by='importance',
+                                      by=['estimator_id', 'importance'],
                                       ascending=False
                                   ).reset_index(drop=True)
 
         return feature_importances
 
-    def _get_feature_importances_sarimax(self) -> pd.DataFrame:
+    @staticmethod
+    def _get_feature_importances_sarimax(estimator) -> pd.DataFrame:
         """Get feature importances for SARIMAX statsmodels model."""
-        feature_importances = self.estimator.params().to_frame().reset_index()
+        feature_importances = estimator.params().to_frame().reset_index()
         feature_importances.columns = ['feature', 'importance']
         return feature_importances
     
     # TODO: Update skforecast Arima wrapper to include feature importances method
-    def _get_feature_importances_arima(self) -> pd.DataFrame:
+    @staticmethod
+    def _get_feature_importances_arima(estimator) -> pd.DataFrame:
         """Get feature importances for Arima model."""
-        pass
+        return
 
-    def _get_feature_importances_arar(self) -> pd.DataFrame:
+    @staticmethod
+    def _get_feature_importances_arar(estimator) -> pd.DataFrame:
         """Get feature importances for Arar model."""
         importances = pd.DataFrame({
-            'feature': [f'lag_{lag}' for lag in self.estimator.lags_],
-            'importance': self.estimator.coef_
+            'feature': [f'lag_{lag}' for lag in estimator.lags_],
+            'importance': estimator.coef_
         })
 
-        if self.estimator.coef_exog_ is not None:
+        if estimator.coef_exog_ is not None:
             exog_importances = pd.DataFrame({
-                'feature': [f'exog_{i}' for i in range(self.estimator.coef_exog_.shape[0])],
-                'importance': self.estimator.coef_exog_
+                'feature': [f'exog_{i}' for i in range(estimator.coef_exog_.shape[0])],
+                'importance': estimator.coef_exog_
             })
             importances = pd.concat([importances, exog_importances], ignore_index=True)
             warnings.warn(
@@ -1472,43 +1483,47 @@ class ForecasterStats():
 
         return importances
 
-    def _get_feature_importances_ets(self) -> pd.DataFrame:
+    @staticmethod
+    def _get_feature_importances_ets(estimator) -> pd.DataFrame:
         """Get feature importances for Eta model."""
         features = ['alpha (level)']
-        importances = [self.estimator.params_['alpha']]
+        importances = [estimator.params_['alpha']]
         
-        if self.estimator.model_config_['trend'] != 'N':
+        if estimator.model_config_['trend'] != 'N':
             features.append('beta (trend)')
-            importances.append(self.estimator.params_['beta'])
+            importances.append(estimator.params_['beta'])
         
-        if self.estimator.model_config_['season'] != 'N':
+        if estimator.model_config_['season'] != 'N':
             features.append('gamma (seasonal)')
-            importances.append(self.estimator.params_['gamma'])
+            importances.append(estimator.params_['gamma'])
         
-        if self.estimator.model_config_['damped']:
+        if estimator.model_config_['damped']:
             features.append('phi (damping)')
-            importances.append(self.estimator.params_['phi'])
+            importances.append(estimator.params_['phi'])
         
         return pd.DataFrame({
             'feature': features,
             'importance': importances
         })
 
-    def _get_feature_importances_aeon_arima(self) -> pd.DataFrame:
+    @staticmethod
+    def _get_feature_importances_aeon_arima(estimator) -> pd.DataFrame:
         """Get feature importances for AEON ARIMA model."""
         return pd.DataFrame({
-            'feature': [f'lag_{lag}' for lag in range(1, self.estimator.p + 1)] + ["ma", "intercept"],
-            'importance': np.concatenate([self.estimator.phi_, self.estimator.theta_, [self.estimator.c_]])
+            'feature': [f'lag_{lag}' for lag in range(1, estimator.p + 1)] + ["ma", "intercept"],
+            'importance': np.concatenate([estimator.phi_, estimator.theta_, [estimator.c_]])
         })
 
-    def _get_feature_importances_aeon_ets(self) -> pd.DataFrame:
+    @staticmethod
+    def _get_feature_importances_aeon_ets(estimator) -> pd.DataFrame:
         """Get feature importances for AEON ETS model."""
         warnings.warn("Feature importances is not available for the AEON ETS model.")
         return pd.DataFrame(columns=['feature', 'importance'])
     
-    def _get_feature_importances_sktime_arima(self) -> pd.DataFrame:
+    @staticmethod
+    def _get_feature_importances_sktime_arima(estimator) -> pd.DataFrame:
         """Get feature importances for sktime ARIMA model."""
-        feature_importances = self.estimator._forecaster.params().to_frame().reset_index()
+        feature_importances = estimator._forecaster.params().to_frame().reset_index()
         feature_importances.columns = ['feature', 'importance']
         return feature_importances
 
@@ -1545,13 +1560,22 @@ class ForecasterStats():
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `get_info_criteria()`."
             )
+        info_criteria = []
+        for estimator, estimator_type in zip(self.estimators_, self.estimator_types_):
+            get_criteria_method = self._info_criteria_dispatch[estimator_type]
+            value = get_criteria_method(estimator, criteria, method)
+            info_criteria.append(value)
 
-        get_criteria_method = self._info_criteria_dispatch[self.estimator_type]
-        metric = get_criteria_method(criteria, method)
+        results = pd.DataFrame({
+            'estimator_id': self.estimator_names_,
+            'criteria': criteria,
+            'value': info_criteria
+        })
         
-        return metric
+        return results
 
-    def _get_info_criteria_sarimax(self, criteria: str, method: str) -> float:
+    @staticmethod
+    def _get_info_criteria_sarimax(estimator, criteria: str, method: str) -> float:
         """Get information criteria for SARIMAX statsmodels model."""
         if criteria not in {'aic', 'bic', 'hqic'}:
             raise ValueError(
@@ -1565,23 +1589,26 @@ class ForecasterStats():
                 "'lutkepohl'."
             )
         
-        return self.estimator.get_info_criteria(criteria=criteria, method=method)
+        return estimator.get_info_criteria(criteria=criteria, method=method)
     
-    def _get_info_criteria_sktime_arima(self, criteria: str, method: str) -> float:
+    @staticmethod
+    def _get_info_criteria_sktime_arima(estimator, criteria: str, method: str) -> float:
         """Get information criteria for sktime ARIMA model."""
         if criteria not in {'aic', 'bic', 'hqic'}:
             raise ValueError("`criteria` must be one of {'aic','bic','hqic'}")
         if method not in {'standard', 'lutkepohl'}:
             raise ValueError("`method` must be either 'standard' or 'lutkepohl'")
 
-        return self.estimator._forecaster.arima_res_.info_criteria(criteria=criteria, method=method)
+        return estimator._forecaster.arima_res_.info_criteria(criteria=criteria, method=method)
 
     # TODO: Update skforecast Arima wrapper to include info_criteria method
-    def _get_info_criteria_arima(self, criteria: str, method: str) -> float:
+    @staticmethod
+    def _get_info_criteria_arima(estimator, criteria: str, method: str) -> float:
         """Get information criteria for Arima statsmodels model."""
         pass
 
-    def _get_info_criteria_arar(self, criteria: str, method: str) -> float:
+    @staticmethod
+    def _get_info_criteria_arar(estimator, criteria: str, method: str) -> float:
         """Get information criteria for Arar model."""
         if criteria not in {'aic', 'bic'}:
             raise ValueError(
@@ -1595,9 +1622,10 @@ class ForecasterStats():
                 "ARAR model."
             )
         
-        return self.estimator.aic_ if criteria == 'aic' else self.estimator.bic_
+        return estimator.aic_ if criteria == 'aic' else estimator.bic_
 
-    def _get_info_criteria_ets(self, criteria: str, method: str) -> float:
+    @staticmethod
+    def _get_info_criteria_ets(estimator, criteria: str, method: str) -> float:
         """Get information criteria for skforecast Ets model."""
         if criteria not in {'aic', 'bic'}:
             raise ValueError(
@@ -1611,16 +1639,17 @@ class ForecasterStats():
                 "ETS model."
             )
         
-        return self.estimator.model_.aic if criteria == 'aic' else self.estimator.model_.bic
+        return estimator.model_.aic if criteria == 'aic' else estimator.model_.bic
 
-    def _get_info_criteria_aeon(self, criteria: str, method: str) -> float:
+    @staticmethod
+    def _get_info_criteria_aeon(estimator, criteria: str, method: str) -> float:
         """Get information criteria for AEON models."""
         if criteria != 'aic':
             raise ValueError(
                 "Invalid value for `criteria`. Only 'aic' is supported for "
                 "AEON models."
             )
-        return self.estimator.aic_
+        return estimator.aic_
 
     def summary(self) -> None:
         """

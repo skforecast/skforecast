@@ -18,7 +18,7 @@ def test_arima_init_default_params():
     assert model.n_cond is None
     assert model.SSinit == "Gardner1980"
     assert model.optim_method == "BFGS"
-    assert model.optim_control is None
+    assert model.optim_kwargs is None
     assert model.kappa == 1e6
     assert model.is_memory_reduced is False
 
@@ -37,7 +37,7 @@ def test_arima_init_with_explicit_params():
         n_cond=10,
         SSinit="Rossignol2011",
         optim_method="L-BFGS-B",
-        optim_control={'maxiter': 100},
+        optim_kwargs={'maxiter': 100},
         kappa=1e5
     )
     
@@ -50,7 +50,7 @@ def test_arima_init_with_explicit_params():
     assert model.n_cond == 10
     assert model.SSinit == "Rossignol2011"
     assert model.optim_method == "L-BFGS-B"
-    assert model.optim_control == {'maxiter': 100}
+    assert model.optim_kwargs == {'maxiter': 100}
     assert model.kappa == 1e5
 
 

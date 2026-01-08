@@ -70,7 +70,7 @@ def test_set_params_all_parameters():
         'n_cond': 15,
         'SSinit': 'Rossignol2011',
         'optim_method': 'L-BFGS-B',
-        'optim_control': {'maxiter': 200},
+        'optim_kwargs': {'maxiter': 200},
         'kappa': 1e5
     }
     
