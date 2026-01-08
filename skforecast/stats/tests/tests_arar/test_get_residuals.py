@@ -1,7 +1,8 @@
 # Unit test get_residuals method - Arar
 # ==============================================================================
-import numpy as np
+import re
 import pytest
+import numpy as np
 from ..._arar import Arar
 
 
@@ -68,7 +69,7 @@ def test_get_residuals_with_exog():
     np.testing.assert_array_almost_equal(residuals[mask][:10], expected_residuals, decimal=6)
 
 
-def test_residuals_raises_error_after_reduce_memory():
+def test_get_residuals_raises_error_after_reduce_memory():
     """
     Test that get_residuals() raises error after reduce_memory().
     """
@@ -85,6 +86,6 @@ def test_residuals_raises_error_after_reduce_memory():
     
     with pytest.raises(
         ValueError, 
-        match="Cannot call residuals_\\(\\): model memory has been reduced"
+        match=re.escape("Cannot call get_residuals(): model memory has been reduced")
     ):
         model.get_residuals()

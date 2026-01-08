@@ -414,7 +414,7 @@ class Ets(BaseEstimator, RegressorMixin):
 
         """
         
-        check_memory_reduced(self, 'residuals_')
+        check_memory_reduced(self, method_name='get_residuals')
         return self.in_sample_residuals_
 
     @check_is_fitted
@@ -428,7 +428,7 @@ class Ets(BaseEstimator, RegressorMixin):
 
         """
         
-        check_memory_reduced(self, 'fitted_')
+        check_memory_reduced(self, method_name='get_fitted_values')
         return self.fitted_values_
 
     @check_is_fitted
@@ -437,7 +437,7 @@ class Ets(BaseEstimator, RegressorMixin):
         Print a summary of the fitted ETS model.
         """
         
-        check_memory_reduced(self, 'summary')
+        check_memory_reduced(self, method_name='summary')
 
         print("ETS Model Summary")
         print("=" * 60)
@@ -502,7 +502,7 @@ class Ets(BaseEstimator, RegressorMixin):
         
         """
         
-        check_memory_reduced(self, 'score')
+        check_memory_reduced(self, method_name='get_score')
 
         y = self.y_train_
         fitted = self.fitted_values_

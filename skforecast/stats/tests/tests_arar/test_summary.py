@@ -26,7 +26,7 @@ def test_estimator_summary(capsys):
     out = capsys.readouterr().out
     
     # Check exact output
-    expected_output = """ARAR Model Summary
+    expected_output = """Arar Model Summary
 ------------------
 Number of observations: 100
 Selected AR lags: (1, 3, 16, 17)
@@ -68,7 +68,7 @@ def test_arar_summary_with_exog(capsys):
     captured = capsys.readouterr().out
     
     # Check exact output
-    expected_output = """ARAR Model Summary
+    expected_output = """Arar Model Summary
 ------------------
 Number of observations: 100
 Selected AR lags: (1, 5, 8, 25)
@@ -110,7 +110,7 @@ def test_summary_raises_error_after_reduce_memory(capsys):
     # Verify summary works before reduction
     est.summary()
     out_before = capsys.readouterr().out
-    assert "ARAR Model Summary" in out_before
+    assert "Arar Model Summary" in out_before
     
     # Reduce memory
     est.reduce_memory()

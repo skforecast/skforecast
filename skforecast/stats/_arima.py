@@ -524,7 +524,7 @@ class Arima(BaseEstimator, RegressorMixin):
         
         """
 
-        check_memory_reduced(self, 'get_residuals')
+        check_memory_reduced(self, method_name='get_residuals')
         return self.in_sample_residuals_
 
     @check_is_fitted
@@ -546,7 +546,7 @@ class Arima(BaseEstimator, RegressorMixin):
         
         """
         
-        check_memory_reduced(self, 'get_fitted_values')
+        check_memory_reduced(self, method_name='get_fitted_values')
         return self.fitted_values_
 
     @check_is_fitted
@@ -565,7 +565,7 @@ class Arima(BaseEstimator, RegressorMixin):
         
         """
         
-        check_memory_reduced(self, 'summary')
+        check_memory_reduced(self, method_name='summary')
                 
         print("ARIMA Model Summary")
         print("=" * 60)
@@ -637,7 +637,7 @@ class Arima(BaseEstimator, RegressorMixin):
         
         """
         
-        check_memory_reduced(self, 'get_score')
+        check_memory_reduced(self, method_name='get_score')
         
         y = self.y_train_
         fitted = self.fitted_values_

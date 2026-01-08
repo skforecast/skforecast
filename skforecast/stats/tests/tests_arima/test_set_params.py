@@ -93,27 +93,16 @@ def test_set_params_resets_fitted_state():
     assert hasattr(model, 'coef_')
     assert hasattr(model, 'y_train_')
     assert model.is_memory_reduced is False
+    assert model.is_fitted is True
     
     # Change a parameter
     model.set_params(order=(2, 0, 0))
     
-    # Fitted attributes should be removed
-    assert not hasattr(model, 'model_')
-    assert not hasattr(model, 'coef_')
-    assert not hasattr(model, 'y_')
-    assert not hasattr(model, 'coef_names_')
-    assert not hasattr(model, 'sigma2_')
-    assert not hasattr(model, 'loglik_')
-    assert not hasattr(model, 'aic_')
-    assert not hasattr(model, 'bic_')
-    assert not hasattr(model, 'arma_')
-    assert not hasattr(model, 'converged_')
-    assert not hasattr(model, 'n_features_in_')
-    assert not hasattr(model, 'n_exog_features_in_')
-    assert not hasattr(model, 'fitted_values_')
-    assert not hasattr(model, 'in_sample_residuals_')
-    assert not hasattr(model, 'var_coef_')
+    assert model.model_ is None
+    assert model.coef_ is None
+    assert model.y_train_ is None
     assert model.is_memory_reduced is False
+    assert model.is_fitted is False
 
 
 def test_set_params_after_fit_requires_refit():
@@ -212,7 +201,7 @@ def test_set_params_on_fitted_model_with_exog():
     model.set_params(order=(2, 0, 0))
     
     # Exog-related attributes should also be reset
-    assert not hasattr(model, 'n_exog_features_in_')
+    assert model.n_exog_features_in_ is None
 
 
 def test_set_params_empty_call():
@@ -223,13 +212,15 @@ def test_set_params_empty_call():
     model = Arima(order=(1, 0, 0))
     model.fit(y)
     
+    assert model.is_fitted is True
     assert hasattr(model, 'model_')
     
     # Call with no parameters
     model.set_params()
     
     # Should still reset fitted state
-    assert not hasattr(model, 'model_')
+    assert model.is_fitted is False
+    assert model.model_ is None
 
 
 def test_set_params_resets_memory_reduced_flag():

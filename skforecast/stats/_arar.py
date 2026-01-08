@@ -538,7 +538,7 @@ class Arar(BaseEstimator, RegressorMixin):
 
         """
 
-        check_memory_reduced(self, 'residuals_')
+        check_memory_reduced(self, method_name='get_residuals')
         return self.in_sample_residuals_
 
     @check_is_fitted
@@ -552,7 +552,7 @@ class Arar(BaseEstimator, RegressorMixin):
 
         """
 
-        check_memory_reduced(self, 'fitted_')
+        check_memory_reduced(self, method_name='get_fitted_values')
         return self.fitted_values_
 
     @check_is_fitted
@@ -561,7 +561,7 @@ class Arar(BaseEstimator, RegressorMixin):
         Print a simple textual summary of the fitted Arar model.
         """
         
-        check_memory_reduced(self, 'summary')
+        check_memory_reduced(self, method_name='summary')
         
         print(f"{self.estimator_id} Model Summary")
         print("------------------")
@@ -609,7 +609,7 @@ class Arar(BaseEstimator, RegressorMixin):
         
         """
 
-        check_memory_reduced(self, 'score')
+        check_memory_reduced(self, method_name='get_score')
 
         y = self.y_train_
         fitted = self.fitted_values_
