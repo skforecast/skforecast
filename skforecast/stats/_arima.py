@@ -9,6 +9,7 @@ from __future__ import annotations
 import warnings
 import numpy as np
 import pandas as pd
+from contextlib import nullcontext
 from scipy.stats import norm
 from sklearn.base import BaseEstimator, RegressorMixin
 
@@ -64,7 +65,7 @@ class Arima(BaseEstimator, RegressorMixin):
     optim_method : str, default "BFGS"
         Optimization method passed to scipy.optimize.minimize. Common options 
         include "BFGS", "L-BFGS-B", "Nelder-Mead", etc.
-    optim_control : dict, optional
+    optim_kwargs : dict or None, default {'maxiter': 1000}
         Additional options passed to the optimizer (e.g., maxiter, ftol).
     kappa : float, default 1e6
         Prior variance for diffuse states in the Kalman filter.
@@ -89,7 +90,7 @@ class Arima(BaseEstimator, RegressorMixin):
         State-space initialization method (e.g., "Gardner1980").
     optim_method : str
         Optimization method passed to the optimizer (e.g., "BFGS").
-    optim_control : dict or None
+    optim_kwargs : dict or None, default {'maxiter': 1000}
         Additional optimizer options.
     kappa : float
         Prior variance for diffuse states in the Kalman filter.
@@ -167,7 +168,7 @@ class Arima(BaseEstimator, RegressorMixin):
         n_cond: int | None = None,
         SSinit: str = "Gardner1980",
         optim_method: str = "BFGS",
-        optim_control: dict | None = None,
+        optim_kwargs: dict | None = {'maxiter': 1000},
         kappa: float = 1e6,
     ):
 
@@ -191,7 +192,7 @@ class Arima(BaseEstimator, RegressorMixin):
         self.n_cond               = n_cond
         self.SSinit               = SSinit
         self.optim_method         = optim_method
-        self.optim_control        = optim_control
+        self.optim_kwargs         = optim_kwargs
         self.kappa                = kappa
         self.is_memory_reduced    = False
         self.is_fitted            = False
@@ -228,7 +229,8 @@ class Arima(BaseEstimator, RegressorMixin):
     def fit(
         self, 
         y: np.ndarray | pd.Series, 
-        exog: np.ndarray | pd.Series | pd.DataFrame | None = None
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None,
+        suppress_warnings: bool = False
     ) -> "Arima":
         """
         Fit the ARIMA model to a univariate time series.
@@ -240,6 +242,8 @@ class Arima(BaseEstimator, RegressorMixin):
         exog : pandas Series, pandas DataFrame,  numpy ndarray of shape (n_samples, n_exog_features), default None
             Exogenous regressors to include in the model. These are incorporated 
             directly into the ARIMA likelihood function.
+        suppress_warnings : bool, default False
+            If True, suppress warnings during fitting (e.g., convergence warnings).
 
         Returns
         -------
@@ -271,23 +275,28 @@ class Arima(BaseEstimator, RegressorMixin):
                     f"Length of `exog` ({len(exog)}) does not match length of `y` ({len(y)})."
                 )
         
-        self.model_ = arima(
-            x              = y,
-            m              = self.m,
-            order          = self.order,
-            seasonal       = self.seasonal_order,
-            xreg           = exog,
-            include_mean   = self.include_mean,
-            transform_pars = self.transform_pars,
-            fixed          = None,
-            init           = None,
-            method         = self.method,
-            n_cond         = self.n_cond,
-            SSinit         = self.SSinit,
-            optim_method   = self.optim_method,
-            optim_control  = self.optim_control,
-            kappa          = self.kappa
-        )
+        
+        ctx = (warnings.catch_warnings() if suppress_warnings else nullcontext())
+        with ctx:
+            if suppress_warnings:
+                warnings.simplefilter("ignore")
+            self.model_ = arima(
+                x              = y,
+                m              = self.m,
+                order          = self.order,
+                seasonal       = self.seasonal_order,
+                xreg           = exog,
+                include_mean   = self.include_mean,
+                transform_pars = self.transform_pars,
+                fixed          = None,
+                init           = None,
+                method         = self.method,
+                n_cond         = self.n_cond,
+                SSinit         = self.SSinit,
+                optim_method   = self.optim_method,
+                optim_control  = self.optim_kwargs,
+                kappa          = self.kappa
+            )
         
         self.y_train_             = self.model_['y']
         self.coef_                = self.model_['coef'].values.flatten()
@@ -705,7 +714,7 @@ class Arima(BaseEstimator, RegressorMixin):
         **params : dict
             Estimator parameters. Valid parameter keys are: 'order', 'seasonal_order',
             'm', 'include_mean', 'transform_pars', 'method', 'n_cond', 'SSinit',
-            'optim_method', 'optim_control', 'kappa'.
+            'optim_method', 'optim_kwargs', 'kappa'.
 
         Returns
         -------
@@ -720,7 +729,7 @@ class Arima(BaseEstimator, RegressorMixin):
 
         valid_params = {
             'order', 'seasonal_order', 'm', 'include_mean', 'transform_pars',
-            'method', 'n_cond', 'SSinit', 'optim_method', 'optim_control', 'kappa'
+            'method', 'n_cond', 'SSinit', 'optim_method', 'optim_kwargs', 'kappa'
         }
         for key in params.keys():
             if key not in valid_params:
@@ -795,7 +804,7 @@ class Arima(BaseEstimator, RegressorMixin):
             "n_cond": self.n_cond,
             "SSinit": self.SSinit,
             "optim_method": self.optim_method,
-            "optim_control": self.optim_control,
+            "optim_kwargs": self.optim_kwargs,
             "kappa": self.kappa,
         }
 
