@@ -36,6 +36,7 @@ from ..utils import (
     initialize_estimator
 )
 
+
 # TODO: Create methods remove estimator, list estimators
 # TODO: all wrapers show have method get_params and set_params
 class ForecasterStats():
@@ -460,14 +461,12 @@ class ForecasterStats():
 
         return self.estimators_[idx]
     
-    def _preprocess_repr(self) -> tuple[list[str], list[str], str]:
+    def _preprocess_repr(self) -> tuple[list[str], str]:
         """
         Format text for __repr__ method.
 
         Returns
         -------
-        estimator_names : list[str]
-            List of formatted estimator names.
         estimator_params : list[str]
             List of formatted parameters for each estimator.
         exog_names_in_ : str
@@ -475,12 +474,10 @@ class ForecasterStats():
 
         """
         
-        estimator_names = self.estimator_names_
-
         # Format parameters for each estimator
         estimator_params = []
         if self.estimator_params_ is not None:
-            for name in estimator_names:
+            for name in self.estimator_names_:
                 params = str(self.estimator_params_[name])
                 if len(params) > 58:
                     params = "\n        " + textwrap.fill(
@@ -500,7 +497,7 @@ class ForecasterStats():
                     exog_names_in_, width=80, subsequent_indent="    "
                 )
         
-        return estimator_names, estimator_params, exog_names_in_
+        return estimator_params, exog_names_in_
 
     def __repr__(
         self
@@ -509,14 +506,14 @@ class ForecasterStats():
         Information displayed when a ForecasterStats object is printed.
         """
 
-        estimator_names, estimator_params, exog_names_in_ = self._preprocess_repr()
+        estimator_params, exog_names_in_ = self._preprocess_repr()
         params_list = "\n    ".join(estimator_params)
 
         info = (
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Estimators: {estimator_names} \n"
+            f"Estimators: {self.estimator_names_} \n"
             f"Series name: {self.series_name_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
@@ -545,7 +542,7 @@ class ForecasterStats():
         The "General Information" section is expanded by default.
         """
 
-        estimator_names, estimator_params, exog_names_in_ = self._preprocess_repr()
+        estimator_params, exog_names_in_ = self._preprocess_repr()
         style, unique_id = get_style_repr_html(self.is_fitted)
 
         # Build estimators list
@@ -556,7 +553,7 @@ class ForecasterStats():
 
         # Build parameters section
         if len(estimator_params) == 1:
-            params_html = f"<li>{estimator_params[0]}</li>"
+            params_html = f"<ul><li>{estimator_params[0]}</li></ul>"
         else:
             params_html = "<ul>"
             for param in estimator_params:
@@ -742,7 +739,8 @@ class ForecasterStats():
         self.is_fitted = True
         self.estimator_names_ = self._generate_estimator_names(self.estimators_)
         self.estimator_params_ = {
-            name: est.get_params() for name, est in zip(self.estimator_names_, self.estimators_)
+            name: est.get_params() 
+            for name, est in zip(self.estimator_names_, self.estimators_)
         }
         self.series_name_in_ = y.name if y.name is not None else 'y'
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
@@ -1318,7 +1316,7 @@ class ForecasterStats():
         preds = estimator.predict_interval(fh=fh, X=exog, coverage=1 - alpha).to_numpy()
         return preds
 
-    #TODO: Add get_params and set_params for each estimator when multiple estimators are supported
+    # TODO: Add get_params and set_params for each estimator when multiple estimators are supported
     def set_params(
         self, 
         params: dict[str, object] | dict[str, dict[str, object]]

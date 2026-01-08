@@ -1,8 +1,10 @@
 # Unit test predict_interval method - Arar
 # ==============================================================================
+import re
+import pytest
 import numpy as np
 import pandas as pd
-import pytest
+from sklearn.exceptions import NotFittedError
 from ..._arar import Arar
 
 
@@ -21,10 +23,12 @@ def test_predict_interval_raises_errors_for_invalid_steps_and_unfitted_model():
     Test that predict_interval raises errors for invalid steps and unfitted model.
     """
     est = Arar()
-    msg = (
-        "This Arar instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator."
+
+    error_msg = re.escape(
+        f"This {type(est).__name__} instance is not fitted yet. Call "
+        f"'fit' with appropriate arguments before using this estimator."
     )
-    with pytest.raises(TypeError, match=msg):
+    with pytest.raises(NotFittedError, match=error_msg):
         est.predict_interval(steps=1)
 
     y = ar1_series(50)

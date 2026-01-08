@@ -11,39 +11,9 @@ import inspect
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.exceptions import NotFittedError
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-
-def _check_fitted(func):
-    """
-    This decorator checks if the model is fitted before using the desired method.
-
-    Parameters
-    ----------
-    func : Callable
-        Function to wrap.
-    
-    Returns
-    -------
-    wrapper : wrapper
-        Function wrapped.
-
-    """
-
-    def wrapper(self, *args, **kwargs):
-
-        if not self.fitted:
-            raise NotFittedError(
-                "Sarimax instance is not fitted yet. Call `fit` with "
-                "appropriate arguments before using this method."
-            )
-        
-        result = func(self, *args, **kwargs)
-        
-        return result
-    
-    return wrapper
+from ._utils import check_is_fitted
 
 
 class Sarimax(BaseEstimator, RegressorMixin):
@@ -227,7 +197,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         train the model, `'numpy'` or `'pandas'`.
     sarimax : object
         The statsmodels.tsa.statespace.sarimax.SARIMAX object created.
-    fitted : bool
+    is_fitted : bool
         Tag to identify if the estimator has been fitted (trained).
     sarimax_res : object
         The resulting statsmodels.tsa.statespace.sarimax.SARIMAXResults object 
@@ -319,7 +289,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         # Create Results Attributes 
         self.output_type    = None
         self.sarimax        = None
-        self.fitted         = False
+        self.is_fitted      = False
         self.sarimax_res    = None
         self.training_index = None
 
@@ -448,19 +418,19 @@ class Sarimax(BaseEstimator, RegressorMixin):
         # Reset values in case the model has already been fitted.
         self.output_type    = None
         self.sarimax_res    = None
-        self.fitted         = False
+        self.is_fitted      = False
         self.training_index = None
 
         self.output_type = 'numpy' if isinstance(y, np.ndarray) else 'pandas'
         
         self._create_sarimax(endog=y, exog=exog)
         self.sarimax_res = self.sarimax.fit(**self._fit_kwargs)
-        self.fitted = True
+        self.is_fitted = True
         
         if self.output_type == 'pandas':
             self.training_index = y.index
 
-    @_check_fitted
+    @check_is_fitted
     def predict(
         self,
         steps: int,
@@ -539,7 +509,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
         return predictions
 
-    @_check_fitted
+    @check_is_fitted
     def append(
         self,
         y: np.ndarray | pd.Series | pd.DataFrame,
@@ -608,7 +578,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
                                **kwargs
                            )
 
-    @_check_fitted
+    @check_is_fitted
     def apply(
         self,
         y: np.ndarray | pd.Series | pd.DataFrame,
@@ -670,7 +640,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
                                **kwargs
                            )
 
-    @_check_fitted
+    @check_is_fitted
     def extend(
         self,
         y: np.ndarray | pd.Series | pd.DataFrame,
@@ -752,35 +722,10 @@ class Sarimax(BaseEstimator, RegressorMixin):
         # Reset values in case the model has already been fitted.
         self.output_type    = None
         self.sarimax_res    = None
-        self.fitted         = False
+        self.is_fitted      = False
         self.training_index = None
 
-    @_check_fitted
-    def get_params(
-        self, 
-        deep: bool = True
-    ) -> dict[str, object]:
-        """
-        Get the non trainable parameters of the estimator. This method
-        is different from the `params` method, which returns the parameters
-        of the fitted model.
-
-        Parameters
-        ----------
-        deep : bool, default True
-            If `True`, will return the parameters for this estimator and 
-            contained subobjects that are estimators.
-
-        Returns
-        -------
-        params : dict
-            Parameters of the estimator.
-
-        """
-
-        return self._sarimax_params.copy()
-
-    @_check_fitted
+    @check_is_fitted
     def params(
         self
     ) -> np.ndarray | pd.Series:
@@ -798,7 +743,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
         return self.sarimax_res.params
 
-    @_check_fitted
+    @check_is_fitted
     def summary(
         self,
         alpha: float = 0.05,
@@ -824,7 +769,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
         return self.sarimax_res.summary(alpha=alpha, start=start)
 
-    @_check_fitted
+    @check_is_fitted
     def get_info_criteria(
         self,
         criteria: str = 'aic',

@@ -52,6 +52,7 @@ def test_set_params_updates_valid_parameters():
     assert model.m == 4
     assert model.model == "AAN"  # Unchanged
     assert model.alpha == 0.1  # Unchanged
+    assert model.is_fitted is False
     
     # Update multiple parameters
     model.set_params(model="AAA", alpha=0.2, beta=0.1, damped=True)
@@ -60,6 +61,7 @@ def test_set_params_updates_valid_parameters():
     assert model.alpha == 0.2
     assert model.beta == 0.1
     assert model.damped is True
+    assert model.is_fitted is False
 
 
 def test_set_params_resets_fitted_state():
@@ -81,6 +83,7 @@ def test_set_params_resets_fitted_state():
     
     # Set params - should reset fitted state
     model.set_params(m=4)
+    assert model.is_fitted is False
     
     # Verify all fitted attributes are reset
     assert model.model_ is None
