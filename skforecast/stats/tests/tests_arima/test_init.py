@@ -97,23 +97,6 @@ def test_arima_init_all_attributes_before_fitting():
     assert model.seasonal_order == (0, 0, 0)
     assert model.m == 1
     assert model.is_memory_reduced is False
-    
-    # Model state attributes should not exist before fitting
-    assert not hasattr(model, 'model_')
-    assert not hasattr(model, 'y_train_')
-    assert not hasattr(model, 'coef_')
-    assert not hasattr(model, 'coef_names_')
-    assert not hasattr(model, 'sigma2_')
-    assert not hasattr(model, 'loglik_')
-    assert not hasattr(model, 'aic_')
-    assert not hasattr(model, 'bic_')
-    assert not hasattr(model, 'arma_')
-    assert not hasattr(model, 'converged_')
-    assert not hasattr(model, 'n_features_in_')
-    assert not hasattr(model, 'n_exog_features_in_')
-    assert not hasattr(model, 'fitted_values_')
-    assert not hasattr(model, 'in_sample_residuals_')
-    assert not hasattr(model, 'var_coef_')
 
 
 def test_arima_repr_non_seasonal():

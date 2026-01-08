@@ -1,7 +1,9 @@
 # Unit test predict method - Arar
 # ==============================================================================
-import numpy as np
+import re
 import pytest
+import numpy as np
+from sklearn.exceptions import NotFittedError
 from ..._arar import Arar
 
 
@@ -14,15 +16,18 @@ def ar1_series(n=80, phi=0.7, sigma=1.0, seed=123):
         y[t] = phi * y[t - 1] + e[t]
     return y
 
+
 def test_predict_raises_errors_for_invalid_steps_and_unfitted_model():
     """
     Test that predict raises errors for invalid steps and unfitted model.
     """
     est = Arar()
-    msg = (
-        "This Arar instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator."
+
+    error_msg = re.escape(
+        f"This {type(est).__name__} instance is not fitted yet. Call "
+        f"'fit' with appropriate arguments before using this estimator."
     )
-    with pytest.raises(TypeError, match=msg):
+    with pytest.raises(NotFittedError, match=error_msg):
         est.predict(steps=1)
 
     y = ar1_series(50)
@@ -50,6 +55,7 @@ def test_arar_predict_without_exog_raises_error_when_fitted_with_exog():
     with pytest.raises(ValueError, match="Model was fitted with exog, so `exog` is required for prediction."):
         model.predict(steps=5)
 
+
 def test_arar_predict_with_exog_raises_error_when_fitted_without_exog():
     """
     Test that predict raises error when exog is provided but model was fitted without exog.
@@ -59,12 +65,14 @@ def test_arar_predict_with_exog_raises_error_when_fitted_without_exog():
     model = Arar()
     model.fit(y)
     exog_pred = np.random.randn(5, 2)
-    msg = (
+
+    error_msg = re.escape(
         "Model was fitted without exog, but `exog` was provided for prediction. "
         "Please refit the model with exogenous variables."
     )
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(ValueError, match=error_msg):
         model.predict(steps=5, exog=exog_pred)
+
 
 def test_arar_exog_feature_count_mismatch():
     """
@@ -77,9 +85,11 @@ def test_arar_exog_feature_count_mismatch():
     model = Arar()
     model.fit(y, exog=exog_train)
     exog_pred = np.random.randn(5, 3)  # Wrong number of features
-    msg = "Mismatch in exogenous features: fitted with 2, got 3."
-    with pytest.raises(ValueError, match=msg):
+
+    error_msg = re.escape("Mismatch in exogenous features: fitted with 2, got 3.")
+    with pytest.raises(ValueError, match=error_msg):
         model.predict(steps=5, exog=exog_pred)
+
 
 def test_arar_exog_length_mismatch():
     """
@@ -93,9 +103,10 @@ def test_arar_exog_length_mismatch():
     model.fit(y, exog=exog_train)
     exog_pred = np.random.randn(3, 2)  # Wrong length
     
-    msg = r"Length of exog \(3\) must match steps \(5\)\."
-    with pytest.raises(ValueError, match=msg):
+    error_msg = re.escape("Length of exog (3) must match steps (5).")
+    with pytest.raises(ValueError, match=error_msg):
         model.predict(steps=5, exog=exog_pred)
+
 
 def test_arar_predict_exog_3d_raises():
     """
@@ -111,6 +122,7 @@ def test_arar_predict_exog_3d_raises():
     
     with pytest.raises(ValueError, match="`exog` must be 1D or 2D."):
         model.predict(steps=5, exog=exog_3d)
+
 
 def test_predict_output():
     """
@@ -159,8 +171,8 @@ def test_arar_predict_with_multiple_exog_features():
     y = np.random.randn(n).cumsum()
     exog = np.column_stack([
         np.random.randn(n),
-        np.sin(np.linspace(0, 4*np.pi, n)),
-        np.cos(np.linspace(0, 4*np.pi, n)),
+        np.sin(np.linspace(0, 4 * np.pi, n)),
+        np.cos(np.linspace(0, 4 * np.pi, n)),
         np.arange(n) / n  # trend
     ])
     y = y + 0.5 * exog[:, 0] + 2.0 * exog[:, 1] + 1.5 * exog[:, 2] + 10.0 * exog[:, 3]
@@ -169,8 +181,8 @@ def test_arar_predict_with_multiple_exog_features():
     model.fit(y, exog=exog, suppress_warnings=True)
     exog_future = np.column_stack([
         np.random.randn(10),
-        np.sin(np.linspace(4*np.pi, 5*np.pi, 10)),
-        np.cos(np.linspace(4*np.pi, 5*np.pi, 10)),
+        np.sin(np.linspace(4 * np.pi, 5 * np.pi, 10)),
+        np.cos(np.linspace(4 * np.pi, 5 * np.pi, 10)),
         np.arange(10) / n + 1.0
     ])
     

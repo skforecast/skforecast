@@ -11,12 +11,12 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.utils.validation import check_is_fitted
+
 from .arima._arima_base import (
     arima,
     predict_arima
 )
-from ._utils import check_memory_reduced
+from ._utils import check_is_fitted, check_memory_reduced
 
 
 class Arima(BaseEstimator, RegressorMixin):
@@ -30,26 +30,26 @@ class Arima(BaseEstimator, RegressorMixin):
 
     Parameters
     ----------
-    order : tuple of int, default=(0, 0, 0)
+    order : tuple of int, default (0, 0, 0)
         The (p, d, q) order of the non-seasonal ARIMA model:
         - p: AR order (number of lag observations)
         - d: Degree of differencing (number of times to difference the series)
         - q: MA order (size of moving average window)
-    seasonal_order : tuple of int, default=(0, 0, 0)
+    seasonal_order : tuple of int, default (0, 0, 0)
         The (P, D, Q) order of the seasonal component:
         - P: Seasonal AR order
         - D: Seasonal differencing order
         - Q: Seasonal MA order
-    m : int, default=1
+    m : int, default 1
         Seasonal period (e.g., 12 for monthly data with yearly seasonality, 
         4 for quarterly data). Set to 1 for non-seasonal models.
-    include_mean : bool, default=True
+    include_mean : bool, default True
         Whether to include a mean/intercept term in the model. Only applies 
         when there is no differencing (d=0 and D=0).
-    transform_pars : bool, default=True
+    transform_pars : bool, default True
         Whether to transform parameters to ensure stationarity and invertibility 
         during optimization.
-    method : str, default="CSS-ML"
+    method : str, default "CSS-ML"
         Estimation method. Options:
         - "CSS-ML": Conditional sum of squares for initial values, then maximum likelihood
         - "ML": Maximum likelihood only
@@ -57,20 +57,42 @@ class Arima(BaseEstimator, RegressorMixin):
     n_cond : int, optional
         Number of initial observations to use for conditional sum of squares. 
         If None, defaults to max(p + d*m + P*m, q + Q*m).
-    SSinit : str, default="Gardner1980"
+    SSinit : str, default "Gardner1980"
         Method for state-space initialization. Options:
         - "Gardner1980": Gardner's method (default, more numerically stable)
         - "Rossignol2011": Rossignol's method (alternative)
-    optim_method : str, default="BFGS"
+    optim_method : str, default "BFGS"
         Optimization method passed to scipy.optimize.minimize. Common options 
         include "BFGS", "L-BFGS-B", "Nelder-Mead", etc.
     optim_control : dict, optional
         Additional options passed to the optimizer (e.g., maxiter, ftol).
-    kappa : float, default=1e6
+    kappa : float, default 1e6
         Prior variance for diffuse states in the Kalman filter.
 
     Attributes
     ----------
+    order : tuple of int
+        (p, d, q) non-seasonal ARIMA order stored on the estimator.
+    seasonal_order : tuple of int
+        (P, D, Q) seasonal ARIMA order stored on the estimator.
+    m : int
+        Seasonal period (e.g., 12 for monthly data).
+    include_mean : bool
+        Whether a mean/intercept term is included in the model.
+    transform_pars : bool
+        Whether parameters are transformed to enforce stationarity/invertibility.
+    method : str
+        Estimation method (e.g., "CSS-ML", "ML", "CSS").
+    n_cond : int or None
+        Number of observations used for conditional sum of squares (if any).
+    SSinit : str
+        State-space initialization method (e.g., "Gardner1980").
+    optim_method : str
+        Optimization method passed to the optimizer (e.g., "BFGS").
+    optim_control : dict or None
+        Additional optimizer options.
+    kappa : float
+        Prior variance for diffuse states in the Kalman filter.
     model_ : dict
         Dictionary containing the fitted ARIMA model with keys:
         - 'y': Original training series
@@ -87,9 +109,9 @@ class Arima(BaseEstimator, RegressorMixin):
         - 'model': State-space model dict
         - 'method': Estimation method string
     y_train_ : ndarray of shape (n_samples,)
-        Original training series.
+        Original training series used for fitting.
     coef_ : ndarray
-        Flattened array of fitted coefficients (AR, MA, xreg, intercept).
+        Flattened array of fitted coefficients (AR, MA, exogenous, intercept if present).
     coef_names_ : list of str
         Names of coefficients in coef_.
     sigma2_ : float
@@ -97,9 +119,9 @@ class Arima(BaseEstimator, RegressorMixin):
     loglik_ : float
         Log-likelihood of the fitted model.
     aic_ : float
-        Akaike Information Criterion.
-    bic_ : float
-        Bayesian Information Criterion.
+        Akaike Information Criterion value.
+    bic_ : float or None
+        Bayesian Information Criterion value (may be ``None`` if not available).
     arma_ : list of int
         ARIMA specification: [p, q, P, Q, m, d, D].
     converged_ : bool
@@ -116,12 +138,14 @@ class Arima(BaseEstimator, RegressorMixin):
         Variance-covariance matrix of coefficients.
     is_memory_reduced : bool
         Flag indicating whether reduce_memory() has been called.
+    is_fitted : bool
+        Flag indicating whether the estimator has been fitted.
     estimator_id : str
-        String identifier for the model configuration (e.g., "Arima(1,1,1)(0,0,0)[1]").
+        String identifier for the model configuration (e.g., ``"Arima(1,1,1)(0,0,0)[1]"``).
 
     Notes
     -----
-    The ARIMA model supports exogenous regressors (xreg) which are incorporated 
+    The ARIMA model supports exogenous regressors which are incorporated 
     directly into the likelihood function, unlike the two-step approach used in 
     the ARAR model. This means the exogenous variables are modeled jointly with 
     the ARMA errors, providing a more integrated treatment.
@@ -130,24 +154,6 @@ class Arima(BaseEstimator, RegressorMixin):
     likelihood computation and forecasting, which allows handling of missing 
     values and provides efficient recursive prediction.
 
-    Examples
-    --------
-    >>> from skforecast.stats import Arima
-    >>> import numpy as np
-    >>> 
-    >>> # Generate sample data
-    >>> np.random.seed(42)
-    >>> y = np.cumsum(np.random.randn(100)) + 50
-    >>> 
-    >>> # Fit ARIMA(1,1,1) model
-    >>> model = Arima(order=(1, 1, 1))
-    >>> model.fit(y)
-    >>> 
-    >>> # Forecast 10 steps ahead
-    >>> predictions = model.predict(steps=10)
-    >>> 
-    >>> # Get prediction intervals
-    >>> intervals = model.predict_interval(steps=10, level=(80, 95))
     """
 
     def __init__(
@@ -173,19 +179,38 @@ class Arima(BaseEstimator, RegressorMixin):
             raise ValueError(
                 f"`seasonal_order` must be a tuple of length 3, got length {len(seasonal_order)}"
             )
+        if m < 1 or not isinstance(m, int):
+            raise ValueError("`m` must be a positive integer (seasonal period).")
         
-        self.order             = order
-        self.seasonal_order    = seasonal_order
-        self.m                 = m
-        self.include_mean      = include_mean
-        self.transform_pars    = transform_pars
-        self.method            = method
-        self.n_cond            = n_cond
-        self.SSinit            = SSinit
-        self.optim_method      = optim_method
-        self.optim_control     = optim_control
-        self.kappa             = kappa
-        self.is_memory_reduced = False
+        self.order                = order
+        self.seasonal_order       = seasonal_order
+        self.m                    = m
+        self.include_mean         = include_mean
+        self.transform_pars       = transform_pars
+        self.method               = method
+        self.n_cond               = n_cond
+        self.SSinit               = SSinit
+        self.optim_method         = optim_method
+        self.optim_control        = optim_control
+        self.kappa                = kappa
+        self.is_memory_reduced    = False
+        self.is_fitted            = False
+
+        self.model_               = None
+        self.y_train_             = None
+        self.coef_                = None
+        self.coef_names_          = None
+        self.sigma2_              = None
+        self.loglik_              = None
+        self.aic_                 = None
+        self.bic_                 = None
+        self.arma_                = None
+        self.converged_           = None
+        self.fitted_values_       = None
+        self.in_sample_residuals_ = None
+        self.var_coef_            = None
+        self.n_features_in_       = None
+        self.n_exog_features_in_  = None
 
         p, d, q = self.order
         P, D, Q = self.seasonal_order
@@ -202,17 +227,17 @@ class Arima(BaseEstimator, RegressorMixin):
 
     def fit(
         self, 
-        y: pd.Series | np.ndarray, 
-        exog: pd.Series | pd.DataFrame | np.ndarray | None = None
+        y: np.ndarray | pd.Series, 
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None
     ) -> "Arima":
         """
         Fit the ARIMA model to a univariate time series.
 
         Parameters
         ----------
-        y : array-like of shape (n_samples,)
+        y : pandas Series, numpy ndarray of shape (n_samples,)
             Time-ordered numeric sequence.
-        exog : Series, DataFrame, or ndarray of shape (n_samples, n_exog_features), default=None
+        exog : pandas Series, pandas DataFrame,  numpy ndarray of shape (n_samples, n_exog_features), default None
             Exogenous regressors to include in the model. These are incorporated 
             directly into the ARIMA likelihood function.
 
@@ -221,14 +246,8 @@ class Arima(BaseEstimator, RegressorMixin):
         self : Arima
             Fitted estimator.
 
-        Notes
-        -----
-        Unlike the ARAR model, ARIMA natively supports exogenous regressors which 
-        are incorporated directly into the likelihood function. This provides a 
-        more integrated treatment where the exogenous variables and ARMA dynamics 
-        are jointly estimated.
         """
-        if not isinstance(y, (pd.Series, np.ndarray)):
+        if not isinstance(y, (np.ndarray, pd.Series)):
             raise TypeError("`y` must be a pandas Series or numpy array.")
         
         if not isinstance(exog, (type(None), pd.Series, pd.DataFrame, np.ndarray)):
@@ -270,7 +289,6 @@ class Arima(BaseEstimator, RegressorMixin):
             kappa          = self.kappa
         )
         
-        # Extract and store model attributes
         self.y_train_             = self.model_['y']
         self.coef_                = self.model_['coef'].values.flatten()
         self.coef_names_          = list(self.model_['coef'].columns)
@@ -286,13 +304,15 @@ class Arima(BaseEstimator, RegressorMixin):
         self.n_exog_features_in_  = exog.shape[1] if exog is not None else 0
         self.n_features_in_       = 1
         self.is_memory_reduced    = False
+        self.is_fitted            = True
         
         return self
 
+    @check_is_fitted
     def predict(
         self, 
         steps: int, 
-        exog: pd.Series | pd.DataFrame | np.ndarray | None = None
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None
     ) -> np.ndarray:
         """
         Generate mean forecasts steps ahead.
@@ -301,26 +321,25 @@ class Arima(BaseEstimator, RegressorMixin):
         ----------
         steps : int
             Forecast horizon (must be > 0).
-        exog : Series, DataFrame, or ndarray of shape (steps, n_exog_features), default=None
+        exog : ndarray, Series or DataFrame of shape (steps, n_exog_features), default None
             Exogenous regressors for the forecast period. Must have the same 
             number of features as used during fitting.
 
         Returns
         -------
-        mean : ndarray of shape (steps,)
+        predictions : ndarray of shape (steps,)
             Point forecasts for steps 1..steps.
 
         Raises
         ------
         ValueError
             If model hasn't been fitted, steps <= 0, or exog shape is incorrect.
+        
         """
-        check_is_fitted(self, "model_")
         
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
         
-        # Convert exog to numpy array if needed
         if exog is not None:
             exog = np.asarray(exog, dtype=float)
             if exog.ndim == 1:
@@ -344,49 +363,49 @@ class Arima(BaseEstimator, RegressorMixin):
                 f"but `exog` was not provided for prediction."
             )
         
-        # Generate predictions using base implementation
-        result = predict_arima(
+        predictions = predict_arima(
             model   = self.model_,
             n_ahead = steps,
             newxreg = exog,
             se_fit  = False
         )
         
-        return result['pred']
+        return predictions['pred']
 
+    @check_is_fitted
     def predict_interval(
         self,
         steps: int = 1,
         level: list[float] | tuple[float, ...] | None = None,
         alpha: float | None = None,
         as_frame: bool = True,
-        exog: pd.Series | pd.DataFrame | np.ndarray | None = None,
-    ) -> pd.DataFrame | np.ndarray:
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None
+    ) -> np.ndarray | pd.DataFrame:
         """
         Forecast with prediction intervals.
 
         Parameters
         ----------
-        steps : int, default=1
+        steps : int, default 1
             Forecast horizon.
-        level : list or tuple of float, default=None
+        level : list or tuple of float, default None
             Confidence levels in percent (e.g., 80 for 80% intervals).
             If None and alpha is None, defaults to (80, 95).
             Cannot be specified together with `alpha`.
-        alpha : float, default=None
+        alpha : float, default None
             The significance level for the prediction interval. 
             If specified, the confidence interval will be (1 - alpha) * 100%.
             For example, alpha=0.05 gives 95% intervals.
             Cannot be specified together with `level`.
-        as_frame : bool, default=True
+        as_frame : bool, default True
             If True, return a tidy DataFrame with columns 'mean', 'lower_<L>',
             'upper_<L>' for each level L. If False, return a NumPy ndarray.
-        exog : Series, DataFrame, or ndarray of shape (steps, n_exog_features), default=None
+        exog : ndarray, Series or DataFrame of shape (steps, n_exog_features), default None
             Exogenous regressors for the forecast period.
 
         Returns
         -------
-        pandas DataFrame or numpy ndarray
+        predictions : numpy ndarray, pandas DataFrame
             If as_frame=True, pandas DataFrame with columns 'mean', 'lower_<L>',
             'upper_<L>' for each level L. If as_frame=False, numpy ndarray.
 
@@ -401,13 +420,12 @@ class Arima(BaseEstimator, RegressorMixin):
         Kalman filter and assuming normally distributed innovations. The intervals 
         fully account for both parameter uncertainty (through the variance-covariance 
         matrix) and forecast uncertainty.
+
         """
-        check_is_fitted(self, "model_")
         
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
         
-        # Handle level and alpha parameters
         if level is not None and alpha is not None:
             raise ValueError(
                 "Cannot specify both `level` and `alpha`. Use one or the other."
@@ -420,13 +438,11 @@ class Arima(BaseEstimator, RegressorMixin):
         elif level is None:
             level = (80, 95)
         
-        # Ensure level is iterable
         if isinstance(level, (int, float, np.number)):
             level = [level]
         else:
             level = list(level)
         
-        # Convert exog to numpy array if needed
         if exog is not None:
             exog = np.asarray(exog, dtype=float)
             if exog.ndim == 1:
@@ -450,20 +466,18 @@ class Arima(BaseEstimator, RegressorMixin):
                 f"but `exog` was not provided for prediction."
             )
         
-        # Generate predictions with standard errors
-        result = predict_arima(
+        raw_preds = predict_arima(
             model   = self.model_,
             n_ahead = steps,
             newxreg = exog,
             se_fit  = True
         )
         
-        mean = np.asarray(result['pred'])
-        se = np.asarray(result['se'])
+        mean = np.asarray(raw_preds['pred'])
+        se = np.asarray(raw_preds['se'])
         levels = list(level)
         n_levels = len(levels)
 
-        # Preallocate and compute intervals
         lower = np.empty((steps, n_levels), dtype=float)
         upper = np.empty((steps, n_levels), dtype=float)
         for i, lv in enumerate(levels):
@@ -472,23 +486,26 @@ class Arima(BaseEstimator, RegressorMixin):
             lower[:, i] = mean - z * se
             upper[:, i] = mean + z * se
 
-        results = np.empty((steps, 1 + 2 * n_levels), dtype=float)
-        results[:, 0] = mean
+        predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
+        predictions[:, 0] = mean
         for i in range(n_levels):
-            results[:, 1 + 2 * i] = lower[:, i]
-            results[:, 1 + 2 * i + 1] = upper[:, i]
+            predictions[:, 1 + 2 * i] = lower[:, i]
+            predictions[:, 1 + 2 * i + 1] = upper[:, i]
 
         if as_frame:
-            idx = pd.RangeIndex(1, steps + 1, name="step")
             col_names = ["mean"]
             for level in levels:
                 level = int(level)
                 col_names.append(f"lower_{level}")
                 col_names.append(f"upper_{level}")
-            results = pd.DataFrame(results, index=idx, columns=col_names)
+            
+            predictions = pd.DataFrame(
+                predictions, columns=col_names, index=pd.RangeIndex(1, steps + 1, name="step")
+            )
 
-        return results
+        return predictions
 
+    @check_is_fitted
     def get_residuals(self) -> np.ndarray:
         """
         Get in-sample residuals (observed - fitted) from the ARIMA model.
@@ -504,11 +521,13 @@ class Arima(BaseEstimator, RegressorMixin):
             If the model has not been fitted.
         RuntimeError
             If reduce_memory() has been called (residuals are no longer available).
+        
         """
-        check_is_fitted(self, "model_")
+
         check_memory_reduced(self, 'get_residuals')
         return self.in_sample_residuals_
 
+    @check_is_fitted
     def get_fitted_values(self) -> np.ndarray:
         """
         Get in-sample fitted values from the ARIMA model.
@@ -524,11 +543,13 @@ class Arima(BaseEstimator, RegressorMixin):
             If the model has not been fitted.
         RuntimeError
             If reduce_memory() has been called (fitted values are no longer available).
+        
         """
-        check_is_fitted(self, "model_")
+        
         check_memory_reduced(self, 'get_fitted_values')
         return self.fitted_values_
 
+    @check_is_fitted
     def summary(self) -> None:
         """
         Print a summary of the fitted ARIMA model.
@@ -541,8 +562,9 @@ class Arima(BaseEstimator, RegressorMixin):
             If the model has not been fitted.
         RuntimeError
             If reduce_memory() has been called (summary information is no longer available).
+        
         """
-        check_is_fitted(self, "model_")
+        
         check_memory_reduced(self, 'summary')
                 
         print("ARIMA Model Summary")
@@ -591,27 +613,7 @@ class Arima(BaseEstimator, RegressorMixin):
         print(f"  75%:                 {np.percentile(self.y_train_, 75):.4f}")
         print(f"  Max:                 {np.max(self.y_train_):.4f}")
 
-    def params(self) -> np.ndarray:
-        """
-        Get the parameters of the fitted model.
-        
-        The order of variables is the AR coefficients, MA coefficients, 
-        seasonal AR coefficients, seasonal MA coefficients, exogenous 
-        coefficients (if any), and intercept (if included).
-
-        Returns
-        -------
-        params : ndarray
-            The parameters of the model.
-        
-        Raises
-        ------
-        NotFittedError
-            If the model has not been fitted.
-        """
-        check_is_fitted(self, "model_")
-        return self.coef_
-
+    @check_is_fitted
     def get_score(self, y: None = None) -> float:
         """
         Compute R^2 score using in-sample fitted values.
@@ -632,8 +634,9 @@ class Arima(BaseEstimator, RegressorMixin):
             If the model has not been fitted.
         RuntimeError
             If reduce_memory() has been called (score cannot be computed).
+        
         """
-        check_is_fitted(self, "model_")
+        
         check_memory_reduced(self, 'get_score')
         
         y = self.y_train_
@@ -646,15 +649,17 @@ class Arima(BaseEstimator, RegressorMixin):
         
         ss_res = np.sum((y[mask] - fitted[mask]) ** 2)
         ss_tot = np.sum((y[mask] - y[mask].mean()) ** 2) + np.finfo(float).eps
+        
         return 1.0 - ss_res / ss_tot
 
+    @check_is_fitted
     def get_info_criteria(self, criteria: str = 'aic') -> float:
         """
         Get the selected information criterion.
 
         Parameters
         ----------
-        criteria : str, default='aic'
+        criteria : str, default 'aic'
             The information criterion to retrieve. Valid options are 
             {'aic', 'bic'}.
 
@@ -669,8 +674,8 @@ class Arima(BaseEstimator, RegressorMixin):
             If an invalid criteria is specified.
         NotFittedError
             If the model has not been fitted.
+        
         """
-        check_is_fitted(self, "model_")
         
         if criteria not in ['aic', 'bic']:
             raise ValueError(
@@ -687,35 +692,6 @@ class Arima(BaseEstimator, RegressorMixin):
                     "the model did not converge or other estimation issues."
                 )
             return self.bic_
-
-    def get_params(self, deep: bool = True) -> dict:
-        """
-        Get parameters for this estimator.
-
-        Parameters
-        ----------
-        deep : bool, default=True
-            If True, will return the parameters for this estimator and
-            contained subobjects that are estimators.
-
-        Returns
-        -------
-        params : dict
-            Parameter names mapped to their values.
-        """
-        return {
-            "order": self.order,
-            "seasonal_order": self.seasonal_order,
-            "m": self.m,
-            "include_mean": self.include_mean,
-            "transform_pars": self.transform_pars,
-            "method": self.method,
-            "n_cond": self.n_cond,
-            "SSinit": self.SSinit,
-            "optim_method": self.optim_method,
-            "optim_control": self.optim_control,
-            "kappa": self.kappa,
-        }
 
     def set_params(self, **params) -> "Arima":
         """
@@ -741,7 +717,7 @@ class Arima(BaseEstimator, RegressorMixin):
         ValueError
             If any parameter key is invalid.
         """
-        # Validate parameter keys
+
         valid_params = {
             'order', 'seasonal_order', 'm', 'include_mean', 'transform_pars',
             'method', 'n_cond', 'SSinit', 'optim_method', 'optim_control', 'kappa'
@@ -752,24 +728,78 @@ class Arima(BaseEstimator, RegressorMixin):
                     f"Invalid parameter '{key}'. Valid parameters are: {valid_params}"
                 )
         
-        # Set the parameters
         for key, value in params.items():
             setattr(self, key, value)
         
-        # Reset fitted state - remove fitted attributes if they exist
+        # TODO: esto debería ser un set to None? Si lo borramos dejan de exitir y 
+        # no funciona igual que cuando se inicializa
         fitted_attrs = [
             'model_', 'y_train_', 'coef_', 'coef_names_', 'sigma2_', 'loglik_',
             'aic_', 'bic_', 'arma_', 'converged_', 'fitted_values_',
             'in_sample_residuals_', 'var_coef_', 'n_features_in_', 'n_exog_features_in_'
         ]
         for attr in fitted_attrs:
-            if hasattr(self, attr):
-                delattr(self, attr)
+            setattr(self, attr, None)
         
         self.is_memory_reduced = False
+        self.is_fitted         = False
         
         return self
+    
+    @check_is_fitted
+    def params(self) -> np.ndarray:
+        """
+        Get the parameters of the fitted model.
+        
+        The order of variables is the AR coefficients, MA coefficients, 
+        seasonal AR coefficients, seasonal MA coefficients, exogenous 
+        coefficients (if any), and intercept (if included).
 
+        Returns
+        -------
+        params : ndarray
+            The parameters of the model.
+        
+        Raises
+        ------
+        NotFittedError
+            If the model has not been fitted.
+        
+        """
+
+        return self.coef_
+
+    @check_is_fitted
+    def get_params(self, deep: bool = True) -> dict:
+        """
+        Get parameters for this estimator.
+
+        Parameters
+        ----------
+        deep : bool, default True
+            If True, will return the parameters for this estimator and
+            contained subobjects that are estimators.
+
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their values.
+        """
+        return {
+            "order": self.order,
+            "seasonal_order": self.seasonal_order,
+            "m": self.m,
+            "include_mean": self.include_mean,
+            "transform_pars": self.transform_pars,
+            "method": self.method,
+            "n_cond": self.n_cond,
+            "SSinit": self.SSinit,
+            "optim_method": self.optim_method,
+            "optim_control": self.optim_control,
+            "kappa": self.kappa,
+        }
+
+    @check_is_fitted
     def reduce_memory(self) -> "Arima":
         """
         Free memory by deleting large attributes after fitting.
@@ -797,8 +827,8 @@ class Arima(BaseEstimator, RegressorMixin):
         --------
         This operation is irreversible. You will need to refit the model to 
         access the removed attributes.
+
         """
-        check_is_fitted(self, "model_")
         
         if self.is_memory_reduced:
             warnings.warn(
@@ -807,7 +837,6 @@ class Arima(BaseEstimator, RegressorMixin):
             )
             return self
         
-        # Delete large memory-consuming attributes, but keep model_ for predictions
         attrs_to_delete = [
             'y_train_', 'fitted_values_', 'in_sample_residuals_', 'var_coef_'
         ]

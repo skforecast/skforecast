@@ -1,7 +1,9 @@
 # Unit test set_params method - Arima
 # ==============================================================================
-import numpy as np
+import re
 import pytest
+import numpy as np
+from sklearn.exceptions import NotFittedError
 from ..._arima import Arima
 
 
@@ -128,14 +130,14 @@ def test_set_params_after_fit_requires_refit():
     
     # Change parameters
     model.set_params(order=(2, 0, 0))
+    assert model.is_fitted is False
     
     # Predictions should fail without refitting
-    from sklearn.exceptions import NotFittedError
-    msg = (
+    error_msg = re.escape(
         "This Arima instance is not fitted yet. Call 'fit' with "
         "appropriate arguments before using this estimator."
     )
-    with pytest.raises(NotFittedError, match=msg):
+    with pytest.raises(NotFittedError, match=error_msg):
         model.predict(steps=5)
     
     # Refit and predictions should work again

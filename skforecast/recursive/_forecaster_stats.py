@@ -36,7 +36,9 @@ from ..utils import (
     initialize_estimator
 )
 
+
 # TODO: Create methods remove estimator, list estimators
+# TODO: all wrapers show have method get_params and set_params
 class ForecasterStats():
     """
     This class turns statistical models into a Forecaster compatible with the 
@@ -91,6 +93,8 @@ class ForecasterStats():
     estimator_types_ : tuple
         Full qualified type string for each estimator (e.g., 
         'skforecast.stats._arima.Arima').
+    estimator_parms_ : dict
+        Dictionary containing the parameters of each estimator.
     n_estimators : int
         Number of estimators in the forecaster.
     transformer_y : object transformer (preprocessor)
@@ -225,6 +229,7 @@ class ForecasterStats():
         self.estimator_names_        = self._generate_estimator_names(self.estimators)
         self.estimator_types_        = tuple(estimator_types_)
         self.n_estimators            = len(self.estimators)
+        self.estimator_params_       = None
         self.transformer_y           = transformer_y
         self.transformer_exog        = transformer_exog
         self.window_size             = 1
@@ -456,22 +461,31 @@ class ForecasterStats():
 
         return self.estimators_[idx]
     
-    def _preprocess_repr(self) -> tuple[str, str]:
+    def _preprocess_repr(self) -> tuple[list[str], str]:
         """
         Format text for __repr__ method.
 
         Returns
         -------
-        text : str
-            Formatted text.
+        estimator_params : list[str]
+            List of formatted parameters for each estimator.
+        exog_names_in_ : str
+            Formatted exogenous variable names.
 
         """
-        params = str(self.params)
-        if len(params) > 58:
-            params = "\n    " + textwrap.fill(
-                params, width=80, subsequent_indent="    "
-            )
+        
+        # Format parameters for each estimator
+        estimator_params = []
+        if self.estimator_params_ is not None:
+            for name in self.estimator_names_:
+                params = str(self.estimator_params_[name])
+                if len(params) > 58:
+                    params = "\n        " + textwrap.fill(
+                        params, width=76, subsequent_indent="        "
+                    )
+                estimator_params.append(f"{name}: {params}")
 
+        # Format exogenous variable names
         exog_names_in_ = None
         if self.exog_names_in_ is not None:
             exog_names_in_ = copy(self.exog_names_in_)
@@ -483,9 +497,8 @@ class ForecasterStats():
                     exog_names_in_, width=80, subsequent_indent="    "
                 )
         
-        return params, exog_names_in_
+        return estimator_params, exog_names_in_
 
-    # TODO: Adapt for multiple estimators
     def __repr__(
         self
     ) -> str:
@@ -493,13 +506,14 @@ class ForecasterStats():
         Information displayed when a ForecasterStats object is printed.
         """
 
-        params, exog_names_in_ = self._preprocess_repr()
+        estimator_params, exog_names_in_ = self._preprocess_repr()
+        params_list = "\n    ".join(estimator_params)
 
         info = (
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Estimator: {self.estimator} \n"
+            f"Estimators: {self.estimator_names_} \n"
             f"Series name: {self.series_name_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
@@ -508,7 +522,7 @@ class ForecasterStats():
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
-            f"Estimator parameters: {params} \n"
+            f"Estimator parameters: \n    {params_list} \n"
             f"fit_kwargs: {self.fit_kwargs} \n"
             f"Creation date: {self.creation_date} \n"
             f"Last fit date: {self.fit_date} \n"
@@ -528,17 +542,23 @@ class ForecasterStats():
         The "General Information" section is expanded by default.
         """
 
-        params, exog_names_in_ = self._preprocess_repr()
+        estimator_params, exog_names_in_ = self._preprocess_repr()
         style, unique_id = get_style_repr_html(self.is_fitted)
 
-        # Get details if applicable to extended estimator name
-        estimator_details = ""
-        if self.estimator_type == 'skforecast.stats._ets.Ets' and self.is_fitted:
-            estimator_details = (
-                f"({self.estimator.model_config_['error']}"
-                f"{self.estimator.model_config_['trend']}"
-                f"{self.estimator.model_config_['season']})"
-            )
+        # Build estimators list
+        estimators_html = "<ul>"
+        for name in self.estimator_names_:
+            estimators_html += f"<li>{name}</li>"
+        estimators_html += "</ul>"
+
+        # Build parameters section
+        if len(estimator_params) == 1:
+            params_html = f"<ul><li>{estimator_params[0]}</li></ul>"
+        else:
+            params_html = "<ul>"
+            for param in estimator_params:
+                params_html += f"<li>{param}</li>"
+            params_html += "</ul>"
 
         content = f"""
         <div class="container-{unique_id}">
@@ -546,7 +566,7 @@ class ForecasterStats():
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Estimator:</strong> {type(self.estimator).__name__}{estimator_details}</li>                  
+                    <li><strong>Estimators:</strong> {estimators_html}</li>                  
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
@@ -580,9 +600,7 @@ class ForecasterStats():
             </details>
             <details>
                 <summary>Estimator Parameters</summary>
-                <ul>
-                    {params}
-                </ul>
+                {params_html}
             </details>
             <details>
                 <summary>Fit Kwargs</summary>
@@ -638,6 +656,7 @@ class ForecasterStats():
         # Not reset estimator_names_ and estimator_types_ since they
         # are needed to identify each estimator.
         self.estimators_             = [copy(est) for est in self.estimators]
+        self.estimator_params_       = None
         self.last_window_            = None
         self.extended_index_         = None
         self.index_type_             = None
@@ -719,6 +738,10 @@ class ForecasterStats():
 
         self.is_fitted = True
         self.estimator_names_ = self._generate_estimator_names(self.estimators_)
+        self.estimator_params_ = {
+            name: est.get_params() 
+            for name, est in zip(self.estimator_names_, self.estimators_)
+        }
         self.series_name_in_ = y.name if y.name is not None else 'y'
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.training_range_ = y.index[[0, -1]]
@@ -1293,6 +1316,7 @@ class ForecasterStats():
         preds = estimator.predict_interval(fh=fh, X=exog, coverage=1 - alpha).to_numpy()
         return preds
 
+    # TODO: Add get_params and set_params for each estimator when multiple estimators are supported
     def set_params(
         self, 
         params: dict[str, object] | dict[str, dict[str, object]]

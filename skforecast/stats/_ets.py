@@ -6,19 +6,18 @@
 # coding=utf-8
 
 from __future__ import annotations
-from typing import Literal
+from typing import Any, Literal
 import numpy as np
 import pandas as pd
 from dataclasses import asdict
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.utils.validation import check_is_fitted
 
 from .exponential_smoothing._ets_base import (
     ets,
     auto_ets,
     forecast_ets
 )
-from ._utils import check_memory_reduced
+from ._utils import check_is_fitted, check_memory_reduced
 
 
 class Ets(BaseEstimator, RegressorMixin):
@@ -33,7 +32,7 @@ class Ets(BaseEstimator, RegressorMixin):
 
     Parameters
     ----------
-    m : int, default=1
+    m : int, default 1
         Seasonal period (e.g., 12 for monthly data with yearly seasonality).
     model : str, None, default "ZZZ"
         Three-letter model specification (e.g., "ANN", "AAA", "MAM"):
@@ -54,21 +53,21 @@ class Ets(BaseEstimator, RegressorMixin):
         Damping parameter (0 < phi < 1). If None, estimated.
     lambda_param : float, optional
         Box-Cox transformation parameter. If None, no transformation applied.
-    lambda_auto : bool, default=False
+    lambda_auto : bool, default False
         If True, automatically select optimal Box-Cox lambda parameter.
-    bias_adjust : bool, default=True
+    bias_adjust : bool, default True
         Apply bias adjustment when back-transforming forecasts.
-    bounds : str, default="both"
+    bounds : str, default "both"
         Parameter bounds type: "usual", "admissible", or "both".
-    seasonal : bool, default=True
+    seasonal : bool, default True
         Allow seasonal models (only used with model="ZZZ").
     trend : bool, optional
         Allow trend models. If None, automatically determined (only with model="ZZZ").
-    ic : {"aic", "aicc", "bic"}, default="aicc"
+    ic : {"aic", "aicc", "bic"}, default "aicc"
         Information criterion for model selection (only with model="ZZZ").
-    allow_multiplicative : bool, default=True
+    allow_multiplicative : bool, default True
         Allow multiplicative error and season models (only with model="ZZZ").
-    allow_multiplicative_trend : bool, default=False
+    allow_multiplicative_trend : bool, default False
         Allow multiplicative trend models (only with model="ZZZ").
 
     Attributes
@@ -204,7 +203,7 @@ class Ets(BaseEstimator, RegressorMixin):
         self.n_features_in_             = None
         self.is_memory_reduced          = False
         self.is_fitted                  = False
-        self.estimator_id               = f"ETS({self.model})"
+        self.estimator_id               = f"Ets({self.model})"
 
     def __repr__(self) -> str:
         """
@@ -301,10 +300,11 @@ class Ets(BaseEstimator, RegressorMixin):
         if self.model_config_['damped'] and self.model_config_['trend'] != "N":
             model_name = f"{self.model_config_['error']}{self.model_config_['trend']}d{self.model_config_['season']}"
 
-        self.estimator_id = f"ETS({model_name})"
+        self.estimator_id = f"Ets({model_name})"
 
         return self
 
+    @check_is_fitted
     def predict(self, steps: int, exog: None = None) -> np.ndarray:
         """
         Generate mean forecasts steps ahead.
@@ -318,54 +318,57 @@ class Ets(BaseEstimator, RegressorMixin):
 
         Returns
         -------
-        mean : ndarray of shape (steps,)
+        predictions : ndarray of shape (steps,)
             Point forecasts for steps 1..h.
+        
         """
-        check_is_fitted(self, "model_")
+        
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
 
-        result = forecast_ets(
+        predictions = forecast_ets(
             self.model_,
             h           = steps,
             bias_adjust = self.bias_adjust,
             level       = None
         )
-        return result["mean"]
+        return predictions["mean"]
 
+    @check_is_fitted
     def predict_interval(
         self,
         steps: int = 1,
         level: list[float] | tuple[float, ...] = (80, 95),
         as_frame: bool = True,
-        exog: None = None,
-    ) -> pd.DataFrame | np.ndarray:
+        exog: Any = None,
+    ) -> np.ndarray | pd.DataFrame:
         """
         Forecast with prediction intervals.
 
         Parameters
         ----------
-        steps : int, default=1
+        steps : int, default 1
             Forecast horizon.
-        level : list or tuple of float, default=(80, 95)
+        level : list or tuple of float, default (80, 95)
             Confidence levels in percent.
-        as_frame : bool, default=True
+        as_frame : bool, default True
             If True, return a tidy DataFrame with columns 'mean', 'lower_<L>',
             'upper_<L>' for each level L. If False, return a NumPy ndarray.
-        exog : None
+        exog : Ignored
             Exogenous variables. Ignored, present for API compatibility.
 
         Returns
         -------
-        pandas DataFrame or numpy ndarray
+        predictions : numpy ndarray, pandas DataFrame
             If as_frame=True, pandas DataFrame with columns 'mean', 'lower_<L>',
             'upper_<L>' for each level L. If as_frame=False, numpy ndarray.
+        
         """
-        check_is_fitted(self, "model_")
+        
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
 
-        result = forecast_ets(
+        raw_preds = forecast_ets(
             self.model_,
             h           = steps,
             bias_adjust = self.bias_adjust,
@@ -374,17 +377,18 @@ class Ets(BaseEstimator, RegressorMixin):
 
         levels = list(level) if level is not None else []
         n_levels = len(levels)
-        mean = np.asarray(result["mean"])
-        results = np.empty((steps, 1 + 2 * n_levels), dtype=float)
-        results[:, 0] = mean
+        mean = np.asarray(raw_preds["mean"])
+
+        predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
+        predictions[:, 0] = mean
         for i, lv in enumerate(levels):
             lv_int = int(lv)
             lower_key = f"lower_{lv_int}"
             upper_key = f"upper_{lv_int}"
-            lower_arr = np.asarray(result[lower_key])
-            upper_arr = np.asarray(result[upper_key])
-            results[:, 1 + 2 * i] = lower_arr
-            results[:, 1 + 2 * i + 1] = upper_arr
+            lower_arr = np.asarray(raw_preds[lower_key])
+            upper_arr = np.asarray(raw_preds[upper_key])
+            predictions[:, 1 + 2 * i] = lower_arr
+            predictions[:, 1 + 2 * i + 1] = upper_arr
 
         if as_frame:
             col_names = ["mean"]
@@ -392,11 +396,14 @@ class Ets(BaseEstimator, RegressorMixin):
                 level = int(level)
                 col_names.append(f"lower_{level}")
                 col_names.append(f"upper_{level}")
-            index = pd.RangeIndex(1, steps + 1, name="step")
-            results = pd.DataFrame(results, columns=col_names, index=index)
+            
+            predictions = pd.DataFrame(
+                predictions, columns=col_names, index=pd.RangeIndex(1, steps + 1, name="step")
+            )
 
-        return results
+        return predictions
 
+    @check_is_fitted
     def get_residuals(self) -> np.ndarray:
         """
         Get in-sample residuals (observed - fitted) from the ETS model.
@@ -404,11 +411,13 @@ class Ets(BaseEstimator, RegressorMixin):
         Returns
         -------
         residuals : ndarray of shape (n_samples,)
+
         """
-        check_is_fitted(self, "model_")
+        
         check_memory_reduced(self, 'residuals_')
         return self.in_sample_residuals_
 
+    @check_is_fitted
     def get_fitted_values(self) -> np.ndarray:
         """
         Get in-sample fitted values from the ETS model.
@@ -416,16 +425,18 @@ class Ets(BaseEstimator, RegressorMixin):
         Returns
         -------
         fitted : ndarray of shape (n_samples,)
+
         """
-        check_is_fitted(self, "model_")
+        
         check_memory_reduced(self, 'fitted_')
         return self.fitted_values_
 
+    @check_is_fitted
     def summary(self) -> None:
         """
         Print a summary of the fitted ETS model.
         """
-        check_is_fitted(self, "model_")
+        
         check_memory_reduced(self, 'summary')
 
         print("ETS Model Summary")
@@ -474,22 +485,25 @@ class Ets(BaseEstimator, RegressorMixin):
         print(f"  75%:                 {np.percentile(self.y_train_, 75):.4f}")
         print(f"  Max:                 {np.max(self.y_train_):.4f}")
 
-    def get_score(self, y: None = None) -> float:
+    @check_is_fitted
+    def get_score(self, y: Any = None) -> float:
         """
         R^2 using in-sample fitted values.
 
         Parameters
         ----------
-        y : ignored
+        y : Ignored
             Present for API compatibility.
 
         Returns
         -------
         score : float
             Coefficient of determination.
+        
         """
-        check_is_fitted(self, "model_")
+        
         check_memory_reduced(self, 'score')
+
         y = self.y_train_
         fitted = self.fitted_values_
 
@@ -500,41 +514,8 @@ class Ets(BaseEstimator, RegressorMixin):
 
         ss_res = np.sum((y[mask] - fitted[mask]) ** 2)
         ss_tot = np.sum((y[mask] - y[mask].mean()) ** 2) + np.finfo(float).eps
+
         return 1.0 - ss_res / ss_tot
-
-    def get_params(self, deep: bool = True) -> dict:
-        """
-        Get parameters for this estimator.
-
-        Parameters
-        ----------
-        deep : bool, default=True
-            If True, will return the parameters for this estimator and
-            contained subobjects that are estimators.
-
-        Returns
-        -------
-        params : dict
-            Parameter names mapped to their values.
-        """
-        return {
-            "m": self.m,
-            "model": self.model,
-            "damped": self.damped,
-            "alpha": self.alpha,
-            "beta": self.beta,
-            "gamma": self.gamma,
-            "phi": self.phi,
-            "lambda_param": self.lambda_param,
-            "lambda_auto": self.lambda_auto,
-            "bias_adjust": self.bias_adjust,
-            "bounds": self.bounds,
-            "seasonal": self.seasonal,
-            "trend": self.trend,
-            "ic": self.ic,
-            "allow_multiplicative": self.allow_multiplicative,
-            "allow_multiplicative_trend": self.allow_multiplicative_trend,
-        }
 
     def set_params(self, **params) -> Ets:
         """
@@ -560,7 +541,9 @@ class Ets(BaseEstimator, RegressorMixin):
         ------
         ValueError
             If any parameter key is invalid.
+        
         """
+
         # Validate parameter keys
         valid_params = {
             'm', 'model', 'damped', 'alpha', 'beta', 'gamma', 'phi',
@@ -592,6 +575,39 @@ class Ets(BaseEstimator, RegressorMixin):
         
         return self
 
+    @check_is_fitted
+    def get_params(self, deep: bool = True) -> dict:
+        """
+        Get parameters for this estimator.
+
+        Parameters
+        ----------
+        deep : bool, default True
+            If True, will return the parameters for this estimator and
+            contained subobjects that are estimators.
+
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their values.
+        
+        """
+
+        return {
+            "m": self.m,
+            "model": self.model,
+            "damped": self.damped,
+            "alpha": self.alpha,
+            "beta": self.beta,
+            "gamma": self.gamma,
+            "phi": self.phi,
+            "seasonal": self.seasonal,
+            "trend": self.trend,
+            "allow_multiplicative": self.allow_multiplicative,
+            "allow_multiplicative_trend": self.allow_multiplicative_trend,
+        }
+    
+    @check_is_fitted
     def reduce_memory(self) -> Ets:
         """
         Reduce memory usage by removing internal arrays not needed for prediction.
@@ -615,7 +631,6 @@ class Ets(BaseEstimator, RegressorMixin):
             The estimator with reduced memory usage.
         
         """
-        check_is_fitted(self, "model_")
         
         # Clear arrays at Ets level
         self.y_train_ = None
