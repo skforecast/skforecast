@@ -525,13 +525,8 @@ class Ets(BaseEstimator, RegressorMixin):
             "beta": self.beta,
             "gamma": self.gamma,
             "phi": self.phi,
-            "lambda_param": self.lambda_param,
-            "lambda_auto": self.lambda_auto,
-            "bias_adjust": self.bias_adjust,
-            "bounds": self.bounds,
             "seasonal": self.seasonal,
             "trend": self.trend,
-            "ic": self.ic,
             "allow_multiplicative": self.allow_multiplicative,
             "allow_multiplicative_trend": self.allow_multiplicative_trend,
         }
