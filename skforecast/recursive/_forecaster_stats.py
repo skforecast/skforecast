@@ -460,23 +460,35 @@ class ForecasterStats():
 
         return self.estimators_[idx]
     
-    # TODO: Adapt for multiple estimators: parms does not exist
-    def _preprocess_repr(self) -> tuple[str, str]:
+    def _preprocess_repr(self) -> tuple[list[str], list[str], str]:
         """
         Format text for __repr__ method.
 
         Returns
         -------
-        text : str
-            Formatted text.
+        estimator_names : list[str]
+            List of formatted estimator names.
+        estimator_params : list[str]
+            List of formatted parameters for each estimator.
+        exog_names_in_ : str
+            Formatted exogenous variable names.
 
         """
-        params = str(self.params)
-        if len(params) > 58:
-            params = "\n    " + textwrap.fill(
-                params, width=80, subsequent_indent="    "
-            )
+        
+        estimator_names = self.estimator_names_
 
+        # Format parameters for each estimator
+        estimator_params = []
+        if self.estimator_params_ is not None:
+            for name in estimator_names:
+                params = str(self.estimator_params_[name])
+                if len(params) > 58:
+                    params = "\n        " + textwrap.fill(
+                        params, width=76, subsequent_indent="        "
+                    )
+                estimator_params.append(f"{name}: {params}")
+
+        # Format exogenous variable names
         exog_names_in_ = None
         if self.exog_names_in_ is not None:
             exog_names_in_ = copy(self.exog_names_in_)
@@ -488,9 +500,8 @@ class ForecasterStats():
                     exog_names_in_, width=80, subsequent_indent="    "
                 )
         
-        return params, exog_names_in_
+        return estimator_names, estimator_params, exog_names_in_
 
-    # TODO: Adapt for multiple estimators
     def __repr__(
         self
     ) -> str:
@@ -498,13 +509,14 @@ class ForecasterStats():
         Information displayed when a ForecasterStats object is printed.
         """
 
-        params, exog_names_in_ = self._preprocess_repr()
+        estimator_names, estimator_params, exog_names_in_ = self._preprocess_repr()
+        params_list = "\n    ".join(estimator_params)
 
         info = (
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Estimator: {self.estimator} \n"
+            f"Estimators: {estimator_names} \n"
             f"Series name: {self.series_name_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
@@ -513,7 +525,7 @@ class ForecasterStats():
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
-            f"Estimator parameters: {params} \n" # TODO: params does not exist
+            f"Estimator parameters: \n    {params_list} \n"
             f"fit_kwargs: {self.fit_kwargs} \n"
             f"Creation date: {self.creation_date} \n"
             f"Last fit date: {self.fit_date} \n"
@@ -533,17 +545,23 @@ class ForecasterStats():
         The "General Information" section is expanded by default.
         """
 
-        params, exog_names_in_ = self._preprocess_repr()
+        estimator_names, estimator_params, exog_names_in_ = self._preprocess_repr()
         style, unique_id = get_style_repr_html(self.is_fitted)
 
-        # Get details if applicable to extended estimator name
-        estimator_details = ""
-        if self.estimator_type == 'skforecast.stats._ets.Ets' and self.is_fitted:
-            estimator_details = (
-                f"({self.estimator.model_config_['error']}"
-                f"{self.estimator.model_config_['trend']}"
-                f"{self.estimator.model_config_['season']})"
-            )
+        # Build estimators list
+        estimators_html = "<ul>"
+        for name in self.estimator_names_:
+            estimators_html += f"<li>{name}</li>"
+        estimators_html += "</ul>"
+
+        # Build parameters section
+        if len(estimator_params) == 1:
+            params_html = f"<li>{estimator_params[0]}</li>"
+        else:
+            params_html = "<ul>"
+            for param in estimator_params:
+                params_html += f"<li>{param}</li>"
+            params_html += "</ul>"
 
         content = f"""
         <div class="container-{unique_id}">
@@ -551,7 +569,7 @@ class ForecasterStats():
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Estimator:</strong> {type(self.estimator).__name__}{estimator_details}</li>                  
+                    <li><strong>Estimators:</strong> {estimators_html}</li>                  
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
@@ -585,9 +603,7 @@ class ForecasterStats():
             </details>
             <details>
                 <summary>Estimator Parameters</summary>
-                <ul>
-                    {params}
-                </ul>
+                {params_html}
             </details>
             <details>
                 <summary>Fit Kwargs</summary>
