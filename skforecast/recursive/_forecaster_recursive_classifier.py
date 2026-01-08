@@ -1428,11 +1428,15 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 shape=(steps, self.n_classes_), fill_value=np.nan, dtype=float
             )
 
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values is not None
+
         for i in range(steps):
 
-            if self.lags is not None:
+            if has_lags:
                 X[:n_lags] = last_window[-self.lags - (steps - i)]
-            if self.window_features is not None:
+            if has_window_features:
                 window_data = last_window[i : -(steps - i)]
                 X[n_lags : n_lags + n_window_features] = np.concatenate(
                     [
@@ -1440,7 +1444,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                         for wf in self.window_features
                     ]
                 )
-            if exog_values is not None:
+            if has_exog:
                 X[n_lags + n_window_features:] = exog_values[i]
 
             if predict_proba:
