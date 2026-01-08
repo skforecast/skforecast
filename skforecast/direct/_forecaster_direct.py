@@ -13,10 +13,10 @@ import numpy as np
 import pandas as pd
 import inspect
 from copy import copy, deepcopy
-import sklearn
-from sklearn.exceptions import NotFittedError
-from sklearn.pipeline import Pipeline
 from sklearn.base import clone
+from sklearn.exceptions import NotFittedError
+from sklearn.linear_model._base import LinearModel
+from sklearn.pipeline import Pipeline
 from joblib import Parallel, delayed, cpu_count
 
 from .. import __version__
@@ -1740,7 +1740,7 @@ class ForecasterDirect(ForecasterBase):
         estimators = [self.estimators_[step] for step in steps]
         
         estimator_name = type(self.estimator).__name__
-        is_linear = isinstance(self.estimator, sklearn.linear_model._base.LinearModel)
+        is_linear = isinstance(self.estimator, LinearModel)
         is_lightgbm = estimator_name == 'LGBMRegressor'
         is_xgboost = estimator_name == 'XGBRegressor'
         

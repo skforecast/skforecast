@@ -13,11 +13,12 @@ import numpy as np
 import pandas as pd
 import inspect
 from copy import copy, deepcopy
-import sklearn
-from sklearn.exceptions import NotFittedError
-from sklearn.pipeline import Pipeline
 from sklearn.base import clone
+from sklearn.exceptions import NotFittedError
+from sklearn.linear_model._base import LinearModel
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
+from sklearn.svm._base import BaseLibSVM
 
 from .. import __version__
 from ..base import ForecasterBase
@@ -473,13 +474,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                dtype      = int
                            ).set_output(transform='pandas')
 
-        scaling_estimators = tuple(
-            member[1]
-            for member in inspect.getmembers(sklearn.linear_model, inspect.isclass)
-            + inspect.getmembers(sklearn.svm, inspect.isclass)
-        )
-
-        if self.transformer_series is None and isinstance(estimator, scaling_estimators):
+        if self.transformer_series is None and isinstance(estimator, (LinearModel, BaseLibSVM)):
             warnings.warn(
                 "When using a linear model, it is recommended to use a transformer_series "
                 "to ensure all series are in the same scale. You can use, for example, a "
@@ -2313,7 +2308,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window = np.concatenate((last_window.to_numpy(), predictions), axis=0)
 
         estimator_name = type(self.estimator).__name__
-        is_linear = isinstance(self.estimator, sklearn.linear_model._base.LinearModel)
+        is_linear = isinstance(self.estimator, LinearModel)
         is_lightgbm = estimator_name == 'LGBMRegressor'
         is_xgboost = estimator_name == 'XGBRegressor'
 
