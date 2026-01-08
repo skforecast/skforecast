@@ -180,20 +180,20 @@ def predict_covariance_with_diff(P: np.ndarray, r: int, d: int, p: int, q: int,
         for j in range(rd):
             tmp = 0.0
             if i < p:
-                tmp += phi[i] * mm[0, j]
+                tmp += phi[i] * mm[j, 0]
             if i < r - 1:
-                tmp += mm[i + 1, j]
-            Pnew[i, j] = tmp
+                tmp += mm[j, i + 1]
+            Pnew[j, i] = tmp
 
     for j in range(rd):
-        tmp = mm[0, j]
+        tmp = mm[j, 0]
         for k in range(d):
-            tmp += delta[k] * mm[r + k, j]
-        Pnew[r, j] = tmp
+            tmp += delta[k] * mm[j, r + k]
+        Pnew[j, r] = tmp
 
     for i in range(1, d):
         for j in range(rd):
-            Pnew[r + i, j] = mm[r + i - 1, j]
+            Pnew[j, r + i] = mm[j, r + i - 1]
 
     for i in range(q + 1):
         if i == 0:
