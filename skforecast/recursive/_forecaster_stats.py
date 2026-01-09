@@ -58,6 +58,7 @@ class ForecasterStats():
         - skforecast.stats.Arar
         - skforecast.stats.Ets
         - skforecast.stats.Sarimax (statsmodels wrapper)
+        - sktime.forecasting.ARIMA (pdmarima wrapper)
         - aeon.forecasting.stats.ARIMA
         - aeon.forecasting.stats.ETS
     transformer_y : object transformer (preprocessor), default None
@@ -223,7 +224,7 @@ class ForecasterStats():
         # TODO: Decide if include 'aggregate' parameter for multiple estimators, it
         # aggregates predictions from all estimators.
         self.estimators              = estimator
-        self.estimators_             = None
+        self.estimators_             = [copy(est) for est in self.estimators]
         self.estimator_names_        = self._generate_estimator_names(self.estimators)
         self.estimator_types_        = estimator_types_
         self.n_estimators            = len(self.estimators)
@@ -454,13 +455,6 @@ class ForecasterStats():
             The requested estimator instance.
         
         """
-
-        if not self.is_fitted:
-            raise NotFittedError(
-                "This ForecasterStats instance is not fitted yet. "
-                "Call `fit` with appropriate arguments before using "
-                "this method."
-            )
         
         if name not in self.estimator_names_:
             raise KeyError(
@@ -486,13 +480,6 @@ class ForecasterStats():
         None
         
         """
-
-        if not self.is_fitted:
-            raise NotFittedError(
-                "This ForecasterStats instance is not fitted yet. "
-                "Call `fit` with appropriate arguments before using "
-                "this method."
-            )
         
         if name not in self.estimator_names_:
             raise KeyError(
@@ -501,6 +488,7 @@ class ForecasterStats():
             )
         
         idx = self.estimator_names_.index(name)
+        del self.estimators[idx]
         del self.estimators_[idx]
         del self.estimator_names_[idx]
         del self.estimator_types_[idx]

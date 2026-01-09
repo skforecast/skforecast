@@ -146,6 +146,9 @@ class Arima(BaseEstimator, RegressorMixin):
         Flag indicating whether the estimator has been fitted.
     estimator_id : str
         String identifier for the model configuration (e.g., ``"Arima(1,1,1)(0,0,0)[1]"``).
+    estimator_selected_id_ : str
+        String identifier for the selected model configuration after fitting.
+        This may differ from estimator_id if automatic model selection was used.
 
     Notes
     -----
@@ -220,9 +223,14 @@ class Arima(BaseEstimator, RegressorMixin):
         p, d, q = self.order
         P, D, Q = self.seasonal_order
         if P == 0 and D == 0 and Q == 0:
-            self.estimator_id = f"Arima({p},{d},{q})"
+            estimator_id = f"Arima({p},{d},{q})"
         else:
-            self.estimator_id = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
+            estimator_id = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
+
+        self.estimator_id = estimator_id
+        self.estimator_selected_id_ = estimator_id
+
+        self
 
     def __repr__(self) -> str:
         """
@@ -643,7 +651,6 @@ class Arima(BaseEstimator, RegressorMixin):
 
         return value
 
-    @check_is_fitted
     def get_params(self, deep: bool = True) -> dict:
         """
         Get parameters for this estimator.
@@ -721,6 +728,15 @@ class Arima(BaseEstimator, RegressorMixin):
         
         self.is_memory_reduced = False
         self.is_fitted         = False
+        p, d, q = self.order
+        P, D, Q = self.seasonal_order
+        if P == 0 and D == 0 and Q == 0:
+            estimator_id = f"Arima({p},{d},{q})"
+        else:
+            estimator_id = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
+
+        self.estimator_id = estimator_id
+        self.estimator_selected_id_ = estimator_id
         
         return self
 

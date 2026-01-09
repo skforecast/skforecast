@@ -152,6 +152,9 @@ class Ets(BaseEstimator, RegressorMixin):
         Flag indicating whether the model has been successfully fitted to data.
     estimator_id : str
         String identifier for the model configuration (e.g., "Ets(ANN)").
+    estimator_selected_id_ : str
+        String identifier for the selected model configuration after fitting.
+        This may differ from estimator_id if automatic model selection was used.
     
     """
 
@@ -204,12 +207,20 @@ class Ets(BaseEstimator, RegressorMixin):
         self.is_memory_reduced          = False
         self.is_fitted                  = False
         self.estimator_id               = f"Ets({self.model})"
+        self.estimator_selected_id_     = f"Ets({self.model})"
 
     def __repr__(self) -> str:
         """
         Information displayed when an Ets object is printed.
         """
-        return self.estimator_id
+        text = (f"Ets(model={self.model}, m={self.m}, damped={self.damped}, "
+                f"alpha={self.alpha}, beta={self.beta}, gamma={self.gamma}, "
+                f"phi={self.phi}, lambda_param={self.lambda_param}, "
+                f"lambda_auto={self.lambda_auto}, bias_adjust={self.bias_adjust}, "
+                f"bounds='{self.bounds}', seasonal={self.seasonal}, trend={self.trend}, "
+                f"ic='{self.ic}', allow_multiplicative={self.allow_multiplicative}, "
+                f"allow_multiplicative_trend={self.allow_multiplicative_trend})")
+        return text
 
     def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> Ets:
         """
@@ -300,7 +311,7 @@ class Ets(BaseEstimator, RegressorMixin):
         if self.model_config_['damped'] and self.model_config_['trend'] != "N":
             model_name = f"{self.model_config_['error']}{self.model_config_['trend']}d{self.model_config_['season']}"
 
-        self.estimator_id = f"Ets({model_name})"
+        self.estimator_selected_id_ = f"Ets({model_name})"
 
         return self
 
@@ -463,7 +474,6 @@ class Ets(BaseEstimator, RegressorMixin):
 
         return 1.0 - ss_res / ss_tot
 
-    @check_is_fitted
     def get_params(self, deep: bool = True) -> dict:
         """
         Get parameters for this estimator.
@@ -592,15 +602,17 @@ class Ets(BaseEstimator, RegressorMixin):
             setattr(self, key, value)
         
         # Reset fitted state - model needs to be refitted with new parameters
-        self.model_               = None
-        self.model_config_        = None
-        self.params_              = None
-        self.y_train_             = None
-        self.fitted_values_       = None
-        self.in_sample_residuals_ = None
-        self.n_features_in_       = None
-        self.is_memory_reduced    = False
-        self.is_fitted            = False
+        self.estimator_id_          = f"Ets({self.model})"
+        self.estimator_selected_id_ = f"Ets({self.model})"
+        self.model_                 = None
+        self.model_config_          = None
+        self.params_                = None
+        self.y_train_               = None
+        self.fitted_values_         = None
+        self.in_sample_residuals_   = None
+        self.n_features_in_         = None
+        self.is_memory_reduced      = False
+        self.is_fitted              = False
         
         return self
     
@@ -614,7 +626,7 @@ class Ets(BaseEstimator, RegressorMixin):
 
         print("ETS Model Summary")
         print("=" * 60)
-        print(f"Model: {self.estimator_id}")
+        print(f"Model: {self.estimator_selected_id_}")
         print(f"Seasonal period (m): {self.model_config_['m']}")
         print()
 

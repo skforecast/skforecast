@@ -206,7 +206,9 @@ class Sarimax(BaseEstimator, RegressorMixin):
         Index of the training series as long as it is a pandas Series or Dataframe.
     estimator_id : str
         String identifier for the model configuration (e.g., "Sarimax(1,0,0)(0,0,0)[0]").
-    
+    estimator_selected_id_ : str
+        String identifier for the selected model configuration after fitting. This
+        may differ from estimator_id if automatic model selection was used.    
 
     References
     ----------
@@ -295,8 +297,8 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
         p, d, q = self.order
         P, D, Q, m = self.seasonal_order
-        
         self.estimator_id = f"Sarimax({p},{d},{q})({P},{D},{Q})[{m}]"
+        self.estimator_selected_id_ = self.estimator_id
 
     def __repr__(
         self
@@ -725,7 +727,6 @@ class Sarimax(BaseEstimator, RegressorMixin):
         self.is_fitted      = False
         self.training_index = None
 
-    @check_is_fitted
     def get_params(
         self, 
         deep: bool = True

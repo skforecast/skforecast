@@ -123,6 +123,9 @@ class Arar(BaseEstimator, RegressorMixin):
         Flag indicating whether the model has been successfully fitted to data.
     estimator_id : str
         String identifier for the model configuration (e.g., "Arar").
+    estimator_selected_id_ : str
+        String identifier for the selected model configuration after fitting.
+        This may differ from estimator_id if automatic model selection was used.
     
     Notes
     -----
@@ -165,34 +168,35 @@ class Arar(BaseEstimator, RegressorMixin):
         max_lag: int | None = None, 
         safe: bool = True
     ):
-        self.max_ar_depth         = max_ar_depth
-        self.max_lag              = max_lag
-        self.safe                 = safe
-        self.lags_                = None
-        self.sigma2_              = None
-        self.psi_                 = None
-        self.sbar_                = None
-
-        self.model_               = None
-        self.coef_                = None
-        self.aic_                 = None
-        self.bic_                 = None
-        self.exog_model_          = None
-        self.coef_exog_           = None
-        self.n_exog_features_in_  = None
-        self.y_train_             = None
-        self.fitted_values_       = None
-        self.in_sample_residuals_ = None
-        self.n_features_in_       = None
-        self.is_memory_reduced    = False
-        self.is_fitted            = False
-        self.estimator_id         = "Arar"
+        self.max_ar_depth           = max_ar_depth
+        self.max_lag                = max_lag
+        self.safe                   = safe
+        self.lags_                  = None
+        self.sigma2_                = None
+        self.psi_                   = None
+        self.sbar_                  = None
+  
+        self.model_                 = None
+        self.coef_                  = None
+        self.aic_                   = None
+        self.bic_                   = None
+        self.exog_model_            = None
+        self.coef_exog_             = None
+        self.n_exog_features_in_    = None
+        self.y_train_               = None
+        self.fitted_values_         = None
+        self.in_sample_residuals_   = None
+        self.n_features_in_         = None
+        self.is_memory_reduced      = False
+        self.is_fitted              = False
+        self.estimator_id           = "Arar"
+        self.estimator_selected_id_ = "Arar()"
 
     def __repr__(self) -> str:
         """
         Information displayed when an Arar object is printed.
         """
-        return self.estimator_id
+        return self.estimator_selected_id_
 
     def fit(
         self, 
@@ -372,6 +376,8 @@ class Arar(BaseEstimator, RegressorMixin):
         else:
             self.aic_ = np.nan
             self.bic_ = np.nan
+
+        self.estimator_selected_id_ = f"Arar(lags={self.lags_})"
 
         return self
     
@@ -585,7 +591,6 @@ class Arar(BaseEstimator, RegressorMixin):
         
         return 1.0 - ss_res / ss_tot
     
-    @check_is_fitted
     def get_params(self, deep: bool = True) -> dict:
         """
         Get parameters for this estimator.
@@ -699,24 +704,25 @@ class Arar(BaseEstimator, RegressorMixin):
             setattr(self, key, value)
         
         # Reset fitted state
-        self.lags_                = None
-        self.sigma2_              = None
-        self.psi_                 = None
-        self.sbar_                = None
-
-        self.model_               = None
-        self.coef_                = None
-        self.aic_                 = None
-        self.bic_                 = None
-        self.exog_model_          = None
-        self.coef_exog_           = None
-        self.n_exog_features_in_  = None
-        self.y_train_             = None
-        self.fitted_values_       = None
-        self.in_sample_residuals_ = None
-        self.n_features_in_       = None
-        self.is_memory_reduced    = False
-        self.is_fitted            = False
+        self.lags_                  = None
+        self.sigma2_                = None
+        self.psi_                   = None
+        self.sbar_                  = None
+  
+        self.model_                 = None
+        self.coef_                  = None
+        self.aic_                   = None
+        self.bic_                   = None
+        self.exog_model_            = None
+        self.coef_exog_             = None
+        self.n_exog_features_in_    = None
+        self.y_train_               = None
+        self.fitted_values_         = None
+        self.in_sample_residuals_   = None
+        self.n_features_in_         = None
+        self.is_memory_reduced      = False
+        self.is_fitted              = False
+        self.estimator_selected_id_ = f"Arar(lags=None)"
         
         return self
     
@@ -726,7 +732,7 @@ class Arar(BaseEstimator, RegressorMixin):
         Print a simple textual summary of the fitted Arar model.
         """
         
-        print(f"{self.estimator_id} Model Summary")
+        print(f"{self.estimator_selected_id_} Model Summary")
         print("------------------")
         print(f"Selected AR lags:                         {self.lags_}")
         print(f"AR coefficients (phi):                    {np.round(self.coef_, 4)}")
