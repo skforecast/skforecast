@@ -726,6 +726,31 @@ class Sarimax(BaseEstimator, RegressorMixin):
         self.training_index = None
 
     @check_is_fitted
+    def get_params(
+        self, 
+        deep: bool = True
+    ) -> dict[str, object]:
+        """
+        Get the non trainable parameters of the estimator. This method
+        is different from the `params` method, which returns the parameters
+        of the fitted model.
+
+        Parameters
+        ----------
+        deep : bool, default True
+            If `True`, will return the parameters for this estimator and 
+            contained subobjects that are estimators.
+
+        Returns
+        -------
+        params : dict
+            Parameters of the estimator.
+
+        """
+
+        return self._sarimax_params.copy()
+
+    @check_is_fitted
     def params(
         self
     ) -> np.ndarray | pd.Series:
@@ -813,3 +838,12 @@ class Sarimax(BaseEstimator, RegressorMixin):
         metric = self.sarimax_res.info_criteria(criteria=criteria, method=method)
         
         return metric
+    
+    @check_is_fitted
+    def get_feature_importances(self) -> pd.DataFrame:
+        """Get feature importances for SARIMAX statsmodels model."""
+
+        feature_importances = self.params().to_frame().reset_index()
+        feature_importances.columns = ['feature', 'importance']
+        
+        return feature_importances

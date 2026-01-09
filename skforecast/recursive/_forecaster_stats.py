@@ -37,8 +37,6 @@ from ..utils import (
 )
 
 
-# TODO: Create methods remove estimator, list estimators
-# TODO: all wrapers show have method get_params and set_params
 class ForecasterStats():
     """
     This class turns statistical models into a Forecaster compatible with the 
@@ -227,7 +225,7 @@ class ForecasterStats():
         self.estimators              = estimator
         self.estimators_             = None
         self.estimator_names_        = self._generate_estimator_names(self.estimators)
-        self.estimator_types_        = tuple(estimator_types_)
+        self.estimator_types_        = estimator_types_
         self.n_estimators            = len(self.estimators)
         self.estimator_params_       = None
         self.transformer_y           = transformer_y
@@ -427,6 +425,19 @@ class ForecasterStats():
             names.append(unique_name)
         
         return names
+    
+    def get_estimator_names(self) -> list[str]:
+        """
+        Get the names of all estimators in the forecaster.
+        
+        Returns
+        -------
+        estimator_names : list[str]
+            List of estimator names.
+        
+        """
+
+        return self.estimator_names_
 
     def get_estimator(self, name: str) -> object:
         """
@@ -461,6 +472,41 @@ class ForecasterStats():
 
         return self.estimators_[idx]
     
+    def remove_estimator(self, name: str) -> None:
+        """
+        Remove a specific estimator by its name.
+        
+        Parameters
+        ----------
+        name : str
+            The name of the estimator to remove.
+        
+        Returns
+        -------
+        None
+        
+        """
+
+        if not self.is_fitted:
+            raise NotFittedError(
+                "This ForecasterStats instance is not fitted yet. "
+                "Call `fit` with appropriate arguments before using "
+                "this method."
+            )
+        
+        if name not in self.estimator_names_:
+            raise KeyError(
+                f"No estimator named '{name}'. "
+                f"Available estimators: {self.estimator_names_}"
+            )
+        
+        idx = self.estimator_names_.index(name)
+        del self.estimators_[idx]
+        del self.estimator_names_[idx]
+        del self.estimator_types_[idx]
+        self.n_estimators -= 1
+
+
     def _preprocess_repr(self) -> tuple[list[str], str]:
         """
         Format text for __repr__ method.
@@ -1432,7 +1478,7 @@ class ForecasterStats():
             get_importances_method = self._feature_importances_dispatch[estimator_type]
             importance = get_importances_method(estimator)
             if importance is not None:
-                importance["estimator_id"] = estimator_name
+                importance.insert(0, 'estimator_id', estimator_name)
                 feature_importances.append(importance)
 
         feature_importances = pd.concat(feature_importances, ignore_index=True)
@@ -1448,63 +1494,26 @@ class ForecasterStats():
     @staticmethod
     def _get_feature_importances_sarimax(estimator) -> pd.DataFrame:
         """Get feature importances for SARIMAX statsmodels model."""
-        feature_importances = estimator.params().to_frame().reset_index()
-        feature_importances.columns = ['feature', 'importance']
-        return feature_importances
+
+        return estimator.get_feature_importances()
     
-    # TODO: Update skforecast Arima wrapper to include feature importances method
     @staticmethod
     def _get_feature_importances_arima(estimator) -> pd.DataFrame:
         """Get feature importances for Arima model."""
-        return
+
+        return estimator.get_feature_importances()
 
     @staticmethod
     def _get_feature_importances_arar(estimator) -> pd.DataFrame:
         """Get feature importances for Arar model."""
-        importances = pd.DataFrame({
-            'feature': [f'lag_{lag}' for lag in estimator.lags_],
-            'importance': estimator.coef_
-        })
-
-        if estimator.coef_exog_ is not None:
-            exog_importances = pd.DataFrame({
-                'feature': [f'exog_{i}' for i in range(estimator.coef_exog_.shape[0])],
-                'importance': estimator.coef_exog_
-            })
-            importances = pd.concat([importances, exog_importances], ignore_index=True)
-            warnings.warn(
-                    "Exogenous variables are being handled using a two-step approach: "
-                    "(1) linear regression on exog, (2) ARAR on residuals. "
-                    "This affects model interpretation:\n"
-                    "  - ARAR coefficients (coef_) describe residual dynamics, not the original series\n"
-                    "  - Exogenous coefficients (coef_exog_) describe exogenous impact on original series",
-                ExogenousInterpretationWarning
-            )
-
-        return importances
+        
+        return estimator.get_feature_importances()
 
     @staticmethod
     def _get_feature_importances_ets(estimator) -> pd.DataFrame:
         """Get feature importances for Eta model."""
-        features = ['alpha (level)']
-        importances = [estimator.params_['alpha']]
-        
-        if estimator.model_config_['trend'] != 'N':
-            features.append('beta (trend)')
-            importances.append(estimator.params_['beta'])
-        
-        if estimator.model_config_['season'] != 'N':
-            features.append('gamma (seasonal)')
-            importances.append(estimator.params_['gamma'])
-        
-        if estimator.model_config_['damped']:
-            features.append('phi (damping)')
-            importances.append(estimator.params_['phi'])
-        
-        return pd.DataFrame({
-            'feature': features,
-            'importance': importances
-        })
+
+        return estimator.get_feature_importances()
 
     @staticmethod
     def _get_feature_importances_aeon_arima(estimator) -> pd.DataFrame:
@@ -1577,19 +1586,26 @@ class ForecasterStats():
     @staticmethod
     def _get_info_criteria_sarimax(estimator, criteria: str, method: str) -> float:
         """Get information criteria for SARIMAX statsmodels model."""
-        if criteria not in {'aic', 'bic', 'hqic'}:
-            raise ValueError(
-                "Invalid value for `criteria`. Valid options are 'aic', 'bic', "
-                "and 'hqic'."
-            )
-        
-        if method not in {'standard', 'lutkepohl'}:
-            raise ValueError(
-                "Invalid value for `method`. Valid options are 'standard' and "
-                "'lutkepohl'."
-            )
-        
+       
         return estimator.get_info_criteria(criteria=criteria, method=method)
+    
+    @staticmethod
+    def _get_info_criteria_arima(estimator, criteria: str, method: str) -> float:
+        """Get information criteria for Arima model."""
+
+        return estimator.get_info_criteria(criteria=criteria)
+
+    @staticmethod
+    def _get_info_criteria_arar(estimator, criteria: str, method: str) -> float:
+        """Get information criteria for Arar model."""
+        
+        return estimator.get_info_criteria(criteria=criteria)
+
+    @staticmethod
+    def _get_info_criteria_ets(estimator, criteria: str, method: str) -> float:
+        """Get information criteria for skforecast Ets model."""
+        
+        return estimator.get_info_criteria(criteria=criteria)
     
     @staticmethod
     def _get_info_criteria_sktime_arima(estimator, criteria: str, method: str) -> float:
@@ -1601,46 +1617,6 @@ class ForecasterStats():
 
         return estimator._forecaster.arima_res_.info_criteria(criteria=criteria, method=method)
 
-    # TODO: Update skforecast Arima wrapper to include info_criteria method
-    @staticmethod
-    def _get_info_criteria_arima(estimator, criteria: str, method: str) -> float:
-        """Get information criteria for Arima statsmodels model."""
-        pass
-
-    @staticmethod
-    def _get_info_criteria_arar(estimator, criteria: str, method: str) -> float:
-        """Get information criteria for Arar model."""
-        if criteria not in {'aic', 'bic'}:
-            raise ValueError(
-                "Invalid value for `criteria`. Valid options are 'aic' and 'bic' "
-                "for ARAR model."
-            )
-        
-        if method != 'standard':
-            raise ValueError(
-                "Invalid value for `method`. Only 'standard' is supported for "
-                "ARAR model."
-            )
-        
-        return estimator.aic_ if criteria == 'aic' else estimator.bic_
-
-    @staticmethod
-    def _get_info_criteria_ets(estimator, criteria: str, method: str) -> float:
-        """Get information criteria for skforecast Ets model."""
-        if criteria not in {'aic', 'bic'}:
-            raise ValueError(
-                "Invalid value for `criteria`. Valid options are 'aic' and 'bic' "
-                "for ETS model."
-            )
-        
-        if method != 'standard':
-            raise ValueError(
-                "Invalid value for `method`. Only 'standard' is supported for "
-                "ETS model."
-            )
-        
-        return estimator.model_.aic if criteria == 'aic' else estimator.model_.bic
-
     @staticmethod
     def _get_info_criteria_aeon(estimator, criteria: str, method: str) -> float:
         """Get information criteria for AEON models."""
@@ -1649,6 +1625,7 @@ class ForecasterStats():
                 "Invalid value for `criteria`. Only 'aic' is supported for "
                 "AEON models."
             )
+        
         return estimator.aic_
 
     def summary(self) -> None:

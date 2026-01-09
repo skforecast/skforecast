@@ -129,6 +129,9 @@ class Arima(BaseEstimator, RegressorMixin):
         Whether the optimization converged successfully.
     n_features_in_ : int
         Number of features in the target series (always 1, for sklearn compatibility).
+    n_exog_names_in_ : list
+        Names of exogenous features seen during fitting (None if no exog provided)
+        or if exog was not a pandas DataFrame.
     n_exog_features_in_ : int
         Number of exogenous features seen during fitting (0 if no exog provided).
     fitted_values_ : ndarray of shape (n_samples,)
@@ -211,6 +214,7 @@ class Arima(BaseEstimator, RegressorMixin):
         self.in_sample_residuals_ = None
         self.var_coef_            = None
         self.n_features_in_       = None
+        self.n_exog_names_in_     = None
         self.n_exog_features_in_  = None
 
         p, d, q = self.order
@@ -263,7 +267,10 @@ class Arima(BaseEstimator, RegressorMixin):
         elif y.ndim != 1:
             raise ValueError("`y` must be 1-dimensional.")
         
+        exog_names_in_ = None
         if exog is not None:
+            if isinstance(exog, pd.DataFrame):
+                exog_names_in_ = list(exog.columns)
             exog = np.asarray(exog, dtype=float)
             if exog.ndim == 1:
                 exog = exog.reshape(-1, 1)
@@ -310,10 +317,14 @@ class Arima(BaseEstimator, RegressorMixin):
         self.fitted_values_       = self.model_['fitted']
         self.in_sample_residuals_ = self.model_['residuals']
         self.var_coef_            = self.model_['var_coef']
+        self.n_exog_names_in_     = exog_names_in_
         self.n_exog_features_in_  = exog.shape[1] if exog is not None else 0
         self.n_features_in_       = 1
         self.is_memory_reduced    = False
         self.is_fitted            = True
+
+        if exog_names_in_ is not None:
+            self.coef_names_[-len(exog_names_in_):] = exog_names_in_
         
         return self
 
@@ -559,69 +570,14 @@ class Arima(BaseEstimator, RegressorMixin):
         return self.fitted_values_
 
     @check_is_fitted
-    def summary(self) -> None:
-        """
-        Print a summary of the fitted ARIMA model.
-
-        Includes model specification, coefficients, fit statistics, and residual diagnostics.
-
-        Raises
-        ------
-        NotFittedError
-            If the model has not been fitted.
-        RuntimeError
-            If reduce_memory() has been called (summary information is no longer available).
-        
-        """
-        
-        check_memory_reduced(self, method_name='summary')
-                
-        print("ARIMA Model Summary")
-        print("=" * 60)
-        print(f"Model: {self.estimator_id}")
-        print(f"Method: {self.model_['method']}")
-        print(f"Number of observations: {len(self.y_train_)}")
-        print(f"Converged: {self.converged_}")
-        print()
-        
-        print("Coefficients:")
-        print("-" * 60)
-        for i, name in enumerate(self.coef_names_):
-            # Extract standard error from variance-covariance matrix
-            if self.var_coef_ is not None and i < len(self.var_coef_):
-                se = np.sqrt(self.var_coef_[i, i])
-                t_stat = self.coef_[i] / se if se > 0 else np.nan
-                print(f"  {name:15s}: {self.coef_[i]:10.4f}  (SE: {se:8.4f}, t: {t_stat:8.2f})")
-            else:
-                print(f"  {name:15s}: {self.coef_[i]:10.4f}")
-        print()
-        
-        print("Model fit statistics:")
-        print(f"  sigma^2:             {self.sigma2_:.6f}")
-        print(f"  Log-likelihood:      {self.loglik_:.2f}")
-        print(f"  AIC:                 {self.aic_:.2f}")
-        if self.bic_ is not None:
-            print(f"  BIC:                 {self.bic_:.2f}")
-        else:
-            print(f"  BIC:                 N/A")
-        print()
-        
-        print("Residual statistics:")
-        print(f"  Mean:                {np.mean(self.in_sample_residuals_):.6f}")
-        print(f"  Std Dev:             {np.std(self.in_sample_residuals_, ddof=1):.6f}")
-        print(f"  MAE:                 {np.mean(np.abs(self.in_sample_residuals_)):.6f}")
-        print(f"  RMSE:                {np.sqrt(np.mean(self.in_sample_residuals_**2)):.6f}")
-        print()
-        
-        print("Time Series Summary Statistics:")
-        print(f"  Mean:                {np.mean(self.y_train_):.4f}")
-        print(f"  Std Dev:             {np.std(self.y_train_, ddof=1):.4f}")
-        print(f"  Min:                 {np.min(self.y_train_):.4f}")
-        print(f"  25%:                 {np.percentile(self.y_train_, 25):.4f}")
-        print(f"  Median:              {np.median(self.y_train_):.4f}")
-        print(f"  75%:                 {np.percentile(self.y_train_, 75):.4f}")
-        print(f"  Max:                 {np.max(self.y_train_):.4f}")
-
+    def get_feature_importances(self) -> pd.DataFrame:
+        """Get feature importances for Arima model."""
+        importances = pd.DataFrame({
+            'feature': self.coef_names_,
+            'importance': self.coef_
+        })
+        return importances
+    
     @check_is_fitted
     def get_score(self, y: None = None) -> float:
         """
@@ -636,13 +592,6 @@ class Arima(BaseEstimator, RegressorMixin):
         -------
         score : float
             Coefficient of determination (R^2).
-
-        Raises
-        ------
-        NotFittedError
-            If the model has not been fitted.
-        RuntimeError
-            If reduce_memory() has been called (score cannot be computed).
         
         """
         
@@ -677,13 +626,6 @@ class Arima(BaseEstimator, RegressorMixin):
         metric : float
             The value of the selected information criterion.
         
-        Raises
-        ------
-        ValueError
-            If an invalid criteria is specified.
-        NotFittedError
-            If the model has not been fitted.
-        
         """
         
         if criteria not in ['aic', 'bic']:
@@ -693,15 +635,44 @@ class Arima(BaseEstimator, RegressorMixin):
             )
         
         if criteria == 'aic':
-            return self.aic_
+            value = self.aic_
         elif criteria == 'bic':
-            if self.bic_ is None:
-                raise ValueError(
-                    "BIC is not available for this model. This may occur when "
-                    "the model did not converge or other estimation issues."
-                )
-            return self.bic_
+            # NOTE: BIC may be not available. This may occur when the model did
+            # not converge or other estimation issues.
+            value = self.bic_ if self.bic_ is not None else np.nan
 
+        return value
+
+    @check_is_fitted
+    def get_params(self, deep: bool = True) -> dict:
+        """
+        Get parameters for this estimator.
+
+        Parameters
+        ----------
+        deep : bool, default True
+            If True, will return the parameters for this estimator and
+            contained subobjects that are estimators.
+
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their values.
+        """
+        return {
+            "order": self.order,
+            "seasonal_order": self.seasonal_order,
+            "m": self.m,
+            "include_mean": self.include_mean,
+            "transform_pars": self.transform_pars,
+            "method": self.method,
+            "n_cond": self.n_cond,
+            "SSinit": self.SSinit,
+            "optim_method": self.optim_method,
+            "optim_kwargs": self.optim_kwargs,
+            "kappa": self.kappa,
+        }
+    
     def set_params(self, **params) -> "Arima":
         """
         Set the parameters of this estimator and reset the fitted state.
@@ -740,12 +711,10 @@ class Arima(BaseEstimator, RegressorMixin):
         for key, value in params.items():
             setattr(self, key, value)
         
-        # TODO: esto debería ser un set to None? Si lo borramos dejan de exitir y 
-        # no funciona igual que cuando se inicializa
         fitted_attrs = [
             'model_', 'y_train_', 'coef_', 'coef_names_', 'sigma2_', 'loglik_',
-            'aic_', 'bic_', 'arma_', 'converged_', 'fitted_values_',
-            'in_sample_residuals_', 'var_coef_', 'n_features_in_', 'n_exog_features_in_'
+            'aic_', 'bic_', 'arma_', 'converged_', 'fitted_values_', 'in_sample_residuals_',
+            'var_coef_', 'n_features_in_', 'n_exog_features_in_', 'n_exog_names_in_'
         ]
         for attr in fitted_attrs:
             setattr(self, attr, None)
@@ -754,59 +723,61 @@ class Arima(BaseEstimator, RegressorMixin):
         self.is_fitted         = False
         
         return self
-    
-    @check_is_fitted
-    def params(self) -> np.ndarray:
-        """
-        Get the parameters of the fitted model.
-        
-        The order of variables is the AR coefficients, MA coefficients, 
-        seasonal AR coefficients, seasonal MA coefficients, exogenous 
-        coefficients (if any), and intercept (if included).
-
-        Returns
-        -------
-        params : ndarray
-            The parameters of the model.
-        
-        Raises
-        ------
-        NotFittedError
-            If the model has not been fitted.
-        
-        """
-
-        return self.coef_
 
     @check_is_fitted
-    def get_params(self, deep: bool = True) -> dict:
+    def summary(self) -> None:
         """
-        Get parameters for this estimator.
-
-        Parameters
-        ----------
-        deep : bool, default True
-            If True, will return the parameters for this estimator and
-            contained subobjects that are estimators.
-
-        Returns
-        -------
-        params : dict
-            Parameter names mapped to their values.
+        Print a summary of the fitted ARIMA model.
+        Includes model specification, coefficients, fit statistics, and residual diagnostics.
+        If reduce_memory() has been called, summary information will be limited.
         """
-        return {
-            "order": self.order,
-            "seasonal_order": self.seasonal_order,
-            "m": self.m,
-            "include_mean": self.include_mean,
-            "transform_pars": self.transform_pars,
-            "method": self.method,
-            "n_cond": self.n_cond,
-            "SSinit": self.SSinit,
-            "optim_method": self.optim_method,
-            "optim_kwargs": self.optim_kwargs,
-            "kappa": self.kappa,
-        }
+                
+        print("ARIMA Model Summary")
+        print("=" * 60)
+        print(f"Model: {self.estimator_id}")
+        print(f"Method: {self.model_['method']}")
+        print(f"Converged: {self.converged_}")
+        print()
+        
+        print("Coefficients:")
+        print("-" * 60)
+        for i, name in enumerate(self.coef_names_):
+            # Extract standard error from variance-covariance matrix
+            if self.var_coef_ is not None and i < len(self.var_coef_):
+                se = np.sqrt(self.var_coef_[i, i])
+                t_stat = self.coef_[i] / se if se > 0 else np.nan
+                print(f"  {name:15s}: {self.coef_[i]:10.4f}  (SE: {se:8.4f}, t: {t_stat:8.2f})")
+            else:
+                print(f"  {name:15s}: {self.coef_[i]:10.4f}")
+        print()
+        
+        print("Model fit statistics:")
+        print(f"  sigma^2:             {self.sigma2_:.6f}")
+        print(f"  Log-likelihood:      {self.loglik_:.2f}")
+        print(f"  AIC:                 {self.aic_:.2f}")
+        if self.bic_ is not None:
+            print(f"  BIC:                 {self.bic_:.2f}")
+        else:
+            print(f"  BIC:                 N/A")
+        print()
+        
+        if not self.is_memory_reduced:
+            print("Residual statistics:")
+            print(f"  Mean:                {np.mean(self.in_sample_residuals_):.6f}")
+            print(f"  Std Dev:             {np.std(self.in_sample_residuals_, ddof=1):.6f}")
+            print(f"  MAE:                 {np.mean(np.abs(self.in_sample_residuals_)):.6f}")
+            print(f"  RMSE:                {np.sqrt(np.mean(self.in_sample_residuals_**2)):.6f}")
+            print()
+            
+            print("Time Series Summary Statistics:")
+            print(f"Number of observations: {len(self.y_train_)}")
+            print(f"  Mean:                 {np.mean(self.y_train_):.4f}")
+            print(f"  Std Dev:              {np.std(self.y_train_, ddof=1):.4f}")
+            print(f"  Min:                  {np.min(self.y_train_):.4f}")
+            print(f"  25%:                  {np.percentile(self.y_train_, 25):.4f}")
+            print(f"  Median:               {np.median(self.y_train_):.4f}")
+            print(f"  75%:                  {np.percentile(self.y_train_, 75):.4f}")
+            print(f"  Max:                  {np.max(self.y_train_):.4f}")
 
     @check_is_fitted
     def reduce_memory(self) -> "Arima":
@@ -827,28 +798,9 @@ class Arima(BaseEstimator, RegressorMixin):
         self : Arima
             The estimator with reduced memory footprint.
 
-        Raises
-        ------
-        NotFittedError
-            If the model has not been fitted.
-
-        Warnings
-        --------
-        This operation is irreversible. You will need to refit the model to 
-        access the removed attributes.
-
         """
         
-        if self.is_memory_reduced:
-            warnings.warn(
-                "Memory has already been reduced. No further reduction possible.",
-                UserWarning
-            )
-            return self
-        
-        attrs_to_delete = [
-            'y_train_', 'fitted_values_', 'in_sample_residuals_', 'var_coef_'
-        ]
+        attrs_to_delete = ['y_train_', 'fitted_values_', 'in_sample_residuals_']
         
         for attr in attrs_to_delete:
             if hasattr(self, attr):

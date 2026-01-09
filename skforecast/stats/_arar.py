@@ -556,43 +556,6 @@ class Arar(BaseEstimator, RegressorMixin):
         return self.fitted_values_
 
     @check_is_fitted
-    def summary(self) -> None:
-        """
-        Print a simple textual summary of the fitted Arar model.
-        """
-        
-        check_memory_reduced(self, method_name='summary')
-        
-        print(f"{self.estimator_id} Model Summary")
-        print("------------------")
-        print(f"Number of observations: {len(self.y_train_)}")
-        print(f"Selected AR lags: {self.lags_}")
-        print(f"AR coefficients (phi): {np.round(self.coef_, 4)}")
-        print(f"Residual variance (sigma^2): {self.sigma2_:.4f}")
-        print(f"Mean of shortened series (sbar): {self.sbar_:.4f}")
-        print(f"Length of memory-shortening filter (psi): {len(self.psi_)}")
-
-        print("\nTime Series Summary Statistics")
-        print(f"Mean: {np.mean(self.y_train_):.4f}")
-        print(f"Std Dev: {np.std(self.y_train_, ddof=1):.4f}")
-        print(f"Min: {np.min(self.y_train_):.4f}")
-        print(f"25%: {np.percentile(self.y_train_, 25):.4f}")
-        print(f"Median: {np.median(self.y_train_):.4f}")
-        print(f"75%: {np.percentile(self.y_train_, 75):.4f}")
-        print(f"Max: {np.max(self.y_train_):.4f}")
-        
-        print("\nModel Diagnostics")
-        print(f"AIC: {self.aic_:.4f}")
-        print(f"BIC: {self.bic_:.4f}")
-        
-        if self.exog_model_ is not None:
-            print("\nExogenous Model (Linear Regression)")
-            print("-----------------------------------")
-            print(f"Number of features: {self.n_exog_features_in_}")
-            print(f"Intercept: {self.exog_model_.intercept_:.4f}")
-            print(f"Coefficients: {np.round(self.exog_model_.coef_, 4)}")
-
-    @check_is_fitted
     def get_score(self, y: Any = None) -> float:
         """
         R^2 using in-sample fitted values (ignores initial NaNs).
@@ -621,7 +584,84 @@ class Arar(BaseEstimator, RegressorMixin):
         ss_tot = np.sum((y[mask] - y[mask].mean()) ** 2) + np.finfo(float).eps
         
         return 1.0 - ss_res / ss_tot
+    
+    @check_is_fitted
+    def get_params(self, deep: bool = True) -> dict:
+        """
+        Get parameters for this estimator.
 
+        Parameters
+        ----------
+        deep : bool, default True
+            If True, will return the parameters for this estimator and
+            contained subobjects that are estimators.
+        
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their values.
+        
+        """
+        
+        return {
+            "max_ar_depth": self.max_ar_depth,
+            "max_lag": self.max_lag,
+            "safe": self.safe
+        }
+    
+    @check_is_fitted
+    def get_feature_importances(self) -> pd.DataFrame:
+        """Get feature importances for Arar model."""
+        importances = pd.DataFrame({
+            'feature': [f'lag_{lag}' for lag in self.lags_],
+            'importance': self.coef_
+        })
+
+        if self.coef_exog_ is not None:
+            exog_importances = pd.DataFrame({
+                'feature': [f'exog_{i}' for i in range(self.coef_exog_.shape[0])],
+                'importance': self.coef_exog_
+            })
+            importances = pd.concat([importances, exog_importances], ignore_index=True)
+            warnings.warn(
+                    "Exogenous variables are being handled using a two-step approach: "
+                    "(1) linear regression on exog, (2) ARAR on residuals. "
+                    "This affects model interpretation:\n"
+                    "  - ARAR coefficients (coef_) describe residual dynamics, not the original series\n"
+                    "  - Exogenous coefficients (coef_exog_) describe exogenous impact on original series",
+                ExogenousInterpretationWarning
+            )
+
+        return importances
+    
+    @check_is_fitted
+    def get_info_criteria(self, criteria: str) -> float:
+        """
+        Get information criteria.
+
+        Parameters
+        ----------
+        criteria : str
+            Information criterion to retrieve. Valid options are 'aic' and 'bic'.
+        Returns
+        -------
+        info_criteria : float
+            Value of the requested information criterion.
+
+        """
+        if criteria not in {'aic', 'bic'}:
+            raise ValueError(
+                "Invalid value for `criteria`. Valid options are 'aic' and 'bic' "
+                "for ARAR model."
+            )
+        
+        if criteria == 'aic':
+            value = self.aic_
+        else:
+            value = self.bic_
+        
+        return value
+    
     def set_params(self, **params) -> "Arar":
         """
         Set the parameters of this estimator and reset the fitted state.
@@ -681,28 +721,40 @@ class Arar(BaseEstimator, RegressorMixin):
         return self
     
     @check_is_fitted
-    def get_params(self, deep: bool = True) -> dict:
+    def summary(self) -> None:
         """
-        Get parameters for this estimator.
+        Print a simple textual summary of the fitted Arar model.
+        """
+        
+        print(f"{self.estimator_id} Model Summary")
+        print("------------------")
+        print(f"Selected AR lags:                         {self.lags_}")
+        print(f"AR coefficients (phi):                    {np.round(self.coef_, 4)}")
+        print(f"Residual variance (sigma^2):              {self.sigma2_:.4f}")
+        print(f"Mean of shortened series (sbar):          {self.sbar_:.4f}")
+        print(f"Length of memory-shortening filter (psi): {len(self.psi_)}")
 
-        Parameters
-        ----------
-        deep : bool, default True
-            If True, will return the parameters for this estimator and
-            contained subobjects that are estimators.
+        if not self.is_memory_reduced:
+            print("\nTime Series Summary Statistics")
+            print(f"Number of observations: {len(self.y_train_)}")
+            print(f"Mean:                   {np.mean(self.y_train_):.4f}")
+            print(f"Std Dev:                {np.std(self.y_train_, ddof=1):.4f}")
+            print(f"Min:                    {np.min(self.y_train_):.4f}")
+            print(f"25%:                    {np.percentile(self.y_train_, 25):.4f}")
+            print(f"Median:                 {np.median(self.y_train_):.4f}")
+            print(f"75%:                    {np.percentile(self.y_train_, 75):.4f}")
+            print(f"Max:                    {np.max(self.y_train_):.4f}")
         
-        Returns
-        -------
-        params : dict
-            Parameter names mapped to their values.
+        print("\nModel Diagnostics")
+        print(f"AIC: {self.aic_:.4f}")
+        print(f"BIC: {self.bic_:.4f}")
         
-        """
-        
-        return {
-            "max_ar_depth": self.max_ar_depth,
-            "max_lag": self.max_lag,
-            "safe": self.safe
-        }
+        if self.exog_model_ is not None:
+            print("\nExogenous Model (Linear Regression)")
+            print("-----------------------------------")
+            print(f"Number of features: {self.n_exog_features_in_}")
+            print(f"Intercept: {self.exog_model_.intercept_:.4f}")
+            print(f"Coefficients: {np.round(self.exog_model_.coef_, 4)}")
 
     @check_is_fitted
     def reduce_memory(self) -> "Arar":

@@ -432,60 +432,6 @@ class Ets(BaseEstimator, RegressorMixin):
         return self.fitted_values_
 
     @check_is_fitted
-    def summary(self) -> None:
-        """
-        Print a summary of the fitted ETS model.
-        """
-        
-        check_memory_reduced(self, method_name='summary')
-
-        print("ETS Model Summary")
-        print("=" * 60)
-        print(f"Model: {self.estimator_id}")
-        print(f"Number of observations: {len(self.y_train_)}")
-        print(f"Seasonal period (m): {self.model_config_['m']}")
-        print()
-
-        print("Smoothing parameters:")
-        print(f"  alpha (level):       {self.params_['alpha']:.4f}")
-        if self.model_config_['trend'] != "N":
-            print(f"  beta (trend):        {self.params_['beta']:.4f}")
-        if self.model_config_['season'] != "N":
-            print(f"  gamma (seasonal):    {self.params_['gamma']:.4f}")
-        if self.model_config_['damped']:
-            print(f"  phi (damping):       {self.params_['phi']:.4f}")
-        print()
-
-        print("Initial states:")
-        print(f"  Level (l0):          {self.params_['init_states'][0]:.4f}")
-        if self.model_config_['trend'] != "N" and len(self.params_['init_states']) > 1:
-            print(f"  Trend (b0):          {self.params_['init_states'][1]:.4f}")
-        print()
-
-        print("Model fit statistics:")
-        print(f"  sigma^2:             {self.model_.sigma2:.6f}")
-        print(f"  Log-likelihood:      {self.model_.loglik:.2f}")
-        print(f"  AIC:                 {self.aic_:.2f}")
-        print(f"  BIC:                 {self.bic_:.2f}")
-        print()
-
-        print("Residual statistics:")
-        print(f"  Mean:                {np.mean(self.in_sample_residuals_):.6f}")
-        print(f"  Std Dev:             {np.std(self.in_sample_residuals_, ddof=1):.6f}")
-        print(f"  MAE:                 {np.mean(np.abs(self.in_sample_residuals_)):.6f}")
-        print(f"  RMSE:                {np.sqrt(np.mean(self.in_sample_residuals_**2)):.6f}")
-        print()
-
-        print("Time Series Summary Statistics:")
-        print(f"  Mean:                {np.mean(self.y_train_):.4f}")
-        print(f"  Std Dev:             {np.std(self.y_train_, ddof=1):.4f}")
-        print(f"  Min:                 {np.min(self.y_train_):.4f}")
-        print(f"  25%:                 {np.percentile(self.y_train_, 25):.4f}")
-        print(f"  Median:              {np.median(self.y_train_):.4f}")
-        print(f"  75%:                 {np.percentile(self.y_train_, 75):.4f}")
-        print(f"  Max:                 {np.max(self.y_train_):.4f}")
-
-    @check_is_fitted
     def get_score(self, y: Any = None) -> float:
         """
         R^2 using in-sample fitted values.
@@ -517,6 +463,89 @@ class Ets(BaseEstimator, RegressorMixin):
 
         return 1.0 - ss_res / ss_tot
 
+    @check_is_fitted
+    def get_params(self, deep: bool = True) -> dict:
+        """
+        Get parameters for this estimator.
+
+        Parameters
+        ----------
+        deep : bool, default True
+            If True, will return the parameters for this estimator and
+            contained subobjects that are estimators.
+
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their values.
+        
+        """
+
+        return {
+            "m": self.m,
+            "model": self.model,
+            "damped": self.damped,
+            "alpha": self.alpha,
+            "beta": self.beta,
+            "gamma": self.gamma,
+            "phi": self.phi,
+            "seasonal": self.seasonal,
+            "trend": self.trend,
+            "allow_multiplicative": self.allow_multiplicative,
+            "allow_multiplicative_trend": self.allow_multiplicative_trend,
+        }
+    
+    @check_is_fitted
+    def get_feature_importances(self) -> pd.DataFrame:
+        """Get feature importances for Eta model."""
+        features = ['alpha (level)']
+        importances = [self.params_['alpha']]
+        
+        if self.model_config_['trend'] != 'N':
+            features.append('beta (trend)')
+            importances.append(self.params_['beta'])
+        
+        if self.model_config_['season'] != 'N':
+            features.append('gamma (seasonal)')
+            importances.append(self.params_['gamma'])
+        
+        if self.model_config_['damped']:
+            features.append('phi (damping)')
+            importances.append(self.params_['phi'])
+        
+        return pd.DataFrame({
+            'feature': features,
+            'importance': importances
+        })
+    
+    @check_is_fitted
+    def get_info_criteria(self, criteria: str) -> float:
+        """
+        Get information criteria.
+
+        Parameters
+        ----------
+        criteria : str
+            Information criterion to retrieve. Valid options are 'aic' and 'bic'.
+        Returns
+        -------
+        info_criteria : float
+            Value of the requested information criterion.
+
+        """
+        if criteria not in {'aic', 'bic'}:
+            raise ValueError(
+                "Invalid value for `criteria`. Valid options are 'aic' and 'bic' "
+                "for ETS model."
+            )
+        
+        if criteria == 'aic':
+            value = self.aic_
+        elif criteria == 'bic':
+            value = self.bic_
+
+        return value
+    
     def set_params(self, **params) -> Ets:
         """
         Set the parameters of this estimator and reset the fitted state.
@@ -574,38 +603,61 @@ class Ets(BaseEstimator, RegressorMixin):
         self.is_fitted            = False
         
         return self
-
+    
     @check_is_fitted
-    def get_params(self, deep: bool = True) -> dict:
+    def summary(self) -> None:
         """
-        Get parameters for this estimator.
-
-        Parameters
-        ----------
-        deep : bool, default True
-            If True, will return the parameters for this estimator and
-            contained subobjects that are estimators.
-
-        Returns
-        -------
-        params : dict
-            Parameter names mapped to their values.
+        Print a summary of the fitted ETS model.
+        """
         
-        """
+        check_memory_reduced(self, method_name='summary')
 
-        return {
-            "m": self.m,
-            "model": self.model,
-            "damped": self.damped,
-            "alpha": self.alpha,
-            "beta": self.beta,
-            "gamma": self.gamma,
-            "phi": self.phi,
-            "seasonal": self.seasonal,
-            "trend": self.trend,
-            "allow_multiplicative": self.allow_multiplicative,
-            "allow_multiplicative_trend": self.allow_multiplicative_trend,
-        }
+        print("ETS Model Summary")
+        print("=" * 60)
+        print(f"Model: {self.estimator_id}")
+        print(f"Seasonal period (m): {self.model_config_['m']}")
+        print()
+
+        print("Smoothing parameters:")
+        print(f"  alpha (level):       {self.params_['alpha']:.4f}")
+        if self.model_config_['trend'] != "N":
+            print(f"  beta (trend):        {self.params_['beta']:.4f}")
+        if self.model_config_['season'] != "N":
+            print(f"  gamma (seasonal):    {self.params_['gamma']:.4f}")
+        if self.model_config_['damped']:
+            print(f"  phi (damping):       {self.params_['phi']:.4f}")
+        print()
+
+        print("Initial states:")
+        print(f"  Level (l0):          {self.params_['init_states'][0]:.4f}")
+        if self.model_config_['trend'] != "N" and len(self.params_['init_states']) > 1:
+            print(f"  Trend (b0):          {self.params_['init_states'][1]:.4f}")
+        print()
+
+        print("Model fit statistics:")
+        print(f"  sigma^2:             {self.model_.sigma2:.6f}")
+        print(f"  Log-likelihood:      {self.model_.loglik:.2f}")
+        print(f"  AIC:                 {self.aic_:.2f}")
+        print(f"  BIC:                 {self.bic_:.2f}")
+        print()
+
+        if not self.is_memory_reduced:
+            print("Residual statistics:")
+            print(f"  Mean:                {np.mean(self.in_sample_residuals_):.6f}")
+            print(f"  Std Dev:             {np.std(self.in_sample_residuals_, ddof=1):.6f}")
+            print(f"  MAE:                 {np.mean(np.abs(self.in_sample_residuals_)):.6f}")
+            print(f"  RMSE:                {np.sqrt(np.mean(self.in_sample_residuals_**2)):.6f}")
+            print()
+
+            print("Time Series Summary Statistics:")
+            print(f"Number of observations: {len(self.y_train_)}")
+            print(f"  Mean:                 {np.mean(self.y_train_):.4f}")
+            print(f"  Std Dev:              {np.std(self.y_train_, ddof=1):.4f}")
+            print(f"  Min:                  {np.min(self.y_train_):.4f}")
+            print(f"  25%:                  {np.percentile(self.y_train_, 25):.4f}")
+            print(f"  Median:               {np.median(self.y_train_):.4f}")
+            print(f"  75%:                  {np.percentile(self.y_train_, 75):.4f}")
+            print(f"  Max:                  {np.max(self.y_train_):.4f}")
     
     @check_is_fitted
     def reduce_memory(self) -> Ets:
