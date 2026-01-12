@@ -144,11 +144,9 @@ class Arima(BaseEstimator, RegressorMixin):
         Flag indicating whether reduce_memory() has been called.
     is_fitted : bool
         Flag indicating whether the estimator has been fitted.
-    estimator_id : str
-        String identifier for the model configuration (e.g., ``"Arima(1,1,1)(0,0,0)[1]"``).
-    estimator_selected_id_ : str
-        String identifier for the selected model configuration after fitting.
-        This may differ from estimator_id if automatic model selection was used.
+    estimator_name_ : str
+        String identifier of the fitted model configuration (e.g., "Arima(1,1,1)(0,0,0)[1]"). 
+        This is updated after fitting to reflect the selected model.
 
     Notes
     -----
@@ -223,20 +221,17 @@ class Arima(BaseEstimator, RegressorMixin):
         p, d, q = self.order
         P, D, Q = self.seasonal_order
         if P == 0 and D == 0 and Q == 0:
-            estimator_id = f"Arima({p},{d},{q})"
+            estimator_name_ = f"Arima({p},{d},{q})"
         else:
-            estimator_id = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
+            estimator_name_ = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
 
-        self.estimator_id = estimator_id
-        self.estimator_selected_id_ = estimator_id
-
-        self
-
+        self.estimator_name_ = estimator_name_
+    
     def __repr__(self) -> str:
         """
         Information displayed when an Arima object is printed.
         """
-        return self.estimator_id
+        return self.estimator_name_
 
     def fit(
         self, 
@@ -289,7 +284,6 @@ class Arima(BaseEstimator, RegressorMixin):
                 raise ValueError(
                     f"Length of `exog` ({len(exog)}) does not match length of `y` ({len(y)})."
                 )
-        
         
         ctx = (warnings.catch_warnings() if suppress_warnings else nullcontext())
         with ctx:
@@ -731,12 +725,11 @@ class Arima(BaseEstimator, RegressorMixin):
         p, d, q = self.order
         P, D, Q = self.seasonal_order
         if P == 0 and D == 0 and Q == 0:
-            estimator_id = f"Arima({p},{d},{q})"
+            estimator_name_ = f"Arima({p},{d},{q})"
         else:
-            estimator_id = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
+            estimator_name_ = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
 
-        self.estimator_id = estimator_id
-        self.estimator_selected_id_ = estimator_id
+        self.estimator_name_ = estimator_name_
         
         return self
 
@@ -750,7 +743,7 @@ class Arima(BaseEstimator, RegressorMixin):
                 
         print("ARIMA Model Summary")
         print("=" * 60)
-        print(f"Model: {self.estimator_id}")
+        print(f"Model: {self.estimator_name_}")
         print(f"Method: {self.model_['method']}")
         print(f"Converged: {self.converged_}")
         print()
