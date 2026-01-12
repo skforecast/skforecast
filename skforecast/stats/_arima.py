@@ -17,6 +17,7 @@ from .arima._arima_base import (
     arima,
     predict_arima
 )
+from .arima._auto_arima import auto_arima
 from ._utils import check_is_fitted, check_memory_reduced
 
 
@@ -31,16 +32,18 @@ class Arima(BaseEstimator, RegressorMixin):
 
     Parameters
     ----------
-    order : tuple of int, default (0, 0, 0)
+    order : tuple of int or None, default None
         The (p, d, q) order of the non-seasonal ARIMA model:
         - p: AR order (number of lag observations)
         - d: Degree of differencing (number of times to difference the series)
         - q: MA order (size of moving average window)
-    seasonal_order : tuple of int, default (0, 0, 0)
+        If None, the order will be automatically selected using auto_arima during fitting.
+    seasonal_order : tuple of int or None, default None
         The (P, D, Q) order of the seasonal component:
         - P: Seasonal AR order
         - D: Seasonal differencing order
         - Q: Seasonal MA order
+        If None, the seasonal order will be automatically selected using auto_arima during fitting.
     m : int, default 1
         Seasonal period (e.g., 12 for monthly data with yearly seasonality, 
         4 for quarterly data). Set to 1 for non-seasonal models.
@@ -69,6 +72,63 @@ class Arima(BaseEstimator, RegressorMixin):
         Additional options passed to the optimizer (e.g., maxiter, ftol).
     kappa : float, default 1e6
         Prior variance for diffuse states in the Kalman filter.
+    max_p : int, default 5
+        Maximum AR order for automatic model selection.
+    max_q : int, default 5
+        Maximum MA order for automatic model selection.
+    max_P : int, default 2
+        Maximum seasonal AR order for automatic model selection.
+    max_Q : int, default 2
+        Maximum seasonal MA order for automatic model selection.
+    max_order : int, default 5
+        Maximum sum of p+q+P+Q for automatic model selection.
+    max_d : int, default 2
+        Maximum non-seasonal differencing order for automatic selection.
+    max_D : int, default 1
+        Maximum seasonal differencing order for automatic selection.
+    start_p : int, default 2
+        Starting AR order for stepwise search.
+    start_q : int, default 2
+        Starting MA order for stepwise search.
+    start_P : int, default 1
+        Starting seasonal AR order for stepwise search.
+    start_Q : int, default 1
+        Starting seasonal MA order for stepwise search.
+    stationary : bool, default False
+        Restrict automatic search to stationary models (d=D=0).
+    seasonal : bool, default True
+        Include seasonal components in automatic search.
+    ic : str, default "aicc"
+        Information criterion for automatic model selection: "aicc", "aic", or "bic".
+    stepwise : bool, default True
+        Use stepwise search (faster) or exhaustive grid search for automatic selection.
+    nmodels : int, default 94
+        Maximum number of models to try in stepwise search.
+    trace : bool, default False
+        Print progress during automatic model selection.
+    approximation : bool or None, default None
+        Use CSS approximation during automatic search. If None, auto-determined based on data size.
+    truncate : int or None, default None
+        Truncate series to this length for approximation offset computation.
+    test : str, default "kpss"
+        Unit root test for automatic differencing determination: "kpss", "adf", or "pp".
+    test_kwargs : dict or None, default None
+        Additional arguments for unit root test.
+    seasonal_test : str, default "seas"
+        Seasonal test for automatic seasonal differencing: "seas", "ocsb", "hegy", or "ch".
+    seasonal_test_kwargs : dict or None, default None
+        Additional arguments for seasonal test.
+    allowdrift : bool, default True
+        Allow drift term in automatic selection when d+D=1.
+    allowmean : bool, default True
+        Allow mean term in automatic selection when d+D=0.
+    lambda_bc : float, str, or None, default None
+        Box-Cox transformation parameter:
+        - None: No transformation
+        - "auto": Automatically select lambda using Guerrero's method
+        - float: Use the specified lambda value (0 = log transform)
+    biasadj : bool, default False
+        Bias adjustment for Box-Cox back-transformation (produces mean forecasts instead of median).
 
     Attributes
     ----------
@@ -109,6 +169,9 @@ class Arima(BaseEstimator, RegressorMixin):
         - 'converged': Convergence status
         - 'model': State-space model dict
         - 'method': Estimation method string
+    auto_arima_results_ : dict
+        Dictionary containing the results from auto_arima when automatic
+        model selection is performed.
     y_train_ : ndarray of shape (n_samples,)
         Original training series used for fitting.
     coef_ : ndarray
@@ -165,8 +228,8 @@ class Arima(BaseEstimator, RegressorMixin):
 
     def __init__(
         self,
-        order: tuple[int, int, int] = (0, 0, 0),
-        seasonal_order: tuple[int, int, int] = (0, 0, 0),
+        order: tuple[int, int, int] | None = None,
+        seasonal_order: tuple[int, int, int] | None = None,
         m: int = 1,
         include_mean: bool = True,
         transform_pars: bool = True,
@@ -176,13 +239,40 @@ class Arima(BaseEstimator, RegressorMixin):
         optim_method: str = "BFGS",
         optim_kwargs: dict | None = {'maxiter': 1000},
         kappa: float = 1e6,
+        max_p: int = 5,
+        max_q: int = 5,
+        max_P: int = 2,
+        max_Q: int = 2,
+        max_order: int = 5,
+        max_d: int = 2,
+        max_D: int = 1,
+        start_p: int = 2,
+        start_q: int = 2,
+        start_P: int = 1,
+        start_Q: int = 1,
+        stationary: bool = False,
+        seasonal: bool = True,
+        ic: str = "aicc",
+        stepwise: bool = True,
+        nmodels: int = 94,
+        trace: bool = False,
+        approximation: bool | None = None,
+        truncate: int | None = None,
+        test: str = "kpss",
+        test_kwargs: dict | None = None,
+        seasonal_test: str = "seas",
+        seasonal_test_kwargs: dict | None = None,
+        allowdrift: bool = True,
+        allowmean: bool = True,
+        lambda_bc: float | str | None = None,
+        biasadj: bool = False,
     ):
 
-        if len(order) != 3:
+        if order is not None and len(order) != 3:
             raise ValueError(
                 f"`order` must be a tuple of length 3, got length {len(order)}"
             )
-        if len(seasonal_order) != 3:
+        if seasonal_order is not None and len(seasonal_order) != 3:
             raise ValueError(
                 f"`seasonal_order` must be a tuple of length 3, got length {len(seasonal_order)}"
             )
@@ -200,10 +290,38 @@ class Arima(BaseEstimator, RegressorMixin):
         self.optim_method         = optim_method
         self.optim_kwargs         = optim_kwargs
         self.kappa                = kappa
+        self.max_p                = max_p
+        self.max_q                = max_q
+        self.max_P                = max_P
+        self.max_Q                = max_Q
+        self.max_order            = max_order
+        self.max_d                = max_d
+        self.max_D                = max_D
+        self.start_p              = start_p
+        self.start_q              = start_q
+        self.start_P              = start_P
+        self.start_Q              = start_Q
+        self.stationary           = stationary
+        self.seasonal             = seasonal
+        self.ic                   = ic
+        self.stepwise             = stepwise
+        self.nmodels              = nmodels
+        self.trace                = trace
+        self.approximation        = approximation
+        self.truncate             = truncate
+        self.test                 = test
+        self.test_kwargs          = test_kwargs
+        self.seasonal_test        = seasonal_test
+        self.seasonal_test_kwargs = seasonal_test_kwargs
+        self.allowdrift           = allowdrift
+        self.allowmean            = allowmean
+        self.lambda_bc            = lambda_bc
+        self.biasadj              = biasadj
         self.is_memory_reduced    = False
         self.is_fitted            = False
 
         self.model_               = None
+        self.auto_arima_results_  = None
         self.y_train_             = None
         self.coef_                = None
         self.coef_names_          = None
@@ -220,12 +338,15 @@ class Arima(BaseEstimator, RegressorMixin):
         self.n_exog_names_in_     = None
         self.n_exog_features_in_  = None
 
-        p, d, q = self.order
-        P, D, Q = self.seasonal_order
-        if P == 0 and D == 0 and Q == 0:
-            estimator_id = f"Arima({p},{d},{q})"
+        if self.order is None or self.seasonal_order is None:
+            estimator_id = "Arima(auto)"
         else:
-            estimator_id = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
+            p, d, q = self.order
+            P, D, Q = self.seasonal_order
+            if P == 0 and D == 0 and Q == 0:
+                estimator_id = f"Arima({p},{d},{q})"
+            else:
+                estimator_id = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
 
         self.estimator_id = estimator_id
         self.estimator_selected_id_ = estimator_id
@@ -247,6 +368,10 @@ class Arima(BaseEstimator, RegressorMixin):
         """
         Fit the ARIMA model to a univariate time series.
 
+        If `order` or `seasonal_order` were not specified during initialization 
+        (i.e., set to None), this method will automatically determine the best 
+        model using auto arima with stepwise search.
+
         Parameters
         ----------
         y : pandas Series, numpy ndarray of shape (n_samples,)
@@ -260,7 +385,9 @@ class Arima(BaseEstimator, RegressorMixin):
         Returns
         -------
         self : Arima
-            Fitted estimator.
+            Fitted estimator. After fitting with automatic model selection, the 
+            selected `order` and `seasonal_order` are stored in the respective 
+            attributes, and `estimator_selected_id_` is updated with the chosen model.
 
         """
         if not isinstance(y, (np.ndarray, pd.Series)):
@@ -290,28 +417,85 @@ class Arima(BaseEstimator, RegressorMixin):
                     f"Length of `exog` ({len(exog)}) does not match length of `y` ({len(y)})."
                 )
         
+        use_auto_arima = self.order is None or self.seasonal_order is None
         
         ctx = (warnings.catch_warnings() if suppress_warnings else nullcontext())
         with ctx:
             if suppress_warnings:
                 warnings.simplefilter("ignore")
-            self.model_ = arima(
-                x              = y,
-                m              = self.m,
-                order          = self.order,
-                seasonal       = self.seasonal_order,
-                xreg           = exog,
-                include_mean   = self.include_mean,
-                transform_pars = self.transform_pars,
-                fixed          = None,
-                init           = None,
-                method         = self.method,
-                n_cond         = self.n_cond,
-                SSinit         = self.SSinit,
-                optim_method   = self.optim_method,
-                optim_control  = self.optim_kwargs,
-                kappa          = self.kappa
-            )
+            
+            if use_auto_arima:
+                self.model_ = auto_arima(
+                    y                  = y,
+                    m                  = self.m,
+                    d                  = self.order[1] if self.order is not None else None,
+                    D                  = self.seasonal_order[1] if self.seasonal_order is not None else None,
+                    max_p              = self.max_p,
+                    max_q              = self.max_q,
+                    max_P              = self.max_P,
+                    max_Q              = self.max_Q,
+                    max_order          = self.max_order,
+                    max_d              = self.max_d,
+                    max_D              = self.max_D,
+                    start_p            = self.start_p,
+                    start_q            = self.start_q,
+                    start_P            = self.start_P,
+                    start_Q            = self.start_Q,
+                    stationary         = self.stationary,
+                    seasonal           = self.seasonal,
+                    ic                 = self.ic,
+                    stepwise           = self.stepwise,
+                    nmodels            = self.nmodels,
+                    trace              = self.trace,
+                    approximation      = self.approximation,
+                    method             = self.method,
+                    truncate           = self.truncate,
+                    xreg               = exog,
+                    test               = self.test,
+                    test_args          = self.test_kwargs,
+                    seasonal_test      = self.seasonal_test,
+                    seasonal_test_args = self.seasonal_test_kwargs,
+                    allowdrift         = self.allowdrift,
+                    allowmean          = self.allowmean,
+                    lambda_bc          = self.lambda_bc,
+                    biasadj            = self.biasadj,
+                    SSinit             = self.SSinit,
+                    kappa              = self.kappa
+                )
+                
+                # TODO: creo que no deberia sobreescribir esto, de lo contrario, en el siguinete fit
+                # no se podria volver a hacer auto arima si se quisiera.
+                arma = self.model_['arma']
+                self.order = (arma[0], arma[5], arma[1])
+                self.seasonal_order = (arma[2], arma[6], arma[3])
+                
+                # Update estimator_selected_id_ with the selected model
+                p, d, q = self.order
+                P, D, Q = self.seasonal_order
+                if P == 0 and D == 0 and Q == 0:
+                    self.estimator_selected_id_ = f"Arima({p},{d},{q})"
+                else:
+                    self.estimator_selected_id_ = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
+
+            else:
+                # Use specified orders
+                self.model_ = arima(
+                    x              = y,
+                    m              = self.m,
+                    order          = self.order,
+                    seasonal       = self.seasonal_order,
+                    xreg           = exog,
+                    include_mean   = self.include_mean,
+                    transform_pars = self.transform_pars,
+                    fixed          = None,
+                    init           = None,
+                    method         = self.method,
+                    n_cond         = self.n_cond,
+                    SSinit         = self.SSinit,
+                    optim_method   = self.optim_method,
+                    optim_control  = self.optim_kwargs,
+                    kappa          = self.kappa
+                )
         
         self.y_train_             = self.model_['y']
         self.coef_                = self.model_['coef'].values.flatten()
