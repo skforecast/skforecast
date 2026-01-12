@@ -1,13 +1,16 @@
+################################################################################
+#                               ARIMA base implementation                      #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
 import numpy as np
 from numba import jit, njit
 from numba.typed import Dict
 import scipy.linalg as la
 import scipy.optimize as opt
-from scipy.stats import norm
 import pandas as pd
 from typing import Tuple, Optional, Dict as DictType, Any, Union, List
 import warnings
-from copy import deepcopy
 
 @njit(cache=True)
 def state_prediction(a: np.ndarray, p: int, r: int, d: int, rd: int,

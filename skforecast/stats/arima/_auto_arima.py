@@ -1,41 +1,34 @@
-"""
-Automatic ARIMA model selection using stepwise search or exhaustive grid search,
-minimizing an information criterion (AIC, AICc, or BIC).
-Also includes arima_rjh for ARIMA fitting with drift and Box-Cox support.
-"""
+################################################################################
+#                 Automatic ARIMA base implementation                          #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
+# coding=utf-8
+# Automatic ARIMA model selection using stepwise search or exhaustive grid search,
+# minimizing an information criterion (AIC, AICc, or BIC).
+# Also includes arima_rjh for ARIMA fitting with drift and Box-Cox support.
 
 import numpy as np
 import pandas as pd
-import math
 from typing import Tuple, Optional, Dict as DictType, Any, Union, List
 import warnings
-from copy import deepcopy
 from scipy.stats import norm
 from numba import njit
+from statsmodels.tsa.stattools import adfuller, kpss
 
 from ._arima_base import (
-    arima, predict_arima, time_series_convolution,
-    ar_check, ma_invert, diff, na_omit, match_arg
+    arima, predict_arima, diff, match_arg
 )
 
 from ..seasonal import (
-    seas_heuristic,
     ndiffs,
     nsdiffs,
-    is_constant,
-    _is_constant_jit,
-    _seas_heuristic_jit,
-    _moving_average_jit,
-    _seasonal_component_jit,
+    is_constant
 )
 
 from ..transformations import (
     box_cox,
-    inv_box_cox,
-    box_cox_lambda,
-    guerrero,
-    bcloglik,
-    box_cox_biasadj,
+    inv_box_cox
 )
 
 
@@ -1634,7 +1627,7 @@ def forecast_arima(
     model: DictType[str, Any],
     h: int = 10,
     xreg: Union[pd.DataFrame, np.ndarray, None] = None,
-    level: Union[List[float], np.ndarray] = [80, 95],
+    level: Union[List[float], np.ndarray, None] = None,
     fan: bool = False,
     lambda_bc: Optional[float] = None,
     biasadj: Optional[bool] = None,
@@ -1657,7 +1650,7 @@ def forecast_arima(
     xreg : DataFrame, ndarray, or None
         Future values of exogenous regressors.
         Column names must match training regressors.
-    level : list of float
+    level : list of float, default None
         Confidence levels for prediction intervals (default [80, 95]).
         Values can be percentages (80, 95) or proportions (0.80, 0.95).
     fan : bool
@@ -1722,8 +1715,8 @@ def forecast_arima(
     n = len(model.get('y', model.get('x', [])))
     model_xreg = model.get('xreg')
     has_drift = (model_xreg is not None and
-                 isinstance(model_xreg, pd.DataFrame) and
-                 'drift' in model_xreg.columns)
+                isinstance(model_xreg, pd.DataFrame) and
+                'drift' in model_xreg.columns)
 
     if xreg is not None:
         if isinstance(xreg, np.ndarray):
@@ -1740,27 +1733,29 @@ def forecast_arima(
     mean = pred_result['pred']
     se = pred_result['se']
 
-    z_values = [norm.ppf(0.5 + l / 200) for l in levels]
-    upper = np.column_stack([mean + z * se for z in z_values])
-    lower = np.column_stack([mean - z * se for z in z_values])
+    if levels is not None:
+        z_values = [norm.ppf(0.5 + l / 200) for l in levels]
+        upper = np.column_stack([mean + z * se for z in z_values])
+        lower = np.column_stack([mean - z * se for z in z_values])
 
     if lambda_bc is not None:
         fvar = se ** 2 if biasadj else None
         mean = inv_box_cox(mean, lambda_bc, biasadj=biasadj, fvar=fvar)
 
-        if lambda_bc < 0:
-            asymptote = -1.0 / lambda_bc
-            cap_value = asymptote * 0.95
-            lower = np.clip(lower, -np.inf, cap_value)
-            upper = np.clip(upper, -np.inf, cap_value)
+        if levels is not None:
+            if lambda_bc < 0:
+                asymptote = -1.0 / lambda_bc
+                cap_value = asymptote * 0.95
+                lower = np.clip(lower, -np.inf, cap_value)
+                upper = np.clip(upper, -np.inf, cap_value)
 
-        lower = inv_box_cox(lower, lambda_bc, biasadj=False)
-        upper = inv_box_cox(upper, lambda_bc, biasadj=False)
+            lower = inv_box_cox(lower, lambda_bc, biasadj=False)
+            upper = inv_box_cox(upper, lambda_bc, biasadj=False)
 
-        if lambda_bc < 0:
-            stacked = np.stack([lower, upper], axis=-1)
-            lower = np.min(stacked, axis=-1)
-            upper = np.max(stacked, axis=-1)
+            if lambda_bc < 0:
+                stacked = np.stack([lower, upper], axis=-1)
+                lower = np.min(stacked, axis=-1)
+                upper = np.max(stacked, axis=-1)
 
     return {
         'mean': mean,

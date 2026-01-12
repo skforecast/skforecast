@@ -1,17 +1,20 @@
-"""
-Differencing utilities for time series stationarity.
+################################################################################
+#                                 Differencing                                 #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
+# Differencing utilities for time series stationarity.
 
-This module provides functions to determine the number of differences
-(regular and seasonal) required to achieve stationarity.
+# This module provides functions to determine the number of differences
+# (regular and seasonal) required to achieve stationarity.
 
-References
-----------
-- Hyndman, R. J., & Khandakar, Y. (2008). Automatic time series forecasting:
-  the forecast package for R. Journal of Statistical Software, 27(3), 1-22.
-- Kwiatkowski, D., Phillips, P. C., Schmidt, P., & Shin, Y. (1992). Testing
-  the null hypothesis of stationarity against the alternative of a unit root.
-  Journal of Econometrics, 54(1-3), 159-178.
-"""
+# References
+# ----------
+# - Hyndman, R. J., & Khandakar, Y. (2008). Automatic time series forecasting:
+#   the forecast package for R. Journal of Statistical Software, 27(3), 1-22.
+# - Kwiatkowski, D., Phillips, P. C., Schmidt, P., & Shin, Y. (1992). Testing
+#   the null hypothesis of stationarity against the alternative of a unit root.
+#   Journal of Econometrics, 54(1-3), 159-178.
 
 import numpy as np
 import math

@@ -1,15 +1,17 @@
-"""
-Seasonal strength measures for time series analysis.
-
-This module implements seasonal strength heuristics based on STL-like
-decomposition, following Wang, Smith & Hyndman (2006).
-
-References
-----------
-- Wang, X., Smith, K. A., & Hyndman, R. J. (2006). Characteristic-based
-  clustering for time series data. Data Mining and Knowledge Discovery,
-  13(3), 335-364.
-"""
+################################################################################
+#                            Seasonal strength                                 #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
+# coding=utf-8
+# Seasonal strength measures for time series analysis.
+# This module implements seasonal strength heuristics based on STL-like
+# decomposition, following Wang, Smith & Hyndman (2006).
+# References
+# ----------
+# - Wang, X., Smith, K. A., & Hyndman, R. J. (2006). Characteristic-based
+#   clustering for time series data. Data Mining and Knowledge Discovery,
+#   13(3), 335-364.
 
 import numpy as np
 from numba import njit

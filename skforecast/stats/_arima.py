@@ -13,17 +13,16 @@ from contextlib import nullcontext
 from scipy.stats import norm
 from sklearn.base import BaseEstimator, RegressorMixin
 
-from .arima._arima_base import (
-    arima,
-    predict_arima
-)
-from .arima._auto_arima import auto_arima
+from .arima._arima_base import arima, predict_arima
+from .arima._auto_arima import auto_arima, forecast_arima
 from ._utils import check_is_fitted, check_memory_reduced
 
 
 class Arima(BaseEstimator, RegressorMixin):
     """
-    Scikit-learn style wrapper for the ARIMA (AutoRegressive Integrated Moving Average) model.
+    Scikit-learn style wrapper for the ARIMA (AutoRegressive Integrated Moving Average)
+    model and auto arima selection algorithm.
+
 
     This estimator treats a univariate time series as input. Call `fit(y)` with 
     a 1D array-like of observations in time order, then produce out-of-sample 
@@ -43,7 +42,8 @@ class Arima(BaseEstimator, RegressorMixin):
         - P: Seasonal AR order
         - D: Seasonal differencing order
         - Q: Seasonal MA order
-        If None, the seasonal order will be automatically selected using auto_arima during fitting.
+        If None, the seasonal order will be automatically selected using auto_arima during
+        fitting.
     m : int, default 1
         Seasonal period (e.g., 12 for monthly data with yearly seasonality, 
         4 for quarterly data). Set to 1 for non-seasonal models.
@@ -154,6 +154,64 @@ class Arima(BaseEstimator, RegressorMixin):
         Additional optimizer options.
     kappa : float
         Prior variance for diffuse states in the Kalman filter.
+    max_p : int, default 5
+        Maximum AR order for automatic model selection.
+    max_q : int, default 5
+        Maximum MA order for automatic model selection.
+    max_P : int, default 2
+        Maximum seasonal AR order for automatic model selection.
+    max_Q : int, default 2
+        Maximum seasonal MA order for automatic model selection.
+    max_order : int, default 5
+        Maximum sum of p+q+P+Q for automatic model selection.
+    max_d : int, default 2
+        Maximum non-seasonal differencing order for automatic selection.
+    max_D : int, default 1
+        Maximum seasonal differencing order for automatic selection.
+    start_p : int, default 2
+        Starting AR order for stepwise search.
+    start_q : int, default 2
+        Starting MA order for stepwise search.
+    start_P : int, default 1
+        Starting seasonal AR order for stepwise search.
+    start_Q : int, default 1
+        Starting seasonal MA order for stepwise search.
+    stationary : bool, default False
+        Restrict automatic search to stationary models (d=D=0).
+    seasonal : bool, default True
+        Include seasonal components in automatic search.
+    ic : str, default "aicc"
+        Information criterion for automatic model selection: "aicc", "aic", or "bic".
+    stepwise : bool, default True
+        Use stepwise search (faster) or exhaustive grid search for automatic selection.
+    nmodels : int, default 94
+        Maximum number of models to try in stepwise search.
+    trace : bool, default False
+        Print progress during automatic model selection.
+    approximation : bool or None, default None
+        Use CSS approximation during automatic search. If None, auto-determined based on data size.
+    truncate : int or None, default None
+        Truncate series to this length for approximation offset computation.
+    test : str, default "kpss"
+        Unit root test for automatic differencing determination: "kpss", "adf", or "pp".
+    test_kwargs : dict or None, default None
+        Additional arguments for unit root test.
+    seasonal_test : str, default "seas"
+        Seasonal test for automatic seasonal differencing: "seas", "ocsb", "hegy", or "ch".
+    seasonal_test_kwargs : dict or None, default None
+        Additional arguments for seasonal test.
+    allowdrift : bool, default True
+        Allow drift term in automatic selection when d+D=1.
+    allowmean : bool, default True
+        Allow mean term in automatic selection when d+D=0.
+    lambda_bc : float, str, or None, default None
+        Box-Cox transformation parameter:
+        - None: No transformation
+        - "auto": Automatically select lambda using Guerrero's method
+        - float: Use the specified lambda value (0 = log transform)
+    biasadj : bool, default False
+        Bias adjustment for Box-Cox back-transformation (produces mean forecasts instead of median).
+        Only available for auto arima mode.
     model_ : dict
         Dictionary containing the fitted ARIMA model with keys:
         - 'y': Original training series
@@ -169,9 +227,6 @@ class Arima(BaseEstimator, RegressorMixin):
         - 'converged': Convergence status
         - 'model': State-space model dict
         - 'method': Estimation method string
-    auto_arima_results_ : dict
-        Dictionary containing the results from auto_arima when automatic
-        model selection is performed.
     y_train_ : ndarray of shape (n_samples,)
         Original training series used for fitting.
     coef_ : ndarray
@@ -317,11 +372,9 @@ class Arima(BaseEstimator, RegressorMixin):
         self.allowmean            = allowmean
         self.lambda_bc            = lambda_bc
         self.biasadj              = biasadj
-        self.is_memory_reduced    = False
-        self.is_fitted            = False
 
+        self.is_auto_arima        = order is None or seasonal_order is None
         self.model_               = None
-        self.auto_arima_results_  = None
         self.y_train_             = None
         self.coef_                = None
         self.coef_names_          = None
@@ -337,8 +390,10 @@ class Arima(BaseEstimator, RegressorMixin):
         self.n_features_in_       = None
         self.n_exog_names_in_     = None
         self.n_exog_features_in_  = None
+        self.is_memory_reduced    = False
+        self.is_fitted            = False
 
-        if self.order is None or self.seasonal_order is None:
+        if self.is_auto_arima:
             estimator_id = "Arima(auto)"
         else:
             p, d, q = self.order
@@ -351,7 +406,6 @@ class Arima(BaseEstimator, RegressorMixin):
         self.estimator_id = estimator_id
         self.estimator_selected_id_ = estimator_id
 
-        self
 
     def __repr__(self) -> str:
         """
@@ -416,15 +470,13 @@ class Arima(BaseEstimator, RegressorMixin):
                 raise ValueError(
                     f"Length of `exog` ({len(exog)}) does not match length of `y` ({len(y)})."
                 )
-        
-        use_auto_arima = self.order is None or self.seasonal_order is None
-        
+                
         ctx = (warnings.catch_warnings() if suppress_warnings else nullcontext())
         with ctx:
             if suppress_warnings:
                 warnings.simplefilter("ignore")
             
-            if use_auto_arima:
+            if self.is_auto_arima:
                 self.model_ = auto_arima(
                     y                  = y,
                     m                  = self.m,
@@ -463,22 +515,17 @@ class Arima(BaseEstimator, RegressorMixin):
                     kappa              = self.kappa
                 )
                 
-                # TODO: creo que no deberia sobreescribir esto, de lo contrario, en el siguinete fit
-                # no se podria volver a hacer auto arima si se quisiera.
-                arma = self.model_['arma']
-                self.order = (arma[0], arma[5], arma[1])
-                self.seasonal_order = (arma[2], arma[6], arma[3])
-                
-                # Update estimator_selected_id_ with the selected model
-                p, d, q = self.order
-                P, D, Q = self.seasonal_order
-                if P == 0 and D == 0 and Q == 0:
-                    self.estimator_selected_id_ = f"Arima({p},{d},{q})"
-                else:
-                    self.estimator_selected_id_ = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
-
+                self.best_model_order_ = (
+                    self.model_['arma'][0],
+                    self.model_['arma'][5],
+                    self.model_['arma'][1]
+                )
+                self.best_seasonal_order_ = (
+                    self.model_['arma'][2],
+                    self.model_['arma'][6],
+                    self.model_['arma'][3]
+                )
             else:
-                # Use specified orders
                 self.model_ = arima(
                     x              = y,
                     m              = self.m,
@@ -575,12 +622,19 @@ class Arima(BaseEstimator, RegressorMixin):
                 f"but `exog` was not provided for prediction."
             )
         
-        predictions = predict_arima(
-            model   = self.model_,
-            n_ahead = steps,
-            newxreg = exog,
-            se_fit  = False
-        )
+        if self.is_auto_arima:
+            predictions = forecast_arima(
+                model   = self.model_,
+                h       = steps,
+                xreg    = exog
+            )
+        else:
+            predictions = predict_arima(
+                model   = self.model_,
+                n_ahead = steps,
+                newxreg = exog,
+                se_fit  = False
+            )
         
         return predictions['pred']
 
@@ -678,42 +732,60 @@ class Arima(BaseEstimator, RegressorMixin):
                 f"but `exog` was not provided for prediction."
             )
         
-        raw_preds = predict_arima(
-            model   = self.model_,
-            n_ahead = steps,
-            newxreg = exog,
-            se_fit  = True
-        )
-        
-        mean = np.asarray(raw_preds['pred'])
-        se = np.asarray(raw_preds['se'])
-        levels = list(level)
-        n_levels = len(levels)
-
-        lower = np.empty((steps, n_levels), dtype=float)
-        upper = np.empty((steps, n_levels), dtype=float)
-        for i, lv in enumerate(levels):
-            alpha_lvl = 1 - lv / 100
-            z = norm.ppf(1 - alpha_lvl / 2)
-            lower[:, i] = mean - z * se
-            upper[:, i] = mean + z * se
-
-        predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
-        predictions[:, 0] = mean
-        for i in range(n_levels):
-            predictions[:, 1 + 2 * i] = lower[:, i]
-            predictions[:, 1 + 2 * i + 1] = upper[:, i]
-
-        if as_frame:
-            col_names = ["mean"]
-            for level in levels:
-                level = int(level)
-                col_names.append(f"lower_{level}")
-                col_names.append(f"upper_{level}")
-            
-            predictions = pd.DataFrame(
-                predictions, columns=col_names, index=pd.RangeIndex(1, steps + 1, name="step")
+        if self.is_auto_arima:
+            raw_preds = forecast_arima(
+                model   = self.model_,
+                h       = steps,
+                xreg    = exog,
+                level   = level
             )
+            if as_frame:
+                predictions = pd.DataFrame(
+                    {
+                        "mean": raw_preds['mean'],
+                        "lower": raw_preds['lower'],
+                        "upper": raw_preds['upper']
+                    },
+                    index=pd.RangeIndex(1, steps + 1, name="step")
+                )
+
+        else:
+            raw_preds = predict_arima(
+                model   = self.model_,
+                n_ahead = steps,
+                newxreg = exog,
+                se_fit  = True
+            )
+        
+            mean = np.asarray(raw_preds['pred'])
+            se = np.asarray(raw_preds['se'])
+            levels = list(level)
+            n_levels = len(levels)
+
+            lower = np.empty((steps, n_levels), dtype=float)
+            upper = np.empty((steps, n_levels), dtype=float)
+            for i, lv in enumerate(levels):
+                alpha_lvl = 1 - lv / 100
+                z = norm.ppf(1 - alpha_lvl / 2)
+                lower[:, i] = mean - z * se
+                upper[:, i] = mean + z * se
+
+            predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
+            predictions[:, 0] = mean
+            for i in range(n_levels):
+                predictions[:, 1 + 2 * i] = lower[:, i]
+                predictions[:, 1 + 2 * i + 1] = upper[:, i]
+
+            if as_frame:
+                col_names = ["mean"]
+                for level in levels:
+                    level = int(level)
+                    col_names.append(f"lower_{level}")
+                    col_names.append(f"upper_{level}")
+                
+                predictions = pd.DataFrame(
+                    predictions, columns=col_names, index=pd.RangeIndex(1, steps + 1, name="step")
+                )
 
         return predictions
 
