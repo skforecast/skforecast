@@ -6,6 +6,15 @@
 # coding=utf-8
 
 import os
+
+# Limitar hilos para reducir ruido en tiempos
+if os.getenv('GITHUB_ACTIONS') != 'true':
+    os.environ.setdefault("OMP_NUM_THREADS", "1")
+    os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+    os.environ.setdefault("MKL_NUM_THREADS", "1")
+    os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+    os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+
 import numpy as np
 from skforecast import __version__ as skforecast_version
 from benchmarks import (
@@ -18,14 +27,6 @@ from benchmarks import (
 
 # Fijar semillas reproducibles
 np.random.seed(123)
-
-# Limitar hilos para reducir ruido en tiempos
-if not os.getenv('GITHUB_ACTIONS') == 'true':
-    os.environ.setdefault("OMP_NUM_THREADS", "1")
-    os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-    os.environ.setdefault("MKL_NUM_THREADS", "1")
-    os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
-    os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 
 
 def main():

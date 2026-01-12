@@ -21,6 +21,14 @@ from ..metrics import add_y_train_argument, _get_metric
 from ..utils import check_interval, date_to_index_position
 
 
+# Pre-computed frozenset of linear estimator names for O(1) lookup in select_n_jobs_backtesting
+# This avoids regenerating the list on every function call
+LINEAR_ESTIMATORS = frozenset(
+    name for name in dir(sklearn.linear_model)
+    if not name.startswith('_')
+)
+
+
 def initialize_lags_grid(
     forecaster: object, 
     lags_grid: (
@@ -659,23 +667,16 @@ def select_n_jobs_backtesting(
 
     if isinstance(forecaster.estimator, Pipeline):
         estimator = forecaster.estimator[-1]
-        estimator_name = type(estimator).__name__
     else:
         estimator = forecaster.estimator
-        estimator_name = type(estimator).__name__
-
-    linear_estimators = [
-        estimator_name
-        for estimator_name in dir(sklearn.linear_model)
-        if not estimator_name.startswith('_')
-    ]
+    estimator_name = type(estimator).__name__
 
     refit = False if refit == 0 else refit
     if not isinstance(refit, bool) and refit != 1:
         n_jobs = 1
     else:
         if forecaster_name in ['ForecasterRecursive']:
-            if estimator_name in linear_estimators:
+            if estimator_name in LINEAR_ESTIMATORS:
                 n_jobs = 1
             elif estimator_name == 'LGBMRegressor':
                 n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
@@ -1087,10 +1088,10 @@ def _calculate_metrics_backtesting_multiseries(
     levels_in_predictions = predictions.index.get_level_values('level').unique()
 
     if isinstance(series, pd.DataFrame) and not isinstance(series.index, pd.MultiIndex):
-        series = series.melt(ignore_index=False, var_name='level', value_name='y_true')
-        series = series.rename_axis('idx', axis=0)
-        series = series.set_index('level', append=True)
-        series = series.swaplevel()
+        series = series.stack()
+        series.index = series.index.swaplevel()
+        series.index.names = ['level', 'idx']
+        series = series.to_frame('y_true')
     else:
         series = pd.concat(series, names = ['level', 'idx']).to_frame('y_true')
     

@@ -26,7 +26,7 @@ def test_estimator_summary(capsys):
     # Check exact output
     expected_output = """ETS Model Summary
 ============================================================
-Model: ETS(AAN)
+Model: Ets(AAN)
 Number of observations: 100
 Seasonal period (m): 1
 

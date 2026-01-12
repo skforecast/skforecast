@@ -1155,14 +1155,17 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                           columns = X_train_features_names_out_
                       )
 
-        y_train = {
-            step: pd.Series(
-                      data  = y_train[:, step - 1], 
-                      index = series_index[self.window_size + step - 1:][:len_train_index],
-                      name  = f"{self.level}_step_{step}"
-                  )
-            for step in self.steps
-        }
+        # Optimize: pre-compute indices to avoid repeated slicing
+        y_train_dict = {}
+        for step in self.steps:
+            step_idx_start = self.window_size + step - 1
+            step_index = series_index[step_idx_start:step_idx_start + len_train_index]
+            y_train_dict[step] = pd.Series(
+                data=y_train[:, step - 1],
+                index=step_index,
+                name=f"{self.level}_step_{step}"
+            )
+        y_train = y_train_dict
 
         return (
             X_train,
@@ -2248,10 +2251,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             )
 
         if self.transformer_series_[self.level]:
-            boot_predictions = np.apply_along_axis(
-                                   func1d            = transform_numpy,
-                                   axis              = 0,
-                                   arr               = boot_predictions,
+            boot_predictions = transform_numpy(
+                                   array             = boot_predictions,
                                    transformer       = self.transformer_series_[self.level],
                                    fit               = False,
                                    inverse_transform = True
@@ -2388,10 +2389,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             )
 
         if self.transformer_series_[self.level]:
-            predictions = np.apply_along_axis(
-                              func1d            = transform_numpy,
-                              axis              = 0,
-                              arr               = predictions,
+            predictions = transform_numpy(
+                              array             = predictions,
                               transformer       = self.transformer_series_[self.level],
                               fit               = False,
                               inverse_transform = True

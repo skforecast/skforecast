@@ -7,6 +7,39 @@
 
 from __future__ import annotations
 import numpy as np
+from sklearn.exceptions import NotFittedError
+
+
+def check_is_fitted(func):
+    """
+    This decorator checks if the model is fitted before using the desired method.
+
+    Parameters
+    ----------
+    func : Callable
+        Function to wrap.
+    
+    Returns
+    -------
+    wrapper : wrapper
+        Function wrapped.
+
+    """
+
+    def wrapper(self, *args, **kwargs):
+
+        if not self.is_fitted:
+            raise NotFittedError(
+                f"This {type(self).__name__} instance is not fitted yet. Call "
+                f"'fit' with appropriate arguments before using this estimator."
+            )
+        
+        result = func(self, *args, **kwargs)
+        
+        return result
+    
+    return wrapper
+
 
 def check_memory_reduced(estimator: object, method_name: str) -> None:
     """
@@ -22,9 +55,9 @@ def check_memory_reduced(estimator: object, method_name: str) -> None:
     Raises
     ------
     ValueError
-        If estimator.memory_reduced_ is True.
+        If estimator.is_memory_reduced is True.
     """
-    if getattr(estimator, 'memory_reduced_', False):
+    if getattr(estimator, 'is_memory_reduced', False):
                 
         message = (
             f"Cannot call {method_name}(): model memory has been reduced via "
@@ -32,7 +65,8 @@ def check_memory_reduced(estimator: object, method_name: str) -> None:
             f"Refit the model to restore full functionality."
         )
         raise ValueError(message)
-    
+
+
 class FastLinearRegression:
     """
     Fast linear regression with using numpy linalg.solve as primary method and

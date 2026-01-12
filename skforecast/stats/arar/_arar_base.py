@@ -10,6 +10,7 @@ import warnings
 import numpy as np
 from scipy.stats import norm
 
+
 def setup_params(y_in, max_ar_depth: int | None = None, max_lag: int | None = None):
     n = len(y_in)
     if n < 10:

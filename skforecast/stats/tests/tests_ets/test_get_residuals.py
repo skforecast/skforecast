@@ -1,7 +1,8 @@
 # Unit test get_residuals method - Ets
 # ==============================================================================
-import numpy as np
+import re
 import pytest
+import numpy as np
 from ..._ets import Ets
 
 
@@ -54,6 +55,6 @@ def test_get_residuals_raises_error_after_reduce_memory():
     # get_residuals() should raise error
     with pytest.raises(
         ValueError,
-        match="Cannot call residuals_\\(\\): model memory has been reduced"
+        match=re.escape("Cannot call get_residuals(): model memory has been reduced")
     ):
         est.get_residuals()

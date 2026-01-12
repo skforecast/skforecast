@@ -1,8 +1,10 @@
 # Unit test predict_interval method - Arar
 # ==============================================================================
+import re
+import pytest
 import numpy as np
 import pandas as pd
-import pytest
+from sklearn.exceptions import NotFittedError
 from ..._arar import Arar
 
 
@@ -21,10 +23,12 @@ def test_predict_interval_raises_errors_for_invalid_steps_and_unfitted_model():
     Test that predict_interval raises errors for invalid steps and unfitted model.
     """
     est = Arar()
-    msg = (
-        "This Arar instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator."
+
+    error_msg = re.escape(
+        f"This {type(est).__name__} instance is not fitted yet. Call "
+        f"'fit' with appropriate arguments before using this estimator."
     )
-    with pytest.raises(TypeError, match=msg):
+    with pytest.raises(NotFittedError, match=error_msg):
         est.predict_interval(steps=1)
 
     y = ar1_series(50)
@@ -171,31 +175,24 @@ def test_predict_interval_output_as_frame():
     assert np.all(result['upper_95'] > result['upper_80'])
 
 
-def test_predict_interval_output_as_dict():
+def test_predict_interval_output_as_array():
     """
-    Test predict_interval functionality returning dict.
+    Test predict_interval functionality returning ndarray when as_frame=False.
     """
     y = ar1_series(120)
     est = Arar()
     est.fit(y)
     result = est.predict_interval(steps=8, level=(80, 95), as_frame=False)
     
-    assert isinstance(result, dict)
-    assert 'mean' in result
-    assert 'lower' in result
-    assert 'upper' in result
-    assert 'level' in result
-    
-    assert result['mean'].shape == (8,)
-    assert result['lower'].shape == (8, 2)
-    assert result['upper'].shape == (8, 2)
-    assert result['level'] == [80, 95]
+    assert isinstance(result, np.ndarray)
+    # columns: mean, lower_80, upper_80, lower_95, upper_95
+    assert result.shape == (8, 5)
     
     expected_mean = np.array([
         0.58329928, 0.92906587, 0.90186554, 1.00217975,
         0.72872694, 0.57427369, 0.38811633, -0.16481327
     ])
-    np.testing.assert_array_almost_equal(result['mean'], expected_mean, decimal=8)
+    np.testing.assert_array_almost_equal(result[:, 0], expected_mean, decimal=8)
     
     expected_lower_80 = np.array([
         -0.57918853, -0.47313545, -0.5967535, -0.53830729,
@@ -205,8 +202,8 @@ def test_predict_interval_output_as_dict():
         1.7457871, 2.33126719, 2.40048457, 2.54266678,
         2.26921628, 2.12291394, 1.95164682, 1.41387004
     ])
-    np.testing.assert_array_almost_equal(result['lower'][:, 0], expected_lower_80, decimal=6)
-    np.testing.assert_array_almost_equal(result['upper'][:, 0], expected_upper_80, decimal=6)
+    np.testing.assert_array_almost_equal(result[:, 1], expected_lower_80, decimal=6)
+    np.testing.assert_array_almost_equal(result[:, 2], expected_upper_80, decimal=6)
     
     expected_lower_95 = np.array([
         -1.19457241, -1.21541599, -1.39007449, -1.35379186,
@@ -216,8 +213,8 @@ def test_predict_interval_output_as_dict():
         2.36117097, 3.07354773, 3.19380556, 3.35815135,
         3.08470208, 2.94271456, 2.77932986, 2.24957451
     ])
-    np.testing.assert_array_almost_equal(result['lower'][:, 1], expected_lower_95, decimal=6)
-    np.testing.assert_array_almost_equal(result['upper'][:, 1], expected_upper_95, decimal=6)
+    np.testing.assert_array_almost_equal(result[:, 3], expected_lower_95, decimal=6)
+    np.testing.assert_array_almost_equal(result[:, 4], expected_upper_95, decimal=6)
 
 
 def test_reduce_memory_preserves_predict_interval():

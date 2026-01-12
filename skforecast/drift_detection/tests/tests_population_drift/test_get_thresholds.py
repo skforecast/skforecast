@@ -1,4 +1,4 @@
-# Unit test get_thresholds method of PopulationDriftDetector
+# Unit test PopulationDriftDetector get_thresholds
 # ==============================================================================
 import pandas as pd
 import numpy as np
@@ -11,7 +11,7 @@ from sklearn.exceptions import NotFittedError
 
 # fixtures
 THIS_DIR = Path(__file__).parent
-data = joblib.load(THIS_DIR/'fixture_data_population_drift.joblib')
+data = joblib.load(THIS_DIR / 'fixture_data_population_drift.joblib')
 data['weather'] = data['weather'].astype('category')
 data_multiseries = pd.concat(
     [
@@ -105,6 +105,7 @@ def test_get_thresholds_single_series():
             0.0,
             0.07087005888035235,
         ],
+        "max_out_of_range_proportion": [0.1] * 11,
     }
     )
     results = detector.get_thresholds()
@@ -300,6 +301,7 @@ def test_get_thresholds_multiseries():
             0.0,
             0.07087005888035235,
         ],
+        "max_out_of_range_proportion": [0.1] * 33,
     }
     )
     results = detector.get_thresholds()

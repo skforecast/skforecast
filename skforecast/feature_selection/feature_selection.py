@@ -125,14 +125,17 @@ def select_features(
         window_features_cols = forecaster.window_features_names
         autoreg_cols.extend(window_features_cols)
 
-    exog_cols = [col for col in X_train.columns if col not in autoreg_cols]
+    # Use sets for O(1) lookup instead of O(n) list search
+    autoreg_cols_set = set(autoreg_cols)
+    exog_cols = [col for col in X_train.columns if col not in autoreg_cols_set]
+    exog_cols_set = set(exog_cols)
 
     forced_autoreg = []
     forced_exog = []
     if force_inclusion is not None:
         if isinstance(force_inclusion, list):
-            forced_autoreg = [col for col in force_inclusion if col in autoreg_cols]
-            forced_exog = [col for col in force_inclusion if col in exog_cols]
+            forced_autoreg = [col for col in force_inclusion if col in autoreg_cols_set]
+            forced_exog = [col for col in force_inclusion if col in exog_cols_set]
         elif isinstance(force_inclusion, str):
             forced_autoreg = [col for col in autoreg_cols if re.match(force_inclusion, col)]
             forced_exog = [col for col in exog_cols if re.match(force_inclusion, col)]
@@ -158,7 +161,7 @@ def select_features(
         selected_autoreg = [
             feature
             for feature in selected_features
-            if feature in autoreg_cols
+            if feature in autoreg_cols_set
         ]
 
     if select_only == 'autoreg':
@@ -167,18 +170,22 @@ def select_features(
         selected_exog = [
             feature
             for feature in selected_features
-            if feature in exog_cols
+            if feature in exog_cols_set
         ]
 
     if force_inclusion is not None: 
         if select_only != 'autoreg':
             forced_exog_not_selected = set(forced_exog) - set(selected_features)
             selected_exog.extend(forced_exog_not_selected)
-            selected_exog.sort(key=exog_cols.index)
+            # Use dict for O(1) index lookup instead of O(n) list.index()
+            exog_cols_order = {col: i for i, col in enumerate(exog_cols)}
+            selected_exog.sort(key=lambda x: exog_cols_order[x])
         if select_only != 'exog':
             forced_autoreg_not_selected = set(forced_autoreg) - set(selected_features)
             selected_autoreg.extend(forced_autoreg_not_selected)
-            selected_autoreg.sort(key=autoreg_cols.index)
+            # Use dict for O(1) index lookup instead of O(n) list.index()
+            autoreg_cols_order = {col: i for i, col in enumerate(autoreg_cols)}
+            selected_autoreg.sort(key=lambda x: autoreg_cols_order[x])
 
     if len(selected_autoreg) == 0:
         warnings.warn(
@@ -189,12 +196,14 @@ def select_features(
         selected_lags = []
         selected_window_features = []
     else:
+        lags_cols_set = set(lags_cols)
+        window_features_cols_set = set(window_features_cols)
         selected_lags = [
             int(feature.replace('lag_', '')) 
-            for feature in selected_autoreg if feature in lags_cols
+            for feature in selected_autoreg if feature in lags_cols_set
         ]
         selected_window_features = [
-            feature for feature in selected_autoreg if feature in window_features_cols
+            feature for feature in selected_autoreg if feature in window_features_cols_set
         ]
 
     if verbose:
@@ -340,18 +349,22 @@ def select_features_multiseries(
     if forecaster.window_features is not None:
         autoreg_cols.extend(window_features_cols)
     
+    # Use sets for O(1) lookup instead of O(n) list search
+    autoreg_cols_set = set(autoreg_cols)
+    encoding_cols_set = set(encoding_cols)
     exog_cols = [
         col
         for col in X_train.columns
-        if col not in autoreg_cols and col not in encoding_cols
+        if col not in autoreg_cols_set and col not in encoding_cols_set
     ]
+    exog_cols_set = set(exog_cols)
 
     forced_autoreg = []
     forced_exog = []
     if force_inclusion is not None:
         if isinstance(force_inclusion, list):
-            forced_autoreg = [col for col in force_inclusion if col in autoreg_cols]
-            forced_exog = [col for col in force_inclusion if col in exog_cols]
+            forced_autoreg = [col for col in force_inclusion if col in autoreg_cols_set]
+            forced_exog = [col for col in force_inclusion if col in exog_cols_set]
         elif isinstance(force_inclusion, str):
             forced_autoreg = [col for col in autoreg_cols if re.match(force_inclusion, col)]
             forced_exog = [col for col in exog_cols if re.match(force_inclusion, col)]
@@ -379,7 +392,7 @@ def select_features_multiseries(
         selected_autoreg = [
             feature
             for feature in selected_features
-            if feature in autoreg_cols
+            if feature in autoreg_cols_set
         ]
 
     if select_only == 'autoreg':
@@ -388,18 +401,22 @@ def select_features_multiseries(
         selected_exog = [
             feature
             for feature in selected_features
-            if feature in exog_cols
+            if feature in exog_cols_set
         ]
 
     if force_inclusion is not None: 
         if select_only != 'autoreg':
             forced_exog_not_selected = set(forced_exog) - set(selected_features)
             selected_exog.extend(forced_exog_not_selected)
-            selected_exog.sort(key=exog_cols.index)
+            # Use dict for O(1) index lookup instead of O(n) list.index()
+            exog_cols_order = {col: i for i, col in enumerate(exog_cols)}
+            selected_exog.sort(key=lambda x: exog_cols_order[x])
         if select_only != 'exog':
             forced_autoreg_not_selected = set(forced_autoreg) - set(selected_features)
             selected_autoreg.extend(forced_autoreg_not_selected)
-            selected_autoreg.sort(key=autoreg_cols.index)
+            # Use dict for O(1) index lookup instead of O(n) list.index()
+            autoreg_cols_order = {col: i for i, col in enumerate(autoreg_cols)}
+            selected_autoreg.sort(key=lambda x: autoreg_cols_order[x])
 
     if len(selected_autoreg) == 0:
         warnings.warn(
@@ -411,6 +428,8 @@ def select_features_multiseries(
         selected_window_features = []
         verbose_selected_lags = []
     else:
+        lags_cols_set = set(lags_cols)
+        window_features_cols_set = set(window_features_cols)
         if forecaster_name == 'ForecasterDirectMultiVariate':
             selected_lags = {
                 series_name: (
@@ -425,19 +444,19 @@ def select_features_multiseries(
                 for series_name, lags_names in forecaster.lags_names.items()
             }
             verbose_selected_lags = [
-                feature for feature in selected_autoreg if feature in lags_cols
+                feature for feature in selected_autoreg if feature in lags_cols_set
             ]
         else:
             selected_lags = [
                 int(feature.replace('lag_', '')) 
                 for feature in selected_autoreg 
-                if feature in lags_cols
+                if feature in lags_cols_set
             ]
             verbose_selected_lags = selected_lags
 
         selected_window_features = [
             feature for feature in selected_autoreg 
-            if feature in window_features_cols
+            if feature in window_features_cols_set
         ]
 
     if verbose:

@@ -102,9 +102,9 @@ class ForecasterRnn(ForecasterBase):
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
-    fit_kwargs : dict, default `None`
+    fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the estimator.
-    forecaster_id : str, int, default `None`
+    forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
     regressor : estimator or pipeline compatible with the Keras API
         **Deprecated**, alias for `estimator`.
@@ -244,7 +244,7 @@ class ForecasterRnn(ForecasterBase):
             feature_range=(0, 1)
         ),
         transformer_exog: object | None = MinMaxScaler(feature_range=(0, 1)),
-        fit_kwargs: dict[str, object] | None = {},
+        fit_kwargs: dict[str, object] | None = None,
         forecaster_id: str | int | None = None,
         regressor: object = None
     ) -> None:
@@ -333,6 +333,9 @@ class ForecasterRnn(ForecasterBase):
                 f"Number of levels ({len(self.levels)}) does not match the number of "
                 f"levels expected by the estimator architecture ({self.n_levels_out})."
             )
+
+        if fit_kwargs is None:
+            fit_kwargs = {}
 
         self.series_val = None
         self.exog_val = None
@@ -577,23 +580,21 @@ class ForecasterRnn(ForecasterBase):
 
         n_rows = len(y) - self.window_size - self.max_step + 1  # rows of y_data
 
-        X_data = np.full(
-            shape=(n_rows, (self.window_size)), fill_value=np.nan, order="F", dtype=float
+        # Use sliding_window_view for vectorized lag creation (more efficient than loops)
+        # Create a sliding window view of the entire relevant portion of y
+        window_view = np.lib.stride_tricks.sliding_window_view(
+            y[: len(y) - self.max_step], window_shape=self.window_size
         )
-        for i, lag in enumerate(range(self.window_size - 1, -1, -1)):
-            X_data[:, i] = y[self.window_size - lag - 1 : -(lag + self.max_step)]
+        # Select only the rows we need and the specific lag columns
+        # Fancy indexing already creates a copy, no need for .astype(float, copy=True)
+        X_data = window_view[:n_rows, self.lags - 1]
 
-        # Get lags index
-        X_data = X_data[:, self.lags - 1]
-
-        y_data = np.full(
-            shape=(n_rows, self.max_step), fill_value=np.nan, order="F", dtype=float
+        # Use sliding_window_view for vectorized step creation
+        y_view = np.lib.stride_tricks.sliding_window_view(
+            y[self.window_size:], window_shape=self.max_step
         )
-        for step in range(self.max_step):
-            y_data[:, step] = y[self.window_size + step : self.window_size + step + n_rows]
-
-        # Get steps index
-        y_data = y_data[:, self.steps - 1]
+        # Select only the rows and steps we need
+        y_data = y_view[:n_rows, self.steps - 1]
 
         return X_data, y_data
 
@@ -703,35 +704,33 @@ class ForecasterRnn(ForecasterBase):
                                            transformer_series = self.transformer_series
                                        )
 
-        # Step 1: Create lags for all columns
         X_train = []
         y_train = []
+        
+        # Cache to store y_steps for series that are also levels
+        # This avoids calling _create_lags twice for the same series
+        levels_set = set(self.levels)
+        lags_cache = {}
 
-        # TODO: Add method argument to calculate lags and/or steps
         for serie in series_names_in_:
             x = series[serie]
-            check_y(y=x)
+            check_y(y=x, series_id=serie)
             x = transform_series(
                 series=x,
                 transformer=self.transformer_series_[serie],
                 fit=fit_transformer,
                 inverse_transform=False,
             )
-            X, _ = self._create_lags(x)
+            X, y_steps = self._create_lags(x)
             X_train.append(X)
+            
+            # Cache y_steps if this series is also a level (to avoid recomputation)
+            if serie in levels_set:
+                lags_cache[serie] = y_steps
 
+        # Get y_train from cache (no recomputation needed)
         for level in self.levels:
-            y = series[level]
-            check_y(y=y)
-            y = transform_series(
-                series=y,
-                transformer=self.transformer_series_[level],
-                fit=fit_transformer,
-                inverse_transform=False,
-            )
-
-            _, y = self._create_lags(y)
-            y_train.append(y)
+            y_train.append(lags_cache[level])
 
         X_train = np.stack(X_train, axis=2)
         y_train = np.stack(y_train, axis=2)
@@ -1211,18 +1210,16 @@ class ForecasterRnn(ForecasterBase):
         ].copy()
 
         last_window_values = last_window.to_numpy()
-        last_window_matrix = np.full(
-            shape=last_window.shape, fill_value=np.nan, order='F', dtype=float
+        last_window_matrix = np.empty(
+            shape=last_window.shape, order='F', dtype=float
         )
         for idx_series, series in enumerate(self.series_names_in_):
-            last_window_series = last_window_values[:, idx_series]
-            last_window_series = transform_numpy(
-                array=last_window_series,
+            last_window_matrix[:, idx_series] = transform_numpy(
+                array=last_window_values[:, idx_series],
                 transformer=self.transformer_series_[series],
                 fit=False,
                 inverse_transform=False,
             )
-            last_window_matrix[:, idx_series] = last_window_series
 
         X = [np.reshape(last_window_matrix, (1, self.max_lag, last_window.shape[1]))]
         X_predict_dimension_names = {
@@ -1411,7 +1408,7 @@ class ForecasterRnn(ForecasterBase):
             Name(s) of the time series to be predicted. It must be included
             in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
-        last_window : pandas DataFrame, default `None`
+        last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the
             first iteration of the prediction (t + 1).
             If `last_window = None`, the values stored in `self.last_window_` are
@@ -1596,10 +1593,8 @@ class ForecasterRnn(ForecasterBase):
             if level in levels:
                 transformer_level = self.transformer_series_[level]
                 if transformer_level is not None:
-                    predictions[i, :, :] = np.apply_along_axis(
-                        func1d            = transform_numpy,
-                        axis              = 0,
-                        arr               = predictions[i, :, :],
+                    predictions[i, :, :] = transform_numpy(
+                        array             = predictions[i, :, :],
                         transformer       = transformer_level,
                         fit               = False,
                         inverse_transform = True
@@ -1741,7 +1736,7 @@ class ForecasterRnn(ForecasterBase):
 
         Parameters
         ----------
-        ax : matplotlib.axes.Axes, default `None`
+        ax : matplotlib.axes.Axes, default None
             Pre-existing ax for the plot. Otherwise, call matplotlib.pyplot.subplots()
             internally.
         exclude_first_iteration : bool, default `False`

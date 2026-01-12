@@ -120,10 +120,10 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
         forecaster._create_train_X_y(series=series)
 
     def ForecasterDirectMultiVariate_fit(forecaster, series, exog):
-        forecaster.fit(series=series, exog=exog)
+        forecaster.fit(series=series, exog=exog, suppress_warnings=True)
 
     def ForecasterDirectMultiVariate_fit_series_no_exog(forecaster, series):
-        forecaster.fit(series=series)
+        forecaster.fit(series=series, suppress_warnings=True)
 
     def ForecasterDirectMultiVariate_check_predict_inputs(forecaster, exog):
         if parse(skforecast_version) >= parse("0.17.0"):
@@ -224,7 +224,8 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
                 cv=cv,
                 metric='mean_squared_error',
                 n_jobs=1,
-                show_progress=False
+                show_progress=False,
+                suppress_warnings=True
             )
         
     runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
@@ -238,8 +239,8 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
     _ = runner.benchmark(ForecasterDirectMultiVariate_fit, forecaster=forecaster, series=series, exog=exog)
     _ = runner.benchmark(ForecasterDirectMultiVariate_fit_series_no_exog, forecaster=forecaster, series=series)
 
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True, suppress_warnings=True)
     runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
-    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     _ = runner.benchmark(ForecasterDirectMultiVariate_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirectMultiVariate_predict, forecaster=forecaster, exog=exog_pred)

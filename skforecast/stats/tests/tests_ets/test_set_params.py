@@ -52,6 +52,7 @@ def test_set_params_updates_valid_parameters():
     assert model.m == 4
     assert model.model == "AAN"  # Unchanged
     assert model.alpha == 0.1  # Unchanged
+    assert model.is_fitted is False
     
     # Update multiple parameters
     model.set_params(model="AAA", alpha=0.2, beta=0.1, damped=True)
@@ -60,6 +61,7 @@ def test_set_params_updates_valid_parameters():
     assert model.alpha == 0.2
     assert model.beta == 0.1
     assert model.damped is True
+    assert model.is_fitted is False
 
 
 def test_set_params_resets_fitted_state():
@@ -72,24 +74,25 @@ def test_set_params_resets_fitted_state():
     
     # Verify model is fitted
     assert hasattr(model, 'model_') and model.model_ is not None
-    assert hasattr(model, 'y_') and model.y_ is not None
-    assert hasattr(model, 'config_') and model.config_ is not None
+    assert hasattr(model, 'y_train_') and model.y_train_ is not None
+    assert hasattr(model, 'model_config_') and model.model_config_ is not None
     assert hasattr(model, 'params_') and model.params_ is not None
     assert hasattr(model, 'fitted_values_') and model.fitted_values_ is not None
-    assert hasattr(model, 'residuals_in_') and model.residuals_in_ is not None
-    assert model.memory_reduced_ is False
+    assert hasattr(model, 'in_sample_residuals_') and model.in_sample_residuals_ is not None
+    assert model.is_memory_reduced is False
     
     # Set params - should reset fitted state
     model.set_params(m=4)
+    assert model.is_fitted is False
     
     # Verify all fitted attributes are reset
     assert model.model_ is None
-    assert model.y_ is None
-    assert model.config_ is None
+    assert model.y_train_ is None
+    assert model.model_config_ is None
     assert model.params_ is None
     assert model.fitted_values_ is None
-    assert model.residuals_in_ is None
-    assert model.memory_reduced_ is False
+    assert model.in_sample_residuals_ is None
+    assert model.is_memory_reduced is False
 
 
 def test_set_params_requires_refit_before_predict():
@@ -207,13 +210,13 @@ def test_set_params_after_reduce_memory():
     model.fit(y)
     model.reduce_memory()
     
-    assert model.memory_reduced_ is True
+    assert model.is_memory_reduced is True
     assert model.fitted_values_ is None
     
     # Set params should reset memory_reduced_ flag
     model.set_params(model="AAN")
     
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
 
 
 def test_set_params_with_all_valid_parameters():

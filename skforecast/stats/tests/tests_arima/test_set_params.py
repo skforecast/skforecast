@@ -1,7 +1,9 @@
 # Unit test set_params method - Arima
 # ==============================================================================
-import numpy as np
+import re
 import pytest
+import numpy as np
+from sklearn.exceptions import NotFittedError
 from ..._arima import Arima
 
 
@@ -68,7 +70,7 @@ def test_set_params_all_parameters():
         'n_cond': 15,
         'SSinit': 'Rossignol2011',
         'optim_method': 'L-BFGS-B',
-        'optim_control': {'maxiter': 200},
+        'optim_kwargs': {'maxiter': 200},
         'kappa': 1e5
     }
     
@@ -89,29 +91,18 @@ def test_set_params_resets_fitted_state():
     # Check that model is fitted
     assert hasattr(model, 'model_')
     assert hasattr(model, 'coef_')
-    assert hasattr(model, 'y_')
-    assert model.memory_reduced_ is False
+    assert hasattr(model, 'y_train_')
+    assert model.is_memory_reduced is False
+    assert model.is_fitted is True
     
     # Change a parameter
     model.set_params(order=(2, 0, 0))
     
-    # Fitted attributes should be removed
-    assert not hasattr(model, 'model_')
-    assert not hasattr(model, 'coef_')
-    assert not hasattr(model, 'y_')
-    assert not hasattr(model, 'coef_names_')
-    assert not hasattr(model, 'sigma2_')
-    assert not hasattr(model, 'loglik_')
-    assert not hasattr(model, 'aic_')
-    assert not hasattr(model, 'bic_')
-    assert not hasattr(model, 'arma_')
-    assert not hasattr(model, 'converged_')
-    assert not hasattr(model, 'n_features_in_')
-    assert not hasattr(model, 'n_exog_features_in_')
-    assert not hasattr(model, 'fitted_values_')
-    assert not hasattr(model, 'residuals_in_')
-    assert not hasattr(model, 'var_coef_')
-    assert model.memory_reduced_ is False
+    assert model.model_ is None
+    assert model.coef_ is None
+    assert model.y_train_ is None
+    assert model.is_memory_reduced is False
+    assert model.is_fitted is False
 
 
 def test_set_params_after_fit_requires_refit():
@@ -128,14 +119,14 @@ def test_set_params_after_fit_requires_refit():
     
     # Change parameters
     model.set_params(order=(2, 0, 0))
+    assert model.is_fitted is False
     
     # Predictions should fail without refitting
-    from sklearn.exceptions import NotFittedError
-    msg = (
+    error_msg = re.escape(
         "This Arima instance is not fitted yet. Call 'fit' with "
         "appropriate arguments before using this estimator."
     )
-    with pytest.raises(NotFittedError, match=msg):
+    with pytest.raises(NotFittedError, match=error_msg):
         model.predict(steps=5)
     
     # Refit and predictions should work again
@@ -210,7 +201,7 @@ def test_set_params_on_fitted_model_with_exog():
     model.set_params(order=(2, 0, 0))
     
     # Exog-related attributes should also be reset
-    assert not hasattr(model, 'n_exog_features_in_')
+    assert model.n_exog_features_in_ is None
 
 
 def test_set_params_empty_call():
@@ -221,26 +212,28 @@ def test_set_params_empty_call():
     model = Arima(order=(1, 0, 0))
     model.fit(y)
     
+    assert model.is_fitted is True
     assert hasattr(model, 'model_')
     
     # Call with no parameters
     model.set_params()
     
     # Should still reset fitted state
-    assert not hasattr(model, 'model_')
+    assert model.is_fitted is False
+    assert model.model_ is None
 
 
 def test_set_params_resets_memory_reduced_flag():
     """
-    Test that set_params resets memory_reduced_ flag.
+    Test that set_params resets is_memory_reduced flag.
     """
     y = ar1_series(100, seed=42)
     model = Arima(order=(1, 0, 0))
     model.fit(y)
     model.reduce_memory()
     
-    assert model.memory_reduced_ is True
+    assert model.is_memory_reduced is True
     
-    model.set_params(order=(1, 0, 1))
+    model.set_params(order=(2, 0, 0))
     
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False

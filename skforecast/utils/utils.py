@@ -161,14 +161,16 @@ def initialize_window_features(
         
         max_window_sizes = []
         window_features_names = []
+        needed_atts_set = set(needed_atts)
+        needed_methods_set = set(needed_methods)
         for wf in window_features:
             wf_name = type(wf).__name__
-            atts_methods = set([a for a in dir(wf)])
-            if not set(needed_atts).issubset(atts_methods):
+            atts_methods = set(dir(wf))
+            if not needed_atts_set.issubset(atts_methods):
                 raise ValueError(
                     f"{wf_name} must have the attributes: {needed_atts}." + link_to_docs
                 )
-            if not set(needed_methods).issubset(atts_methods):
+            if not needed_methods_set.issubset(atts_methods):
                 raise ValueError(
                     f"{wf_name} must have the methods: {needed_methods}." + link_to_docs
                 )
@@ -634,26 +636,27 @@ def check_exog_dtypes(
     valid_dtypes = ("int", "Int", "float", "Float", "uint")
 
     if isinstance(exog, pd.DataFrame):
-
-        for dtype_name in set(exog.dtypes.astype(str)):
-            if not (dtype_name.startswith(valid_dtypes) or dtype_name == "category"):
-                warnings.warn(
-                    f"{series_id} may contain only `int`, `float` or `category` dtypes. "
-                    f"Most machine learning models do not allow other types of values. "
-                    f"Fitting the forecaster may fail.", 
-                    DataTypeWarning
-                )
-                break
-
-        for col in exog.columns:
-            if isinstance(exog[col].dtype, pd.CategoricalDtype):
-                if not np.issubdtype(exog[col].cat.categories.dtype, np.integer):
+        unique_dtypes = set(exog.dtypes)
+        has_invalid_dtype = False
+        for dtype in unique_dtypes:
+            if isinstance(dtype, pd.CategoricalDtype):
+                if not np.issubdtype(dtype.categories.dtype, np.integer):
                     raise TypeError(
                         "Categorical dtypes in exog must contain only integer values. "
                         "See skforecast docs for more info about how to include "
                         "categorical features https://skforecast.org/"
                         "latest/user_guides/categorical-features.html"
                     )
+            elif not dtype.name.startswith(valid_dtypes):
+                has_invalid_dtype = True
+        
+        if has_invalid_dtype:
+            warnings.warn(
+                f"{series_id} may contain only `int`, `float` or `category` dtypes. "
+                f"Most machine learning models do not allow other types of values. "
+                f"Fitting the forecaster may fail.", 
+                DataTypeWarning
+            )
     
     else:
         
@@ -1243,11 +1246,11 @@ def check_residuals_input(
     
     """
 
-    forecasters_multiseries = [
+    forecasters_multiseries = (
         'ForecasterRecursiveMultiSeries',
         'ForecasterDirectMultiVariate',
         'ForecasterRnn'
-    ]
+    )
 
     if use_in_sample_residuals:
         if use_binned_residuals:
@@ -1257,11 +1260,13 @@ def check_residuals_input(
             residuals = in_sample_residuals_
             literal = "in_sample_residuals_"
         
-        if (
+        # Check if residuals are empty or None
+        is_empty = (
             residuals is None
             or (isinstance(residuals, dict) and not residuals)
             or (isinstance(residuals, np.ndarray) and residuals.size == 0)
-        ):
+        )
+        if is_empty:
             raise ValueError(
                 f"`forecaster.{literal}` is either None or empty. Use "
                 f"`store_in_sample_residuals = True` when fitting the forecaster "
@@ -1287,11 +1292,12 @@ def check_residuals_input(
             residuals = out_sample_residuals_
             literal = "out_sample_residuals_"
         
-        if (
+        is_empty = (
             residuals is None
             or (isinstance(residuals, dict) and not residuals)
             or (isinstance(residuals, np.ndarray) and residuals.size == 0)
-        ):
+        )
+        if is_empty:
             raise ValueError(
                 f"`forecaster.{literal}` is either None or empty. Use "
                 f"`use_in_sample_residuals = True` or the "
@@ -1313,7 +1319,8 @@ def check_residuals_input(
 
     if forecaster_name in forecasters_multiseries:
         for level in residuals.keys():
-            if residuals[level] is None or len(residuals[level]) == 0:
+            level_residuals = residuals[level]
+            if level_residuals is None or len(level_residuals) == 0:
                 raise ValueError(
                     f"Residuals for level '{level}' are None. Check `forecaster.{literal}`."
                 )
@@ -1495,10 +1502,7 @@ def exog_to_direct(
         exog_step.columns = [f"{col}_step_{i + 1}" for col in exog_cols]
         exog_direct.append(exog_step)
 
-    if len(exog_direct) > 1:
-        exog_direct = pd.concat(exog_direct, axis=1, copy=False)
-    else:
-        exog_direct = exog_direct[0]
+    exog_direct = pd.concat(exog_direct, axis=1) if steps > 1 else exog_direct[0]
 
     exog_direct_names = exog_direct.columns.to_list()
     exog_direct.index = exog_idx[-len(exog_direct):]
@@ -1550,15 +1554,8 @@ def exog_to_direct_numpy(
         exog = np.expand_dims(exog, axis=1)
 
     n_rows = len(exog)
-    exog_direct = []
-    for i in range(steps):
-        exog_step = exog[i : n_rows - (steps - 1 - i)]
-        exog_direct.append(exog_step)
-
-    if len(exog_direct) > 1:
-        exog_direct = np.concatenate(exog_direct, axis=1)
-    else:
-        exog_direct = exog_direct[0]
+    exog_direct = [exog[i : n_rows - (steps - 1 - i)] for i in range(steps)]
+    exog_direct = np.concatenate(exog_direct, axis=1) if steps > 1 else exog_direct[0]
     
     return exog_direct, exog_direct_names
 
@@ -1732,17 +1729,20 @@ def transform_numpy(
         Transformed array.
 
     """
+
+    if transformer is None:
+        return array
     
     if not isinstance(array, np.ndarray):
         raise TypeError(
             f"`array` argument must be a numpy ndarray. Got {type(array)}"
         )
-
-    if transformer is None:
-        return array
     
-    array_ndim = array.ndim
-    if array_ndim == 1:
+    original_ndim = array.ndim
+    original_shape = array.shape
+    reshaped_for_inverse = False
+    
+    if original_ndim == 1:
         array = array.reshape(-1, 1)
 
     if inverse_transform and isinstance(transformer, ColumnTransformer):
@@ -1762,6 +1762,12 @@ def transform_numpy(
             else:
                 array_transformed = transformer.transform(array)
         else:
+            # Vectorized inverse transformation for 2D arrays with multiple columns.
+            # Reshape to single column, transform, and reshape back.
+            # This is faster than applying the transformer column by column.
+            if array.shape[1] > 1:
+                array = array.reshape(-1, 1)
+                reshaped_for_inverse = True
             array_transformed = transformer.inverse_transform(array)
 
     if hasattr(array_transformed, 'toarray'):
@@ -1771,7 +1777,11 @@ def transform_numpy(
     if isinstance(array_transformed, (pd.Series, pd.DataFrame)):
         array_transformed = array_transformed.to_numpy()
 
-    if array_ndim == 1:
+    # Reshape back to original shape only if we reshaped for inverse_transform
+    if reshaped_for_inverse:
+        array_transformed = array_transformed.reshape(original_shape)
+
+    if original_ndim == 1:
         array_transformed = array_transformed.ravel()
 
     return array_transformed
@@ -2124,7 +2134,7 @@ def check_optional_dependency(
                 f"skforecast installation. Please run: `pip install \"{package_version}\"` to install it."
                 f"\n\nAlternately, you can install it by running `pip install skforecast[{extra}]`"
             )
-        except:
+        except Exception:
             msg = f"\n'{package_name}' is needed but not installed. Please install it."
         
         raise ImportError(msg)
@@ -2221,17 +2231,15 @@ def select_n_jobs_fit_forecaster(
 
     if isinstance(estimator, Pipeline):
         estimator = estimator[-1]
-        estimator_name = type(estimator).__name__
-    else:
-        estimator_name = type(estimator).__name__
+    estimator_name = type(estimator).__name__
 
-    linear_estimators = [
-        estimator_name
-        for estimator_name in dir(sklearn.linear_model)
-        if not estimator_name.startswith('_')
-    ]
+    # Use frozenset for O(1) lookup
+    linear_estimators = frozenset(
+        name for name in dir(sklearn.linear_model)
+        if not name.startswith('_')
+    )
 
-    if forecaster_name in ['ForecasterDirect', 'ForecasterDirectMultiVariate']:
+    if forecaster_name in ('ForecasterDirect', 'ForecasterDirectMultiVariate'):
         if estimator_name in linear_estimators:
             n_jobs = 1
         elif estimator_name == 'LGBMRegressor':
@@ -2252,12 +2260,14 @@ def set_cpu_gpu_device(
     Set the device for the estimator to either 'cpu', 'gpu', 'cuda', or None.
     """
 
-    if device not in {'gpu', 'cpu', 'cuda', 'GPU', 'CPU', None}:
+    valid_devices = {'gpu', 'cpu', 'cuda', 'GPU', 'CPU', None}
+    if device not in valid_devices:
         raise ValueError("`device` must be 'gpu', 'cpu', 'cuda', or None.")
     
     estimator_name = type(estimator).__name__
 
-    if estimator_name not in ['XGBRegressor', 'LGBMRegressor', 'CatBoostRegressor']:
+    supported_estimators = {'XGBRegressor', 'LGBMRegressor', 'CatBoostRegressor'}
+    if estimator_name not in supported_estimators:
         return None
     
     device_names = {
@@ -2824,32 +2834,29 @@ def prepare_steps_direct(
 
     Returns
     -------
-    steps : list
+    steps_direct : list
         Steps to be predicted.
 
     """
 
     if isinstance(steps, int):
-        steps = list(np.arange(steps) + 1)
+        steps_direct = list(range(1, steps + 1))
     elif steps is None:
         if isinstance(max_step, int):
-            steps = list(np.arange(max_step) + 1)
+            steps_direct = list(range(1, max_step + 1))
         else:
-            steps = list(np.array(max_step))
+            steps_direct = [int(s) for s in max_step]
     elif isinstance(steps, list):
-        steps = list(np.array(steps))
-    
-    for step in steps:
-        if not isinstance(step, (int, np.int64, np.int32)):
-            raise TypeError(
-                f"`steps` argument must be an int, a list of ints or `None`. "
-                f"Got {type(steps)}."
-            )
-    
-    # Required since numpy 2.0
-    steps = [int(step) for step in steps if step is not None]
+        steps_direct = []
+        for step in steps:
+            if not isinstance(step, (int, np.integer)):
+                raise TypeError(
+                    f"`steps` argument must be an int, a list of ints or `None`. "
+                    f"Got {type(steps)}."
+                )
+            steps_direct.append(int(step))
 
-    return steps
+    return steps_direct
 
 
 def set_skforecast_warnings(

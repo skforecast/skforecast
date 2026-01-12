@@ -107,27 +107,26 @@ def test_predict_interval_returns_dataframe_by_default():
     np.testing.assert_array_almost_equal(result['upper_95'].iloc[:3], expected_upper_95, decimal=4)
 
 
-def test_predict_interval_returns_dict_when_as_frame_false():
+def test_predict_interval_returns_array_when_as_frame_false():
     """
-    Test that predict_interval returns dict when as_frame=False.
+    Test that predict_interval returns ndarray when as_frame=False.
     """
     y = ar1_series(100, seed=42)
     model = Arima(order=(1, 0, 1))
     model.fit(y)
     
+    # Compare to DataFrame output for consistency
+    df = model.predict_interval(steps=10)
     result = model.predict_interval(steps=10, as_frame=False)
     
-    assert isinstance(result, dict)
-    assert 'mean' in result
-    assert 'lower' in result
-    assert 'upper' in result
-    assert 'level' in result
-    
-    assert isinstance(result['mean'], np.ndarray)
-    assert result['mean'].shape == (10,)
-    assert isinstance(result['lower'], dict)
-    assert isinstance(result['upper'], dict)
-    assert isinstance(result['level'], list)
+    assert isinstance(result, np.ndarray)
+    # columns: mean, lower_80, upper_80, lower_95, upper_95
+    assert result.shape == (10, 5)
+    np.testing.assert_array_almost_equal(result[:, 0], df['mean'].values, decimal=12)
+    np.testing.assert_array_almost_equal(result[:, 1], df['lower_80'].values, decimal=6)
+    np.testing.assert_array_almost_equal(result[:, 2], df['upper_80'].values, decimal=6)
+    np.testing.assert_array_almost_equal(result[:, 3], df['lower_95'].values, decimal=6)
+    np.testing.assert_array_almost_equal(result[:, 4], df['upper_95'].values, decimal=6)
 
 
 def test_predict_interval_with_single_level():
