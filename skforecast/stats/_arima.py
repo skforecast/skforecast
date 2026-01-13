@@ -394,7 +394,7 @@ class Arima(BaseEstimator, RegressorMixin):
         self.is_fitted            = False
 
         if self.is_auto_arima:
-            estimator_id = "Arima(auto)"
+            estimator_id = "Arima()"
         else:
             p, d, q = self.order
             P, D, Q = self.seasonal_order
@@ -627,7 +627,7 @@ class Arima(BaseEstimator, RegressorMixin):
                 model   = self.model_,
                 h       = steps,
                 xreg    = exog
-            )
+            )['mean']
         else:
             predictions = predict_arima(
                 model   = self.model_,
@@ -636,7 +636,7 @@ class Arima(BaseEstimator, RegressorMixin):
                 se_fit  = False
             )
         
-        return predictions['pred']
+        return predictions
 
     @check_is_fitted
     def predict_interval(
@@ -739,15 +739,37 @@ class Arima(BaseEstimator, RegressorMixin):
                 xreg    = exog,
                 level   = level
             )
+            
+            mean = raw_preds['mean']
+            lower = raw_preds['lower']
+            upper = raw_preds['upper']
+            levels = raw_preds['level']
+            
+            # TODO: move this into arima_base_ predict method
             if as_frame:
+                n_levels = len(levels)
+                predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
+                predictions[:, 0] = mean
+                for i in range(n_levels):
+                    predictions[:, 1 + 2 * i] = lower[:, i]
+                    predictions[:, 1 + 2 * i + 1] = upper[:, i]
+                
+                col_names = ["mean"]
+                for lv in levels:
+                    lv = int(lv)
+                    col_names.append(f"lower_{lv}")
+                    col_names.append(f"upper_{lv}")
+                
                 predictions = pd.DataFrame(
-                    {
-                        "mean": raw_preds['mean'],
-                        "lower": raw_preds['lower'],
-                        "upper": raw_preds['upper']
-                    },
-                    index=pd.RangeIndex(1, steps + 1, name="step")
+                    predictions, columns=col_names, index=pd.RangeIndex(1, steps + 1, name="step")
                 )
+            else:
+                n_levels = len(levels)
+                predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
+                predictions[:, 0] = mean
+                for i in range(n_levels):
+                    predictions[:, 1 + 2 * i] = lower[:, i]
+                    predictions[:, 1 + 2 * i + 1] = upper[:, i]
 
         else:
             raw_preds = predict_arima(
@@ -757,6 +779,7 @@ class Arima(BaseEstimator, RegressorMixin):
                 se_fit  = True
             )
         
+            # TODO: move this into arima_base_ predict method
             mean = np.asarray(raw_preds['pred'])
             se = np.asarray(raw_preds['se'])
             levels = list(level)

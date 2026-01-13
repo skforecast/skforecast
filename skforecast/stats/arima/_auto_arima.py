@@ -1702,15 +1702,18 @@ def forecast_arima(
     if biasadj is None:
         biasadj = model.get('biasadj', False)
 
-    if fan:
-        levels = np.arange(51, 100, 3).tolist()
+    if level is not None:
+        if fan:
+            levels = np.arange(51, 100, 3).tolist()
+        else:
+            levels = list(level)
+            if min(levels) > 0 and max(levels) < 1:
+                levels = [l * 100 for l in levels]
+            if min(levels) < 0 or max(levels) > 99.99:
+                raise ValueError("Confidence level out of range")
+        levels = sorted(levels)
     else:
-        levels = list(level)
-        if min(levels) > 0 and max(levels) < 1:
-            levels = [l * 100 for l in levels]
-        if min(levels) < 0 or max(levels) > 99.99:
-            raise ValueError("Confidence level out of range")
-    levels = sorted(levels)
+        levels = []
 
     n = len(model.get('y', model.get('x', [])))
     model_xreg = model.get('xreg')
@@ -1733,7 +1736,9 @@ def forecast_arima(
     mean = pred_result['pred']
     se = pred_result['se']
 
-    if levels is not None:
+    lower = None
+    upper = None
+    if levels:
         z_values = [norm.ppf(0.5 + l / 200) for l in levels]
         upper = np.column_stack([mean + z * se for z in z_values])
         lower = np.column_stack([mean - z * se for z in z_values])
@@ -1742,7 +1747,7 @@ def forecast_arima(
         fvar = se ** 2 if biasadj else None
         mean = inv_box_cox(mean, lambda_bc, biasadj=biasadj, fvar=fvar)
 
-        if levels is not None:
+        if levels:
             if lambda_bc < 0:
                 asymptote = -1.0 / lambda_bc
                 cap_value = asymptote * 0.95
