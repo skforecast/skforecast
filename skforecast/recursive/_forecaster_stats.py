@@ -1097,7 +1097,7 @@ class ForecasterStats():
                           inverse_transform = True
                       )
 
-        if len(self.estimator_ids) == 1:
+        if self.n_estimators == 1:
             predictions = pd.Series(
                               data  = predictions.ravel(),
                               index = prediction_index,
@@ -1296,7 +1296,7 @@ class ForecasterStats():
                           columns = ['pred', 'lower_bound', 'upper_bound']
                       )
         
-        if len(self.estimator_ids) > 1:
+        if self.n_estimators > 1:
             predictions.insert(0, 'estimator_id', np.repeat(estimator_ids, steps))
         else:
             # This is done to restore the frequency
@@ -1347,9 +1347,7 @@ class ForecasterStats():
         preds = estimator.predict_interval(fh=fh, X=exog, coverage=1 - alpha).to_numpy()
         return preds
 
-    # TODO: Add get_params 
-    # TODO: Poner el Forecaster a fitted false?
-    # TODO: Borrar self.estimator_params_ ?
+    # TODO: Poner Forecaster fitted False en el resto de Forecasters
     def set_params(
         self, 
         params: dict[str, object] | dict[str, dict[str, object]]
@@ -1408,6 +1406,12 @@ class ForecasterStats():
                     self.estimators[idx] = clone(self.estimators[idx])
                     self.estimators[idx].set_params(**est_params)
 
+        self.is_fitted = False
+        self.estimator_params_ = {
+            est_id: est.get_params() 
+            for est_id, est in zip(self.estimator_ids, self.estimators)
+        }
+
     def set_fit_kwargs(
         self, 
         fit_kwargs: Any = None
@@ -1435,7 +1439,6 @@ class ForecasterStats():
             IgnoredArgumentWarning
         )
 
-    # TODO: Le ponemos la columna id si es single estimator?
     def get_feature_importances(
         self,
         sort_importance: bool = True
@@ -1479,6 +1482,9 @@ class ForecasterStats():
                                       ascending=False
                                   ).reset_index(drop=True)
 
+        if self.n_estimators == 1:
+            feature_importances = feature_importances.drop(columns=['estimator_id'])
+
         return feature_importances
 
     @staticmethod
@@ -1508,7 +1514,6 @@ class ForecasterStats():
         feature_importances.columns = ['feature', 'importance']
         return feature_importances
 
-    # TODO: Le ponemos la columna id si es single estimator?
     def get_info_criteria(
         self, 
         criteria: str = 'aic', 
@@ -1549,11 +1554,16 @@ class ForecasterStats():
             value = get_criteria_method(estimator, criteria, method)
             info_criteria.append(value)
 
-        results = pd.DataFrame({
-            'estimator_id': self.estimator_ids,
-            'criteria': criteria,
-            'value': info_criteria
-        })
+        if self.n_estimators == 1:
+            results = pd.DataFrame({
+                'criteria': criteria, 'value': info_criteria
+            })
+        else:
+            results = pd.DataFrame({
+                'estimator_id': self.estimator_ids,
+                'criteria': criteria,
+                'value': info_criteria
+            })
         
         return results
 
@@ -1599,11 +1609,12 @@ class ForecasterStats():
         -------
         info : pandas DataFrame
             DataFrame with columns:
-            - id: Unique identifier for each estimator.º
+            - id: Unique identifier for each estimator.
             - name: Descriptive name (available after fitting).
             - type: Full qualified type string.
             - supports_exog: Whether the estimator supports exogenous variables.
             - supports_interval: Whether the estimator supports prediction intervals.
+            - params: Dictionary of the estimator parameters.
         
         """
 
@@ -1615,13 +1626,17 @@ class ForecasterStats():
             est_type in self.estimators_support_interval 
             for est_type in self.estimator_types_
         ]
+        params = [
+            str(est_params) for est_params in self.estimator_params_.values()
+        ]
 
         info = pd.DataFrame({
             'id': self.estimator_ids,
             'name': self.estimator_names_,
             'type': self.estimator_types_,
             'supports_exog': supports_exog,
-            'supports_interval': supports_interval
+            'supports_interval': supports_interval,
+            'params': params
         })
 
         return info
