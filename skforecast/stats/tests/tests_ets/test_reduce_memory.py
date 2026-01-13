@@ -18,9 +18,9 @@ def test_reduce_memory_clears_arrays():
     model.fit(y)
     
     # Verify arrays exist before reduction
-    assert model.y_ is not None
+    assert model.y_train_ is not None
     assert model.fitted_values_ is not None
-    assert model.residuals_in_ is not None
+    assert model.in_sample_residuals_ is not None
     assert model.model_.fitted is not None
     assert model.model_.residuals is not None
     assert model.model_.y_original is not None
@@ -29,9 +29,9 @@ def test_reduce_memory_clears_arrays():
     result = model.reduce_memory()
     
     # Verify arrays are cleared
-    assert model.y_ is None
+    assert model.y_train_ is None
     assert model.fitted_values_ is None
-    assert model.residuals_in_ is None
+    assert model.in_sample_residuals_ is None
     assert model.model_.fitted is None
     assert model.model_.residuals is None
     assert model.model_.y_original is None
@@ -51,13 +51,13 @@ def test_reduce_memory_sets_flag():
     model.fit(y)
     
     # Flag should be False after fit
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
     
     # Call reduce_memory
     model.reduce_memory()
     
     # Flag should be True after reduction
-    assert model.memory_reduced_ is True
+    assert model.is_memory_reduced is True
 
 
 def test_reduce_memory_preserves_predictions():
@@ -152,29 +152,6 @@ def test_score_raises_error_after_reduce_memory():
         model.get_score()
 
 
-def test_summary_raises_error_after_reduce_memory(capsys):
-    """
-    Test that summary() raises ValueError after reduce_memory().
-    """
-    np.random.seed(42)
-    y = np.random.randn(1000).cumsum() + 100
-    
-    model = Ets(m=12, model="AAN")
-    model.fit(y)
-    
-    # Should work before reduction
-    model.summary()
-    captured = capsys.readouterr()
-    assert "ETS Model Summary" in captured.out
-    
-    # Reduce memory
-    model.reduce_memory()
-    
-    # Should raise ValueError after reduction
-    with pytest.raises(ValueError, match="memory has been reduced"):
-        model.summary()
-
-
 def test_refit_resets_memory_reduced_flag():
     """
     Test that refitting resets memory_reduced_ flag to False.
@@ -187,13 +164,13 @@ def test_refit_resets_memory_reduced_flag():
     model.reduce_memory()
     
     # Flag should be True after reduction
-    assert model.memory_reduced_ is True
+    assert model.is_memory_reduced is True
     
     # Refit the model
     model.fit(y)
     
     # Flag should be reset to False
-    assert model.memory_reduced_ is False
+    assert model.is_memory_reduced is False
     
     # Diagnostic methods should work again
     fitted = model.get_fitted_values()
@@ -218,7 +195,7 @@ def test_reduce_memory_with_different_models():
         pred_after = model.predict(steps=12)
         
         np.testing.assert_allclose(pred_before, pred_after)
-        assert model.memory_reduced_ is True
+        assert model.is_memory_reduced is True
 
 
 def test_reduce_memory_with_auto_selection():
@@ -236,7 +213,7 @@ def test_reduce_memory_with_auto_selection():
     pred_after = model.predict(steps=12)
     
     np.testing.assert_allclose(pred_before, pred_after)
-    assert model.memory_reduced_ is True
+    assert model.is_memory_reduced is True
 
 
 def test_reduce_memory_with_damped_trend():
@@ -254,7 +231,7 @@ def test_reduce_memory_with_damped_trend():
     pred_after = model.predict(steps=12)
     
     np.testing.assert_allclose(pred_before, pred_after)
-    assert model.memory_reduced_ is True
+    assert model.is_memory_reduced is True
 
 
 def test_reduce_memory_with_box_cox():
@@ -272,7 +249,7 @@ def test_reduce_memory_with_box_cox():
     pred_after = model.predict(steps=12)
     
     np.testing.assert_allclose(pred_before, pred_after)
-    assert model.memory_reduced_ is True
+    assert model.is_memory_reduced is True
 
 
 def test_reduce_memory_chaining():
@@ -286,7 +263,7 @@ def test_reduce_memory_chaining():
     result = model.fit(y).reduce_memory()
     
     assert result is model
-    assert model.memory_reduced_ is True
+    assert model.is_memory_reduced is True
     
     # Predictions should still work
     pred = result.predict(steps=12)
@@ -308,7 +285,7 @@ def test_reduce_memory_with_pandas_series():
     pred_after = model.predict(steps=12)
     
     np.testing.assert_allclose(pred_before, pred_after)
-    assert model.memory_reduced_ is True
+    assert model.is_memory_reduced is True
 
 
 def test_reduce_memory_error_message_content():
@@ -335,9 +312,4 @@ def test_reduce_memory_error_message_content():
     # Test get_score() error message
     with pytest.raises(ValueError) as exc_info:
         model.get_score()
-    assert "reduce_memory()" in str(exc_info.value)
-    
-    # Test summary() error message
-    with pytest.raises(ValueError) as exc_info:
-        model.summary()
     assert "reduce_memory()" in str(exc_info.value)

@@ -40,8 +40,8 @@ def test_decorator_check_fitted():
     sarimax = Sarimax(order=(1, 1, 1))
 
     err_msg = re.escape(
-        "Sarimax instance is not fitted yet. Call `fit` with "
-        "appropriate arguments before using this method."
+        f"This {type(sarimax).__name__} instance is not fitted yet. Call "
+        f"'fit' with appropriate arguments before using this estimator."
     )
     with pytest.raises(NotFittedError, match = err_msg): 
         sarimax.predict(steps=5)
@@ -235,14 +235,14 @@ def test_Sarimax_fit_with_numpy():
 
     assert sarimax.output_type is None
     assert sarimax.sarimax_res is None
-    assert sarimax.fitted == False
+    assert sarimax.is_fitted == False
     assert sarimax.training_index is None
 
     sarimax.fit(y=y_numpy, exog=exog_numpy)
 
     assert sarimax.output_type == 'numpy'
     assert isinstance(sarimax.sarimax_res, SARIMAXResultsWrapper)
-    assert sarimax.fitted == True
+    assert sarimax.is_fitted == True
     assert sarimax.training_index == None
 
 
@@ -261,14 +261,14 @@ def test_Sarimax_fit_with_pandas(y, exog):
 
     assert sarimax.output_type is None
     assert sarimax.sarimax_res is None
-    assert sarimax.fitted == False
+    assert sarimax.is_fitted == False
     assert sarimax.training_index is None
 
     sarimax.fit(y=y, exog=exog)
 
     assert sarimax.output_type == 'pandas'
     assert isinstance(sarimax.sarimax_res, SARIMAXResultsWrapper)
-    assert sarimax.fitted == True
+    assert sarimax.is_fitted == True
     pd.testing.assert_index_equal(sarimax.training_index, y.index)
 
 
@@ -708,6 +708,7 @@ def test_Sarimax_set_params():
     """
     
     sarimax = Sarimax(order=(1, 1, 1))
+    sarimax.fit(y=y_numpy)
 
     sarimax.set_params(
         order         = (2, 2, 2),
@@ -715,7 +716,9 @@ def test_Sarimax_set_params():
         sm_fit_kwargs = {'test': 1},
         not_a_param   = 'fake'
     )
+    assert sarimax.is_fitted is False
 
+    sarimax.is_fitted = True
     results = sarimax.get_params()
 
     expected = {
@@ -748,7 +751,7 @@ def test_Sarimax_set_params():
     assert results == expected
     assert sarimax.output_type is None
     assert sarimax.sarimax_res is None
-    assert sarimax.fitted is False
+    assert sarimax.is_fitted is True
     assert sarimax.training_index is None
 
 

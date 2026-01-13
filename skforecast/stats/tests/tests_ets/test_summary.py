@@ -1,7 +1,8 @@
 # Unit test summary method - Ets
 # ==============================================================================
-import numpy as np
+import re
 import pytest
+import numpy as np
 from ..._ets import Ets
 
 
@@ -26,8 +27,7 @@ def test_estimator_summary(capsys):
     # Check exact output
     expected_output = """ETS Model Summary
 ============================================================
-Model: ETS(AAN)
-Number of observations: 100
+Model: Ets(AAN)
 Seasonal period (m): 1
 
 Smoothing parameters:
@@ -51,34 +51,33 @@ Residual statistics:
   RMSE:                1.214333
 
 Time Series Summary Statistics:
-  Mean:                0.2885
-  Std Dev:             1.1514
-  Min:                 -2.4900
-  25%:                 -0.4976
-  Median:              0.2289
-  75%:                 1.0181
-  Max:                 3.2281
+Number of observations: 100
+  Mean:                 0.2885
+  Std Dev:              1.1514
+  Min:                  -2.4900
+  25%:                  -0.4976
+  Median:               0.2289
+  75%:                  1.0181
+  Max:                  3.2281
 """
     assert captured == expected_output
 
 
-def test_summary_raises_error_after_reduce_memory(capsys):
-    """Test that summary() raises error after reduce_memory()"""
-    y = ar1_series(100)
-    est = Ets(m=1, model="AAN")
-    est.fit(y)
+def test_summary_is_shorter_after_reduce_memory(capsys):
+    """
+    Test that summary() output is shorter after reduce_memory().
+    """
+    y = ar1_series(100, seed=42)
+    model = Ets(m=1, model="AAN")
+    model.fit(y)
+
+    model.summary()
+    captured = capsys.readouterr()
+    assert "ETS Model Summary" in captured.out
+    assert "Time Series Summary Statistics" in captured.out
     
-    # Verify summary works before reduction
-    est.summary()
-    out_before = capsys.readouterr().out
-    assert "ETS Model Summary" in out_before
-    
-    # Reduce memory
-    est.reduce_memory()
-    
-    # summary() should raise error
-    with pytest.raises(
-        ValueError,
-        match="Cannot call summary\\(\\): model memory has been reduced"
-    ):
-        est.summary()
+    model.reduce_memory()
+    model.summary()
+    captured = capsys.readouterr()
+    assert "ETS Model Summary" in captured.out
+    assert "Time Series Summary Statistics" not in captured.out

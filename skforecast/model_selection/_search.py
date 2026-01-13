@@ -6,7 +6,6 @@
 # coding=utf-8
 
 from __future__ import annotations
-from typing_extensions import deprecated
 import os
 import logging
 from typing import Callable
@@ -18,7 +17,7 @@ from tqdm.auto import tqdm
 import optuna
 from optuna.samplers import TPESampler
 from sklearn.model_selection import ParameterGrid, ParameterSampler
-from ..exceptions import warn_skforecast_categories, runtime_deprecated
+from ..exceptions import warn_skforecast_categories
 from ..model_selection._split import TimeSeriesFold, OneStepAheadFold
 from ..model_selection._validation import (
     backtesting_forecaster, 
@@ -58,6 +57,7 @@ def grid_search_forecaster(
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
@@ -104,6 +104,10 @@ def grid_search_forecaster(
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -125,18 +129,19 @@ def grid_search_forecaster(
     param_grid = list(ParameterGrid(param_grid))
 
     results = _evaluate_grid_hyperparameters(
-                  forecaster    = forecaster,
-                  y             = y,
-                  cv            = cv,
-                  param_grid    = param_grid,
-                  metric        = metric,
-                  exog          = exog,
-                  lags_grid     = lags_grid,
-                  return_best   = return_best,
-                  n_jobs        = n_jobs,
-                  verbose       = verbose,
-                  show_progress = show_progress,
-                  output_file   = output_file
+                  forecaster        = forecaster,
+                  y                 = y,
+                  cv                = cv,
+                  param_grid        = param_grid,
+                  metric            = metric,
+                  exog              = exog,
+                  lags_grid         = lags_grid,
+                  return_best       = return_best,
+                  n_jobs            = n_jobs,
+                  verbose           = verbose,
+                  show_progress     = show_progress,
+                  suppress_warnings = suppress_warnings,
+                  output_file       = output_file
               )
 
     return results
@@ -160,6 +165,7 @@ def random_search_forecaster(
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
@@ -211,6 +217,10 @@ def random_search_forecaster(
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -232,18 +242,19 @@ def random_search_forecaster(
     param_grid = list(ParameterSampler(param_distributions, n_iter=n_iter, random_state=random_state))
 
     results = _evaluate_grid_hyperparameters(
-                  forecaster    = forecaster,
-                  y             = y,
-                  cv            = cv,
-                  param_grid    = param_grid,
-                  metric        = metric,
-                  exog          = exog,
-                  lags_grid     = lags_grid,
-                  return_best   = return_best,
-                  n_jobs        = n_jobs,
-                  verbose       = verbose,
-                  show_progress = show_progress,
-                  output_file   = output_file
+                  forecaster        = forecaster,
+                  y                 = y,
+                  cv                = cv,
+                  param_grid        = param_grid,
+                  metric            = metric,
+                  exog              = exog,
+                  lags_grid         = lags_grid,
+                  return_best       = return_best,
+                  n_jobs            = n_jobs,
+                  verbose           = verbose,
+                  show_progress     = show_progress,
+                  suppress_warnings = suppress_warnings,
+                  output_file       = output_file
               )
 
     return results
@@ -265,6 +276,7 @@ def _evaluate_grid_hyperparameters(
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
@@ -310,6 +322,10 @@ def _evaluate_grid_hyperparameters(
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -327,6 +343,8 @@ def _evaluate_grid_hyperparameters(
         - additional n columns with param = value.
 
     """
+
+    set_skforecast_warnings(suppress_warnings, action='ignore')
 
     forecaster_search = deepcopy(forecaster)
     is_regression = forecaster_search.__skforecast_tags__['forecaster_task'] == 'regression'
@@ -393,7 +411,6 @@ def _evaluate_grid_hyperparameters(
 
     if show_progress:
         lags_grid_tqdm = tqdm(lags_grid.items(), desc='lags grid', position=0)  # ncols=90
-        param_grid = tqdm(param_grid, desc='params grid', position=1, leave=False)
     else:
         lags_grid_tqdm = lags_grid.items()
     
@@ -420,6 +437,9 @@ def _evaluate_grid_hyperparameters(
             ) = forecaster_search._train_test_split_one_step_ahead(
                 y=y, initial_train_size=cv.initial_train_size, exog=exog
             )
+
+        if show_progress:
+            param_grid = tqdm(param_grid, desc='params grid', position=1, leave=False)
 
         for params in param_grid:
             try:
@@ -513,6 +533,8 @@ def _evaluate_grid_hyperparameters(
             f"  {'Backtesting' if cv_name == 'TimeSeriesFold' else 'One-step-ahead'} "
             f"metric: {best_metric}"
         )
+
+    set_skforecast_warnings(suppress_warnings, action='default')
     
     return results
 
@@ -530,6 +552,7 @@ def bayesian_search_forecaster(
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None,
     kwargs_create_study: dict = {},
     kwargs_study_optimize: dict = {}
@@ -580,6 +603,10 @@ def bayesian_search_forecaster(
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -624,6 +651,7 @@ def bayesian_search_forecaster(
                               n_jobs                = n_jobs,
                               verbose               = verbose,
                               show_progress         = show_progress,
+                              suppress_warnings     = suppress_warnings,
                               output_file           = output_file,
                               kwargs_create_study   = kwargs_create_study,
                               kwargs_study_optimize = kwargs_study_optimize
@@ -645,6 +673,7 @@ def _bayesian_search_optuna(
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None,
     kwargs_create_study: dict = {},
     kwargs_study_optimize: dict = {}
@@ -695,6 +724,10 @@ def _bayesian_search_optuna(
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -719,6 +752,8 @@ def _bayesian_search_optuna(
         The best optimization result returned as an optuna FrozenTrial object.
 
     """
+
+    set_skforecast_warnings(suppress_warnings, action='ignore')
 
     forecaster_search = deepcopy(forecaster)
     forecaster_name = type(forecaster_search).__name__
@@ -958,6 +993,8 @@ def _bayesian_search_optuna(
             f"  {'Backtesting' if cv_name == 'TimeSeriesFold' else 'One-step-ahead'} "
             f"metric: {best_metric}"
         )
+
+    set_skforecast_warnings(suppress_warnings, action='default')
             
     return results, best_trial
 
@@ -1416,7 +1453,6 @@ def _evaluate_grid_hyperparameters_multiseries(
 
     if show_progress:
         lags_grid_tqdm = tqdm(lags_grid.items(), desc='lags grid', position=0)  # ncols=90
-        param_grid = tqdm(param_grid, desc='params grid', position=1, leave=False)
     else:
         lags_grid_tqdm = lags_grid.items()
     
@@ -1446,6 +1482,9 @@ def _evaluate_grid_hyperparameters_multiseries(
             ) = forecaster_search._train_test_split_one_step_ahead(
                 series=series, exog=exog, initial_train_size=cv.initial_train_size
             )
+
+        if show_progress:
+            param_grid = tqdm(param_grid, desc='params grid', position=1, leave=False)
         
         for params in param_grid:
             
@@ -2146,122 +2185,6 @@ def _bayesian_search_optuna_multiseries(
             
     return results, best_trial
 
-# TODO: Remove in version 0.20.0
-@runtime_deprecated(replacement="grid_search_stats", version="0.19.0", removal="0.20.0")
-@deprecated("`grid_search_sarimax` is deprecated since version 0.19.0; use `grid_search_stats` instead. It will be removed in version 0.20.0.")
-def grid_search_sarimax(
-    forecaster: object,
-    y: pd.Series,
-    cv: TimeSeriesFold,
-    param_grid: dict,
-    metric: str | Callable | list[str | Callable],
-    exog: pd.Series | pd.DataFrame | None = None,
-    return_best: bool = True,
-    n_jobs: int | str = 'auto',
-    verbose: bool = False,
-    suppress_warnings_fit: bool = False,
-    show_progress: bool = True,
-    output_file: str | None = None
-) -> pd.DataFrame:
-    """
-    !!! warning "Deprecated"
-        This function is deprecated since skforecast 0.19. Please use `grid_search_stats` instead.
-
-    """
-
-    return grid_search_stats(
-        forecaster            = forecaster,
-        y                     = y,
-        cv                    = cv,
-        param_grid            = param_grid,
-        metric                = metric,
-        exog                  = exog,
-        return_best           = return_best,
-        n_jobs                = n_jobs,
-        verbose               = verbose,
-        suppress_warnings_fit = suppress_warnings_fit,
-        show_progress         = show_progress,
-        output_file           = output_file
-    )
-
-# TODO: Remove in version 0.20.0
-@runtime_deprecated(replacement="random_search_stats", version="0.19.0", removal="0.20.0")
-@deprecated("`random_search_sarimax` is deprecated since version 0.19.0; use `random_search_stats` instead. It will be removed in version 0.20.0.")
-def random_search_sarimax(
-    forecaster: object,
-    y: pd.Series,
-    cv: TimeSeriesFold,
-    param_distributions: dict,
-    metric: str | Callable | list[str | Callable],
-    exog: pd.Series | pd.DataFrame | None = None,
-    n_iter: int = 10,
-    random_state: int = 123,
-    return_best: bool = True,
-    n_jobs: int | str = 'auto',
-    verbose: bool = False,
-    suppress_warnings_fit: bool = False,
-    show_progress: bool = True,
-    output_file: str | None = None
-) -> pd.DataFrame:
-    """
-    !!! warning "Deprecated"
-        This function is deprecated since skforecast 0.19. Please use `random_search_stats` instead.
-    """
-    
-    return random_search_stats(
-        forecaster            = forecaster,
-        y                     = y,
-        cv                    = cv,
-        param_distributions   = param_distributions,
-        metric                = metric,
-        exog                  = exog,
-        n_iter                = n_iter,
-        random_state          = random_state,
-        return_best           = return_best,
-        n_jobs                = n_jobs,
-        verbose               = verbose,
-        suppress_warnings_fit = suppress_warnings_fit,
-        show_progress         = show_progress,
-        output_file           = output_file
-    )
-
-# TODO: Remove in version 0.20.0
-@runtime_deprecated(replacement="_evaluate_grid_hyperparameters_stats", version="0.19.0", removal="0.20.0")
-@deprecated("`_evaluate_grid_hyperparameters_sarimax` is deprecated since version 0.19.0; use `_evaluate_grid_hyperparameters_stats` instead. It will be removed in version 0.20.0.")
-def _evaluate_grid_hyperparameters_sarimax(
-    forecaster: object,
-    y: pd.Series,
-    cv: TimeSeriesFold,
-    param_grid: dict,
-    metric: str | Callable | list[str | Callable],
-    exog: pd.Series | pd.DataFrame | None = None,
-    return_best: bool = True,
-    n_jobs: int | str = 'auto',
-    verbose: bool = False,
-    suppress_warnings_fit: bool = False,
-    show_progress: bool = True,
-    output_file: str | None = None
-) -> pd.DataFrame:
-    """
-    !!! warning "Deprecated"
-        This function is deprecated since skforecast 0.19. Please use `_evaluate_grid_hyperparameters_stats` instead.
-    """
-
-    return _evaluate_grid_hyperparameters_stats(
-        forecaster            = forecaster,
-        y                     = y,
-        cv                    = cv,
-        param_grid            = param_grid,
-        metric                = metric,
-        exog                  = exog,
-        return_best           = return_best,
-        n_jobs                = n_jobs,
-        verbose               = verbose,
-        suppress_warnings_fit = suppress_warnings_fit,
-        show_progress         = show_progress,
-        output_file           = output_file
-    )
-
 
 def grid_search_stats(
     forecaster: object,
@@ -2567,6 +2490,7 @@ def _evaluate_grid_hyperparameters_stats(
         except Exception as e:
             warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
             continue
+        
         metric_values = metric_values.iloc[0, :].to_list()
         warnings.filterwarnings(
             'ignore', category=RuntimeWarning, message= "The forecaster will be fit.*"

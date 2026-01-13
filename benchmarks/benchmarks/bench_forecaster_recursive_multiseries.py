@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from packaging.version import parse
 from sklearn.dummy import DummyRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from skforecast import __version__ as skforecast_version
 from skforecast.recursive import ForecasterRecursiveMultiSeries
@@ -211,22 +212,22 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
     # Fit
     # ==========================================================================
     def ForecasterRecursiveMultiSeries_fit_series_is_dict_no_exog(forecaster, series):
-        forecaster.fit(series=series, exog=None)
+        forecaster.fit(series=series, exog=None, suppress_warnings=True)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dict_exog_is_dict(forecaster, series, exog):
-        forecaster.fit(series=series, exog=exog)
+        forecaster.fit(series=series, exog=exog, suppress_warnings=True)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dict_different_length_exog_is_dict(forecaster, series, exog):
-        forecaster.fit(series=series, exog=exog)
+        forecaster.fit(series=series, exog=exog, suppress_warnings=True)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dataframe_no_exog(forecaster, series):
-        forecaster.fit(series=series, exog=None)
+        forecaster.fit(series=series, exog=None, suppress_warnings=True)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dataframe(forecaster, series, exog):
-        forecaster.fit(series=series, exog=exog)
+        forecaster.fit(series=series, exog=exog, suppress_warnings=True)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dict(forecaster, series, exog):
-        forecaster.fit(series=series, exog=exog)
+        forecaster.fit(series=series, exog=exog, suppress_warnings=True)
 
     # Predict
     # ==========================================================================
@@ -330,7 +331,8 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
                 interval=[5, 95],
                 interval_method='conformal',
                 metric='mean_squared_error',
-                show_progress=False
+                show_progress=False,
+                suppress_warnings=True
             )
             
     def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_exog_dict_conformal(forecaster, series, exog):
@@ -347,8 +349,17 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
                 interval=[5, 95],
                 interval_method='conformal',
                 metric='mean_squared_error',
-                show_progress=False
+                show_progress=False,
+                suppress_warnings=True
             )
+
+    def ForecasterRecursiveMultiSeries_predict_bootstrapping_exog_is_dict(forecaster, exog):
+        forecaster.predict_bootstrapping(
+            steps=STEPS,
+            exog=exog,
+            n_boot=250,
+            suppress_warnings=True
+        )
 
     # Create lags and train_X_y
     # ==========================================================================
@@ -481,7 +492,9 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
         transformer_exog=StandardScaler(),
         encoding="ordinal"
     )
-    forecaster.fit(series=series_dict, exog=exog_dict, store_in_sample_residuals = True)
+    forecaster.fit(
+        series=series_dict, exog=exog_dict, store_in_sample_residuals=True, suppress_warnings=True
+    )
 
     runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     _ = runner.benchmark(
@@ -505,7 +518,9 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
     if parse(skforecast_version) >= parse("0.17.0"):
         # NOTE: Only when the forecaster is fitted with a wide dataframe, the exogenous variables can be
         # passed as a wide dataframe.
-        forecaster.fit(series=series_dict, exog=exog_df_wide, store_in_sample_residuals = True)
+        forecaster.fit(
+            series=series_dict, exog=exog_df_wide, store_in_sample_residuals=True, suppress_warnings=True
+        )
         _ = runner.benchmark(
                 ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_wide,
                 forecaster=forecaster,
@@ -563,4 +578,28 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
             forecaster=forecaster,
             series=series_dict,
             exog=exog_dict
+        )
+
+    # Predict Bootstrapping
+    # ==========================================================================
+
+    # NOTE: As a constant prediction doesn't represent a real use case, we include
+    # a forecaster with a LinearRegression estimator for binned bootstrapping.
+    forecaster_boot = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(),
+        lags=50,
+        transformer_series=StandardScaler(),
+        transformer_exog=StandardScaler(),
+        encoding="ordinal",
+        binner_kwargs={'n_bins': 10}
+    )
+    forecaster_boot.fit(
+        series=series_dict, exog=exog_dict, store_in_sample_residuals=True, suppress_warnings=True
+    )
+
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
+    _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries_predict_bootstrapping_exog_is_dict,
+            forecaster=forecaster_boot,
+            exog=exog_dict_pred
         )

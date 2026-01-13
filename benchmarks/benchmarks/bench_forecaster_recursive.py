@@ -8,6 +8,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.dummy import DummyRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from skforecast.recursive import ForecasterRecursive
 from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster
@@ -90,7 +91,17 @@ def run_benchmark_ForecasterRecursive(output_dir):
         estimator=DummyRegressor(strategy='constant', constant=1.),
         lags=50,
         transformer_y=StandardScaler(),
+        transformer_exog=StandardScaler()
+    )
+
+    # NOTE: As a constant prediction doesn't represent a real use case, we include
+    # a forecaster with a LinearRegression estimator for binned bootstrapping.
+    forecaster_boot = ForecasterRecursive(
+        estimator=LinearRegression(),
+        lags=50,
+        transformer_y=StandardScaler(),
         transformer_exog=StandardScaler(),
+        binner_kwargs={'n_bins': 10}
     )
 
     def ForecasterRecursive__create_lags(forecaster, y):
@@ -166,8 +177,16 @@ def run_benchmark_ForecasterRecursive(output_dir):
                 cv=cv,
                 metric='mean_squared_error',
                 n_jobs=1,
-                show_progress=False
+                show_progress=False,
+                suppress_warnings=True
             )
+
+    def ForecasterRecursive_predict_bootstrapping(forecaster, exog):
+        forecaster.predict_bootstrapping(
+            steps=STEPS,
+            exog=exog,
+            n_boot=250
+        )
 
     runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
     _ = runner.benchmark(ForecasterRecursive__create_lags, forecaster=forecaster, y=y_values)
@@ -176,8 +195,8 @@ def run_benchmark_ForecasterRecursive(output_dir):
     runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     _ = runner.benchmark(ForecasterRecursive_fit, forecaster=forecaster, y=y, exog=exog)
 
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True, suppress_warnings=True)
     runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
-    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     _ = runner.benchmark(ForecasterRecursive_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive_predict, forecaster=forecaster, exog=exog_pred)
@@ -186,3 +205,7 @@ def run_benchmark_ForecasterRecursive(output_dir):
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
     _ = runner.benchmark(ForecasterRecursive_backtesting, forecaster=forecaster, y=y, exog=exog)
     _ = runner.benchmark(ForecasterRecursive_backtesting_conformal, forecaster=forecaster, y=y, exog=exog)
+
+    forecaster_boot.fit(y=y, exog=exog, store_in_sample_residuals=True, suppress_warnings=True)
+    runner = BenchmarkRunner(repeat=15, output_dir=output_dir)
+    _ = runner.benchmark(ForecasterRecursive_predict_bootstrapping, forecaster=forecaster_boot, exog=exog_pred)

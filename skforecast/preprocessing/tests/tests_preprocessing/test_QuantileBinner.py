@@ -2,10 +2,12 @@
 # ==============================================================================
 import re
 import pytest
+import warnings
 import numpy as np
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import KBinsDiscretizer
 from ...preprocessing import QuantileBinner
+from skforecast.exceptions import IgnoredArgumentWarning
 
 
 def test_QuantileBinner_validate_params():
@@ -198,3 +200,111 @@ def test_QuantileBinner_is_equivalent_to_KBinsDiscretizer():
 
         np.testing.assert_array_almost_equal(binner_1.bin_edges_[0], binner_2.bin_edges_)
         np.testing.assert_array_almost_equal(transformed_1, transformed_2)
+
+
+def test_QuantileBinner_fit_with_duplicate_edges_raises_warning():
+    """
+    Test that QuantileBinner raises a warning when duplicate edges are removed
+    due to repeated values in the data.
+    """
+    
+    # Data with many repeated values that will cause duplicate edges
+    # Two unique values (1 and 2) will result in 2 bins instead of 10
+    X = np.array([1, 1, 1, 1, 1, 2, 2, 2, 2, 2])
+    binner = QuantileBinner(
+        n_bins=10,
+        method='linear',
+        dtype=np.float64,
+        random_state=789654,
+    )
+    
+    warn_msg = re.escape(
+        "The number of bins has been reduced from 10 to 2 due to duplicated "
+        "edges caused by repeated predicted values."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        binner.fit(X)
+    
+    # Check that n_bins_ is reduced to 2 (one bin per unique value)
+    assert binner.n_bins_ == 2
+    assert binner.n_bins_ < binner.n_bins
+
+
+def test_QuantileBinner_fit_with_identical_values():
+    """
+    Test that QuantileBinner handles data with all identical values correctly,
+    creating at least 1 bin.
+    """
+    
+    X = np.array([5.0, 5.0, 5.0, 5.0, 5.0])
+    binner = QuantileBinner(
+        n_bins=10,
+        method='linear',
+        dtype=np.float64,
+        random_state=789654,
+    )
+    
+    warn_msg = re.escape(
+        "The number of bins has been reduced from 10 to 1 due to duplicated "
+        "edges caused by repeated predicted values."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        binner.fit(X)
+    
+    # Check that at least 1 bin is created
+    assert binner.n_bins_ == 1
+    assert len(binner.bin_edges_) == 2
+    assert binner.bin_edges_[0] == 5.0
+    assert binner.bin_edges_[1] == 5.0
+    
+    # Check that transform works correctly
+    transformed = binner.transform(X)
+    np.testing.assert_array_equal(transformed, np.zeros(5))
+
+
+def test_QuantileBinner_fit_no_warning_when_bins_not_reduced():
+    """
+    Test that QuantileBinner does not raise a warning when the number of bins
+    is not reduced (no duplicate edges).
+    """
+    
+    X = np.arange(100).astype(float)
+    binner = QuantileBinner(
+        n_bins=10,
+        method='linear',
+        dtype=np.float64,
+        random_state=789654,
+    )
+    
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        binner.fit(X)
+    
+    assert binner.n_bins_ == binner.n_bins
+
+
+def test_QuantileBinner_transform_with_reduced_bins():
+    """
+    Test that transform works correctly after bins have been reduced.
+    """
+    
+    # Data that will result in fewer bins
+    X_train = np.array([1, 1, 1, 5, 5, 5, 10, 10, 10])
+    X_test = np.array([0, 1, 3, 5, 7, 10, 15])
+    
+    binner = QuantileBinner(
+        n_bins=10,
+        method='linear',
+        dtype=np.float64,
+        random_state=789654,
+    )
+    
+    with pytest.warns(IgnoredArgumentWarning):
+        binner.fit(X_train)
+    
+    # Transform should work and produce valid bin indices
+    transformed = binner.transform(X_test)
+    
+    # All indices should be between 0 and n_bins_ - 1
+    assert transformed.min() >= 0
+    assert transformed.max() <= binner.n_bins_ - 1
