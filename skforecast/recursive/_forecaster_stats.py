@@ -34,7 +34,6 @@ from ..utils import (
 )
 
 
-# TODO: Get estimator info, que sea una tabla con los ids, con los nombres, etc
 class ForecasterStats():
     """
     This class turns statistical models into a Forecaster compatible with the 
@@ -232,7 +231,6 @@ class ForecasterStats():
         self.estimator_names_        = [None] * len(self.estimators)
         self.estimator_types_        = estimator_types_
         self.n_estimators            = len(self.estimators)
-        self.estimator_params_       = None
         self.transformer_y           = transformer_y
         self.transformer_exog        = transformer_exog
         self.window_size             = 1
@@ -255,6 +253,11 @@ class ForecasterStats():
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
         self.fit_kwargs              = None  # Ignored, present for API consistency
+
+        self.estimator_params_       = {
+            est_id: est.get_params() 
+            for est_id, est in zip(self.estimator_ids, self.estimators_)
+        }
 
         self.estimators_support_last_window = (
             'skforecast.stats._sarimax.Sarimax',
@@ -294,18 +297,18 @@ class ForecasterStats():
             'sktime.forecasting.arima._pmdarima.ARIMA': self._predict_interval_sktime_arima,
         }
         self._feature_importances_dispatch = {
-            'skforecast.stats._arima.Arima': self._get_feature_importances_arima,
-            'skforecast.stats._arar.Arar': self._get_feature_importances_arar,
-            'skforecast.stats._ets.Ets': self._get_feature_importances_ets,
-            'skforecast.stats._sarimax.Sarimax': self._get_feature_importances_sarimax,
+            'skforecast.stats._arima.Arima': self._get_feature_importances_skforecast_stats,
+            'skforecast.stats._arar.Arar': self._get_feature_importances_skforecast_stats,
+            'skforecast.stats._ets.Ets': self._get_feature_importances_skforecast_stats,
+            'skforecast.stats._sarimax.Sarimax': self._get_feature_importances_skforecast_stats,
             'aeon.forecasting.stats._arima.ARIMA': self._get_feature_importances_aeon_arima,
             'aeon.forecasting.stats._ets.ETS': self._get_feature_importances_aeon_ets,
             'sktime.forecasting.arima._pmdarima.ARIMA': self._get_feature_importances_sktime_arima
         }
         self._info_criteria_dispatch = {
-            'skforecast.stats._arima.Arima': self._get_info_criteria_arima,
-            'skforecast.stats._arar.Arar': self._get_info_criteria_arar,
-            'skforecast.stats._ets.Ets': self._get_info_criteria_ets,
+            'skforecast.stats._arima.Arima': self._get_info_criteria_skforecast_stats,
+            'skforecast.stats._arar.Arar': self._get_info_criteria_skforecast_stats,
+            'skforecast.stats._ets.Ets': self._get_info_criteria_skforecast_stats,
             'skforecast.stats._sarimax.Sarimax': self._get_info_criteria_sarimax,
             'aeon.forecasting.stats._arima.ARIMA': self._get_info_criteria_aeon,
             'aeon.forecasting.stats._ets.ETS': self._get_info_criteria_aeon,
@@ -497,14 +500,13 @@ class ForecasterStats():
         
         # Format parameters for each estimator
         estimator_params = []
-        if self.estimator_params_ is not None:
-            for id in self.estimator_ids:
-                params = str(self.estimator_params_[id])
-                if len(params) > 58:
-                    params = "\n        " + textwrap.fill(
-                        params, width=76, subsequent_indent="        "
-                    )
-                estimator_params.append(f"{id}: {params}")
+        for id in self.estimator_ids:
+            params = str(self.estimator_params_[id])
+            if len(params) > 58:
+                params = "\n        " + textwrap.fill(
+                    params, width=76, subsequent_indent="        "
+                )
+            estimator_params.append(f"{id}: {params}")
 
         # Format exogenous variable names
         exog_names_in_ = None
@@ -1345,7 +1347,9 @@ class ForecasterStats():
         preds = estimator.predict_interval(fh=fh, X=exog, coverage=1 - alpha).to_numpy()
         return preds
 
-    # TODO: Add get_params and set_params for each estimator when multiple estimators are supported
+    # TODO: Add get_params 
+    # TODO: Poner el Forecaster a fitted false?
+    # TODO: Borrar self.estimator_params_ ?
     def set_params(
         self, 
         params: dict[str, object] | dict[str, dict[str, object]]
@@ -1409,8 +1413,9 @@ class ForecasterStats():
         fit_kwargs: Any = None
     ) -> None:
         """
-        Set new values for the additional keyword arguments passed to the `fit` 
-        method of the estimator.
+        This method is a placeholder to maintain API consistency. When using 
+        the skforecast Sarimax model, fit kwargs should be passed using the 
+        model parameter `sm_fit_kwargs`.
         
         Parameters
         ----------
@@ -1423,13 +1428,14 @@ class ForecasterStats():
         
         """
 
-        if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
-            warnings.warn(
-                "When using the skforecast Sarimax model, the fit kwargs should "
-                "be passed using the model parameter `sm_fit_kwargs`.",
-                IgnoredArgumentWarning
-            )
+        warnings.warn(
+            "This method is a placeholder to maintain API consistency. When using "
+            "the skforecast Sarimax model, fit kwargs should be passed using the "
+            "model parameter `sm_fit_kwargs`.",
+            IgnoredArgumentWarning
+        )
 
+    # TODO: Le ponemos la columna id si es single estimator?
     def get_feature_importances(
         self,
         sort_importance: bool = True
@@ -1454,12 +1460,13 @@ class ForecasterStats():
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `get_feature_importances()`."
             )
+        
         feature_importances = []
         for estimator, estimator_type, estimator_id in zip(
             self.estimators_, self.estimator_types_, self.estimator_ids
         ):
-            get_importances_method = self._feature_importances_dispatch[estimator_type]
-            importance = get_importances_method(estimator)
+            get_importances_func = self._feature_importances_dispatch[estimator_type]
+            importance = get_importances_func(estimator)
             if importance is not None:
                 importance.insert(0, 'estimator_id', estimator_id)
                 feature_importances.append(importance)
@@ -1475,26 +1482,8 @@ class ForecasterStats():
         return feature_importances
 
     @staticmethod
-    def _get_feature_importances_sarimax(estimator) -> pd.DataFrame:
-        """Get feature importances for SARIMAX statsmodels model."""
-
-        return estimator.get_feature_importances()
-    
-    @staticmethod
-    def _get_feature_importances_arima(estimator) -> pd.DataFrame:
-        """Get feature importances for Arima model."""
-
-        return estimator.get_feature_importances()
-
-    @staticmethod
-    def _get_feature_importances_arar(estimator) -> pd.DataFrame:
-        """Get feature importances for Arar model."""
-        
-        return estimator.get_feature_importances()
-
-    @staticmethod
-    def _get_feature_importances_ets(estimator) -> pd.DataFrame:
-        """Get feature importances for Eta model."""
+    def _get_feature_importances_skforecast_stats(estimator) -> pd.DataFrame:
+        """Get feature importances for skforecast Sarimax/Arima/Arar/Ets models."""
 
         return estimator.get_feature_importances()
 
@@ -1519,6 +1508,7 @@ class ForecasterStats():
         feature_importances.columns = ['feature', 'importance']
         return feature_importances
 
+    # TODO: Le ponemos la columna id si es single estimator?
     def get_info_criteria(
         self, 
         criteria: str = 'aic', 
@@ -1552,6 +1542,7 @@ class ForecasterStats():
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `get_info_criteria()`."
             )
+        
         info_criteria = []
         for estimator, estimator_type in zip(self.estimators_, self.estimator_types_):
             get_criteria_method = self._info_criteria_dispatch[estimator_type]
@@ -1567,28 +1558,16 @@ class ForecasterStats():
         return results
 
     @staticmethod
+    def _get_info_criteria_skforecast_stats(estimator, criteria: str, method: str) -> float:
+        """Get information criteria for skforecast Arima/Arar/Ets models."""
+
+        return estimator.get_info_criteria(criteria=criteria)
+
+    @staticmethod
     def _get_info_criteria_sarimax(estimator, criteria: str, method: str) -> float:
         """Get information criteria for SARIMAX statsmodels model."""
        
         return estimator.get_info_criteria(criteria=criteria, method=method)
-    
-    @staticmethod
-    def _get_info_criteria_arima(estimator, criteria: str, method: str) -> float:
-        """Get information criteria for Arima model."""
-
-        return estimator.get_info_criteria(criteria=criteria)
-
-    @staticmethod
-    def _get_info_criteria_arar(estimator, criteria: str, method: str) -> float:
-        """Get information criteria for Arar model."""
-        
-        return estimator.get_info_criteria(criteria=criteria)
-
-    @staticmethod
-    def _get_info_criteria_ets(estimator, criteria: str, method: str) -> float:
-        """Get information criteria for skforecast Ets model."""
-        
-        return estimator.get_info_criteria(criteria=criteria)
     
     @staticmethod
     def _get_info_criteria_sktime_arima(estimator, criteria: str, method: str) -> float:
@@ -1610,6 +1589,42 @@ class ForecasterStats():
             )
         
         return estimator.aic_
+
+    def get_estimators_info(self) -> pd.DataFrame:
+        """
+        Get a summary DataFrame with information about all estimators in the 
+        forecaster.
+        
+        Returns
+        -------
+        info : pandas DataFrame
+            DataFrame with columns:
+            - id: Unique identifier for each estimator.º
+            - name: Descriptive name (available after fitting).
+            - type: Full qualified type string.
+            - supports_exog: Whether the estimator supports exogenous variables.
+            - supports_interval: Whether the estimator supports prediction intervals.
+        
+        """
+
+        supports_exog = [
+            est_type in self.estimators_support_exog 
+            for est_type in self.estimator_types_
+        ]
+        supports_interval = [
+            est_type in self.estimators_support_interval 
+            for est_type in self.estimator_types_
+        ]
+
+        info = pd.DataFrame({
+            'id': self.estimator_ids,
+            'name': self.estimator_names_,
+            'type': self.estimator_types_,
+            'supports_exog': supports_exog,
+            'supports_interval': supports_interval
+        })
+
+        return info
 
     def summary(self) -> None:
         """

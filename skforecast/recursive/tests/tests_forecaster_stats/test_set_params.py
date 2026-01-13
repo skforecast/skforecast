@@ -58,9 +58,9 @@ def test_ForecasterStats_set_params_multiple_estimators_all_match():
     forecaster = ForecasterStats(estimator=estimators)
     
     new_params = {
-        'Sarimax(1,0,1)(0,0,0)[0]': {'order': (2, 1, 2), 'maxiter': 100},
-        'Arar': {'max_lag': 50},
-        'Ets(ZZZ)': {'damped': True}
+        'skforecast.Sarimax': {'order': (2, 1, 2), 'maxiter': 100},
+        'skforecast.Arar': {'max_lag': 50},
+        'skforecast.Ets': {'damped': True}
     }
     forecaster.set_params(new_params)
     
@@ -87,13 +87,14 @@ def test_ForecasterStats_set_params_multiple_estimators_partial_match():
     forecaster = ForecasterStats(estimator=estimators)
     
     new_params = {
-        'Sarimax(1,0,1)(0,0,0)[0]': {'order': (2, 1, 2)},
+        'skforecast.Sarimax': {'order': (2, 1, 2)},
         'NonExistentEstimator': {'param': 'value'}
     }
     
     warn_msg = re.escape(
-        "The following estimator names do not match any estimator "
-        "in the forecaster and will be ignored: ['NonExistentEstimator']."
+        "The following estimator ids do not match any estimator "
+        "in the forecaster and will be ignored: ['NonExistentEstimator']. "
+        f"Available estimator ids are: {forecaster.estimator_ids}."
     )
     with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
         forecaster.set_params(new_params)
@@ -118,8 +119,8 @@ def test_ForecasterStats_set_params_multiple_estimators_no_match():
     }
     
     err_msg = re.escape(
-        f"None of the provided estimator names ['NonExistent1'] "
-        f"match the available estimator names: {forecaster.estimator_names_}."
+        f"None of the provided estimator ids ['NonExistent1'] "
+        f"match the available estimator ids: {forecaster.estimator_ids}."
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.set_params(new_params)
@@ -141,7 +142,7 @@ def test_ForecasterStats_set_params_multiple_estimators_single_update():
     original_ets_damped = forecaster.estimators[2].get_params()['damped']
     
     new_params = {
-        'Sarimax(1,0,1)(0,0,0)[0]': {'maxiter': 200}
+        'skforecast.Sarimax': {'maxiter': 200}
     }
     forecaster.set_params(new_params)
     

@@ -621,6 +621,7 @@ class Ets(BaseEstimator, RegressorMixin):
         Print a summary of the fitted ETS model.
         """
         
+        # TODO: Es necesario el check_memory_reduced? En el Arima y Arar no está
         check_memory_reduced(self, method_name='summary')
 
         print("ETS Model Summary")

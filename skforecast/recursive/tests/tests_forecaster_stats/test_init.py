@@ -90,39 +90,39 @@ def test_estimators_stored_correctly_when_multiple_estimators():
     assert forecaster.n_estimators == 3
 
 
-def test_estimator_names_generated_correctly():
+def test_estimator_ids_generated_correctly():
     """
-    Check that estimator names are generated correctly from estimator_id.
+    Check that estimator ids are generated correctly.
     """
     forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 1)))
     
-    assert forecaster.estimator_names_ == ['Sarimax(1,0,1)(0,0,0)[0]']
+    assert forecaster.estimator_ids == ['skforecast.Sarimax']
 
 
-def test_estimator_names_unique_for_duplicate_estimators():
+def test_estimator_ids_unique_for_duplicate_estimators():
     """
-    Check that estimator names are made unique when duplicates exist.
+    Check that estimator ids are made unique when duplicates exist.
     """
     estimators = [Sarimax(order=(1, 0, 1)), Sarimax(order=(1, 0, 1))]
     forecaster = ForecasterStats(estimator=estimators)
     
-    assert forecaster.estimator_names_[0] != forecaster.estimator_names_[1]
-    assert forecaster.estimator_names_[0] == 'Sarimax(1,0,1)(0,0,0)[0]'
-    assert forecaster.estimator_names_[1] == 'Sarimax(1,0,1)(0,0,0)[0]_2'
+    assert forecaster.estimator_ids[0] != forecaster.estimator_ids[1]
+    assert forecaster.estimator_ids[0] == 'skforecast.Sarimax'
+    assert forecaster.estimator_ids[1] == 'skforecast.Sarimax_2'
 
 
 def test_estimator_types_stored_correctly():
     """
-    Check that estimator types are stored correctly as a tuple.
+    Check that estimator types are stored correctly as a list.
     """
     estimators = [Sarimax(order=(1, 0, 1)), Arima(order=(1, 1, 1))]
     forecaster = ForecasterStats(estimator=estimators)
     
-    assert isinstance(forecaster.estimator_types_, tuple)
-    assert forecaster.estimator_types_ == (
+    assert isinstance(forecaster.estimator_types_, list)
+    assert forecaster.estimator_types_ == [
         'skforecast.stats._sarimax.Sarimax',
         'skforecast.stats._arima.Arima'
-    )
+    ]
 
 
 def test_fit_kwargs_is_ignored():

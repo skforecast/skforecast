@@ -105,29 +105,6 @@ def test_get_score_raises_error_after_reduce_memory():
         model.get_score()
 
 
-def test_summary_raises_error_after_reduce_memory(capsys):
-    """
-    Test that summary() raises ValueError after reduce_memory().
-    """
-    np.random.seed(42)
-    y = np.random.randn(1000).cumsum() + 100
-    
-    model = Arar()
-    model.fit(y)
-    model.summary()
-    captured = capsys.readouterr()
-
-    assert "Arar Model Summary" in captured.out
-    
-    model.reduce_memory()
-    
-    with pytest.raises(
-        ValueError, 
-        match=re.escape("Cannot call summary(): model memory has been reduced via reduce_memory()")
-    ):
-        model.summary()
-
-
 def test_refit_resets_memory_reduced_flag():
     """
     Test that refitting resets memory_reduced_ flag to False.

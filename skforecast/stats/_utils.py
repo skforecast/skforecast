@@ -56,8 +56,10 @@ def check_memory_reduced(estimator: object, method_name: str) -> None:
     ------
     ValueError
         If estimator.is_memory_reduced is True.
+    
     """
-    if getattr(estimator, 'is_memory_reduced', False):
+
+    if getattr(estimator, 'is_memory_reduced', default=False):
                 
         message = (
             f"Cannot call {method_name}(): model memory has been reduced via "

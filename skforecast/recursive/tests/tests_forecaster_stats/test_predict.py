@@ -211,7 +211,7 @@ def test_predict_output_ForecasterStats_with_exog_multiple_estimators():
         ]
     
     expected = pd.DataFrame({
-            'estimator': ['Sarimax(1,0,1)(0,0,0)[0]'] * 5 + ['Arar'] * 5 + ['Ets(MAdN)'] * 5,
+            'estimator_id': ['skforecast.Sarimax'] * 5 + ['skforecast.Arar'] * 5 + ['skforecast.Ets'] * 5,
             'pred': expected_pred
         }, 
         index=pd.DatetimeIndex(
@@ -286,7 +286,7 @@ def test_predict_output_ForecasterStats_with_transform_y_multiple_estimators():
     predictions = forecaster.predict(steps=5)
     
     expected = pd.DataFrame({
-        'estimator': ['Sarimax(1,0,1)(0,0,0)[0]'] * 5 + ['Arar'] * 5 + ['Ets(MAdN)'] * 5,
+        'estimator_id': ['skforecast.Sarimax'] * 5 + ['skforecast.Arar'] * 5 + ['skforecast.Ets'] * 5,
         'pred': [
             0.60290703, 0.60568721, 0.60451413, 0.6050091, 0.60480025,
             0.62548412, 0.63711385, 0.70171521, 0.68564555, 0.72810186,

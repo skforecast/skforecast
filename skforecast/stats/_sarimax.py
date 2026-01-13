@@ -715,6 +715,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         params = {k: v for k, v in params.items() if k in self._sarimax_params}
         for key, value in params.items():
             setattr(self, key, value)
+            self._sarimax_params[key] = value
 
         self._consolidate_kwargs()
 

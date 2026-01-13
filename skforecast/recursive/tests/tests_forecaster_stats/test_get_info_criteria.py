@@ -2,7 +2,8 @@
 # ==============================================================================
 import re
 import pytest
-from skforecast.stats import Sarimax
+import numpy as np
+from skforecast.stats import Sarimax, Arar, Ets
 from skforecast.recursive import ForecasterStats
 
 # Fixtures
@@ -19,8 +20,8 @@ def test_ForecasterStats_get_info_criteria_ValueError_criteria_invalid_value():
     criteria = 'not_valid'
 
     err_msg = re.escape(
-        ("Invalid value for `criteria`. Valid options are 'aic', 'bic', "
-         "and 'hqic'.")
+        "Invalid value for `criteria`. Valid options are 'aic', 'bic', "
+        "and 'hqic'."
     )
     with pytest.raises(ValueError, match = err_msg): 
         forecaster.get_info_criteria(criteria=criteria)
@@ -36,8 +37,8 @@ def test_ForecasterStats_get_info_criteria_ValueError_method_invalid_value():
     method = 'not_valid'
 
     err_msg = re.escape(
-        ("Invalid value for `method`. Valid options are 'standard' and "
-         "'lutkepohl'.")
+        "Invalid value for `method`. Valid options are 'standard' and "
+        "'lutkepohl'."
     )
     with pytest.raises(ValueError, match = err_msg): 
         forecaster.get_info_criteria(method=method)
@@ -58,10 +59,7 @@ def test_Sarimax_get_info_criteria_skforecast():
 def test_Arar_get_info_criteria():
     """
     Test ForecasterStats get_info_criteria with Arar estimator.
-    """
-    import numpy as np
-    from skforecast.stats import Arar
-    
+    """    
     forecaster = ForecasterStats(estimator=Arar())
     forecaster.fit(y=y)
     
@@ -87,9 +85,7 @@ def test_Arar_get_info_criteria():
 def test_Arar_get_info_criteria_ValueError_invalid_criteria():
     """
     Test ForecasterStats get_info_criteria ValueError when criteria='hqic' with Arar.
-    """
-    from skforecast.stats import Arar
-    
+    """    
     forecaster = ForecasterStats(estimator=Arar())
     forecaster.fit(y=y)
     
@@ -105,8 +101,6 @@ def test_Arar_get_info_criteria_ValueError_invalid_method():
     """
     Test ForecasterStats get_info_criteria ValueError when method='lutkepohl' with Arar.
     """
-    from skforecast.stats import Arar
-    
     forecaster = ForecasterStats(estimator=Arar())
     forecaster.fit(y=y)
     
@@ -121,9 +115,7 @@ def test_Arar_get_info_criteria_ValueError_invalid_method():
 def test_Ets_get_info_criteria():
     """
     Test ForecasterStats get_info_criteria with Ets estimator.
-    """
-    from skforecast.stats import Ets
-    
+    """    
     forecaster = ForecasterStats(estimator=Ets(model='ANN'))
     forecaster.fit(y=y)
     
@@ -141,9 +133,7 @@ def test_Ets_get_info_criteria():
 def test_Ets_get_info_criteria_ValueError_invalid_criteria():
     """
     Test ForecasterStats get_info_criteria ValueError when criteria='hqic' with Ets.
-    """
-    from skforecast.stats import Ets
-    
+    """    
     forecaster = ForecasterStats(estimator=Ets(model='ANN'))
     forecaster.fit(y=y)
     
@@ -158,9 +148,7 @@ def test_Ets_get_info_criteria_ValueError_invalid_criteria():
 def test_Ets_get_info_criteria_ValueError_invalid_method():
     """
     Test ForecasterStats get_info_criteria ValueError when method='lutkepohl' with Ets.
-    """
-    from skforecast.stats import Ets
-    
+    """    
     forecaster = ForecasterStats(estimator=Ets(model='ANN'))
     forecaster.fit(y=y)
     
