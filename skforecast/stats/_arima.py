@@ -150,7 +150,7 @@ class Arima(BaseEstimator, RegressorMixin):
         State-space initialization method (e.g., "Gardner1980").
     optim_method : str
         Optimization method passed to the optimizer (e.g., "BFGS").
-    optim_kwargs : dict or None, default {'maxiter': 1000}
+    optim_kwargs : dict or None
         Additional optimizer options.
     kappa : float
         Prior variance for diffuse states in the Kalman filter.
@@ -290,7 +290,7 @@ class Arima(BaseEstimator, RegressorMixin):
         n_cond: int | None = None,
         SSinit: str = "Gardner1980",
         optim_method: str = "BFGS",
-        optim_kwargs: dict | None = {'maxiter': 1000},
+        optim_kwargs: dict | None = None,
         kappa: float = 1e6,
         max_p: int = 5,
         max_q: int = 5,
@@ -369,7 +369,7 @@ class Arima(BaseEstimator, RegressorMixin):
         self.allowdrift           = allowdrift
         self.allowmean            = allowmean
         self.lambda_bc            = lambda_bc
-        self.biasadj              = biasadj
+        self.biasadj              = biasadj       
 
         self.is_auto_arima        = order is None or seasonal_order is None
         self.model_               = None
@@ -390,6 +390,9 @@ class Arima(BaseEstimator, RegressorMixin):
         self.n_exog_features_in_  = None
         self.is_memory_reduced    = False
         self.is_fitted            = False
+
+        if self.optim_kwargs is None:
+            self.optim_kwargs = {'maxiter': 1000}
 
         if self.is_auto_arima:
             estimator_name_ = "Arima()"
@@ -536,12 +539,12 @@ class Arima(BaseEstimator, RegressorMixin):
                     n_cond         = self.n_cond,
                     SSinit         = self.SSinit,
                     optim_method   = self.optim_method,
-                    optim_control  = self.optim_kwargs,
+                    opt_options    = self.optim_kwargs,
                     kappa          = self.kappa
                 )
         
         self.y_train_             = self.model_['y']
-        self.coef_                = self.model_['coef'].values.flatten()
+        self.coef_                = self.model_['coef'].to_numpy().ravel()
         self.coef_names_          = list(self.model_['coef'].columns)
         self.sigma2_              = self.model_['sigma2']
         self.loglik_              = self.model_['loglik']
@@ -559,7 +562,8 @@ class Arima(BaseEstimator, RegressorMixin):
         self.is_fitted            = True
 
         if exog_names_in_ is not None:
-            self.coef_names_[-len(exog_names_in_):] = exog_names_in_
+            n_exog = len(exog_names_in_)
+            self.coef_names_ = self.coef_names_[:-n_exog] + exog_names_in_
         
         return self
 
@@ -761,18 +765,15 @@ class Arima(BaseEstimator, RegressorMixin):
             levels = list(level)
             n_levels = len(levels)
 
-            # Vectorized computation of intervals
-            alpha_lvls = 1 - np.array(levels) / 100
-            z_scores = norm.ppf(1 - alpha_lvls / 2)
-            se_expanded = se[:, np.newaxis]
-            lower = mean[:, np.newaxis] - z_scores * se_expanded
-            upper = mean[:, np.newaxis] + z_scores * se_expanded
 
-            # Vectorized array building
-            predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
+            alpha_lvls = 1.0 - np.asarray(levels, dtype=np.float64) / 100.0
+            z_scores = norm.ppf(1.0 - alpha_lvls / 2.0)
+            predictions = np.empty((steps, 1 + 2 * n_levels), dtype=np.float64)
             predictions[:, 0] = mean
-            predictions[:, 1::2] = lower
-            predictions[:, 2::2] = upper
+            se_expanded = se[:, np.newaxis]
+            mean_expanded = mean[:, np.newaxis]
+            predictions[:, 1::2] = mean_expanded - z_scores * se_expanded  # lower bounds
+            predictions[:, 2::2] = mean_expanded + z_scores * se_expanded  # upper bounds
 
         if as_frame:
             col_names = ["mean"]
@@ -1014,7 +1015,7 @@ class Arima(BaseEstimator, RegressorMixin):
         print("-" * 60)
         for i, name in enumerate(self.coef_names_):
             # Extract standard error from variance-covariance matrix
-            if self.var_coef_ is not None and i < len(self.var_coef_):
+            if self.var_coef_ is not None and i < self.var_coef_.shape[0] and i < self.var_coef_.shape[1]:
                 se = np.sqrt(self.var_coef_[i, i])
                 t_stat = self.coef_[i] / se if se > 0 else np.nan
                 print(f"  {name:15s}: {self.coef_[i]:10.4f}  (SE: {se:8.4f}, t: {t_stat:8.2f})")
