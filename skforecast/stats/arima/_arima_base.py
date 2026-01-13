@@ -1,13 +1,16 @@
+################################################################################
+#                               ARIMA base implementation                      #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
 import numpy as np
 from numba import jit, njit
 from numba.typed import Dict
 import scipy.linalg as la
 import scipy.optimize as opt
-from scipy.stats import norm
 import pandas as pd
 from typing import Tuple, Optional, Dict as DictType, Any, Union, List
 import warnings
-from copy import deepcopy
 
 @njit(cache=True)
 def state_prediction(a: np.ndarray, p: int, r: int, d: int, rd: int,
@@ -180,20 +183,20 @@ def predict_covariance_with_diff(P: np.ndarray, r: int, d: int, p: int, q: int,
         for j in range(rd):
             tmp = 0.0
             if i < p:
-                tmp += phi[i] * mm[0, j]
+                tmp += phi[i] * mm[j, 0]
             if i < r - 1:
-                tmp += mm[i + 1, j]
-            Pnew[i, j] = tmp
+                tmp += mm[j, i + 1]
+            Pnew[j, i] = tmp
 
     for j in range(rd):
-        tmp = mm[0, j]
+        tmp = mm[j, 0]
         for k in range(d):
-            tmp += delta[k] * mm[r + k, j]
-        Pnew[r, j] = tmp
+            tmp += delta[k] * mm[j, r + k]
+        Pnew[j, r] = tmp
 
     for i in range(1, d):
         for j in range(rd):
-            Pnew[r + i, j] = mm[r + i - 1, j]
+            Pnew[j, r + i] = mm[j, r + i - 1]
 
     for i in range(q + 1):
         if i == 0:
