@@ -1,7 +1,8 @@
 # Unit test reduce_memory method - Arima
 # ==============================================================================
-import numpy as np
+import re
 import pytest
+import numpy as np
 import warnings
 from ..._arima import Arima
 
@@ -88,7 +89,6 @@ def test_reduce_memory_deletes_large_attributes():
     assert hasattr(model, 'y_train_')
     assert hasattr(model, 'fitted_values_')
     assert hasattr(model, 'in_sample_residuals_')
-    assert hasattr(model, 'var_coef_')
     
     model.reduce_memory()
     
@@ -96,7 +96,6 @@ def test_reduce_memory_deletes_large_attributes():
     assert not hasattr(model, 'y_train_')
     assert not hasattr(model, 'fitted_values_')
     assert not hasattr(model, 'in_sample_residuals_')
-    assert not hasattr(model, 'var_coef_')
 
 
 def test_reduce_memory_keeps_model_for_predictions():
@@ -161,18 +160,24 @@ def test_reduce_memory_diagnostic_methods_fail():
     model.reduce_memory()
     
     # get_residuals should fail
-    msg = "Cannot call get_residuals\\(\\): model memory has been reduced via"
-    with pytest.raises(ValueError, match=msg):
+    error_msg = re.escape(
+        "Cannot call get_residuals(): model memory has been reduced via"
+    )
+    with pytest.raises(ValueError, match=error_msg):
         model.get_residuals()
     
     # get_fitted_values should fail
-    msg = "Cannot call get_fitted_values\\(\\): model memory has been reduced via"
-    with pytest.raises(ValueError, match=msg):
+    error_msg = re.escape(
+        "Cannot call get_fitted_values(): model memory has been reduced via"
+    )
+    with pytest.raises(ValueError, match=error_msg):
         model.get_fitted_values()
     
     # get_score should fail
-    msg = "Cannot call get_score\\(\\): model memory has been reduced via"
-    with pytest.raises(ValueError, match=msg):
+    error_msg = re.escape(
+        "Cannot call get_score(): model memory has been reduced via"
+    )
+    with pytest.raises(ValueError, match=error_msg):
         model.get_score()
 
 

@@ -1,7 +1,6 @@
 # Unit test summary method - Arar
 # ==============================================================================
 import numpy as np
-import pytest
 from ..._arar import Arar
 
 
@@ -105,9 +104,9 @@ def test_summary_is_shorter_after_reduce_memory(capsys):
     """
     np.random.seed(42)
     y = np.random.randn(1000).cumsum() + 100
-    
     model = Arar()
     model.fit(y)
+
     model.summary()
     captured = capsys.readouterr()
     assert "Arar(lags=(1, 4, 8, 20)) Model Summary" in captured.out
