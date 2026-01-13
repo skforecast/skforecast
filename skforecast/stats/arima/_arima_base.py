@@ -4,9 +4,7 @@
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
 import numpy as np
-from numba import jit, njit
-from numba.typed import Dict
-import scipy.linalg as la
+from numba import njit
 import scipy.optimize as opt
 import pandas as pd
 from typing import Tuple, Optional, Dict as DictType, Any, Union, List
@@ -2174,7 +2172,7 @@ def arima(
     n_cond: Optional[int] = None,
     SSinit: str = "Gardner1980",
     optim_method: str = "BFGS",
-    optim_control: Optional[DictType] = None,
+    opt_options: DictType = {'maxiter': 1000},
     kappa: float = 1e6
 ) -> DictType[str, Any]:
     """
@@ -2208,7 +2206,7 @@ def arima(
         State-space initialization: "Gardner1980" or "Rossignol2011".
     optim_method : str
         Optimization method for scipy.optimize.minimize.
-    optim_control : dict or None
+    opt_options : dict, default {'maxiter': 1000}
         Additional options for optimizer.
     kappa : float
         Prior variance for diffuse states.
@@ -2230,8 +2228,6 @@ def arima(
         - 'model': State-space model dict
         - 'method': Estimation method string
     """
-    if optim_control is None:
-        optim_control = {}
 
     SSinit = match_arg(SSinit, ["Gardner1980", "Rossignol2011"])
     method = match_arg(method, ["CSS-ML", "ML", "CSS"])
@@ -2411,13 +2407,10 @@ def arima(
         if no_optim:
             res = {'converged': True, 'x': np.zeros(0), 'fun': armaCSS(np.zeros(0))}
         else:
-            opt_options = {
-                'maxiter': optim_control.get('maxit', 1000),
-            }
             opt_result = opt.minimize(
                 armaCSS,
                 init[mask],
-                method='BFGS',
+                method=optim_method,
                 options=opt_options
             )
             res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
@@ -2455,13 +2448,10 @@ def arima(
             if no_optim:
                 res = {'converged': True, 'x': init[mask], 'fun': armaCSS(np.zeros(np.sum(mask)))}
             else:
-                opt_options = {
-                    'maxiter': optim_control.get('maxit', 1000),
-                }
                 opt_result = opt.minimize(
                     armaCSS,
                     init[mask],
-                    method='BFGS',
+                    method=optim_method,
                     options=opt_options
                 )
                 res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
@@ -2498,13 +2488,10 @@ def arima(
             res = {'converged': True, 'x': np.zeros(0), 'fun': armafn(np.zeros(0), transform_pars)}
         else:
             ml_obj_func = lambda p: armafn(p, transform_pars)
-            opt_options = {
-                'maxiter': optim_control.get('maxit', 1000),
-            }
             opt_result = opt.minimize(
                 ml_obj_func,
                 init[mask],
-                method='BFGS',
+                method=optim_method,
                 options=opt_options
             )
             res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
