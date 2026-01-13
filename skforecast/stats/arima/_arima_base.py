@@ -2100,7 +2100,9 @@ def optim_hessian(func, x, eps=None):
     x : np.ndarray
         Point at which to compute Hessian.
     eps : float or None
-        Step size for finite differences. If None, uses sqrt(machine epsilon).
+        Step size for finite differences. If None, uses 1e-2 which works well
+        for ARIMA parameters in transformed space. The default sqrt(machine epsilon)
+        (~1.49e-8) is too small and causes numerical instability.
 
     Returns
     -------
@@ -2111,7 +2113,7 @@ def optim_hessian(func, x, eps=None):
     n = len(x)
 
     if eps is None:
-        eps = np.sqrt(np.finfo(float).eps)
+        eps = 1e-2
 
     # Compute gradient at perturbed points using scipy.optimize.approx_fprime
     # H[i,j] = (grad_j(x + eps*e_i) - grad_j(x - eps*e_i)) / (2*eps)
@@ -2134,6 +2136,28 @@ def optim_hessian(func, x, eps=None):
     H = 0.5 * (H + H.T)
 
     return H
+
+
+def _make_numerical_gradient(func, eps=1e-2):
+    """
+    Create a numerical gradient function with specified step size.
+
+    Parameters
+    ----------
+    func : callable
+        Objective function f(x) -> scalar.
+    eps : float
+        Step size for finite differences. Default 1e-2 works well for ARIMA
+        parameters in transformed space.
+
+    Returns
+    -------
+    grad_func : callable
+        Gradient function that returns numerical gradient at point x.
+    """
+    def grad_func(x):
+        return opt.approx_fprime(x, func, eps)
+    return grad_func
 
 
 def arima(
@@ -2312,8 +2336,6 @@ def arima(
                 sa_stop = arma[0] + arma[1] + arma[2]
                 if not ar_check(init[sa_start:sa_stop]):
                     raise ValueError("non-stationary seasonal AR part")
-            if transform_pars:
-                init = inverse_arima_parameter_transform(init, np.array(arma[:3]))
     else:
         init = init0.copy()
 
@@ -2384,16 +2406,19 @@ def arima(
     init_phi, init_theta = transform_arima_parameters(init, arma_arr, transform_pars)
     mod = initialize_arima_state(init_phi, init_theta, Delta, kappa=kappa, SSinit=SSinit)
 
-    # Optimization
+    # Optimization - use BFGS matching R's optim default
     if method == "CSS":
         if no_optim:
             res = {'converged': True, 'x': np.zeros(0), 'fun': armaCSS(np.zeros(0))}
         else:
+            opt_options = {
+                'maxiter': optim_control.get('maxit', 1000),
+            }
             opt_result = opt.minimize(
                 armaCSS,
                 init[mask],
-                method=optim_method,
-                options={'maxiter': optim_control.get('maxiter', 1000)}
+                method='BFGS',
+                options=opt_options
             )
             res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
 
@@ -2430,11 +2455,14 @@ def arima(
             if no_optim:
                 res = {'converged': True, 'x': init[mask], 'fun': armaCSS(np.zeros(np.sum(mask)))}
             else:
+                opt_options = {
+                    'maxiter': optim_control.get('maxit', 1000),
+                }
                 opt_result = opt.minimize(
                     armaCSS,
                     init[mask],
-                    method=optim_method,
-                    options={'maxiter': optim_control.get('maxiter', 1000)}
+                    method='BFGS',
+                    options=opt_options
                 )
                 res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
 
@@ -2469,11 +2497,15 @@ def arima(
         if no_optim:
             res = {'converged': True, 'x': np.zeros(0), 'fun': armafn(np.zeros(0), transform_pars)}
         else:
+            ml_obj_func = lambda p: armafn(p, transform_pars)
+            opt_options = {
+                'maxiter': optim_control.get('maxit', 1000),
+            }
             opt_result = opt.minimize(
-                lambda p: armafn(p, transform_pars),
+                ml_obj_func,
                 init[mask],
-                method=optim_method,
-                options={'maxiter': optim_control.get('maxiter', 1000)}
+                method='BFGS',
+                options=opt_options
             )
             res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
 
