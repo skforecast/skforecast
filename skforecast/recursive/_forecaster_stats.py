@@ -1092,7 +1092,7 @@ class ForecasterStats():
             preds = pred_func(estimator=estimator, steps=steps, exog=exog)
             all_predictions.append(preds)
             estimator_names.append(est_name)
-
+        print(all_predictions)
         predictions = transform_numpy(
                           array             = np.concatenate(all_predictions),
                           transformer       = self.transformer_y,

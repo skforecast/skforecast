@@ -634,7 +634,7 @@ class Arima(BaseEstimator, RegressorMixin):
                 n_ahead = steps,
                 newxreg = exog,
                 se_fit  = False
-            )
+            )['pred']
         
         return predictions
 
@@ -744,32 +744,12 @@ class Arima(BaseEstimator, RegressorMixin):
             lower = raw_preds['lower']
             upper = raw_preds['upper']
             levels = raw_preds['level']
-            
-            # TODO: move this into arima_base_ predict method
-            if as_frame:
-                n_levels = len(levels)
-                predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
-                predictions[:, 0] = mean
-                for i in range(n_levels):
-                    predictions[:, 1 + 2 * i] = lower[:, i]
-                    predictions[:, 1 + 2 * i + 1] = upper[:, i]
-                
-                col_names = ["mean"]
-                for lv in levels:
-                    lv = int(lv)
-                    col_names.append(f"lower_{lv}")
-                    col_names.append(f"upper_{lv}")
-                
-                predictions = pd.DataFrame(
-                    predictions, columns=col_names, index=pd.RangeIndex(1, steps + 1, name="step")
-                )
-            else:
-                n_levels = len(levels)
-                predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
-                predictions[:, 0] = mean
-                for i in range(n_levels):
-                    predictions[:, 1 + 2 * i] = lower[:, i]
-                    predictions[:, 1 + 2 * i + 1] = upper[:, i]
+            n_levels = len(levels)
+
+            predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
+            predictions[:, 0] = mean
+            predictions[:, 1::2] = lower
+            predictions[:, 2::2] = upper
 
         else:
             raw_preds = predict_arima(
@@ -778,37 +758,38 @@ class Arima(BaseEstimator, RegressorMixin):
                 newxreg = exog,
                 se_fit  = True
             )
-        
-            # TODO: move this into arima_base_ predict method
-            mean = np.asarray(raw_preds['pred'])
-            se = np.asarray(raw_preds['se'])
+
+            # TODO: move the calculation of intervals to predict_arima
+            mean = raw_preds['pred']
+            se = raw_preds['se']
             levels = list(level)
             n_levels = len(levels)
 
-            lower = np.empty((steps, n_levels), dtype=float)
-            upper = np.empty((steps, n_levels), dtype=float)
-            for i, lv in enumerate(levels):
-                alpha_lvl = 1 - lv / 100
-                z = norm.ppf(1 - alpha_lvl / 2)
-                lower[:, i] = mean - z * se
-                upper[:, i] = mean + z * se
+            # Vectorized computation of intervals
+            alpha_lvls = 1 - np.array(levels) / 100
+            z_scores = norm.ppf(1 - alpha_lvls / 2)
+            se_expanded = se[:, np.newaxis]
+            lower = mean[:, np.newaxis] - z_scores * se_expanded
+            upper = mean[:, np.newaxis] + z_scores * se_expanded
 
+            # Vectorized array building
             predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
             predictions[:, 0] = mean
-            for i in range(n_levels):
-                predictions[:, 1 + 2 * i] = lower[:, i]
-                predictions[:, 1 + 2 * i + 1] = upper[:, i]
+            predictions[:, 1::2] = lower
+            predictions[:, 2::2] = upper
 
-            if as_frame:
-                col_names = ["mean"]
-                for level in levels:
-                    level = int(level)
-                    col_names.append(f"lower_{level}")
-                    col_names.append(f"upper_{level}")
-                
-                predictions = pd.DataFrame(
-                    predictions, columns=col_names, index=pd.RangeIndex(1, steps + 1, name="step")
-                )
+        if as_frame:
+            col_names = ["mean"]
+            for level in levels:
+                level = int(level)
+                col_names.append(f"lower_{level}")
+                col_names.append(f"upper_{level}")
+            
+            predictions = pd.DataFrame(
+                data    = predictions,
+                columns = col_names,
+                index   = pd.RangeIndex(1, steps + 1, name="step")
+            )
 
         return predictions
 
