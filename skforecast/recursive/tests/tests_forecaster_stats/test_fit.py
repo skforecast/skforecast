@@ -38,10 +38,9 @@ def test_IgnoredArgumentWarning_when_estimators_do_not_support_exog():
     exog = pd.Series(data=np.arange(10), name='exog')
     forecaster = ForecasterStats(estimator=Ets())
 
-    # Use regex to match estimator_id pattern like Ets(ZZZ)
     warn_msg = re.escape(
         "The following estimators do not support exogenous variables "
-        "and will ignore them during fit: ['Ets(ZZZ)']"
+        "and will ignore them during fit: ['skforecast.Ets']"
     )
     with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
         forecaster.fit(y=y, exog=exog)
@@ -52,7 +51,7 @@ def test_IgnoredArgumentWarning_when_estimators_do_not_support_exog():
     # Use regex to match estimator_id pattern like Ets(ZZZ)
     warn_msg = re.escape(
         "The following estimators do not support exogenous variables "
-        "and will ignore them during fit: ['Ets(ZZZ)']"
+        "and will ignore them during fit: ['skforecast.Ets']"
     )
     with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
         forecaster.fit(y=y, exog=exog)
@@ -70,6 +69,7 @@ def test_forecaster_y_exog_features_stored():
     forecaster.fit(y=y, exog=exog)
 
     is_fitted = True
+    estimator_ids = ['skforecast.Sarimax', 'skforecast.Ets']
     estimator_names_ = ['Sarimax(1,1,1)(0,0,0)[0]', 'Ets(AAN)']
     series_name_in_ = 'y_sarimax'
     exog_in_ = True
@@ -80,6 +80,7 @@ def test_forecaster_y_exog_features_stored():
     X_train_exog_names_out_ = ['exog']
     
     assert forecaster.is_fitted == is_fitted
+    assert forecaster.estimator_ids == estimator_ids
     assert forecaster.estimator_names_ == estimator_names_
     assert forecaster.series_name_in_ == series_name_in_
     assert forecaster.exog_in_ == exog_in_
@@ -189,7 +190,7 @@ def test_fit_estimator_names_updated_after_fit():
     y = pd.Series(data=np.arange(50), name='y')
     forecaster = ForecasterStats(estimator=Ets())
     
-    # Before fit, Ets has default name
+    # Before fit, [None]
     names_before = forecaster.estimator_names_.copy()
     
     forecaster.fit(y=y)

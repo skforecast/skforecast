@@ -18,8 +18,9 @@ def test_set_fit_kwargs_skforecast():
     new_fit_kwargs = {'warning': 1}
     
     warn_msg = re.escape(
-        "When using the skforecast Sarimax model, the fit kwargs should "
-        "be passed using the model parameter `sm_fit_kwargs`."
+        "This method is a placeholder to maintain API consistency. When using "
+        "the skforecast Sarimax model, fit kwargs should be passed using the "
+        "model parameter `sm_fit_kwargs`."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         forecaster.set_fit_kwargs(new_fit_kwargs)

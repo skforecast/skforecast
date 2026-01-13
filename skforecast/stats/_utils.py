@@ -56,7 +56,9 @@ def check_memory_reduced(estimator: object, method_name: str) -> None:
     ------
     ValueError
         If estimator.is_memory_reduced is True.
+    
     """
+
     if getattr(estimator, 'is_memory_reduced', False):
                 
         message = (

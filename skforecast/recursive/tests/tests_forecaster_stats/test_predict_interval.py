@@ -152,7 +152,7 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators_exog(alpha,
     # Check estimator and pred columns (stable values)
     expected_estimator_pred = pd.DataFrame(
                    data    = {
-                       'estimator': ['Sarimax(1,0,1)(0,0,0)[0]'] * 5 + ['Arar'] * 5 + ['Ets(MAdN)'] * 5,
+                       'estimator_id': ['skforecast.Sarimax'] * 5 + ['skforecast.Arar'] * 5 + ['skforecast.Ets'] * 5,
                        'pred': [0.599299, 0.612997, 0.628731, 0.644136, 0.661960,
                                 0.635100, 0.677110, 0.765381, 0.757966, 0.800557,
                                 0.604989, 0.604981, 0.604974, 0.604969, 0.604965],
@@ -160,7 +160,7 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators_exog(alpha,
                    index   = pd.Index([50, 51, 52, 53, 54] * 3)
                )
     pd.testing.assert_frame_equal(
-        predictions[['estimator', 'pred']], 
+        predictions[['estimator_id', 'pred']], 
         expected_estimator_pred, 
         atol=0.0001
     )
@@ -241,7 +241,7 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators_exog_transf
     # Check estimator and pred columns (stable values)
     expected_estimator_pred = pd.DataFrame(
                    data    = {
-                       'estimator': ['Sarimax(1,0,1)(0,0,0)[0]'] * 5 + ['Arar'] * 5 + ['Ets(MAdN)'] * 5,
+                       'estimator_id': ['skforecast.Sarimax'] * 5 + ['skforecast.Arar'] * 5 + ['skforecast.Ets'] * 5,
                        'pred': [0.611820, 0.613855, 0.613302, 0.613836, 0.613947,
                                 0.635100, 0.677110, 0.765381, 0.757966, 0.800557,
                                 0.693197, 0.693995, 0.694766, 0.695513, 0.696234],
@@ -249,7 +249,7 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators_exog_transf
                    index   = pd.Index([50, 51, 52, 53, 54] * 3)
                )
     pd.testing.assert_frame_equal(
-        predictions[['estimator', 'pred']], 
+        predictions[['estimator_id', 'pred']], 
         expected_estimator_pred, 
         atol=0.0001
     )

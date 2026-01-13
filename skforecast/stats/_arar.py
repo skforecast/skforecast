@@ -121,11 +121,9 @@ class Arar(BaseEstimator, RegressorMixin):
         arrays (y_train_, fitted_values_, in_sample_residuals_).
     is_fitted : bool
         Flag indicating whether the model has been successfully fitted to data.
-    estimator_id : str
-        String identifier for the model configuration (e.g., "Arar").
-    estimator_selected_id_ : str
-        String identifier for the selected model configuration after fitting.
-        This may differ from estimator_id if automatic model selection was used.
+    estimator_name_ : str
+        String identifier of the fitted model configuration (e.g., "Arar(lags=[1,2,3])"). 
+        This is updated after fitting to reflect the selected model.
     
     Notes
     -----
@@ -189,14 +187,13 @@ class Arar(BaseEstimator, RegressorMixin):
         self.n_features_in_         = None
         self.is_memory_reduced      = False
         self.is_fitted              = False
-        self.estimator_id           = "Arar"
-        self.estimator_selected_id_ = "Arar()"
+        self.estimator_name_        = "Arar()"
 
     def __repr__(self) -> str:
         """
         Information displayed when an Arar object is printed.
         """
-        return self.estimator_selected_id_
+        return self.estimator_name_
 
     def fit(
         self, 
@@ -377,7 +374,7 @@ class Arar(BaseEstimator, RegressorMixin):
             self.aic_ = np.nan
             self.bic_ = np.nan
 
-        self.estimator_selected_id_ = f"Arar(lags={self.lags_})"
+        self.estimator_name_ = f"Arar(lags={self.lags_})"
 
         return self
     
@@ -722,7 +719,7 @@ class Arar(BaseEstimator, RegressorMixin):
         self.n_features_in_         = None
         self.is_memory_reduced      = False
         self.is_fitted              = False
-        self.estimator_selected_id_ = f"Arar(lags=None)"
+        self.estimator_name_        = "Arar()"
         
         return self
     
@@ -732,7 +729,7 @@ class Arar(BaseEstimator, RegressorMixin):
         Print a simple textual summary of the fitted Arar model.
         """
         
-        print(f"{self.estimator_selected_id_} Model Summary")
+        print(f"{self.estimator_name_} Model Summary")
         print("------------------")
         print(f"Selected AR lags:                         {self.lags_}")
         print(f"AR coefficients (phi):                    {np.round(self.coef_, 4)}")

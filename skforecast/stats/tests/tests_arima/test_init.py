@@ -1,6 +1,42 @@
 # Unit test __init__ method - Arima
 # ==============================================================================
+import re
+import pytest
 from ..._arima import Arima
+
+
+def test_arima_init_order_validation():
+    """
+    Test that initialization validates order parameter length.
+    """
+    msg = re.escape("`order` must be a tuple of length 3, got length 2")
+    with pytest.raises(ValueError, match=msg):
+        Arima(order=(1, 1))
+    
+    msg = re.escape("`order` must be a tuple of length 3, got length 4")
+    with pytest.raises(ValueError, match=msg):
+        Arima(order=(1, 1, 1, 1))
+
+
+def test_arima_init_seasonal_order_and_m_validation():
+    """
+    Test that initialization validates seasonal_order parameter length.
+    """
+    msg = re.escape("`seasonal_order` must be a tuple of length 3, got length 2")
+    with pytest.raises(ValueError, match=msg):
+        Arima(seasonal_order=(1, 1))
+    
+    msg = re.escape("`seasonal_order` must be a tuple of length 3, got length 1")
+    with pytest.raises(ValueError, match=msg):
+        Arima(seasonal_order=(1,))
+    
+    msg = re.escape("`m` must be a positive integer (seasonal period).")
+    with pytest.raises(ValueError, match=msg):
+        Arima(seasonal_order=(1, 1, 1), m=0)
+    
+    msg = re.escape("`m` must be a positive integer (seasonal period).")
+    with pytest.raises(ValueError, match=msg):
+        Arima(seasonal_order=(1, 1, 1), m='not_int')
 
 
 def test_arima_init_default_params():
@@ -18,7 +54,7 @@ def test_arima_init_default_params():
     assert model.n_cond is None
     assert model.SSinit == "Gardner1980"
     assert model.optim_method == "BFGS"
-    assert model.optim_kwargs is None
+    assert model.optim_kwargs == {'maxiter': 1000}
     assert model.kappa == 1e6
     assert model.is_memory_reduced is False
 
@@ -52,38 +88,6 @@ def test_arima_init_with_explicit_params():
     assert model.optim_method == "L-BFGS-B"
     assert model.optim_kwargs == {'maxiter': 100}
     assert model.kappa == 1e5
-
-
-def test_arima_init_order_validation():
-    """
-    Test that initialization validates order parameter length.
-    """
-    import pytest
-    
-    # Invalid order length
-    msg = "`order` must be a tuple of length 3, got length 2"
-    with pytest.raises(ValueError, match=msg):
-        Arima(order=(1, 1))
-    
-    msg = "`order` must be a tuple of length 3, got length 4"
-    with pytest.raises(ValueError, match=msg):
-        Arima(order=(1, 1, 1, 1))
-
-
-def test_arima_init_seasonal_order_validation():
-    """
-    Test that initialization validates seasonal_order parameter length.
-    """
-    import pytest
-    
-    # Invalid seasonal_order length
-    msg = "`seasonal_order` must be a tuple of length 3, got length 2"
-    with pytest.raises(ValueError, match=msg):
-        Arima(seasonal_order=(1, 1))
-    
-    msg = "`seasonal_order` must be a tuple of length 3, got length 1"
-    with pytest.raises(ValueError, match=msg):
-        Arima(seasonal_order=(1,))
 
 
 def test_arima_init_all_attributes_before_fitting():

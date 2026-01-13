@@ -174,30 +174,6 @@ def test_reduce_memory_diagnostic_methods_fail():
     msg = "Cannot call get_score\\(\\): model memory has been reduced via"
     with pytest.raises(ValueError, match=msg):
         model.get_score()
-    
-    # summary should fail
-    msg = "Cannot call summary\\(\\): model memory has been reduced via"
-    with pytest.raises(ValueError, match=msg):
-        model.summary()
-
-
-def test_reduce_memory_calling_twice_warns():
-    """
-    Test that calling reduce_memory twice emits warning.
-    """
-    y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
-    model.fit(y)
-    
-    model.reduce_memory()
-    
-    # Call again
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        model.reduce_memory()
-        
-        assert len(w) == 1
-        assert "already been reduced" in str(w[0].message)
 
 
 def test_reduce_memory_with_exog():

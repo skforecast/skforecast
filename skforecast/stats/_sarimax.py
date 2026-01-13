@@ -204,11 +204,9 @@ class Sarimax(BaseEstimator, RegressorMixin):
         created by statsmodels after fitting the SARIMAX model.
     training_index : pandas Index
         Index of the training series as long as it is a pandas Series or Dataframe.
-    estimator_id : str
-        String identifier for the model configuration (e.g., "Sarimax(1,0,0)(0,0,0)[0]").
-    estimator_selected_id_ : str
-        String identifier for the selected model configuration after fitting. This
-        may differ from estimator_id if automatic model selection was used.    
+    estimator_name_ : str
+        String identifier of the fitted model configuration (e.g., "Sarimax(1,1,1)(0,0,0)[1]"). 
+        This is updated after fitting to reflect the selected model.
 
     References
     ----------
@@ -297,8 +295,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
         p, d, q = self.order
         P, D, Q, m = self.seasonal_order
-        self.estimator_id = f"Sarimax({p},{d},{q})({P},{D},{Q})[{m}]"
-        self.estimator_selected_id_ = self.estimator_id
+        self.estimator_name_ = f"Sarimax({p},{d},{q})({P},{D},{Q})[{m}]"
 
     def __repr__(
         self
@@ -307,7 +304,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         Information displayed when a Sarimax object is printed.
         """
         
-        return self.estimator_id
+        return self.estimator_name_
 
     def _consolidate_kwargs(
         self
@@ -718,6 +715,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         params = {k: v for k, v in params.items() if k in self._sarimax_params}
         for key, value in params.items():
             setattr(self, key, value)
+            self._sarimax_params[key] = value
 
         self._consolidate_kwargs()
 

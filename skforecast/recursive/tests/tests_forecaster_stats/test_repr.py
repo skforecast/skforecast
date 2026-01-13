@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from skforecast.recursive import ForecasterStats
-from skforecast.stats import Sarimax
+from skforecast.stats import Sarimax, Arima
 
 
 def test_repr_and_repr_html():
@@ -21,7 +21,7 @@ def test_repr_and_repr_html():
     assert isinstance(result_repr, str)
     assert len(result_repr) > 0
     assert "ForecasterStats" in result_repr
-    assert "Estimator:" in result_repr
+    assert "Estimators:" in result_repr
     assert "Series name:" in result_repr
     assert "Exogenous included:" in result_repr
     assert "Transformer for y:" in result_repr
@@ -248,3 +248,166 @@ def test_repr_and_repr_html():
     assert "API Reference" in result_html17
     assert "User Guide" in result_html17
     assert "forecasting-sarimax-arima" in result_html17
+
+
+def test_repr_and_repr_html_multiple_estimators():
+    """
+    Test for __repr__ and _repr_html_ methods with multiple estimators.
+    """
+    # Test 1: Multiple estimators - not fitted
+    forecaster = ForecasterStats(
+        estimator=[
+            Sarimax(order=(1, 0, 0)),
+            Arima(order=(2, 1, 1))
+        ]
+    )
+    
+    result_repr = repr(forecaster)
+    result_html = forecaster._repr_html_()
+    
+    assert "ForecasterStats" in result_repr
+    assert "Estimators:" in result_repr
+    assert "skforecast.Sarimax" in result_repr
+    assert "skforecast.Arima" in result_repr
+    assert "ForecasterStats" in result_html
+    assert "skforecast.Sarimax" in result_html
+    assert "skforecast.Arima" in result_html
+    
+    # Verify estimator_ids are generated correctly
+    assert len(forecaster.estimator_ids) == 2
+    assert forecaster.n_estimators == 2
+    
+    # Test 2: Multiple estimators with same type - check unique IDs
+    forecaster2 = ForecasterStats(
+        estimator=[
+            Sarimax(order=(1, 0, 0)),
+            Sarimax(order=(2, 1, 1)),
+            Arima(order=(1, 1, 1))
+        ]
+    )
+    
+    result_repr2 = repr(forecaster2)
+    result_html2 = forecaster2._repr_html_()
+    
+    assert forecaster2.n_estimators == 3
+    assert len(forecaster2.estimator_ids) == 3
+    # Check that duplicate estimator types get unique IDs
+    assert "skforecast.Sarimax" in result_repr2
+    assert "skforecast.Sarimax_2" in result_repr2
+    assert "skforecast.Arima" in result_repr2
+    
+    # Test 3: Multiple estimators - fitted without exog
+    forecaster3 = ForecasterStats(
+        estimator=[
+            Sarimax(order=(1, 0, 0)),
+            Arima(order=(1, 0, 1))
+        ]
+    )
+    y = pd.Series(
+        np.random.rand(50),
+        index=pd.date_range('2020-01-01', periods=50, freq='D'),
+        name='test_series'
+    )
+    forecaster3.fit(y)
+    
+    result_repr3 = repr(forecaster3)
+    result_html3 = forecaster3._repr_html_()
+    
+    assert "Training range:" in result_repr3
+    assert "Training range: None" not in result_repr3
+    assert "Series name: test_series" in result_repr3
+    assert "skforecast.Sarimax" in result_repr3
+    assert "skforecast.Arima" in result_repr3
+    assert "2020" in result_html3
+    
+    # Verify estimator_names_ are populated after fitting
+    assert forecaster3.estimator_names_[0] is not None
+    assert forecaster3.estimator_names_[1] is not None
+    
+    # Test 4: Multiple estimators - fitted with exog
+    forecaster4 = ForecasterStats(
+        estimator=[
+            Sarimax(order=(1, 0, 0)),
+            Arima(order=(1, 0, 1))
+        ],
+        transformer_y=StandardScaler(),
+        transformer_exog=StandardScaler()
+    )
+    y = pd.Series(
+        np.random.rand(50),
+        index=pd.date_range('2020-01-01', periods=50, freq='D'),
+        name='y'
+    )
+    exog = pd.DataFrame({
+        'exog_1': np.random.rand(50),
+        'exog_2': np.random.rand(50)
+    }, index=pd.date_range('2020-01-01', periods=50, freq='D'))
+    
+    forecaster4.fit(y, exog=exog)
+    result_repr4 = repr(forecaster4)
+    result_html4 = forecaster4._repr_html_()
+    
+    assert "Exogenous included: True" in result_repr4
+    assert "exog_1" in result_repr4 or "Exogenous names:" in result_repr4
+    assert "StandardScaler" in result_repr4
+    assert "skforecast.Sarimax" in result_repr4
+    assert "skforecast.Arima" in result_repr4
+    assert "Exogenous Variables" in result_html4
+    
+    # Test 5: Multiple estimators with forecaster_id
+    forecaster5 = ForecasterStats(
+        estimator=[
+            Sarimax(order=(1, 0, 0)),
+            Arima(order=(1, 0, 1))
+        ],
+        forecaster_id="multi_estimator_forecaster"
+    )
+    result_repr5 = repr(forecaster5)
+    assert "Forecaster id: multi_estimator_forecaster" in result_repr5
+    
+    # Test 6: Verify HTML sections with multiple estimators
+    forecaster6 = ForecasterStats(
+        estimator=[
+            Sarimax(order=(1, 0, 0)),
+            Arima(order=(1, 0, 1))
+        ]
+    )
+    y = pd.Series(
+        np.random.rand(50),
+        index=pd.date_range('2020-01-01', periods=50, freq='D'),
+        name='y'
+    )
+    forecaster6.fit(y)
+    
+    result_html6 = forecaster6._repr_html_()
+    
+    expected_sections = [
+        "General Information",
+        "Exogenous Variables",
+        "Data Transformations",
+        "Training Information",
+        "Estimator Parameters",
+        "Fit Kwargs"
+    ]
+    
+    for section in expected_sections:
+        assert section in result_html6, f"Section '{section}' not found in HTML output"
+    
+    # Verify HTML contains list items for each estimator
+    assert "<li>" in result_html6
+    assert "skforecast.Sarimax" in result_html6
+    assert "skforecast.Arima" in result_html6
+    
+    # Test 7: Estimator parameters for multiple estimators
+    forecaster7 = ForecasterStats(
+        estimator=[
+            Sarimax(order=(2, 1, 1), seasonal_order=(1, 0, 1, 12)),
+            Arima(order=(1, 1, 1))
+        ]
+    )
+    result_repr7 = repr(forecaster7)
+    
+    assert "Estimator parameters:" in result_repr7
+    # Verify parameters for each estimator are shown
+    assert "skforecast.Sarimax:" in result_repr7
+    assert "skforecast.Arima:" in result_repr7

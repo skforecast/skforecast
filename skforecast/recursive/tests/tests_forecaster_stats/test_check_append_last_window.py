@@ -46,7 +46,7 @@ def test_check_append_last_window_IgnoredArgumentWarning_when_mixed_estimators()
     forecaster.fit(y=y)
     
     warn_msg = re.escape(
-        f"Prediction with `last_window` is not implemented for estimators: ['Arar']. "
+        f"Prediction with `last_window` is not implemented for estimators: ['skforecast.Arar']. "
         f"These estimators will be skipped. Available estimators for prediction "
         f"using `last_window` are: {list(forecaster.estimators_support_last_window)}."
     )

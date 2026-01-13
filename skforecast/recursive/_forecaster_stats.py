@@ -17,10 +17,7 @@ from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 
 from .. import __version__
-from ..exceptions import (
-    IgnoredArgumentWarning,
-    ExogenousInterpretationWarning
-)
+from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     check_y,
     check_exog,
@@ -85,14 +82,19 @@ class ForecasterStats():
     estimators_ : list
         List of statistical model instances. These are the estimators that will
         be trained when `fit()` is called.
+    estimator_ids : list
+        Unique identifiers for each estimator, generated from estimator types and 
+        numeric suffixes to handle duplicates (e.g., 'skforecast.Arima', 
+        'skforecast.Arima_2', 'skforecast.Ets'). Used to identify predictions 
+        from each model.
     estimator_names_ : list
-        Descriptive names for each estimator, generated from model parameters
-        (e.g., 'Arima(1,1,1)', 'Ets(AAN)'). Used to identify predictions from
-        each model.
+        Descriptive names for each estimator including the fitted model configuration
+        (e.g., 'Arima(1,1,1)(0,0,0)[12]', 'Ets(AAA)', etc.). This is updated 
+        after fitting to reflect the selected model.
     estimator_types_ : tuple
         Full qualified type string for each estimator (e.g., 
         'skforecast.stats._arima.Arima').
-    estimator_parms_ : dict
+    estimator_params_ : dict
         Dictionary containing the parameters of each estimator.
     n_estimators : int
         Number of estimators in the forecaster.
@@ -225,10 +227,10 @@ class ForecasterStats():
         # aggregates predictions from all estimators.
         self.estimators              = estimator
         self.estimators_             = [copy(est) for est in self.estimators]
-        self.estimator_names_        = self._generate_estimator_names(self.estimators)
+        self.estimator_ids           = self._generate_ids(self.estimators)
+        self.estimator_names_        = [None] * len(self.estimators)
         self.estimator_types_        = estimator_types_
         self.n_estimators            = len(self.estimators)
-        self.estimator_params_       = None
         self.transformer_y           = transformer_y
         self.transformer_exog        = transformer_exog
         self.window_size             = 1
@@ -251,6 +253,11 @@ class ForecasterStats():
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
         self.fit_kwargs              = None  # Ignored, present for API consistency
+
+        self.estimator_params_       = {
+            est_id: est.get_params() 
+            for est_id, est in zip(self.estimator_ids, self.estimators_)
+        }
 
         self.estimators_support_last_window = (
             'skforecast.stats._sarimax.Sarimax',
@@ -290,18 +297,18 @@ class ForecasterStats():
             'sktime.forecasting.arima._pmdarima.ARIMA': self._predict_interval_sktime_arima,
         }
         self._feature_importances_dispatch = {
-            'skforecast.stats._arima.Arima': self._get_feature_importances_arima,
-            'skforecast.stats._arar.Arar': self._get_feature_importances_arar,
-            'skforecast.stats._ets.Ets': self._get_feature_importances_ets,
-            'skforecast.stats._sarimax.Sarimax': self._get_feature_importances_sarimax,
+            'skforecast.stats._arima.Arima': self._get_feature_importances_skforecast_stats,
+            'skforecast.stats._arar.Arar': self._get_feature_importances_skforecast_stats,
+            'skforecast.stats._ets.Ets': self._get_feature_importances_skforecast_stats,
+            'skforecast.stats._sarimax.Sarimax': self._get_feature_importances_skforecast_stats,
             'aeon.forecasting.stats._arima.ARIMA': self._get_feature_importances_aeon_arima,
             'aeon.forecasting.stats._ets.ETS': self._get_feature_importances_aeon_ets,
             'sktime.forecasting.arima._pmdarima.ARIMA': self._get_feature_importances_sktime_arima
         }
         self._info_criteria_dispatch = {
-            'skforecast.stats._arima.Arima': self._get_info_criteria_arima,
-            'skforecast.stats._arar.Arar': self._get_info_criteria_arar,
-            'skforecast.stats._ets.Ets': self._get_info_criteria_ets,
+            'skforecast.stats._arima.Arima': self._get_info_criteria_skforecast_stats,
+            'skforecast.stats._arar.Arar': self._get_info_criteria_skforecast_stats,
+            'skforecast.stats._ets.Ets': self._get_info_criteria_skforecast_stats,
             'skforecast.stats._sarimax.Sarimax': self._get_info_criteria_sarimax,
             'aeon.forecasting.stats._arima.ARIMA': self._get_info_criteria_aeon,
             'aeon.forecasting.stats._ets.ETS': self._get_info_criteria_aeon,
@@ -368,35 +375,10 @@ class ForecasterStats():
         )
         return self.estimators
 
-    def _generate_estimator_name(self, estimator: object) -> str:
+    def _generate_ids(self, estimators: list) -> list[str]:
         """
-        Generate a descriptive name for a single estimator based on its 
-        parameters and type.
-        
-        Parameters
-        ----------
-        estimator : object
-            A statistical model instance.
-        
-        Returns
-        -------
-        estimator_id : str
-            Descriptive name for the estimator.
-        
-        """
-        # Check if estimator has estimator_id attribute (skforecast models)
-        if hasattr(estimator, 'estimator_id') and estimator.estimator_id is not None:
-            estimator_id = estimator.estimator_id
-        else:
-            estimator_id = f"{type(estimator).__module__.split('.')[0]}.{type(estimator).__name__}"
-        
-        return estimator_id
-
-    def _generate_estimator_names(self, estimators: list) -> list[str]:
-        """
-        Generate unique, descriptive names for a list of estimators.
-        
-        Handles duplicate names by appending a numeric suffix.
+        Generate unique ids for a list of estimators. Handles duplicate ids by 
+        appending a numeric suffix.
         
         Parameters
         ----------
@@ -405,49 +387,39 @@ class ForecasterStats():
         
         Returns
         -------
-        names : list[str]
-            List of unique names for each estimator.
+        ids : list[str]
+            List of unique ids for each estimator.
         
         """
-        names = []
-        name_counts = {}
-        
+
+        ids = []
+        id_counts = {}
         for est in estimators:
-            base_name = self._generate_estimator_name(est)
+
+            base_id = (
+                f"{type(est).__module__.split('.')[0]}.{type(est).__name__}"
+            )
             
             # Track occurrences and add suffix for duplicates
-            if base_name in name_counts:
-                name_counts[base_name] += 1
-                unique_name = f"{base_name}_{name_counts[base_name]}"
+            if base_id in id_counts:
+                id_counts[base_id] += 1
+                unique_id = f"{base_id}_{id_counts[base_id]}"
             else:
-                name_counts[base_name] = 1
-                unique_name = base_name
+                id_counts[base_id] = 1
+                unique_id = base_id
             
-            names.append(unique_name)
+            ids.append(unique_id)
         
-        return names
-    
-    def get_estimator_names(self) -> list[str]:
-        """
-        Get the names of all estimators in the forecaster.
-        
-        Returns
-        -------
-        estimator_names : list[str]
-            List of estimator names.
-        
-        """
+        return ids
 
-        return self.estimator_names_
-
-    def get_estimator(self, name: str) -> object:
+    def get_estimator(self, id: str) -> object:
         """
-        Get a specific estimator by its name.
+        Get a specific estimator by its id.
         
         Parameters
         ----------
-        name : str
-            The name of the estimator to retrieve.
+        id : str
+            The id of the estimator to retrieve.
         
         Returns
         -------
@@ -456,44 +428,62 @@ class ForecasterStats():
         
         """
         
-        if name not in self.estimator_names_:
+        if id not in self.estimator_ids:
             raise KeyError(
-                f"No estimator named '{name}'. "
-                f"Available estimators: {self.estimator_names_}"
+                f"No estimator with id '{id}'. "
+                f"Available estimators: {self.estimator_ids}"
             )
         
-        idx = self.estimator_names_.index(name)
+        idx = self.estimator_ids.index(id)
 
         return self.estimators_[idx]
     
-    def remove_estimator(self, name: str) -> None:
+    def get_estimator_ids(self) -> list[str]:
         """
-        Remove a specific estimator by its name.
+        Get the ids of all estimators in the forecaster.
+        
+        Returns
+        -------
+        estimator_ids : list[str]
+            List of estimator ids.
+        
+        """
+
+        return self.estimator_ids
+    
+    def remove_estimator(self, ids: str | list[str]) -> None:
+        """
+        Remove one or more estimators by their ids.
         
         Parameters
         ----------
-        name : str
-            The name of the estimator to remove.
+        ids : str, list[str]
+            The ids of the estimators to remove.
         
         Returns
         -------
         None
         
         """
-        
-        if name not in self.estimator_names_:
-            raise KeyError(
-                f"No estimator named '{name}'. "
-                f"Available estimators: {self.estimator_names_}"
-            )
-        
-        idx = self.estimator_names_.index(name)
-        del self.estimators[idx]
-        del self.estimators_[idx]
-        del self.estimator_names_[idx]
-        del self.estimator_types_[idx]
-        self.n_estimators -= 1
 
+        if isinstance(ids, str):
+            ids = [ids]
+        
+        missing_ids = [id for id in ids if id not in self.estimator_ids]
+        if missing_ids:
+            raise KeyError(
+                f"No estimator(s) with id '{missing_ids}'. "
+                f"Available estimators: {self.estimator_ids}"
+            )
+            
+        for id in ids:
+            idx = self.estimator_ids.index(id)
+            del self.estimators[idx]
+            del self.estimators_[idx]
+            del self.estimator_ids[idx]
+            del self.estimator_names_[idx]
+            del self.estimator_types_[idx]
+            self.n_estimators -= 1
 
     def _preprocess_repr(self) -> tuple[list[str], str]:
         """
@@ -510,14 +500,13 @@ class ForecasterStats():
         
         # Format parameters for each estimator
         estimator_params = []
-        if self.estimator_params_ is not None:
-            for name in self.estimator_names_:
-                params = str(self.estimator_params_[name])
-                if len(params) > 58:
-                    params = "\n        " + textwrap.fill(
-                        params, width=76, subsequent_indent="        "
-                    )
-                estimator_params.append(f"{name}: {params}")
+        for id in self.estimator_ids:
+            params = str(self.estimator_params_[id])
+            if len(params) > 58:
+                params = "\n        " + textwrap.fill(
+                    params, width=76, subsequent_indent="        "
+                )
+            estimator_params.append(f"{id}: {params}")
 
         # Format exogenous variable names
         exog_names_in_ = None
@@ -547,7 +536,7 @@ class ForecasterStats():
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Estimators: {self.estimator_names_} \n"
+            f"Estimators: {self.estimator_ids} \n"
             f"Series name: {self.series_name_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
@@ -581,8 +570,11 @@ class ForecasterStats():
 
         # Build estimators list
         estimators_html = "<ul>"
-        for name in self.estimator_names_:
-            estimators_html += f"<li>{name}</li>"
+        for est_id, est_name in zip(self.estimator_ids, self.estimator_names_):
+            if est_name is not None:
+                estimators_html += f"<li>{est_id}: {est_name}</li>"
+            else:
+                estimators_html += f"<li>{est_id}</li>"
         estimators_html += "</ul>"
 
         # Build parameters section
@@ -686,10 +678,8 @@ class ForecasterStats():
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
 
-        # Reset values in case the forecaster has already been fitted.
-        # Not reset estimator_names_ and estimator_types_ since they
-        # are needed to identify each estimator.
         self.estimators_             = [copy(est) for est in self.estimators]
+        self.estimator_names_        = [None] * len(self.estimators)
         self.estimator_params_       = None
         self.last_window_            = None
         self.extended_index_         = None
@@ -720,7 +710,7 @@ class ForecasterStats():
                 )
             
             unsupported_exog = [
-                name for name, est_type in zip(self.estimator_names_, self.estimator_types_)
+                id for id, est_type in zip(self.estimator_ids, self.estimator_types_)
                 if est_type not in self.estimators_support_exog
             ]
             if unsupported_exog:
@@ -771,10 +761,17 @@ class ForecasterStats():
                 estimator.fit(y=y, exog=exog)
 
         self.is_fitted = True
-        self.estimator_names_ = self._generate_estimator_names(self.estimators_)
+
+        for i, estimator in enumerate(self.estimators_):
+            # Check if estimator has estimator_name_ attribute (skforecast models)
+            if hasattr(estimator, 'estimator_name_') and estimator.estimator_name_ is not None:
+                self.estimator_names_[i] = estimator.estimator_name_
+            else:
+                self.estimator_names_[i] = f"{type(estimator).__module__.split('.')[0]}.{type(estimator).__name__}"
+
         self.estimator_params_ = {
-            name: est.get_params() 
-            for name, est in zip(self.estimator_names_, self.estimators_)
+            est_id: est.get_params() 
+            for est_id, est in zip(self.estimator_ids, self.estimators_)
         }
         self.series_name_in_ = y.name if y.name is not None else 'y'
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
@@ -986,7 +983,7 @@ class ForecasterStats():
             )
         
         unsupported_last_window = [
-            name for name, estimator_type in zip(self.estimator_names_, self.estimator_types_)
+            id for id, estimator_type in zip(self.estimator_ids, self.estimator_types_)
             if estimator_type not in self.estimators_support_last_window
         ]
         if unsupported_last_window:
@@ -1057,7 +1054,7 @@ class ForecasterStats():
             Predicted values from all estimators:
 
             - For multiple estimators: long format DataFrame with columns 
-            'estimator' (estimator name) and 'pred' (predicted value).
+            'estimator_id' (estimator id) and 'pred' (predicted value).
             - For a single estimator: pandas Series with predicted values.
         
         """
@@ -1081,9 +1078,9 @@ class ForecasterStats():
             )
 
         all_predictions = []
-        estimator_names = []
-        for estimator, est_name, est_type in zip(
-            self.estimators_, self.estimator_names_, self.estimator_types_
+        estimator_ids = []
+        for estimator, est_id, est_type in zip(
+            self.estimators_, self.estimator_ids, self.estimator_types_
         ):
             if last_window is not None and est_type not in self.estimators_support_last_window:
                 continue
@@ -1091,8 +1088,8 @@ class ForecasterStats():
             pred_func = self._predict_dispatch[est_type]
             preds = pred_func(estimator=estimator, steps=steps, exog=exog)
             all_predictions.append(preds)
-            estimator_names.append(est_name)
-        print(all_predictions)
+            estimator_ids.append(est_id)
+
         predictions = transform_numpy(
                           array             = np.concatenate(all_predictions),
                           transformer       = self.transformer_y,
@@ -1100,7 +1097,7 @@ class ForecasterStats():
                           inverse_transform = True
                       )
 
-        if len(self.estimator_names_) == 1:
+        if self.n_estimators == 1:
             predictions = pd.Series(
                               data  = predictions.ravel(),
                               index = prediction_index,
@@ -1108,8 +1105,8 @@ class ForecasterStats():
                           )
         else:
             predictions = pd.DataFrame(
-                {"estimator": np.repeat(estimator_names, steps), "pred": predictions.ravel()},
-                index = np.tile(prediction_index, len(estimator_names)),
+                {"estimator_id": np.repeat(estimator_ids, steps), "pred": predictions.ravel()},
+                index = np.tile(prediction_index, len(estimator_ids)),
             )
         
         set_skforecast_warnings(suppress_warnings, action='default')
@@ -1224,7 +1221,7 @@ class ForecasterStats():
             estimated intervals:
             
             - For multiple estimators: long format DataFrame with columns
-              'estimator', 'pred', 'lower_bound', 'upper_bound'.
+              'estimator_id', 'pred', 'lower_bound', 'upper_bound'.
             - For a single estimator: DataFrame with columns
               'pred', 'lower_bound', 'upper_bound'.
 
@@ -1259,7 +1256,7 @@ class ForecasterStats():
             )
 
         unsupported_interval = [
-            name for name, est_type in zip(self.estimator_names_, self.estimator_types_)
+            id for id, est_type in zip(self.estimator_ids, self.estimator_types_)
             if est_type not in self.estimators_support_interval
         ]
         if unsupported_interval:
@@ -1271,9 +1268,9 @@ class ForecasterStats():
             )
         
         all_predictions = []
-        estimator_names = []
-        for estimator, est_name, est_type in zip(
-            self.estimators_, self.estimator_names_, self.estimator_types_
+        estimator_ids = []
+        for estimator, est_id, est_type in zip(
+            self.estimators_, self.estimator_ids, self.estimator_types_
         ):
             
             if est_type not in self.estimators_support_interval:
@@ -1284,7 +1281,7 @@ class ForecasterStats():
             pred_func = self._predict_interval_dispatch[est_type]
             preds = pred_func(estimator=estimator, steps=steps, exog=exog, alpha=alpha)
             all_predictions.append(preds)
-            estimator_names.append(est_name)
+            estimator_ids.append(est_id)
 
         predictions = transform_numpy(
                           array             = np.concatenate(all_predictions),
@@ -1295,12 +1292,12 @@ class ForecasterStats():
 
         predictions = pd.DataFrame(
                           data  = predictions,
-                          index = np.tile(prediction_index, len(estimator_names)),
+                          index = np.tile(prediction_index, len(estimator_ids)),
                           columns = ['pred', 'lower_bound', 'upper_bound']
                       )
         
-        if len(self.estimator_names_) > 1:
-            predictions.insert(0, 'estimator', np.repeat(estimator_names, steps))
+        if self.n_estimators > 1:
+            predictions.insert(0, 'estimator_id', np.repeat(estimator_ids, steps))
         else:
             # This is done to restore the frequency
             predictions.index = prediction_index
@@ -1350,7 +1347,7 @@ class ForecasterStats():
         preds = estimator.predict_interval(fh=fh, X=exog, coverage=1 - alpha).to_numpy()
         return preds
 
-    # TODO: Add get_params and set_params for each estimator when multiple estimators are supported
+    # TODO: Poner Forecaster fitted False en el resto de Forecasters
     def set_params(
         self, 
         params: dict[str, object] | dict[str, dict[str, object]]
@@ -1367,7 +1364,7 @@ class ForecasterStats():
             - Single estimator: A dictionary with parameter names as keys 
             and their new values as values.
             - Multiple estimators: A dictionary where each key is an 
-            estimator name (as shown in `estimator_names_`) and each value 
+            estimator id (as shown in `estimator_ids`) and each value 
             is a dictionary of parameters for that estimator.
 
         Returns
@@ -1387,35 +1384,42 @@ class ForecasterStats():
                     f"`params` must be a dictionary. Got {type(params).__name__}."
                 )
             
-            provided_names = set(params.keys())
-            valid_names = set(self.estimator_names_)
-            invalid_names = provided_names - valid_names
-            if invalid_names == provided_names:
+            provided_ids = set(params.keys())
+            valid_ids = set(self.estimator_ids)
+            invalid_ids = provided_ids - valid_ids
+            if invalid_ids == provided_ids:
                 raise ValueError(
-                    f"None of the provided estimator names {list(invalid_names)} "
-                    f"match the available estimator names: {self.estimator_names_}."
+                    f"None of the provided estimator ids {list(invalid_ids)} "
+                    f"match the available estimator ids: {self.estimator_ids}."
                 )
-            if invalid_names:
+            if invalid_ids:
                 warnings.warn(
-                    f"The following estimator names do not match any estimator "
-                    f"in the forecaster and will be ignored: {list(invalid_names)}. "
-                    f"Available estimator names are: {self.estimator_names_}.",
+                    f"The following estimator ids do not match any estimator "
+                    f"in the forecaster and will be ignored: {list(invalid_ids)}. "
+                    f"Available estimator ids are: {self.estimator_ids}.",
                     IgnoredArgumentWarning
                 )
             
-            for name, est_params in params.items():
-                if name in valid_names:
-                    idx = self.estimator_names_.index(name)
+            for est_id, est_params in params.items():
+                if est_id in valid_ids:
+                    idx = self.estimator_ids.index(est_id)
                     self.estimators[idx] = clone(self.estimators[idx])
                     self.estimators[idx].set_params(**est_params)
+
+        self.is_fitted = False
+        self.estimator_params_ = {
+            est_id: est.get_params() 
+            for est_id, est in zip(self.estimator_ids, self.estimators)
+        }
 
     def set_fit_kwargs(
         self, 
         fit_kwargs: Any = None
     ) -> None:
         """
-        Set new values for the additional keyword arguments passed to the `fit` 
-        method of the estimator.
+        This method is a placeholder to maintain API consistency. When using 
+        the skforecast Sarimax model, fit kwargs should be passed using the 
+        model parameter `sm_fit_kwargs`.
         
         Parameters
         ----------
@@ -1428,12 +1432,12 @@ class ForecasterStats():
         
         """
 
-        if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
-            warnings.warn(
-                "When using the skforecast Sarimax model, the fit kwargs should "
-                "be passed using the model parameter `sm_fit_kwargs`.",
-                IgnoredArgumentWarning
-            )
+        warnings.warn(
+            "This method is a placeholder to maintain API consistency. When using "
+            "the skforecast Sarimax model, fit kwargs should be passed using the "
+            "model parameter `sm_fit_kwargs`.",
+            IgnoredArgumentWarning
+        )
 
     def get_feature_importances(
         self,
@@ -1459,14 +1463,15 @@ class ForecasterStats():
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `get_feature_importances()`."
             )
+        
         feature_importances = []
-        for estimator, estimator_type, estimator_name in zip(
-            self.estimators_, self.estimator_types_, self.estimator_names_
+        for estimator, estimator_type, estimator_id in zip(
+            self.estimators_, self.estimator_types_, self.estimator_ids
         ):
-            get_importances_method = self._feature_importances_dispatch[estimator_type]
-            importance = get_importances_method(estimator)
+            get_importances_func = self._feature_importances_dispatch[estimator_type]
+            importance = get_importances_func(estimator)
             if importance is not None:
-                importance.insert(0, 'estimator_id', estimator_name)
+                importance.insert(0, 'estimator_id', estimator_id)
                 feature_importances.append(importance)
 
         feature_importances = pd.concat(feature_importances, ignore_index=True)
@@ -1477,29 +1482,14 @@ class ForecasterStats():
                                       ascending=False
                                   ).reset_index(drop=True)
 
+        if self.n_estimators == 1:
+            feature_importances = feature_importances.drop(columns=['estimator_id'])
+
         return feature_importances
 
     @staticmethod
-    def _get_feature_importances_sarimax(estimator) -> pd.DataFrame:
-        """Get feature importances for SARIMAX statsmodels model."""
-
-        return estimator.get_feature_importances()
-    
-    @staticmethod
-    def _get_feature_importances_arima(estimator) -> pd.DataFrame:
-        """Get feature importances for Arima model."""
-
-        return estimator.get_feature_importances()
-
-    @staticmethod
-    def _get_feature_importances_arar(estimator) -> pd.DataFrame:
-        """Get feature importances for Arar model."""
-        
-        return estimator.get_feature_importances()
-
-    @staticmethod
-    def _get_feature_importances_ets(estimator) -> pd.DataFrame:
-        """Get feature importances for Eta model."""
+    def _get_feature_importances_skforecast_stats(estimator) -> pd.DataFrame:
+        """Get feature importances for skforecast Sarimax/Arima/Arar/Ets models."""
 
         return estimator.get_feature_importances()
 
@@ -1557,43 +1547,37 @@ class ForecasterStats():
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `get_info_criteria()`."
             )
+        
         info_criteria = []
         for estimator, estimator_type in zip(self.estimators_, self.estimator_types_):
             get_criteria_method = self._info_criteria_dispatch[estimator_type]
             value = get_criteria_method(estimator, criteria, method)
             info_criteria.append(value)
 
-        results = pd.DataFrame({
-            'estimator_id': self.estimator_names_,
-            'criteria': criteria,
-            'value': info_criteria
-        })
+        if self.n_estimators == 1:
+            results = pd.DataFrame({
+                'criteria': criteria, 'value': info_criteria
+            })
+        else:
+            results = pd.DataFrame({
+                'estimator_id': self.estimator_ids,
+                'criteria': criteria,
+                'value': info_criteria
+            })
         
         return results
+
+    @staticmethod
+    def _get_info_criteria_skforecast_stats(estimator, criteria: str, method: str) -> float:
+        """Get information criteria for skforecast Arima/Arar/Ets models."""
+
+        return estimator.get_info_criteria(criteria=criteria)
 
     @staticmethod
     def _get_info_criteria_sarimax(estimator, criteria: str, method: str) -> float:
         """Get information criteria for SARIMAX statsmodels model."""
        
         return estimator.get_info_criteria(criteria=criteria, method=method)
-    
-    @staticmethod
-    def _get_info_criteria_arima(estimator, criteria: str, method: str) -> float:
-        """Get information criteria for Arima model."""
-
-        return estimator.get_info_criteria(criteria=criteria)
-
-    @staticmethod
-    def _get_info_criteria_arar(estimator, criteria: str, method: str) -> float:
-        """Get information criteria for Arar model."""
-        
-        return estimator.get_info_criteria(criteria=criteria)
-
-    @staticmethod
-    def _get_info_criteria_ets(estimator, criteria: str, method: str) -> float:
-        """Get information criteria for skforecast Ets model."""
-        
-        return estimator.get_info_criteria(criteria=criteria)
     
     @staticmethod
     def _get_info_criteria_sktime_arima(estimator, criteria: str, method: str) -> float:
@@ -1615,6 +1599,47 @@ class ForecasterStats():
             )
         
         return estimator.aic_
+
+    def get_estimators_info(self) -> pd.DataFrame:
+        """
+        Get a summary DataFrame with information about all estimators in the 
+        forecaster.
+        
+        Returns
+        -------
+        info : pandas DataFrame
+            DataFrame with columns:
+            - id: Unique identifier for each estimator.
+            - name: Descriptive name (available after fitting).
+            - type: Full qualified type string.
+            - supports_exog: Whether the estimator supports exogenous variables.
+            - supports_interval: Whether the estimator supports prediction intervals.
+            - params: Dictionary of the estimator parameters.
+        
+        """
+
+        supports_exog = [
+            est_type in self.estimators_support_exog 
+            for est_type in self.estimator_types_
+        ]
+        supports_interval = [
+            est_type in self.estimators_support_interval 
+            for est_type in self.estimator_types_
+        ]
+        params = [
+            str(est_params) for est_params in self.estimator_params_.values()
+        ]
+
+        info = pd.DataFrame({
+            'id': self.estimator_ids,
+            'name': self.estimator_names_,
+            'type': self.estimator_types_,
+            'supports_exog': supports_exog,
+            'supports_interval': supports_interval,
+            'params': params
+        })
+
+        return info
 
     def summary(self) -> None:
         """
@@ -1652,7 +1677,7 @@ class ForecasterStats():
             )
 
         unsupported_reduce_memory = [
-            name for name, estimator_type in zip(self.estimator_names_, self.estimator_types_)
+            est_id for est_id, estimator_type in zip(self.estimator_ids, self.estimator_types_)
             if estimator_type not in self.estimators_support_reduce_memory
         ]
         if unsupported_reduce_memory:
