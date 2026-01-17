@@ -329,7 +329,7 @@ class Arima(BaseEstimator, RegressorMixin):
             raise ValueError(
                 f"`seasonal_order` must be a tuple of length 3, got length {len(seasonal_order)}"
             )
-        if m < 1 or not isinstance(m, int):
+        if not isinstance(m, int) or m < 1:
             raise ValueError("`m` must be a positive integer (seasonal period).")
         
         self.order                = order

@@ -21,7 +21,7 @@ def test_get_score_raises_error_for_unfitted_model():
     Test that get_score raises error when model is not fitted.
     """
     from sklearn.exceptions import NotFittedError
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     msg = (
         "This Arima instance is not fitted yet. Call 'fit' with "
         "appropriate arguments before using this estimator."
@@ -35,7 +35,7 @@ def test_get_score_returns_float():
     Test that get_score returns a float value.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     score = model.get_score()
@@ -48,7 +48,7 @@ def test_get_score_between_zero_and_one():
     Test that R² score is generally between 0 and 1 for good fits.
     """
     y = ar1_series(100, phi=0.7, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     score = model.get_score()
@@ -62,7 +62,7 @@ def test_get_score_after_reduce_memory():
     Test that get_score raises error after reduce_memory is called.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     # Should work before reduce_memory
@@ -86,7 +86,7 @@ def test_get_score_with_exog():
     y = ar1_series(80)
     exog = np.random.randn(80, 2)
     
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y, exog=exog)
     
     score = model.get_score()
@@ -100,7 +100,7 @@ def test_get_score_ignores_y_parameter():
     Test that get_score ignores the y parameter (sklearn compatibility).
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     score1 = model.get_score()
@@ -115,7 +115,7 @@ def test_get_score_consistency():
     Test that get_score returns same value across multiple calls.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     score1 = model.get_score()
@@ -130,11 +130,11 @@ def test_get_score_different_models():
     """
     y = ar1_series(100, seed=42)
     
-    model1 = Arima(order=(1, 0, 0))
+    model1 = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model1.fit(y)
     score1 = model1.get_score()
     
-    model2 = Arima(order=(0, 0, 1))
+    model2 = Arima(order=(0, 0, 1), seasonal_order=(0, 0, 0))
     model2.fit(y)
     score2 = model2.get_score()
     

@@ -37,7 +37,7 @@ def test_set_params_updates_valid_parameters():
     """
     Test that set_params correctly updates valid parameters.
     """
-    model = Arima(order=(1, 0, 0), m=1, method="CSS-ML")
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0), m=1, method="CSS-ML")
     
     assert model.order == (1, 0, 0)
     assert model.m == 1
@@ -85,7 +85,7 @@ def test_set_params_resets_fitted_state():
     Test that set_params resets all fitted attributes.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     # Check that model is fitted
@@ -110,7 +110,7 @@ def test_set_params_after_fit_requires_refit():
     Test that after set_params, model needs to be refitted before prediction.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     # Predictions work after fitting
@@ -140,7 +140,7 @@ def test_set_params_returns_self():
     Test that set_params returns self for method chaining.
     """
     model = Arima()
-    result = model.set_params(order=(1, 1, 1))
+    result = model.set_params(order=(1, 1, 1), seasonal_order=(0, 1, 1))
     
     assert result is model
 
@@ -151,7 +151,7 @@ def test_set_params_method_chaining():
     """
     y = ar1_series(100, seed=42)
     
-    model = (Arima()
+    model = (Arima(order=(0, 0, 0), seasonal_order=(0, 0, 0), m=1)
              .set_params(order=(1, 0, 1))
              .set_params(m=12)
              .fit(y))
@@ -192,7 +192,7 @@ def test_set_params_on_fitted_model_with_exog():
     y = ar1_series(80)
     exog = np.random.randn(80, 2)
     
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y, exog=exog)
     
     assert model.n_exog_features_in_ == 2
@@ -209,7 +209,7 @@ def test_set_params_empty_call():
     Test that calling set_params with no arguments still resets fitted state.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     assert model.is_fitted is True
@@ -228,7 +228,7 @@ def test_set_params_resets_memory_reduced_flag():
     Test that set_params resets is_memory_reduced flag.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0), m=1)
     model.fit(y)
     model.reduce_memory()
     
