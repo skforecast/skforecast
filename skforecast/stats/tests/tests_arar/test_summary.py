@@ -27,21 +27,21 @@ def test_estimator_summary(capsys):
     # Check exact output
     expected_output = """Arar(lags=(1, 3, 16, 17)) Model Summary
 ------------------
-Number of observations: 100
-Selected AR lags: (1, 3, 16, 17)
-AR coefficients (phi): [ 0.6876 -0.1565  0.102  -0.1787]
-Residual variance (sigma^2): 0.7354
-Mean of shortened series (sbar): 0.2885
+Selected AR lags:                         (1, 3, 16, 17)
+AR coefficients (phi):                    [ 0.6876 -0.1565  0.102  -0.1787]
+Residual variance (sigma^2):              0.7354
+Mean of shortened series (sbar):          0.2885
 Length of memory-shortening filter (psi): 1
 
 Time Series Summary Statistics
-Mean: 0.2885
-Std Dev: 1.1514
-Min: -2.4900
-25%: -0.4976
-Median: 0.2289
-75%: 1.0181
-Max: 3.2281
+Number of observations: 100
+Mean:                   0.2885
+Std Dev:                1.1514
+Min:                    -2.4900
+25%:                    -0.4976
+Median:                 0.2289
+75%:                    1.0181
+Max:                    3.2281
 
 Model Diagnostics
 AIC: 224.5980
@@ -69,21 +69,21 @@ def test_arar_summary_with_exog(capsys):
     # Check exact output
     expected_output = """Arar(lags=(1, 5, 8, 25)) Model Summary
 ------------------
-Number of observations: 100
-Selected AR lags: (1, 5, 8, 25)
-AR coefficients (phi): [ 0.019   0.1824 -0.1076  0.1259]
-Residual variance (sigma^2): 0.7978
-Mean of shortened series (sbar): -0.1081
+Selected AR lags:                         (1, 5, 8, 25)
+AR coefficients (phi):                    [ 0.019   0.1824 -0.1076  0.1259]
+Residual variance (sigma^2):              0.7978
+Mean of shortened series (sbar):          -0.1081
 Length of memory-shortening filter (psi): 2
 
 Time Series Summary Statistics
-Mean: -6.2559
-Std Dev: 5.1307
-Min: -14.5761
-25%: -9.6461
-Median: -7.6509
-75%: -3.1440
-Max: 8.5967
+Number of observations: 100
+Mean:                   -6.2559
+Std Dev:                5.1307
+Min:                    -14.5761
+25%:                    -9.6461
+Median:                 -7.6509
+75%:                    -3.1440
+Max:                    8.5967
 
 Model Diagnostics
 AIC: 213.2099
