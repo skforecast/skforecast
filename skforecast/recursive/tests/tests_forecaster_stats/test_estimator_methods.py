@@ -6,8 +6,6 @@ import numpy as np
 import pandas as pd
 from skforecast.stats import Sarimax, Arima, Ets
 from skforecast.recursive import ForecasterStats
-from aeon.forecasting.stats import ARIMA as AeonARIMA
-
 
 # Test get_estimator
 # ==============================================================================
@@ -160,7 +158,11 @@ def test_remove_estimator_multiple_ids_and_fitted():
     """
     Check that remove_estimator removes multiple estimators by ids.
     """
-    estimators = [Sarimax(order=(1, 0, 1)), Arima(order=(1, 1, 1)), Ets()]
+    estimators = [
+        Sarimax(order=(1, 0, 1)),
+        Arima(order=(1, 1, 1), seasonal_order=(0, 0, 0)),
+        Ets()
+    ]
     forecaster = ForecasterStats(estimator=estimators)
     forecaster.fit(y=pd.Series(np.arange(50), name='y'))
     
@@ -202,23 +204,33 @@ def test_get_estimators_info_not_fitted():
     """
     Check that get_estimators_info returns correct DataFrame when not fitted.
     """
-    estimators = [Sarimax(order=(1, 0, 1)), Arima(order=(1, 1, 1)), Ets(), AeonARIMA(p=1, d=1, q=1)]
+    estimators = [
+        Sarimax(order=(1, 0, 1)),
+        Arima(order=(1, 1, 1), seasonal_order=(0, 0, 0)),
+        Ets()
+    ]
     forecaster = ForecasterStats(estimator=estimators)
     
     results = forecaster.get_estimators_info()
 
-    expected = pd.DataFrame({
-        'id': ['skforecast.Sarimax', 'skforecast.Arima', 'skforecast.Ets', 'aeon.ARIMA'],
-        'name': [None, None, None, None],
-        'type': [
-            'skforecast.stats._sarimax.Sarimax',
-            'skforecast.stats._arima.Arima',
-            'skforecast.stats._ets.Ets',
-            'aeon.forecasting.stats._arima.ARIMA'
-        ],
-        'supports_exog': [True, True, False, False],
-        'supports_interval': [True, True, True, False]
-    })
+    expected = pd.DataFrame(
+        {
+            "id": ["skforecast.Sarimax", "skforecast.Arima", "skforecast.Ets"],
+            "name": [None, None, None],
+            "type": [
+                "skforecast.stats._sarimax.Sarimax",
+                "skforecast.stats._arima.Arima",
+                "skforecast.stats._ets.Ets",
+            ],
+            "supports_exog": [True, True, False],
+            "supports_interval": [True, True, True],
+            "params": [
+                "{'order': (1, 0, 1), 'seasonal_order': (0, 0, 0, 0), 'trend': None, 'measurement_error': False, 'time_varying_regression': False, 'mle_regression': True, 'simple_differencing': False, 'enforce_stationarity': True, 'enforce_invertibility': True, 'hamilton_representation': False, 'concentrate_scale': False, 'trend_offset': 1, 'use_exact_diffuse': False, 'dates': None, 'freq': None, 'missing': 'none', 'validate_specification': True, 'method': 'lbfgs', 'maxiter': 50, 'start_params': None, 'disp': False, 'sm_init_kwargs': {}, 'sm_fit_kwargs': {}, 'sm_predict_kwargs': {}}",
+                "{'order': (1, 1, 1), 'seasonal_order': (0, 0, 0), 'm': 1, 'include_mean': True, 'transform_pars': True, 'method': 'CSS-ML', 'n_cond': None, 'SSinit': 'Gardner1980', 'optim_method': 'BFGS', 'optim_kwargs': {'maxiter': 1000}, 'kappa': 1000000.0}",
+                "{'m': 1, 'model': 'ZZZ', 'damped': None, 'alpha': None, 'beta': None, 'gamma': None, 'phi': None, 'seasonal': True, 'trend': None, 'allow_multiplicative': True, 'allow_multiplicative_trend': False}",
+            ],
+        }
+    )
 
     pd.testing.assert_frame_equal(results, expected)
 
@@ -227,23 +239,31 @@ def test_get_estimators_info_fitted():
     """
     Check that get_estimators_info returns correct DataFrame when fitted.
     """
-    estimators = [Sarimax(order=(1, 0, 1)), Arima(order=(1, 1, 1)), Ets(), AeonARIMA(p=1, d=1, q=1)]
+    estimators = [
+        Sarimax(order=(1, 0, 1)),
+        Arima(order=(1, 1, 1), seasonal_order=(0, 0, 0)),
+        Ets()
+    ]
     forecaster = ForecasterStats(estimator=estimators)
     forecaster.fit(y=pd.Series(np.arange(50), name='y'))
     
     results = forecaster.get_estimators_info()
 
     expected = pd.DataFrame({
-        'id': ['skforecast.Sarimax', 'skforecast.Arima', 'skforecast.Ets', 'aeon.ARIMA'],
-        'name': ['Sarimax(1,0,1)(0,0,0)[0]', 'Arima(1,1,1)', 'Ets(AAN)', 'aeon.ARIMA'],
+        'id': ['skforecast.Sarimax', 'skforecast.Arima', 'skforecast.Ets',],
+        'name': ['Sarimax(1,0,1)(0,0,0)[0]', 'Arima(1,1,1)', 'Ets(AAN)',],
         'type': [
             'skforecast.stats._sarimax.Sarimax',
             'skforecast.stats._arima.Arima',
             'skforecast.stats._ets.Ets',
-            'aeon.forecasting.stats._arima.ARIMA'
         ],
-        'supports_exog': [True, True, False, False],
-        'supports_interval': [True, True, True, False]
+        'supports_exog': [True, True, False],
+        'supports_interval': [True, True, True],
+        'params': [
+            "{'order': (1, 0, 1), 'seasonal_order': (0, 0, 0, 0), 'trend': None, 'measurement_error': False, 'time_varying_regression': False, 'mle_regression': True, 'simple_differencing': False, 'enforce_stationarity': True, 'enforce_invertibility': True, 'hamilton_representation': False, 'concentrate_scale': False, 'trend_offset': 1, 'use_exact_diffuse': False, 'dates': None, 'freq': None, 'missing': 'none', 'validate_specification': True, 'method': 'lbfgs', 'maxiter': 50, 'start_params': None, 'disp': False, 'sm_init_kwargs': {}, 'sm_fit_kwargs': {}, 'sm_predict_kwargs': {}}",
+            "{'order': (1, 1, 1), 'seasonal_order': (0, 0, 0), 'm': 1, 'include_mean': True, 'transform_pars': True, 'method': 'CSS-ML', 'n_cond': None, 'SSinit': 'Gardner1980', 'optim_method': 'BFGS', 'optim_kwargs': {'maxiter': 1000}, 'kappa': 1000000.0}",
+            "{'m': 1, 'model': 'ZZZ', 'damped': None, 'alpha': None, 'beta': None, 'gamma': None, 'phi': None, 'seasonal': True, 'trend': None, 'allow_multiplicative': True, 'allow_multiplicative_trend': False}"
+            ]
     })
 
     pd.testing.assert_frame_equal(results, expected)
