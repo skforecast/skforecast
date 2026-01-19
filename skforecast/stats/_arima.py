@@ -31,13 +31,13 @@ class Arima(BaseEstimator, RegressorMixin):
 
     Parameters
     ----------
-    order : tuple of int or None, default None
+    order : tuple of int or None, default (1, 0, 0)
         The (p, d, q) order of the non-seasonal ARIMA model:
         - p: AR order (number of lag observations)
         - d: Degree of differencing (number of times to difference the series)
         - q: MA order (size of moving average window)
         If None, the order will be automatically selected using auto_arima during fitting.
-    seasonal_order : tuple of int or None, default None
+    seasonal_order : tuple of int or None, default (0, 0, 0)
         The (P, D, Q) order of the seasonal component:
         - P: Seasonal AR order
         - D: Seasonal differencing order
@@ -281,8 +281,8 @@ class Arima(BaseEstimator, RegressorMixin):
 
     def __init__(
         self,
-        order: tuple[int, int, int] | None = None,
-        seasonal_order: tuple[int, int, int] | None = None,
+        order: tuple[int, int, int] | None = (1, 0, 0),
+        seasonal_order: tuple[int, int, int] | None = (0, 0, 0),
         m: int = 1,
         include_mean: bool = True,
         transform_pars: bool = True,
