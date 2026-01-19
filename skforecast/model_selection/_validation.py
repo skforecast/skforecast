@@ -1375,8 +1375,11 @@ def backtesting_forecaster_multiseries(
     )
 
     return metrics_levels, backtest_predictions
-    
 
+
+# TODO: suppress_warnings_fit and suppress_warnings? Igual solo te interesa uno o lo general
+# TODO: Como usamos last_window, se ignoran los estimators que no la usan y no se predice
+# TODO: Tenemos estimators que permiten refit y otros que no 
 def _backtesting_stats(
     forecaster: object,
     y: pd.Series,
@@ -1475,16 +1478,17 @@ def _backtesting_stats(
     forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
 
-    estimator_type = f"{type(forecaster.estimator).__module__}.{type(forecaster.estimator).__name__}"
-    if estimator_type != "skforecast.stats._sarimax.Sarimax" and cv.refit is False:
-        warnings.warn(
-            "If `ForecasterStats` uses a estimator different from "
-            "`skforecast.stats.Sarimax`, `cv.refit` must be `True` since "
-            "predictions must start from the end of the training set."
-            " Setting `cv.refit = True`.",
-            IgnoredArgumentWarning
-        )
-        cv.refit = True
+    # TODO: This has to be moved to individual estimator checks 
+    # estimator_type = f"{type(forecaster.estimator).__module__}.{type(forecaster.estimator).__name__}"
+    # if estimator_type != "skforecast.stats._sarimax.Sarimax" and cv.refit is False:
+    #     warnings.warn(
+    #         "If `ForecasterStats` uses a estimator different from "
+    #         "`skforecast.stats.Sarimax`, `cv.refit` must be `True` since "
+    #         "predictions must start from the end of the training set."
+    #         " Setting `cv.refit = True`.",
+    #         IgnoredArgumentWarning
+    #     )
+    #     cv.refit = True
 
     cv.set_params({
         'window_size': forecaster.window_size,
