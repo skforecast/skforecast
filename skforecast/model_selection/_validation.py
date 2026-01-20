@@ -1377,9 +1377,10 @@ def backtesting_forecaster_multiseries(
     return metrics_levels, backtest_predictions
 
 
-# TODO: suppress_warnings_fit and suppress_warnings? Igual solo te interesa uno o lo general
+# TODO: suppress_warnings_fit cambiar a suppress_warnings
 # TODO: Como usamos last_window, se ignoran los estimators que no la usan y no se predice
 # TODO: Tenemos estimators que permiten refit y otros que no 
+# TODO: para los modelos AUTO, queremos hacer una búsqueda en cada refit, o congelar los params
 def _backtesting_stats(
     forecaster: object,
     y: pd.Series,
@@ -1478,17 +1479,31 @@ def _backtesting_stats(
     forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
 
+    # 1. Si hay más de un estimator y no son todos Sarimax, obligar a que sea refit = True
+    # Si refit no es True -> warning y forzar refit = True
+    # 2. Si son todos Sarimax (o solo uno), permitir refit = False y no lanzar warning
+    # 3. Si es uno solo y no es Sarimax, obligar a que sea refit = True y lanzar warning si refit es False
+    # ----------------
+    # Params fijos o lanzar Auto en cada refit?
+    # Añadir argumento para congelar params -> freeze_params: bool = True que haga que se fijen los params
+    # en el primer fit y se usen esos en los refit posteriores.
+    # Después del primer fit, hago un set_params usando best atributos (best_params_) sobre los
+    # argumentos y atributos (order, seasonal_order) de los estimators para los refit posteriores. Esto va a provocar 
+    # que ya no se lance el Auto. (Hacer para Arima y Sarimax).
+    # Cuando estás en el modo freeze_params=False, añadir una columna 'params' donde 
+    # aparezca el estimator_id (Sarimax(1, 1, 1)(0, 1, 1, 12)) o los params (ver qué es más rápido)
+
     # TODO: This has to be moved to individual estimator checks 
-    # estimator_type = f"{type(forecaster.estimator).__module__}.{type(forecaster.estimator).__name__}"
-    # if estimator_type != "skforecast.stats._sarimax.Sarimax" and cv.refit is False:
-    #     warnings.warn(
-    #         "If `ForecasterStats` uses a estimator different from "
-    #         "`skforecast.stats.Sarimax`, `cv.refit` must be `True` since "
-    #         "predictions must start from the end of the training set."
-    #         " Setting `cv.refit = True`.",
-    #         IgnoredArgumentWarning
-    #     )
-    #     cv.refit = True
+    estimator_type = f"{type(forecaster.estimator).__module__}.{type(forecaster.estimator).__name__}"
+    if estimator_type != "skforecast.stats._sarimax.Sarimax" and cv.refit is False:
+        warnings.warn(
+            "If `ForecasterStats` uses a estimator different from "
+            "`skforecast.stats.Sarimax`, `cv.refit` must be `True` since "
+            "predictions must start from the end of the training set."
+            " Setting `cv.refit = True`.",
+            IgnoredArgumentWarning
+        )
+        cv.refit = True
 
     cv.set_params({
         'window_size': forecaster.window_size,
@@ -1674,6 +1689,7 @@ def _backtesting_stats(
             .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
         )
 
+    # TODO: Adapt for multiple estimators
     metric_values = [
         m(
             y_true = y.loc[backtest_predictions_for_metrics.index],
