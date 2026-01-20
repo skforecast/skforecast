@@ -554,7 +554,8 @@ class Arima(BaseEstimator, RegressorMixin):
                 )
                 self.best_params_ = {
                     'order': best_model_order_,
-                    'seasonal_order': best_seasonal_order_
+                    'seasonal_order': best_seasonal_order_,
+                    'm': self.m
                 }
             else:
                 self.model_ = arima(
