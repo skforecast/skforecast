@@ -233,7 +233,7 @@ class RangeDriftDetector:
         """
 
         if isinstance(feature_range, tuple):
-            return X.min() < feature_range[0] or X.max() > feature_range[1]
+            return bool(X.min() < feature_range[0] or X.max() > feature_range[1])
         else:
             unseen = set(X.dropna().unique()) - feature_range
             return bool(unseen)
