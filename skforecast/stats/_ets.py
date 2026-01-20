@@ -153,6 +153,11 @@ class Ets(BaseEstimator, RegressorMixin):
     estimator_name_ : str
         String identifier of the fitted model configuration (e.g., "Ets(AAA)"). 
         This is updated after fitting to reflect the selected model.
+    is_auto: bool
+        Indicates whether automatic model selection was used (model="ZZZ").
+    best_params_ : dict or None
+        If automatic model selection was used (model="ZZZ"), this dictionary contains
+        the parameters of the selected best model. None if a fixed model was used.
     
     """
 
@@ -205,6 +210,8 @@ class Ets(BaseEstimator, RegressorMixin):
         self.is_memory_reduced          = False
         self.is_fitted                  = False
         self.estimator_name_            = f"Ets({self.model})"
+        self.best_params_               = None
+        self.is_auto                    = self.model == "ZZZ"
 
     def __repr__(self) -> str:
         """
@@ -251,6 +258,7 @@ class Ets(BaseEstimator, RegressorMixin):
         self.n_features_in_       = None
         self.is_memory_reduced    = False
         self.is_fitted            = False
+        self.best_params_         = None
         
         if not isinstance(y, (pd.Series, np.ndarray)):
             raise ValueError("`y` must be a pandas Series or numpy ndarray.")
@@ -278,6 +286,26 @@ class Ets(BaseEstimator, RegressorMixin):
                 lambda_auto                = self.lambda_auto,
                 verbose                    = False,
             )
+
+            self.best_params_ = {
+                "m": self.model_.config.m,
+                "model": f"{self.model_.config.error}{self.model_.config.trend}{self.model_.config.season}",
+                "damped": self.model_.config.damped,
+                "alpha": self.model_.params.alpha,
+                "beta": self.model_.params.beta,
+                "gamma": self.model_.params.gamma,
+                "phi": self.model_.params.phi,
+                "lambda_param": self.lambda_param,
+                "lambda_auto": self.lambda_auto,
+                "bias_adjust": self.bias_adjust,
+                "bounds": self.bounds,
+                "seasonal": self.seasonal,
+                "trend": self.trend,
+                "ic": self.ic,
+                "allow_multiplicative": self.allow_multiplicative,
+                "allow_multiplicative_trend": self.allow_multiplicative_trend,
+            }
+
         else:
             # Fit specific model
             damped_param = False if self.damped is None else self.damped
@@ -612,6 +640,7 @@ class Ets(BaseEstimator, RegressorMixin):
         self.is_memory_reduced    = False
         self.is_fitted            = False
         self.estimator_name_      = f"Ets({self.model})"
+        self.is_auto              = self.model == "ZZZ"
         
         return self
     

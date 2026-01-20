@@ -258,6 +258,11 @@ class Arima(BaseEstimator, RegressorMixin):
         In-sample residuals (observed - fitted).
     var_coef_ : ndarray
         Variance-covariance matrix of coefficients.
+    best_params_ : dict or None
+        If auto arima was used, dictionary with 'order' and 'seasonal_order' of the
+        selected best model. None if fixed order was used.
+    is_auto : bool
+        Flag indicating whether auto arima model selection is used.
     is_memory_reduced : bool
         Flag indicating whether reduce_memory() has been called.
     is_fitted : bool
@@ -371,7 +376,7 @@ class Arima(BaseEstimator, RegressorMixin):
         self.lambda_bc            = lambda_bc
         self.biasadj              = biasadj       
 
-        self.is_auto_arima        = order is None or seasonal_order is None
+        self.is_auto              = order is None or seasonal_order is None
         self.model_               = None
         self.y_train_             = None
         self.coef_                = None
@@ -390,11 +395,12 @@ class Arima(BaseEstimator, RegressorMixin):
         self.n_exog_features_in_  = None
         self.is_memory_reduced    = False
         self.is_fitted            = False
+        self.best_params_         = None
 
         if self.optim_kwargs is None:
             self.optim_kwargs = {'maxiter': 1000}
 
-        if self.is_auto_arima:
+        if self.is_auto:
             estimator_name_ = "Arima()"
         else:
             p, d, q = self.order
@@ -443,6 +449,28 @@ class Arima(BaseEstimator, RegressorMixin):
             attributes, and `estimator_selected_id_` is updated with the chosen model.
 
         """
+
+        self.model_               = None
+        self.y_train_             = None
+        self.coef_                = None
+        self.coef_names_          = None
+        self.sigma2_              = None
+        self.loglik_              = None
+        self.aic_                 = None
+        self.bic_                 = None
+        self.arma_                = None
+        self.converged_           = None
+        self.fitted_values_       = None
+        self.in_sample_residuals_ = None
+        self.var_coef_            = None
+        self.n_features_in_       = None
+        self.n_exog_names_in_     = None
+        self.n_exog_features_in_  = None
+        self.is_memory_reduced    = False
+        self.is_fitted            = False
+        self.best_params_         = None
+        self.is_auto              = self.order is None or self.seasonal_order is None
+        
         if not isinstance(y, (np.ndarray, pd.Series)):
             raise TypeError("`y` must be a pandas Series or numpy array.")
         
@@ -475,7 +503,7 @@ class Arima(BaseEstimator, RegressorMixin):
             if suppress_warnings:
                 warnings.simplefilter("ignore")
             
-            if self.is_auto_arima:
+            if self.is_auto:
                 self.model_ = auto_arima(
                     y                  = y,
                     m                  = self.m,
@@ -514,16 +542,20 @@ class Arima(BaseEstimator, RegressorMixin):
                     kappa              = self.kappa
                 )
                 
-                self.best_model_order_ = (
+                best_model_order_ = (
                     self.model_['arma'][0],
                     self.model_['arma'][5],
                     self.model_['arma'][1]
                 )
-                self.best_seasonal_order_ = (
+                best_seasonal_order_ = (
                     self.model_['arma'][2],
                     self.model_['arma'][6],
                     self.model_['arma'][3]
                 )
+                self.best_params_ = {
+                    'order': best_model_order_,
+                    'seasonal_order': best_seasonal_order_
+                }
             else:
                 self.model_ = arima(
                     x              = y,
@@ -622,7 +654,7 @@ class Arima(BaseEstimator, RegressorMixin):
                 f"but `exog` was not provided for prediction."
             )
         
-        if self.is_auto_arima:
+        if self.is_auto:
             predictions = forecast_arima(
                 model   = self.model_,
                 h       = steps,
@@ -732,7 +764,7 @@ class Arima(BaseEstimator, RegressorMixin):
                 f"but `exog` was not provided for prediction."
             )
         
-        if self.is_auto_arima:
+        if self.is_auto:
             raw_preds = forecast_arima(
                 model   = self.model_,
                 h       = steps,
@@ -983,8 +1015,9 @@ class Arima(BaseEstimator, RegressorMixin):
         for attr in fitted_attrs:
             setattr(self, attr, None)
         
+        self.is_auto = self.order is None or self.seasonal_order is None
         self.is_memory_reduced = False
-        self.is_fitted         = False
+        self.is_fitted = False
         p, d, q = self.order
         P, D, Q = self.seasonal_order
         if P == 0 and D == 0 and Q == 0:
