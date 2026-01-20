@@ -235,15 +235,15 @@ def test_Sarimax_fit_with_numpy():
 
     assert sarimax.output_type is None
     assert sarimax.sarimax_res is None
-    assert sarimax.is_fitted == False
+    assert sarimax.is_fitted is False
     assert sarimax.training_index is None
 
     sarimax.fit(y=y_numpy, exog=exog_numpy)
 
     assert sarimax.output_type == 'numpy'
     assert isinstance(sarimax.sarimax_res, SARIMAXResultsWrapper)
-    assert sarimax.is_fitted == True
-    assert sarimax.training_index == None
+    assert sarimax.is_fitted is True
+    assert sarimax.training_index is None
 
 
 @pytest.mark.parametrize("y, exog", 
@@ -261,14 +261,14 @@ def test_Sarimax_fit_with_pandas(y, exog):
 
     assert sarimax.output_type is None
     assert sarimax.sarimax_res is None
-    assert sarimax.is_fitted == False
+    assert sarimax.is_fitted is False
     assert sarimax.training_index is None
 
     sarimax.fit(y=y, exog=exog)
 
     assert sarimax.output_type == 'pandas'
     assert isinstance(sarimax.sarimax_res, SARIMAXResultsWrapper)
-    assert sarimax.is_fitted == True
+    assert sarimax.is_fitted is True
     pd.testing.assert_index_equal(sarimax.training_index, y.index)
 
 
