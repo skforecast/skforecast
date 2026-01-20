@@ -40,6 +40,8 @@ The main changes in this release are:
 
 + Removed residual handling from `_recursive_predict` methods, separating bootstrap logic into dedicated methods.
 
++ `suppress_warnings_fit` parameter in <code>[backtesting_stats]</code> function has been replaced with `suppress_warnings` to control the display of skforecast warnings during the entire backtesting process.
+
 
 **Fixed**
 

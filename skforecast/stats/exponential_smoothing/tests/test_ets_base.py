@@ -375,7 +375,7 @@ def test_ets_damped_trend():
     y = ar1_series(100)
     model = ets(y, m=1, model="AAN", damped=True)
 
-    assert model.config.damped == True
+    assert model.config.damped is True
     assert 0 < model.params.phi < 1
 
 

@@ -694,8 +694,8 @@ def test_check_backtesting_input_ValueError_when_skip_folds_in_ForecasterStats()
 
 @pytest.mark.parametrize("boolean_argument", 
                          ['add_aggregated_metric', 'use_in_sample_residuals', 
-                          'use_binned_residuals', 'return_predictors', 'show_progress', 
-                          'suppress_warnings', 'suppress_warnings_fit'], 
+                          'use_binned_residuals', 'return_predictors', 'freeze_params', 
+                          'show_progress', 'suppress_warnings'], 
                          ids = lambda argument: f'{argument}')
 def test_check_backtesting_input_TypeError_when_boolean_arguments_not_bool(boolean_argument):
     """
@@ -721,9 +721,9 @@ def test_check_backtesting_input_TypeError_when_boolean_arguments_not_bool(boole
         'use_in_sample_residuals': False,
         'use_binned_residuals': False,
         'return_predictors': False,
+        'freeze_params': False,
         'show_progress': False,
-        'suppress_warnings': False,
-        'suppress_warnings_fit': False
+        'suppress_warnings': False
     }
     boolean_arguments[boolean_argument] = 'not_bool'
     
