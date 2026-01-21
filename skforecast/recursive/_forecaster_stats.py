@@ -87,13 +87,13 @@ class ForecasterStats():
         numeric suffixes to handle duplicates (e.g., 'skforecast.Arima', 
         'skforecast.Arima_2', 'skforecast.Ets'). Used to identify predictions 
         from each model.
+    estimator_types : tuple
+        Full qualified type string for each estimator (e.g., 
+        'skforecast.stats._arima.Arima').
     estimator_names_ : list
         Descriptive names for each estimator including the fitted model configuration
         (e.g., 'Arima(1,1,1)(0,0,0)[12]', 'Ets(AAA)', etc.). This is updated 
         after fitting to reflect the selected model.
-    estimator_types_ : tuple
-        Full qualified type string for each estimator (e.g., 
-        'skforecast.stats._arima.Arima').
     estimator_params_ : dict
         Dictionary containing the parameters of each estimator.
     n_estimators : int
@@ -211,7 +211,7 @@ class ForecasterStats():
                 raise ValueError("`estimator` list cannot be empty.")
         
         # Validate all estimators and collect types
-        estimator_types_ = []
+        estimator_types = []
         for i, est in enumerate(estimator):
             est_type = f"{type(est).__module__}.{type(est).__name__}"
             if est_type not in self.valid_estimator_types:
@@ -219,7 +219,7 @@ class ForecasterStats():
                     f"Estimator at index {i} must be an instance of type "
                     f"{self.valid_estimator_types}. Got '{type(est)}'."
                 )
-            estimator_types_.append(est_type)
+            estimator_types.append(est_type)
         
         # TODO: Review window_size for statistical models
         # TODO Review _search functions, they only work for single estimator
@@ -228,8 +228,8 @@ class ForecasterStats():
         self.estimators              = estimator
         self.estimators_             = [copy(est) for est in self.estimators]
         self.estimator_ids           = self._generate_ids(self.estimators)
+        self.estimator_types         = estimator_types
         self.estimator_names_        = [None] * len(self.estimators)
-        self.estimator_types_        = estimator_types_
         self.n_estimators            = len(self.estimators)
         self.transformer_y           = transformer_y
         self.transformer_exog        = transformer_exog
@@ -451,7 +451,7 @@ class ForecasterStats():
 
         return self.estimator_ids
     
-    def remove_estimator(self, ids: str | list[str]) -> None:
+    def remove_estimators(self, ids: str | list[str]) -> None:
         """
         Remove one or more estimators by their ids.
         
@@ -482,7 +482,7 @@ class ForecasterStats():
             del self.estimators_[idx]
             del self.estimator_ids[idx]
             del self.estimator_names_[idx]
-            del self.estimator_types_[idx]
+            del self.estimator_types[idx]
             self.n_estimators -= 1
 
     def _preprocess_repr(self) -> tuple[list[str], str]:
@@ -710,7 +710,7 @@ class ForecasterStats():
                 )
             
             unsupported_exog = [
-                id for id, est_type in zip(self.estimator_ids, self.estimator_types_)
+                id for id, est_type in zip(self.estimator_ids, self.estimator_types)
                 if est_type not in self.estimators_support_exog
             ]
             if unsupported_exog:
@@ -788,7 +788,7 @@ class ForecasterStats():
 
         # Set extended_index_ based on first SARIMAX estimator or default to y.index
         first_sarimax = next(
-            (est for est, est_type in zip(self.estimators_, self.estimator_types_)
+            (est for est, est_type in zip(self.estimators_, self.estimator_types)
              if est_type == 'skforecast.stats._sarimax.Sarimax'),
             None
         )
@@ -972,7 +972,7 @@ class ForecasterStats():
         """
 
         sarimax_indices = [
-            i for i, estimator_type in enumerate(self.estimator_types_) 
+            i for i, estimator_type in enumerate(self.estimator_types) 
             if estimator_type == 'skforecast.stats._sarimax.Sarimax'
         ]
         if not sarimax_indices:
@@ -983,7 +983,7 @@ class ForecasterStats():
             )
         
         unsupported_last_window = [
-            id for id, estimator_type in zip(self.estimator_ids, self.estimator_types_)
+            id for id, estimator_type in zip(self.estimator_ids, self.estimator_types)
             if estimator_type not in self.estimators_support_last_window
         ]
         if unsupported_last_window:
@@ -1080,7 +1080,7 @@ class ForecasterStats():
         all_predictions = []
         estimator_ids = []
         for estimator, est_id, est_type in zip(
-            self.estimators_, self.estimator_ids, self.estimator_types_
+            self.estimators_, self.estimator_ids, self.estimator_types
         ):
             if last_window is not None and est_type not in self.estimators_support_last_window:
                 continue
@@ -1090,8 +1090,15 @@ class ForecasterStats():
             all_predictions.append(preds)
             estimator_ids.append(est_id)
 
+        n_estimators = len(estimator_ids)
+        if n_estimators > 1:
+            all_predictions = np.column_stack(all_predictions).ravel()
+        else:
+            all_predictions = np.concatenate(all_predictions)
+
         predictions = transform_numpy(
-                          array             = np.concatenate(all_predictions),
+                        #   array             = np.concatenate(all_predictions),
+                          array             = all_predictions,
                           transformer       = self.transformer_y,
                           fit               = False,
                           inverse_transform = True
@@ -1104,9 +1111,17 @@ class ForecasterStats():
                               name  = 'pred'
                           )
         else:
+
+            # predictions = pd.DataFrame(
+            #     {"estimator_id": np.repeat(estimator_ids, steps), "pred": predictions.ravel()},
+            #     index = np.tile(prediction_index, len(estimator_ids)),
+            # )
+
+            # TODO: Adapted to temporal order to match ForecasterMultiSeries and 
+            # allow gap in backtesting
             predictions = pd.DataFrame(
-                {"estimator_id": np.repeat(estimator_ids, steps), "pred": predictions.ravel()},
-                index = np.tile(prediction_index, len(estimator_ids)),
+                {"estimator_id": np.tile(estimator_ids, steps), "pred": predictions.ravel()},
+                index = np.repeat(prediction_index, n_estimators),
             )
         
         set_skforecast_warnings(suppress_warnings, action='default')
@@ -1256,7 +1271,7 @@ class ForecasterStats():
             )
 
         unsupported_interval = [
-            id for id, est_type in zip(self.estimator_ids, self.estimator_types_)
+            id for id, est_type in zip(self.estimator_ids, self.estimator_types)
             if est_type not in self.estimators_support_interval
         ]
         if unsupported_interval:
@@ -1270,7 +1285,7 @@ class ForecasterStats():
         all_predictions = []
         estimator_ids = []
         for estimator, est_id, est_type in zip(
-            self.estimators_, self.estimator_ids, self.estimator_types_
+            self.estimators_, self.estimator_ids, self.estimator_types
         ):
             
             if est_type not in self.estimators_support_interval:
@@ -1283,21 +1298,42 @@ class ForecasterStats():
             all_predictions.append(preds)
             estimator_ids.append(est_id)
 
+        # TODO: Adapted to temporal order to match ForecasterMultiSeries and 
+        # allow gap in backtesting
+        n_estimators = len(estimator_ids)
+        if n_estimators > 1:
+            all_predictions = np.stack(all_predictions).transpose(1, 0, 2).reshape(-1, 3)
+        else:
+            all_predictions = np.concatenate(all_predictions)
+
         predictions = transform_numpy(
-                          array             = np.concatenate(all_predictions),
+                        #   array             = np.concatenate(all_predictions),
+                          array             = all_predictions,
                           transformer       = self.transformer_y,
                           fit               = False,
                           inverse_transform = True
                       )
 
+        # predictions = pd.DataFrame(
+        #                   data  = predictions,
+        #                   index = np.tile(prediction_index, len(estimator_ids)),
+        #                   columns = ['pred', 'lower_bound', 'upper_bound']
+        #               )
+        
+        # if self.n_estimators > 1:
+        #     predictions.insert(0, 'estimator_id', np.repeat(estimator_ids, steps))
+        # else:
+        #     # This is done to restore the frequency
+        #     predictions.index = prediction_index
+
         predictions = pd.DataFrame(
-                          data  = predictions,
-                          index = np.tile(prediction_index, len(estimator_ids)),
+                          data    = predictions,
+                          index   = np.repeat(prediction_index, n_estimators),
                           columns = ['pred', 'lower_bound', 'upper_bound']
                       )
         
         if self.n_estimators > 1:
-            predictions.insert(0, 'estimator_id', np.repeat(estimator_ids, steps))
+            predictions.insert(0, 'estimator_id', np.tile(estimator_ids, steps))
         else:
             # This is done to restore the frequency
             predictions.index = prediction_index
@@ -1466,7 +1502,7 @@ class ForecasterStats():
         
         feature_importances = []
         for estimator, estimator_type, estimator_id in zip(
-            self.estimators_, self.estimator_types_, self.estimator_ids
+            self.estimators_, self.estimator_types, self.estimator_ids
         ):
             get_importances_func = self._feature_importances_dispatch[estimator_type]
             importance = get_importances_func(estimator)
@@ -1549,7 +1585,7 @@ class ForecasterStats():
             )
         
         info_criteria = []
-        for estimator, estimator_type in zip(self.estimators_, self.estimator_types_):
+        for estimator, estimator_type in zip(self.estimators_, self.estimator_types):
             get_criteria_method = self._info_criteria_dispatch[estimator_type]
             value = get_criteria_method(estimator, criteria, method)
             info_criteria.append(value)
@@ -1620,11 +1656,11 @@ class ForecasterStats():
 
         supports_exog = [
             est_type in self.estimators_support_exog 
-            for est_type in self.estimator_types_
+            for est_type in self.estimator_types
         ]
         supports_interval = [
             est_type in self.estimators_support_interval 
-            for est_type in self.estimator_types_
+            for est_type in self.estimator_types
         ]
         params = [
             str(est_params) for est_params in self.estimator_params_.values()
@@ -1633,7 +1669,7 @@ class ForecasterStats():
         info = pd.DataFrame({
             'id': self.estimator_ids,
             'name': self.estimator_names_,
-            'type': self.estimator_types_,
+            'type': self.estimator_types,
             'supports_exog': supports_exog,
             'supports_interval': supports_interval,
             'params': params
@@ -1677,7 +1713,7 @@ class ForecasterStats():
             )
 
         unsupported_reduce_memory = [
-            est_id for est_id, estimator_type in zip(self.estimator_ids, self.estimator_types_)
+            est_id for est_id, estimator_type in zip(self.estimator_ids, self.estimator_types)
             if estimator_type not in self.estimators_support_reduce_memory
         ]
         if unsupported_reduce_memory:
@@ -1688,6 +1724,6 @@ class ForecasterStats():
                 IgnoredArgumentWarning
             )
             
-        for estimator, est_type in zip(self.estimators_, self.estimator_types_):
+        for estimator, est_type in zip(self.estimators_, self.estimator_types):
             if est_type in self.estimators_support_reduce_memory:
                 estimator.reduce_memory()
