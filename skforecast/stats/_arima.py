@@ -937,6 +937,35 @@ class Arima(BaseEstimator, RegressorMixin):
             "kappa": self.kappa,
         }
     
+    def _set_params(self, **params) -> None:
+        """
+        Set the parameters of this estimator. Internal method without resetting 
+        the fitted state. This method is intended for internal use only, please 
+        use `set_params()` instead.
+
+        Parameters
+        ----------
+        **params : dict
+            Estimator parameters.
+        
+        Returns
+        -------
+        None
+        
+        """
+        
+        for key, value in params.items():
+            setattr(self, key, value)
+        
+        p, d, q = self.order
+        P, D, Q = self.seasonal_order
+        if P == 0 and D == 0 and Q == 0:
+            estimator_name_ = f"Arima({p},{d},{q})"
+        else:
+            estimator_name_ = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
+
+        self.estimator_name_ = estimator_name_
+    
     def set_params(self, **params) -> "Arima":
         """
         Set the parameters of this estimator and reset the fitted state.
@@ -960,6 +989,7 @@ class Arima(BaseEstimator, RegressorMixin):
         ------
         ValueError
             If any parameter key is invalid.
+        
         """
 
         valid_params = {
@@ -971,9 +1001,8 @@ class Arima(BaseEstimator, RegressorMixin):
                 raise ValueError(
                     f"Invalid parameter '{key}'. Valid parameters are: {valid_params}"
                 )
-        
-        for key, value in params.items():
-            setattr(self, key, value)
+
+        self._set_params(**params)
         
         fitted_attrs = [
             'model_', 'y_train_', 'coef_', 'coef_names_', 'sigma2_', 'loglik_',
@@ -985,14 +1014,6 @@ class Arima(BaseEstimator, RegressorMixin):
         
         self.is_memory_reduced = False
         self.is_fitted         = False
-        p, d, q = self.order
-        P, D, Q = self.seasonal_order
-        if P == 0 and D == 0 and Q == 0:
-            estimator_name_ = f"Arima({p},{d},{q})"
-        else:
-            estimator_name_ = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
-
-        self.estimator_name_ = estimator_name_
         
         return self
 

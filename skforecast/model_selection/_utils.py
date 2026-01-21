@@ -1073,6 +1073,8 @@ def _calculate_metrics_backtesting_multiseries(
     
     """
 
+    # TODO: All this checks can be deleted as they are done in the public
+    # function that calls this private function.
     if not isinstance(series, (pd.DataFrame, dict)):
         raise TypeError(
             "`series` must be a pandas DataFrame or a dictionary of pandas "
@@ -1173,7 +1175,8 @@ def _calculate_metrics_backtesting_multiseries(
             else:
                 y_train = None
             metrics_level = [
-                m(y_true=y_true, y_pred=y_pred, y_train=y_train) for m in metrics
+                m(y_true=y_true, y_pred=y_pred, y_train=y_train) 
+                for m in metrics
             ]
             metrics_levels.append(metrics_level)
         else:
@@ -1216,7 +1219,10 @@ def _calculate_metrics_backtesting_multiseries(
         weighted_average['levels'] = 'weighted_average'
 
         # aggregation: pooling
-        scaled_metrics = ['mean_absolute_scaled_error', 'root_mean_squared_scaled_error']
+        scaled_metrics = [
+            'mean_absolute_scaled_error', 
+            'root_mean_squared_scaled_error'
+        ]
 
         y_true = y_true_y_pred.loc[:, 'y_true'].droplevel("level")
         y_pred = y_true_y_pred.loc[:, 'y_pred'].droplevel("level")
@@ -1314,6 +1320,9 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         Value of predictions for each level.
     
     """
+
+    # TODO: All this checks can be deleted as they are done in the public
+    # function that calls this private function.
 
     if not isinstance(series, (pd.DataFrame, dict)):
         raise TypeError(
@@ -1466,7 +1475,8 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             else:
                 y_train = None
             metrics_level = [
-                m(y_true=y_true, y_pred=y_pred, y_train=y_train) for m in metrics
+                m(y_true=y_true, y_pred=y_pred, y_train=y_train) 
+                for m in metrics
             ]
             metrics_levels.append(metrics_level)
         else:

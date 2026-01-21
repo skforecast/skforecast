@@ -445,17 +445,15 @@ def _backtesting_forecaster(
             .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
         )
 
-    metric_values = [
-        m(
-            y_true = y.loc[backtest_predictions_for_metrics.index],
-            y_pred = backtest_predictions_for_metrics['pred'],
-            y_train = y_train
-        ) 
+    y_true = y.loc[backtest_predictions_for_metrics.index]
+    y_pred = backtest_predictions_for_metrics['pred']
+    metric_values = [[
+        m(y_true=y_true, y_pred=y_pred, y_train=y_train) 
         for m in metrics
-    ]
+    ]]
 
     metric_values = pd.DataFrame(
-        data    = [metric_values],
+        data    = metric_values,
         columns = [m.__name__ for m in metrics]
     )
     
@@ -1520,13 +1518,14 @@ def _backtesting_stats(
     # NOTE: Only skforecast.Sarimax allows refit=False, if other estimators are 
     # present, refit must be True.
     all_sarimax = all(
-        et == 'skforecast.stats._sarimax.Sarimax' for et in forecaster.estimator_types_
+        est_type == 'skforecast.stats._sarimax.Sarimax' 
+        for est_type in forecaster.estimator_types
     )
     if not all_sarimax and not cv.refit:
         warnings.warn(
-            "When using estimators different from `skforecast.stats.Sarimax`, "
-            "`cv.refit` must be `True` since predictions must start from "
-            "the end of the training set. Setting `cv.refit = True`.",
+            "Estimators different from `skforecast.stats.Sarimax` require refitting "
+            "since predictions must start from the end of the training set. "
+            "`refit` is set to `True`, regardless of the value provided.",
             IgnoredArgumentWarning
         )
         cv.refit = True
@@ -1549,7 +1548,9 @@ def _backtesting_stats(
             )
         n_jobs = 1
     else:
-        if n_jobs == 'auto':        
+        if n_jobs == 'auto':
+            # TODO: Esto falla porque forecaster no tiene .estimator
+            # En realidad diría que aquí nunca paralelizamos
             n_jobs = select_n_jobs_backtesting(
                          forecaster = forecaster,
                          refit      = refit
@@ -1583,6 +1584,20 @@ def _backtesting_stats(
     steps = cv.steps
     gap = cv.gap
 
+    # TODO: Si hay intervalo, borro directamente los estimators para los que no tiene sentido
+    if alpha is not None or interval is not None:
+        ids_not_support_interval = [
+            est_id for est_id, est_type in zip(forecaster.estimator_ids, forecaster.estimator_types)
+            if est_type not in forecaster.estimators_support_interval
+        ]
+        if ids_not_support_interval:
+            warnings.warn(
+                f"The following estimators do not support prediction intervals "
+                f"and will be excluded from backtesting: {ids_not_support_interval}.",
+                IgnoredArgumentWarning
+            )
+            forecaster.remove_estimators(ids_not_support_interval)
+
     # NOTE: initial_train_size cannot be None because of append method in Sarimax
     # NOTE: This allows for parallelization when `refit` is `False`. The initial 
     # Forecaster fit occurs outside of the auxiliary function.
@@ -1599,7 +1614,7 @@ def _backtesting_stats(
     if freeze_params and refit:
         for estimator in forecaster.estimators_:
             if hasattr(estimator, 'best_params_') and estimator.best_params_:
-                estimator.set_params(**estimator.best_params_)
+                estimator._set_params(**estimator.best_params_)
     # ==========================================================================
     
     if refit:
@@ -1654,12 +1669,6 @@ def _backtesting_stats(
 
             forecaster.fit(y=y_train, exog=exog_train)#, suppress_warnings=suppress_warnings)
 
-        # TODO: Capture params used in the fit if freeze_params=False or estimator_id
-        # TODO: Make it a return 
-        params_str = None
-        if not freeze_params:
-            params_str = forecaster.get_fitted_params_str()
-
         next_window_exog = exog.iloc[test_iloc_start:test_iloc_end, ] if exog is not None else None
 
         # After the first fit, Sarimax must use the last windows stored in the model
@@ -1687,10 +1696,30 @@ def _backtesting_stats(
                     #    suppress_warnings = suppress_warnings
                    )
 
-        pred = pred.iloc[gap:, ]            
+        # TODO: Esto no va a funcionar si hay múltiples estimadores y gap > 0
+        # las preds están ordenadas por estimador, no por tiempo
+        # Solución: ordenar las preds por tiempo: Est1_t0, Est2_t0, Est1_t1, Est2_t1, ...
+        if gap > 0:
+            # pred = pred.iloc[gap:, ]
+            # Manera de saber cuántos estimators han salido
+            pred = pred.iloc[forecaster.n_estimators * gap:, :]
+
+        # Posible solución
+        # if gap > 0:
+        #     n_estimators = forecaster.n_estimators
+        #     # Calcular índices a mantener (excluyendo primeras `gap` de cada estimador)
+        #     indices_to_keep = []
+        #     for i in range(n_estimators):
+        #         start = i * steps + gap
+        #         end = (i + 1) * steps
+        #         indices_to_keep.extend(range(start, end))
+        #     pred = pred.iloc[indices_to_keep]
+
+        estimator_names_ = None
+        if not freeze_params:
+            estimator_names_ = np.repeat(forecaster.estimator_names_, steps - gap)
         
-        # TODO: Return params_str along with pred
-        return pred
+        return pred, estimator_names_
 
     kwargs_fit_predict_forecaster = {
         "forecaster": forecaster,
@@ -1702,32 +1731,24 @@ def _backtesting_stats(
         "interval": interval,
         "suppress_warnings": suppress_warnings
     }
-    backtest_predictions = Parallel(n_jobs=n_jobs)(
+    results = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(
             fold=fold, **kwargs_fit_predict_forecaster
         )
         for fold in folds_tqdm
     )
+
+    backtest_predictions = [result[0] for result in results]
     fold_labels = [
         np.repeat(fold[0], backtest_predictions[i].shape[0]) for i, fold in enumerate(folds)
     ]
-    
-    # TODO: Uncomment when params_str is returned
-    # backtest_predictions = [result[0] for result in results]
-    backtest_predictions = pd.concat(backtest_predictions)
+    backtest_predictions = pd.concat(backtest_predictions, axis=0)
     if isinstance(backtest_predictions, pd.Series):
         backtest_predictions = pd.DataFrame(backtest_predictions)
     backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
-
-    # TODO: Add freeze_params column, results sería el output del Parallel (preds, params)
     if not freeze_params:
-        params_per_fold = [result[1] for result in results]
-        # Expandir params para cada fila de predicciones
-        params_labels = [
-            np.repeat(params_per_fold[i], backtest_predictions[i].shape[0]) 
-            for i in range(len(folds))
-        ]
-        backtest_predictions['params'] = np.concatenate(params_labels)
+        estimator_names_ = [result[1] for result in results]
+        backtest_predictions['params'] = np.concatenate(estimator_names_)
 
     train_indexes = []
     for i, fold in enumerate(folds):
@@ -1747,20 +1768,36 @@ def _backtesting_stats(
             .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
         )
 
-    # TODO: Adapt for multiple estimators
-    metric_values = [
-        m(
-            y_true = y.loc[backtest_predictions_for_metrics.index],
-            y_pred = backtest_predictions_for_metrics['pred'],
-            y_train = y_train
-        ) 
-        for m in metrics
-    ]
+    if forecaster.n_estimators == 1:
+        y_true = y.loc[backtest_predictions_for_metrics.index]
+        y_pred = backtest_predictions_for_metrics['pred']
+        metric_values = [[
+            m(y_true=y_true, y_pred=y_pred, y_train=y_train)
+            for m in metrics
+        ]]
 
-    metric_values = pd.DataFrame(
-        data    = [metric_values],
-        columns = [m.__name__ for m in metrics]
-    )
+        metric_values = pd.DataFrame(
+            data    = metric_values,
+            columns = [m.__name__ for m in metrics]
+        )
+    else:
+        unique_indices = backtest_predictions_for_metrics.index.unique()
+        y_true = y.loc[unique_indices]
+
+        grouped = backtest_predictions_for_metrics.groupby('estimator_id', sort=False)
+        metric_values = [
+            [
+                m(y_true=y_true, y_pred=group['pred'], y_train=y_train)
+                for m in metrics
+            ]
+            for _, group in grouped
+        ]
+
+        metric_values = pd.DataFrame(
+            data    = metric_values,
+            columns = [m.__name__ for m in metrics]
+        )
+        metric_values.insert(0, 'estimator_id', forecaster.estimator_ids)
     
     set_skforecast_warnings(suppress_warnings, action='default')
 
