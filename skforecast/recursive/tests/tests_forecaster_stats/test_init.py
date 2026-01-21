@@ -111,15 +111,15 @@ def test_estimator_ids_unique_for_duplicate_estimators():
     assert forecaster.estimator_ids[1] == 'skforecast.Sarimax_2'
 
 
-def test_estimator_types_stored_correctly():
+def test_estimator_typesstored_correctly():
     """
     Check that estimator types are stored correctly as a list.
     """
     estimators = [Sarimax(order=(1, 0, 1)), Arima(order=(1, 1, 1))]
     forecaster = ForecasterStats(estimator=estimators)
     
-    assert isinstance(forecaster.estimator_types_, list)
-    assert forecaster.estimator_types_ == [
+    assert isinstance(forecaster.estimator_types, list)
+    assert forecaster.estimator_types == [
         'skforecast.stats._sarimax.Sarimax',
         'skforecast.stats._arima.Arima'
     ]
