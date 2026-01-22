@@ -541,7 +541,7 @@ class Arima(BaseEstimator, RegressorMixin):
                     SSinit             = self.SSinit,
                     kappa              = self.kappa
                 )
-                # TODO: review this is the correct indexing to extract the values
+                
                 best_model_order_ = (
                     self.model_['arma'][0],
                     self.model_['arma'][5],
