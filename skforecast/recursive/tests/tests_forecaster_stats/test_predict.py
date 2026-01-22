@@ -149,7 +149,7 @@ def test_predict_output_ForecasterStats_different_estimators(estimator, expected
         (
             Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
             {'win': [0.5992994623690436, 0.6129973483291491, 0.628731260599752, 0.6441357287484715, 0.6619599475823104],
-             'linux': [0.60535333, 0.59654171, 0.58785836, 0.5793014, 0.570869]}
+             'linux': [0.59929951, 0.61299736, 0.62873128, 0.64413574, 0.66195996]}
         ),
         (
             Arar(),

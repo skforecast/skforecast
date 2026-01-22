@@ -21,7 +21,6 @@ def ar1_series(n=100, phi=0.7, sigma=1.0, seed=123):
 
 # Input and Parameter Validation
 # ------------------------------------------------------------------------------
-
 def test_arima_fit_invalid_y_type_raises():
     """
     Test that fit raises TypeError for invalid y type.
@@ -82,7 +81,6 @@ def test_arima_fit_with_exog_3d_raises():
 
 # Basic Fit Functionality Tests
 # ------------------------------------------------------------------------------
-
 @pytest.mark.parametrize(
     "y_input_type",
     ["numpy_array", "pandas_series"],
@@ -99,7 +97,7 @@ def test_arima_fit_with_default_parameters(y_input_type):
     if y_input_type == "pandas_series":
         y = pd.Series(y, index=pd.date_range(start='2020-01-01', periods=100, freq='D'))
     
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     result = model.fit(y)
     
     # Check return value
@@ -140,7 +138,7 @@ def test_arima_fit_ar_model():
     Test fitting a pure AR model (p, 0, 0) with exact coefficient values.
     """
     y = ar1_series(100, phi=0.7, seed=42)
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     # Check exact AR coefficient (should be close to true value 0.7)
@@ -161,7 +159,7 @@ def test_arima_fit_ma_model():
     """
     np.random.seed(123)
     y = np.cumsum(np.random.randn(50))
-    model = Arima(order=(0, 1, 1))
+    model = Arima(order=(0, 1, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     # Check exact MA coefficient (values verified against corrected Kalman filter)
@@ -203,16 +201,16 @@ def test_arima_fit_with_exog_numpy_array():
     """
     Test fit with exogenous variables as numpy array with exact coefficient values.
     """
-    np.random.seed(42)
-    y = np.cumsum(np.random.randn(80))
-    exog = np.random.randn(80, 2)
+    rng = np.random.default_rng(42)
+    y = np.cumsum(rng.standard_normal(80))
+    exog = rng.standard_normal((80, 2))
     
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y, exog=exog)
     
     # Check exact coefficients (R-based implementation values)
-    expected_coef = np.array([1.0, -0.0003234212366958329, 210.429647821712, -15.215371022899996, 264.625868944957])
-    np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=3)
+    expected_coef = np.array([0.91005932,  0.11445059, -0.69434627,  0.8389574 ,  0.80990506])
+    np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=5)
 
     assert model.n_exog_features_in_ == 2
     assert len(model.coef_) == 5  # AR + MA + 2 exog + intercept
@@ -228,11 +226,11 @@ def test_arima_fit_with_exog_pandas_series():
     y = np.cumsum(np.random.randn(80))
     exog = pd.Series(np.random.randn(80))
     
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y, exog=exog)
     
     # Check exact coefficients (R-based implementation values)
-    expected_coef = np.array([0.9751429399092149, 5.178213238649968, -0.30425563392298216])
+    expected_coef = np.array([0.97514494,  5.17778438, -0.30422759])
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=5)
 
     # Check exact sigma2 and aic
@@ -256,7 +254,7 @@ def test_arima_fit_with_exog_pandas_dataframe():
         'x3': np.random.randn(80)
     })
     
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y, exog=exog)
     
     # Check exact coefficients
@@ -285,7 +283,7 @@ def test_arima_fit_2d_y_with_single_column():
     Test that fit handles 2D y with single column correctly and checks exact values.
     """
     y = ar1_series(50).reshape(-1, 1)
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     # Check exact coefficients
@@ -307,7 +305,7 @@ def test_arima_fit_method_css():
     Test fitting with CSS method and verify exact values.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1), method="CSS")
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0), method="CSS")
     model.fit(y)
     
     # Check exact coefficients
@@ -330,7 +328,7 @@ def test_arima_fit_method_ml():
     Test fitting with ML method and verify exact values.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1), method="ML")
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0), method="ML")
     model.fit(y)
     
     # Check exact coefficients
@@ -352,7 +350,7 @@ def test_arima_fit_without_mean():
     Test fitting with include_mean=False and verify exact coefficient values.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 0), include_mean=False)
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0), include_mean=False)
     model.fit(y)
     
     # Check exact coefficient (only AR, no intercept)
@@ -371,7 +369,7 @@ def test_arima_fit_returns_self():
     Test that fit returns self for method chaining and model is properly fitted.
     """
     y = ar1_series(50)
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     result = model.fit(y)
     
     assert result is model

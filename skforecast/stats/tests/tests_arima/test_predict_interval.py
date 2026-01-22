@@ -83,7 +83,7 @@ def test_predict_interval_returns_dataframe_by_default():
     Test that predict_interval returns DataFrame when as_frame=True (default).
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     result = model.predict_interval(steps=10)
@@ -112,7 +112,7 @@ def test_predict_interval_returns_array_when_as_frame_false():
     Test that predict_interval returns ndarray when as_frame=False.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     # Compare to DataFrame output for consistency
@@ -134,7 +134,7 @@ def test_predict_interval_with_single_level():
     Test predict_interval with a single confidence level.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     result = model.predict_interval(steps=10, level=(90,))
@@ -160,7 +160,7 @@ def test_predict_interval_with_alpha_parameter():
     Test predict_interval with alpha parameter instead of level.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     # alpha=0.05 should give 95% interval
@@ -186,7 +186,7 @@ def test_predict_interval_with_custom_levels():
     Test predict_interval with custom confidence levels.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     result = model.predict_interval(steps=10, level=(50, 75, 99))
@@ -218,7 +218,7 @@ def test_predict_interval_bounds_are_symmetric():
     Test that prediction intervals are symmetric around the mean.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     result = model.predict_interval(steps=10, level=(95,))
@@ -234,7 +234,7 @@ def test_predict_interval_wider_for_higher_confidence():
     Test that intervals get wider for higher confidence levels.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     result = model.predict_interval(steps=10, level=(80, 95, 99))
@@ -253,7 +253,7 @@ def test_predict_interval_widens_with_horizon():
     Test that prediction intervals generally widen as forecast horizon increases.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     result = model.predict_interval(steps=20, level=(95,))
@@ -272,7 +272,7 @@ def test_predict_interval_with_exog():
     y = ar1_series(80)
     exog_train = np.random.randn(80, 2)
     
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y, exog=exog_train)
     
     exog_pred = np.random.randn(10, 2)
@@ -297,7 +297,7 @@ def test_predict_interval_index_starts_at_one():
     Test that DataFrame index starts at 1 (not 0).
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     result = model.predict_interval(steps=10)
@@ -312,7 +312,7 @@ def test_predict_interval_all_values_finite():
     Test that all returned values are finite (not NaN or inf).
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     result = model.predict_interval(steps=20)

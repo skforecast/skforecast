@@ -126,7 +126,7 @@ def test_arima_predict_returns_correct_shape_and_values():
     Test that predict returns correct shape and exact values.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y)
 
     # Test 1 step prediction
@@ -157,7 +157,7 @@ def test_arima_predict_returns_finite_and_exact_values():
     Test that predictions are finite and match exact values.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     pred = model.predict(steps=5)
@@ -180,7 +180,7 @@ def test_arima_predict_with_exog_numpy_array():
         y[i] = 0.5 * y[i-1] + y[i]
     exog_train = np.random.randn(30, 2)
     
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y, exog=exog_train)
     
     # Check exact coefficients (R-based implementation values)
@@ -204,7 +204,7 @@ def test_arima_predict_with_exog_1d_array():
     y = ar1_series(80)
     exog_train = np.random.randn(80)
     
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y, exog=exog_train)
     
     np.random.seed(42)  # Reset seed for reproducible exog_pred
@@ -223,7 +223,7 @@ def test_arima_predict_consistency():
     Test that predictions are consistent across multiple calls and match exact values.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     pred1 = model.predict(steps=10)
@@ -260,7 +260,7 @@ def test_arima_predict_ar_model_stays_bounded():
     Test that predictions from stationary AR model converge and match exact values.
     """
     y = ar1_series(100, phi=0.5, seed=42)
-    model = Arima(order=(1, 0, 0))
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y)
     
     pred = model.predict(steps=5)

@@ -679,13 +679,8 @@ class Arar(BaseEstimator, RegressorMixin):
         
         Returns
         -------
-        self : Arar
+        Arar
             The estimator with updated parameters and reset state.
-        
-        Raises
-        ------
-        ValueError
-            If any parameter key is invalid.
         
         """
 

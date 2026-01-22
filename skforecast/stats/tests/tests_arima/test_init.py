@@ -24,26 +24,25 @@ def test_arima_init_seasonal_order_and_m_validation():
     """
     msg = re.escape("`seasonal_order` must be a tuple of length 3, got length 2")
     with pytest.raises(ValueError, match=msg):
-        Arima(seasonal_order=(1, 1))
+        Arima(order=(0, 0, 0), seasonal_order=(1, 1))
     
     msg = re.escape("`seasonal_order` must be a tuple of length 3, got length 1")
     with pytest.raises(ValueError, match=msg):
-        Arima(seasonal_order=(1,))
+        Arima(order=(0, 0, 0), seasonal_order=(1,))
     
     msg = re.escape("`m` must be a positive integer (seasonal period).")
     with pytest.raises(ValueError, match=msg):
-        Arima(seasonal_order=(1, 1, 1), m=0)
+        Arima(order=(0, 0, 0), seasonal_order=(1, 1, 1), m=0)
     
     msg = re.escape("`m` must be a positive integer (seasonal period).")
     with pytest.raises(ValueError, match=msg):
-        Arima(seasonal_order=(1, 1, 1), m='not_int')
-
+        Arima(order=(0, 0, 0), seasonal_order=(1, 1, 1), m='not_int')
 
 def test_arima_init_default_params():
     """
     Test Arima initialization with default parameters.
     """
-    model = Arima()
+    model = Arima(order=(0, 0, 0), seasonal_order=(0, 0, 0), m=1)
     
     assert model.order == (0, 0, 0)
     assert model.seasonal_order == (0, 0, 0)
@@ -94,7 +93,7 @@ def test_arima_init_all_attributes_before_fitting():
     """
     Test that all attributes have expected initial values before fitting.
     """
-    model = Arima(order=(1, 0, 1))
+    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     
     # Parameter attributes are set
     assert model.order == (1, 0, 1)
@@ -107,7 +106,7 @@ def test_arima_repr_non_seasonal():
     """
     Test __repr__ for non-seasonal ARIMA model.
     """
-    model = Arima(order=(2, 1, 1))
+    model = Arima(order=(2, 1, 1), seasonal_order=(0, 0, 0), m=1)
     assert repr(model) == "Arima(2,1,1)"
 
 
