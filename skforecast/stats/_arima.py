@@ -259,8 +259,8 @@ class Arima(BaseEstimator, RegressorMixin):
     var_coef_ : ndarray
         Variance-covariance matrix of coefficients.
     best_params_ : dict or None
-        If auto arima was used, dictionary with 'order' and 'seasonal_order' of the
-        selected best model. None if fixed order was used.
+        If auto arima was used, dictionary with 'order', 'seasonal_order' and `m`
+        of the selected best model. Otherwise None.
     is_auto : bool
         Flag indicating whether auto arima model selection is used.
     is_memory_reduced : bool
@@ -401,7 +401,7 @@ class Arima(BaseEstimator, RegressorMixin):
             self.optim_kwargs = {'maxiter': 1000}
 
         if self.is_auto:
-            estimator_name_ = "Arima()"
+            estimator_name_ = "AutoArima()"
         else:
             p, d, q = self.order
             P, D, Q = self.seasonal_order
@@ -450,6 +450,7 @@ class Arima(BaseEstimator, RegressorMixin):
 
         """
 
+        self.is_auto              = self.order is None or self.seasonal_order is None
         self.model_               = None
         self.y_train_             = None
         self.coef_                = None
@@ -469,7 +470,6 @@ class Arima(BaseEstimator, RegressorMixin):
         self.is_memory_reduced    = False
         self.is_fitted            = False
         self.best_params_         = None
-        self.is_auto              = self.order is None or self.seasonal_order is None
         
         if not isinstance(y, (np.ndarray, pd.Series)):
             raise TypeError("`y` must be a pandas Series or numpy array.")
@@ -541,7 +541,7 @@ class Arima(BaseEstimator, RegressorMixin):
                     SSinit             = self.SSinit,
                     kappa              = self.kappa
                 )
-                
+                # TODO: review this is the correct indexing to extract the values
                 best_model_order_ = (
                     self.model_['arma'][0],
                     self.model_['arma'][5],
@@ -970,6 +970,39 @@ class Arima(BaseEstimator, RegressorMixin):
             "kappa": self.kappa,
         }
     
+    def _set_params(self, **params) -> None:
+        """
+        Set the parameters of this estimator. Internal method without resetting 
+        the fitted state. This method is intended for internal use only, please 
+        use `set_params()` instead.
+
+        Parameters
+        ----------
+        **params : dict
+            Estimator parameters.
+        
+        Returns
+        -------
+        None
+        
+        """
+        
+        for key, value in params.items():
+            setattr(self, key, value)
+        
+        self.is_auto = self.order is None or self.seasonal_order is None
+        if self.is_auto:
+            estimator_name_ = "AutoArima()"
+        else:
+            p, d, q = self.order
+            P, D, Q = self.seasonal_order
+            if P == 0 and D == 0 and Q == 0:
+                estimator_name_ = f"Arima({p},{d},{q})"
+            else:
+                estimator_name_ = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
+
+        self.estimator_name_ = estimator_name_
+    
     def set_params(self, **params) -> "Arima":
         """
         Set the parameters of this estimator and reset the fitted state.
@@ -993,6 +1026,7 @@ class Arima(BaseEstimator, RegressorMixin):
         ------
         ValueError
             If any parameter key is invalid.
+        
         """
 
         valid_params = {
@@ -1004,9 +1038,8 @@ class Arima(BaseEstimator, RegressorMixin):
                 raise ValueError(
                     f"Invalid parameter '{key}'. Valid parameters are: {valid_params}"
                 )
-        
-        for key, value in params.items():
-            setattr(self, key, value)
+
+        self._set_params(**params)
         
         fitted_attrs = [
             'model_', 'y_train_', 'coef_', 'coef_names_', 'sigma2_', 'loglik_',
@@ -1016,17 +1049,8 @@ class Arima(BaseEstimator, RegressorMixin):
         for attr in fitted_attrs:
             setattr(self, attr, None)
         
-        self.is_auto = self.order is None or self.seasonal_order is None
         self.is_memory_reduced = False
         self.is_fitted = False
-        p, d, q = self.order
-        P, D, Q = self.seasonal_order
-        if P == 0 and D == 0 and Q == 0:
-            estimator_name_ = f"Arima({p},{d},{q})"
-        else:
-            estimator_name_ = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
-
-        self.estimator_name_ = estimator_name_
         
         return self
 

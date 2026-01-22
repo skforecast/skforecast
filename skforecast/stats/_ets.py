@@ -42,7 +42,7 @@ class Ets(BaseEstimator, RegressorMixin):
         Use "ZZZ" or None for automatic model selection.
     damped : bool or None, default None
         Whether to use damped trend. If None, both damped and non-damped
-        models are tried (only when model="ZZZ").
+        models are tried (only when model="ZZZ" or model=None).
     alpha : float, optional
         Smoothing parameter for level (0 < alpha < 1). If None, estimated.
     beta : float, optional
@@ -60,15 +60,18 @@ class Ets(BaseEstimator, RegressorMixin):
     bounds : str, default "both"
         Parameter bounds type: "usual", "admissible", or "both".
     seasonal : bool, default True
-        Allow seasonal models (only used with model="ZZZ").
+        Allow seasonal models (only used with model="ZZZ" or model=None).
     trend : bool, optional
-        Allow trend models. If None, automatically determined (only with model="ZZZ").
+        Allow trend models. If None, automatically determined (only with
+        model="ZZZ" or model=None).
     ic : {"aic", "aicc", "bic"}, default "aicc"
-        Information criterion for model selection (only with model="ZZZ").
+        Information criterion for model selection (only with model="ZZZ"
+        or model=None).
     allow_multiplicative : bool, default True
-        Allow multiplicative error and season models (only with model="ZZZ").
+        Allow multiplicative error and season models (only with model="ZZZ"
+        or model=None).
     allow_multiplicative_trend : bool, default False
-        Allow multiplicative trend models (only with model="ZZZ").
+        Allow multiplicative trend models (only with model="ZZZ" or model=None).
 
     Attributes
     ----------
@@ -79,8 +82,9 @@ class Ets(BaseEstimator, RegressorMixin):
         represents error, trend, and season types respectively, using A (Additive),
         M (Multiplicative), N (None), or Z (Auto-select).
     damped : bool or None
-        Whether to apply damping to the trend component. If None with model="ZZZ",
-        both damped and non-damped models are evaluated during automatic selection.
+        Whether to apply damping to the trend component. If None with model="ZZZ"
+        or model=None, both damped and non-damped models are evaluated during
+        automatic selection.
     alpha : float or None
         User-provided smoothing parameter for the level component (0 < alpha < 1).
         When None, the parameter is estimated during fitting.
@@ -107,19 +111,19 @@ class Ets(BaseEstimator, RegressorMixin):
         "admissible" for stability-ensuring bounds, or "both" for their intersection.
     seasonal : bool
         Whether seasonal models are considered during automatic model selection
-        (only applicable when model="ZZZ").
+        (only applicable when model="ZZZ" or model=None).
     trend : bool or None
         Whether trend models are considered during automatic model selection. When None
-        with model="ZZZ", this is determined automatically based on the data.
+        with model="ZZZ" or model=None, this is determined automatically based on the data.
     ic : {"aic", "aicc", "bic"}
         Information criterion used to compare and select the best model during automatic
-        model selection (only applicable when model="ZZZ").
+        model selection (only applicable when model="ZZZ" or model=None).
     allow_multiplicative : bool
         Whether multiplicative error and seasonal components are allowed during automatic
-        model selection (only applicable when model="ZZZ").
+        model selection (only applicable when model="ZZZ" or model=None).
     allow_multiplicative_trend : bool
         Whether multiplicative trend components are allowed during automatic model
-        selection (only applicable when model="ZZZ").
+        selection (only applicable when model="ZZZ" or model=None).
     model_ : ETSModel or None
         The fitted ETS model object containing parameters, diagnostics, and state space
         representation. Available after calling `fit()`.
@@ -154,10 +158,10 @@ class Ets(BaseEstimator, RegressorMixin):
         String identifier of the fitted model configuration (e.g., "Ets(AAA)"). 
         This is updated after fitting to reflect the selected model.
     is_auto: bool
-        Indicates whether automatic model selection was used (model="ZZZ").
+        Indicates whether automatic model selection was used (model="ZZZ" or model=None).
     best_params_ : dict or None
-        If automatic model selection was used (model="ZZZ"), this dictionary contains
-        the parameters of the selected best model. None if a fixed model was used.
+        If automatic model selection was used (model="ZZZ" or model=None), this dictionary contains
+        the parameters of the selected best model. Otherwise, it is None.
     
     """
 
@@ -209,9 +213,13 @@ class Ets(BaseEstimator, RegressorMixin):
         self.n_features_in_             = None
         self.is_memory_reduced          = False
         self.is_fitted                  = False
-        self.estimator_name_            = f"Ets({self.model})"
         self.best_params_               = None
         self.is_auto                    = self.model == "ZZZ"
+
+        if self.is_auto:
+            self.estimator_name_ = "AutoEts()"
+        else:
+            self.estimator_name_ = f"Ets({self.model})"
 
     def __repr__(self) -> str:
         """
@@ -584,6 +592,36 @@ class Ets(BaseEstimator, RegressorMixin):
 
         return value
     
+    def _set_params(self, **params) -> None:
+        """
+        Set the parameters of this estimator. Internal method without resetting 
+        the fitted state. This method is intended for internal use only, please 
+        use `set_params()` instead.
+
+        Parameters
+        ----------
+        **params : dict
+            Estimator parameters.
+
+        Returns
+        -------
+        None
+
+        """
+
+        for key, value in params.items():
+            setattr(self, key, value)
+
+        self.is_auto = self.model is None or self.model == "ZZZ"
+        if self.is_auto:
+            self.model = "ZZZ"
+            estimator_name_ = "AutoEts()"
+        else:
+            estimator_name_ = f"Ets({self.model})"
+
+        self.estimator_name_ = estimator_name_
+        
+    
     def set_params(self, **params) -> Ets:
         """
         Set the parameters of this estimator and reset the fitted state.
@@ -611,7 +649,6 @@ class Ets(BaseEstimator, RegressorMixin):
         
         """
 
-        # Validate parameter keys
         valid_params = {
             'm', 'model', 'damped', 'alpha', 'beta', 'gamma', 'phi',
             'lambda_param', 'lambda_auto', 'bias_adjust', 'bounds',
@@ -625,9 +662,7 @@ class Ets(BaseEstimator, RegressorMixin):
                     f"Valid parameters are: {sorted(valid_params)}"
                 )
         
-        # Set the parameters
-        for key, value in params.items():
-            setattr(self, key, value)
+        self._set_params(**params)
         
         # Reset fitted state - model needs to be refitted with new parameters
         self.model_               = None
@@ -639,8 +674,7 @@ class Ets(BaseEstimator, RegressorMixin):
         self.n_features_in_       = None
         self.is_memory_reduced    = False
         self.is_fitted            = False
-        self.estimator_name_      = f"Ets({self.model})"
-        self.is_auto              = self.model == "ZZZ"
+        self.best_params_         = None
         
         return self
     

@@ -87,6 +87,7 @@ def predict_covariance_nodiff(P: np.ndarray, r: int, p: int, q: int,
         Predicted state covariance matrix.
     """
     Pnew = np.zeros((r, r))
+    P00 = P[0, 0]
 
     for i in range(r):
         if i == 0:
@@ -105,7 +106,7 @@ def predict_covariance_nodiff(P: np.ndarray, r: int, p: int, q: int,
                 tmp = 0.0
 
             if i < p and j < p:
-                tmp += phi[i] * phi[j] * P[0, 0]
+                tmp += phi[i] * phi[j] * P00
 
             if i < r - 1 and j < r - 1:
                 tmp += P[i + 1, j + 1]
@@ -344,9 +345,9 @@ def compute_arima_likelihood_core(
     sumlog = 0.0
     nu = 0
 
-    a = a_init.copy()
-    P = P_init.copy()
-    Pnew = Pn_init.copy()
+    a = a_init
+    P = P_init
+    Pnew = Pn_init
 
     if give_resid:
         rsResid = np.zeros(n)
@@ -371,7 +372,7 @@ def compute_arima_likelihood_core(
             if give_resid:
                 rsResid[l] = resid / np.sqrt(gain) if gain > 0 else np.nan
         else:
-            a = anew.copy()
+            a = anew
             if give_resid:
                 rsResid[l] = np.nan
 
@@ -380,7 +381,7 @@ def compute_arima_likelihood_core(
                 Pnew = predict_covariance_nodiff(P, r, p, q, phi, theta)
             else:
                 Pnew = predict_covariance_with_diff(P, r, d, p, q, rd, phi, delta, theta)
-            P = Pnew.copy()
+            P = Pnew
 
     stats = np.array([ssq, sumlog, float(nu)])
     return stats, rsResid, a, P
@@ -417,6 +418,8 @@ def compute_arima_likelihood(
         - 'a': Final filtered state vector.
         - 'P': Final filtered state covariance.
     """
+
+    # astype creates copies so no further copying is needed inside the Numba function
     phi = model['phi'].astype(np.float64)
     theta = model['theta'].astype(np.float64)
     delta = model['Delta'].astype(np.float64)
@@ -465,14 +468,14 @@ def transform_unconstrained_to_ar_params(p: int, raw: np.ndarray) -> np.ndarray:
     if p > 100:
         raise ValueError("Can only transform up to 100 parameters")
 
-    new = np.tanh(raw[:p].copy())
-    work = new.copy()
+    new = np.tanh(raw[:p])
+    work = np.empty(p)
 
     for j in range(1, p):
         a = new[j]
         for k in range(j):
             work[k] = new[k] - a * new[j - 1 - k]
-        new[:j] = work[:j].copy()
+        new[:j] = work[:j]
 
     return new
 
@@ -1618,14 +1621,13 @@ def kalman_forecast_core(
     forecasts = np.zeros(n_ahead)
     variances = np.zeros(n_ahead)
 
-    a_curr = a.copy()
-    P_curr = P.copy()
+    a_curr = a
+    P_curr = P
 
     for l in range(n_ahead):
         # State prediction
         anew = state_prediction(a_curr, p, r, d, rd, phi, delta)
-        a_curr = anew.copy()
-
+        a_curr = anew
         # Forecast
         fc = 0.0
         for i in range(rd):
@@ -1637,7 +1639,7 @@ def kalman_forecast_core(
             Pnew = predict_covariance_nodiff(P_curr, r, p, q, phi, theta)
         else:
             Pnew = predict_covariance_with_diff(P_curr, r, d, p, q, rd, phi, delta, theta)
-        P_curr = Pnew.copy()
+        P_curr = Pnew
 
         # Forecast variance: h + Z' P Z
         tmpvar = h
@@ -1779,7 +1781,7 @@ def diff(x: np.ndarray, lag: int = 1, differences: int = 1) -> np.ndarray:
     np.ndarray
         Differenced array.
     """
-    result = x.copy()
+    result = x
     for _ in range(differences):
         if result.ndim == 1:
             result = result[lag:] - result[:-lag]
@@ -1972,8 +1974,8 @@ def regress_and_update(
         S = None
 
     # Difference series and regressors
-    dx = x.copy()
-    dxreg = xreg.copy()
+    dx = x
+    dxreg = xreg
 
     if order_d > 0:
         dx = diff(dx, lag=1, differences=order_d)
@@ -2353,14 +2355,15 @@ def arima(
         except Exception:
             return 1e10
 
-        xxi = x.copy()
         try:
             mod = update_arima(mod, phi_t, theta_t, ss_g=SS_G)
         except Exception:
             return 1e10
 
         if ncxreg > 0:
-            xxi = xxi - xreg_mat @ par[narma:narma + ncxreg]
+            xxi = x - xreg_mat @ par[narma:narma + ncxreg]
+        else:
+            xxi = x
 
         try:
             resss = compute_arima_likelihood(xxi, mod, update_start=0, give_resid=False)
@@ -2384,9 +2387,10 @@ def arima(
         except Exception:
             return 1e10
 
-        x_in = x.copy()
         if ncxreg > 0:
-            x_in = x_in - xreg_mat @ par[narma:narma + ncxreg]
+            x_in = x - xreg_mat @ par[narma:narma + ncxreg]
+        else:
+            x_in = x
 
         try:
             sigma2, _ = compute_css_residuals(x_in, arma_arr, phi_t, theta_t, ncond)
