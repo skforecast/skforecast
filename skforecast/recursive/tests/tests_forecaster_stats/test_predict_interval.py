@@ -152,12 +152,14 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators_exog(alpha,
     # Check estimator and pred columns (stable values)
     expected_estimator_pred = pd.DataFrame(
                    data    = {
-                       'estimator_id': ['skforecast.Sarimax'] * 5 + ['skforecast.Arar'] * 5 + ['skforecast.Ets'] * 5,
-                       'pred': [0.599299, 0.612997, 0.628731, 0.644136, 0.661960,
-                                0.635100, 0.677110, 0.765381, 0.757966, 0.800557,
-                                0.604989, 0.604981, 0.604974, 0.604969, 0.604965],
+                       'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 'skforecast.Ets'] * 5,
+                       'pred': [0.599299, 0.635100, 0.604989,
+                                0.612997, 0.677110, 0.604981,
+                                0.628731, 0.765381, 0.604974,
+                                0.644136, 0.757966, 0.604969,
+                                0.661960, 0.800557, 0.604965], 
                    },
-                   index   = pd.Index([50, 51, 52, 53, 54] * 3)
+                   index   = pd.Index([50, 50, 50, 51, 51, 51, 52, 52, 52, 53, 53, 53, 54, 54, 54])
                )
     pd.testing.assert_frame_equal(
         predictions[['estimator_id', 'pred']], 
@@ -165,24 +167,32 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators_exog(alpha,
         atol=0.0001
     )
     
-    # Check bounds for Sarimax and Arar (stable values, first 10 rows)
+    # Check bounds for Sarimax and Arar (stable values) - select by estimator_id
+    sarimax_arar_mask = predictions['estimator_id'].isin(['skforecast.Sarimax', 'skforecast.Arar'])
+    sarimax_arar_predictions = predictions[sarimax_arar_mask]
     expected_bounds_sarimax_arar = pd.DataFrame(
                    data    = {
-                       'lower_bound': [0.578620, 0.592025, 0.607742, 0.623146, 0.640970,
-                                       0.566307, 0.606592, 0.694777, 0.687357, 0.724952],
-                       'upper_bound': [0.619978, 0.633969, 0.649720, 0.665126, 0.682950,
-                                       0.703893, 0.747628, 0.835985, 0.828575, 0.876162],
+                       'lower_bound': [0.578620, 0.566307, 
+                                       0.592025, 0.606592,  
+                                       0.607742, 0.694777,  
+                                       0.623146, 0.687357,  
+                                       0.640970, 0.724952], 
+                       'upper_bound': [0.619978, 0.703893,  
+                                       0.633969, 0.747628,  
+                                       0.649720, 0.835985,  
+                                       0.665126, 0.828575,  
+                                       0.682950, 0.876162], 
                    },
-                   index   = pd.Index([50, 51, 52, 53, 54] * 2)
+                   index   = pd.Index([50, 50, 51, 51, 52, 52, 53, 53, 54, 54])
                )
     pd.testing.assert_frame_equal(
-        predictions[['lower_bound', 'upper_bound']].iloc[:10], 
+        sarimax_arar_predictions[['lower_bound', 'upper_bound']], 
         expected_bounds_sarimax_arar, 
         atol=0.0001
     )
     
     # Check that bounds for Ets are reasonable (lower < pred < upper)
-    ets_predictions = predictions.iloc[10:]
+    ets_predictions = predictions[predictions['estimator_id'] == 'skforecast.Ets']
     assert (ets_predictions['lower_bound'] < ets_predictions['pred']).all()
     assert (ets_predictions['pred'] < ets_predictions['upper_bound']).all()
 
@@ -241,12 +251,14 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators_exog_transf
     # Check estimator and pred columns (stable values)
     expected_estimator_pred = pd.DataFrame(
                    data    = {
-                       'estimator_id': ['skforecast.Sarimax'] * 5 + ['skforecast.Arar'] * 5 + ['skforecast.Ets'] * 5,
-                       'pred': [0.611820, 0.613855, 0.613302, 0.613836, 0.613947,
-                                0.635100, 0.677110, 0.765381, 0.757966, 0.800557,
-                                0.693197, 0.693995, 0.694766, 0.695513, 0.696234],
+                       'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 'skforecast.Ets'] * 5,
+                       'pred': [0.611820, 0.635100, 0.693197, 
+                                0.613855, 0.677110, 0.693995, 
+                                0.613302, 0.765381, 0.694766, 
+                                0.613836, 0.757966, 0.695513, 
+                                0.613947, 0.800557, 0.696234],
                    },
-                   index   = pd.Index([50, 51, 52, 53, 54] * 3)
+                   index   = pd.Index([50, 50, 50, 51, 51, 51, 52, 52, 52, 53, 53, 53, 54, 54, 54])
                )
     pd.testing.assert_frame_equal(
         predictions[['estimator_id', 'pred']], 
@@ -254,24 +266,32 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators_exog_transf
         atol=0.0001
     )
     
-    # Check bounds for Sarimax and Arar (stable values, first 10 rows)
+    # Check bounds for Sarimax and Arar (stable values) - select by estimator_id
+    sarimax_arar_mask = predictions['estimator_id'].isin(['skforecast.Sarimax', 'skforecast.Arar'])
+    sarimax_arar_predictions = predictions[sarimax_arar_mask]
     expected_bounds_sarimax_arar = pd.DataFrame(
                    data    = {
-                       'lower_bound': [0.448996, 0.450212, 0.449515, 0.450024, 0.450130,
-                                       0.566307, 0.606592, 0.694777, 0.687357, 0.724952],
-                       'upper_bound': [0.774643, 0.777497, 0.777089, 0.777649, 0.777764,
-                                       0.703893, 0.747628, 0.835985, 0.828575, 0.876162],
+                       'lower_bound': [0.448996, 0.566307, 
+                                       0.450212, 0.606592,  
+                                       0.449515, 0.694777,  
+                                       0.450024, 0.687357,  
+                                       0.450130, 0.724952], 
+                       'upper_bound': [0.774643, 0.703893,  
+                                       0.777497, 0.747628,  
+                                       0.777089, 0.835985,  
+                                       0.777649, 0.828575,  
+                                       0.777764, 0.876162], 
                    },
-                   index   = pd.Index([50, 51, 52, 53, 54] * 2)
+                   index   = pd.Index([50, 50, 51, 51, 52, 52, 53, 53, 54, 54])
                )
     pd.testing.assert_frame_equal(
-        predictions[['lower_bound', 'upper_bound']].iloc[:10], 
+        sarimax_arar_predictions[['lower_bound', 'upper_bound']], 
         expected_bounds_sarimax_arar, 
         atol=0.0001
     )
     
     # Check that bounds for Ets are reasonable (lower < pred < upper)
-    ets_predictions = predictions.iloc[10:]
+    ets_predictions = predictions[predictions['estimator_id'] == 'skforecast.Ets']
     assert (ets_predictions['lower_bound'] < ets_predictions['pred']).all()
     assert (ets_predictions['pred'] < ets_predictions['upper_bound']).all()
 

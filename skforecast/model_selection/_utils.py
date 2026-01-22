@@ -93,10 +93,10 @@ def check_backtesting_input(
     use_binned_residuals: bool = True,
     random_state: int = 123,
     return_predictors: bool = False,
+    freeze_params: bool = True,
     n_jobs: int | str = 'auto',
     show_progress: bool = True,
-    suppress_warnings: bool = False,
-    suppress_warnings_fit: bool = False
+    suppress_warnings: bool = False
 ) -> None:
     """
     This is a helper function to check most inputs of backtesting functions in 
@@ -161,15 +161,24 @@ def check_backtesting_input(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_fit_forecaster.
+    freeze_params : bool, default True
+        Determines whether to freeze the model parameters after the first fit
+        for estimators that perform automatic model selection.
+
+        - If `True`, the model parameters found during the first fit (e.g., order 
+        and seasonal_order for Arima, or smoothing parameters for Ets) are reused
+        in all subsequent refits. This avoids re-running the automatic selection
+        procedure in each fold and reduces runtime.
+        - If `False`, automatic model selection is performed independently in each
+        refit, allowing parameters to adapt across folds. This increases runtime
+        and adds a `params` column to the output with the parameters selected per
+        fold.
     show_progress : bool, default True
         Whether to show a progress bar.
     suppress_warnings: bool, default False
         If `True`, skforecast warnings will be suppressed during the backtesting 
         process. See skforecast.exceptions.warn_skforecast_categories for more
         information.
-    suppress_warnings_fit : bool, default False
-        If `True`, warnings generated during fitting will be ignored. Only 
-        `ForecasterStats`.
 
     Returns
     -------
@@ -373,14 +382,14 @@ def check_backtesting_input(
         raise TypeError(f"`random_state` must be an integer greater than 0. Got {random_state}.")
     if not isinstance(return_predictors, bool):
         raise TypeError("`return_predictors` must be a boolean: `True`, `False`.")
+    if not isinstance(freeze_params, bool):
+        raise TypeError("`freeze_params` must be a boolean: `True`, `False`.")
     if not isinstance(n_jobs, int) and n_jobs != 'auto':
         raise TypeError(f"`n_jobs` must be an integer or `'auto'`. Got {n_jobs}.")
     if not isinstance(show_progress, bool):
         raise TypeError("`show_progress` must be a boolean: `True`, `False`.")
     if not isinstance(suppress_warnings, bool):
         raise TypeError("`suppress_warnings` must be a boolean: `True`, `False`.")
-    if not isinstance(suppress_warnings_fit, bool):
-        raise TypeError("`suppress_warnings_fit` must be a boolean: `True`, `False`.")
 
     if interval is not None or alpha is not None:
         
@@ -1064,6 +1073,8 @@ def _calculate_metrics_backtesting_multiseries(
     
     """
 
+    # TODO: All this checks can be deleted as they are done in the public
+    # function that calls this private function.
     if not isinstance(series, (pd.DataFrame, dict)):
         raise TypeError(
             "`series` must be a pandas DataFrame or a dictionary of pandas "
@@ -1164,7 +1175,8 @@ def _calculate_metrics_backtesting_multiseries(
             else:
                 y_train = None
             metrics_level = [
-                m(y_true=y_true, y_pred=y_pred, y_train=y_train) for m in metrics
+                m(y_true=y_true, y_pred=y_pred, y_train=y_train) 
+                for m in metrics
             ]
             metrics_levels.append(metrics_level)
         else:
@@ -1207,7 +1219,10 @@ def _calculate_metrics_backtesting_multiseries(
         weighted_average['levels'] = 'weighted_average'
 
         # aggregation: pooling
-        scaled_metrics = ['mean_absolute_scaled_error', 'root_mean_squared_scaled_error']
+        scaled_metrics = [
+            'mean_absolute_scaled_error', 
+            'root_mean_squared_scaled_error'
+        ]
 
         y_true = y_true_y_pred.loc[:, 'y_true'].droplevel("level")
         y_pred = y_true_y_pred.loc[:, 'y_pred'].droplevel("level")
@@ -1305,6 +1320,9 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         Value of predictions for each level.
     
     """
+
+    # TODO: All this checks can be deleted as they are done in the public
+    # function that calls this private function.
 
     if not isinstance(series, (pd.DataFrame, dict)):
         raise TypeError(
@@ -1457,7 +1475,8 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             else:
                 y_train = None
             metrics_level = [
-                m(y_true=y_true, y_pred=y_pred, y_train=y_train) for m in metrics
+                m(y_true=y_true, y_pred=y_pred, y_train=y_train) 
+                for m in metrics
             ]
             metrics_levels.append(metrics_level)
         else:

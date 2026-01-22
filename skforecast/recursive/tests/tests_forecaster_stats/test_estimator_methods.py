@@ -1,4 +1,4 @@
-# Unit test get_estimator, get_estimator_ids, remove_estimator ForecasterStats
+# Unit test get_estimator, get_estimator_ids, remove_estimators ForecasterStats
 # ==============================================================================
 import re
 import pytest
@@ -104,9 +104,9 @@ def test_get_estimator_ids_with_duplicates():
     assert ids == ['skforecast.Arima', 'skforecast.Arima_2', 'skforecast.Arima_3']
 
 
-# Test remove_estimator
+# Test remove_estimators
 # ==============================================================================
-def test_remove_estimator_raises_KeyError_when_id_not_found():
+def test_remove_estimators_raises_KeyError_when_id_not_found():
     """
     Raise KeyError when estimator id to remove is not found.
     """
@@ -117,10 +117,10 @@ def test_remove_estimator_raises_KeyError_when_id_not_found():
         "Available estimators: ['skforecast.Sarimax']"
     )
     with pytest.raises(KeyError, match=err_msg):
-        forecaster.remove_estimator('invalid_id')
+        forecaster.remove_estimators('invalid_id')
 
 
-def test_remove_estimator_raises_KeyError_when_multiple_ids_not_found():
+def test_remove_estimators_raises_KeyError_when_multiple_ids_not_found():
     """
     Raise KeyError when multiple estimator ids to remove are not found.
     """
@@ -132,31 +132,31 @@ def test_remove_estimator_raises_KeyError_when_multiple_ids_not_found():
         "Available estimators: ['skforecast.Sarimax', 'skforecast.Arima']"
     )
     with pytest.raises(KeyError, match=err_msg):
-        forecaster.remove_estimator(['invalid_1', 'invalid_2'])
+        forecaster.remove_estimators(['invalid_1', 'invalid_2'])
 
 
-def test_remove_estimator_single_id():
+def test_remove_estimators_single_id():
     """
-    Check that remove_estimator removes a single estimator by id.
+    Check that remove_estimators removes a single estimator by id.
     """
     estimators = [Sarimax(order=(1, 0, 1)), Arima(order=(1, 1, 1)), Ets()]
     forecaster = ForecasterStats(estimator=estimators)
     
-    forecaster.remove_estimator('skforecast.Arima')
+    forecaster.remove_estimators('skforecast.Arima')
     
     assert forecaster.n_estimators == 2
     assert forecaster.estimator_ids == ['skforecast.Sarimax', 'skforecast.Ets']
     assert len(forecaster.estimators) == 2
     assert len(forecaster.estimators_) == 2
-    assert forecaster.estimator_types_ == [
+    assert forecaster.estimator_types == [
         'skforecast.stats._sarimax.Sarimax', 'skforecast.stats._ets.Ets'
     ]
     assert forecaster.estimator_names_ == [None, None]
 
 
-def test_remove_estimator_multiple_ids_and_fitted():
+def test_remove_estimators_multiple_ids_and_fitted():
     """
-    Check that remove_estimator removes multiple estimators by ids.
+    Check that remove_estimators removes multiple estimators by ids.
     """
     estimators = [
         Sarimax(order=(1, 0, 1)),
@@ -166,31 +166,31 @@ def test_remove_estimator_multiple_ids_and_fitted():
     forecaster = ForecasterStats(estimator=estimators)
     forecaster.fit(y=pd.Series(np.arange(50), name='y'))
     
-    forecaster.remove_estimator(['skforecast.Sarimax', 'skforecast.Ets'])
+    forecaster.remove_estimators(['skforecast.Sarimax', 'skforecast.Ets'])
     
     assert forecaster.n_estimators == 1
     assert forecaster.estimator_ids == ['skforecast.Arima']
     assert len(forecaster.estimators) == 1
     assert len(forecaster.estimators_) == 1
-    assert forecaster.estimator_types_ == ['skforecast.stats._arima.Arima']
+    assert forecaster.estimator_types == ['skforecast.stats._arima.Arima']
     assert forecaster.estimator_names_ == ['Arima(1,1,1)']
 
 
-def test_remove_estimator_with_suffix_and_fitted():
+def test_remove_estimators_with_suffix_and_fitted():
     """
-    Check that remove_estimator correctly removes estimator with suffix id.
+    Check that remove_estimators correctly removes estimator with suffix id.
     """
     estimators = [Sarimax(order=(1, 0, 1)), Sarimax(order=(2, 0, 1)), Sarimax(order=(3, 0, 1))]
     forecaster = ForecasterStats(estimator=estimators)
     forecaster.fit(y=pd.Series(np.arange(50), name='y'))
     
-    forecaster.remove_estimator('skforecast.Sarimax_2')
+    forecaster.remove_estimators('skforecast.Sarimax_2')
     
     assert forecaster.n_estimators == 2
     assert forecaster.estimator_ids == ['skforecast.Sarimax', 'skforecast.Sarimax_3']
     assert len(forecaster.estimators) == 2
     assert len(forecaster.estimators_) == 2
-    assert forecaster.estimator_types_ == [
+    assert forecaster.estimator_types == [
         'skforecast.stats._sarimax.Sarimax', 'skforecast.stats._sarimax.Sarimax'
     ]
     assert forecaster.estimator_names_ == [
