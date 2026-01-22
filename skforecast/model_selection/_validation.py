@@ -1375,11 +1375,6 @@ def backtesting_forecaster_multiseries(
     return metrics_levels, backtest_predictions
 
 
-# TODO: Duda, en principio no deberíamos pasar suppress_warnings a las funciones de fit/predict
-# porque resetea el estado al acabar. Probar y si es correcto cambiarlo en el multiseries también
-# TODO: Como usamos last_window, se ignoran los estimators que no la usan y no se predice
-# TODO: Tenemos estimators que permiten refit y otros que no 
-# TODO: para los modelos AUTO, queremos hacer una búsqueda en cada refit, o congelar los params
 def _backtesting_stats(
     forecaster: object,
     y: pd.Series,
@@ -1473,7 +1468,7 @@ def _backtesting_stats(
 
         If `freeze_params` is `False`, an additional column is included:
 
-        - params: parameters used in the estimator for each fold.
+        - estimator_params: parameters used in the estimator for each fold.
 
         Depending on the relation between `steps` and `fold_stride`, the output
         may include repeated indexes (if `fold_stride < steps`) or gaps
@@ -1498,22 +1493,6 @@ def _backtesting_stats(
 
     forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
-
-    # 1. Si hay más de un estimator y no son todos Sarimax, obligar a que sea refit = True
-    # Si refit no es True -> warning y forzar refit = True
-    # 2. Si son todos Sarimax (o solo uno), permitir refit = False y no lanzar warning
-    # 3. Si es uno solo y no es Sarimax, obligar a que sea refit = True y lanzar warning si refit es False
-    # ----------------
-    # Params fijos o lanzar Auto en cada refit?
-    # Añadir argumento para congelar params -> freeze_params: bool = True que haga que se fijen los params
-    # en el primer fit y se usen esos en los refit posteriores.
-    # Después del primer fit, hago un set_params usando best atributos (best_params_) sobre los
-    # argumentos y atributos (order, seasonal_order) de los estimators para los refit posteriores. Esto va a provocar 
-    # que ya no se lance el Auto. (Hacer para Arima y Sarimax).
-    # Cuando estás en el modo freeze_params=False, añadir una columna 'params' donde 
-    # aparezca el estimator_id (Sarimax(1, 1, 1)(0, 1, 1, 12)) o los params (ver qué es más rápido)
-
-    # Options: freeze_params, reuse_params, fixed_params, warm_start, persist_params
 
     # NOTE: Only skforecast.Sarimax allows refit=False, if other estimators are 
     # present, refit must be True.
@@ -1549,8 +1528,6 @@ def _backtesting_stats(
         n_jobs = 1
     else:
         if n_jobs == 'auto':
-            # TODO: Esto falla porque forecaster no tiene .estimator
-            # En realidad diría que aquí nunca paralelizamos
             n_jobs = select_n_jobs_backtesting(
                          forecaster = forecaster,
                          refit      = refit
@@ -1584,7 +1561,6 @@ def _backtesting_stats(
     steps = cv.steps
     gap = cv.gap
 
-    # TODO: Si hay intervalo, borro directamente los estimators para los que no tiene sentido
     if alpha is not None or interval is not None:
         ids_not_support_interval = [
             est_id for est_id, est_type in zip(forecaster.estimator_ids, forecaster.estimator_types)
@@ -1598,6 +1574,7 @@ def _backtesting_stats(
             )
             forecaster.remove_estimators(ids_not_support_interval)
 
+    # TODO: Check for multiple estimators
     # NOTE: initial_train_size cannot be None because of append method in Sarimax
     # NOTE: This allows for parallelization when `refit` is `False`. The initial 
     # Forecaster fit occurs outside of the auxiliary function.
@@ -1605,17 +1582,14 @@ def _backtesting_stats(
     forecaster.fit(
         y                 = y.iloc[:initial_train_size, ],
         exog              = exog_train,
-        # suppress_warnings = suppress_warnings
+        suppress_warnings = suppress_warnings
     )
     folds[0][5] = False
 
-    # TODO: Congelar params si freeze_params=True
-    # ==========================================================================
     if freeze_params and refit:
         for estimator in forecaster.estimators_:
             if hasattr(estimator, 'best_params_') and estimator.best_params_:
                 estimator._set_params(**estimator.best_params_)
-    # ==========================================================================
     
     if refit:
         n_of_fits = int(len(folds) / refit)
@@ -1667,7 +1641,7 @@ def _backtesting_stats(
             last_window_y = None
             last_window_exog = None
 
-            forecaster.fit(y=y_train, exog=exog_train)#, suppress_warnings=suppress_warnings)
+            forecaster.fit(y=y_train, exog=exog_train, suppress_warnings=suppress_warnings)
 
         next_window_exog = exog.iloc[test_iloc_start:test_iloc_end, ] if exog is not None else None
 
@@ -1683,7 +1657,7 @@ def _backtesting_stats(
                        last_window       = last_window_y,
                        last_window_exog  = last_window_exog,
                        exog              = next_window_exog,
-                    #    suppress_warnings = suppress_warnings
+                       suppress_warnings = suppress_warnings
                    )
         else:
             pred = forecaster.predict_interval(
@@ -1693,27 +1667,11 @@ def _backtesting_stats(
                        interval          = interval,
                        last_window       = last_window_y,
                        last_window_exog  = last_window_exog,
-                    #    suppress_warnings = suppress_warnings
+                       suppress_warnings = suppress_warnings
                    )
 
-        # TODO: Esto no va a funcionar si hay múltiples estimadores y gap > 0
-        # las preds están ordenadas por estimador, no por tiempo
-        # Solución: ordenar las preds por tiempo: Est1_t0, Est2_t0, Est1_t1, Est2_t1, ...
         if gap > 0:
-            # pred = pred.iloc[gap:, ]
-            # Manera de saber cuántos estimators han salido
             pred = pred.iloc[forecaster.n_estimators * gap:, :]
-
-        # Posible solución
-        # if gap > 0:
-        #     n_estimators = forecaster.n_estimators
-        #     # Calcular índices a mantener (excluyendo primeras `gap` de cada estimador)
-        #     indices_to_keep = []
-        #     for i in range(n_estimators):
-        #         start = i * steps + gap
-        #         end = (i + 1) * steps
-        #         indices_to_keep.extend(range(start, end))
-        #     pred = pred.iloc[indices_to_keep]
 
         estimator_names_ = None
         if not freeze_params:
@@ -1748,7 +1706,7 @@ def _backtesting_stats(
     backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
     if not freeze_params:
         estimator_names_ = [result[1] for result in results]
-        backtest_predictions['params'] = np.concatenate(estimator_names_)
+        backtest_predictions['estimator_params'] = np.concatenate(estimator_names_)
 
     train_indexes = []
     for i, fold in enumerate(folds):

@@ -674,6 +674,10 @@ def select_n_jobs_backtesting(
 
     forecaster_name = type(forecaster).__name__
 
+    if forecaster_name == 'ForecasterStats':
+        n_jobs = 1
+        return n_jobs
+
     if isinstance(forecaster.estimator, Pipeline):
         estimator = forecaster.estimator[-1]
     else:
@@ -684,10 +688,10 @@ def select_n_jobs_backtesting(
     if not isinstance(refit, bool) and refit != 1:
         n_jobs = 1
     else:
-        if forecaster_name in ['ForecasterRecursive']:
+        if forecaster_name in ['ForecasterRecursive', 'ForecasterRecursiveClassifier']:
             if estimator_name in LINEAR_ESTIMATORS:
                 n_jobs = 1
-            elif estimator_name == 'LGBMRegressor':
+            elif estimator_name in {'LGBMRegressor', 'LGBMClassifier'}:
                 n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
@@ -699,7 +703,7 @@ def select_n_jobs_backtesting(
                 n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
-        elif forecaster_name in ['ForecasterStats', 'ForecasterEquivalentDate']:
+        elif forecaster_name in ['ForecasterEquivalentDate']:
             n_jobs = 1
         else:
             n_jobs = 1
@@ -1073,27 +1077,27 @@ def _calculate_metrics_backtesting_multiseries(
     
     """
 
-    # TODO: All this checks can be deleted as they are done in the public
+    # NOTE: All this checks can be deleted as they are done in the public
     # function that calls this private function.
-    if not isinstance(series, (pd.DataFrame, dict)):
-        raise TypeError(
-            "`series` must be a pandas DataFrame or a dictionary of pandas "
-            "DataFrames."
-        )
-    if not isinstance(predictions, pd.DataFrame):
-        raise TypeError("`predictions` must be a pandas DataFrame.")
-    if not isinstance(folds, (list, tqdm)):
-        raise TypeError("`folds` must be a list or a tqdm object.")
-    if not isinstance(span_index, (pd.DatetimeIndex, pd.RangeIndex)):
-        raise TypeError("`span_index` must be a pandas DatetimeIndex or pandas RangeIndex.")
-    if not isinstance(window_size, (int, np.integer)):
-        raise TypeError("`window_size` must be an integer.")
-    if not isinstance(metrics, list):
-        raise TypeError("`metrics` must be a list.")
-    if not isinstance(levels, list):
-        raise TypeError("`levels` must be a list.")
-    if not isinstance(add_aggregated_metric, bool):
-        raise TypeError("`add_aggregated_metric` must be a boolean.")
+    # if not isinstance(series, (pd.DataFrame, dict)):
+    #     raise TypeError(
+    #         "`series` must be a pandas DataFrame or a dictionary of pandas "
+    #         "DataFrames."
+    #     )
+    # if not isinstance(predictions, pd.DataFrame):
+    #     raise TypeError("`predictions` must be a pandas DataFrame.")
+    # if not isinstance(folds, (list, tqdm)):
+    #     raise TypeError("`folds` must be a list or a tqdm object.")
+    # if not isinstance(span_index, (pd.DatetimeIndex, pd.RangeIndex)):
+    #     raise TypeError("`span_index` must be a pandas DatetimeIndex or pandas RangeIndex.")
+    # if not isinstance(window_size, (int, np.integer)):
+    #     raise TypeError("`window_size` must be an integer.")
+    # if not isinstance(metrics, list):
+    #     raise TypeError("`metrics` must be a list.")
+    # if not isinstance(levels, list):
+    #     raise TypeError("`levels` must be a list.")
+    # if not isinstance(add_aggregated_metric, bool):
+    #     raise TypeError("`add_aggregated_metric` must be a boolean.")
     
     metric_names = [m.__name__ for m in metrics]
     levels_in_predictions = predictions.index.get_level_values('level').unique()
@@ -1321,44 +1325,43 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     
     """
 
-    # TODO: All this checks can be deleted as they are done in the public
+    # NOTE: All this checks can be deleted as they are done in the public
     # function that calls this private function.
-
-    if not isinstance(series, (pd.DataFrame, dict)):
-        raise TypeError(
-            "`series` must be a pandas DataFrame or a dictionary of pandas "
-            "DataFrames."
-        )
-    if not isinstance(X_train, pd.DataFrame):
-        raise TypeError(f"`X_train` must be a pandas DataFrame. Got: {type(X_train)}")
-    if not isinstance(y_train, (pd.Series, dict)):
-        raise TypeError(
-            f"`y_train` must be a pandas Series or a dictionary of pandas Series. "
-            f"Got: {type(y_train)}"
-        )        
-    if not isinstance(X_test, pd.DataFrame):
-        raise TypeError(f"`X_test` must be a pandas DataFrame. Got: {type(X_test)}")
-    if not isinstance(y_test, (pd.Series, dict)):
-        raise TypeError(
-            f"`y_test` must be a pandas Series or a dictionary of pandas Series. "
-            f"Got: {type(y_test)}"
-        )
-    if not isinstance(X_train_encoding, pd.Series):
-        raise TypeError(
-            f"`X_train_encoding` must be a pandas Series. Got: {type(X_train_encoding)}"
-        )
-    if not isinstance(X_test_encoding, pd.Series):
-        raise TypeError(
-            f"`X_test_encoding` must be a pandas Series. Got: {type(X_test_encoding)}"
-        )
-    if not isinstance(levels, list):
-        raise TypeError(f"`levels` must be a list. Got: {type(levels)}")
-    if not isinstance(metrics, list):
-        raise TypeError(f"`metrics` must be a list. Got: {type(metrics)}")
-    if not isinstance(add_aggregated_metric, bool):
-        raise TypeError(
-            f"`add_aggregated_metric` must be a boolean. Got: {type(add_aggregated_metric)}"
-        )
+    # if not isinstance(series, (pd.DataFrame, dict)):
+    #     raise TypeError(
+    #         "`series` must be a pandas DataFrame or a dictionary of pandas "
+    #         "DataFrames."
+    #     )
+    # if not isinstance(X_train, pd.DataFrame):
+    #     raise TypeError(f"`X_train` must be a pandas DataFrame. Got: {type(X_train)}")
+    # if not isinstance(y_train, (pd.Series, dict)):
+    #     raise TypeError(
+    #         f"`y_train` must be a pandas Series or a dictionary of pandas Series. "
+    #         f"Got: {type(y_train)}"
+    #     )        
+    # if not isinstance(X_test, pd.DataFrame):
+    #     raise TypeError(f"`X_test` must be a pandas DataFrame. Got: {type(X_test)}")
+    # if not isinstance(y_test, (pd.Series, dict)):
+    #     raise TypeError(
+    #         f"`y_test` must be a pandas Series or a dictionary of pandas Series. "
+    #         f"Got: {type(y_test)}"
+    #     )
+    # if not isinstance(X_train_encoding, pd.Series):
+    #     raise TypeError(
+    #         f"`X_train_encoding` must be a pandas Series. Got: {type(X_train_encoding)}"
+    #     )
+    # if not isinstance(X_test_encoding, pd.Series):
+    #     raise TypeError(
+    #         f"`X_test_encoding` must be a pandas Series. Got: {type(X_test_encoding)}"
+    #     )
+    # if not isinstance(levels, list):
+    #     raise TypeError(f"`levels` must be a list. Got: {type(levels)}")
+    # if not isinstance(metrics, list):
+    #     raise TypeError(f"`metrics` must be a list. Got: {type(metrics)}")
+    # if not isinstance(add_aggregated_metric, bool):
+    #     raise TypeError(
+    #         f"`add_aggregated_metric` must be a boolean. Got: {type(add_aggregated_metric)}"
+    #     )
 
     metrics = [
         _get_metric(metric=m)

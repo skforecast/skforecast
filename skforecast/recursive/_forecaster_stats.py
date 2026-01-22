@@ -1091,13 +1091,12 @@ class ForecasterStats():
             estimator_ids.append(est_id)
 
         n_estimators = len(estimator_ids)
-        if n_estimators > 1:
-            all_predictions = np.column_stack(all_predictions).ravel()
+        if n_estimators == 1:
+            all_predictions = all_predictions[0]
         else:
-            all_predictions = np.concatenate(all_predictions)
+            all_predictions = np.column_stack(all_predictions).ravel()
 
         predictions = transform_numpy(
-                        #   array             = np.concatenate(all_predictions),
                           array             = all_predictions,
                           transformer       = self.transformer_y,
                           fit               = False,
@@ -1111,14 +1110,6 @@ class ForecasterStats():
                               name  = 'pred'
                           )
         else:
-
-            # predictions = pd.DataFrame(
-            #     {"estimator_id": np.repeat(estimator_ids, steps), "pred": predictions.ravel()},
-            #     index = np.tile(prediction_index, len(estimator_ids)),
-            # )
-
-            # TODO: Adapted to temporal order to match ForecasterMultiSeries and 
-            # allow gap in backtesting
             predictions = pd.DataFrame(
                 {"estimator_id": np.tile(estimator_ids, steps), "pred": predictions.ravel()},
                 index = np.repeat(prediction_index, n_estimators),
@@ -1298,33 +1289,18 @@ class ForecasterStats():
             all_predictions.append(preds)
             estimator_ids.append(est_id)
 
-        # TODO: Adapted to temporal order to match ForecasterMultiSeries and 
-        # allow gap in backtesting
         n_estimators = len(estimator_ids)
-        if n_estimators > 1:
-            all_predictions = np.stack(all_predictions).transpose(1, 0, 2).reshape(-1, 3)
+        if n_estimators == 1:
+            all_predictions = all_predictions[0]
         else:
-            all_predictions = np.concatenate(all_predictions)
+            all_predictions = np.stack(all_predictions).transpose(1, 0, 2).reshape(-1, 3)
 
         predictions = transform_numpy(
-                        #   array             = np.concatenate(all_predictions),
                           array             = all_predictions,
                           transformer       = self.transformer_y,
                           fit               = False,
                           inverse_transform = True
                       )
-
-        # predictions = pd.DataFrame(
-        #                   data  = predictions,
-        #                   index = np.tile(prediction_index, len(estimator_ids)),
-        #                   columns = ['pred', 'lower_bound', 'upper_bound']
-        #               )
-        
-        # if self.n_estimators > 1:
-        #     predictions.insert(0, 'estimator_id', np.repeat(estimator_ids, steps))
-        # else:
-        #     # This is done to restore the frequency
-        #     predictions.index = prediction_index
 
         predictions = pd.DataFrame(
                           data    = predictions,
@@ -1332,11 +1308,11 @@ class ForecasterStats():
                           columns = ['pred', 'lower_bound', 'upper_bound']
                       )
         
-        if self.n_estimators > 1:
-            predictions.insert(0, 'estimator_id', np.tile(estimator_ids, steps))
-        else:
+        if self.n_estimators == 1:
             # This is done to restore the frequency
             predictions.index = prediction_index
+        else:
+            predictions.insert(0, 'estimator_id', np.tile(estimator_ids, steps))
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
