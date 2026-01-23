@@ -1,7 +1,0 @@
-# `ForecasterAutoregMultiSeriesCustom`
-
-::: skforecast.ForecasterAutoregMultiSeriesCustom.ForecasterAutoregMultiSeriesCustom.ForecasterAutoregMultiSeriesCustom
-
-::: skforecast.ForecasterAutoregMultiSeriesCustom.ForecasterAutoregMultiSeriesCustom.ForecasterAutoregMultiSeriesCustom._recursive_predict
-
-::: skforecast.ForecasterAutoregMultiSeriesCustom.ForecasterAutoregMultiSeriesCustom.ForecasterAutoregMultiSeriesCustom.__repr__
