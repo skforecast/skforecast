@@ -1,5 +1,10 @@
 # Fixture data sets for arima
 # ==============================================================================
+# air_passengers, sunspots_data, co2_data, macrodata_data and nile_data dataset
+# have been obtained from statsmodels library https://www.statsmodels.org/ 
+# licensed under BSD-3-Clause Copyright (c) statsmodels developers.
+# Other datasets have been synthetically generated.
+
 import pandas as pd
 import numpy as np
 
