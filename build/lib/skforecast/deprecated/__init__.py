@@ -1,1 +1,0 @@
-name = "skforecast_experimental"
