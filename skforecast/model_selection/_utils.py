@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from joblib import cpu_count
 from sklearn.exceptions import NotFittedError
-from sklearn.linear_model._base import LinearModel
+from sklearn.linear_model._base import LinearModel, LinearClassifierMixin
 from sklearn.pipeline import Pipeline
 from tqdm.auto import tqdm
 
@@ -679,22 +679,22 @@ def select_n_jobs_backtesting(
     if not isinstance(refit, bool) and refit != 1:
         n_jobs = 1
     else:
-        if forecaster_name in ['ForecasterRecursive', 'ForecasterRecursiveClassifier']:
-            if isinstance(estimator, LinearModel):
+        if forecaster_name in {'ForecasterRecursive', 'ForecasterRecursiveClassifier'}:
+            if isinstance(estimator, (LinearModel, LinearClassifierMixin)):
                 n_jobs = 1
             elif type(estimator).__name__ in {'LGBMRegressor', 'LGBMClassifier'}:
                 n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
-        elif forecaster_name in ['ForecasterDirect', 'ForecasterDirectMultiVariate']:
+        elif forecaster_name in {'ForecasterDirect', 'ForecasterDirectMultiVariate'}:
             # Parallelization is applied during the fitting process.
             n_jobs = 1
-        elif forecaster_name in ['ForecasterRecursiveMultiSeries']:
+        elif forecaster_name in {'ForecasterRecursiveMultiSeries'}:
             if type(estimator).__name__ == 'LGBMRegressor':
                 n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
-        elif forecaster_name in ['ForecasterEquivalentDate']:
+        elif forecaster_name in {'ForecasterEquivalentDate'}:
             n_jobs = 1
         else:
             n_jobs = 1

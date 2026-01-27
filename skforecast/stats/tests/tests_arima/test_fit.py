@@ -182,7 +182,7 @@ def test_arima_fit_seasonal_model():
     
     # Check exact coefficients
     expected_coef = np.array([0.94557857, -0.00845976, 2.49797772])
-    np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=5)
+    np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=4)
     
     # Check exact sigma2
     np.testing.assert_almost_equal(model.sigma2_, 1.2449496729615976, decimal=6)

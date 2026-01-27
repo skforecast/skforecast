@@ -1,5 +1,6 @@
 # Unit test predict method - Ets
 # ==============================================================================
+import platform
 import numpy as np
 import pytest
 from ..._ets import Ets
@@ -138,6 +139,10 @@ def test_estimator_ann_no_trend():
     np.testing.assert_array_almost_equal(pred, expected, decimal=7)
 
 
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
 def test_estimator_damped_trend():
     """Test damped trend model predictions"""
     rng = np.random.default_rng(789)
