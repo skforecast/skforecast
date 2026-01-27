@@ -34,8 +34,8 @@ from ..utils import (
 def _backtesting_forecaster(
     forecaster: object,
     y: pd.Series,
-    metric: str | Callable | list[str | Callable],
     cv: TimeSeriesFold,
+    metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     interval: float | list[float] | tuple[float] | str | object | None = None,
     interval_method: str = 'bootstrapping',
@@ -68,6 +68,8 @@ def _backtesting_forecaster(
         Forecaster model.
     y : pandas Series
         Training time series.
+    cv : TimeSeriesFold
+        TimeSeriesFold object with the information needed to split the data into folds.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
@@ -77,8 +79,6 @@ def _backtesting_forecaster(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    cv : TimeSeriesFold
-        TimeSeriesFold object with the information needed to split the data into folds.
     exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
@@ -1378,8 +1378,8 @@ def backtesting_forecaster_multiseries(
 def _backtesting_stats(
     forecaster: object,
     y: pd.Series,
-    metric: str | Callable | list[str | Callable],
     cv: TimeSeriesFold,
+    metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     alpha: float | None = None,
     interval: list[float] | tuple[float] | None = None,
@@ -1401,6 +1401,8 @@ def _backtesting_stats(
         Forecaster model.
     y : pandas Series
         Training time series.
+    cv : TimeSeriesFold
+        TimeSeriesFold object with the information needed to split the data into folds.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
@@ -1410,8 +1412,6 @@ def _backtesting_stats(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    cv : TimeSeriesFold
-        TimeSeriesFold object with the information needed to split the data into folds.
     exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
@@ -1869,11 +1869,11 @@ def backtesting_stats(
     
     """
     
-    if type(forecaster).__name__ not in ['ForecasterStats']:
+    if type(forecaster).__name__  != 'ForecasterStats':
         raise TypeError(
             "`forecaster` must be of type `ForecasterStats`, for all other "
-            "types of forecasters use the functions available in the other "
-            "`model_selection` modules."
+            "types of forecasters use the functions available in the "
+            "`model_selection` module."
         )
     
     check_backtesting_input(

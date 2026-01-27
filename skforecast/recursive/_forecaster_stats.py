@@ -221,7 +221,6 @@ class ForecasterStats():
                 )
             estimator_types.append(est_type)
         
-        # TODO Review _search functions, they only work for single estimator
         # TODO: Evaluate if include 'aggregate' parameter for multiple estimators, it
         # aggregates predictions from all estimators.
         self.estimators              = estimator
