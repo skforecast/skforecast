@@ -667,7 +667,7 @@ class Arima(BaseEstimator, RegressorMixin):
                 n_ahead = steps,
                 newxreg = exog,
                 se_fit  = False
-            )['pred']
+            )['mean']
         
         return predictions
 
@@ -772,41 +772,21 @@ class Arima(BaseEstimator, RegressorMixin):
                 xreg    = exog,
                 level   = level
             )
-            
-            mean = raw_preds['mean']
-            lower = raw_preds['lower']
-            upper = raw_preds['upper']
-            levels = raw_preds['level']
-            n_levels = len(levels)
-
-            predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
-            predictions[:, 0] = mean
-            predictions[:, 1::2] = lower
-            predictions[:, 2::2] = upper
-
         else:
             raw_preds = predict_arima(
                 model   = self.model_,
                 n_ahead = steps,
                 newxreg = exog,
-                se_fit  = True
+                se_fit  = True,
+                level   = level
             )
 
-            # TODO: move the calculation of intervals to predict_arima
-            mean = raw_preds['pred']
-            se = raw_preds['se']
-            levels = list(level)
-            n_levels = len(levels)
-
-
-            alpha_lvls = 1.0 - np.asarray(levels, dtype=np.float64) / 100.0
-            z_scores = norm.ppf(1.0 - alpha_lvls / 2.0)
-            predictions = np.empty((steps, 1 + 2 * n_levels), dtype=np.float64)
-            predictions[:, 0] = mean
-            se_expanded = se[:, np.newaxis]
-            mean_expanded = mean[:, np.newaxis]
-            predictions[:, 1::2] = mean_expanded - z_scores * se_expanded  # lower bounds
-            predictions[:, 2::2] = mean_expanded + z_scores * se_expanded  # upper bounds
+        levels = raw_preds['level']
+        n_levels = len(levels)
+        predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
+        predictions[:, 0] = raw_preds['mean']
+        predictions[:, 1::2] = raw_preds['lower']
+        predictions[:, 2::2] = raw_preds['upper']
 
         if as_frame:
             col_names = ["mean"]

@@ -201,7 +201,7 @@ class ForecasterStats():
             'sktime.forecasting.arima._pmdarima.ARIMA'
         )
 
-        # TODO: Remove 0.20. Handle deprecated 'regressor' argument
+        # TODO: Remove 0.21. Handle deprecated 'regressor' argument
         estimator = initialize_estimator(estimator, regressor)
         
         if not isinstance(estimator, list):
@@ -221,9 +221,8 @@ class ForecasterStats():
                 )
             estimator_types.append(est_type)
         
-        # TODO: Review window_size for statistical models
         # TODO Review _search functions, they only work for single estimator
-        # TODO: Decide if include 'aggregate' parameter for multiple estimators, it
+        # TODO: Evaluate if include 'aggregate' parameter for multiple estimators, it
         # aggregates predictions from all estimators.
         self.estimators              = estimator
         self.estimators_             = [copy(est) for est in self.estimators]
@@ -233,7 +232,6 @@ class ForecasterStats():
         self.n_estimators            = len(self.estimators)
         self.transformer_y           = transformer_y
         self.transformer_exog        = transformer_exog
-        self.window_size             = 1
         self.last_window_            = None
         self.extended_index_         = None
         self.index_type_             = None
@@ -252,6 +250,7 @@ class ForecasterStats():
         self.skforecast_version      = __version__
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
+        self.window_size             = 1     # Ignored, present for API consistency
         self.fit_kwargs              = None  # Ignored, present for API consistency
 
         self.estimator_params_       = {
@@ -314,14 +313,14 @@ class ForecasterStats():
             'aeon.forecasting.stats._ets.ETS': self._get_info_criteria_aeon,
             'sktime.forecasting.arima._pmdarima.ARIMA': self._get_info_criteria_sktime_arima
         }
-
-        # TODO: Review, multiple_estimator flag?
+        
         self.__skforecast_tags__ = {
             "library": "skforecast",
             "forecaster_name": "ForecasterStats",
             "forecaster_task": "regression",
             "forecasting_scope": "single-series",  # single-series | global
             "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
+            "multiple_estimators": True,
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
@@ -1359,13 +1358,14 @@ class ForecasterStats():
         preds = estimator.predict_interval(fh=fh, X=exog, coverage=1 - alpha).to_numpy()
         return preds
 
-    # TODO: Poner Forecaster fitted False en el resto de Forecasters
     def set_params(
         self, 
         params: dict[str, object] | dict[str, dict[str, object]]
     ) -> None:
         """
         Set new values to the parameters of the model stored in the forecaster.
+        After calling this method, the forecaster is reset to an unfitted state. 
+        The `fit` method must be called before prediction.
         
         Parameters
         ----------

@@ -1743,8 +1743,8 @@ def forecast_arima(
     upper = None
     if levels:
         z_values = [norm.ppf(0.5 + l / 200) for l in levels]
-        upper = np.column_stack([mean + z * se for z in z_values])
         lower = np.column_stack([mean - z * se for z in z_values])
+        upper = np.column_stack([mean + z * se for z in z_values])
 
     if lambda_bc is not None:
         fvar = se ** 2 if biasadj else None

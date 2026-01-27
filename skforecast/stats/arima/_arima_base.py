@@ -4,9 +4,10 @@
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
 import numpy as np
-from numba import njit
-import scipy.optimize as opt
 import pandas as pd
+from numba import njit
+from scipy.stats import norm
+import scipy.optimize as opt
 from typing import Tuple, Optional, Dict as DictType, Any, Union, List
 import warnings
 
@@ -2610,7 +2611,8 @@ def predict_arima(
     model: DictType[str, Any],
     n_ahead: int = 1,
     newxreg: Union[pd.DataFrame, np.ndarray, None] = None,
-    se_fit: bool = True
+    se_fit: bool = True,
+    level: Union[List[float], np.ndarray, None] = None
 ) -> DictType[str, Any]:
     """
     Generate forecasts from a fitted ARIMA model.
@@ -2625,12 +2627,18 @@ def predict_arima(
         New exogenous regressors for forecast period.
     se_fit : bool
         Whether to compute standard errors.
+    level : list of float, default None
+        Confidence levels for prediction intervals (default [80, 95]).
+        Values can be percentages (80, 95) or proportions (0.80, 0.95).
 
     Returns
     -------
     result : dict
         Dictionary with:
-        - 'pred': Point forecasts
+        - 'mean': Point forecasts
+        - 'lower': Lower bounds of prediction intervals
+        - 'upper': Upper bounds of prediction intervals
+        - 'level': Confidence levels used
         - 'se': Standard errors
         - 'y': Original data
         - 'fitted': In-sample fitted values
@@ -2643,6 +2651,16 @@ def predict_arima(
     coef_names = list(coef_df.columns)
     narma = sum(arma[:4])
     ncoefs = len(coefs)
+
+    if level is not None:
+        levels = list(level)
+        if min(levels) > 0 and max(levels) < 1:
+            levels = [l * 100 for l in levels]
+        if min(levels) < 0 or max(levels) > 99.99:
+            raise ValueError("Confidence level out of range")
+        levels = sorted(levels)
+    else:
+        levels = []
 
     # Check for intercept
     intercept_idx = coef_names.index("intercept") if "intercept" in coef_names else None
@@ -2694,8 +2712,21 @@ def predict_arima(
     else:
         se = np.full(len(pred), np.nan)
 
+    lower = None
+    upper = None
+    if levels:
+        alpha_lvls = 1.0 - np.asarray(levels, dtype=np.float64) / 100.0
+        z_scores = norm.ppf(1.0 - alpha_lvls / 2.0)
+        se_expanded = se[:, np.newaxis]
+        mean_expanded = pred[:, np.newaxis]
+        lower = mean_expanded - z_scores * se_expanded  # lower bounds
+        upper = mean_expanded + z_scores * se_expanded  # upper bounds
+
     return {
-        'pred': pred,
+        'mean': pred,
+        'lower': lower,
+        'upper': upper,
+        'level': levels,
         'se': se,
         'y': model['y'],
         'fitted': model['fitted'],

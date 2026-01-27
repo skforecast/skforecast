@@ -8,7 +8,6 @@ import pandas as pd
 from sklearn.exceptions import NotFittedError
 from skforecast.stats import Sarimax, Arar, Ets
 from skforecast.recursive import ForecasterStats
-from skforecast.utils import expand_index
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
