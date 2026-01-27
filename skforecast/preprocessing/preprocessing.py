@@ -441,6 +441,7 @@ def reshape_series_long_to_dict(
     series_id: str | None = None,
     index: str | None = None,
     values: str | None = None,
+    fill_value: float | None = None,
     suppress_warnings: bool = False
 ) -> dict[str, pd.Series]:
     """
@@ -467,6 +468,10 @@ def reshape_series_long_to_dict(
     values: str, default None
         Column name with the values. Not needed if the input data is a pandas
         DataFrame with MultiIndex.
+    fill_value: float, default None
+        Value to use for filling gaps created when setting the frequency with 
+        `asfreq` (note this does not fill NaNs that already were present). If 
+        None, gaps will contain NaN values.
     suppress_warnings: bool, default False
         If True, suppress warnings when a series is incomplete after setting the
         frequency.
@@ -486,7 +491,7 @@ def reshape_series_long_to_dict(
         first_col = data.columns[0]
         data.index = data.index.set_names([data.index.names[0], None])
         series_dict = {
-            id: data.loc[id][first_col].rename(id).asfreq(freq)
+            id: data.loc[id][first_col].rename(id).asfreq(freq, fill_value=fill_value)
             for id in data.index.levels[0]
         }
 
@@ -506,7 +511,7 @@ def reshape_series_long_to_dict(
         original_sizes = data_grouped.size()
         series_dict = {}
         for k, v in data_grouped:
-            series_dict[k] = v.set_index(index)[values].asfreq(freq, fill_value=np.nan).rename(k)
+            series_dict[k] = v.set_index(index)[values].asfreq(freq, fill_value=fill_value).rename(k)
             series_dict[k].index.name = None
             if not suppress_warnings and len(series_dict[k]) != original_sizes[k]:
                 warnings.warn(
@@ -523,6 +528,7 @@ def reshape_exog_long_to_dict(
     freq: str,
     series_id: str | None = None,
     index: str | None = None,
+    fill_value: float | None = None,
     drop_all_nan_cols: bool = False,
     consolidate_dtypes: bool = True,
     suppress_warnings: bool = False
@@ -548,6 +554,10 @@ def reshape_exog_long_to_dict(
     index: str, default None
         Column name with the time index. Not needed if the input data is a pandas
         DataFrame with MultiIndex.
+    fill_value: float, default None
+        Value to use for filling gaps created when setting the frequency with 
+        `asfreq` (note this does not fill NaNs that already were present). If 
+        None, gaps will contain NaN values.
     drop_all_nan_cols: bool, default False
         If True, drop columns with all values as NaN. This is useful when
         there are series without some exogenous variables.
@@ -573,7 +583,7 @@ def reshape_exog_long_to_dict(
 
         data.index = data.index.set_names([data.index.names[0], None])
         exog_dict = {
-            id: data.loc[id].asfreq(freq) for id in data.index.levels[0]
+            id: data.loc[id].asfreq(freq, fill_value=fill_value) for id in data.index.levels[0]
         }
 
     else:
@@ -597,7 +607,7 @@ def reshape_exog_long_to_dict(
         original_sizes = data_grouped.size()
         exog_dict = dict(tuple(data_grouped))
         exog_dict = {
-            k: v.set_index(index).asfreq(freq, fill_value=np.nan).drop(columns=series_id)
+            k: v.set_index(index).asfreq(freq, fill_value=fill_value).drop(columns=series_id)
             for k, v in exog_dict.items()
         }
 
