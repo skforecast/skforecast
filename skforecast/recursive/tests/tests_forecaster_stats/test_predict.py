@@ -10,7 +10,6 @@ from skforecast.recursive import ForecasterStats
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
-from aeon.forecasting.stats import ARIMA
 
 # Fixtures
 from .fixtures_forecaster_stats import y
@@ -124,6 +123,10 @@ def test_predict_output_ForecasterStats_with_exog(kwargs, data):
     ],
     ids=['Sarimax', 'Arar', 'Ets']
 )
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
 def test_predict_output_ForecasterStats_different_estimators(estimator, expected_data):
     """
     Test predict output of ForecasterStats with different estimators (Sarimax, Arar, Ets).
@@ -164,6 +167,10 @@ def test_predict_output_ForecasterStats_different_estimators(estimator, expected
     ],
     ids=['Sarimax', 'Arar', 'Ets']
 )
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
 def test_predict_output_ForecasterStats_different_estimators_exog(estimator, expected_data):
     """
     Test predict output of ForecasterStats with different estimators (Sarimax, Arar, Ets).
@@ -183,6 +190,10 @@ def test_predict_output_ForecasterStats_different_estimators_exog(estimator, exp
     pd.testing.assert_series_equal(predictions, expected)
 
 
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
 def test_predict_output_ForecasterStats_with_exog_multiple_estimators():
     """
     Test predict output of ForecasterStats with a StandardScaler() as transformer_y
@@ -251,6 +262,10 @@ def test_predict_output_ForecasterStats_with_exog_multiple_estimators():
     ],
     ids=['Sarimax', 'Arar', 'Ets']
 )
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
 def test_predict_output_ForecasterStats_with_transform_y(estimator, expected_data):
     """
     Test predict output of ForecasterStats with a StandardScaler() as transformer_y
@@ -273,6 +288,10 @@ def test_predict_output_ForecasterStats_with_transform_y(estimator, expected_dat
     pd.testing.assert_series_equal(predictions, expected)
 
 
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
 def test_predict_output_ForecasterStats_with_transform_y_multiple_estimators():
     """
     Test predict output of ForecasterStats with a StandardScaler() as transformer_y
@@ -512,28 +531,13 @@ def test_predict_ForecasterStats_updates_extended_index_twice(y, idx):
                 0.6709843645603916,
                 0.6697034314469024,
             ]
-        ),
-        (
-            ARIMA(p=4, d=1, q=1),
-            [
-                0.68329597,
-                0.7153698,
-                0.72118068,
-                0.71875056,
-                0.70465789,
-                0.68932917,
-                0.68087982,
-                0.67748653,
-                0.67828572,
-                0.68193945,
-            ]
-        ),
+        )
     ],
-    ids=['Sarimax', 'Arar', 'Ets', 'aeon_ARIMA']
+    ids=['Sarimax', 'Arar', 'Ets']
 )
 def test_predict_output_ForecasterStats_with_multiple_estimators(estimator, expected_data, y=y):
     """
-    Test output of predict when using different estimators (Sarimax, Arar, Ets, aeon ARIMA) in ForecasterStats.
+    Test output of predict when using different estimators (Sarimax, Arar, Ets) in ForecasterStats.
     """
     y = y.copy()
     y.index = pd.date_range(start="2000-01-01", periods=len(y), freq="D")

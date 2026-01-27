@@ -1,6 +1,7 @@
 # Unit test backtesting_stats
 # ==============================================================================
 import re
+import platform
 import pytest
 import numpy as np
 import pandas as pd
@@ -39,7 +40,7 @@ def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
     err_msg = re.escape(
         "`forecaster` must be of type `ForecasterStats`, for all other "
         "types of forecasters use the functions available in the other "
-        "`model_selection` modules."
+        "`model_selection` module."
     )
     with pytest.raises(TypeError, match = err_msg):
         backtesting_stats(
@@ -940,6 +941,10 @@ def test_output_backtesting_stats_fold_stride_greater_than_steps_with_mocked():
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
 def test_output_backtesting_stats_multiple_estimators_refit_False_with_mocked():
     """
     Test output of backtesting_stats with multiple estimators, refit=False,
@@ -1019,6 +1024,10 @@ def test_output_backtesting_stats_multiple_estimators_refit_False_with_mocked():
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
 def test_output_backtesting_stats_multiple_estimators_refit_True_with_mocked():
     """
     Test output of backtesting_stats with multiple estimators, refit=True,

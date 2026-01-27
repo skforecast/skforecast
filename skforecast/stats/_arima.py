@@ -1,7 +1,7 @@
 ################################################################################
 #                                 ARIMA                                        #
 #                                                                              #
-# This work by skforecast team is licensed under the BSD 3-Clause License.    #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
 # coding=utf-8
 
@@ -10,7 +10,6 @@ import warnings
 import numpy as np
 import pandas as pd
 from contextlib import nullcontext
-from scipy.stats import norm
 from sklearn.base import BaseEstimator, RegressorMixin
 
 from .arima._arima_base import arima, predict_arima

@@ -2232,7 +2232,7 @@ def select_n_jobs_fit_forecaster(
     if isinstance(estimator, Pipeline):
         estimator = estimator[-1]
 
-    if forecaster_name in ('ForecasterDirect', 'ForecasterDirectMultiVariate'):
+    if forecaster_name in {'ForecasterDirect', 'ForecasterDirectMultiVariate'}:
         if isinstance(estimator, LinearModel):
             n_jobs = 1
         elif type(estimator).__name__ == 'LGBMRegressor':

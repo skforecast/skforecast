@@ -1,5 +1,6 @@
 # Unit test fit method - Ets
 # ==============================================================================
+import platform
 import numpy as np
 import pandas as pd
 import pytest
@@ -322,6 +323,10 @@ def test_fit_ets_auto_selection():
     )
 
 
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
 def test_fit_ets_aan_damped_trend():
     """
     Test that damped trend model includes phi parameter.

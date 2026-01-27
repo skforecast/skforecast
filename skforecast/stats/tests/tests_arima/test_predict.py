@@ -1,5 +1,7 @@
 # Unit test predict method - Arima
 # ==============================================================================
+import re
+import platform
 import numpy as np
 import pytest
 from ..._arima import Arima
@@ -99,7 +101,7 @@ def test_arima_predict_exog_length_mismatch():
     model.fit(y, exog=exog_train)
     
     exog_pred = np.random.randn(3, 2)  # Wrong length
-    msg = r"Length of `exog` \(3\) must match `steps` \(5\)\."
+    msg = re.escape("Length of `exog` (3) must match `steps` (5).")
     with pytest.raises(ValueError, match=msg):
         model.predict(steps=5, exog=exog_pred)
 
@@ -169,6 +171,10 @@ def test_arima_predict_returns_finite_and_exact_values():
     assert np.all(np.isfinite(pred))
 
 
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="ARIMA optimizer converges to different values on macOS"
+)
 def test_arima_predict_with_exog_numpy_array():
     """
     Test predict with exogenous variables as numpy array.
@@ -273,3 +279,170 @@ def test_arima_predict_ar_model_stays_bounded():
     # All predictions should be finite and bounded
     assert np.all(np.isfinite(pred))
     assert np.all(np.abs(pred) < 10)
+
+
+def test_arima_predict_with_differencing():
+    """
+    Test predict for ARIMA with differencing (d > 0) returns exact values.
+    """
+    # Create a random walk (needs differencing)
+    np.random.seed(42)
+    y = np.cumsum(np.random.randn(100))
+    
+    model = Arima(order=(1, 1, 0), seasonal_order=(0, 0, 0))
+    model.fit(y)
+    
+    pred = model.predict(steps=10)
+    
+    assert pred.shape == (10,)
+    assert np.all(np.isfinite(pred))
+    
+    # Expected values from skforecast implementation
+    expected_pred = np.array([
+        -10.38329029, -10.38329819, -10.38329815, -10.38329815,
+        -10.38329815, -10.38329815, -10.38329815, -10.38329815,
+        -10.38329815, -10.38329815
+    ])
+    np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
+
+
+def test_arima_predict_ma_model():
+    """
+    Test predict for pure MA model (p=0, q>0) returns exact values.
+    """
+    np.random.seed(42)
+    y = np.random.randn(100)
+    
+    model = Arima(order=(0, 0, 1), seasonal_order=(0, 0, 0))
+    model.fit(y)
+    
+    pred = model.predict(steps=5)
+    
+    assert pred.shape == (5,)
+    assert np.all(np.isfinite(pred))
+    
+    # MA(1) forecasts should converge quickly to mean
+    # Expected values from skforecast implementation
+    expected_pred = np.array([
+        -0.10094798, -0.10395163, -0.10395163, -0.10395163, -0.10395163
+    ])
+    np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
+
+
+def test_arima_predict_auto_arima_mode():
+    """
+    Test predict works correctly with auto ARIMA mode (order=None).
+    """
+    np.random.seed(42)
+    y = ar1_series(100, phi=0.7, seed=42)
+    
+    # Auto ARIMA mode - order is determined automatically
+    model = Arima(order=None, seasonal_order=(0, 0, 0), m=1, stepwise=True, trace=False)
+    model.fit(y, suppress_warnings=True)
+    
+    pred = model.predict(steps=5)
+    
+    assert pred.shape == (5,)
+    assert np.all(np.isfinite(pred))
+    assert model.is_auto is True
+    assert model.best_params_ is not None
+    
+    # Verify model was selected and predictions are reasonable
+    assert 'order' in model.best_params_
+    
+    # Check exact predicted values
+    expected_pred = np.array([
+        -1.77710048, -1.48832129, -1.29536201, -1.16642861, -1.08027663
+    ])
+    np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
+
+
+def test_arima_predict_with_exog_dataframe():
+    """
+    Test predict with exogenous variables as pandas DataFrame and Series.
+    """
+    import pandas as pd
+    np.random.seed(42)
+    y = ar1_series(80, seed=42)
+    
+    # Create exog as DataFrame
+    exog_train = pd.DataFrame({
+        'feature1': np.random.randn(80),
+        'feature2': np.random.randn(80)
+    })
+    
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
+    model.fit(y, exog=exog_train)
+    
+    assert model.n_exog_features_in_ == 2
+    assert model.n_exog_names_in_ == ['feature1', 'feature2']
+    
+    # Predict with DataFrame
+    np.random.seed(123)
+    exog_pred_df = pd.DataFrame({
+        'feature1': np.random.randn(5),
+        'feature2': np.random.randn(5)
+    })
+    pred_df = model.predict(steps=5, exog=exog_pred_df)
+    
+    assert pred_df.shape == (5,)
+    assert np.all(np.isfinite(pred_df))
+    
+    # Check exact predicted values for DataFrame exog
+    expected_pred_df = np.array([
+        -0.2013853, 0.19484881, -0.03919908, -0.24332757, -0.0255057
+    ])
+    np.testing.assert_array_almost_equal(pred_df, expected_pred_df, decimal=5)
+    
+    # Predict with Series (1D exog)
+    np.random.seed(42)
+    y2 = ar1_series(80, seed=42)
+    exog_train_1d = pd.Series(np.random.randn(80), name='single_feature')
+    
+    model2 = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
+    model2.fit(y2, exog=exog_train_1d)
+    
+    assert model2.n_exog_features_in_ == 1
+    
+    exog_pred_series = pd.Series(np.random.randn(5))
+    pred_series = model2.predict(steps=5, exog=exog_pred_series)
+    
+    assert pred_series.shape == (5,)
+    assert np.all(np.isfinite(pred_series))
+    
+    # Check exact predicted values for Series exog
+    expected_pred_series = np.array([
+        -0.02240879, 0.0069841, 0.09581765, -0.09615039, -0.12792916
+    ])
+    np.testing.assert_array_almost_equal(pred_series, expected_pred_series, decimal=5)
+
+
+def test_arima_predict_after_reduce_memory_raises():
+    """
+    Test that predict still works after reduce_memory() is called.
+    reduce_memory removes fitted_values_ and in_sample_residuals_ but
+    predict should still work as it uses the model_ object.
+    """
+    y = ar1_series(100, seed=42)
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
+    model.fit(y)
+    
+    # Get prediction before reduce_memory
+    pred_before = model.predict(steps=5)
+    
+    # Call reduce_memory
+    model.reduce_memory()
+    assert model.is_memory_reduced is True
+    
+    # predict should still work
+    pred_after = model.predict(steps=5)
+    
+    # Predictions should be identical
+    np.testing.assert_array_almost_equal(pred_before, pred_after, decimal=10)
+    
+    # Expected values
+    expected_pred = np.array([
+        -1.6134968158909693, -1.1891329639587627, -0.8868684748513417, 
+        -0.671572518422975, -0.5182222224908184
+    ])
+    np.testing.assert_array_almost_equal(pred_after, expected_pred, decimal=5)

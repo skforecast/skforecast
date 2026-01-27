@@ -1812,9 +1812,13 @@ def match_arg(arg: str, choices: List[str]) -> str:
     ValueError
         If no match found.
     """
+    # First try exact match
+    if arg in choices:
+        return arg
+    # Then try prefix match
     for choice in choices:
-        if arg == choice or choice.startswith(arg):
-            return choice
+        if choice.startswith(arg):
+            return arg
     raise ValueError(f"'{arg}' should be one of {choices}")
 
 

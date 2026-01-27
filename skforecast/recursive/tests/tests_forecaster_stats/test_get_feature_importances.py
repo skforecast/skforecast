@@ -5,7 +5,6 @@ import pytest
 import numpy as np
 import pandas as pd
 from skforecast.stats import Sarimax, Arar, Ets
-from aeon.forecasting.stats import ARIMA
 from skforecast.recursive import ForecasterStats
 from sklearn.exceptions import NotFittedError
 
@@ -69,35 +68,6 @@ def test_output_get_feature_importances_ForecasterStats_with_Arar_estimator():
                         },
                     }
                 )
-    pd.testing.assert_frame_equal(expected, results)
-
-
-def test_output_get_feature_importances_ForecasterStats_with_ARIMA_estimator():
-    """
-    Test output of get_feature_importances ForecasterStats using ARIMA as
-    estimator.
-    """
-    forecaster = ForecasterStats(estimator = ARIMA(p=4, d=1, q=1))
-    forecaster.fit(y=y)
-    results = forecaster.get_feature_importances(sort_importance=True)
-
-    expected = pd.DataFrame(
-                {'feature': {0: 'lag_1',
-                            1: 'lag_3',
-                            2: 'intercept',
-                            3: 'lag_4',
-                            4: 'lag_2',
-                            5: 'ma'
-                        },
-                'importance': {0: 0.6648894126315568,
-                                1: 0.1478647645869075,
-                                2: 0.0,
-                                3: -0.23108776151763405,
-                                4: -0.2444320861918562,
-                                5: -0.8696258072896246
-                        }
-                }
-            )
     pd.testing.assert_frame_equal(expected, results)
 
 
