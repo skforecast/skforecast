@@ -36,6 +36,7 @@ nav:
     - Statistical Models:
       - ARIMA and SARIMAX: user_guides/forecasting-sarimax-arima.ipynb
       - ARAR: user_guides/forecasting-arar.ipynb
+      - ETS: user_guides/forecasting-ets.ipynb
     - Feature Engineering:
       - Exogenous variables: user_guides/exogenous-variables.ipynb
       - Window and custom features: user_guides/window-features-and-custom-features.ipynb

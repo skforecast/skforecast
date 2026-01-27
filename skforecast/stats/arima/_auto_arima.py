@@ -1030,22 +1030,24 @@ def auto_arima(
         xreg=xreg, method=method, **kwargs
     )
     results[0, :] = [p, d, q, P, D, Q, int(constant), bestfit['ic']]
+    k = 1
 
-    fit = fit_custom_arima(
-        x, m, order=(0, d, 0), seasonal=(0, D, 0),
-        constant=constant, ic=ic, trace=trace,
-        approximation=approximation, offset=offset,
-        xreg=xreg, method=method, **kwargs
-    )
-    results[1, :] = [0, d, 0, 0, D, 0, int(constant), fit['ic']]
+    # Second initial model: (0,d,0)(0,D,0)
+    if k < nmodels:
+        fit = fit_custom_arima(
+            x, m, order=(0, d, 0), seasonal=(0, D, 0),
+            constant=constant, ic=ic, trace=trace,
+            approximation=approximation, offset=offset,
+            xreg=xreg, method=method, **kwargs
+        )
+        results[k, :] = [0, d, 0, 0, D, 0, int(constant), fit['ic']]
 
-    if fit['ic'] < bestfit['ic']:
-        bestfit = fit
-        p, q, P, Q = 0, 0, 0, 0
+        if fit['ic'] < bestfit['ic']:
+            bestfit = fit
+            p, q, P, Q = 0, 0, 0, 0
+        k += 1
 
-    k = 2
-
-    if max_p > 0 or max_P > 0:
+    if (max_p > 0 or max_P > 0) and k < nmodels:
         pp = 1 if max_p > 0 else 0
         PP = 1 if (m > 1 and max_P > 0) else 0
 
@@ -1064,7 +1066,7 @@ def auto_arima(
             q, Q = 0, 0
         k += 1
 
-    if max_q > 0 or max_Q > 0:
+    if (max_q > 0 or max_Q > 0) and k < nmodels:
         qq = 1 if max_q > 0 else 0
         QQ = 1 if (m > 1 and max_Q > 0) else 0
 
@@ -1083,7 +1085,7 @@ def auto_arima(
             Q = QQ
         k += 1
 
-    if constant:
+    if constant and k < nmodels:
         fit = fit_custom_arima(
             x, m, order=(0, d, 0), seasonal=(0, D, 0),
             constant=False, ic=ic, trace=trace,
@@ -1163,7 +1165,9 @@ def auto_arima(
                     constant = new_constant
 
     if k >= nmodels:
-        warnings.warn(f"Stepwise search stopped early due to model limit (`nmodels`): {nmodels}")
+        warnings.warn(
+            f"Stepwise search stopped early due to model limit (`nmodels`): {nmodels}"
+        )
 
     if approximation:
         if trace:
@@ -1720,9 +1724,11 @@ def forecast_arima(
 
     n = len(model.get('y', model.get('x', [])))
     model_xreg = model.get('xreg')
-    has_drift = (model_xreg is not None and
-                isinstance(model_xreg, pd.DataFrame) and
-                'drift' in model_xreg.columns)
+    has_drift = (
+        model_xreg is not None and
+        isinstance(model_xreg, pd.DataFrame) and
+        'drift' in model_xreg.columns
+    )
 
     if xreg is not None:
         if isinstance(xreg, np.ndarray):
@@ -1736,7 +1742,7 @@ def forecast_arima(
         xreg = pd.DataFrame({'drift': np.arange(n + 1, n + h + 1)})
 
     pred_result = predict_arima(model, n_ahead=h, newxreg=xreg, se_fit=True)
-    mean = pred_result['pred']
+    mean = pred_result['mean']
     se = pred_result['se']
 
     lower = None

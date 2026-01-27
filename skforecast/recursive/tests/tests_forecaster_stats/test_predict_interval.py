@@ -130,6 +130,10 @@ def test_predict_interval_output_ForecasterStats_with_exog(alpha, interval):
                          [(0.05, [1, 99]), 
                           (None, [2.5, 97.5])], 
                          ids = lambda values: f'alpha, interval: {values}')
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
 def test_predict_interval_output_ForecasterStats_multiple_estimators_exog(alpha, interval):
     """
     Test predict_interval output of ForecasterStats with multiple estimators
@@ -227,6 +231,10 @@ def test_predict_interval_output_ForecasterStats_with_transform_y(alpha, interva
                          [(0.05, [1, 99]), 
                           (None, [2.5, 97.5])], 
                          ids = lambda values: f'alpha, interval: {values}')
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
 def test_predict_interval_output_ForecasterStats_multiple_estimators_exog_transform_y(alpha, interval):
     """
     Test predict_interval output of ForecasterStats with multiple estimators, 

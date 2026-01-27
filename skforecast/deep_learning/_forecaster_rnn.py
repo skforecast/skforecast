@@ -2099,8 +2099,8 @@ class ForecasterRnn(ForecasterBase):
         rng = np.random.default_rng(seed=random_state)
         for level in series_to_update:
 
-            y_true_level = deepcopy(y_true[level])
-            y_pred_level = deepcopy(y_pred[level])
+            y_true_level = y_true[level]
+            y_pred_level = y_pred[level]
             if not isinstance(y_true_level, np.ndarray):
                 y_true_level = y_true_level.to_numpy()
             if not isinstance(y_pred_level, np.ndarray):
