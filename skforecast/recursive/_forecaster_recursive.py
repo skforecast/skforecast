@@ -13,9 +13,10 @@ import numpy as np
 import pandas as pd
 import inspect
 from copy import copy, deepcopy
-from sklearn.exceptions import NotFittedError
-from sklearn.pipeline import Pipeline
 from sklearn.base import clone
+from sklearn.exceptions import NotFittedError
+from sklearn.linear_model._base import LinearModel
+from sklearn.pipeline import Pipeline
 
 from .. import __version__
 from ..base import ForecasterBase
@@ -1336,11 +1337,28 @@ class ForecasterRecursive(ForecasterBase):
         predictions = np.full(shape=steps, fill_value=np.nan, dtype=float)
         last_window = np.concatenate((last_window_values, predictions))
 
+        estimator_name = type(self.estimator).__name__
+        is_linear = isinstance(self.estimator, LinearModel)
+        is_lightgbm = estimator_name == 'LGBMRegressor'
+        is_xgboost = estimator_name == 'XGBRegressor'
+        
+        if is_linear:
+            coef = self.estimator.coef_
+            intercept = self.estimator.intercept_
+        elif is_lightgbm:
+            booster = self.estimator.booster_
+        elif is_xgboost:
+            booster = self.estimator.get_booster()
+        
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values is not None
+        
         for i in range(steps):
 
-            if self.lags is not None:
+            if has_lags:
                 X[:n_lags] = last_window[-self.lags - (steps - i)]
-            if self.window_features is not None:
+            if has_window_features:
                 window_data = last_window[i : -(steps - i)]
                 X[n_lags : n_lags + n_window_features] = np.concatenate(
                     [
@@ -1348,11 +1366,19 @@ class ForecasterRecursive(ForecasterBase):
                         for wf in self.window_features
                     ]
                 )
-            if exog_values is not None:
+            if has_exog:
                 X[n_lags + n_window_features:] = exog_values[i]
         
-            pred = self.estimator.predict(X.reshape(1, -1)).ravel().item()
-        
+            if is_linear:
+                pred = np.dot(X, coef) + intercept
+            elif is_lightgbm:
+                pred = booster.predict(X.reshape(1, -1))
+            elif is_xgboost:
+                pred = booster.inplace_predict(X.reshape(1, -1))
+            else:
+                pred = self.estimator.predict(X.reshape(1, -1)).ravel()
+            
+            pred = pred.item()
             predictions[i] = pred
 
             # Update `last_window` values. The first position is discarded and 
