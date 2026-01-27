@@ -13,11 +13,12 @@ import numpy as np
 import pandas as pd
 import inspect
 from copy import copy, deepcopy
-from sklearn.exceptions import NotFittedError
-from sklearn.pipeline import Pipeline
 from sklearn.base import clone
-from joblib import Parallel, delayed, cpu_count
+from sklearn.exceptions import NotFittedError
+from sklearn.linear_model._base import LinearModel
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from joblib import Parallel, delayed, cpu_count
 from itertools import chain
 
 from .. import __version__
@@ -2074,16 +2075,38 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             )
 
         estimators = [self.estimators_[step] for step in steps]
+        
+        estimator_name = type(self.estimator).__name__
+        is_linear = isinstance(self.estimator, LinearModel)
+        is_lightgbm = estimator_name == 'LGBMRegressor'
+        is_xgboost = estimator_name == 'XGBRegressor'
+        
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", 
                 message="X does not have valid feature names", 
                 category=UserWarning
             )
-            predictions = np.array([
-                estimator.predict(X).ravel().item()
-                for estimator, X in zip(estimators, Xs)
-            ])
+            if is_linear:
+                predictions = np.array([
+                    np.dot(X.ravel(), estimator.coef_) + estimator.intercept_
+                    for estimator, X in zip(estimators, Xs)
+                ])
+            elif is_lightgbm:
+                predictions = np.array([
+                    estimator.booster_.predict(X).item()
+                    for estimator, X in zip(estimators, Xs)
+                ])
+            elif is_xgboost:
+                predictions = np.array([
+                    estimator.get_booster().inplace_predict(X).item()
+                    for estimator, X in zip(estimators, Xs)
+                ])
+            else:
+                predictions = np.array([
+                    estimator.predict(X).ravel().item()
+                    for estimator, X in zip(estimators, Xs)
+                ])
 
         if self.differentiation is not None:
             predictions = (

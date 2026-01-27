@@ -19,11 +19,11 @@ import warnings
 import joblib
 import numpy as np
 import pandas as pd
-import sklearn.linear_model
 from sklearn.base import clone
-from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
+from sklearn.linear_model._base import LinearModel
+from sklearn.pipeline import Pipeline
 from .. import __version__
 from ..exceptions import warn_skforecast_categories
 from ..exceptions import (
@@ -2231,18 +2231,11 @@ def select_n_jobs_fit_forecaster(
 
     if isinstance(estimator, Pipeline):
         estimator = estimator[-1]
-    estimator_name = type(estimator).__name__
-
-    # Use frozenset for O(1) lookup
-    linear_estimators = frozenset(
-        name for name in dir(sklearn.linear_model)
-        if not name.startswith('_')
-    )
 
     if forecaster_name in ('ForecasterDirect', 'ForecasterDirectMultiVariate'):
-        if estimator_name in linear_estimators:
+        if isinstance(estimator, LinearModel):
             n_jobs = 1
-        elif estimator_name == 'LGBMRegressor':
+        elif type(estimator).__name__ == 'LGBMRegressor':
             n_jobs = joblib.cpu_count() - 1 if estimator.n_jobs == 1 else 1
         else:
             n_jobs = joblib.cpu_count() - 1

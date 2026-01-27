@@ -13,11 +13,12 @@ import numpy as np
 import pandas as pd
 import inspect
 from copy import copy, deepcopy
-import sklearn
-from sklearn.exceptions import NotFittedError
-from sklearn.pipeline import Pipeline
 from sklearn.base import clone
+from sklearn.exceptions import NotFittedError
+from sklearn.linear_model._base import LinearModel
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
+from sklearn.svm._base import BaseLibSVM
 
 from .. import __version__
 from ..base import ForecasterBase
@@ -473,13 +474,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                dtype      = int
                            ).set_output(transform='pandas')
 
-        scaling_estimators = tuple(
-            member[1]
-            for member in inspect.getmembers(sklearn.linear_model, inspect.isclass)
-            + inspect.getmembers(sklearn.svm, inspect.isclass)
-        )
-
-        if self.transformer_series is None and isinstance(estimator, scaling_estimators):
+        if self.transformer_series is None and isinstance(estimator, (LinearModel, BaseLibSVM)):
             warnings.warn(
                 "When using a linear model, it is recommended to use a transformer_series "
                 "to ensure all series are in the same scale. You can use, for example, a "
@@ -2312,13 +2307,30 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         last_window = np.concatenate((last_window.to_numpy(), predictions), axis=0)
 
+        estimator_name = type(self.estimator).__name__
+        is_linear = isinstance(self.estimator, LinearModel)
+        is_lightgbm = estimator_name == 'LGBMRegressor'
+        is_xgboost = estimator_name == 'XGBRegressor'
+
+        if is_linear:
+            coef = self.estimator.coef_
+            intercept = self.estimator.intercept_
+        elif is_lightgbm:
+            booster = self.estimator.booster_
+        elif is_xgboost:
+            booster = self.estimator.get_booster()
+
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values_dict is not None
+
         for i in range(steps):
-            
-            if self.lags is not None:
+
+            if has_lags:
                 features[:, :n_lags] = last_window[
                     -self.lags - (steps - i), :
                 ].transpose()
-            if self.window_features is not None:
+            if has_window_features:
                 window_data = last_window[i:-(steps - i), :]
                 features[:, n_lags:n_autoreg] = np.concatenate(
                     [
@@ -2327,13 +2339,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     ],
                     axis=1
                 )
-            if exog_values_dict is not None:
+            if has_exog:
                 features[:, -n_exog:] = exog_values_dict[i + 1]
 
-            pred = self.estimator.predict(features)
+            if is_linear:
+                pred = features.dot(coef) + intercept
+            elif is_lightgbm:
+                pred = booster.predict(features)
+            elif is_xgboost:
+                pred = booster.inplace_predict(features)
+            else:
+                pred = self.estimator.predict(features)
+
             predictions[i, :] = pred
 
-            # NOTE: CatBoost makes the input array read-only.
+            # NOTE: CatBoost may make the input array read-only after predict
             if not features.flags.writeable:
                 features.flags.writeable = True
             

@@ -11,22 +11,14 @@ import warnings
 import numpy as np
 import pandas as pd
 from joblib import cpu_count
-from tqdm.auto import tqdm
-from sklearn.pipeline import Pipeline
-import sklearn.linear_model
 from sklearn.exceptions import NotFittedError
+from sklearn.linear_model._base import LinearModel
+from sklearn.pipeline import Pipeline
+from tqdm.auto import tqdm
 
 from ..exceptions import IgnoredArgumentWarning, OneStepAheadValidationWarning
 from ..metrics import add_y_train_argument, _get_metric
 from ..utils import check_interval, date_to_index_position
-
-
-# Pre-computed frozenset of linear estimator names for O(1) lookup in select_n_jobs_backtesting
-# This avoids regenerating the list on every function call
-LINEAR_ESTIMATORS = frozenset(
-    name for name in dir(sklearn.linear_model)
-    if not name.startswith('_')
-)
 
 
 def initialize_lags_grid(
@@ -682,16 +674,15 @@ def select_n_jobs_backtesting(
         estimator = forecaster.estimator[-1]
     else:
         estimator = forecaster.estimator
-    estimator_name = type(estimator).__name__
 
     refit = False if refit == 0 else refit
     if not isinstance(refit, bool) and refit != 1:
         n_jobs = 1
     else:
         if forecaster_name in ['ForecasterRecursive', 'ForecasterRecursiveClassifier']:
-            if estimator_name in LINEAR_ESTIMATORS:
+            if isinstance(estimator, LinearModel):
                 n_jobs = 1
-            elif estimator_name in {'LGBMRegressor', 'LGBMClassifier'}:
+            elif type(estimator).__name__ in {'LGBMRegressor', 'LGBMClassifier'}':
                 n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
@@ -699,7 +690,7 @@ def select_n_jobs_backtesting(
             # Parallelization is applied during the fitting process.
             n_jobs = 1
         elif forecaster_name in ['ForecasterRecursiveMultiSeries']:
-            if estimator_name == 'LGBMRegressor':
+            if type(estimator).__name__ == 'LGBMRegressor':
                 n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
