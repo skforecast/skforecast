@@ -1,7 +1,8 @@
 # Unit test get_score method - Arar
 # ==============================================================================
-import numpy as np
+import re
 import pytest
+import numpy as np
 from ..._arar import Arar
 
 
@@ -46,7 +47,7 @@ def test_arar_score_with_exog():
     np.testing.assert_almost_equal(score, expected_score, decimal=10)
 
 
-def test_score_raises_error_after_reduce_memory():
+def test_get_score_raises_error_after_reduce_memory():
     """
     Test that get_score() raises error after reduce_memory().
     """
@@ -64,6 +65,6 @@ def test_score_raises_error_after_reduce_memory():
     # get_score() should raise error
     with pytest.raises(
         ValueError,
-        match="Cannot call score\\(\\): model memory has been reduced"
+        match=re.escape("Cannot call get_score(): model memory has been reduced")
     ):
         est.get_score()

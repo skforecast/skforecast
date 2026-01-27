@@ -3047,7 +3047,7 @@ def show_versions(
         return None
 
 
-# TODO: Remove regressor in 0.20.0
+# TODO: Remove regressor in 0.21.0
 def initialize_estimator(
     estimator: object | None = None,
     regressor: object | None = None

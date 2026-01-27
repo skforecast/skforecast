@@ -5,11 +5,12 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
-from skforecast.stats import Sarimax
+from skforecast.stats import Sarimax, Arar, Ets, Arima
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterStats
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection import backtesting_stats
+from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
 from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import y_datetime
@@ -937,3 +938,275 @@ def test_output_backtesting_stats_fold_stride_greater_than_steps_with_mocked():
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
+
+
+def test_output_backtesting_stats_multiple_estimators_refit_False_with_mocked():
+    """
+    Test output of backtesting_stats with multiple estimators, refit=False,
+    12 observations to backtest, steps=3, metric='mean_squared_error'.
+    Note: Estimators different from Sarimax require refitting, so refit is
+    internally set to True regardless of the value provided.
+    """
+    estimators = [
+        Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False),
+        Arar(),
+        Ets(),
+        Arima(order=(1, 1, 1))
+    ]
+    forecaster = ForecasterStats(estimator=estimators)
+    
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = len(y_datetime) - 12,
+             refit                 = False,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+    
+    warn_msg = re.escape(
+        "Estimators different from `skforecast.stats.Sarimax` require refitting "
+        "since predictions must start from the end of the training set. `refit` "
+        "is set to `True`, regardless of the value provided."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        metric, backtest_predictions = backtesting_stats(
+                                            forecaster = forecaster,
+                                            y          = y_datetime,
+                                            cv         = cv,
+                                            metric     = 'mean_squared_error',
+                                            alpha      = None,
+                                            interval   = None,
+                                            verbose    = False
+                                       )
+    
+    expected_metric = pd.DataFrame({
+        'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 
+                         'skforecast.Ets', 'skforecast.Arima'],
+        'mean_squared_error': [0.03870420, 0.00075339, 0.02130093, 0.01233176]
+    })
+    
+    expected_preds = pd.DataFrame(
+        data = {
+            'fold': [0]*4 + [0]*4 + [0]*4 + [1]*4 + [1]*4 + [1]*4 + 
+                    [2]*4 + [2]*4 + [2]*4 + [3]*4 + [3]*4 + [3]*4,
+            'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 
+                             'skforecast.Ets', 'skforecast.Arima'] * 12,
+            'pred': np.array([
+                0.51853756, 0.59008805, 0.55841927, 0.56981577,
+                0.5165776 , 0.6215785 , 0.558423  , 0.57511248,
+                0.51790214, 0.72728926, 0.55842598, 0.57838768,
+                0.80295192, 0.74408697, 0.74574166, 0.74604025,
+                0.85238217, 0.75550972, 0.75722036, 0.74315278,
+                0.9244119 , 0.82159729, 0.76846949, 0.74475521,
+                0.84173367, 0.95293211, 0.82573018, 0.80033296,
+                0.8793909 , 0.93913951, 0.83668506, 0.80841525,
+                0.91329115, 0.5480628 , 0.84742083, 0.80363893,
+                0.42336972, 0.6195116 , 0.75333365, 0.56392292,
+                0.38434305, 0.58648398, 0.75541092, 0.58633461,
+                0.2093133 , 0.62192848, 0.75738421, 0.60061975
+            ])
+        },
+        index = pd.DatetimeIndex(
+            ['2038-12-31']*4 + ['2039-12-31']*4 + ['2040-12-31']*4 +
+            ['2041-12-31']*4 + ['2042-12-31']*4 + ['2043-12-31']*4 +
+            ['2044-12-31']*4 + ['2045-12-31']*4 + ['2046-12-31']*4 +
+            ['2047-12-31']*4 + ['2048-12-31']*4 + ['2049-12-31']*4
+        )
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
+
+
+def test_output_backtesting_stats_multiple_estimators_refit_True_with_mocked():
+    """
+    Test output of backtesting_stats with multiple estimators, refit=True,
+    12 observations to backtest, steps=3, metric='mean_squared_error'.
+    """
+    estimators = [
+        Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False),
+        Arar(),
+        Ets(),
+        Arima(order=(1, 1, 1))
+    ]
+    forecaster = ForecasterStats(estimator=estimators)
+    
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = len(y_datetime) - 12,
+             refit                 = True,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+    
+    metric, backtest_predictions = backtesting_stats(
+                                        forecaster = forecaster,
+                                        y          = y_datetime,
+                                        cv         = cv,
+                                        metric     = 'mean_squared_error',
+                                        alpha      = None,
+                                        interval   = None,
+                                        verbose    = False
+                                   )
+    
+    expected_metric = pd.DataFrame({
+        'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 
+                         'skforecast.Ets', 'skforecast.Arima'],
+        'mean_squared_error': [0.03870420, 0.00075339, 0.02130093, 0.01233176]
+    })
+    
+    expected_preds = pd.DataFrame(
+        data = {
+            'fold': [0]*4 + [0]*4 + [0]*4 + [1]*4 + [1]*4 + [1]*4 + 
+                    [2]*4 + [2]*4 + [2]*4 + [3]*4 + [3]*4 + [3]*4,
+            'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 
+                             'skforecast.Ets', 'skforecast.Arima'] * 12,
+            'pred': np.array([
+                0.51853756, 0.59008805, 0.55841927, 0.56981577,
+                0.5165776 , 0.6215785 , 0.558423  , 0.57511248,
+                0.51790214, 0.72728926, 0.55842598, 0.57838768,
+                0.80295192, 0.74408697, 0.74574166, 0.74604025,
+                0.85238217, 0.75550972, 0.75722036, 0.74315278,
+                0.9244119 , 0.82159729, 0.76846949, 0.74475521,
+                0.84173367, 0.95293211, 0.82573018, 0.80033296,
+                0.8793909 , 0.93913951, 0.83668506, 0.80841525,
+                0.91329115, 0.5480628 , 0.84742083, 0.80363893,
+                0.42336972, 0.6195116 , 0.75333365, 0.56392292,
+                0.38434305, 0.58648398, 0.75541092, 0.58633461,
+                0.2093133 , 0.62192848, 0.75738421, 0.60061975
+            ])
+        },
+        index = pd.DatetimeIndex(
+            ['2038-12-31'] * 4 + ['2039-12-31'] * 4 + ['2040-12-31'] * 4 +
+            ['2041-12-31'] * 4 + ['2042-12-31'] * 4 + ['2043-12-31'] * 4 +
+            ['2044-12-31'] * 4 + ['2045-12-31'] * 4 + ['2046-12-31'] * 4 +
+            ['2047-12-31'] * 4 + ['2048-12-31'] * 4 + ['2049-12-31'] * 4
+        )
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
+
+
+def test_output_backtesting_stats_multiple_estimators_refit_False_interval_with_mocked():
+    """
+    Test output of backtesting_stats with multiple estimators, refit=False,
+    12 observations to backtest, steps=3, metric='mean_squared_error', interval.
+    Note: Estimators different from Sarimax require refitting, so refit is
+    internally set to True regardless of the value provided.
+    This test verifies the structure and columns of the output, but not exact
+    interval values due to numerical variability in statistical models.
+    """
+    estimators = [
+        Sarimax(order=(3, 1, 0)),
+        Arar(),
+        Ets(),
+        Arima(order=(1, 1, 1))
+    ]
+    forecaster = ForecasterStats(estimator=estimators)
+    
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = len(y_datetime) - 12,
+             refit                 = False,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+    
+    warn_msg = re.escape(
+        "Estimators different from `skforecast.stats.Sarimax` require refitting "
+        "since predictions must start from the end of the training set. `refit` "
+        "is set to `True`, regardless of the value provided."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        metric, backtest_predictions = backtesting_stats(
+                                            forecaster = forecaster,
+                                            y          = y_datetime,
+                                            cv         = cv,
+                                            metric     = 'mean_squared_error',
+                                            alpha      = 0.05,
+                                            interval   = None,
+                                            verbose    = False
+                                       )
+    
+    # Check metric structure
+    assert list(metric.columns) == ['estimator_id', 'mean_squared_error']
+    assert len(metric) == 4
+    assert list(metric['estimator_id']) == [
+        'skforecast.Sarimax', 'skforecast.Arar', 
+        'skforecast.Ets', 'skforecast.Arima'
+    ]
+    
+    # Check predictions structure
+    assert list(backtest_predictions.columns) == [
+        'fold', 'estimator_id', 'pred', 'lower_bound', 'upper_bound'
+    ]
+    assert len(backtest_predictions) == 48  # 12 timesteps x 4 estimators
+    assert set(backtest_predictions['estimator_id']) == {
+        'skforecast.Sarimax', 'skforecast.Arar', 
+        'skforecast.Ets', 'skforecast.Arima'
+    }
+    
+    # Check that lower_bound < pred < upper_bound
+    assert (backtest_predictions['lower_bound'] < backtest_predictions['pred']).all()
+    assert (backtest_predictions['pred'] < backtest_predictions['upper_bound']).all()
+
+
+def test_output_backtesting_stats_multiple_estimators_refit_True_interval_with_mocked():
+    """
+    Test output of backtesting_stats with multiple estimators, refit=True,
+    12 observations to backtest, steps=3, metric='mean_squared_error', interval.
+    This test verifies the structure and columns of the output, but not exact
+    interval values due to numerical variability in statistical models.
+    """
+    estimators = [
+        Sarimax(order=(3, 1, 0)),
+        Arar(),
+        Ets(),
+        Arima(order=(1, 1, 1))
+    ]
+    forecaster = ForecasterStats(estimator=estimators)
+    
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = len(y_datetime) - 12,
+             refit                 = True,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+    
+    metric, backtest_predictions = backtesting_stats(
+                                        forecaster = forecaster,
+                                        y          = y_datetime,
+                                        cv         = cv,
+                                        metric     = 'mean_squared_error',
+                                        alpha      = 0.05,
+                                        interval   = None,
+                                        verbose    = False
+                                   )
+    
+    # Check metric structure
+    assert list(metric.columns) == ['estimator_id', 'mean_squared_error']
+    assert len(metric) == 4
+    assert list(metric['estimator_id']) == [
+        'skforecast.Sarimax', 'skforecast.Arar', 
+        'skforecast.Ets', 'skforecast.Arima'
+    ]
+    
+    # Check predictions structure
+    assert list(backtest_predictions.columns) == [
+        'fold', 'estimator_id', 'pred', 'lower_bound', 'upper_bound'
+    ]
+    assert len(backtest_predictions) == 48  # 12 timesteps x 4 estimators
+    assert set(backtest_predictions['estimator_id']) == {
+        'skforecast.Sarimax', 'skforecast.Arar', 
+        'skforecast.Ets', 'skforecast.Arima'
+    }
+    
+    # Check that lower_bound < pred < upper_bound
+    assert (backtest_predictions['lower_bound'] < backtest_predictions['pred']).all()
+    assert (backtest_predictions['pred'] < backtest_predictions['upper_bound']).all()

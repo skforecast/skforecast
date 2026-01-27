@@ -152,29 +152,6 @@ def test_score_raises_error_after_reduce_memory():
         model.get_score()
 
 
-def test_summary_raises_error_after_reduce_memory(capsys):
-    """
-    Test that summary() raises ValueError after reduce_memory().
-    """
-    np.random.seed(42)
-    y = np.random.randn(1000).cumsum() + 100
-    
-    model = Ets(m=12, model="AAN")
-    model.fit(y)
-    
-    # Should work before reduction
-    model.summary()
-    captured = capsys.readouterr()
-    assert "ETS Model Summary" in captured.out
-    
-    # Reduce memory
-    model.reduce_memory()
-    
-    # Should raise ValueError after reduction
-    with pytest.raises(ValueError, match="memory has been reduced"):
-        model.summary()
-
-
 def test_refit_resets_memory_reduced_flag():
     """
     Test that refitting resets memory_reduced_ flag to False.
@@ -335,9 +312,4 @@ def test_reduce_memory_error_message_content():
     # Test get_score() error message
     with pytest.raises(ValueError) as exc_info:
         model.get_score()
-    assert "reduce_memory()" in str(exc_info.value)
-    
-    # Test summary() error message
-    with pytest.raises(ValueError) as exc_info:
-        model.summary()
     assert "reduce_memory()" in str(exc_info.value)

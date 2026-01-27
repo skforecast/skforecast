@@ -34,8 +34,8 @@ from ..utils import (
 def _backtesting_forecaster(
     forecaster: object,
     y: pd.Series,
-    metric: str | Callable | list[str | Callable],
     cv: TimeSeriesFold,
+    metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     interval: float | list[float] | tuple[float] | str | object | None = None,
     interval_method: str = 'bootstrapping',
@@ -68,6 +68,8 @@ def _backtesting_forecaster(
         Forecaster model.
     y : pandas Series
         Training time series.
+    cv : TimeSeriesFold
+        TimeSeriesFold object with the information needed to split the data into folds.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
@@ -77,8 +79,6 @@ def _backtesting_forecaster(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    cv : TimeSeriesFold
-        TimeSeriesFold object with the information needed to split the data into folds.
     exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
@@ -445,17 +445,15 @@ def _backtesting_forecaster(
             .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
         )
 
-    metric_values = [
-        m(
-            y_true = y.loc[backtest_predictions_for_metrics.index],
-            y_pred = backtest_predictions_for_metrics['pred'],
-            y_train = y_train
-        ) 
+    y_true = y.loc[backtest_predictions_for_metrics.index]
+    y_pred = backtest_predictions_for_metrics['pred']
+    metric_values = [[
+        m(y_true=y_true, y_pred=y_pred, y_train=y_train) 
         for m in metrics
-    ]
+    ]]
 
     metric_values = pd.DataFrame(
-        data    = [metric_values],
+        data    = metric_values,
         columns = [m.__name__ for m in metrics]
     )
     
@@ -1375,20 +1373,21 @@ def backtesting_forecaster_multiseries(
     )
 
     return metrics_levels, backtest_predictions
-    
+
 
 def _backtesting_stats(
     forecaster: object,
     y: pd.Series,
-    metric: str | Callable | list[str | Callable],
     cv: TimeSeriesFold,
+    metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     alpha: float | None = None,
     interval: list[float] | tuple[float] | None = None,
+    freeze_params: bool = True,
     n_jobs: int | str = 'auto',
-    suppress_warnings_fit: bool = False,
     verbose: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Backtesting of ForecasterStats.
@@ -1402,6 +1401,8 @@ def _backtesting_stats(
         Forecaster model.
     y : pandas Series
         Training time series.
+    cv : TimeSeriesFold
+        TimeSeriesFold object with the information needed to split the data into folds.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
@@ -1411,8 +1412,6 @@ def _backtesting_stats(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    cv : TimeSeriesFold
-        TimeSeriesFold object with the information needed to split the data into folds.
     exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
@@ -1426,6 +1425,18 @@ def _backtesting_stats(
         0 and 100 inclusive. For example, interval of 95% should be as 
         `interval = [2.5, 97.5]`. If both, `alpha` and `interval` are 
         provided, `alpha` will be used.
+    freeze_params : bool, default True
+        Determines whether to freeze the model parameters after the first fit
+        for estimators that perform automatic model selection.
+
+        - If `True`, the model parameters found during the first fit (e.g., order 
+        and seasonal_order for Arima, or smoothing parameters for Ets) are reused
+        in all subsequent refits. This avoids re-running the automatic selection
+        procedure in each fold and reduces runtime.
+        - If `False`, automatic model selection is performed independently in each
+        refit, allowing parameters to adapt across folds. This increases runtime
+        and adds a `params` column to the output with the parameters selected per
+        fold.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -1433,10 +1444,12 @@ def _backtesting_stats(
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
-    suppress_warnings_fit : bool, default False
-        If `True`, warnings generated during fitting will be ignored.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings: bool, default False
+        If `True`, skforecast warnings will be suppressed during the backtesting 
+        process. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
 
     Returns
     -------
@@ -1452,6 +1465,10 @@ def _backtesting_stats(
 
         - lower_bound: lower bound of the interval.
         - upper_bound: upper bound of the interval.
+
+        If `freeze_params` is `False`, an additional column is included:
+
+        - estimator_params: parameters used in the estimator for each fold.
 
         Depending on the relation between `steps` and `fold_stride`, the output
         may include repeated indexes (if `fold_stride < steps`) or gaps
@@ -1472,16 +1489,22 @@ def _backtesting_stats(
     
     """
 
+    set_skforecast_warnings(suppress_warnings, action='ignore')
+
     forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
 
-    estimator_type = f"{type(forecaster.estimator).__module__}.{type(forecaster.estimator).__name__}"
-    if estimator_type != "skforecast.stats._sarimax.Sarimax" and cv.refit is False:
+    # NOTE: Only skforecast.Sarimax allows refit=False, if other estimators are 
+    # present, refit must be True.
+    all_sarimax = all(
+        est_type == 'skforecast.stats._sarimax.Sarimax' 
+        for est_type in forecaster.estimator_types
+    )
+    if not all_sarimax and not cv.refit:
         warnings.warn(
-            "If `ForecasterStats` uses a estimator different from "
-            "`skforecast.stats.Sarimax`, `cv.refit` must be `True` since "
-            "predictions must start from the end of the training set."
-            " Setting `cv.refit = True`.",
+            "Estimators different from `skforecast.stats.Sarimax` require refitting "
+            "since predictions must start from the end of the training set. "
+            "`refit` is set to `True`, regardless of the value provided.",
             IgnoredArgumentWarning
         )
         cv.refit = True
@@ -1495,7 +1518,7 @@ def _backtesting_stats(
     refit = cv.refit
     overlapping_folds = cv.overlapping_folds
     
-    if refit == False:
+    if not refit:
         if n_jobs != 'auto' and n_jobs != 1:
             warnings.warn(
                 "If `refit = False`, `n_jobs` is set to 1 to avoid unexpected "
@@ -1504,7 +1527,7 @@ def _backtesting_stats(
             )
         n_jobs = 1
     else:
-        if n_jobs == 'auto':        
+        if n_jobs == 'auto':
             n_jobs = select_n_jobs_backtesting(
                          forecaster = forecaster,
                          refit      = refit
@@ -1538,16 +1561,32 @@ def _backtesting_stats(
     steps = cv.steps
     gap = cv.gap
 
+    if alpha is not None or interval is not None:
+        ids_not_support_interval = [
+            est_id for est_id, est_type in zip(forecaster.estimator_ids, forecaster.estimator_types)
+            if est_type not in forecaster.estimators_support_interval
+        ]
+        if ids_not_support_interval:
+            warnings.warn(
+                f"The following estimators do not support prediction intervals "
+                f"and will be excluded from backtesting: {ids_not_support_interval}.",
+                IgnoredArgumentWarning
+            )
+            forecaster.remove_estimators(ids_not_support_interval)
+
     # NOTE: initial_train_size cannot be None because of append method in Sarimax
-    # NOTE: This allows for parallelization when `refit` is `False`. The initial 
-    # Forecaster fit occurs outside of the auxiliary function.
     exog_train = exog.iloc[:initial_train_size, ] if exog is not None else None
     forecaster.fit(
         y                 = y.iloc[:initial_train_size, ],
         exog              = exog_train,
-        suppress_warnings = suppress_warnings_fit
+        suppress_warnings = suppress_warnings
     )
     folds[0][5] = False
+
+    if freeze_params and refit:
+        for estimator in forecaster.estimators_:
+            if hasattr(estimator, 'best_params_') and estimator.best_params_:
+                estimator._set_params(**estimator.best_params_)
     
     if refit:
         n_of_fits = int(len(folds) / refit)
@@ -1561,7 +1600,7 @@ def _backtesting_stats(
     folds_tqdm = tqdm(folds) if show_progress else folds
 
     def _fit_predict_forecaster(
-        y, exog, forecaster, alpha, interval, fold, steps, gap
+        fold, forecaster, y, exog, steps, gap, alpha, interval, suppress_warnings
     ) -> pd.DataFrame:
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
@@ -1599,7 +1638,7 @@ def _backtesting_stats(
             last_window_y = None
             last_window_exog = None
 
-            forecaster.fit(y=y_train, exog=exog_train, suppress_warnings=suppress_warnings_fit)
+            forecaster.fit(y=y_train, exog=exog_train, suppress_warnings=suppress_warnings)
 
         next_window_exog = exog.iloc[test_iloc_start:test_iloc_end, ] if exog is not None else None
 
@@ -1611,46 +1650,60 @@ def _backtesting_stats(
         steps = len(range(test_iloc_start, test_iloc_end))
         if alpha is None and interval is None:
             pred = forecaster.predict(
-                       steps            = steps,
-                       last_window      = last_window_y,
-                       last_window_exog = last_window_exog,
-                       exog             = next_window_exog
+                       steps             = steps,
+                       last_window       = last_window_y,
+                       last_window_exog  = last_window_exog,
+                       exog              = next_window_exog,
+                       suppress_warnings = suppress_warnings
                    )
         else:
             pred = forecaster.predict_interval(
-                       steps            = steps,
-                       exog             = next_window_exog,
-                       alpha            = alpha,
-                       interval         = interval,
-                       last_window      = last_window_y,
-                       last_window_exog = last_window_exog
+                       steps             = steps,
+                       exog              = next_window_exog,
+                       alpha             = alpha,
+                       interval          = interval,
+                       last_window       = last_window_y,
+                       last_window_exog  = last_window_exog,
+                       suppress_warnings = suppress_warnings
                    )
 
-        pred = pred.iloc[gap:, ]            
-        
-        return pred
+        if gap > 0:
+            pred = pred.iloc[forecaster.n_estimators * gap:, :]
 
-    backtest_predictions = Parallel(n_jobs=n_jobs)(
+        estimator_names_ = None
+        if not freeze_params:
+            estimator_names_ = np.repeat(forecaster.estimator_names_, steps - gap)
+        
+        return pred, estimator_names_
+
+    kwargs_fit_predict_forecaster = {
+        "forecaster": forecaster,
+        "y": y,
+        "exog": exog,
+        "steps": steps,
+        "gap": gap,
+        "alpha": alpha,
+        "interval": interval,
+        "suppress_warnings": suppress_warnings
+    }
+    results = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(
-            y=y,
-            exog=exog,
-            forecaster=forecaster,
-            alpha=alpha,
-            interval=interval,
-            fold=fold,
-            steps=steps,
-            gap=gap,
+            fold=fold, **kwargs_fit_predict_forecaster
         )
         for fold in folds_tqdm
     )
+
+    backtest_predictions = [result[0] for result in results]
     fold_labels = [
         np.repeat(fold[0], backtest_predictions[i].shape[0]) for i, fold in enumerate(folds)
     ]
-    
-    backtest_predictions = pd.concat(backtest_predictions)
+    backtest_predictions = pd.concat(backtest_predictions, axis=0)
     if isinstance(backtest_predictions, pd.Series):
         backtest_predictions = pd.DataFrame(backtest_predictions)
     backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
+    if not freeze_params:
+        estimator_names_ = [result[1] for result in results]
+        backtest_predictions['estimator_params'] = np.concatenate(estimator_names_)
 
     train_indexes = []
     for i, fold in enumerate(folds):
@@ -1670,19 +1723,38 @@ def _backtesting_stats(
             .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
         )
 
-    metric_values = [
-        m(
-            y_true = y.loc[backtest_predictions_for_metrics.index],
-            y_pred = backtest_predictions_for_metrics['pred'],
-            y_train = y_train
-        ) 
-        for m in metrics
-    ]
+    if forecaster.n_estimators == 1:
+        y_true = y.loc[backtest_predictions_for_metrics.index]
+        y_pred = backtest_predictions_for_metrics['pred']
+        metric_values = [[
+            m(y_true=y_true, y_pred=y_pred, y_train=y_train)
+            for m in metrics
+        ]]
 
-    metric_values = pd.DataFrame(
-        data    = [metric_values],
-        columns = [m.__name__ for m in metrics]
-    )
+        metric_values = pd.DataFrame(
+            data    = metric_values,
+            columns = [m.__name__ for m in metrics]
+        )
+    else:
+        unique_indices = backtest_predictions_for_metrics.index.unique()
+        y_true = y.loc[unique_indices]
+
+        grouped = backtest_predictions_for_metrics.groupby('estimator_id', sort=False)
+        metric_values = [
+            [
+                m(y_true=y_true, y_pred=group['pred'], y_train=y_train)
+                for m in metrics
+            ]
+            for _, group in grouped
+        ]
+
+        metric_values = pd.DataFrame(
+            data    = metric_values,
+            columns = [m.__name__ for m in metrics]
+        )
+        metric_values.insert(0, 'estimator_id', forecaster.estimator_ids)
+    
+    set_skforecast_warnings(suppress_warnings, action='default')
 
     return metric_values, backtest_predictions
 
@@ -1695,10 +1767,11 @@ def backtesting_stats(
     exog: pd.Series | pd.DataFrame | None = None,
     alpha: float | None = None,
     interval: list[float] | tuple[float] | None = None,
+    freeze_params: bool = True,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
-    suppress_warnings_fit: bool = False,
-    show_progress: bool = True
+    show_progress: bool = True,
+    suppress_warnings: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Backtesting of ForecasterStats.
@@ -1736,6 +1809,18 @@ def backtesting_stats(
         0 and 100 inclusive. For example, interval of 95% should be as 
         `interval = [2.5, 97.5]`. If both, `alpha` and `interval` are 
         provided, `alpha` will be used.
+    freeze_params : bool, default True
+        Determines whether to freeze the model parameters after the first fit
+        for estimators that perform automatic model selection.
+
+        - If `True`, the model parameters found during the first fit (e.g., order 
+        and seasonal_order for Arima, or smoothing parameters for Ets) are reused
+        in all subsequent refits. This avoids re-running the automatic selection
+        procedure in each fold and reduces runtime.
+        - If `False`, automatic model selection is performed independently in each
+        refit, allowing parameters to adapt across folds. This increases runtime
+        and adds a `params` column to the output with the parameters selected per
+        fold.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -1743,10 +1828,12 @@ def backtesting_stats(
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
-    suppress_warnings_fit : bool, default False
-        If `True`, warnings generated during fitting will be ignored.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings: bool, default False
+        If `True`, skforecast warnings will be suppressed during the backtesting 
+        process. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
 
     Returns
     -------
@@ -1782,37 +1869,39 @@ def backtesting_stats(
     
     """
     
-    if type(forecaster).__name__ not in ['ForecasterStats']:
+    if type(forecaster).__name__  != 'ForecasterStats':
         raise TypeError(
             "`forecaster` must be of type `ForecasterStats`, for all other "
-            "types of forecasters use the functions available in the other "
-            "`model_selection` modules."
+            "types of forecasters use the functions available in the "
+            "`model_selection` module."
         )
     
     check_backtesting_input(
-        forecaster            = forecaster,
-        cv                    = cv,
-        y                     = y,
-        metric                = metric,
-        interval              = interval,
-        alpha                 = alpha,
-        n_jobs                = n_jobs,
-        show_progress         = show_progress,
-        suppress_warnings_fit = suppress_warnings_fit
+        forecaster        = forecaster,
+        cv                = cv,
+        y                 = y,
+        metric            = metric,
+        interval          = interval,
+        alpha             = alpha,
+        freeze_params     = freeze_params,
+        n_jobs            = n_jobs,
+        show_progress     = show_progress,
+        suppress_warnings = suppress_warnings
     )
     
     metric_values, backtest_predictions = _backtesting_stats(
-        forecaster            = forecaster,
-        y                     = y,
-        cv                    = cv,
-        metric                = metric,
-        exog                  = exog,
-        alpha                 = alpha,
-        interval              = interval,
-        n_jobs                = n_jobs,
-        verbose               = verbose,
-        suppress_warnings_fit = suppress_warnings_fit,
-        show_progress         = show_progress
+        forecaster        = forecaster,
+        y                 = y,
+        cv                = cv,
+        metric            = metric,
+        exog              = exog,
+        alpha             = alpha,
+        interval          = interval,
+        freeze_params     = freeze_params,
+        n_jobs            = n_jobs,
+        verbose           = verbose,
+        show_progress     = show_progress,
+        suppress_warnings = suppress_warnings
     )
 
     return metric_values, backtest_predictions

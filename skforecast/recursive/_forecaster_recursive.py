@@ -618,7 +618,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return X_train_window_features, X_train_window_features_names_out_
 
-
     def _create_train_X_y(
         self,
         y: pd.Series,
@@ -912,7 +911,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return X_train, y_train, X_test, y_test
 
-
     def create_sample_weights(
         self,
         X_train: pd.DataFrame,
@@ -954,7 +952,6 @@ class ForecasterRecursive(ForecasterBase):
                 )
 
         return sample_weight
-
 
     def fit(
         self,
@@ -1685,7 +1682,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
-
     def predict_bootstrapping(
         self,
         steps: int | str | pd.Timestamp,
@@ -2085,7 +2081,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
-
     def predict_quantiles(
         self,
         steps: int | str | pd.Timestamp,
@@ -2164,7 +2159,6 @@ class ForecasterRecursive(ForecasterBase):
         predictions.columns = [f'q_{q}' for q in quantiles]
 
         return predictions
-
 
     def predict_dist(
         self,
@@ -2258,14 +2252,14 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
-
     def set_params(
         self, 
         params: dict[str, object]
     ) -> None:
         """
         Set new values to the parameters of the scikit-learn model stored in the
-        forecaster.
+        forecaster. After calling this method, the forecaster is reset to an 
+        unfitted state. The `fit` method must be called before prediction.
         
         Parameters
         ----------
@@ -2280,6 +2274,7 @@ class ForecasterRecursive(ForecasterBase):
 
         self.estimator = clone(self.estimator)
         self.estimator.set_params(**params)
+        self.is_fitted = False
 
     def set_fit_kwargs(
         self, 

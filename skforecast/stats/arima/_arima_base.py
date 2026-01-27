@@ -1,13 +1,15 @@
+################################################################################
+#                               ARIMA base implementation                      #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
 import numpy as np
-from numba import jit, njit
-from numba.typed import Dict
-import scipy.linalg as la
-import scipy.optimize as opt
-from scipy.stats import norm
 import pandas as pd
+from numba import njit
+from scipy.stats import norm
+import scipy.optimize as opt
 from typing import Tuple, Optional, Dict as DictType, Any, Union, List
 import warnings
-from copy import deepcopy
 
 @njit(cache=True)
 def state_prediction(a: np.ndarray, p: int, r: int, d: int, rd: int,
@@ -86,6 +88,7 @@ def predict_covariance_nodiff(P: np.ndarray, r: int, p: int, q: int,
         Predicted state covariance matrix.
     """
     Pnew = np.zeros((r, r))
+    P00 = P[0, 0]
 
     for i in range(r):
         if i == 0:
@@ -104,7 +107,7 @@ def predict_covariance_nodiff(P: np.ndarray, r: int, p: int, q: int,
                 tmp = 0.0
 
             if i < p and j < p:
-                tmp += phi[i] * phi[j] * P[0, 0]
+                tmp += phi[i] * phi[j] * P00
 
             if i < r - 1 and j < r - 1:
                 tmp += P[i + 1, j + 1]
@@ -180,20 +183,20 @@ def predict_covariance_with_diff(P: np.ndarray, r: int, d: int, p: int, q: int,
         for j in range(rd):
             tmp = 0.0
             if i < p:
-                tmp += phi[i] * mm[0, j]
+                tmp += phi[i] * mm[j, 0]
             if i < r - 1:
-                tmp += mm[i + 1, j]
-            Pnew[i, j] = tmp
+                tmp += mm[j, i + 1]
+            Pnew[j, i] = tmp
 
     for j in range(rd):
-        tmp = mm[0, j]
+        tmp = mm[j, 0]
         for k in range(d):
-            tmp += delta[k] * mm[r + k, j]
-        Pnew[r, j] = tmp
+            tmp += delta[k] * mm[j, r + k]
+        Pnew[j, r] = tmp
 
     for i in range(1, d):
         for j in range(rd):
-            Pnew[r + i, j] = mm[r + i - 1, j]
+            Pnew[j, r + i] = mm[j, r + i - 1]
 
     for i in range(q + 1):
         if i == 0:
@@ -296,7 +299,7 @@ def compute_arima_likelihood_core(
     Pn_init: np.ndarray,
     update_start: int,
     give_resid: bool
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Core Kalman filter likelihood computation (Numba-compatible).
 
@@ -327,6 +330,10 @@ def compute_arima_likelihood_core(
         Array [ssq, sumlog, nu] - sum of squares, log-determinant sum, count.
     residuals : np.ndarray
         Standardized residuals (if give_resid=True, else empty).
+    a_final : np.ndarray
+        Final filtered state vector.
+    P_final : np.ndarray
+        Final filtered state covariance.
     """
     n = len(y)
     rd = len(a_init)
@@ -339,9 +346,9 @@ def compute_arima_likelihood_core(
     sumlog = 0.0
     nu = 0
 
-    a = a_init.copy()
-    P = P_init.copy()
-    Pnew = Pn_init.copy()
+    a = a_init
+    P = P_init
+    Pnew = Pn_init
 
     if give_resid:
         rsResid = np.zeros(n)
@@ -366,7 +373,7 @@ def compute_arima_likelihood_core(
             if give_resid:
                 rsResid[l] = resid / np.sqrt(gain) if gain > 0 else np.nan
         else:
-            a = anew.copy()
+            a = anew
             if give_resid:
                 rsResid[l] = np.nan
 
@@ -375,10 +382,10 @@ def compute_arima_likelihood_core(
                 Pnew = predict_covariance_nodiff(P, r, p, q, phi, theta)
             else:
                 Pnew = predict_covariance_with_diff(P, r, d, p, q, rd, phi, delta, theta)
-            P = Pnew.copy()
+            P = Pnew
 
     stats = np.array([ssq, sumlog, float(nu)])
-    return stats, rsResid
+    return stats, rsResid, a, P
 
 
 def compute_arima_likelihood(
@@ -409,7 +416,11 @@ def compute_arima_likelihood(
         - 'sumlog': Accumulated log-determinants.
         - 'nu': Number of innovations.
         - 'resid': Standardized residuals (only if give_resid=True).
+        - 'a': Final filtered state vector.
+        - 'P': Final filtered state covariance.
     """
+
+    # astype creates copies so no further copying is needed inside the Numba function
     phi = model['phi'].astype(np.float64)
     theta = model['theta'].astype(np.float64)
     delta = model['Delta'].astype(np.float64)
@@ -417,14 +428,16 @@ def compute_arima_likelihood(
     P = model['P'].astype(np.float64)
     Pn = model['Pn'].astype(np.float64)
 
-    stats, residuals = compute_arima_likelihood_core(
+    stats, residuals, a_final, P_final = compute_arima_likelihood_core(
         y.astype(np.float64), phi, theta, delta, a, P, Pn, update_start, give_resid
     )
 
     result = {
         'ssq': stats[0],
         'sumlog': stats[1],
-        'nu': int(stats[2])
+        'nu': int(stats[2]),
+        'a': a_final,
+        'P': P_final
     }
 
     if give_resid:
@@ -456,14 +469,14 @@ def transform_unconstrained_to_ar_params(p: int, raw: np.ndarray) -> np.ndarray:
     if p > 100:
         raise ValueError("Can only transform up to 100 parameters")
 
-    new = np.tanh(raw[:p].copy())
-    work = new.copy()
+    new = np.tanh(raw[:p])
+    work = np.empty(p)
 
     for j in range(1, p):
         a = new[j]
         for k in range(j):
             work[k] = new[k] - a * new[j - 1 - k]
-        new[:j] = work[:j].copy()
+        new[:j] = work[:j]
 
     return new
 
@@ -1609,14 +1622,13 @@ def kalman_forecast_core(
     forecasts = np.zeros(n_ahead)
     variances = np.zeros(n_ahead)
 
-    a_curr = a.copy()
-    P_curr = Pn.copy()
+    a_curr = a
+    P_curr = P
 
     for l in range(n_ahead):
         # State prediction
         anew = state_prediction(a_curr, p, r, d, rd, phi, delta)
-        a_curr = anew.copy()
-
+        a_curr = anew
         # Forecast
         fc = 0.0
         for i in range(rd):
@@ -1628,7 +1640,7 @@ def kalman_forecast_core(
             Pnew = predict_covariance_nodiff(P_curr, r, p, q, phi, theta)
         else:
             Pnew = predict_covariance_with_diff(P_curr, r, d, p, q, rd, phi, delta, theta)
-        P_curr = Pnew.copy()
+        P_curr = Pnew
 
         # Forecast variance: h + Z' P Z
         tmpvar = h
@@ -1668,11 +1680,10 @@ def kalman_forecast(
     Z = mod['Z'].astype(np.float64)
     a = mod['a'].astype(np.float64)
     P = mod['P'].astype(np.float64)
-    Pn = mod['Pn'].astype(np.float64)
     h = float(mod['h'])
 
     forecasts, variances, a_final, P_final = kalman_forecast_core(
-        n_ahead, phi, theta, delta, Z, a, P, Pn, h
+        n_ahead, phi, theta, delta, Z, a, P, P, h
     )
 
     result = {'pred': forecasts, 'var': variances}
@@ -1771,7 +1782,7 @@ def diff(x: np.ndarray, lag: int = 1, differences: int = 1) -> np.ndarray:
     np.ndarray
         Differenced array.
     """
-    result = x.copy()
+    result = x
     for _ in range(differences):
         if result.ndim == 1:
             result = result[lag:] - result[:-lag]
@@ -1964,8 +1975,8 @@ def regress_and_update(
         S = None
 
     # Difference series and regressors
-    dx = x.copy()
-    dxreg = xreg.copy()
+    dx = x
+    dxreg = xreg
 
     if order_d > 0:
         dx = diff(dx, lag=1, differences=order_d)
@@ -2090,7 +2101,9 @@ def optim_hessian(func, x, eps=None):
     x : np.ndarray
         Point at which to compute Hessian.
     eps : float or None
-        Step size for finite differences. If None, uses sqrt(machine epsilon).
+        Step size for finite differences. If None, uses 1e-2 which works well
+        for ARIMA parameters in transformed space. The default sqrt(machine epsilon)
+        (~1.49e-8) is too small and causes numerical instability.
 
     Returns
     -------
@@ -2101,7 +2114,7 @@ def optim_hessian(func, x, eps=None):
     n = len(x)
 
     if eps is None:
-        eps = np.sqrt(np.finfo(float).eps)
+        eps = 1e-2
 
     # Compute gradient at perturbed points using scipy.optimize.approx_fprime
     # H[i,j] = (grad_j(x + eps*e_i) - grad_j(x - eps*e_i)) / (2*eps)
@@ -2126,6 +2139,28 @@ def optim_hessian(func, x, eps=None):
     return H
 
 
+def _make_numerical_gradient(func, eps=1e-2):
+    """
+    Create a numerical gradient function with specified step size.
+
+    Parameters
+    ----------
+    func : callable
+        Objective function f(x) -> scalar.
+    eps : float
+        Step size for finite differences. Default 1e-2 works well for ARIMA
+        parameters in transformed space.
+
+    Returns
+    -------
+    grad_func : callable
+        Gradient function that returns numerical gradient at point x.
+    """
+    def grad_func(x):
+        return opt.approx_fprime(x, func, eps)
+    return grad_func
+
+
 def arima(
     x: np.ndarray,
     m: int = 1,
@@ -2140,7 +2175,7 @@ def arima(
     n_cond: Optional[int] = None,
     SSinit: str = "Gardner1980",
     optim_method: str = "BFGS",
-    optim_control: Optional[DictType] = None,
+    opt_options: DictType = {'maxiter': 1000},
     kappa: float = 1e6
 ) -> DictType[str, Any]:
     """
@@ -2174,7 +2209,7 @@ def arima(
         State-space initialization: "Gardner1980" or "Rossignol2011".
     optim_method : str
         Optimization method for scipy.optimize.minimize.
-    optim_control : dict or None
+    opt_options : dict, default {'maxiter': 1000}
         Additional options for optimizer.
     kappa : float
         Prior variance for diffuse states.
@@ -2196,8 +2231,6 @@ def arima(
         - 'model': State-space model dict
         - 'method': Estimation method string
     """
-    if optim_control is None:
-        optim_control = {}
 
     SSinit = match_arg(SSinit, ["Gardner1980", "Rossignol2011"])
     method = match_arg(method, ["CSS-ML", "ML", "CSS"])
@@ -2302,8 +2335,6 @@ def arima(
                 sa_stop = arma[0] + arma[1] + arma[2]
                 if not ar_check(init[sa_start:sa_stop]):
                     raise ValueError("non-stationary seasonal AR part")
-            if transform_pars:
-                init = inverse_arima_parameter_transform(init, np.array(arma[:3]))
     else:
         init = init0.copy()
 
@@ -2325,14 +2356,15 @@ def arima(
         except Exception:
             return 1e10
 
-        xxi = x.copy()
         try:
             mod = update_arima(mod, phi_t, theta_t, ss_g=SS_G)
         except Exception:
             return 1e10
 
         if ncxreg > 0:
-            xxi = xxi - xreg_mat @ par[narma:narma + ncxreg]
+            xxi = x - xreg_mat @ par[narma:narma + ncxreg]
+        else:
+            xxi = x
 
         try:
             resss = compute_arima_likelihood(xxi, mod, update_start=0, give_resid=False)
@@ -2356,9 +2388,10 @@ def arima(
         except Exception:
             return 1e10
 
-        x_in = x.copy()
         if ncxreg > 0:
-            x_in = x_in - xreg_mat @ par[narma:narma + ncxreg]
+            x_in = x - xreg_mat @ par[narma:narma + ncxreg]
+        else:
+            x_in = x
 
         try:
             sigma2, _ = compute_css_residuals(x_in, arma_arr, phi_t, theta_t, ncond)
@@ -2374,7 +2407,7 @@ def arima(
     init_phi, init_theta = transform_arima_parameters(init, arma_arr, transform_pars)
     mod = initialize_arima_state(init_phi, init_theta, Delta, kappa=kappa, SSinit=SSinit)
 
-    # Optimization
+    # Optimization - use BFGS matching R's optim default
     if method == "CSS":
         if no_optim:
             res = {'converged': True, 'x': np.zeros(0), 'fun': armaCSS(np.zeros(0))}
@@ -2383,12 +2416,14 @@ def arima(
                 armaCSS,
                 init[mask],
                 method=optim_method,
-                options={'maxiter': optim_control.get('maxit', 1000)}
+                options=opt_options
             )
             res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
 
         if not res['converged']:
-            warnings.warn("CSS optimization convergence issue")
+            warnings.warn(
+                "CSS optimization convergence issue. Try to increase 'maxiter' or change the optimization method."
+            )
 
         coef[mask] = res['x']
 
@@ -2422,7 +2457,7 @@ def arima(
                     armaCSS,
                     init[mask],
                     method=optim_method,
-                    options={'maxiter': optim_control.get('maxit', 1000)}
+                    options=opt_options
                 )
                 res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
 
@@ -2457,16 +2492,20 @@ def arima(
         if no_optim:
             res = {'converged': True, 'x': np.zeros(0), 'fun': armafn(np.zeros(0), transform_pars)}
         else:
+            ml_obj_func = lambda p: armafn(p, transform_pars)
             opt_result = opt.minimize(
-                lambda p: armafn(p, transform_pars),
+                ml_obj_func,
                 init[mask],
                 method=optim_method,
-                options={'maxiter': optim_control.get('maxit', 1000)}
+                options=opt_options
             )
             res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
 
         if not res['converged']:
-            warnings.warn("Possible convergence problem")
+            warnings.warn(
+                "Possible convergence problem."
+                "Try to increase 'maxiter' or change the optimization method."
+            )
 
         coef[mask] = res['x']
 
@@ -2511,6 +2550,10 @@ def arima(
         val = compute_arima_likelihood(x_work, mod, update_start=0, give_resid=True)
         sigma2 = val['ssq'] / n_used
         resid = val['resid']
+        
+        # Update model state with final filtered state
+        mod['a'] = val['a']
+        mod['P'] = val['P']
 
     # Final computations
     value = 2 * n_used * res['fun'] + n_used + n_used * np.log(2 * np.pi)
@@ -2568,7 +2611,8 @@ def predict_arima(
     model: DictType[str, Any],
     n_ahead: int = 1,
     newxreg: Union[pd.DataFrame, np.ndarray, None] = None,
-    se_fit: bool = True
+    se_fit: bool = True,
+    level: Union[List[float], np.ndarray, None] = None
 ) -> DictType[str, Any]:
     """
     Generate forecasts from a fitted ARIMA model.
@@ -2583,12 +2627,18 @@ def predict_arima(
         New exogenous regressors for forecast period.
     se_fit : bool
         Whether to compute standard errors.
+    level : list of float, default None
+        Confidence levels for prediction intervals (default [80, 95]).
+        Values can be percentages (80, 95) or proportions (0.80, 0.95).
 
     Returns
     -------
     result : dict
         Dictionary with:
-        - 'pred': Point forecasts
+        - 'mean': Point forecasts
+        - 'lower': Lower bounds of prediction intervals
+        - 'upper': Upper bounds of prediction intervals
+        - 'level': Confidence levels used
         - 'se': Standard errors
         - 'y': Original data
         - 'fitted': In-sample fitted values
@@ -2601,6 +2651,16 @@ def predict_arima(
     coef_names = list(coef_df.columns)
     narma = sum(arma[:4])
     ncoefs = len(coefs)
+
+    if level is not None:
+        levels = list(level)
+        if min(levels) > 0 and max(levels) < 1:
+            levels = [l * 100 for l in levels]
+        if min(levels) < 0 or max(levels) > 99.99:
+            raise ValueError("Confidence level out of range")
+        levels = sorted(levels)
+    else:
+        levels = []
 
     # Check for intercept
     intercept_idx = coef_names.index("intercept") if "intercept" in coef_names else None
@@ -2652,8 +2712,21 @@ def predict_arima(
     else:
         se = np.full(len(pred), np.nan)
 
+    lower = None
+    upper = None
+    if levels:
+        alpha_lvls = 1.0 - np.asarray(levels, dtype=np.float64) / 100.0
+        z_scores = norm.ppf(1.0 - alpha_lvls / 2.0)
+        se_expanded = se[:, np.newaxis]
+        mean_expanded = pred[:, np.newaxis]
+        lower = mean_expanded - z_scores * se_expanded  # lower bounds
+        upper = mean_expanded + z_scores * se_expanded  # upper bounds
+
     return {
-        'pred': pred,
+        'mean': pred,
+        'lower': lower,
+        'upper': upper,
+        'level': levels,
         'se': se,
         'y': model['y'],
         'fitted': model['fitted'],

@@ -1,7 +1,9 @@
 # Unit test set_params method - Arar
 # ==============================================================================
-import numpy as np
+import re
 import pytest
+import numpy as np
+from sklearn.exceptions import NotFittedError
 from ..._arar import Arar
 
 
@@ -140,12 +142,14 @@ def test_set_params_requires_refit_before_predict():
     
     # Set params resets fitted state
     model.set_params(max_ar_depth=20)
+    assert model.is_fitted is False
     
     # Predict should raise error
-    with pytest.raises(
-        TypeError,
-        match="This Arar instance is not fitted yet. Call 'fit' with appropriate arguments"
-    ):
+    error_msg = re.escape(
+        f"This {type(model).__name__} instance is not fitted yet. Call "
+        f"'fit' with appropriate arguments before using this estimator."
+    )
+    with pytest.raises(NotFittedError, match=error_msg):
         model.predict(steps=5)
     
     # Refit and predict should work again
@@ -170,10 +174,11 @@ def test_set_params_requires_refit_before_predict_interval():
     model.set_params(safe=False)
     
     # predict_interval should raise error
-    with pytest.raises(
-        TypeError,
-        match="This Arar instance is not fitted yet. Call 'fit' with appropriate arguments"
-    ):
+    error_msg = re.escape(
+        f"This {type(model).__name__} instance is not fitted yet. Call "
+        f"'fit' with appropriate arguments before using this estimator."
+    )
+    with pytest.raises(NotFittedError, match=error_msg):
         model.predict_interval(steps=5)
     
     # Refit and predict_interval should work again

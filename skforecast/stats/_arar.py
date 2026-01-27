@@ -6,11 +6,11 @@
 # coding=utf-8
 
 from __future__ import annotations
+from typing import Any
 import warnings
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.utils.validation import check_is_fitted
 
 from ..exceptions import ExogenousInterpretationWarning
 from .arar._arar_base import (
@@ -18,7 +18,11 @@ from .arar._arar_base import (
     forecast,
     fitted_arar
 )
-from ._utils import check_memory_reduced, FastLinearRegression
+from ._utils import (
+    check_is_fitted, 
+    check_memory_reduced, 
+    FastLinearRegression
+)
 
 
 class Arar(BaseEstimator, RegressorMixin):
@@ -33,11 +37,11 @@ class Arar(BaseEstimator, RegressorMixin):
 
     Parameters
     ----------
-    max_ar_depth : int, default=None
+    max_ar_depth : int, default None
         Maximum AR depth considered for the (1, i, j, k) AR selection stage.
-    max_lag : int, default=None
+    max_lag : int, default None
         Maximum lag used when estimating autocovariances.
-    safe : bool, default=True
+    safe : bool, default True
         If True, falls back to a mean-only model on numerical issues or very
         short series; otherwise errors are raised.
 
@@ -117,6 +121,9 @@ class Arar(BaseEstimator, RegressorMixin):
         arrays (y_train_, fitted_values_, in_sample_residuals_).
     is_fitted : bool
         Flag indicating whether the model has been successfully fitted to data.
+    estimator_name_ : str
+        String identifier of the fitted model configuration (e.g., "Arar(lags=[1,2,3])"). 
+        This is updated after fitting to reflect the selected model.
     
     Notes
     -----
@@ -150,6 +157,7 @@ class Arar(BaseEstimator, RegressorMixin):
     Despite these limitations, this strategy provides a practical and
     computationally efficient way to incorporate exogenous information into an
     otherwise univariate ARAR framework.
+
     """
 
     def __init__(
@@ -158,32 +166,39 @@ class Arar(BaseEstimator, RegressorMixin):
         max_lag: int | None = None, 
         safe: bool = True
     ):
-        self.max_ar_depth         = max_ar_depth
-        self.max_lag              = max_lag
-        self.safe                 = safe
-        self.lags_                = None
-        self.sigma2_              = None
-        self.psi_                 = None
-        self.sbar_                = None
+        self.max_ar_depth           = max_ar_depth
+        self.max_lag                = max_lag
+        self.safe                   = safe
+        self.lags_                  = None
+        self.sigma2_                = None
+        self.psi_                   = None
+        self.sbar_                  = None
+  
+        self.model_                 = None
+        self.coef_                  = None
+        self.aic_                   = None
+        self.bic_                   = None
+        self.exog_model_            = None
+        self.coef_exog_             = None
+        self.n_exog_features_in_    = None
+        self.y_train_               = None
+        self.fitted_values_         = None
+        self.in_sample_residuals_   = None
+        self.n_features_in_         = None
+        self.is_memory_reduced      = False
+        self.is_fitted              = False
+        self.estimator_name_        = "Arar()"
 
-        self.model_               = None
-        self.coef_                = None
-        self.aic_                 = None
-        self.bic_                 = None
-        self.exog_model_          = None
-        self.coef_exog_           = None
-        self.n_exog_features_in_  = None
-        self.y_train_             = None
-        self.fitted_values_       = None
-        self.in_sample_residuals_ = None
-        self.n_features_in_       = None
-        self.is_memory_reduced    = False
-        self.is_fitted            = False
+    def __repr__(self) -> str:
+        """
+        Information displayed when an Arar object is printed.
+        """
+        return self.estimator_name_
 
     def fit(
         self, 
-        y: pd.Series | np.ndarray, 
-        exog: pd.Series | pd.DataFrame | np.ndarray | None = None, 
+        y: np.ndarray | pd.Series, 
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None,
         suppress_warnings: bool = False
     ) -> "Arar":
         """
@@ -193,10 +208,10 @@ class Arar(BaseEstimator, RegressorMixin):
         ----------
         y : array-like of shape (n_samples,)
             Time-ordered numeric sequence.
-        exog : Series, DataFrame, or ndarray of shape (n_samples, n_exog_features), default=None
+        exog : Series, DataFrame, or ndarray of shape (n_samples, n_exog_features), default None
             Exogenous variables to include in the model. See Notes section for details
             on how exogenous variables are handled.
-        suppress_warnings : bool, default=False
+        suppress_warnings : bool, default False
             If True, suppresses the warning about exogenous variables affecting model
             interpretation.
 
@@ -359,12 +374,15 @@ class Arar(BaseEstimator, RegressorMixin):
             self.aic_ = np.nan
             self.bic_ = np.nan
 
+        self.estimator_name_ = f"Arar(lags={self.lags_})"
+
         return self
     
+    @check_is_fitted
     def predict(
         self, 
         steps: int, 
-        exog: pd.Series | pd.DataFrame | np.ndarray | None = None
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None
     ) -> np.ndarray:
         """
         Generate mean forecasts steps ahead.
@@ -373,24 +391,21 @@ class Arar(BaseEstimator, RegressorMixin):
         ----------
         steps : int
             Forecast horizon (must be > 0)
-        exog : Series, DataFrame, or ndarray of shape (steps, n_exog_features), default=None
+        exog : ndarray, Series or DataFrame of shape (steps, n_exog_features), default None
             Exogenous variables for prediction.
 
         Returns
         -------
-        mean : ndarray of shape (h,)
+        predictions : ndarray of shape (h,)
             Point forecasts for steps 1..h.
+        
         """
-        if not self.is_fitted:
-            raise TypeError(
-                "This Arar instance is not fitted yet. "
-                "Call 'fit' with appropriate arguments before using this estimator."
-        )
+
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
 
         # Forecast ARAR component
-        arar_pred = forecast(self.model_, h=steps)["mean"]
+        predictions = forecast(self.model_, h=steps)["mean"]
 
         if self.exog_model_ is None and exog is not None:
             raise ValueError(
@@ -416,53 +431,51 @@ class Arar(BaseEstimator, RegressorMixin):
 
             # Forecast Regression component
             exog_pred = self.exog_model_.predict(exog)
-            arar_pred = arar_pred + exog_pred
+            predictions = predictions + exog_pred
         
-        return arar_pred
+        return predictions
 
+    @check_is_fitted
     def predict_interval(
         self,
         steps: int = 1,
         level=(80, 95),
         as_frame: bool = True,
-        exog: pd.Series | pd.DataFrame | np.ndarray | None = None
-    ) -> pd.DataFrame | dict:
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None
+    ) -> np.ndarray | pd.DataFrame:
         """
         Forecast with symmetric normal-theory prediction intervals.
 
         Parameters
         ----------
-        steps : int, default=1
+        steps : int, default 1
             Forecast horizon.
-        level : iterable of int, default=(80, 95)
+        level : iterable of int, default (80, 95)
             Confidence levels in percent.
-        as_frame : bool, default=True
-            If True, return a tidy DataFrame with columns:
-            'mean', 'lower_<L>', 'upper_<L>' for each level L.
-        exog : Series, DataFrame, or ndarray of shape (steps, n_exog_features), default=None
+        as_frame : bool, default True
+            If True, return a tidy DataFrame with columns 'mean', 'lower_<L>',
+            'upper_<L>' for each level L. If False, return a NumPy ndarray.
+        exog : ndarray, Series or DataFrame of shape (steps, n_exog_features), default None
             Exogenous variables for prediction.
 
         Returns
         -------
-        DataFrame or dict
-            If as_frame=True: DataFrame indexed by step (1..steps).
-            Else: the raw dict from `forecast`.
+        predictions : numpy ndarray, pandas DataFrame
+            If as_frame=True, pandas DataFrame with columns 'mean', 'lower_<L>',
+            'upper_<L>' for each level L. If as_frame=False, numpy ndarray.
             
         Notes
         -----
         When exogenous variables are used, prediction intervals account only for 
         ARAR forecast uncertainty and do not include uncertainty from the regression 
         coefficients. This may result in **undercoverage** (actual coverage < nominal level).
+
         """
-        if not self.is_fitted:
-            raise TypeError(
-                "This Arar instance is not fitted yet. "
-                "Call 'fit' with appropriate arguments before using this estimator."
-        )
+
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
             
-        out = forecast(self.model_, h=steps, level=level)
+        raw_preds = forecast(self.model_, h=steps, level=level)
         
         if self.exog_model_ is None and exog is not None:
             raise ValueError(
@@ -490,22 +503,34 @@ class Arar(BaseEstimator, RegressorMixin):
 
             exog_pred = self.exog_model_.predict(exog)
             
-            out["mean"] = out["mean"] + exog_pred
+            raw_preds["mean"] = raw_preds["mean"] + exog_pred
             # Broadcast the exog prediction across confidence columns
-            out["upper"] = out["upper"] + exog_pred[:, np.newaxis]
-            out["lower"] = out["lower"] + exog_pred[:, np.newaxis]
+            raw_preds["upper"] = raw_preds["upper"] + exog_pred[:, np.newaxis]
+            raw_preds["lower"] = raw_preds["lower"] + exog_pred[:, np.newaxis]
 
-        if not as_frame:
-            return out
-
-        idx = pd.RangeIndex(1, steps + 1, name="step")
-        df = pd.DataFrame({"mean": out["mean"]}, index=idx)
-        for i, L in enumerate(out["level"]):
-            df[f"lower_{L}"] = out["lower"][:, i]
-            df[f"upper_{L}"] = out["upper"][:, i]
+        levels = raw_preds["level"]
+        n_levels = len(levels)
+        cols = [raw_preds["mean"]]
+        for i in range(n_levels):
+            cols.append(raw_preds["lower"][:, i])
+            cols.append(raw_preds["upper"][:, i])
         
-        return df
+        predictions = np.column_stack(cols)
 
+        if as_frame:
+            col_names = ["mean"]
+            for level in levels:
+                level = int(level)
+                col_names.append(f"lower_{level}")
+                col_names.append(f"upper_{level}")
+            
+            predictions = pd.DataFrame(
+                predictions, columns=col_names, index=pd.RangeIndex(1, steps + 1, name="step")
+            )
+        
+        return predictions
+
+    @check_is_fitted
     def get_residuals(self) -> np.ndarray:
         """
         Get in-sample residuals (observed - fitted) from the ARAR model.
@@ -513,11 +538,13 @@ class Arar(BaseEstimator, RegressorMixin):
         Returns
         -------
         residuals : ndarray of shape (n_samples,)
+
         """
-        check_is_fitted(self, "model_")
-        check_memory_reduced(self, 'residuals_')
+
+        check_memory_reduced(self, method_name='get_residuals')
         return self.in_sample_residuals_
 
+    @check_is_fitted
     def get_fitted_values(self) -> np.ndarray:
         """
         Get in-sample fitted values from the ARAR model.
@@ -525,48 +552,14 @@ class Arar(BaseEstimator, RegressorMixin):
         Returns
         -------
         fitted : ndarray of shape (n_samples,)
+
         """
-        check_is_fitted(self, "model_")
-        check_memory_reduced(self, 'fitted_')
+
+        check_memory_reduced(self, method_name='get_fitted_values')
         return self.fitted_values_
 
-    def summary(self) -> None:
-        """
-        Print a simple textual summary of the fitted ARAR model.
-        """
-        check_is_fitted(self, "model_")
-        check_memory_reduced(self, 'summary')
-        
-        print("ARAR Model Summary")
-        print("------------------")
-        print(f"Number of observations: {len(self.y_train_)}")
-        print(f"Selected AR lags: {self.lags_}")
-        print(f"AR coefficients (phi): {np.round(self.coef_, 4)}")
-        print(f"Residual variance (sigma^2): {self.sigma2_:.4f}")
-        print(f"Mean of shortened series (sbar): {self.sbar_:.4f}")
-        print(f"Length of memory-shortening filter (psi): {len(self.psi_)}")
-
-        print("\nTime Series Summary Statistics")
-        print(f"Mean: {np.mean(self.y_train_):.4f}")
-        print(f"Std Dev: {np.std(self.y_train_, ddof=1):.4f}")
-        print(f"Min: {np.min(self.y_train_):.4f}")
-        print(f"25%: {np.percentile(self.y_train_, 25):.4f}")
-        print(f"Median: {np.median(self.y_train_):.4f}")
-        print(f"75%: {np.percentile(self.y_train_, 75):.4f}")
-        print(f"Max: {np.max(self.y_train_):.4f}")
-        
-        print("\nModel Diagnostics")
-        print(f"AIC: {self.aic_:.4f}")
-        print(f"BIC: {self.bic_:.4f}")
-        
-        if self.exog_model_ is not None:
-            print("\nExogenous Model (Linear Regression)")
-            print("-----------------------------------")
-            print(f"Number of features: {self.n_exog_features_in_}")
-            print(f"Intercept: {self.exog_model_.intercept_:.4f}")
-            print(f"Coefficients: {np.round(self.exog_model_.coef_, 4)}")
-
-    def get_score(self, y=None) -> float:
+    @check_is_fitted
+    def get_score(self, y: Any = None) -> float:
         """
         R^2 using in-sample fitted values (ignores initial NaNs).
 
@@ -579,18 +572,189 @@ class Arar(BaseEstimator, RegressorMixin):
         -------
         score : float
             Coefficient of determination.
+        
         """
-        check_is_fitted(self, "model_")
-        check_memory_reduced(self, 'score')
+
+        check_memory_reduced(self, method_name='get_score')
+
         y = self.y_train_
         fitted = self.fitted_values_
+
         mask = ~np.isnan(fitted)
         if mask.sum() < 2:
             return float("nan")
         ss_res = np.sum((y[mask] - fitted[mask]) ** 2)
         ss_tot = np.sum((y[mask] - y[mask].mean()) ** 2) + np.finfo(float).eps
+        
         return 1.0 - ss_res / ss_tot
+    
+    def get_params(self, deep: bool = True) -> dict:
+        """
+        Get parameters for this estimator.
 
+        Parameters
+        ----------
+        deep : bool, default True
+            If True, will return the parameters for this estimator and
+            contained subobjects that are estimators.
+        
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their values.
+        
+        """
+        
+        return {
+            "max_ar_depth": self.max_ar_depth,
+            "max_lag": self.max_lag,
+            "safe": self.safe
+        }
+    
+    @check_is_fitted
+    def get_feature_importances(self) -> pd.DataFrame:
+        """Get feature importances for Arar model."""
+        importances = pd.DataFrame({
+            'feature': [f'lag_{lag}' for lag in self.lags_],
+            'importance': self.coef_
+        })
+
+        if self.coef_exog_ is not None:
+            exog_importances = pd.DataFrame({
+                'feature': [f'exog_{i}' for i in range(self.coef_exog_.shape[0])],
+                'importance': self.coef_exog_
+            })
+            importances = pd.concat([importances, exog_importances], ignore_index=True)
+            warnings.warn(
+                    "Exogenous variables are being handled using a two-step approach: "
+                    "(1) linear regression on exog, (2) ARAR on residuals. "
+                    "This affects model interpretation:\n"
+                    "  - ARAR coefficients (coef_) describe residual dynamics, not the original series\n"
+                    "  - Exogenous coefficients (coef_exog_) describe exogenous impact on original series",
+                ExogenousInterpretationWarning
+            )
+
+        return importances
+    
+    @check_is_fitted
+    def get_info_criteria(self, criteria: str) -> float:
+        """
+        Get information criteria.
+
+        Parameters
+        ----------
+        criteria : str
+            Information criterion to retrieve. Valid options are 'aic' and 'bic'.
+        Returns
+        -------
+        info_criteria : float
+            Value of the requested information criterion.
+
+        """
+        if criteria not in {'aic', 'bic'}:
+            raise ValueError(
+                "Invalid value for `criteria`. Valid options are 'aic' and 'bic' "
+                "for ARAR model."
+            )
+        
+        if criteria == 'aic':
+            value = self.aic_
+        else:
+            value = self.bic_
+        
+        return value
+    
+    def set_params(self, **params) -> "Arar":
+        """
+        Set the parameters of this estimator and reset the fitted state.
+        
+        This method resets the estimator to its unfitted state whenever parameters
+        are changed, requiring the model to be refitted before making predictions.
+        
+        Parameters
+        ----------
+        **params : dict
+            Estimator parameters. Valid parameter keys are 'max_ar_depth', 'max_lag',
+            and 'safe'.
+        
+        Returns
+        -------
+        Arar
+            The estimator with updated parameters and reset state.
+        
+        """
+
+        valid_params = {'max_ar_depth', 'max_lag', 'safe'}
+        for key in params.keys():
+            if key not in valid_params:
+                raise ValueError(
+                    f"Invalid parameter '{key}' for estimator {self.__class__.__name__}. "
+                    f"Valid parameters are: {valid_params}"
+                )
+        
+        for key, value in params.items():
+            setattr(self, key, value)
+        
+        # Reset fitted state
+        self.lags_                  = None
+        self.sigma2_                = None
+        self.psi_                   = None
+        self.sbar_                  = None
+  
+        self.model_                 = None
+        self.coef_                  = None
+        self.aic_                   = None
+        self.bic_                   = None
+        self.exog_model_            = None
+        self.coef_exog_             = None
+        self.n_exog_features_in_    = None
+        self.y_train_               = None
+        self.fitted_values_         = None
+        self.in_sample_residuals_   = None
+        self.n_features_in_         = None
+        self.is_memory_reduced      = False
+        self.is_fitted              = False
+        self.estimator_name_        = "Arar()"
+        
+        return self
+    
+    @check_is_fitted
+    def summary(self) -> None:
+        """
+        Print a simple textual summary of the fitted Arar model.
+        """
+        
+        print(f"{self.estimator_name_} Model Summary")
+        print("------------------")
+        print(f"Selected AR lags:                         {self.lags_}")
+        print(f"AR coefficients (phi):                    {np.round(self.coef_, 4)}")
+        print(f"Residual variance (sigma^2):              {self.sigma2_:.4f}")
+        print(f"Mean of shortened series (sbar):          {self.sbar_:.4f}")
+        print(f"Length of memory-shortening filter (psi): {len(self.psi_)}")
+
+        if not self.is_memory_reduced:
+            print("\nTime Series Summary Statistics")
+            print(f"Number of observations: {len(self.y_train_)}")
+            print(f"Mean:                   {np.mean(self.y_train_):.4f}")
+            print(f"Std Dev:                {np.std(self.y_train_, ddof=1):.4f}")
+            print(f"Min:                    {np.min(self.y_train_):.4f}")
+            print(f"25%:                    {np.percentile(self.y_train_, 25):.4f}")
+            print(f"Median:                 {np.median(self.y_train_):.4f}")
+            print(f"75%:                    {np.percentile(self.y_train_, 75):.4f}")
+            print(f"Max:                    {np.max(self.y_train_):.4f}")
+        
+        print("\nModel Diagnostics")
+        print(f"AIC: {self.aic_:.4f}")
+        print(f"BIC: {self.bic_:.4f}")
+        
+        if self.exog_model_ is not None:
+            print("\nExogenous Model (Linear Regression)")
+            print("-----------------------------------")
+            print(f"Number of features: {self.n_exog_features_in_}")
+            print(f"Intercept: {self.exog_model_.intercept_:.4f}")
+            print(f"Coefficients: {np.round(self.exog_model_.coef_, 4)}")
+
+    @check_is_fitted
     def reduce_memory(self) -> "Arar":
         """
         Reduce memory usage by removing internal arrays not needed for prediction.
@@ -614,69 +778,10 @@ class Arar(BaseEstimator, RegressorMixin):
             The estimator with reduced memory usage.
         
         """
-        check_is_fitted(self, "model_")
         
         self.fitted_values_ = None
         self.in_sample_residuals_ = None
 
         self.is_memory_reduced = True
-        
-        return self
-
-    def set_params(self, **params) -> "Arar":
-        """
-        Set the parameters of this estimator and reset the fitted state.
-        
-        This method resets the estimator to its unfitted state whenever parameters
-        are changed, requiring the model to be refitted before making predictions.
-        
-        Parameters
-        ----------
-        **params : dict
-            Estimator parameters. Valid parameter keys are 'max_ar_depth', 'max_lag',
-            and 'safe'.
-        
-        Returns
-        -------
-        self : Arar
-            The estimator with updated parameters and reset state.
-        
-        Raises
-        ------
-        ValueError
-            If any parameter key is invalid.
-        
-        """
-
-        valid_params = {'max_ar_depth', 'max_lag', 'safe'}
-        for key in params.keys():
-            if key not in valid_params:
-                raise ValueError(
-                    f"Invalid parameter '{key}' for estimator {self.__class__.__name__}. "
-                    f"Valid parameters are: {valid_params}"
-                )
-        
-        for key, value in params.items():
-            setattr(self, key, value)
-        
-        # Reset fitted state
-        self.lags_                = None
-        self.sigma2_              = None
-        self.psi_                 = None
-        self.sbar_                = None
-
-        self.model_               = None
-        self.coef_                = None
-        self.aic_                 = None
-        self.bic_                 = None
-        self.exog_model_          = None
-        self.coef_exog_           = None
-        self.n_exog_features_in_  = None
-        self.y_train_             = None
-        self.fitted_values_       = None
-        self.in_sample_residuals_ = None
-        self.n_features_in_       = None
-        self.is_memory_reduced    = False
-        self.is_fitted            = False
         
         return self

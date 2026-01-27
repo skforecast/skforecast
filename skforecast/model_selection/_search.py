@@ -2196,8 +2196,8 @@ def grid_search_stats(
     return_best: bool = True,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
-    suppress_warnings_fit: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
@@ -2237,10 +2237,12 @@ def grid_search_stats(
         skforecast.utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds used for cv or backtesting.
-    suppress_warnings_fit : bool, default False
-        If `True`, warnings generated during fitting will be ignored.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -2260,18 +2262,18 @@ def grid_search_stats(
     param_grid = list(ParameterGrid(param_grid))
 
     results = _evaluate_grid_hyperparameters_stats(
-        forecaster            = forecaster,
-        y                     = y,
-        cv                    = cv,
-        param_grid            = param_grid,
-        metric                = metric,
-        exog                  = exog,
-        return_best           = return_best,
-        n_jobs                = n_jobs,
-        verbose               = verbose,
-        suppress_warnings_fit = suppress_warnings_fit,
-        show_progress         = show_progress,
-        output_file           = output_file
+        forecaster        = forecaster,
+        y                 = y,
+        cv                = cv,
+        param_grid        = param_grid,
+        metric            = metric,
+        exog              = exog,
+        return_best       = return_best,
+        n_jobs            = n_jobs,
+        verbose           = verbose,
+        suppress_warnings = suppress_warnings,
+        show_progress     = show_progress,
+        output_file       = output_file
     )
 
     return results
@@ -2289,8 +2291,8 @@ def random_search_stats(
     return_best: bool = True,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
-    suppress_warnings_fit: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
@@ -2335,10 +2337,12 @@ def random_search_stats(
         skforecast.utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds used for cv or backtesting.
-    suppress_warnings_fit : bool, default False
-        If `True`, warnings generated during fitting will be ignored.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -2358,18 +2362,18 @@ def random_search_stats(
     param_grid = list(ParameterSampler(param_distributions, n_iter=n_iter, random_state=random_state))
 
     results = _evaluate_grid_hyperparameters_stats(
-        forecaster            = forecaster,
-        y                     = y,
-        cv                    = cv,
-        param_grid            = param_grid,
-        metric                = metric,
-        exog                  = exog,
-        return_best           = return_best,
-        n_jobs                = n_jobs,
-        verbose               = verbose,
-        suppress_warnings_fit = suppress_warnings_fit,
-        show_progress         = show_progress,
-        output_file           = output_file
+        forecaster        = forecaster,
+        y                 = y,
+        cv                = cv,
+        param_grid        = param_grid,
+        metric            = metric,
+        exog              = exog,
+        return_best       = return_best,
+        n_jobs            = n_jobs,
+        verbose           = verbose,
+        suppress_warnings = suppress_warnings,
+        show_progress     = show_progress,
+        output_file       = output_file
     )
 
     return results
@@ -2385,8 +2389,8 @@ def _evaluate_grid_hyperparameters_stats(
     return_best: bool = True,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
-    suppress_warnings_fit: bool = False,
     show_progress: bool = True,
+    suppress_warnings: bool = False,
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
@@ -2425,10 +2429,12 @@ def _evaluate_grid_hyperparameters_stats(
         skforecast.utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds used for cv or backtesting.
-    suppress_warnings_fit : bool, default False
-        If `True`, warnings generated during fitting will be ignored.
     show_progress : bool, default True
         Whether to show a progress bar.
+    suppress_warnings: bool, default False
+        If `True`, skforecast warnings will be suppressed during the backtesting 
+        process. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
     output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
@@ -2444,6 +2450,21 @@ def _evaluate_grid_hyperparameters_stats(
         - additional n columns with param = value.
 
     """
+    
+    if type(forecaster).__name__  != 'ForecasterStats':
+        raise TypeError(
+            "`forecaster` must be of type `ForecasterStats`, for all other "
+            "types of forecasters use the functions available in the "
+            "`model_selection` module."
+        )
+
+    if forecaster.n_estimators != 1:
+        raise ValueError(
+            f"Hyperparameter search with `ForecasterStats` is only available when "
+            f"the forecaster contains a single estimator. Got {forecaster.n_estimators} "
+            f"estimators: {forecaster.estimator_ids}. Initialize `ForecasterStats` with a single "
+            f"estimator to perform hyperparameter search."
+        )
 
     if return_best and exog is not None and (len(exog) != len(y)):
         raise ValueError(
@@ -2452,9 +2473,11 @@ def _evaluate_grid_hyperparameters_stats(
         )
 
     if not isinstance(metric, list):
-        metric = [metric] 
-    metric_dict = {(m if isinstance(m, str) else m.__name__): [] 
-                   for m in metric}
+        metric = [metric]
+    metric_dict = {
+        (m if isinstance(m, str) else m.__name__): [] 
+        for m in metric
+    }
     
     if len(metric_dict) != len(metric):
         raise ValueError(
@@ -2475,17 +2498,18 @@ def _evaluate_grid_hyperparameters_stats(
         try:
             forecaster.set_params(params)
             metric_values = backtesting_stats(
-                                forecaster            = forecaster,
-                                y                     = y,
-                                cv                    = cv,
-                                metric                = metric,
-                                exog                  = exog,
-                                alpha                 = None,
-                                interval              = None,
-                                n_jobs                = n_jobs,
-                                verbose               = verbose,
-                                suppress_warnings_fit = suppress_warnings_fit,
-                                show_progress         = False
+                                forecaster        = forecaster,
+                                y                 = y,
+                                cv                = cv,
+                                metric            = metric,
+                                exog              = exog,
+                                alpha             = None,
+                                interval          = None,
+                                freeze_params     = True,
+                                n_jobs            = n_jobs,
+                                verbose           = verbose,
+                                show_progress     = False,
+                                suppress_warnings = suppress_warnings
                             )[0]
         except Exception as e:
             warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
@@ -2529,7 +2553,7 @@ def _evaluate_grid_hyperparameters_stats(
         best_params = results.loc[0, 'params']
         best_metric = results.loc[0, list(metric_dict.keys())[0]]
         forecaster.set_params(best_params)
-        forecaster.fit(y=y, exog=exog, suppress_warnings=suppress_warnings_fit)
+        forecaster.fit(y=y, exog=exog, suppress_warnings=suppress_warnings)
         
         print(
             f"`Forecaster` refitted using the best-found parameters, "

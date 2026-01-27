@@ -1,7 +1,6 @@
 # Unit test summary method - Arar
 # ==============================================================================
 import numpy as np
-import pytest
 from ..._arar import Arar
 
 
@@ -26,23 +25,23 @@ def test_estimator_summary(capsys):
     out = capsys.readouterr().out
     
     # Check exact output
-    expected_output = """ARAR Model Summary
+    expected_output = """Arar(lags=(1, 3, 16, 17)) Model Summary
 ------------------
-Number of observations: 100
-Selected AR lags: (1, 3, 16, 17)
-AR coefficients (phi): [ 0.6876 -0.1565  0.102  -0.1787]
-Residual variance (sigma^2): 0.7354
-Mean of shortened series (sbar): 0.2885
+Selected AR lags:                         (1, 3, 16, 17)
+AR coefficients (phi):                    [ 0.6876 -0.1565  0.102  -0.1787]
+Residual variance (sigma^2):              0.7354
+Mean of shortened series (sbar):          0.2885
 Length of memory-shortening filter (psi): 1
 
 Time Series Summary Statistics
-Mean: 0.2885
-Std Dev: 1.1514
-Min: -2.4900
-25%: -0.4976
-Median: 0.2289
-75%: 1.0181
-Max: 3.2281
+Number of observations: 100
+Mean:                   0.2885
+Std Dev:                1.1514
+Min:                    -2.4900
+25%:                    -0.4976
+Median:                 0.2289
+75%:                    1.0181
+Max:                    3.2281
 
 Model Diagnostics
 AIC: 224.5980
@@ -68,23 +67,23 @@ def test_arar_summary_with_exog(capsys):
     captured = capsys.readouterr().out
     
     # Check exact output
-    expected_output = """ARAR Model Summary
+    expected_output = """Arar(lags=(1, 5, 8, 25)) Model Summary
 ------------------
-Number of observations: 100
-Selected AR lags: (1, 5, 8, 25)
-AR coefficients (phi): [ 0.019   0.1824 -0.1076  0.1259]
-Residual variance (sigma^2): 0.7978
-Mean of shortened series (sbar): -0.1081
+Selected AR lags:                         (1, 5, 8, 25)
+AR coefficients (phi):                    [ 0.019   0.1824 -0.1076  0.1259]
+Residual variance (sigma^2):              0.7978
+Mean of shortened series (sbar):          -0.1081
 Length of memory-shortening filter (psi): 2
 
 Time Series Summary Statistics
-Mean: -6.2559
-Std Dev: 5.1307
-Min: -14.5761
-25%: -9.6461
-Median: -7.6509
-75%: -3.1440
-Max: 8.5967
+Number of observations: 100
+Mean:                   -6.2559
+Std Dev:                5.1307
+Min:                    -14.5761
+25%:                    -9.6461
+Median:                 -7.6509
+75%:                    -3.1440
+Max:                    8.5967
 
 Model Diagnostics
 AIC: 213.2099
@@ -99,25 +98,22 @@ Coefficients: [0.4044 2.1382]
     assert captured == expected_output
 
 
-def test_summary_raises_error_after_reduce_memory(capsys):
+def test_summary_is_shorter_after_reduce_memory(capsys):
     """
-    Test that summary() raises error after reduce_memory().
+    Test that summary() output is shorter after reduce_memory().
     """
-    y = ar1_series(100)
-    est = Arar()
-    est.fit(y)
+    np.random.seed(42)
+    y = np.random.randn(1000).cumsum() + 100
+    model = Arar()
+    model.fit(y)
+
+    model.summary()
+    captured = capsys.readouterr()
+    assert "Arar(lags=(1, 4, 8, 20)) Model Summary" in captured.out
+    assert "Time Series Summary Statistics" in captured.out
     
-    # Verify summary works before reduction
-    est.summary()
-    out_before = capsys.readouterr().out
-    assert "ARAR Model Summary" in out_before
-    
-    # Reduce memory
-    est.reduce_memory()
-    
-    # summary() should raise error
-    with pytest.raises(
-        ValueError,
-        match="Cannot call summary\\(\\): model memory has been reduced"
-    ):
-        est.summary()
+    model.reduce_memory()
+    model.summary()
+    captured = capsys.readouterr()
+    assert "Arar(lags=(1, 4, 8, 20)) Model Summary" in captured.out
+    assert "Time Series Summary Statistics" not in captured.out

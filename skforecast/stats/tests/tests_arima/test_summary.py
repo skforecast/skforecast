@@ -153,19 +153,24 @@ def test_summary_displays_residual_statistics():
     assert "RMSE:" in output
 
 
-def test_summary_after_reduce_memory():
+def test_summary_is_shorter_after_reduce_memory(capsys):
     """
-    Test that summary raises error after reduce_memory is called.
+    Test that summary() output is shorter after reduce_memory().
     """
     y = ar1_series(100, seed=42)
     model = Arima(order=(1, 0, 1))
     model.fit(y)
+
+    model.summary()
+    captured = capsys.readouterr()
+    assert "ARIMA Model Summary" in captured.out
+    assert "Time Series Summary Statistics" in captured.out
     
     model.reduce_memory()
-    
-    msg = "Cannot call summary\\(\\): model memory has been reduced via"
-    with pytest.raises(ValueError, match=msg):
-        model.summary()
+    model.summary()
+    captured = capsys.readouterr()
+    assert "ARIMA Model Summary" in captured.out
+    assert "Time Series Summary Statistics" not in captured.out
 
 
 def test_summary_with_exog():

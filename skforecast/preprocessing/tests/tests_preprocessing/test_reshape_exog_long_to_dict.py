@@ -1,5 +1,6 @@
 # Unit test reshape_exog_long_to_dict
 # ==============================================================================
+import re
 import pytest
 import numpy as np
 import pandas as pd
@@ -17,7 +18,7 @@ def test_TypeError_when_data_is_not_dataframe():
     """
     Raise TypeError if data is not a pandas DataFrame.
     """
-    err_msg = "`data` must be a pandas DataFrame."
+    err_msg = re.escape("`data` must be a pandas DataFrame.")
     with pytest.raises(TypeError, match=err_msg):
         reshape_exog_long_to_dict(
             data="not_a_dataframe",
@@ -34,8 +35,7 @@ def test_ValueError_reshape_exog_long_to_dict_when_arguments_series_id_index_not
     Check that ValueError is raised when the input dataframe does not have MultiIndex and the
     arguments `series_id`, `index` and `values` are not provided
     """
-
-    err_msg = (
+    err_msg = re.escape(
         "Arguments `series_id`, and `index` must be "
         "specified when the input DataFrame does not have a MultiIndex. "
         "Please provide a value for each of these arguments."
@@ -49,7 +49,8 @@ def test_ValueError_when_series_id_not_in_data():
     Raise ValueError if series_id is not in data.
     """
     series_id = "series_id_not_in_data"
-    err_msg = f"Column '{series_id}' not found in `data`."
+
+    err_msg = re.escape(f"Column '{series_id}' not found in `data`.")
     with pytest.raises(ValueError, match=err_msg):
         reshape_exog_long_to_dict(
             data=exog_long,
@@ -66,7 +67,8 @@ def test_ValueError_when_index_not_in_data():
     Raise ValueError if index is not in data.
     """
     index = "series_id_not_in_data"
-    err_msg = f"Column '{index}' not found in `data`."
+    
+    err_msg = re.escape(f"Column '{index}' not found in `data`.")
     with pytest.raises(ValueError, match=err_msg):
         reshape_exog_long_to_dict(
             data=exog_long,
@@ -368,3 +370,90 @@ def test_reshape_exog_long_to_dict_output_when_npnan_are_added_in_integer_column
         assert exog_dict['series_2'].dtypes.astype(str).to_list() == ['float64', 'category', 'int32']
     else:
         assert exog_dict['series_2'].dtypes.astype(str).to_list() == ['float64', 'category', 'int64']
+
+
+@pytest.mark.parametrize(
+    "fill_value, expected_fill",
+    [(None, np.nan), (-999., -999.)],
+    ids=lambda x: f"fill_value: {x}",
+)
+def test_check_output_reshape_exog_long_to_dict_with_fill_value(fill_value, expected_fill):
+    """
+    Check output of reshape_exog_long_to_dict with fill_value parameter.
+    """
+    data = pd.DataFrame({
+        'series_id': ['A'] * 3 + ['B'] * 3,
+        'datetime': pd.to_datetime(['2020-01-01', '2020-01-02', '2020-01-04'] * 2),
+        'exog_1': [1.0, 2.0, 4.0, 10.0, 20.0, 40.0],
+        'exog_2': [0.1, 0.2, 0.4, 1.0, 2.0, 4.0]
+    })
+
+    results = reshape_exog_long_to_dict(
+        data=data,
+        series_id='series_id',
+        index='datetime',
+        freq='D',
+        fill_value=fill_value,
+        suppress_warnings=True,
+    )
+
+    expected_A = pd.DataFrame(
+        {
+            'exog_1': [1.0, 2.0, expected_fill, 4.0],
+            'exog_2': [0.1, 0.2, expected_fill, 0.4]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+    expected_B = pd.DataFrame(
+        {
+            'exog_1': [10.0, 20.0, expected_fill, 40.0],
+            'exog_2': [1.0, 2.0, expected_fill, 4.0]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+
+    pd.testing.assert_frame_equal(results['A'], expected_A)
+    pd.testing.assert_frame_equal(results['B'], expected_B)
+
+
+@pytest.mark.parametrize(
+    "fill_value, expected_fill",
+    [(None, np.nan), (0., 0.)],
+    ids=lambda x: f"fill_value: {x}",
+)
+def test_check_output_reshape_exog_long_to_dict_with_fill_value_when_multiindex(fill_value, expected_fill):
+    """
+    Check output of reshape_exog_long_to_dict with fill_value parameter when
+    input data is a MultiIndex DataFrame.
+    """
+    data = pd.DataFrame({
+        'series_id': ['A'] * 3 + ['B'] * 3,
+        'datetime': pd.to_datetime(['2020-01-01', '2020-01-02', '2020-01-04'] * 2),
+        'exog_1': [1.0, 2.0, 4.0, 10.0, 20.0, 40.0],
+        'exog_2': [0.1, 0.2, 0.4, 1.0, 2.0, 4.0]
+    })
+    data = data.set_index(['series_id', 'datetime'])
+
+    results = reshape_exog_long_to_dict(
+        data=data,
+        freq='D',
+        fill_value=fill_value,
+    )
+
+    expected_A = pd.DataFrame(
+        {
+            'exog_1': [1.0, 2.0, expected_fill, 4.0],
+            'exog_2': [0.1, 0.2, expected_fill, 0.4]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+    expected_B = pd.DataFrame(
+        {
+            'exog_1': [10.0, 20.0, expected_fill, 40.0],
+            'exog_2': [1.0, 2.0, expected_fill, 4.0]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+
+    pd.testing.assert_frame_equal(results['A'], expected_A)
+    pd.testing.assert_frame_equal(results['B'], expected_B)

@@ -1,7 +1,8 @@
 # Unit test score method - Ets
 # ==============================================================================
-import numpy as np
+import re
 import pytest
+import numpy as np
 from ..._ets import Ets
 
 
@@ -15,7 +16,7 @@ def ar1_series(n=80, phi=0.7, sigma=1.0, seed=123):
     return y
 
 
-def test_estimator_score():
+def test_estimator_get_score():
     """Test Ets estimator get_score method"""
     y = ar1_series(100)
     est = Ets(m=1, model="AAN").fit(y)
@@ -25,7 +26,7 @@ def test_estimator_score():
     np.testing.assert_almost_equal(score, expected_score, decimal=10)
 
 
-def test_score_raises_error_after_reduce_memory():
+def test_get_score_raises_error_after_reduce_memory():
     """Test that get_score() raises error after reduce_memory()"""
     y = ar1_series(100)
     est = Ets(m=1, model="AAN")
@@ -41,6 +42,6 @@ def test_score_raises_error_after_reduce_memory():
     # get_score() should raise error
     with pytest.raises(
         ValueError,
-        match="Cannot call score\\(\\): model memory has been reduced"
+        match=re.escape("Cannot call get_score(): model memory has been reduced")
     ):
         est.get_score()

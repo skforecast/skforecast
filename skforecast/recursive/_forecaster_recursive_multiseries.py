@@ -3500,7 +3500,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     ) -> None:
         """
         Set new values to the parameters of the scikit-learn model stored in the
-        forecaster.
+        forecaster. After calling this method, the forecaster is reset to an 
+        unfitted state. The `fit` method must be called before prediction.
         
         Parameters
         ----------
@@ -3515,6 +3516,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         self.estimator = clone(self.estimator)
         self.estimator.set_params(**params)
+        self.is_fitted = False
 
     def set_fit_kwargs(
         self, 

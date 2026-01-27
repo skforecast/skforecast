@@ -47,7 +47,7 @@ from ..utils import (
     initialize_estimator
 )
 
-# TODO: Review in skforecast 0.20.0
+# TODO: Review in skforecast 0.21.0
 try:
     import keras
 except ImportError as e:
@@ -714,7 +714,7 @@ class ForecasterRnn(ForecasterBase):
 
         for serie in series_names_in_:
             x = series[serie]
-            check_y(y=x, series_id=serie)
+            check_y(y=x, series_id=f"series '{serie}'")
             x = transform_series(
                 series=x,
                 transformer=self.transformer_series_[serie],
@@ -1807,7 +1807,9 @@ class ForecasterRnn(ForecasterBase):
         """
         Set new values to the parameters of the scikit-learn model stored in the
         forecaster. It is important to note that all models share the same
-        configuration of parameters and hyperparameters.
+        configuration of parameters and hyperparameters. After calling this method, 
+        the forecaster is reset to an unfitted state. The `fit` method must be 
+        called before prediction.
 
         Parameters
         ----------
@@ -1823,6 +1825,7 @@ class ForecasterRnn(ForecasterBase):
         self.estimator = clone(self.estimator)
         self.estimator.reset_states()
         self.estimator.compile(**params)
+        self.is_fitted = False
 
     def set_fit_kwargs(self, fit_kwargs: dict) -> None:
         """

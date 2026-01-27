@@ -85,10 +85,10 @@ def check_backtesting_input(
     use_binned_residuals: bool = True,
     random_state: int = 123,
     return_predictors: bool = False,
+    freeze_params: bool = True,
     n_jobs: int | str = 'auto',
     show_progress: bool = True,
-    suppress_warnings: bool = False,
-    suppress_warnings_fit: bool = False
+    suppress_warnings: bool = False
 ) -> None:
     """
     This is a helper function to check most inputs of backtesting functions in 
@@ -153,15 +153,24 @@ def check_backtesting_input(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_fit_forecaster.
+    freeze_params : bool, default True
+        Determines whether to freeze the model parameters after the first fit
+        for estimators that perform automatic model selection.
+
+        - If `True`, the model parameters found during the first fit (e.g., order 
+        and seasonal_order for Arima, or smoothing parameters for Ets) are reused
+        in all subsequent refits. This avoids re-running the automatic selection
+        procedure in each fold and reduces runtime.
+        - If `False`, automatic model selection is performed independently in each
+        refit, allowing parameters to adapt across folds. This increases runtime
+        and adds a `params` column to the output with the parameters selected per
+        fold.
     show_progress : bool, default True
         Whether to show a progress bar.
     suppress_warnings: bool, default False
         If `True`, skforecast warnings will be suppressed during the backtesting 
         process. See skforecast.exceptions.warn_skforecast_categories for more
         information.
-    suppress_warnings_fit : bool, default False
-        If `True`, warnings generated during fitting will be ignored. Only 
-        `ForecasterStats`.
 
     Returns
     -------
@@ -334,8 +343,8 @@ def check_backtesting_input(
     else:
         if forecaster_name in ['ForecasterStats', 'ForecasterEquivalentDate']:
             raise ValueError(
-                f"`initial_train_size` must be an integer smaller than the "
-                f"length of `{data_name}` ({data_length})."
+                f"When using {forecaster_name}, `initial_train_size` must be an "
+                f"integer smaller than the length of `{data_name}` ({data_length})."
             )
         else:
             if not forecaster.is_fitted:
@@ -365,14 +374,14 @@ def check_backtesting_input(
         raise TypeError(f"`random_state` must be an integer greater than 0. Got {random_state}.")
     if not isinstance(return_predictors, bool):
         raise TypeError("`return_predictors` must be a boolean: `True`, `False`.")
+    if not isinstance(freeze_params, bool):
+        raise TypeError("`freeze_params` must be a boolean: `True`, `False`.")
     if not isinstance(n_jobs, int) and n_jobs != 'auto':
         raise TypeError(f"`n_jobs` must be an integer or `'auto'`. Got {n_jobs}.")
     if not isinstance(show_progress, bool):
         raise TypeError("`show_progress` must be a boolean: `True`, `False`.")
     if not isinstance(suppress_warnings, bool):
         raise TypeError("`suppress_warnings` must be a boolean: `True`, `False`.")
-    if not isinstance(suppress_warnings_fit, bool):
-        raise TypeError("`suppress_warnings_fit` must be a boolean: `True`, `False`.")
 
     if interval is not None or alpha is not None:
         
@@ -657,6 +666,10 @@ def select_n_jobs_backtesting(
 
     forecaster_name = type(forecaster).__name__
 
+    if forecaster_name == 'ForecasterStats':
+        n_jobs = 1
+        return n_jobs
+
     if isinstance(forecaster.estimator, Pipeline):
         estimator = forecaster.estimator[-1]
     else:
@@ -666,10 +679,10 @@ def select_n_jobs_backtesting(
     if not isinstance(refit, bool) and refit != 1:
         n_jobs = 1
     else:
-        if forecaster_name in ['ForecasterRecursive']:
+        if forecaster_name in ['ForecasterRecursive', 'ForecasterRecursiveClassifier']:
             if isinstance(estimator, LinearModel):
                 n_jobs = 1
-            elif type(estimator).__name__ == 'LGBMRegressor':
+            elif type(estimator).__name__ in {'LGBMRegressor', 'LGBMClassifier'}':
                 n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
@@ -681,7 +694,7 @@ def select_n_jobs_backtesting(
                 n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
-        elif forecaster_name in ['ForecasterStats', 'ForecasterEquivalentDate']:
+        elif forecaster_name in ['ForecasterEquivalentDate']:
             n_jobs = 1
         else:
             n_jobs = 1
@@ -1055,25 +1068,27 @@ def _calculate_metrics_backtesting_multiseries(
     
     """
 
-    if not isinstance(series, (pd.DataFrame, dict)):
-        raise TypeError(
-            "`series` must be a pandas DataFrame or a dictionary of pandas "
-            "DataFrames."
-        )
-    if not isinstance(predictions, pd.DataFrame):
-        raise TypeError("`predictions` must be a pandas DataFrame.")
-    if not isinstance(folds, (list, tqdm)):
-        raise TypeError("`folds` must be a list or a tqdm object.")
-    if not isinstance(span_index, (pd.DatetimeIndex, pd.RangeIndex)):
-        raise TypeError("`span_index` must be a pandas DatetimeIndex or pandas RangeIndex.")
-    if not isinstance(window_size, (int, np.integer)):
-        raise TypeError("`window_size` must be an integer.")
-    if not isinstance(metrics, list):
-        raise TypeError("`metrics` must be a list.")
-    if not isinstance(levels, list):
-        raise TypeError("`levels` must be a list.")
-    if not isinstance(add_aggregated_metric, bool):
-        raise TypeError("`add_aggregated_metric` must be a boolean.")
+    # NOTE: All this checks can be deleted as they are done in the public
+    # function that calls this private function.
+    # if not isinstance(series, (pd.DataFrame, dict)):
+    #     raise TypeError(
+    #         "`series` must be a pandas DataFrame or a dictionary of pandas "
+    #         "DataFrames."
+    #     )
+    # if not isinstance(predictions, pd.DataFrame):
+    #     raise TypeError("`predictions` must be a pandas DataFrame.")
+    # if not isinstance(folds, (list, tqdm)):
+    #     raise TypeError("`folds` must be a list or a tqdm object.")
+    # if not isinstance(span_index, (pd.DatetimeIndex, pd.RangeIndex)):
+    #     raise TypeError("`span_index` must be a pandas DatetimeIndex or pandas RangeIndex.")
+    # if not isinstance(window_size, (int, np.integer)):
+    #     raise TypeError("`window_size` must be an integer.")
+    # if not isinstance(metrics, list):
+    #     raise TypeError("`metrics` must be a list.")
+    # if not isinstance(levels, list):
+    #     raise TypeError("`levels` must be a list.")
+    # if not isinstance(add_aggregated_metric, bool):
+    #     raise TypeError("`add_aggregated_metric` must be a boolean.")
     
     metric_names = [m.__name__ for m in metrics]
     levels_in_predictions = predictions.index.get_level_values('level').unique()
@@ -1155,7 +1170,8 @@ def _calculate_metrics_backtesting_multiseries(
             else:
                 y_train = None
             metrics_level = [
-                m(y_true=y_true, y_pred=y_pred, y_train=y_train) for m in metrics
+                m(y_true=y_true, y_pred=y_pred, y_train=y_train) 
+                for m in metrics
             ]
             metrics_levels.append(metrics_level)
         else:
@@ -1198,7 +1214,10 @@ def _calculate_metrics_backtesting_multiseries(
         weighted_average['levels'] = 'weighted_average'
 
         # aggregation: pooling
-        scaled_metrics = ['mean_absolute_scaled_error', 'root_mean_squared_scaled_error']
+        scaled_metrics = [
+            'mean_absolute_scaled_error', 
+            'root_mean_squared_scaled_error'
+        ]
 
         y_true = y_true_y_pred.loc[:, 'y_true'].droplevel("level")
         y_pred = y_true_y_pred.loc[:, 'y_pred'].droplevel("level")
@@ -1297,41 +1316,43 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     
     """
 
-    if not isinstance(series, (pd.DataFrame, dict)):
-        raise TypeError(
-            "`series` must be a pandas DataFrame or a dictionary of pandas "
-            "DataFrames."
-        )
-    if not isinstance(X_train, pd.DataFrame):
-        raise TypeError(f"`X_train` must be a pandas DataFrame. Got: {type(X_train)}")
-    if not isinstance(y_train, (pd.Series, dict)):
-        raise TypeError(
-            f"`y_train` must be a pandas Series or a dictionary of pandas Series. "
-            f"Got: {type(y_train)}"
-        )        
-    if not isinstance(X_test, pd.DataFrame):
-        raise TypeError(f"`X_test` must be a pandas DataFrame. Got: {type(X_test)}")
-    if not isinstance(y_test, (pd.Series, dict)):
-        raise TypeError(
-            f"`y_test` must be a pandas Series or a dictionary of pandas Series. "
-            f"Got: {type(y_test)}"
-        )
-    if not isinstance(X_train_encoding, pd.Series):
-        raise TypeError(
-            f"`X_train_encoding` must be a pandas Series. Got: {type(X_train_encoding)}"
-        )
-    if not isinstance(X_test_encoding, pd.Series):
-        raise TypeError(
-            f"`X_test_encoding` must be a pandas Series. Got: {type(X_test_encoding)}"
-        )
-    if not isinstance(levels, list):
-        raise TypeError(f"`levels` must be a list. Got: {type(levels)}")
-    if not isinstance(metrics, list):
-        raise TypeError(f"`metrics` must be a list. Got: {type(metrics)}")
-    if not isinstance(add_aggregated_metric, bool):
-        raise TypeError(
-            f"`add_aggregated_metric` must be a boolean. Got: {type(add_aggregated_metric)}"
-        )
+    # NOTE: All this checks can be deleted as they are done in the public
+    # function that calls this private function.
+    # if not isinstance(series, (pd.DataFrame, dict)):
+    #     raise TypeError(
+    #         "`series` must be a pandas DataFrame or a dictionary of pandas "
+    #         "DataFrames."
+    #     )
+    # if not isinstance(X_train, pd.DataFrame):
+    #     raise TypeError(f"`X_train` must be a pandas DataFrame. Got: {type(X_train)}")
+    # if not isinstance(y_train, (pd.Series, dict)):
+    #     raise TypeError(
+    #         f"`y_train` must be a pandas Series or a dictionary of pandas Series. "
+    #         f"Got: {type(y_train)}"
+    #     )        
+    # if not isinstance(X_test, pd.DataFrame):
+    #     raise TypeError(f"`X_test` must be a pandas DataFrame. Got: {type(X_test)}")
+    # if not isinstance(y_test, (pd.Series, dict)):
+    #     raise TypeError(
+    #         f"`y_test` must be a pandas Series or a dictionary of pandas Series. "
+    #         f"Got: {type(y_test)}"
+    #     )
+    # if not isinstance(X_train_encoding, pd.Series):
+    #     raise TypeError(
+    #         f"`X_train_encoding` must be a pandas Series. Got: {type(X_train_encoding)}"
+    #     )
+    # if not isinstance(X_test_encoding, pd.Series):
+    #     raise TypeError(
+    #         f"`X_test_encoding` must be a pandas Series. Got: {type(X_test_encoding)}"
+    #     )
+    # if not isinstance(levels, list):
+    #     raise TypeError(f"`levels` must be a list. Got: {type(levels)}")
+    # if not isinstance(metrics, list):
+    #     raise TypeError(f"`metrics` must be a list. Got: {type(metrics)}")
+    # if not isinstance(add_aggregated_metric, bool):
+    #     raise TypeError(
+    #         f"`add_aggregated_metric` must be a boolean. Got: {type(add_aggregated_metric)}"
+    #     )
 
     metrics = [
         _get_metric(metric=m)
@@ -1448,7 +1469,8 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             else:
                 y_train = None
             metrics_level = [
-                m(y_true=y_true, y_pred=y_pred, y_train=y_train) for m in metrics
+                m(y_true=y_true, y_pred=y_pred, y_train=y_train) 
+                for m in metrics
             ]
             metrics_levels.append(metrics_level)
         else:

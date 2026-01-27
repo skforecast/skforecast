@@ -175,3 +175,86 @@ def test_check_output_reshape_series_long_to_dict_when_multiindex():
 
     for k in expected.keys():
         pd.testing.assert_series_equal(results[k], expected[k])
+
+
+@pytest.mark.parametrize("fill_value, expected_fill", 
+                         [(None, np.nan), (-999., -999.)], 
+                         ids=lambda x: f'fill_value: {x}')
+def test_check_output_reshape_series_long_to_dict_with_fill_value(fill_value, expected_fill):
+    """
+    Check output of reshape_series_long_to_dict with fill_value parameter
+    when gaps are created by setting the frequency.
+    """
+    data = pd.DataFrame({
+        "series_id": ["A"] * 4 + ["B"] * 4,
+        "index": pd.date_range("2020-01-01", periods=4, freq="D").tolist() * 2,
+        "values": [1., 2., 3., 4.] * 2,
+    })
+    # Remove one row to create a gap in series B
+    data = data.iloc[[0, 1, 2, 3, 4, 5, 7]]
+
+    expected = {
+        "A": pd.Series(
+                np.array([1., 2., 3., 4.]), 
+                index=pd.date_range("2020-01-01", periods=4, freq="D"), 
+                name="A"
+            ),
+        "B": pd.Series(
+                np.array([1., 2., expected_fill, 4.]), 
+                index=pd.date_range("2020-01-01", periods=4, freq="D"), 
+                name="B"
+            )
+    }
+
+    results = reshape_series_long_to_dict(
+        data=data,
+        series_id="series_id",
+        index="index",
+        values="values",
+        freq="D",
+        fill_value=fill_value,
+        suppress_warnings=True
+    )
+
+    for k in expected.keys():
+        pd.testing.assert_series_equal(results[k], expected[k])
+
+
+@pytest.mark.parametrize("fill_value, expected_fill", 
+                         [(None, np.nan), (0., 0.)], 
+                         ids=lambda x: f'fill_value: {x}')
+def test_check_output_reshape_series_long_to_dict_with_fill_value_when_multiindex(fill_value, expected_fill):
+    """
+    Check output of reshape_series_long_to_dict with fill_value parameter
+    when data is a MultiIndex DataFrame and gaps are created by setting the frequency.
+    """
+    data = pd.DataFrame({
+        "series_id": ["A"] * 4 + ["B"] * 4,
+        "datetime": pd.date_range("2020-01-01", periods=4, freq="D").tolist() * 2,
+        "values": [1., 2., 3., 4.] * 2,
+    })
+    # Remove one row to create a gap in series B
+    data = data.iloc[[0, 1, 2, 3, 4, 5, 7]]
+    data = data.set_index(["series_id", "datetime"])
+
+    expected = {
+        "A": pd.Series(
+                np.array([1., 2., 3., 4.]), 
+                index=pd.date_range("2020-01-01", periods=4, freq="D"), 
+                name="A"
+            ),
+        "B": pd.Series(
+                np.array([1., 2., expected_fill, 4.]), 
+                index=pd.date_range("2020-01-01", periods=4, freq="D"), 
+                name="B"
+            )
+    }
+
+    results = reshape_series_long_to_dict(
+        data=data,
+        freq="D",
+        fill_value=fill_value
+    )
+
+    for k in expected.keys():
+        pd.testing.assert_series_equal(results[k], expected[k])

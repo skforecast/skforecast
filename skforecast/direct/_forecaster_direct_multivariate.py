@@ -2799,7 +2799,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         """
         Set new values to the parameters of the scikit-learn model stored in the
         forecaster. It is important to note that all models share the same 
-        configuration of parameters and hyperparameters.
+        configuration of parameters and hyperparameters. After calling this method, 
+        the forecaster is reset to an unfitted state. The `fit` method must be 
+        called before prediction.
         
         Parameters
         ----------
@@ -2818,6 +2820,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             step: clone(self.estimator)
             for step in self.steps
         }
+        self.is_fitted = False
 
     def set_fit_kwargs(
         self, 

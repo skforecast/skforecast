@@ -2,7 +2,9 @@
 # ==============================================================================
 import re
 import pytest
-from skforecast.stats import Sarimax
+import pandas as pd
+import numpy as np
+from skforecast.stats import Sarimax, Arar, Ets
 from skforecast.recursive import ForecasterStats
 
 # Fixtures
@@ -19,8 +21,8 @@ def test_ForecasterStats_get_info_criteria_ValueError_criteria_invalid_value():
     criteria = 'not_valid'
 
     err_msg = re.escape(
-        ("Invalid value for `criteria`. Valid options are 'aic', 'bic', "
-         "and 'hqic'.")
+        "Invalid value for `criteria`. Valid options are 'aic', 'bic', "
+        "and 'hqic'."
     )
     with pytest.raises(ValueError, match = err_msg): 
         forecaster.get_info_criteria(criteria=criteria)
@@ -36,8 +38,8 @@ def test_ForecasterStats_get_info_criteria_ValueError_method_invalid_value():
     method = 'not_valid'
 
     err_msg = re.escape(
-        ("Invalid value for `method`. Valid options are 'standard' and "
-         "'lutkepohl'.")
+        "Invalid value for `method`. Valid options are 'standard' and "
+        "'lutkepohl'."
     )
     with pytest.raises(ValueError, match = err_msg): 
         forecaster.get_info_criteria(method=method)
@@ -50,46 +52,39 @@ def test_Sarimax_get_info_criteria_skforecast():
     forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 1)))
     forecaster.fit(y=y)
     results = forecaster.get_info_criteria(criteria='aic', method='standard')
-    expected = -56.80222086732
+    expected = pd.DataFrame({
+        'criteria': 'aic',
+        'value': -56.80222086732
+    }, index=[0])
 
-    assert results == pytest.approx(expected)
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_Arar_get_info_criteria():
     """
     Test ForecasterStats get_info_criteria with Arar estimator.
-    """
-    import numpy as np
-    from skforecast.stats import Arar
-    
+    """    
     forecaster = ForecasterStats(estimator=Arar())
     forecaster.fit(y=y)
-    
-    # Test AIC
-    aic_result = forecaster.get_info_criteria(criteria='aic', method='standard')
-    assert isinstance(aic_result, (float, np.floating))
-    # Handle NaN case properly
-    if np.isnan(aic_result):
-        assert np.isnan(forecaster.estimator.aic_)
-    else:
-        assert aic_result == forecaster.estimator.aic_
-    
-    # Test BIC
-    bic_result = forecaster.get_info_criteria(criteria='bic', method='standard')
-    assert isinstance(bic_result, (float, np.floating))
-    # Handle NaN case properly
-    if np.isnan(bic_result):
-        assert np.isnan(forecaster.estimator.bic_)
-    else:
-        assert bic_result == forecaster.estimator.bic_
+    results = forecaster.get_info_criteria(criteria='aic')
+    expected_aic = pd.DataFrame({
+        'criteria': 'aic',
+        'value': -75.467178
+    }, index=[0])
+    pd.testing.assert_frame_equal(results, expected_aic)
+
+    results = forecaster.get_info_criteria(criteria='bic')
+    expected_bic = pd.DataFrame({
+        'criteria': 'bic',
+        'value': -67.918599
+    }, index=[0])
+    pd.testing.assert_frame_equal(results, expected_bic)
 
 
 def test_Arar_get_info_criteria_ValueError_invalid_criteria():
     """
     Test ForecasterStats get_info_criteria ValueError when criteria='hqic' with Arar.
-    """
-    from skforecast.stats import Arar
-    
+    """    
     forecaster = ForecasterStats(estimator=Arar())
     forecaster.fit(y=y)
     
@@ -101,49 +96,25 @@ def test_Arar_get_info_criteria_ValueError_invalid_criteria():
         forecaster.get_info_criteria(criteria='hqic')
 
 
-def test_Arar_get_info_criteria_ValueError_invalid_method():
-    """
-    Test ForecasterStats get_info_criteria ValueError when method='lutkepohl' with Arar.
-    """
-    from skforecast.stats import Arar
-    
-    forecaster = ForecasterStats(estimator=Arar())
-    forecaster.fit(y=y)
-    
-    err_msg = re.escape(
-        "Invalid value for `method`. Only 'standard' is supported for "
-        "ARAR model."
-    )
-    with pytest.raises(ValueError, match=err_msg):
-        forecaster.get_info_criteria(criteria='aic', method='lutkepohl')
-
-
 def test_Ets_get_info_criteria():
     """
     Test ForecasterStats get_info_criteria with Ets estimator.
-    """
-    from skforecast.stats import Ets
-    
+    """    
     forecaster = ForecasterStats(estimator=Ets(model='ANN'))
     forecaster.fit(y=y)
     
     # Test AIC
-    aic_result = forecaster.get_info_criteria(criteria='aic', method='standard')
-    assert isinstance(aic_result, float)
-    assert aic_result == forecaster.estimator.model_.aic
+    aic_result = forecaster.get_info_criteria(criteria='aic')
+    assert aic_result['value'].item() == forecaster.estimators_[0].model_.aic
     
     # Test BIC
-    bic_result = forecaster.get_info_criteria(criteria='bic', method='standard')
-    assert isinstance(bic_result, float)
-    assert bic_result == forecaster.estimator.model_.bic
-
+    bic_result = forecaster.get_info_criteria(criteria='bic')
+    assert bic_result['value'].item() == forecaster.estimators_[0].model_.bic
 
 def test_Ets_get_info_criteria_ValueError_invalid_criteria():
     """
     Test ForecasterStats get_info_criteria ValueError when criteria='hqic' with Ets.
-    """
-    from skforecast.stats import Ets
-    
+    """    
     forecaster = ForecasterStats(estimator=Ets(model='ANN'))
     forecaster.fit(y=y)
     
@@ -153,20 +124,3 @@ def test_Ets_get_info_criteria_ValueError_invalid_criteria():
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.get_info_criteria(criteria='hqic')
-
-
-def test_Ets_get_info_criteria_ValueError_invalid_method():
-    """
-    Test ForecasterStats get_info_criteria ValueError when method='lutkepohl' with Ets.
-    """
-    from skforecast.stats import Ets
-    
-    forecaster = ForecasterStats(estimator=Ets(model='ANN'))
-    forecaster.fit(y=y)
-    
-    err_msg = re.escape(
-        "Invalid value for `method`. Only 'standard' is supported for "
-        "ETS model."
-    )
-    with pytest.raises(ValueError, match=err_msg):
-        forecaster.get_info_criteria(criteria='aic', method='lutkepohl')

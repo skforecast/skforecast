@@ -1,6 +1,8 @@
 # Unit test set_params ForecasterRecursiveClassifier
 # ==============================================================================
 import pytest
+import numpy as np
+import pandas as pd
 import sklearn
 from sklearn.linear_model import LogisticRegression
 from skforecast.recursive import ForecasterRecursiveClassifier
@@ -74,3 +76,20 @@ def test_set_params_sklearn_1_8_or_greater():
     results = forecaster.estimator.get_params()
     
     assert results == expected
+
+
+def test_set_params_sets_is_fitted_to_false():
+    """
+    Test that set_params sets is_fitted to False after a forecaster has been fitted.
+    """
+    y = pd.Series(np.random.choice([0, 1], size=20), name='y')
+    forecaster = ForecasterRecursiveClassifier(
+        LogisticRegression(), lags=3
+    )
+    forecaster.fit(y=y)
+    assert forecaster.is_fitted is True
+    
+    new_params = {'C': 0.5}
+    forecaster.set_params(new_params)
+    
+    assert forecaster.is_fitted is False

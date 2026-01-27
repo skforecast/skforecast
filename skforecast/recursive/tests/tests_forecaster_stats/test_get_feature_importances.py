@@ -22,8 +22,8 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
     forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
 
     err_msg = re.escape(
-        ("This forecaster is not fitted yet. Call `fit` with appropriate "
-         "arguments before using `get_feature_importances()`.")
+        "This forecaster is not fitted yet. Call `fit` with appropriate "
+        "arguments before using `get_feature_importances()`."
     )
     with pytest.raises(NotFittedError, match=err_msg):         
         forecaster.get_feature_importances()

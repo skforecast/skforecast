@@ -18,10 +18,16 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> Added parameter `max_out_of_range_proportion` to <code>[PopulationDriftDetector]</code> to set the maximum allowed proportion of out-of-range observations (for numeric features) before triggering drift detection.
 
-+ <span class="badge text-bg-api-change">API Change</span> [ForecasterSarimax] has been removed, deprecated in version 0.19.0. Use the new [ForecasterStats] class in the [recursive] module, which offers enhanced capabilities and flexibility for statistical time series forecasting.
++ <span class="badge text-bg-feature">Feature</span> <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[ETS]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterSarimax]</code> has been removed, deprecated in version 0.19.0. Use the new <code>[ForecasterStats]</code> class in the <code>[recursive]</code> module, which offers enhanced capabilities and flexibility for statistical time series forecasting.
 
 
 **Added**
+
++ <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[ETS]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
+
++ New argument `freeze_params` in the [backtesting_stats] function to allow freezing the parameters of the statistical models during backtesting. When set to `True`, the models will use the parameters obtained from the initial fit throughout the backtesting process, rather than re-estimating them at each step.
 
 + Introduced vectorized `_recursive_predict_bootstrapping` methods in <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code> that predict all bootstrap samples in a single batch per step instead of looping over bootstrap iterations. This achieves significant speedup in the interval prediction process.
 
@@ -41,6 +47,8 @@ The main changes in this release are:
 + [ForecasterSarimax] has been removed, deprecated in version 0.19.0. Use the new [ForecasterStats] class in the [recursive] module, which offers enhanced capabilities and flexibility for statistical time series forecasting.
 
 + Removed residual handling from `_recursive_predict` methods, separating bootstrap logic into dedicated methods.
+
++ `suppress_warnings_fit` parameter in <code>[backtesting_stats]</code> function has been replaced with `suppress_warnings` to control the display of skforecast warnings during the entire backtesting process.
 
 
 **Fixed**
@@ -1372,6 +1380,8 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [stats]: ../api/stats.md
 [Sarimax]: ../api/stats.md#skforecast.stats._sarimax.Sarimax
 [Arar]: ../api/stats.md#skforecast.stats._arar.Arar
+[ETS]: ../api/stats.md#skforecast.stats._ets.ETS
+[Arima]: ../api/stats.md#skforecast.stats._arima.Arima
 
 <!-- model_selection -->
 [model_selection]: ../api/model_selection.md
