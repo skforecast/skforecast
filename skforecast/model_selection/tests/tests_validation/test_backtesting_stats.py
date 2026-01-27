@@ -38,8 +38,8 @@ def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
          )
 
     err_msg = re.escape(
-        "`forecaster` must be of type `ForecasterStats`, for all other "
-        "types of forecasters use the functions available in the other "
+        "`forecaster` must be of type `ForecasterStats`. For all other "
+        "types of forecasters use the other functions available in the "
         "`model_selection` module."
     )
     with pytest.raises(TypeError, match = err_msg):
