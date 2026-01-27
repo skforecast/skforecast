@@ -351,8 +351,8 @@ def check_backtesting_input(
     else:
         if forecaster_name in ['ForecasterStats', 'ForecasterEquivalentDate']:
             raise ValueError(
-                f"`initial_train_size` must be an integer smaller than the "
-                f"length of `{data_name}` ({data_length})."
+                f"When using {forecaster_name}, `initial_train_size` must be an "
+                f"integer smaller than the length of `{data_name}` ({data_length})."
             )
         else:
             if not forecaster.is_fitted:

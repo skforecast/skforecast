@@ -1574,10 +1574,7 @@ def _backtesting_stats(
             )
             forecaster.remove_estimators(ids_not_support_interval)
 
-    # TODO: Check for multiple estimators
     # NOTE: initial_train_size cannot be None because of append method in Sarimax
-    # NOTE: This allows for parallelization when `refit` is `False`. The initial 
-    # Forecaster fit occurs outside of the auxiliary function.
     exog_train = exog.iloc[:initial_train_size, ] if exog is not None else None
     forecaster.fit(
         y                 = y.iloc[:initial_train_size, ],
