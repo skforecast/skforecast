@@ -1,6 +1,8 @@
 # Unit test set_params ForecasterStats
 # ==============================================================================
 import re
+import numpy as np
+import pandas as pd
 import pytest
 from skforecast.stats import Sarimax, Arar, Ets
 from skforecast.recursive import ForecasterStats
@@ -152,3 +154,18 @@ def test_ForecasterStats_set_params_multiple_estimators_single_update():
     # Check other estimators remain unchanged
     assert forecaster.estimators[1].get_params()['max_lag'] == original_arar_max_lag
     assert forecaster.estimators[2].get_params()['damped'] == original_ets_damped
+
+
+def test_ForecasterStats_set_params_sets_is_fitted_to_false():
+    """
+    Test that set_params sets is_fitted to False after a forecaster has been fitted.
+    """
+    y = pd.Series(np.arange(50), name='y')
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 1)))
+    forecaster.fit(y=y)
+    assert forecaster.is_fitted is True
+    
+    new_params = {'order': (2, 1, 2)}
+    forecaster.set_params(new_params)
+    
+    assert forecaster.is_fitted is False
