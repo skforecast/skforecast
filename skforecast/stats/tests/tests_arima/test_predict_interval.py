@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from ..._arima import Arima
+from .fixtures_arima import air_passengers, multi_seasonal
 
 
 def ar1_series(n=100, phi=0.7, sigma=1.0, seed=123):
@@ -392,49 +393,137 @@ def test_predict_interval_with_differencing():
     np.testing.assert_array_almost_equal(result['upper_95'].values, expected_upper_95, decimal=4)
 
 
-def test_predict_interval_auto_arima_mode():
+def test_predict_interval_auto_arima_air_passengers_data():
     """
-    Test predict_interval works correctly with auto ARIMA mode (order=None).
+    Test predict_interval works correctly with auto ARIMA on Air Passengers dataset
     """
-    np.random.seed(42)
-    y = ar1_series(100, phi=0.7, seed=42)
     
-    # Auto ARIMA mode - order is determined automatically
-    model = Arima(order=None, seasonal_order=(0, 0, 0), m=1, stepwise=True, trace=False)
-    model.fit(y, suppress_warnings=True)
-    
-    result = model.predict_interval(steps=5, level=(95,))
-    
-    assert isinstance(result, pd.DataFrame)
-    assert result.shape[0] == 5
-    assert 'mean' in result.columns
-    assert 'lower_95' in result.columns
-    assert 'upper_95' in result.columns
-    assert np.all(np.isfinite(result.values))
-    assert model.is_auto is True
-    
-    # Verify intervals are symmetric and make sense
-    lower_distance = result['mean'] - result['lower_95']
-    upper_distance = result['upper_95'] - result['mean']
-    np.testing.assert_array_almost_equal(lower_distance, upper_distance, decimal=10)
-    
-    # All interval widths should be positive
-    assert np.all((result['upper_95'] - result['lower_95']) > 0)
-    
-    # Check exact predicted values
-    expected_mean = np.array([
-        -1.77710048, -1.48832129, -1.29536201, -1.16642861, -1.08027663
-    ])
-    expected_lower_95 = np.array([
-        -3.66645481, -3.54546389, -3.44415392, -3.37082276, -3.32172265
-    ])
-    expected_upper_95 = np.array([
-        0.11225386, 0.56882131, 0.8534299, 1.03796555, 1.16116938
-    ])
-    np.testing.assert_array_almost_equal(result['mean'].values, expected_mean, decimal=5)
-    np.testing.assert_array_almost_equal(result['lower_95'].values, expected_lower_95, decimal=5)
-    np.testing.assert_array_almost_equal(result['upper_95'].values, expected_upper_95, decimal=5)
+    model = Arima(
+        order=None,
+        seasonal_order=None,
+        start_p=0,
+        start_q=0,
+        max_p=5,
+        max_q=5,
+        max_P=2,
+        max_Q=2,
+        max_order=5,
+        max_d=2,
+        max_D=1,
+        ic="aic",
+        seasonal=True,
+        test="kpss",
+        nmodels=94,
+        optim_method="BFGS",
+        m=12,
+        trace=False,
+        stepwise=True,
+    )
+    model.fit(air_passengers, suppress_warnings=True)
+    pred = model.predict_interval(steps=5, level=(95, 99))
 
+    expected = pd.DataFrame({
+            'mean': {1: 445.2856573681562,
+            2: 419.83465616022573,
+            3: 448.44413493780667,
+            4: 490.92842560605027,
+            5: 502.3511798022874},
+            'lower_95': {1: 419.01183057292997,
+            2: 390.374886879868,
+            3: 416.9267606112706,
+            4: 457.9051928081597,
+            5: 468.2289786562149},
+            'upper_95': {1: 471.5594841633824,
+            2: 449.2944254405835,
+            3: 479.96150926434274,
+            4: 523.9516584039409,
+            5: 536.4733809483598},
+            'lower_99': {1: 410.7559958492004,
+            2: 381.1179564725308,
+            3: 407.02328383973776,
+            4: 447.52854101139263,
+            5: 457.50700597719066},
+            'upper_99': {1: 479.81531888711197,
+            2: 458.55135584792066,
+            3: 489.8649860358756,
+            4: 534.3283102007078,
+            5: 547.1953536273841}
+            },
+            index=[1, 2, 3, 4, 5],
+    ).rename_axis('step')
+    
+    assert model.is_auto is True
+    assert model.best_params_['order'] == (2, 1, 1)
+    assert model.best_params_['seasonal_order'] == (0, 1, 0)
+    assert model.best_params_['m'] == 12
+    pd.testing.assert_frame_equal(pred, expected)
+    
+    
+def test_predict_interval_auto_arima_multi_seasonal_data():
+    """
+    Test predict_interval works correctly with auto ARIMA on multi-seasonal dataset
+    """
+    
+    model = Arima(
+        order=None,
+        seasonal_order=None,
+        start_p=0,
+        start_q=0,
+        max_p=5,
+        max_q=5,
+        max_P=2,
+        max_Q=2,
+        max_order=5,
+        max_d=2,
+        max_D=1,
+        ic="aic",
+        seasonal=True,
+        test="kpss",
+        nmodels=94,
+        optim_method="BFGS",
+        m=12,
+        trace=False,
+        stepwise=True,
+    )
+    model.fit(multi_seasonal, suppress_warnings=True)
+    pred = model.predict_interval(steps=5, level=(95, 99))
+
+    expected = pd.DataFrame({
+        'mean': {1: 174.22831851,
+        2: 174.13324908,
+        3: 174.86422913,
+        4: 174.85907826,
+        5: 174.81533986},
+        'lower_95': {1: 153.13683798,
+        2: 153.03928683,
+        3: 153.71540634,
+        4: 153.65260745,
+        5: 153.55657799},
+        'upper_95': {1: 195.31979904,
+        2: 195.22721133,
+        3: 196.01305192,
+        4: 196.06554908,
+        5: 196.07410173},
+        'lower_99': {1: 146.50941453,
+        2: 146.41108393,
+        3: 147.06996441,
+        4: 146.98905099,
+        5: 146.87659144},
+        'upper_99': {1: 201.94722249,
+        2: 201.85541423,
+        3: 202.65849385,
+        4: 202.72910554,
+        5: 202.75408828}
+        },
+        index=[1, 2, 3, 4, 5],
+        ).rename_axis('step')
+    
+    assert model.is_auto is True
+    assert model.best_params_['order'] == (2, 1, 1)
+    assert model.best_params_['seasonal_order'] == (0, 0, 0)
+    assert model.best_params_['m'] == 12
+    pd.testing.assert_frame_equal(pred, expected)
+    
 
 def test_predict_interval_with_exog_dataframe():
     """
