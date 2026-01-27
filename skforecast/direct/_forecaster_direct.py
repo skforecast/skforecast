@@ -2701,8 +2701,6 @@ class ForecasterDirect(ForecasterBase):
                     "`y_true` and `y_pred` must have the same index."
                 )
         
-        y_true = deepcopy(y_true)
-        y_pred = deepcopy(y_pred)
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.to_numpy()
         if not isinstance(y_true, np.ndarray):

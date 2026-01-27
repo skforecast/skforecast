@@ -3167,8 +3167,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 f"Got {set(y_pred.keys())}."
             )
         
-        y_true = deepcopy(y_true[self.level])
-        y_pred = deepcopy(y_pred[self.level])
+        y_true = y_true[self.level]
+        y_pred = y_pred[self.level]
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.to_numpy()
         if not isinstance(y_true, np.ndarray):
