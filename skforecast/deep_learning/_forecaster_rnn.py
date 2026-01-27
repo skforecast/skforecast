@@ -714,7 +714,7 @@ class ForecasterRnn(ForecasterBase):
 
         for serie in series_names_in_:
             x = series[serie]
-            check_y(y=x, series_id=serie)
+            check_y(y=x, series_id=f"series '{serie}'")
             x = transform_series(
                 series=x,
                 transformer=self.transformer_series_[serie],

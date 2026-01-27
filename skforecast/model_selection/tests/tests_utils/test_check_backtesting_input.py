@@ -558,8 +558,8 @@ def test_check_backtesting_input_ValueError_Sarimax_Equivalent_when_initial_trai
          )
     
     err_msg = re.escape(
-        f"`initial_train_size` must be an integer smaller than the "
-        f"length of `y` ({len(y)})."
+        f"When using {type(forecaster).__name__}, `initial_train_size` must be an "
+        f"integer smaller than the length of `y` ({len(y)})."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(

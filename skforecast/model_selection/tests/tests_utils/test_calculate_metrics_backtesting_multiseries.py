@@ -139,89 +139,92 @@ def custom_metric(y_true, y_pred):  # pragma: no cover
     return metric
 
 
-def test_calculate_metrics_backtesting_multiseries_input_types():
-    """
-    Check if function raises errors when input parameters have wrong types.
-    """
+# NOTE: Ignored, inputs checks are commented out in the function.
+# def test_calculate_metrics_backtesting_multiseries_input_types():
+#     """
+#     Check if function raises errors when input parameters have wrong types.
+#     """
 
-    # Mock inputs
-    series_df = pd.DataFrame(
-        {"time": pd.date_range(start="2020-01-01", periods=3), "value": [1, 2, 3]}
-    )
-    predictions = pd.DataFrame(
-        {
-            "time": pd.date_range(start="2020-01-01", periods=3),
-            "predicted": [1.5, 2.5, 3.5],
-        }
-    )
-    folds = [{"train": (0, 1), "test": (2, 3)}]
-    span_index = pd.date_range(start="2020-01-01", periods=3)
-    window_size = 2
-    metrics = ["mean_absolute_error"]
-    levels = ["level1", "level2"]
+#     # Mock inputs
+#     series_df = pd.DataFrame(
+#         {"time": pd.date_range(start="2020-01-01", periods=3), "value": [1, 2, 3]}
+#     )
+#     predictions = pd.DataFrame(
+#         {
+#             "time": pd.date_range(start="2020-01-01", periods=3),
+#             "predicted": [1.5, 2.5, 3.5],
+#         }
+#     )
+#     folds = [{"train": (0, 1), "test": (2, 3)}]
+#     span_index = pd.date_range(start="2020-01-01", periods=3)
+#     window_size = 2
+#     metrics = ["mean_absolute_error"]
+#     levels = ["level1", "level2"]
 
-    # Test invalid type for series
-    msg = "`series` must be a pandas DataFrame or a dictionary of pandas DataFrames."
-    with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_backtesting_multiseries(
-            "invalid_series_type", predictions, folds, span_index, window_size, metrics, levels
-        )
+#     # Test invalid type for series
+#     msg = re.escape(
+#         "`series` must be a pandas DataFrame or a dictionary of pandas DataFrames."
+#     )
+#     with pytest.raises(TypeError, match=msg):
+#         _calculate_metrics_backtesting_multiseries(
+#             "invalid_series_type", predictions, folds, span_index, window_size, metrics, levels
+#         )
 
-    # Test invalid type for predictions
-    msg = "`predictions` must be a pandas DataFrame."
-    with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_backtesting_multiseries(
-            series_df, "invalid_predictions_type", folds, span_index, window_size, metrics, levels
-        )
+#     # Test invalid type for predictions
+#     msg = re.escape("`predictions` must be a pandas DataFrame.")
+#     with pytest.raises(TypeError, match=msg):
+#         _calculate_metrics_backtesting_multiseries(
+#             series_df, "invalid_predictions_type", folds, span_index, window_size, metrics, levels
+#         )
 
-    # Test invalid type for folds
-    msg = "`folds` must be a list."
-    with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_backtesting_multiseries(
-            series_df, predictions, "invalid_folds_type", span_index, window_size, metrics, levels
-        )
+#     # Test invalid type for folds
+#     msg = re.escape("`folds` must be a list.")
+#     with pytest.raises(TypeError, match=msg):
+#         _calculate_metrics_backtesting_multiseries(
+#             series_df, predictions, "invalid_folds_type", span_index, window_size, metrics, levels
+#         )
 
-    # Test invalid type for span_index
-    msg = "`span_index` must be a pandas DatetimeIndex or pandas RangeIndex."
-    with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_backtesting_multiseries(
-            series_df, predictions, folds, "invalid_span_index_type", window_size, metrics, levels
-        )
+#     # Test invalid type for span_index
+#     msg = re.escape("`span_index` must be a pandas DatetimeIndex or pandas RangeIndex.")
+#     with pytest.raises(TypeError, match=msg):
+#         _calculate_metrics_backtesting_multiseries(
+#             series_df, predictions, folds, "invalid_span_index_type", window_size, metrics, levels
+#         )
 
-    # Test invalid type for window_size
-    msg = "`window_size` must be an integer."
-    with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_backtesting_multiseries(
-            series_df, predictions, folds, span_index, "invalid_window_size_type", metrics, levels
-        )
+#     # Test invalid type for window_size
+#     msg = re.escape("`window_size` must be an integer.")
+#     with pytest.raises(TypeError, match=msg):
+#         _calculate_metrics_backtesting_multiseries(
+#             series_df, predictions, folds, span_index, "invalid_window_size_type", metrics, levels
+#         )
 
-    # Test invalid type for metrics
-    msg = "`metrics` must be a list."
-    with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_backtesting_multiseries(
-            series_df, predictions, folds, span_index, window_size, "invalid_metrics_type", levels
-        )
+#     # Test invalid type for metrics
+#     msg = re.escape("`metrics` must be a list.")
+#     with pytest.raises(TypeError, match=msg):
+#         _calculate_metrics_backtesting_multiseries(
+#             series_df, predictions, folds, span_index, window_size, "invalid_metrics_type", levels
+#         )
 
-    # Test invalid type for levels
-    msg = "`levels` must be a list."
-    with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_backtesting_multiseries(
-            series_df, predictions, folds, span_index, window_size, metrics, "invalid_levels_type"
-        )
+#     # Test invalid type for levels
+#     msg = re.escape("`levels` must be a list.")
+#     with pytest.raises(TypeError, match=msg):
+#         _calculate_metrics_backtesting_multiseries(
+#             series_df, predictions, folds, span_index, window_size, metrics, "invalid_levels_type"
+#         )
 
-    # Test invalid type for add_aggregated_metric
-    msg = "`add_aggregated_metric` must be a boolean."
-    with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_backtesting_multiseries(
-            series_df,
-            predictions,
-            folds,
-            span_index,
-            window_size,
-            metrics,
-            levels,
-            add_aggregated_metric="invalid_type",
-        )
+#     # Test invalid type for add_aggregated_metric
+#     msg = re.escape("`add_aggregated_metric` must be a boolean.")
+#     with pytest.raises(TypeError, match=msg):
+#         _calculate_metrics_backtesting_multiseries(
+#             series_df,
+#             predictions,
+#             folds,
+#             span_index,
+#             window_size,
+#             metrics,
+#             levels,
+#             add_aggregated_metric="invalid_type",
+#         )
 
 
 def test_calculate_metrics_backtesting_multiseries_output_when_no_aggregated_metric(
