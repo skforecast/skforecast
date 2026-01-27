@@ -143,3 +143,6 @@ dmypy.json
 
 # Ruff
 *.ruff_cache/
+
+# Github Agents
+.github/agents
