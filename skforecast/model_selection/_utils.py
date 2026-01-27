@@ -682,7 +682,7 @@ def select_n_jobs_backtesting(
         if forecaster_name in ['ForecasterRecursive', 'ForecasterRecursiveClassifier']:
             if isinstance(estimator, LinearModel):
                 n_jobs = 1
-            elif type(estimator).__name__ in {'LGBMRegressor', 'LGBMClassifier'}':
+            elif type(estimator).__name__ in {'LGBMRegressor', 'LGBMClassifier'}:
                 n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
