@@ -178,22 +178,6 @@ class IgnoredArgumentWarning(UserWarning):
         return self.message + "\n" + extra_message
 
 
-class IndexWarning(UserWarning):
-    """
-    Warning used to notify that the index of the input data is not a
-    expected type. 
-    """
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        extra_message = (
-            "You can suppress this warning using: "
-            "warnings.simplefilter('ignore', category=IndexWarning)"
-        )
-        return self.message + "\n" + extra_message
-
-
 class InputTypeWarning(UserWarning):
     """
     Warning used to notify that input format is not the most efficient or
@@ -346,7 +330,6 @@ warn_skforecast_categories = [
     ExogenousInterpretationWarning,
     FeatureOutOfRangeWarning,
     IgnoredArgumentWarning,
-    IndexWarning,
     InputTypeWarning,
     LongTrainingWarning,
     MissingExogWarning,

@@ -3,7 +3,6 @@ from .exceptions import (
     DataTransformationWarning,
     ExogenousInterpretationWarning,
     IgnoredArgumentWarning,
-    IndexWarning,
     InputTypeWarning,
     LongTrainingWarning,
     MissingExogWarning,
