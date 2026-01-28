@@ -2009,6 +2009,71 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         return X_predict
 
+    def _direct_predict(
+        self,
+        steps: list[int],
+        Xs: list[np.ndarray]
+    ) -> np.ndarray:
+        """
+        Generate predictions for the specified steps using the fitted estimators.
+        
+        This method optimizes prediction for common estimator types:
+        - LinearModel: Uses direct dot product with coefficients
+        - LGBMRegressor: Uses booster_.predict for faster inference
+        - XGBRegressor: Uses get_booster().inplace_predict for faster inference
+        - Other estimators: Uses standard predict method
+        
+        Parameters
+        ----------
+        steps : list[int]
+            List of steps to predict. Each step corresponds to an estimator
+            in `self.estimators_`.
+        Xs : list[np.ndarray]
+            List of numpy arrays with the predictors for each step.
+            Each array has shape (1, n_features).
+
+        Returns
+        -------
+        predictions : numpy ndarray
+            Predicted values for each step. Shape: (len(steps),)
+        
+        """
+
+        estimators = [self.estimators_[step] for step in steps]
+        
+        estimator_name = type(self.estimator).__name__
+        is_linear = isinstance(self.estimator, LinearModel)
+        is_lightgbm = estimator_name == 'LGBMRegressor'
+        is_xgboost = estimator_name == 'XGBRegressor'
+        
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            if is_linear:
+                predictions = np.array([
+                    np.dot(X.ravel(), estimator.coef_) + estimator.intercept_
+                    for estimator, X in zip(estimators, Xs)
+                ])
+            elif is_lightgbm:
+                predictions = np.array([
+                    estimator.booster_.predict(X).item()
+                    for estimator, X in zip(estimators, Xs)
+                ])
+            elif is_xgboost:
+                predictions = np.array([
+                    estimator.get_booster().inplace_predict(X).item()
+                    for estimator, X in zip(estimators, Xs)
+                ])
+            else:
+                predictions = np.array([
+                    estimator.predict(X).ravel().item()
+                    for estimator, X in zip(estimators, Xs)
+                ])
+
+        return predictions
 
     def predict(
         self,
@@ -2074,39 +2139,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 check_inputs = check_inputs,
             )
 
-        estimators = [self.estimators_[step] for step in steps]
-        
-        estimator_name = type(self.estimator).__name__
-        is_linear = isinstance(self.estimator, LinearModel)
-        is_lightgbm = estimator_name == 'LGBMRegressor'
-        is_xgboost = estimator_name == 'XGBRegressor'
-        
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            if is_linear:
-                predictions = np.array([
-                    np.dot(X.ravel(), estimator.coef_) + estimator.intercept_
-                    for estimator, X in zip(estimators, Xs)
-                ])
-            elif is_lightgbm:
-                predictions = np.array([
-                    estimator.booster_.predict(X).item()
-                    for estimator, X in zip(estimators, Xs)
-                ])
-            elif is_xgboost:
-                predictions = np.array([
-                    estimator.get_booster().inplace_predict(X).item()
-                    for estimator, X in zip(estimators, Xs)
-                ])
-            else:
-                predictions = np.array([
-                    estimator.predict(X).ravel().item()
-                    for estimator, X in zip(estimators, Xs)
-                ])
+        predictions = self._direct_predict(steps=steps, Xs=Xs)
 
         if self.differentiation is not None:
             predictions = (
@@ -2233,17 +2266,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             residuals_by_bin = self.out_sample_residuals_by_bin_[self.level]
 
         # NOTE: Predictors and residuals are transformed and differentiated
-        estimators = [self.estimators_[step] for step in steps]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predictions = np.array([
-                estimator.predict(X).ravel().item()
-                for estimator, X in zip(estimators, Xs)
-            ])
+        predictions = self._direct_predict(steps=steps, Xs=Xs)
         
         rng = np.random.default_rng(seed=random_state)
         if not use_binned_residuals:
@@ -2377,18 +2400,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             residuals = self.out_sample_residuals_[self.level]
             residuals_by_bin = self.out_sample_residuals_by_bin_[self.level]
 
-        # NOTE: Predictors and residuals are transformed and differentiated  
-        estimators = [self.estimators_[step] for step in steps]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predictions = np.array([
-                estimator.predict(X).ravel().item()
-                for estimator, X in zip(estimators, Xs)
-            ])
+        # NOTE: Predictors and residuals are transformed and differentiated
+        predictions = self._direct_predict(steps=steps, Xs=Xs)
         
         if use_binned_residuals:
             correction_factor_by_bin = {
