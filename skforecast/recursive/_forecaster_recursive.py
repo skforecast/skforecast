@@ -12,10 +12,11 @@ import sys
 import numpy as np
 import pandas as pd
 import inspect
-from copy import copy, deepcopy
-from sklearn.exceptions import NotFittedError
-from sklearn.pipeline import Pipeline
+from copy import copy
 from sklearn.base import clone
+from sklearn.exceptions import NotFittedError
+from sklearn.linear_model._base import LinearModel
+from sklearn.pipeline import Pipeline
 
 from .. import __version__
 from ..base import ForecasterBase
@@ -40,6 +41,7 @@ from ..utils import (
     transform_dataframe,
     get_style_repr_html,
     set_cpu_gpu_device,
+    set_skforecast_warnings,
     initialize_estimator
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -616,7 +618,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return X_train_window_features, X_train_window_features_names_out_
 
-
     def _create_train_X_y(
         self,
         y: pd.Series,
@@ -910,7 +911,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return X_train, y_train, X_test, y_test
 
-
     def create_sample_weights(
         self,
         X_train: pd.DataFrame,
@@ -953,14 +953,14 @@ class ForecasterRecursive(ForecasterBase):
 
         return sample_weight
 
-
     def fit(
         self,
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
         store_in_sample_residuals: bool = False,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> None:
         """
         Training Forecaster.
@@ -986,12 +986,18 @@ class ForecasterRecursive(ForecasterBase):
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the training 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
         None
         
         """
+
+        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         # TODO: create a method reset_forecaster() to reset all attributes
         # Reset values in case the forecaster has already been fitted.
@@ -1073,6 +1079,8 @@ class ForecasterRecursive(ForecasterBase):
                 .copy()
                 .to_frame(name=y.name if y.name is not None else 'y')
             )
+
+        set_skforecast_warnings(suppress_warnings, action='default')
 
     def _binning_in_sample_residuals(
         self,
@@ -1290,9 +1298,7 @@ class ForecasterRecursive(ForecasterBase):
         self,
         steps: int,
         last_window_values: np.ndarray,
-        exog_values: np.ndarray | None = None,
-        residuals: np.ndarray | dict[str, np.ndarray] | None = None,
-        use_binned_residuals: bool = True,
+        exog_values: np.ndarray | None = None
     ) -> np.ndarray:
         """
         Predict n steps ahead. It is an iterative process in which, each prediction,
@@ -1307,12 +1313,6 @@ class ForecasterRecursive(ForecasterBase):
             iteration of the prediction (t + 1).
         exog_values : numpy ndarray, default None
             Exogenous variable/s included as predictor/s.
-        residuals : numpy ndarray, dict, default None
-            Residuals used to generate bootstrapping predictions.
-        use_binned_residuals : bool, default True
-            If `True`, residuals are selected based on the predicted values 
-            (binned selection).
-            If `False`, residuals are selected randomly.
 
         Returns
         -------
@@ -1337,30 +1337,46 @@ class ForecasterRecursive(ForecasterBase):
         predictions = np.full(shape=steps, fill_value=np.nan, dtype=float)
         last_window = np.concatenate((last_window_values, predictions))
 
+        estimator_name = type(self.estimator).__name__
+        is_linear = isinstance(self.estimator, LinearModel)
+        is_lightgbm = estimator_name == 'LGBMRegressor'
+        is_xgboost = estimator_name == 'XGBRegressor'
+        
+        if is_linear:
+            coef = self.estimator.coef_
+            intercept = self.estimator.intercept_
+        elif is_lightgbm:
+            booster = self.estimator.booster_
+        elif is_xgboost:
+            booster = self.estimator.get_booster()
+        
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values is not None
+        
         for i in range(steps):
 
-            if self.lags is not None:
+            if has_lags:
                 X[:n_lags] = last_window[-self.lags - (steps - i)]
-            if self.window_features is not None:
+            if has_window_features:
+                window_data = last_window[i : -(steps - i)]
                 X[n_lags : n_lags + n_window_features] = np.concatenate(
                     [
-                        wf.transform(last_window[i : -(steps - i)])
+                        wf.transform(window_data)
                         for wf in self.window_features
                     ]
                 )
-            if exog_values is not None:
+            if has_exog:
                 X[n_lags + n_window_features:] = exog_values[i]
         
-            pred = self.estimator.predict(X.reshape(1, -1)).ravel()
-            
-            if residuals is not None:
-                if use_binned_residuals:
-                    predicted_bin = self.binner.transform(pred).item()
-                    step_residual = residuals[predicted_bin][i]
-                else:
-                    step_residual = residuals[i]
-                
-                pred += step_residual
+            if is_linear:
+                pred = np.dot(X, coef) + intercept
+            elif is_lightgbm:
+                pred = booster.predict(X.reshape(1, -1))
+            elif is_xgboost:
+                pred = booster.inplace_predict(X.reshape(1, -1))
+            else:
+                pred = self.estimator.predict(X.reshape(1, -1)).ravel()
             
             pred = pred.item()
             predictions[i] = pred
@@ -1368,6 +1384,127 @@ class ForecasterRecursive(ForecasterBase):
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
             last_window[-(steps - i)] = pred
+
+        set_cpu_gpu_device(estimator=self.estimator, device=original_device)
+
+        return predictions
+
+    def _recursive_predict_bootstrapping(
+        self,
+        steps: int,
+        last_window_values: np.ndarray,
+        sampled_residuals: np.ndarray,
+        use_binned_residuals: bool,
+        n_boot: int,
+        exog_values: np.ndarray | None = None
+    ) -> np.ndarray:
+        """
+        Vectorized bootstrap prediction - predict all n_boot iterations per step.
+        Instead of running n_boot sequential predictions, this method predicts 
+        all bootstrap samples at once per step, significantly reducing overhead.
+        
+        Parameters
+        ----------
+        steps : int
+            Number of steps to predict. 
+        last_window_values : numpy ndarray
+            Series values used to create the predictors needed in the first 
+            iteration of the prediction (t + 1).
+        sampled_residuals : numpy ndarray
+            Pre-sampled residuals for all bootstrap iterations.
+            - If `use_binned_residuals=True`: 3D array of shape (n_bins, steps, n_boot)
+            - If `use_binned_residuals=False`: 2D array of shape (steps, n_boot)
+        use_binned_residuals : bool
+            If `True`, residuals are selected based on the predicted values.
+            If `False`, residuals are selected randomly.
+        n_boot : int
+            Number of bootstrap iterations.
+        exog_values : numpy ndarray, default None
+            Exogenous variable/s included as predictor/s.
+
+        Returns
+        -------
+        predictions : numpy ndarray
+            Predicted values with shape (steps, n_boot).
+        
+        """
+
+        original_device = set_cpu_gpu_device(estimator=self.estimator, device='cpu')
+
+        n_lags = len(self.lags) if self.lags is not None else 0
+        n_window_features = (
+            len(self.X_train_window_features_names_out_)
+            if self.window_features is not None
+            else 0
+        )
+        n_exog = exog_values.shape[1] if exog_values is not None else 0
+        n_features = n_lags + n_window_features + n_exog
+
+        # Input matrix for prediction: shape (n_boot, n_features)
+        X = np.full((n_boot, n_features), fill_value=np.nan, dtype=float)
+        
+        # Output predictions: shape (steps, n_boot)
+        predictions = np.full((steps, n_boot), fill_value=np.nan, dtype=float)
+        
+        # Expand last_window to 2D: (window_size + steps, n_boot)
+        # Each column represents a separate bootstrap trajectory
+        last_window = np.tile(last_window_values[:, np.newaxis], (1, n_boot))
+        last_window = np.vstack([last_window, np.full((steps, n_boot), np.nan)])
+
+        estimator_name = type(self.estimator).__name__
+        is_linear = isinstance(self.estimator, LinearModel)
+        is_lightgbm = estimator_name == 'LGBMRegressor'
+        is_xgboost = estimator_name == 'XGBRegressor'
+        
+        if is_linear:
+            coef = self.estimator.coef_
+            intercept = self.estimator.intercept_
+        elif is_lightgbm:
+            booster = self.estimator.booster_
+        elif is_xgboost:
+            booster = self.estimator.get_booster()
+        
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values is not None
+
+        for i in range(steps):
+
+            if has_lags:
+                for j, lag in enumerate(self.lags):
+                    X[:, j] = last_window[-(lag + steps - i), :]
+            
+            if has_window_features:
+                window_data = last_window[:-(steps - i), :]
+                # transform accepts 2D: (window_length, n_boot) -> (n_boot, n_stats)
+                # and concatenate along axis=1: (n_boot, total_window_features)
+                X[:, n_lags:n_lags + n_window_features] = np.concatenate(
+                    [wf.transform(window_data) for wf in self.window_features],
+                    axis=1
+                )
+            
+            if has_exog:
+                X[:, n_lags + n_window_features:] = exog_values[i]
+        
+            if is_linear:
+                pred = np.dot(X, coef) + intercept
+            elif is_lightgbm:
+                pred = booster.predict(X)
+            elif is_xgboost:
+                pred = booster.inplace_predict(X)
+            else:
+                pred = self.estimator.predict(X).ravel()
+            
+            if use_binned_residuals:
+                # sampled_residuals is a 3D array: (n_bins, steps, n_boot)
+                boot_indices = np.arange(n_boot)
+                pred_bins = self.binner.transform(pred).astype(int)
+                pred += sampled_residuals[pred_bins, i, boot_indices]
+            else:
+                pred += sampled_residuals[i, :]
+            
+            predictions[i, :] = pred
+            last_window[-(steps - i), :] = pred
 
         set_cpu_gpu_device(estimator=self.estimator, device=original_device)
 
@@ -1569,7 +1706,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
-
     def predict_bootstrapping(
         self,
         steps: int | str | pd.Timestamp,
@@ -1653,46 +1789,32 @@ class ForecasterRecursive(ForecasterBase):
 
         rng = np.random.default_rng(seed=random_state)
         if use_binned_residuals:
-            sampled_residuals = {
-                k: v[rng.integers(low=0, high=len(v), size=(steps, n_boot))]
-                for k, v in residuals_by_bin.items()
-            }
+            # Create 3D array with sampled residuals: (n_bins, steps, n_boot)
+            n_bins = len(residuals_by_bin)
+            sampled_residuals = np.stack(
+                [residuals_by_bin[k][rng.integers(low=0, high=len(residuals_by_bin[k]), size=(steps, n_boot))]
+                 for k in range(n_bins)],
+                axis=0
+            )
         else:
             sampled_residuals = residuals[
                 rng.integers(low=0, high=len(residuals), size=(steps, n_boot))
             ]
         
-        boot_columns = []
-        boot_predictions = np.full(
-                               shape      = (steps, n_boot),
-                               fill_value = np.nan,
-                               order      = 'F',
-                               dtype      = float
-                           )
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", 
                 message="X does not have valid feature names", 
                 category=UserWarning
             )
-            for i in range(n_boot):
-
-                if use_binned_residuals:
-                    boot_sampled_residuals = {
-                        k: v[:, i]
-                        for k, v in sampled_residuals.items()
-                    }
-                else:
-                    boot_sampled_residuals = sampled_residuals[:, i]
-
-                boot_columns.append(f"pred_boot_{i}")
-                boot_predictions[:, i] = self._recursive_predict(
-                    steps                = steps,
-                    last_window_values   = last_window_values,
-                    exog_values          = exog_values,
-                    residuals            = boot_sampled_residuals,
-                    use_binned_residuals = use_binned_residuals,
-                )
+            boot_predictions = self._recursive_predict_bootstrapping(
+                steps                = steps,
+                last_window_values   = last_window_values,
+                exog_values          = exog_values,
+                sampled_residuals    = sampled_residuals,
+                use_binned_residuals = use_binned_residuals,
+                n_boot               = n_boot
+            )
 
         if self.differentiation is not None:
             boot_predictions = (
@@ -1700,15 +1822,14 @@ class ForecasterRecursive(ForecasterBase):
             )
         
         if self.transformer_y:
-            boot_predictions = np.apply_along_axis(
-                                   func1d            = transform_numpy,
-                                   axis              = 0,
-                                   arr               = boot_predictions,
+            boot_predictions = transform_numpy(
+                                   array             = boot_predictions,
                                    transformer       = self.transformer_y,
                                    fit               = False,
                                    inverse_transform = True
                                )
 
+        boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
         boot_predictions = pd.DataFrame(
                                data    = boot_predictions,
                                index   = prediction_index,
@@ -1829,10 +1950,8 @@ class ForecasterRecursive(ForecasterBase):
             )
         
         if self.transformer_y:
-            predictions = np.apply_along_axis(
-                              func1d            = transform_numpy,
-                              axis              = 0,
-                              arr               = predictions,
+            predictions = transform_numpy(
+                              array             = predictions,
                               transformer       = self.transformer_y,
                               fit               = False,
                               inverse_transform = True
@@ -1986,7 +2105,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
-
     def predict_quantiles(
         self,
         steps: int | str | pd.Timestamp,
@@ -2065,7 +2183,6 @@ class ForecasterRecursive(ForecasterBase):
         predictions.columns = [f'q_{q}' for q in quantiles]
 
         return predictions
-
 
     def predict_dist(
         self,
@@ -2159,14 +2276,14 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
-
     def set_params(
         self, 
         params: dict[str, object]
     ) -> None:
         """
         Set new values to the parameters of the scikit-learn model stored in the
-        forecaster.
+        forecaster. After calling this method, the forecaster is reset to an 
+        unfitted state. The `fit` method must be called before prediction.
         
         Parameters
         ----------
@@ -2181,6 +2298,7 @@ class ForecasterRecursive(ForecasterBase):
 
         self.estimator = clone(self.estimator)
         self.estimator.set_params(**params)
+        self.is_fitted = False
 
     def set_fit_kwargs(
         self, 
@@ -2458,8 +2576,6 @@ class ForecasterRecursive(ForecasterBase):
                     "`y_true` and `y_pred` must have the same index."
                 )
         
-        y_true = deepcopy(y_true)
-        y_pred = deepcopy(y_pred)
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.to_numpy()
         if not isinstance(y_true, np.ndarray):

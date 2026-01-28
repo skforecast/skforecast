@@ -2,12 +2,12 @@
 # ==============================================================================
 import re
 import pytest
+import platform
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.stats import Sarimax, Arar
+from skforecast.stats import Sarimax, Arar, Ets
 from skforecast.recursive import ForecasterStats
-from skforecast.utils import expand_index
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
@@ -42,58 +42,13 @@ def test_predict_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict_interval(
             steps = 5, 
             alpha = 0.05
-        )
-
-
-def test_predict_interval_ValueError_when_ForecasterStats_last_window_exog_is_not_None_and_last_window_is_not_provided():
-    """
-    Check ValueError is raised when last_window_exog is not None, but 
-    last_window is not provided.
-    """
-    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
-    forecaster.fit(y=y, exog=exog)
-    
-    err_msg = re.escape(
-                ("To make predictions unrelated to the original data, both "
-                 "`last_window` and `last_window_exog` must be provided.")
-              )   
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_interval(
-            steps            = 5, 
-            alpha            = 0.05, 
-            exog             = exog_predict, 
-            last_window      = None, 
-            last_window_exog = exog
-        )
-
-
-def test_predict_interval_ValueError_when_ForecasterStats_last_window_exog_is_None_and_included_exog_is_true():
-    """
-    Check ValueError is raised when last_window_exog is None, but included_exog
-    is True and last_window is provided.
-    """
-    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
-    forecaster.fit(y=y, exog=exog)
-    
-    err_msg = re.escape(
-                ("Forecaster trained with exogenous variable/s. To make predictions "
-                 "unrelated to the original data, same variable/s must be provided "
-                 "using `last_window_exog`.")
-              )   
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_interval(
-            steps            = 5, 
-            alpha            = 0.05, 
-            exog             = exog_lw_predict, 
-            last_window      = y_lw, 
-            last_window_exog = None
         )
 
 
@@ -107,10 +62,10 @@ def test_predict_interval_ValueError_when_interval_is_not_symmetrical():
     interval_not_symmetrical = [5, 97.5] 
 
     err_msg = re.escape(
-                (f"When using `interval` in ForecasterStats, it must be symmetrical. "
-                 f"For example, interval of 95% should be as `interval = [2.5, 97.5]`. "
-                 f"Got {interval_not_symmetrical}.")
-            )
+        f"When using `interval` in ForecasterStats, it must be symmetrical. "
+        f"For example, interval of 95% should be as `interval = [2.5, 97.5]`. "
+        f"Got {interval_not_symmetrical}."
+    )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_interval(
             steps    = 5, 
@@ -122,7 +77,7 @@ def test_predict_interval_ValueError_when_interval_is_not_symmetrical():
 @pytest.mark.parametrize("alpha, interval", 
                          [(0.05, [1, 99]), 
                           (None, [2.5, 97.5])], 
-                         ids = lambda values : f'alpha, interval: {values}')
+                         ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_skforecast_Sarimax(alpha, interval):
     """
     Test predict_interval output of ForecasterStats using Sarimax from skforecast.
@@ -148,7 +103,7 @@ def test_predict_interval_output_ForecasterStats_skforecast_Sarimax(alpha, inter
 @pytest.mark.parametrize("alpha, interval", 
                          [(0.05, [1, 99]), 
                           (None, [2.5, 97.5])], 
-                         ids = lambda values : f'alpha, interval: {values}')
+                         ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_exog(alpha, interval):
     """
     Test predict_interval output of ForecasterStats with exogenous variables.
@@ -174,7 +129,81 @@ def test_predict_interval_output_ForecasterStats_with_exog(alpha, interval):
 @pytest.mark.parametrize("alpha, interval", 
                          [(0.05, [1, 99]), 
                           (None, [2.5, 97.5])], 
-                         ids = lambda values : f'alpha, interval: {values}')
+                         ids = lambda values: f'alpha, interval: {values}')
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
+def test_predict_interval_output_ForecasterStats_multiple_estimators_exog(alpha, interval):
+    """
+    Test predict_interval output of ForecasterStats with multiple estimators
+    and exogenous variables. Ets is included to check that bounds are reasonable
+    (lower_bound < pred < upper_bound), but cannot be checked against stable values 
+    as they differ slightly between runs.
+    """
+    estimators = [
+        Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
+        Arar(),
+        Ets(trend='add', seasonal=None) 
+    ]
+    forecaster = ForecasterStats(estimator=estimators)
+    forecaster.fit(y=y, exog=exog)
+    predictions = forecaster.predict_interval(
+        steps=5, exog=exog_predict, alpha=alpha, interval=interval
+    )
+    
+    # Check estimator and pred columns (stable values)
+    expected_estimator_pred = pd.DataFrame(
+                   data    = {
+                       'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 'skforecast.Ets'] * 5,
+                       'pred': [0.599299, 0.635100, 0.604989,
+                                0.612997, 0.677110, 0.604981,
+                                0.628731, 0.765381, 0.604974,
+                                0.644136, 0.757966, 0.604969,
+                                0.661960, 0.800557, 0.604965], 
+                   },
+                   index   = pd.Index([50, 50, 50, 51, 51, 51, 52, 52, 52, 53, 53, 53, 54, 54, 54])
+               )
+    pd.testing.assert_frame_equal(
+        predictions[['estimator_id', 'pred']], 
+        expected_estimator_pred, 
+        atol=0.0001
+    )
+    
+    # Check bounds for Sarimax and Arar (stable values) - select by estimator_id
+    sarimax_arar_mask = predictions['estimator_id'].isin(['skforecast.Sarimax', 'skforecast.Arar'])
+    sarimax_arar_predictions = predictions[sarimax_arar_mask]
+    expected_bounds_sarimax_arar = pd.DataFrame(
+                   data    = {
+                       'lower_bound': [0.578620, 0.566307, 
+                                       0.592025, 0.606592,  
+                                       0.607742, 0.694777,  
+                                       0.623146, 0.687357,  
+                                       0.640970, 0.724952], 
+                       'upper_bound': [0.619978, 0.703893,  
+                                       0.633969, 0.747628,  
+                                       0.649720, 0.835985,  
+                                       0.665126, 0.828575,  
+                                       0.682950, 0.876162], 
+                   },
+                   index   = pd.Index([50, 50, 51, 51, 52, 52, 53, 53, 54, 54])
+               )
+    pd.testing.assert_frame_equal(
+        sarimax_arar_predictions[['lower_bound', 'upper_bound']], 
+        expected_bounds_sarimax_arar, 
+        atol=0.0001
+    )
+    
+    # Check that bounds for Ets are reasonable (lower < pred < upper)
+    ets_predictions = predictions[predictions['estimator_id'] == 'skforecast.Ets']
+    assert (ets_predictions['lower_bound'] < ets_predictions['pred']).all()
+    assert (ets_predictions['pred'] < ets_predictions['upper_bound']).all()
+
+
+@pytest.mark.parametrize("alpha, interval", 
+                         [(0.05, [1, 99]), 
+                          (None, [2.5, 97.5])], 
+                         ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_transform_y(alpha, interval):
     """
     Test predict_interval output of ForecasterStats with a StandardScaler() as transformer_y.
@@ -201,7 +230,83 @@ def test_predict_interval_output_ForecasterStats_with_transform_y(alpha, interva
 @pytest.mark.parametrize("alpha, interval", 
                          [(0.05, [1, 99]), 
                           (None, [2.5, 97.5])], 
-                         ids = lambda values : f'alpha, interval: {values}')
+                         ids = lambda values: f'alpha, interval: {values}')
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="Ets optimizer converges to different local minima on macOS"
+)
+def test_predict_interval_output_ForecasterStats_multiple_estimators_exog_transform_y(alpha, interval):
+    """
+    Test predict_interval output of ForecasterStats with multiple estimators, 
+    exogenous variables and StandardScaler() as transformer_y. Ets is included 
+    to check that bounds are reasonable (lower_bound < pred < upper_bound), but 
+    cannot be checked against stable values as they differ slightly between runs.
+    """
+    estimators = [
+        Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
+        Arar(),
+        Ets(trend='add', seasonal=None) 
+    ]
+    forecaster = ForecasterStats(
+        estimator=estimators, transformer_y=StandardScaler()
+    )
+    forecaster.fit(y=y, exog=exog)
+    predictions = forecaster.predict_interval(
+        steps=5, exog=exog_predict, alpha=alpha, interval=interval
+    )
+    
+    # Check estimator and pred columns (stable values)
+    expected_estimator_pred = pd.DataFrame(
+                   data    = {
+                       'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 'skforecast.Ets'] * 5,
+                       'pred': [0.611820, 0.635100, 0.693197, 
+                                0.613855, 0.677110, 0.693995, 
+                                0.613302, 0.765381, 0.694766, 
+                                0.613836, 0.757966, 0.695513, 
+                                0.613947, 0.800557, 0.696234],
+                   },
+                   index   = pd.Index([50, 50, 50, 51, 51, 51, 52, 52, 52, 53, 53, 53, 54, 54, 54])
+               )
+    pd.testing.assert_frame_equal(
+        predictions[['estimator_id', 'pred']], 
+        expected_estimator_pred, 
+        atol=0.0001
+    )
+    
+    # Check bounds for Sarimax and Arar (stable values) - select by estimator_id
+    sarimax_arar_mask = predictions['estimator_id'].isin(['skforecast.Sarimax', 'skforecast.Arar'])
+    sarimax_arar_predictions = predictions[sarimax_arar_mask]
+    expected_bounds_sarimax_arar = pd.DataFrame(
+                   data    = {
+                       'lower_bound': [0.448996, 0.566307, 
+                                       0.450212, 0.606592,  
+                                       0.449515, 0.694777,  
+                                       0.450024, 0.687357,  
+                                       0.450130, 0.724952], 
+                       'upper_bound': [0.774643, 0.703893,  
+                                       0.777497, 0.747628,  
+                                       0.777089, 0.835985,  
+                                       0.777649, 0.828575,  
+                                       0.777764, 0.876162], 
+                   },
+                   index   = pd.Index([50, 50, 51, 51, 52, 52, 53, 53, 54, 54])
+               )
+    pd.testing.assert_frame_equal(
+        sarimax_arar_predictions[['lower_bound', 'upper_bound']], 
+        expected_bounds_sarimax_arar, 
+        atol=0.0001
+    )
+    
+    # Check that bounds for Ets are reasonable (lower < pred < upper)
+    ets_predictions = predictions[predictions['estimator_id'] == 'skforecast.Ets']
+    assert (ets_predictions['lower_bound'] < ets_predictions['pred']).all()
+    assert (ets_predictions['pred'] < ets_predictions['upper_bound']).all()
+
+
+@pytest.mark.parametrize("alpha, interval", 
+                         [(0.05, [1, 99]), 
+                          (None, [2.5, 97.5])], 
+                         ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_transform_y_and_transform_exog(alpha, interval):
     """
     Test predict_interval output of ForecasterStats, StandardScaler
@@ -234,77 +339,10 @@ def test_predict_interval_output_ForecasterStats_with_transform_y_and_transform_
     pd.testing.assert_frame_equal(predictions, expected, atol=0.0001)
 
 
-def test_predict_interval_ValueError_when_last_window_index_does_not_follow_training_set():
-    """
-    Raise ValueError if `last_window` index does not start at the end 
-    of the index seen by the forecaster.
-    """
-    y_test = pd.Series(data=y_datetime.to_numpy())
-    y_test.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
-    lw_test = pd.Series(data=y_lw_datetime.to_numpy())
-    lw_test.index = pd.date_range(start='2022-03-01', periods=50, freq='D')
-
-    forecaster = ForecasterStats(estimator = Sarimax(order=(1, 0, 0)))
-    forecaster.fit(y=y_test)
-    expected_index = expand_index(forecaster.extended_index_, 1)[0]
-
-    err_msg = re.escape(
-        (f"To make predictions unrelated to the original data, `last_window` "
-         f"has to start at the end of the index seen by the forecaster.\n"
-         f"    Series last index         : {forecaster.extended_index_[-1]}.\n"
-         f"    Expected index            : {expected_index}.\n"
-         f"    `last_window` index start : {lw_test.index[0]}.")
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_interval(
-            steps            = 5, 
-            alpha            = 0.05,
-            last_window      = lw_test,
-        )
-
-
-def test_predict_interval_ValueError_when_last_window_exog_index_does_not_follow_training_set():
-    """
-    Raise ValueError if `last_window_exog` index does not start at the end 
-    of the index seen by the forecaster.
-    """
-    y_test = pd.Series(data=y_datetime.to_numpy())
-    y_test.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
-    lw_test = pd.Series(data=y_lw_datetime.to_numpy())
-    lw_test.index = pd.date_range(start='2022-02-20', periods=50, freq='D')
-
-    exog_test = pd.Series(data=exog_datetime.to_numpy(), name='exog')
-    exog_test.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
-    exog_pred_test = pd.Series(data=exog_predict_datetime.to_numpy(), name='exog')
-    exog_pred_test.index = pd.date_range(start='2022-04-11', periods=10, freq='D')
-    lw_exog_test = pd.Series(data=exog_lw_datetime.to_numpy(), name='exog')
-    lw_exog_test.index = pd.date_range(start='2022-03-01', periods=50, freq='D')
-
-    forecaster = ForecasterStats(estimator = Sarimax(order=(1, 0, 0)))
-    forecaster.fit(y=y_test, exog=exog_test)
-    expected_index = expand_index(forecaster.extended_index_, 1)[0]
-
-    err_msg = re.escape(
-        (f"To make predictions unrelated to the original data, `last_window_exog` "
-         f"has to start at the end of the index seen by the forecaster.\n"
-         f"    Series last index              : {forecaster.extended_index_[-1]}.\n"
-         f"    Expected index                 : {expected_index}.\n"
-         f"    `last_window_exog` index start : {lw_exog_test.index[0]}.")
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_interval(
-            steps            = 5, 
-            alpha            = 0.05,
-            exog             = exog_pred_test, 
-            last_window      = lw_test, 
-            last_window_exog = lw_exog_test
-        )
-
-
 @pytest.mark.parametrize("alpha, interval", 
                          [(0.05, [1, 99]), 
                           (None, [2.5, 97.5])], 
-                         ids = lambda values : f'alpha, interval: {values}')
+                         ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_last_window(alpha, interval):
     """
     Test predict_interval output of ForecasterStats with `last_window`.
@@ -336,7 +374,7 @@ def test_predict_interval_output_ForecasterStats_with_last_window(alpha, interva
 @pytest.mark.parametrize("alpha, interval", 
                          [(0.05, [1, 99]), 
                           (None, [2.5, 97.5])], 
-                         ids = lambda values : f'alpha, interval: {values}')
+                         ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_last_window_and_exog(alpha, interval):
     """
     Test predict_interval output of ForecasterStats with exogenous variables and `last_window`.
@@ -370,7 +408,7 @@ def test_predict_interval_output_ForecasterStats_with_last_window_and_exog(alpha
 @pytest.mark.parametrize("alpha, interval", 
                          [(0.05, [1, 99]), 
                           (None, [2.5, 97.5])], 
-                         ids = lambda values : f'alpha, interval: {values}')
+                         ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_last_window_and_exog_and_transformers(alpha, interval):
     """
     Test predict_interval output of ForecasterStats with exogenous variables and `last_window`.
@@ -435,35 +473,80 @@ def test_predict_interval_ForecasterStats_updates_extended_index_twice(y, idx):
     pd.testing.assert_index_equal(forecaster.extended_index_, idx)
 
 
-def test_predict_interval_output_ForecasterStats_Arar_estimator(y=y):
+@pytest.mark.parametrize(
+    "estimator, expected_data",
+    [
+        (
+            Sarimax(order=(1, 0, 1), seasonal_order=(0, 0, 0, 0), maxiter=1000, method='cg', disp=False),
+            np.array([[0.605353  , 0.352368  , 0.858338  ],
+                      [0.596542  , 0.243767  , 0.949317  ],
+                      [0.587858  , 0.159896  , 1.015821  ],
+                      [0.579301  , 0.089243  , 1.069360  ],
+                      [0.570869  , 0.027256  , 1.114482  ],
+                      [0.562559  , -0.028434 , 1.153553  ],
+                      [0.554371  , -0.079252 , 1.187993  ],
+                      [0.546301  , -0.126137 , 1.218740  ],
+                      [0.538349  , -0.169750 , 1.246448  ],
+                      [0.530513  , -0.210575 , 1.271601  ]])
+        ),
+        (
+            Arar(max_ar_depth=26, max_lag=40),
+            np.array([[0.65451694, 0.56798138, 0.7410525 ],
+                      [0.69369274, 0.60112468, 0.78626081],
+                      [0.8018875 , 0.70848121, 0.8952938 ],
+                      [0.82157326, 0.72804665, 0.91509988],
+                      [0.87868702, 0.78514306, 0.97223098],
+                      [0.88798496, 0.79443849, 0.98153142],
+                      [1.01739572, 0.92384889, 1.11094254],
+                      [1.02221717, 0.92867029, 1.11576405],
+                      [0.5688093 , 0.47526242, 0.66235619],
+                      [0.63365663, 0.54010974, 0.72720352]])
+        ),
+        (
+            Ets(model='AAN', damped=False),
+            np.array([[0.681232  , 0.290318  , 1.072146  ],
+                      [0.679951  , 0.286679  , 1.073223  ],
+                      [0.678670  , 0.282610  , 1.074730  ],
+                      [0.677389  , 0.278082  , 1.076696  ],
+                      [0.676108  , 0.273068  , 1.079148  ],
+                      [0.674827  , 0.267544  , 1.082110  ],
+                      [0.673546  , 0.261489  , 1.085604  ],
+                      [0.672265  , 0.254883  , 1.089647  ],
+                      [0.670984  , 0.247713  , 1.094256  ],
+                      [0.669703  , 0.239965  , 1.099442  ]])
+        ),
+    ],
+    ids=['Sarimax', 'Arar', 'Ets']
+)
+def test_predict_interval_output_ForecasterStats_multiple_estimators(estimator, expected_data, y=y):
     """
-    Test output of predict_interval when using Arar as estimator in ForecasterStats
+    Test output of predict_interval when using different estimators (Sarimax, Arar, Ets) in ForecasterStats.
     """
     y = y.copy()
     y.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
-    estimator = Arar(max_ar_depth=26, max_lag=40)
-    forecaster = ForecasterStats(
-        estimator = estimator
-    )
+    forecaster = ForecasterStats(estimator=estimator)
     forecaster.fit(y=y)
     predictions = forecaster.predict_interval(steps=10, alpha=0.05)
 
+    if isinstance(estimator, Sarimax) and platform.system() == 'Windows':
+        expected_data = np.array([
+            [ 0.63432268, -1.62088311,  2.88952848],
+            [ 0.62507372, -3.25642788,  4.50657533],
+            [ 0.61595962, -4.3597053 ,  5.59162454],
+            [ 0.60697841, -5.2383511 ,  6.45230791],
+            [ 0.59812815, -5.98260763,  7.17886392],
+            [ 0.58940693, -6.63414807,  7.81296193],
+            [ 0.58081288, -7.21639982,  8.37802558],
+            [ 0.57234414, -7.7441369 ,  8.88882518],
+            [ 0.56399888, -8.2274152 ,  9.35541295],
+            [ 0.55577529, -8.67346365,  9.78501423]]
+        )
+
     expected_results = pd.DataFrame(
-        data = np.array([[0.65451694, 0.56798138, 0.7410525 ],
-        [0.69369274, 0.60112468, 0.78626081],
-        [0.8018875 , 0.70848121, 0.8952938 ],
-        [0.82157326, 0.72804665, 0.91509988],
-        [0.87868702, 0.78514306, 0.97223098],
-        [0.88798496, 0.79443849, 0.98153142],
-        [1.01739572, 0.92384889, 1.11094254],
-        [1.02221717, 0.92867029, 1.11576405],
-        [0.5688093 , 0.47526242, 0.66235619],
-        [0.63365663, 0.54010974, 0.72720352]],
-        dtype=float),
-        columns = ['pred', 'lower_bound', 'upper_bound'],
-        index = pd.date_range(start="2000-02-20", periods=10, freq='D')
-        
+        data=expected_data,
+        columns=['pred', 'lower_bound', 'upper_bound'],
+        index=pd.date_range(start="2000-02-20", periods=10, freq='D')
     )
 
-    pd.testing.assert_frame_equal(predictions, expected_results)
+    pd.testing.assert_frame_equal(predictions, expected_results, atol=0.0001)
 

@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 from typing import Any
-from copy import deepcopy
 import warnings
 import numpy as np
 import pandas as pd
@@ -352,7 +351,7 @@ class BaseFold():
                 f"`params` must be a dictionary. Got {type(params)}."
             )
 
-        current_params = deepcopy(vars(self))
+        current_params = dict(vars(self))
         unknown_params = set(params.keys()) - set(current_params.keys())
         if unknown_params:
             warnings.warn(

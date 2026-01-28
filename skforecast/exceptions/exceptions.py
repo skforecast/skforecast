@@ -131,6 +131,22 @@ class DataTransformationWarning(UserWarning):
         return self.message + "\n" + extra_message
 
 
+class ExogenousInterpretationWarning(UserWarning):
+    """
+    Warning used to notify about important implications when using exogenous 
+    variables with models that use a two-step approach (e.g., regression + ARAR).
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=ExogenousInterpretationWarning)"
+        )
+        return self.message + "\n" + extra_message
+
+
 class FeatureOutOfRangeWarning(UserWarning):
     """
     Warning used to notify that a feature is out of the range seen during training.
@@ -158,22 +174,6 @@ class IgnoredArgumentWarning(UserWarning):
         extra_message = (
             "You can suppress this warning using: "
             "warnings.simplefilter('ignore', category=IgnoredArgumentWarning)"
-        )
-        return self.message + "\n" + extra_message
-
-
-class IndexWarning(UserWarning):
-    """
-    Warning used to notify that the index of the input data is not a
-    expected type. 
-    """
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        extra_message = (
-            "You can suppress this warning using: "
-            "warnings.simplefilter('ignore', category=IndexWarning)"
         )
         return self.message + "\n" + extra_message
 
@@ -327,9 +327,9 @@ class SkforecastVersionWarning(UserWarning):
 warn_skforecast_categories = [
     DataTypeWarning,
     DataTransformationWarning,
+    ExogenousInterpretationWarning,
     FeatureOutOfRangeWarning,
     IgnoredArgumentWarning,
-    IndexWarning,
     InputTypeWarning,
     LongTrainingWarning,
     MissingExogWarning,

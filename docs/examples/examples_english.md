@@ -53,7 +53,7 @@ For experienced users looking to deepen their forecasting skills, this section p
 
 <i class="fa-solid fa-chart-gantt" style="font-size: 25px; color: #ff004f;"></i> [Interpretable forecasting models](https://www.cienciadedatos.net/documentos/py57-interpretable-forecasting-models.html)
 
-<i class="fa-solid fa-bell" style="color: #f7931a;"></i> [Data drift detection in time series forecasting](https://dev.cienciadedatos.net/documentos/py70-drift-detection-forecasting-model.html)
+<i class="fa-solid fa-bell" style="color: #f7931a;"></i> [Data drift detection in time series forecasting](https://cienciadedatos.net/documentos/py70-drift-detection-forecasting-model.html)
 
 <i class="fa-solid fa-tree" style="font-size: 25px; color:rgb(7, 104, 84);"></i> [Modelling time series trend with tree based models](https://www.cienciadedatos.net/documentos/py49-modelling-time-series-trend-with-tree-based-models.html)
 

@@ -456,7 +456,7 @@ def test_create_train_X_y_ValueError_when_all_series_values_are_missing():
             )
     forecaster = ForecasterRnn(estimator=model, levels="1", lags=3)
 
-    err_msg = re.escape("`y` has missing values.")
+    err_msg = re.escape("series '2' has missing values.")
     with pytest.raises(ValueError, match=err_msg):
         forecaster._create_train_X_y(series=series)
 
@@ -489,7 +489,7 @@ def test_create_train_X_y_ValueError_when_series_values_are_missing(values):
             )
     forecaster = ForecasterRnn(estimator=model, levels="1", lags=3)
 
-    err_msg = re.escape("`y` has missing values.")
+    err_msg = re.escape("series '1' has missing values.")
     with pytest.raises(ValueError, match=err_msg):
         forecaster._create_train_X_y(series=series)
 

@@ -12,12 +12,13 @@ import sys
 import numpy as np
 import pandas as pd
 import inspect
-from copy import copy, deepcopy
-from sklearn.exceptions import NotFittedError
-from sklearn.pipeline import Pipeline
+from copy import copy
 from sklearn.base import clone
-from joblib import Parallel, delayed, cpu_count
+from sklearn.exceptions import NotFittedError
+from sklearn.linear_model._base import LinearModel
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from joblib import Parallel, delayed, cpu_count
 from itertools import chain
 
 from .. import __version__
@@ -1155,14 +1156,17 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                           columns = X_train_features_names_out_
                       )
 
-        y_train = {
-            step: pd.Series(
-                      data  = y_train[:, step - 1], 
-                      index = series_index[self.window_size + step - 1:][:len_train_index],
-                      name  = f"{self.level}_step_{step}"
-                  )
-            for step in self.steps
-        }
+        # Optimize: pre-compute indices to avoid repeated slicing
+        y_train_dict = {}
+        for step in self.steps:
+            step_idx_start = self.window_size + step - 1
+            step_index = series_index[step_idx_start:step_idx_start + len_train_index]
+            y_train_dict[step] = pd.Series(
+                data=y_train[:, step - 1],
+                index=step_index,
+                name=f"{self.level}_step_{step}"
+            )
+        y_train = y_train_dict
 
         return (
             X_train,
@@ -2005,6 +2009,71 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         return X_predict
 
+    def _direct_predict(
+        self,
+        steps: list[int],
+        Xs: list[np.ndarray]
+    ) -> np.ndarray:
+        """
+        Generate predictions for the specified steps using the fitted estimators.
+        
+        This method optimizes prediction for common estimator types:
+        - LinearModel: Uses direct dot product with coefficients
+        - LGBMRegressor: Uses booster_.predict for faster inference
+        - XGBRegressor: Uses get_booster().inplace_predict for faster inference
+        - Other estimators: Uses standard predict method
+        
+        Parameters
+        ----------
+        steps : list[int]
+            List of steps to predict. Each step corresponds to an estimator
+            in `self.estimators_`.
+        Xs : list[np.ndarray]
+            List of numpy arrays with the predictors for each step.
+            Each array has shape (1, n_features).
+
+        Returns
+        -------
+        predictions : numpy ndarray
+            Predicted values for each step. Shape: (len(steps),)
+        
+        """
+
+        estimators = [self.estimators_[step] for step in steps]
+        
+        estimator_name = type(self.estimator).__name__
+        is_linear = isinstance(self.estimator, LinearModel)
+        is_lightgbm = estimator_name == 'LGBMRegressor'
+        is_xgboost = estimator_name == 'XGBRegressor'
+        
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            if is_linear:
+                predictions = np.array([
+                    np.dot(X.ravel(), estimator.coef_) + estimator.intercept_
+                    for estimator, X in zip(estimators, Xs)
+                ])
+            elif is_lightgbm:
+                predictions = np.array([
+                    estimator.booster_.predict(X).item()
+                    for estimator, X in zip(estimators, Xs)
+                ])
+            elif is_xgboost:
+                predictions = np.array([
+                    estimator.get_booster().inplace_predict(X).item()
+                    for estimator, X in zip(estimators, Xs)
+                ])
+            else:
+                predictions = np.array([
+                    estimator.predict(X).ravel().item()
+                    for estimator, X in zip(estimators, Xs)
+                ])
+
+        return predictions
 
     def predict(
         self,
@@ -2070,17 +2139,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 check_inputs = check_inputs,
             )
 
-        estimators = [self.estimators_[step] for step in steps]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predictions = np.array([
-                estimator.predict(X).ravel().item()
-                for estimator, X in zip(estimators, Xs)
-            ])
+        predictions = self._direct_predict(steps=steps, Xs=Xs)
 
         if self.differentiation is not None:
             predictions = (
@@ -2207,17 +2266,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             residuals_by_bin = self.out_sample_residuals_by_bin_[self.level]
 
         # NOTE: Predictors and residuals are transformed and differentiated
-        estimators = [self.estimators_[step] for step in steps]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predictions = np.array([
-                estimator.predict(X).ravel().item()
-                for estimator, X in zip(estimators, Xs)
-            ])
+        predictions = self._direct_predict(steps=steps, Xs=Xs)
         
         rng = np.random.default_rng(seed=random_state)
         if not use_binned_residuals:
@@ -2248,10 +2297,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             )
 
         if self.transformer_series_[self.level]:
-            boot_predictions = np.apply_along_axis(
-                                   func1d            = transform_numpy,
-                                   axis              = 0,
-                                   arr               = boot_predictions,
+            boot_predictions = transform_numpy(
+                                   array             = boot_predictions,
                                    transformer       = self.transformer_series_[self.level],
                                    fit               = False,
                                    inverse_transform = True
@@ -2353,18 +2400,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             residuals = self.out_sample_residuals_[self.level]
             residuals_by_bin = self.out_sample_residuals_by_bin_[self.level]
 
-        # NOTE: Predictors and residuals are transformed and differentiated  
-        estimators = [self.estimators_[step] for step in steps]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predictions = np.array([
-                estimator.predict(X).ravel().item()
-                for estimator, X in zip(estimators, Xs)
-            ])
+        # NOTE: Predictors and residuals are transformed and differentiated
+        predictions = self._direct_predict(steps=steps, Xs=Xs)
         
         if use_binned_residuals:
             correction_factor_by_bin = {
@@ -2388,10 +2425,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             )
 
         if self.transformer_series_[self.level]:
-            predictions = np.apply_along_axis(
-                              func1d            = transform_numpy,
-                              axis              = 0,
-                              arr               = predictions,
+            predictions = transform_numpy(
+                              array             = predictions,
                               transformer       = self.transformer_series_[self.level],
                               fit               = False,
                               inverse_transform = True
@@ -2777,7 +2812,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         """
         Set new values to the parameters of the scikit-learn model stored in the
         forecaster. It is important to note that all models share the same 
-        configuration of parameters and hyperparameters.
+        configuration of parameters and hyperparameters. After calling this method, 
+        the forecaster is reset to an unfitted state. The `fit` method must be 
+        called before prediction.
         
         Parameters
         ----------
@@ -2796,6 +2833,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             step: clone(self.estimator)
             for step in self.steps
         }
+        self.is_fitted = False
 
     def set_fit_kwargs(
         self, 
@@ -3165,8 +3203,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 f"Got {set(y_pred.keys())}."
             )
         
-        y_true = deepcopy(y_true[self.level])
-        y_pred = deepcopy(y_pred[self.level])
+        y_true = y_true[self.level]
+        y_pred = y_pred[self.level]
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.to_numpy()
         if not isinstance(y_true, np.ndarray):

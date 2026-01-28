@@ -10,6 +10,58 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.20.0 <small>In development</small> { id="0.20.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the bootstrapped residuals calculation in all recursive forecasters achieving **10x speedup** in the interval prediction process. This improvement significantly reduces the time required to generate prediction intervals, enhancing overall performance and user experience.
+
++ <span class="badge text-bg-feature">Feature</span> New skforecast <code>[Arima]</code> class in the <code>[stats]</code> module. Native and fast Python implementation of ARIMA model for time series forecasting that follows the scikit-learn interface. [User guide](../user_guides/forecasting-sarimax-arima.ipynb)
+
++ <span class="badge text-bg-feature">Feature</span> <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[ETS]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
+
++ <span class="badge text-bg-feature">Feature</span> Added parameter `max_out_of_range_proportion` to <code>[PopulationDriftDetector]</code> to set the maximum allowed proportion of out-of-range observations (for numeric features) before triggering drift detection.
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterSarimax]</code> has been removed, deprecated in version 0.19.0. Use the new <code>[ForecasterStats]</code> class in the <code>[recursive]</code> module, which offers enhanced capabilities and flexibility for statistical time series forecasting.
+
+
+**Added**
+
++ Support for `Python 3.14`.
+
++ New skforecast <code>[Arima]</code> class in the <code>[stats]</code> module. Native and fast Python implementation of ARIMA model for time series forecasting that follows the scikit-learn interface. [User guide](../user_guides/forecasting-sarimax-arima.ipynb)
+
++ <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[ETS]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
+
++ New argument `freeze_params` in the [backtesting_stats] function to allow freezing the parameters of the statistical models during backtesting. When set to `True`, the models will use the parameters obtained from the initial fit throughout the backtesting process, rather than re-estimating them at each step.
+
++ Introduced vectorized `_recursive_predict_bootstrapping` methods in <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code> that predict all bootstrap samples in a single batch per step instead of looping over bootstrap iterations. This achieves significant speedup in the interval prediction process.
+
++ Added <code>_transform_vectorized</code> method to <code>[RollingFeatures]</code> for faster computation of vectorizable statistics.
+  
++ Implemented caching in <code>[ForecasterDirect]</code> to avoid repeated computation of column indices and names during backtesting.
+  
++ Optimized array operations in <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterDirect]</code> to reduce memory allocations.
+
++ Added parameter `max_out_of_range_proportion` to <code>[PopulationDriftDetector]</code> to set the maximum allowed proportion of out-of-range observations (for numeric features) before triggering drift detection.
+
++ Introduced optimized prediction paths for linear models (using numpy dot product), LightGBM (using booster API), and XGBoost (using inplace_predict)
+
+
+**Changed**
+
++ [ForecasterSarimax] has been removed, deprecated in version 0.19.0. Use the new [ForecasterStats] class in the [recursive] module, which offers enhanced capabilities and flexibility for statistical time series forecasting.
+
++ Removed residual handling from `_recursive_predict` methods, separating bootstrap logic into dedicated methods.
+
++ `suppress_warnings_fit` parameter in <code>[backtesting_stats]</code> function has been replaced with `suppress_warnings` to control the display of skforecast warnings during the entire backtesting process.
+
+
+**Fixed**
+
++ Fixed an issue in <code>[QuantileBinner]</code> where duplicate bin edges caused by repeated values in the data led to non-consecutive bin indices. This caused errors in `predict_bootstrapping` when using binned residuals. The fix removes duplicate edges and ensures bins are always numbered consecutively from 0 to `n_bins_-1`. A warning is now issued when the number of bins is reduced.
+
+
 ## 0.19.1 <small>Dec 10, 2025</small> { id="0.19.1" }
 
 The main changes in this release are:
@@ -1334,6 +1386,8 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [stats]: ../api/stats.md
 [Sarimax]: ../api/stats.md#skforecast.stats._sarimax.Sarimax
 [Arar]: ../api/stats.md#skforecast.stats._arar.Arar
+[ETS]: ../api/stats.md#skforecast.stats._ets.ETS
+[Arima]: ../api/stats.md#skforecast.stats._arima.Arima
 
 <!-- model_selection -->
 [model_selection]: ../api/model_selection.md

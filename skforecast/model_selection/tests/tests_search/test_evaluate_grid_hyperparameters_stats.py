@@ -5,10 +5,11 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
+from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import ParameterGrid
-from skforecast.stats import Sarimax
-from skforecast.recursive import ForecasterStats
+from skforecast.stats import Sarimax, Ets
+from skforecast.recursive import ForecasterRecursive, ForecasterStats
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection._search import _evaluate_grid_hyperparameters_stats
 
@@ -20,6 +21,71 @@ from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import
 from tqdm import tqdm
 from functools import partialmethod
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
+
+
+def test_TypeError_evaluate_grid_hyperparameters_stats_when_forecaster_not_ForecasterStats():
+    """
+    Test TypeError is raised in _evaluate_grid_hyperparameters_stats when 
+    forecaster is not of type `ForecasterStats`.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=3)
+
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = False,
+         )
+
+    err_msg = re.escape(
+        "`forecaster` must be of type `ForecasterStats`, for all other "
+        "types of forecasters use the functions available in the "
+        "`model_selection` module."
+    )
+    with pytest.raises(TypeError, match=err_msg):
+        _evaluate_grid_hyperparameters_stats(
+            forecaster  = forecaster,
+            y           = y_datetime,
+            cv          = cv,
+            param_grid  = [{'alpha': 0.1}, {'alpha': 0.5}],
+            metric      = 'mean_absolute_error',
+            return_best = False,
+            verbose     = False
+        )
+
+
+def test_ValueError_evaluate_grid_hyperparameters_stats_when_multiple_estimators():
+    """
+    Test ValueError is raised in _evaluate_grid_hyperparameters_stats when 
+    forecaster has more than one estimator.
+    """
+    forecaster = ForecasterStats(
+                     estimator = [
+                         Sarimax(order=(1, 1, 1)), Ets(model='AAN')
+                     ]
+                 )
+
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = False,
+         )
+
+    err_msg = re.escape(
+        "Hyperparameter search with `ForecasterStats` is only available when "
+        "the forecaster contains a single estimator. Got 2 "
+        "estimators: ['skforecast.Sarimax', 'skforecast.Ets']. Initialize `ForecasterStats` with a single "
+        "estimator to perform hyperparameter search."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        _evaluate_grid_hyperparameters_stats(
+            forecaster  = forecaster,
+            y           = y_datetime,
+            cv          = cv,
+            param_grid  = [{'order': (1, 1, 1)}, {'order': (1, 2, 2)}],
+            metric      = 'mean_absolute_error',
+            return_best = False,
+            verbose     = False
+        )
 
 
 def test_ValueError_evaluate_grid_hyperparameters_stats_when_return_best_and_len_y_exog_different():
@@ -85,7 +151,7 @@ def test_evaluate_grid_hyperparameters_stats_warn_when_non_valid_params():
             param_grid=param_grid,
             metric="mean_absolute_error",
             return_best=False,
-            suppress_warnings_fit=True,
+            suppress_warnings=True,
         )
 
     expected_results = pd.DataFrame(
@@ -287,14 +353,14 @@ def test_evaluate_grid_hyperparameters_stats_when_return_best():
                   {'order': (3, 2, 0), 'trend': 'c'}]
 
     _evaluate_grid_hyperparameters_stats(
-        forecaster            = forecaster,
-        y                     = y_datetime,
-        cv                    = cv,
-        param_grid            = param_grid,
-        metric                = mean_absolute_error,
-        return_best           = True,
-        suppress_warnings_fit = False,
-        verbose               = False
+        forecaster        = forecaster,
+        y                 = y_datetime,
+        cv                = cv,
+        param_grid        = param_grid,
+        metric            = mean_absolute_error,
+        return_best       = True,
+        suppress_warnings = False,
+        verbose           = False
     )
     
     expected_params = {
@@ -324,7 +390,8 @@ def test_evaluate_grid_hyperparameters_stats_when_return_best():
         'validate_specification': True
     }
     
-    assert expected_params == forecaster.params
+    estimator_id = forecaster.estimator_ids[0]
+    assert expected_params == forecaster.estimator_params_[estimator_id]
 
 
 def test_evaluate_grid_hyperparameters_stats_output_file_when_single_metric():

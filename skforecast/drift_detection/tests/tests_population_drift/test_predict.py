@@ -1,4 +1,4 @@
-# Unit test predict
+# Unit test PopulationDriftDetector predict
 # ==============================================================================
 from pathlib import Path
 import pytest
@@ -10,10 +10,10 @@ from ..._population_drift import PopulationDriftDetector
 
 # Fixtures
 THIS_DIR = Path(__file__).parent
-data = joblib.load(THIS_DIR/'fixture_data_population_drift.joblib')
-results_nannyml = joblib.load(THIS_DIR/'fixture_results_nannyml.joblib')
-results_multiseries = joblib.load(THIS_DIR/'fixture_results_multiseries.joblib')
-summary_multiseries = joblib.load(THIS_DIR/'fixture_summary_multiseries.joblib')
+data = joblib.load(THIS_DIR / 'fixture_data_population_drift.joblib')
+results_nannyml = joblib.load(THIS_DIR / 'fixture_results_nannyml.joblib')
+results_multiseries = joblib.load(THIS_DIR / 'fixture_results_multiseries.joblib')
+summary_multiseries = joblib.load(THIS_DIR / 'fixture_summary_multiseries.joblib')
 
 
 # NOTE: Code used to generate fixture_results_nannyml
@@ -78,6 +78,7 @@ def test_predict_ValueError_when_chunk_size_is_frequency_but_X_index_not_datetim
     err_msg = "`chunk_size` is a pandas frequency but `X` does not have a DatetimeIndex."
     with pytest.raises(ValueError, match=err_msg):
         detector.predict(X=X)
+
 
 def test_predict_output_equivalence_nannyml():
     """
@@ -208,10 +209,69 @@ def test_predict_output_when_multiple_series():
     detector = PopulationDriftDetector(
         chunk_size="MS",
         threshold=0.95,
-        threshold_method='quantile'
+        threshold_method='quantile',
+        max_out_of_range_proportion=0.1
     )
     detector.fit(data_multiseries)
     results, summary = detector.predict(data_multiseries)
 
     pd.testing.assert_frame_equal(results, results_multiseries)
     pd.testing.assert_frame_equal(summary, summary_multiseries)
+
+
+def test_predict_out_of_range_detection():
+    """
+    Test that out-of-range detection works correctly:
+    - prop_out_of_range is calculated correctly
+    - is_out_of_range respects max_out_of_range_proportion
+    - drift_detected includes is_out_of_range
+    - Categorical features have NaN for out-of-range columns
+    """
+    # Create reference data with known range [0, 10]
+    dates_ref = pd.date_range('2020-01-01', periods=99, freq='D')
+    data_ref = pd.DataFrame({
+        'numeric': np.linspace(0, 10, 99),  # Exact range [0, 10]
+        'category': ['A', 'B', 'C'] * 33    # Exact proportions: 33% each
+    }, index=dates_ref)
+    data_ref['category'] = data_ref['category'].astype('category')
+    
+    # New data: 20% out of range for numeric feature (10 out of 51)
+    # Category has exact same distribution as reference (no drift)
+    dates_new = pd.date_range('2020-04-11', periods=51, freq='D')
+    values_new = np.concatenate([
+        np.array([-1.0] * 10),  # 10 below range (~20%)
+        np.linspace(0, 10, 41)  # 41 in range
+    ])
+    data_new = pd.DataFrame({
+        'numeric': values_new,
+        'category': ['A', 'B', 'C'] * 17  # Exact same proportions: 33% each
+    }, index=dates_new)
+    data_new['category'] = pd.Categorical(
+        data_new['category'], categories=['A', 'B', 'C']
+    )
+    
+    # Test with max_out_of_range_proportion=0.1 (~20% > 10%, should trigger)
+    detector = PopulationDriftDetector(
+        chunk_size=None,
+        threshold=3,
+        threshold_method='std',
+        max_out_of_range_proportion=0.1
+    )
+    detector.fit(data_ref)
+    results, _ = detector.predict(data_new)
+    
+    # Expected results
+    expected = pd.DataFrame({
+        'feature': ['numeric', 'category'],
+        'prop_out_of_range': [10 / 51, np.nan],
+        'max_out_of_range_proportion': [0.1, 0.1],
+        'is_out_of_range': [True, np.nan],
+        'drift_detected': [True, False],
+    })
+    
+    cols_to_check = [
+        'feature', 'prop_out_of_range', 'max_out_of_range_proportion', 'is_out_of_range', 'drift_detected'
+    ]
+    results_subset = results[cols_to_check].reset_index(drop=True)
+    
+    pd.testing.assert_frame_equal(results_subset, expected)
