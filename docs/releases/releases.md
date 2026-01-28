@@ -16,9 +16,11 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Refactored the bootstrapped residuals calculation in all recursive forecasters achieving **10x speedup** in the interval prediction process. This improvement significantly reduces the time required to generate prediction intervals, enhancing overall performance and user experience.
 
-+ <span class="badge text-bg-feature">Feature</span> Added parameter `max_out_of_range_proportion` to <code>[PopulationDriftDetector]</code> to set the maximum allowed proportion of out-of-range observations (for numeric features) before triggering drift detection.
++ <span class="badge text-bg-feature">Feature</span> New skforecast <code>[Arima]</code> class in the <code>[stats]</code> module. Native and fast Python implementation of ARIMA model for time series forecasting that follows the scikit-learn interface. [User guide](../user_guides/forecasting-sarimax-arima.ipynb)
 
 + <span class="badge text-bg-feature">Feature</span> <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[ETS]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
+
++ <span class="badge text-bg-feature">Feature</span> Added parameter `max_out_of_range_proportion` to <code>[PopulationDriftDetector]</code> to set the maximum allowed proportion of out-of-range observations (for numeric features) before triggering drift detection.
 
 + <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterSarimax]</code> has been removed, deprecated in version 0.19.0. Use the new <code>[ForecasterStats]</code> class in the <code>[recursive]</code> module, which offers enhanced capabilities and flexibility for statistical time series forecasting.
 
@@ -26,6 +28,8 @@ The main changes in this release are:
 **Added**
 
 + Support for `Python 3.14`.
+
++ New skforecast <code>[Arima]</code> class in the <code>[stats]</code> module. Native and fast Python implementation of ARIMA model for time series forecasting that follows the scikit-learn interface. [User guide](../user_guides/forecasting-sarimax-arima.ipynb)
 
 + <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[ETS]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
 

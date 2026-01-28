@@ -1110,10 +1110,10 @@ def test_output_backtesting_stats_multiple_estimators_refit_False_interval_with_
     interval values due to numerical variability in statistical models.
     """
     estimators = [
-        Sarimax(order=(3, 1, 0)),
+        Sarimax(order=(2, 1, 0)),
         Arar(),
-        Ets(),
-        Arima(order=(1, 1, 1))
+        Ets(model='ANN'),
+        Arima(order=(1, 1, 0))
     ]
     forecaster = ForecasterStats(estimator=estimators)
     
@@ -1173,10 +1173,10 @@ def test_output_backtesting_stats_multiple_estimators_refit_True_interval_with_m
     interval values due to numerical variability in statistical models.
     """
     estimators = [
-        Sarimax(order=(3, 1, 0)),
+        Sarimax(order=(2, 1, 0)),
         Arar(),
-        Ets(),
-        Arima(order=(1, 1, 1))
+        Ets(model='ANN'),
+        Arima(order=(1, 1, 0))
     ]
     forecaster = ForecasterStats(estimator=estimators)
     
@@ -1242,7 +1242,7 @@ def test_output_backtesting_stats_auto_arima_arar_freeze_params_False_gap_air_pa
         max_P=1,
         max_Q=1,
         max_order=5,
-        max_d=2,
+        max_d=1,
         max_D=1,
         ic="aic",
         seasonal=True,
