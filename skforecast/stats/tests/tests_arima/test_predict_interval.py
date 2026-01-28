@@ -726,6 +726,7 @@ def test_predict_interval_auto_arima_air_passengers_data():
     assert model.best_params_['order'] == (2, 1, 1)
     assert model.best_params_['seasonal_order'] == (0, 1, 0)
     assert model.best_params_['m'] == 12
+    assert model.estimator_name_ == "AutoArima(2,1,1)(0,1,0)[12]"
     pd.testing.assert_frame_equal(pred, expected[platform.system()], rtol=1e-4)
 
 
@@ -779,8 +780,6 @@ def test_predict_interval_auto_arima_multi_seasonal_data():
                                       202.75402933])
             }, index=[1, 2, 3, 4, 5]).rename_axis('step')
     }
-
-    expected = expected[platform.system()]
     
     model = Arima(
         order=None,
@@ -810,4 +809,5 @@ def test_predict_interval_auto_arima_multi_seasonal_data():
     assert model.best_params_['order'] == (2, 1, 1)
     assert model.best_params_['seasonal_order'] == (0, 0, 0)
     assert model.best_params_['m'] == 12
-    pd.testing.assert_frame_equal(pred, expected)
+    assert model.estimator_name_ == "AutoArima(2,1,1)(0,0,0)[12]"
+    pd.testing.assert_frame_equal(pred, expected[platform.system()])

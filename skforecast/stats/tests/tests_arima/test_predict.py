@@ -543,6 +543,11 @@ def test_arima_predict_auto_arima_air_passengers_data():
         'Darwin': (0, 1, 0),
         'Windows': (0, 1, 0)
     }
+    expected_estimator_name_ = {
+        'Linux': "AutoArima(2,1,1)(0,1,0)[12]",
+        'Darwin': "AutoArima(1,1,0)(0,1,0)[12]",
+        'Windows': "AutoArima(2,1,1)(0,1,0)[12]"
+    }
     expected_pred = {
         'Linux': 
             np.array([
@@ -592,6 +597,7 @@ def test_arima_predict_auto_arima_air_passengers_data():
     assert model.best_params_['order'] == expected_order[platform_name]
     assert model.best_params_['seasonal_order'] == expected_seasonal_order[platform_name]
     assert model.best_params_['m'] == 12
+    assert model.estimator_name_ == expected_estimator_name_[platform_name]
     np.testing.assert_allclose(pred, expected_pred[platform.system()], rtol=1e-4)
 
 
@@ -649,6 +655,7 @@ def test_arima_predict_auto_arima_multi_seasonal_data():
     assert model.best_params_['order'] == (2, 1, 1)
     assert model.best_params_['seasonal_order'] == (0, 0, 0)
     assert model.best_params_['m'] == 12
+    assert model.estimator_name_ == "AutoArima(2,1,1)(0,0,0)[12]"
     np.testing.assert_allclose(pred, expected[platform.system()], rtol=1e-4)
 
 
