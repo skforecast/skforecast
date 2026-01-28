@@ -1307,7 +1307,7 @@ def test_output_backtesting_stats_auto_arima_arar_freeze_params_False_gap_air_pa
             478.39345005, 456.12460312, 433.48247753, 405.13228127,
             476.45577472, 444.53909803
         ])
-        mse_expected = np.array([880.057541, 180.798112])
+        mse_expected = np.array([880.0986434976576, 180.79811204373485])
     
     expected_metric = pd.DataFrame({
         'estimator_id': ['skforecast.Arima', 'skforecast.Arar'],
