@@ -149,6 +149,41 @@ def test_compute_approx_offset_with_approximation(ar1_series):
     assert np.isfinite(offset)
 
 
+def test_compute_approx_offset_with_truncation(ar1_series):
+    """Test compute_approx_offset with truncate parameter."""
+    offset = compute_approx_offset(
+        approximation=True, x=ar1_series, d=0, D=0, m=1, truncate=50
+    )
+    
+    # Should return a finite offset value
+    assert np.isfinite(offset)
+
+
+def test_compute_approx_offset_with_seasonal_D(ar1_series):
+    """Test compute_approx_offset with seasonal differencing."""
+    # Need longer series for seasonal
+    np.random.seed(42)
+    y = np.random.randn(120)
+    offset = compute_approx_offset(
+        approximation=True, x=y, d=0, D=1, m=12
+    )
+    
+    assert np.isfinite(offset)
+
+
+def test_compute_approx_offset_with_xreg_truncation():
+    """Test compute_approx_offset with xreg and truncation."""
+    np.random.seed(42)
+    y = np.random.randn(100)
+    xreg = pd.DataFrame({'x1': np.random.randn(100)})
+    
+    offset = compute_approx_offset(
+        approximation=True, x=y, d=0, D=0, m=1, xreg=xreg, truncate=50
+    )
+    
+    assert np.isfinite(offset)
+
+
 # =============================================================================
 # Tests for newmodel
 # =============================================================================
@@ -177,34 +212,31 @@ def test_newmodel_existing_configuration():
 # =============================================================================
 # Tests for get_pdq and get_sum
 # =============================================================================
-def test_get_pdq_from_tuple():
-    """Test get_pdq extracts values from tuple."""
-    result = get_pdq((1, 2, 3))
-    assert result == (1, 2, 3)
+@pytest.mark.parametrize(
+    'input_val, expected',
+    [
+        ((1, 2, 3), (1, 2, 3)),           # tuple
+        ({'p': 1, 'd': 2, 'q': 3}, (1, 2, 3)),  # dict complete
+        ({'p': 2}, (2, 0, 0)),            # dict partial
+        ([2, 1, 3], (2, 1, 3)),           # list
+    ]
+)
+def test_get_pdq(input_val, expected):
+    """Test get_pdq extracts values from different input types."""
+    assert get_pdq(input_val) == expected
 
 
-def test_get_pdq_from_dict():
-    """Test get_pdq extracts values from dict."""
-    result = get_pdq({'p': 1, 'd': 2, 'q': 3})
-    assert result == (1, 2, 3)
-
-
-def test_get_pdq_from_dict_partial():
-    """Test get_pdq with partial dict defaults to 0."""
-    result = get_pdq({'p': 2})
-    assert result == (2, 0, 0)
-
-
-def test_get_sum_from_tuple():
-    """Test get_sum calculates sum from tuple."""
-    result = get_sum((1, 2, 3))
-    assert result == 6
-
-
-def test_get_sum_from_dict():
-    """Test get_sum calculates sum from dict."""
-    result = get_sum({'p': 1, 'd': 2, 'q': 3})
-    assert result == 6
+@pytest.mark.parametrize(
+    'input_val, expected',
+    [
+        ((1, 2, 3), 6),           # tuple
+        ({'p': 1, 'd': 2, 'q': 3}, 6),  # dict
+        ([2, 1, 3], 6),           # list
+    ]
+)
+def test_get_sum(input_val, expected):
+    """Test get_sum calculates sum from different input types."""
+    assert get_sum(input_val) == expected
 
 
 # =============================================================================
@@ -239,6 +271,16 @@ def test_arima_trace_str_seasonal():
     
     assert "ARIMA(1,0,1)" in result
     assert "(1,1,1)[12]" in result
+
+
+def test_arima_trace_str_zero_mean():
+    """Test trace string for model without mean."""
+    result = arima_trace_str(
+        order=(1, 0, 1), seasonal=(0, 0, 0), m=1, constant=False, ic_value=100.0
+    )
+    
+    assert "ARIMA(1,0,1)" in result
+    assert "zero mean" in result
 
 
 def test_arima_trace_str_infinite_ic():
@@ -423,6 +465,19 @@ def test_n_and_nstar(ar1_series):
     assert nstar == n - 1
 
 
+def test_n_and_nstar_seasonal():
+    """Test n_and_nstar with seasonal differencing."""
+    np.random.seed(42)
+    y = np.random.randn(120)
+    
+    fit = fit_custom_arima(y, m=12, order=(0, 0, 0), seasonal=(0, 1, 0), constant=False)
+    
+    n, nstar = n_and_nstar(fit)
+    
+    # For D=1, m=12: nstar = n - D*m = n - 12
+    assert nstar == n - 12
+
+
 # =============================================================================
 # Tests for prepend_drift
 # =============================================================================
@@ -458,6 +513,27 @@ def test_prepend_drift_to_ndarray():
     assert isinstance(result, pd.DataFrame)
     assert result.columns[0] == 'drift'
     assert result.shape == (3, 3)
+
+
+def test_forecast_arima_with_only_drift(ar1_series):
+    """Test forecast_arima with model that has only drift (no other xreg)."""
+    # Fit model with drift only
+    fit = arima_rjh(ar1_series, m=1, order=(1, 1, 0), include_drift=True)
+    
+    # Forecast without providing xreg - drift should be added automatically
+    fc = forecast_arima(fit, h=5)
+    
+    assert len(fc['mean']) == 5
+
+
+def test_forecast_arima_fan_levels(ar1_series):
+    """Test forecast_arima with fan=True generates many levels."""
+    fit = auto_arima(ar1_series, m=1, stepwise=True, trace=False)
+    
+    fc = forecast_arima(fit, h=5, level=[80, 95], fan=True)
+    
+    # fan=True should override level
+    assert len(fc['level']) > 2
 
 
 # =============================================================================
@@ -538,6 +614,51 @@ def test_auto_arima_different_ic(ar1_series):
     assert fit_bic['converged'] is True
 
 
+def test_auto_arima_with_box_cox_auto(ar1_series):
+    """Test auto_arima with automatic Box-Cox lambda selection."""
+    y_pos = np.abs(ar1_series) + 1.0
+    
+    fit = auto_arima(y_pos, m=1, stepwise=True, lambda_bc="auto", trace=False)
+    
+    assert fit['converged'] is True
+    assert fit['lambda'] is not None
+
+
+def test_auto_arima_with_constant_d_D():
+    """Test auto_arima detects constant after differencing."""
+    # Create series that becomes constant after differencing
+    y = np.arange(1.0, 51.0)  # Linear trend
+    
+    # Adding noise to avoid becoming exactly constant
+    np.random.seed(42)
+    y = y + np.random.randn(50) * 0.01
+    
+    fit = auto_arima(y, m=1, stepwise=True, trace=False)
+    
+    # Should detect d=1 for trend
+    assert fit['arma'][5] >= 1  # d >= 1
+
+
+def test_auto_arima_allowdrift_false(random_walk_series):
+    """Test auto_arima with allowdrift=False."""
+    fit = auto_arima(random_walk_series, m=1, stepwise=True, 
+                     allowdrift=False, trace=False)
+    
+    # Should not include drift
+    assert fit['converged'] is True
+
+
+def test_auto_arima_approximation_refit(ar1_series):
+    """Test auto_arima refits without approximation."""
+    # Large series triggers approximation automatically
+    np.random.seed(42)
+    y_large = np.random.randn(200)
+    
+    fit = auto_arima(y_large, m=1, stepwise=True, approximation=True, trace=False)
+    
+    assert fit['converged'] is True
+
+
 # =============================================================================
 # Tests for arima_rjh
 # =============================================================================
@@ -570,6 +691,43 @@ def test_arima_rjh_no_drift_warning(random_walk_series):
     # d=2 should not allow drift
     with pytest.warns(UserWarning, match="No drift term fitted"):
         arima_rjh(random_walk_series, m=1, order=(0, 2, 0), include_drift=True)
+
+
+def test_arima_rjh_with_box_cox():
+    """Test arima_rjh with Box-Cox transformation."""
+    np.random.seed(42)
+    y_pos = np.exp(np.random.randn(80) * 0.1 + 2)
+    
+    fit = arima_rjh(y_pos, m=1, order=(1, 0, 0), lambda_bc=0.0)
+    
+    assert fit['lambda'] == 0.0
+    assert fit['converged'] is True
+
+
+def test_arima_rjh_with_auto_box_cox():
+    """Test arima_rjh with automatic Box-Cox lambda."""
+    np.random.seed(42)
+    y_pos = np.exp(np.random.randn(80) * 0.1 + 2)
+    
+    fit = arima_rjh(y_pos, m=1, order=(1, 0, 0), lambda_bc="auto")
+    
+    assert fit['lambda'] is not None
+    assert fit['converged'] is True
+
+
+def test_arima_rjh_include_constant_true(ar1_series):
+    """Test arima_rjh with include_constant=True."""
+    fit = arima_rjh(ar1_series, m=1, order=(1, 0, 0), include_constant=True)
+    
+    assert 'intercept' in fit['coef'].columns
+
+
+def test_arima_rjh_include_constant_false(ar1_series):
+    """Test arima_rjh with include_constant=False."""
+    fit = arima_rjh(ar1_series, m=1, order=(1, 0, 0), include_constant=False)
+    
+    # Should not have intercept
+    assert 'intercept' not in fit['coef'].columns
 
 
 def test_arima_rjh_minimum_data_length():
@@ -644,6 +802,45 @@ def test_forecast_arima_with_drift(random_walk_series):
     assert len(fc['mean']) == 5
     # Forecasts should show trend due to drift
     assert not np.allclose(fc['mean'], fc['mean'][0])
+
+
+def test_forecast_arima_with_box_cox(ar1_series):
+    """Test forecast_arima with Box-Cox transformation."""
+    # Use positive series for Box-Cox
+    y_pos = np.abs(ar1_series) + 1.0
+    
+    fit = auto_arima(y_pos, m=1, stepwise=True, lambda_bc=0.5, trace=False)
+    
+    fc = forecast_arima(fit, h=5, level=[80, 95])
+    
+    assert len(fc['mean']) == 5
+    assert fc['lambda'] == 0.5
+
+
+def test_forecast_arima_with_box_cox_biasadj(ar1_series):
+    """Test forecast_arima with Box-Cox and bias adjustment."""
+    y_pos = np.abs(ar1_series) + 1.0
+    
+    fit = auto_arima(y_pos, m=1, stepwise=True, lambda_bc=0.5, biasadj=True, trace=False)
+    
+    fc = forecast_arima(fit, h=5, level=[80, 95])
+    
+    assert len(fc['mean']) == 5
+    assert fc['biasadj'] == True
+
+
+def test_forecast_arima_with_negative_lambda():
+    """Test forecast_arima with negative Box-Cox lambda."""
+    np.random.seed(42)
+    y_pos = np.exp(np.random.randn(100) * 0.1 + 2)
+    
+    fit = auto_arima(y_pos, m=1, stepwise=True, lambda_bc=-0.5, trace=False)
+    
+    fc = forecast_arima(fit, h=5, level=[80, 95])
+    
+    assert len(fc['mean']) == 5
+    # Lambda should be stored
+    assert fc['lambda'] == -0.5
 
 
 def test_forecast_arima_level_as_proportions(ar1_series):
@@ -745,6 +942,41 @@ def test_search_arima_respects_max_order(ar1_series):
     assert p + q <= 2
 
 
+def test_search_arima_allowdrift_true(random_walk_series):
+    """Test search_arima with drift allowed."""
+    fit = search_arima(
+        random_walk_series, m=1, d=1, D=0,
+        max_p=2, max_q=2, max_P=0, max_Q=0,
+        allowdrift=True,
+        trace=False
+    )
+    
+    assert fit['converged'] is True
+
+
+def test_search_arima_allowmean_true(ar1_series):
+    """Test search_arima with mean allowed."""
+    fit = search_arima(
+        ar1_series, m=1, d=0, D=0,
+        max_p=2, max_q=2, max_P=0, max_Q=0,
+        allowmean=True,
+        trace=False
+    )
+    
+    assert fit['converged'] is True
+
+
+def test_search_arima_seasonal(seasonal_series):
+    """Test search_arima with seasonal parameters."""
+    fit = search_arima(
+        seasonal_series, m=12, d=0, D=0,
+        max_p=1, max_q=1, max_P=1, max_Q=1,
+        trace=False
+    )
+    
+    assert fit['converged'] is True
+
+
 # =============================================================================
 # Edge cases and error handling
 # =============================================================================
@@ -806,3 +1038,142 @@ def test_auto_arima_nmodels_very_low_no_index_error():
         # The number of models evaluated should not exceed nmodels
         # (results array has shape (nmodels, 8))
         assert fit.get('converged', True) is True or fit.get('arima') is not None
+
+# =============================================================================
+# Tests for prepare_drift
+# =============================================================================
+def test_prepare_drift_model_without_drift(ar1_series):
+    """Test prepare_drift raises error when model doesn't have drift."""
+    from skforecast.stats.arima._auto_arima import prepare_drift
+    
+    # Fit a model without drift
+    fit = auto_arima(ar1_series, m=1, stepwise=True, trace=False)
+    
+    xreg = pd.DataFrame({'x1': np.random.randn(len(ar1_series))})
+    
+    # Should raise ValueError since model has no xreg for drift reconstruction
+    with pytest.raises(ValueError, match="no xreg for drift reconstruction"):
+        prepare_drift(fit, ar1_series, xreg)
+
+
+def test_prepare_drift_model_with_drift(random_walk_series):
+    """Test prepare_drift when model has drift term."""
+    from skforecast.stats.arima._auto_arima import prepare_drift
+    
+    # Fit a model with drift
+    fit = arima_rjh(random_walk_series, m=1, order=(0, 1, 0), include_drift=True)
+    
+    result = prepare_drift(fit, random_walk_series, None)
+    
+    # Should add drift term
+    assert isinstance(result, pd.DataFrame)
+    assert 'drift' in result.columns
+
+
+# =============================================================================
+# Tests for refit_arima_model
+# =============================================================================
+def test_refit_arima_model_basic(ar1_series):
+    """Test refit_arima_model on a fitted model."""
+    from skforecast.stats.arima._auto_arima import refit_arima_model
+    
+    # First fit a model
+    fit = auto_arima(ar1_series, m=1, stepwise=True, trace=False)
+    
+    # Refit on same data
+    refit = refit_arima_model(ar1_series, m=1, model=fit, xreg=None, method="CSS-ML")
+    
+    assert refit['converged'] is True
+    assert 'coef' in refit
+
+
+def test_refit_arima_model_with_xreg(ar1_series):
+    """Test refit_arima_model with exogenous regressors."""
+    from skforecast.stats.arima._auto_arima import refit_arima_model
+    
+    xreg = pd.DataFrame({'x1': np.random.randn(len(ar1_series))})
+    
+    # First fit a model with xreg
+    fit = auto_arima(ar1_series, m=1, xreg=xreg, stepwise=True, trace=False)
+    
+    # Refit on same data
+    refit = refit_arima_model(ar1_series, m=1, model=fit, xreg=xreg, method="CSS-ML")
+    
+    assert refit['converged'] is True
+
+
+# =============================================================================
+# Tests for _time_index_jit
+# =============================================================================
+@pytest.mark.parametrize(
+    'n, m, start, expected',
+    [
+        (5, 1, 1.0, np.array([1.0, 2.0, 3.0, 4.0, 5.0])),      # basic
+        (4, 4, 1.0, np.array([1.0, 1.25, 1.5, 1.75])),         # seasonal
+        (3, 0, 1.0, np.array([1.0, 2.0, 3.0])),                # m=0 edge case
+    ]
+)
+def test_time_index_jit(n, m, start, expected):
+    """Test _time_index_jit generates correct indices."""
+    from skforecast.stats.arima._auto_arima import _time_index_jit
+    
+    result = _time_index_jit(n, m, start)
+    np.testing.assert_array_almost_equal(result, expected)
+
+
+# =============================================================================
+# Tests for _newmodel_jit
+# =============================================================================
+@pytest.mark.parametrize(
+    'p, d, q, P, D, Q, constant, expected',
+    [
+        (2, 0, 1, 0, 0, 0, 1, True),   # new model (different p)
+        (1, 0, 1, 0, 0, 0, 1, False),  # existing model
+    ]
+)
+def test_newmodel_jit(p, d, q, P, D, Q, constant, expected):
+    """Test _newmodel_jit returns correct boolean for model configurations."""
+    from skforecast.stats.arima._auto_arima import _newmodel_jit
+    
+    results = np.full((10, 8), np.nan)
+    results[0, :7] = [1, 0, 1, 0, 0, 0, 1]  # ARIMA(1,0,1) with constant
+    
+    is_new = _newmodel_jit(p, d, q, P, D, Q, constant, results, 1)
+    assert is_new is expected
+
+
+# =============================================================================
+# Tests for arima_trace_str edge cases
+# =============================================================================
+def test_arima_trace_str_no_constant_with_differencing():
+    """Test trace string for model without constant and with differencing."""
+    result = arima_trace_str(
+        order=(1, 1, 1), seasonal=(0, 0, 0), m=1, constant=False, ic_value=123.45
+    )
+    
+    assert "ARIMA(1,1,1)" in result
+    assert "123.45" in result
+
+
+# =============================================================================
+# Tests for auto_arima with test="adf"
+# =============================================================================
+def test_auto_arima_with_adf_test(ar1_series):
+    """Test auto_arima using ADF test."""
+    fit = auto_arima(ar1_series, m=1, stepwise=True, test="adf", trace=False)
+    
+    assert fit['converged'] is True
+
+
+# =============================================================================
+# Tests for forecast_arima edge cases
+# =============================================================================
+def test_forecast_arima_single_level(ar1_series):
+    """Test forecast_arima with single confidence level."""
+    fit = auto_arima(ar1_series, m=1, stepwise=True, trace=False)
+    
+    fc = forecast_arima(fit, h=5, level=[90])
+    
+    assert fc['lower'].shape == (5, 1)
+    assert fc['upper'].shape == (5, 1)
+    assert fc['level'] == [90]

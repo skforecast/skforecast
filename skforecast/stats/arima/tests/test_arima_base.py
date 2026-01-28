@@ -351,6 +351,25 @@ def test_ma_invert_empty():
     assert len(result) == 0
 
 
+def test_ma_invert_non_invertible():
+    """Test ma_invert reflects roots inside unit circle outside."""
+    # MA coefficient with root inside unit circle (non-invertible)
+    # For MA(1): root is at -1/theta. If theta=2, root is at -0.5 (inside unit circle)
+    ma = np.array([2.0])
+    result = ma_invert(ma)
+    # The inverted coefficient should make the polynomial invertible
+    # Inverted root: 1/(-0.5) = -2, so theta becomes 1/2 = 0.5
+    np.testing.assert_allclose(result[0], 0.5, rtol=1e-6)
+
+
+def test_ma_invert_all_zeros_after_first():
+    """Test ma_invert with zeros returns original."""
+    ma = np.array([0.0, 0.0, 0.0])
+    result = ma_invert(ma)
+    # q0=0 case
+    np.testing.assert_array_equal(result, ma)
+
+
 # =============================================================================
 # Tests for initialize_arima_state and update_arima
 # =============================================================================
@@ -503,6 +522,24 @@ def test_kalman_forecast_variances_increase():
         assert result['var'][i] >= result['var'][i-1] - 1e-10
 
 
+def test_kalman_forecast_with_update():
+    """Test that kalman_forecast with update=True returns complete result."""
+    phi = np.array([0.5])
+    theta = np.array([])
+    Delta = np.array([])
+    
+    model = initialize_arima_state(phi, theta, Delta)
+    model['a'] = np.array([1.0])
+    
+    result = kalman_forecast(5, model, update=True)
+    
+    # Should have predictions and variances
+    assert len(result['pred']) == 5
+    assert len(result['var']) == 5
+    # Result should contain model (since update=True)
+    assert 'mod' in result
+
+
 # =============================================================================
 # Tests for utility functions
 # =============================================================================
@@ -557,6 +594,14 @@ def test_diff_with_lag():
     x = np.array([1.0, 2.0, 3.0, 5.0, 7.0, 9.0])
     result = diff(x, lag=3)
     expected = np.array([4.0, 5.0, 6.0])  # x[3:] - x[:-3]
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_diff_2d_array():
+    """Test diff with 2D array."""
+    x = np.array([[1.0, 2.0], [3.0, 4.0], [6.0, 7.0], [10.0, 11.0]])
+    result = diff(x, lag=1, differences=1)
+    expected = np.array([[2.0, 2.0], [3.0, 3.0], [4.0, 4.0]])
     np.testing.assert_array_equal(result, expected)
 
 
@@ -623,6 +668,17 @@ def test_add_drift_term_to_dataframe():
     assert len(result) == 3
 
 
+def test_add_drift_term_to_ndarray():
+    """Test add_drift_term with numpy array xreg."""
+    xreg = np.array([[1, 4], [2, 5], [3, 6]])
+    drift = np.array([1, 1, 1])
+    result = add_drift_term(xreg, drift, name="drift")
+    
+    assert isinstance(result, pd.DataFrame)
+    assert 'drift' in result.columns
+    assert result.shape == (3, 3)
+
+
 # =============================================================================
 # Tests for arima function (integration tests)
 # =============================================================================
@@ -671,6 +727,29 @@ def test_arima_css_method(simple_ar1_series):
     result = arima(y, order=(1, 0, 0), method="CSS", include_mean=False)
     
     assert result['converged'] == True
+
+
+def test_arima_ml_method(simple_ar1_series):
+    """Test ARIMA with ML estimation method."""
+    y = simple_ar1_series
+    
+    result = arima(y, order=(1, 0, 0), method="ML", include_mean=False)
+    
+    assert result['converged'] == True
+
+
+def test_arima_with_missing_values():
+    """Test ARIMA handles missing values in series."""
+    np.random.seed(42)
+    y = np.random.randn(50)
+    y[10] = np.nan  # Add a missing value
+    
+    # ML method should be used automatically with missing values
+    result = arima(y, order=(1, 0, 0), include_mean=False)
+    
+    # Should converge (ML method handles missing)
+    assert 'residuals' in result
+    assert len(result['residuals']) == len(y)
 
 
 def test_arima_residuals_length(simple_ar1_series):
@@ -832,3 +911,229 @@ def test_compute_css_residuals_with_differencing():
     
     assert sigma2 > 0
     assert len(resid) == len(y)
+
+
+def test_predict_arima_no_se(simple_ar1_series):
+    """Test predict_arima with se_fit=False."""
+    y = simple_ar1_series
+    model = arima(y, order=(1, 0, 0), include_mean=False)
+    
+    result = predict_arima(model, n_ahead=5, se_fit=False)
+    
+    assert len(result['mean']) == 5
+    # se should be NaN when se_fit=False
+    assert np.all(np.isnan(result['se']))
+
+
+def test_arima_seasonal_model(simple_ar1_series):
+    """Test ARIMA with seasonal component."""
+    # Create a longer series for seasonal model
+    np.random.seed(42)
+    n = 60
+    y = np.random.randn(n) + np.sin(np.arange(n) * 2 * np.pi / 12) * 2
+    
+    result = arima(y, m=12, order=(1, 0, 0), seasonal=(1, 0, 0), include_mean=True)
+    
+    assert 'sar1' in result['coef'].columns
+
+
+def test_process_xreg_1d_array():
+    """Test process_xreg with 1D numpy array."""
+    xreg = np.array([1.0, 2.0, 3.0])
+    xreg_mat, ncxreg, nmxreg = process_xreg(xreg, 3)
+    
+    assert xreg_mat.shape == (3, 1)
+    assert ncxreg == 1
+    assert nmxreg == ['xreg1']
+
+
+# =============================================================================
+# Tests for na_omit_pair
+# =============================================================================
+def test_na_omit_pair_basic():
+    """Test na_omit_pair converts arrays to float64."""
+    from skforecast.stats.arima._arima_base import na_omit_pair
+    
+    x = np.array([1, 2, 3])
+    xreg = np.array([[1, 2], [3, 4], [5, 6]])
+    
+    x_out, xreg_out = na_omit_pair(x, xreg)
+    
+    assert x_out.dtype == np.float64
+    assert xreg_out.dtype == np.float64
+    np.testing.assert_array_equal(x_out, x.astype(np.float64))
+    np.testing.assert_array_equal(xreg_out, xreg.astype(np.float64))
+
+
+# =============================================================================
+# Tests for handle_r_equals_1
+# =============================================================================
+@pytest.mark.parametrize(
+    'p, phi, expected_value',
+    [
+        (0, np.array([]), 1.0),           # p=0 case
+        (1, np.array([0.5]), 1.0 / 0.75), # p=1: 1/(1-phi^2)
+    ]
+)
+def test_handle_r_equals_1(p, phi, expected_value):
+    """Test handle_r_equals_1 for different p values."""
+    from skforecast.stats.arima._arima_base import handle_r_equals_1
+    
+    result = handle_r_equals_1(p, phi)
+    
+    assert result.shape == (1, 1)
+    np.testing.assert_allclose(result[0, 0], expected_value, rtol=1e-10)
+
+
+# =============================================================================
+# Tests for handle_p_equals_0 and unpack_full_matrix
+# =============================================================================
+def test_handle_p_equals_0_r2():
+    """Test handle_p_equals_0 for r=2 (pure MA case)."""
+    from skforecast.stats.arima._arima_base import handle_p_equals_0, compute_v, unpack_full_matrix
+    
+    phi = np.array([])
+    theta = np.array([0.5])
+    r = 2
+    
+    V = compute_v(phi, theta, r)
+    res_flat = handle_p_equals_0(V, r)
+    
+    assert len(res_flat) == r * r
+    
+    # Also test unpack_full_matrix
+    matrix = unpack_full_matrix(res_flat.copy(), r)
+    assert matrix.shape == (r, r)
+    # Matrix should be symmetric
+    np.testing.assert_allclose(matrix, matrix.T, rtol=1e-10)
+
+
+# =============================================================================
+# Tests for compute_v
+# =============================================================================
+@pytest.mark.parametrize(
+    'phi, theta, r, expected_shape, check_first_value',
+    [
+        (np.array([0.5]), np.array([]), 1, (1,), 1.0),   # AR(1)
+        (np.array([]), np.array([0.3]), 2, (3,), None),  # MA(1), r*(r+1)/2=3
+    ]
+)
+def test_compute_v(phi, theta, r, expected_shape, check_first_value):
+    """Test compute_v for AR and MA models."""
+    from skforecast.stats.arima._arima_base import compute_v
+    
+    V = compute_v(phi, theta, r)
+    
+    assert V.shape == expected_shape
+    if check_first_value is not None:
+        np.testing.assert_allclose(V[0], check_first_value, rtol=1e-10)
+
+
+# =============================================================================
+# Tests for prep_coefs
+# =============================================================================
+@pytest.mark.parametrize(
+    'arma, coef, cn, ncxreg, expected_columns',
+    [
+        # AR(1)
+        ([1, 0, 0, 0, 1, 0, 0], np.array([0.5]), [], 0, ['ar1']),
+        # ARMA(1,1) with xreg
+        ([1, 1, 0, 0, 1, 0, 0], np.array([0.5, 0.3, 1.2]), ['exog1'], 1, ['ar1', 'ma1', 'exog1']),
+        # Seasonal model p=1, P=1, Q=1, m=12
+        ([1, 0, 1, 1, 12, 0, 0], np.array([0.5, 0.2, -0.3]), [], 0, ['ar1', 'sar1', 'sma1']),
+    ]
+)
+def test_prep_coefs(arma, coef, cn, ncxreg, expected_columns):
+    """Test prep_coefs creates correct coefficient DataFrame."""
+    from skforecast.stats.arima._arima_base import prep_coefs
+    
+    result = prep_coefs(arma, coef, cn, ncxreg)
+    
+    assert isinstance(result, pd.DataFrame)
+    assert list(result.columns) == expected_columns
+    np.testing.assert_allclose(result.values[0], coef, rtol=1e-10)
+
+
+# =============================================================================
+# Tests for inverse_arima_parameter_transform
+# =============================================================================
+def test_inverse_arima_parameter_transform_ar():
+    """Test inverse_arima_parameter_transform for AR parameters."""
+    from skforecast.stats.arima._arima_base import (
+        inverse_arima_parameter_transform, 
+        transform_unconstrained_to_ar_params
+    )
+    
+    # Start with unconstrained parameters
+    raw = np.array([0.3, 0.2])
+    p = 2
+    
+    # Transform to constrained
+    constrained = transform_unconstrained_to_ar_params(p, raw)
+    
+    # Now invert back
+    arma = np.array([2, 0, 0, 0, 1, 0, 0])  # p=2, q=0, P=0
+    theta = constrained.copy()
+    inverted = inverse_arima_parameter_transform(theta, arma)
+    
+    np.testing.assert_allclose(inverted[:2], raw, rtol=1e-5)
+
+
+# =============================================================================
+# Tests for compute_arima_transform_gradient
+# =============================================================================
+def test_compute_arima_transform_gradient_shape():
+    """Test compute_arima_transform_gradient returns correct shape."""
+    from skforecast.stats.arima._arima_base import compute_arima_transform_gradient
+    
+    x = np.array([0.5, 0.3, 0.2, 0.1])  # 2 AR + 1 seasonal AR + 1 param
+    arma = np.array([2, 1, 1, 0, 12, 0, 0])  # p=2, q=1, P=1
+    
+    result = compute_arima_transform_gradient(x, arma)
+    
+    assert result.shape == (4, 4)
+
+
+# =============================================================================
+# Tests for undo_arima_parameter_transform
+# =============================================================================
+def test_undo_arima_parameter_transform():
+    """Test undo_arima_parameter_transform applies transformation."""
+    from skforecast.stats.arima._arima_base import undo_arima_parameter_transform
+    
+    x = np.array([0.5, 0.3])  # p=1, q=1
+    arma = np.array([1, 1, 0, 0, 1, 0, 0])
+    
+    result = undo_arima_parameter_transform(x, arma)
+    
+    # AR param should be transformed by tanh
+    expected_ar = np.tanh(0.5)
+    np.testing.assert_allclose(result[0], expected_ar, rtol=1e-10)
+    # MA param should remain unchanged
+    np.testing.assert_allclose(result[1], 0.3, rtol=1e-10)
+
+
+# =============================================================================
+# Tests for optim_hessian
+# =============================================================================
+def test_optim_hessian():
+    """Test optim_hessian computes correct and symmetric Hessian."""
+    from skforecast.stats.arima._arima_base import optim_hessian
+    
+    # f(x) = x[0]^2 + x[1]^2, Hessian = [[2, 0], [0, 2]]
+    def f1(x):
+        return x[0]**2 + x[1]**2
+    
+    x1 = np.array([1.0, 1.0])
+    H1 = optim_hessian(f1, x1)
+    
+    assert H1.shape == (2, 2)
+    np.testing.assert_allclose(H1, np.array([[2.0, 0.0], [0.0, 2.0]]), rtol=0.1, atol=1e-10)
+    np.testing.assert_allclose(H1, H1.T, rtol=1e-10)  # symmetry
+    
+    # f(x) = x[0]^2 + 2*x[0]*x[1] + 3*x[1]^2, Hessian = [[2, 2], [2, 6]]
+    def f2(x):
+        return x[0]**2 + 2*x[0]*x[1] + 3*x[1]**2
+    
+    H2 = optim_hessian(f2, np.array([0.5, 0.5]))
+    np.testing.assert_allclose(H2, H2.T, rtol=1e-10)  # symmetry

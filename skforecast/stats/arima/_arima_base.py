@@ -11,6 +11,7 @@ import scipy.optimize as opt
 from typing import Tuple, Optional, Dict as DictType, Any, Union, List
 import warnings
 
+
 @njit(cache=True)
 def state_prediction(a: np.ndarray, p: int, r: int, d: int, rd: int,
                      phi: np.ndarray, delta: np.ndarray) -> np.ndarray:
@@ -2175,7 +2176,7 @@ def arima(
     transform_pars: bool = True,
     fixed: Optional[np.ndarray] = None,
     init: Optional[np.ndarray] = None,
-    method: str = "CSS-ML",
+    method: Optional[str] = "CSS-ML",
     n_cond: Optional[int] = None,
     SSinit: str = "Gardner1980",
     optim_method: str = "BFGS",
@@ -2237,6 +2238,8 @@ def arima(
     """
 
     SSinit = match_arg(SSinit, ["Gardner1980", "Rossignol2011"])
+    if method is None:
+        method = "CSS-ML"
     method = match_arg(method, ["CSS-ML", "ML", "CSS"])
     SS_G = SSinit == "Gardner1980"
 
