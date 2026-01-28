@@ -3,9 +3,10 @@
 import re
 import platform
 import numpy as np
+import sys
 import pytest
 from ..._arima import Arima
-from .fixtures_arima import air_passengers, multi_seasonal
+from .fixtures_arima import air_passengers, multi_seasonal, fuel_consumption
 
 
 def ar1_series(n=100, phi=0.7, sigma=1.0, seed=123):
@@ -391,94 +392,6 @@ def test_arima_predict_multi_seasonal_data():
     np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
 
 
-def test_arima_predict_auto_arima_air_passengers_data():
-    """
-    Test predict works correctly with auto ARIMA mode when applied to
-    Air Passengers dataset and returns exact values.
-    """
-   
-    model = Arima(
-        order=None,
-        seasonal_order=None,
-        start_p=0,
-        start_q=0,
-        max_p=5,
-        max_q=5,
-        max_P=2,
-        max_Q=2,
-        max_order=5,
-        max_d=2,
-        max_D=1,
-        ic="aic",
-        seasonal=True,
-        test="kpss",
-        nmodels=94,
-        optim_method="BFGS",
-        m=12,
-        trace=False,
-        stepwise=True,
-    )
-    model.fit(air_passengers, suppress_warnings=True)
-    pred = model.predict(steps=10)
-    
-    assert model.is_auto is True
-    assert model.best_params_['order'] == (2, 1, 1)
-    assert model.best_params_['seasonal_order'] == (0, 1, 0)
-    assert model.best_params_['m'] == 12
-    
-    # Check exact predicted values
-    expected_pred = np.array([
-        445.28565737, 419.83465616, 448.44413494, 490.92842561,
-        502.3511798 , 565.70976142, 653.01653442, 637.27830708,
-        539.5018538 , 492.69271213
-    ])
-    np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
-
-
-def test_arima_predict_auto_arima_multi_seasonal_data():
-    """
-    Test predict works correctly with auto ARIMA mode when applied to
-    multi_seasonal dataset and returns exact values.
-    """
-   
-    model = Arima(
-        order=None,
-        seasonal_order=None,
-        start_p=0,
-        start_q=0,
-        max_p=5,
-        max_q=5,
-        max_P=2,
-        max_Q=2,
-        max_order=5,
-        max_d=2,
-        max_D=1,
-        ic="aic",
-        seasonal=True,
-        test="kpss",
-        nmodels=94,
-        optim_method="BFGS",
-        m=12,
-        trace=False,
-        stepwise=True,
-    )
-    model.fit(multi_seasonal, suppress_warnings=True)
-    pred = model.predict(steps=10)
-    
-    assert model.is_auto is True
-    assert model.best_params_['order'] == (2, 1, 1)
-    assert model.best_params_['seasonal_order'] == (0, 0, 0)
-    assert model.best_params_['m'] == 12
-    
-    # Check exact predicted values
-    expected_pred = np.array([
-        174.22831851, 174.13324908, 174.86422913, 174.85907826,
-        174.81533986, 174.81629778, 174.81890523, 174.81880912,
-        174.81865425, 174.81866231
-    ])
-    np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
-
-
 def test_arima_predict_with_exog_dataframe():
     """
     Test predict with exogenous variables as pandas DataFrame and Series.
@@ -537,6 +450,167 @@ def test_arima_predict_with_exog_dataframe():
         -0.02240879, 0.0069841, 0.09581765, -0.09615039, -0.12792916
     ])
     np.testing.assert_array_almost_equal(pred_series, expected_pred_series, decimal=5)
+
+
+def test_predict_fuel_consumption_data_with_exog():
+    """
+    Test predict works correctly with auto ARIMA on Fuel Consumption dataset
+    """
+
+    model = Arima(
+                order=(1, 1, 1),
+                seasonal_order=(1, 1, 1),
+                m=12,
+                include_mean = True,
+                transform_pars = True,
+                method = "CSS-ML",
+                n_cond = None,
+                SSinit = "Gardner1980",
+                optim_method = "BFGS",
+                optim_kwargs = {"maxiter": 2000},
+            )
+    model.fit(
+        y=fuel_consumption.loc[:'1989-09-01', 'y'],
+        exog=fuel_consumption.loc[:'1989-09-01'].drop(columns=['y']),
+        suppress_warnings=True
+    )
+    pred = model.predict(
+        steps=5,
+        exog=fuel_consumption.loc['1989-09-01':].drop(columns=['y']),
+    )
+
+    expected = {
+        'linux': np.array([1574773.72985479, 1540700.25454104, 1608847.20516855,
+                            1529993.59262818, 1619553.86708141]),
+        'darwin':
+            np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
+                      90.92842560605027, 502.3511798022874]),
+        'win32':
+            np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
+                        490.92842560605027, 502.3511798022874])
+    }
+
+    expected = expected[sys.platform]
+    
+    np.testing.assert_array_almost_equal(pred, expected, decimal=5)
+
+
+def test_arima_predict_auto_arima_air_passengers_data():
+    """
+    Test predict works correctly with auto ARIMA mode when applied to
+    Air Passengers dataset and returns exact values.
+    """
+
+    expected = {
+        'linux': 
+            np.array([
+                445.28565737, 419.83465616, 448.44413494, 490.92842561,
+                502.3511798 , 565.70976142, 653.01653442, 637.27830708,
+                539.5018538 , 492.69271213
+            ]),
+        'darwin':
+            np.array([
+                445.28565737, 419.83465616, 448.44413494, 490.92842561,
+                502.3511798 , 565.70976142, 653.01653442, 637.27830708,
+                539.5018538 , 492.69271213
+            ]),
+        'win32': 
+            np.array([
+                445.28565737, 419.83465616, 448.44413494, 490.92842561,
+                502.3511798 , 565.70976142, 653.01653442, 637.27830708,
+                539.5018538 , 492.69271213
+            ])
+    }
+    expected = expected[sys.platform]
+
+    model = Arima(
+        order=None,
+        seasonal_order=None,
+        start_p=0,
+        start_q=0,
+        max_p=5,
+        max_q=5,
+        max_P=2,
+        max_Q=2,
+        max_order=5,
+        max_d=2,
+        max_D=1,
+        ic="aic",
+        seasonal=True,
+        test="kpss",
+        nmodels=94,
+        optim_method="BFGS",
+        m=12,
+        trace=False,
+        stepwise=True,
+    )
+    model.fit(air_passengers, suppress_warnings=True)
+    pred = model.predict(steps=10)
+    
+    assert model.is_auto is True
+    assert model.best_params_['order'] == (2, 1, 1)
+    assert model.best_params_['seasonal_order'] == (0, 1, 0)
+    assert model.best_params_['m'] == 12
+    np.testing.assert_array_almost_equal(pred, expected, decimal=5)
+
+
+def test_arima_predict_auto_arima_multi_seasonal_data():
+    """
+    Test predict works correctly with auto ARIMA mode when applied to
+    multi_seasonal dataset and returns exact values.
+    """
+
+    expected = {
+        'linux': 
+            np.array([
+                174.22831851, 174.13324908, 174.86422913, 174.85907826,
+                174.81533986, 174.81629778, 174.81890523, 174.81880912,
+                174.81865425, 174.81866231
+            ]),
+        'darwin':
+            np.array([
+                174.22831851, 174.13324908, 174.86422913, 174.85907826,
+                174.81533986, 174.81629778, 174.81890523, 174.81880912,
+                174.81865425, 174.81866231
+            ]),
+        'win32': 
+            np.array([
+                174.22831851, 174.13324908, 174.86422913, 174.85907826,
+                174.81533986, 174.81629778, 174.81890523, 174.81880912,
+                174.81865425, 174.81866231
+            ])
+    }
+    expected = expected[sys.platform]
+   
+    model = Arima(
+        order=None,
+        seasonal_order=None,
+        start_p=0,
+        start_q=0,
+        max_p=5,
+        max_q=5,
+        max_P=2,
+        max_Q=2,
+        max_order=5,
+        max_d=2,
+        max_D=1,
+        ic="aic",
+        seasonal=True,
+        test="kpss",
+        nmodels=94,
+        optim_method="BFGS",
+        m=12,
+        trace=False,
+        stepwise=True,
+    )
+    model.fit(multi_seasonal, suppress_warnings=True)
+    pred = model.predict(steps=10)
+    
+    assert model.is_auto is True
+    assert model.best_params_['order'] == (2, 1, 1)
+    assert model.best_params_['seasonal_order'] == (0, 0, 0)
+    assert model.best_params_['m'] == 12
+    np.testing.assert_array_almost_equal(pred, expected, decimal=5)
 
 
 def test_arima_predict_after_reduce_memory_raises():

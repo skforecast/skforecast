@@ -13,11 +13,8 @@ from sklearn.preprocessing import OneHotEncoder
 
 # Fixtures
 from .fixtures_forecaster_stats import y
-from .fixtures_forecaster_stats import y_lw
 from .fixtures_forecaster_stats import exog
-from .fixtures_forecaster_stats import exog_lw
 from .fixtures_forecaster_stats import exog_predict
-from .fixtures_forecaster_stats import exog_lw_predict
 from .fixtures_forecaster_stats import y_datetime
 from .fixtures_forecaster_stats import y_lw_datetime
 from .fixtures_forecaster_stats import exog_datetime
@@ -25,12 +22,9 @@ from .fixtures_forecaster_stats import exog_lw_datetime
 from .fixtures_forecaster_stats import exog_predict_datetime
 from .fixtures_forecaster_stats import exog_lw_predict_datetime
 from .fixtures_forecaster_stats import df_exog
-from .fixtures_forecaster_stats import df_exog_lw
 from .fixtures_forecaster_stats import df_exog_predict
-from .fixtures_forecaster_stats import df_exog_lw_predict
 from .fixtures_forecaster_stats import df_exog_datetime
 from .fixtures_forecaster_stats import df_exog_lw_datetime
-from .fixtures_forecaster_stats import df_exog_predict_datetime
 from .fixtures_forecaster_stats import df_exog_lw_predict_datetime
 
 

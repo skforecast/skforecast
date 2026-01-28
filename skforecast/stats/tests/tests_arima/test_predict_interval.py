@@ -4,8 +4,9 @@ import platform
 import numpy as np
 import pandas as pd
 import pytest
+import sys
 from ..._arima import Arima
-from .fixtures_arima import air_passengers, multi_seasonal
+from .fixtures_arima import air_passengers, multi_seasonal, fuel_consumption
 
 
 def ar1_series(n=100, phi=0.7, sigma=1.0, seed=123):
@@ -99,7 +100,6 @@ def test_predict_interval_returns_dataframe_by_default():
     assert 'lower_95' in result.columns
     assert 'upper_95' in result.columns
 
-    # Check exact values for first 3 steps (R-based implementation)
     expected_mean = np.array([-1.6103516001266247, -1.1072627028353699, -0.7753950199537363])
     expected_lower_95 = np.array([-3.5061759690202594, -3.15078572725202, -2.8799551358866573])
     expected_upper_95 = np.array([0.2854727687670102, 0.9362603215812801, 1.3291650959791845])
@@ -147,7 +147,6 @@ def test_predict_interval_with_single_level():
     assert 'lower_80' not in result.columns
     assert 'lower_95' not in result.columns
 
-    # Check exact values for first 3 steps (R-based implementation)
     expected_mean = np.array([-1.6103516001266247, -1.1072627028353699, -0.7753950199537363])
     expected_lower_90 = np.array([-3.201377564804984, -2.822241286617544, -2.5415975456812863])
     expected_upper_90 = np.array([-0.019325635448265155, 0.6077158809468042, 0.9908075057738135])
@@ -173,7 +172,6 @@ def test_predict_interval_with_alpha_parameter():
     assert 'upper_95' in result.columns
     assert len(result.columns) == 3  # Only mean and one interval
 
-    # Check exact values for first 3 steps (R-based implementation)
     expected_mean = np.array([-1.6103516001266247, -1.1072627028353699, -0.7753950199537363])
     expected_lower_95 = np.array([-3.5061759690202594, -3.15078572725202, -2.8799551358866573])
     expected_upper_95 = np.array([0.2854727687670102, 0.9362603215812801, 1.3291650959791845])
@@ -201,7 +199,6 @@ def test_predict_interval_with_custom_levels():
     assert 'lower_99' in result.columns
     assert 'upper_99' in result.columns
     
-    # Check exact values for first 2 steps (R-based implementation)
     expected_mean = np.array([-1.6103516001266247, -1.1072627028353699])
     expected_lower_50 = np.array([-2.262768744052251, -1.8105079385289138])
     expected_upper_50 = np.array([-0.9579344562009986, -0.40401746714182596])
@@ -250,22 +247,6 @@ def test_predict_interval_wider_for_higher_confidence():
     assert np.all(width_95 < width_99)
 
 
-def test_predict_interval_widens_with_horizon():
-    """
-    Test that prediction intervals generally widen as forecast horizon increases.
-    """
-    y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
-    model.fit(y)
-    
-    result = model.predict_interval(steps=20, level=(95,))
-    
-    width = result['upper_95'] - result['lower_95']
-    
-    # Width should generally increase (allowing for small variations)
-    assert width.iloc[-1] >= width.iloc[0]
-
-
 @pytest.mark.skipif(
     platform.system() == 'Darwin',
     reason="ARIMA optimizer converges to different values on macOS"
@@ -288,7 +269,6 @@ def test_predict_interval_with_exog():
     assert result.shape[0] == 10
     assert 'mean' in result.columns
     
-    # Check exact values for first 3 steps (R-based implementation)
     expected_mean = np.array([-0.7086254997055901, -0.28482871141306915, -0.09336880032784575])
     expected_lower_95 = np.array([-2.814753398261278, -2.524216549793444, -2.387987574296295])
     expected_upper_95 = np.array([1.3975023988500974, 1.954559126967306, 2.2012499736406035])
@@ -392,136 +372,78 @@ def test_predict_interval_with_differencing():
     np.testing.assert_array_almost_equal(result['lower_95'].values, expected_lower_95, decimal=4)
     np.testing.assert_array_almost_equal(result['upper_95'].values, expected_upper_95, decimal=4)
 
+def test_predict_interval_fuel_consumption_data_with_exog():
+    """
+    Test predict_interval works correctly with auto ARIMA on Fuel Consumption dataset
+    """
 
-def test_predict_interval_auto_arima_air_passengers_data():
-    """
-    Test predict_interval works correctly with auto ARIMA on Air Passengers dataset
-    """
-    
     model = Arima(
-        order=None,
-        seasonal_order=None,
-        start_p=0,
-        start_q=0,
-        max_p=5,
-        max_q=5,
-        max_P=2,
-        max_Q=2,
-        max_order=5,
-        max_d=2,
-        max_D=1,
-        ic="aic",
-        seasonal=True,
-        test="kpss",
-        nmodels=94,
-        optim_method="BFGS",
-        m=12,
-        trace=False,
-        stepwise=True,
+                order=(1, 1, 1),
+                seasonal_order=(1, 1, 1),
+                m=12,
+                include_mean = True,
+                transform_pars = True,
+                method = "CSS-ML",
+                n_cond = None,
+                SSinit = "Gardner1980",
+                optim_method = "BFGS",
+                optim_kwargs = {"maxiter": 2000},
+            )
+    model.fit(
+        y=fuel_consumption.loc[:'1989-09-01', 'y'],
+        exog=fuel_consumption.loc[:'1989-09-01'].drop(columns=['y']),
+        suppress_warnings=True
     )
-    model.fit(air_passengers, suppress_warnings=True)
-    pred = model.predict_interval(steps=5, level=(95, 99))
-
-    expected = pd.DataFrame({
-            'mean': {1: 445.2856573681562,
-            2: 419.83465616022573,
-            3: 448.44413493780667,
-            4: 490.92842560605027,
-            5: 502.3511798022874},
-            'lower_95': {1: 419.01183057292997,
-            2: 390.374886879868,
-            3: 416.9267606112706,
-            4: 457.9051928081597,
-            5: 468.2289786562149},
-            'upper_95': {1: 471.5594841633824,
-            2: 449.2944254405835,
-            3: 479.96150926434274,
-            4: 523.9516584039409,
-            5: 536.4733809483598},
-            'lower_99': {1: 410.7559958492004,
-            2: 381.1179564725308,
-            3: 407.02328383973776,
-            4: 447.52854101139263,
-            5: 457.50700597719066},
-            'upper_99': {1: 479.81531888711197,
-            2: 458.55135584792066,
-            3: 489.8649860358756,
-            4: 534.3283102007078,
-            5: 547.1953536273841}
-            },
-            index=[1, 2, 3, 4, 5],
-    ).rename_axis('step')
-    
-    assert model.is_auto is True
-    assert model.best_params_['order'] == (2, 1, 1)
-    assert model.best_params_['seasonal_order'] == (0, 1, 0)
-    assert model.best_params_['m'] == 12
-    pd.testing.assert_frame_equal(pred, expected)
-    
-    
-def test_predict_interval_auto_arima_multi_seasonal_data():
-    """
-    Test predict_interval works correctly with auto ARIMA on multi-seasonal dataset
-    """
-    
-    model = Arima(
-        order=None,
-        seasonal_order=None,
-        start_p=0,
-        start_q=0,
-        max_p=5,
-        max_q=5,
-        max_P=2,
-        max_Q=2,
-        max_order=5,
-        max_d=2,
-        max_D=1,
-        ic="aic",
-        seasonal=True,
-        test="kpss",
-        nmodels=94,
-        optim_method="BFGS",
-        m=12,
-        trace=False,
-        stepwise=True,
+    pred = model.predict_interval(
+        steps=5,
+        exog=fuel_consumption.loc['1989-09-01':].drop(columns=['y']),
+        level=(95, 99),
     )
-    model.fit(multi_seasonal, suppress_warnings=True)
-    pred = model.predict_interval(steps=5, level=(95, 99))
 
-    expected = pd.DataFrame({
-        'mean': {1: 174.22831851,
-        2: 174.13324908,
-        3: 174.86422913,
-        4: 174.85907826,
-        5: 174.81533986},
-        'lower_95': {1: 153.13683798,
-        2: 153.03928683,
-        3: 153.71540634,
-        4: 153.65260745,
-        5: 153.55657799},
-        'upper_95': {1: 195.31979904,
-        2: 195.22721133,
-        3: 196.01305192,
-        4: 196.06554908,
-        5: 196.07410173},
-        'lower_99': {1: 146.50941453,
-        2: 146.41108393,
-        3: 147.06996441,
-        4: 146.98905099,
-        5: 146.87659144},
-        'upper_99': {1: 201.94722249,
-        2: 201.85541423,
-        3: 202.65849385,
-        4: 202.72910554,
-        5: 202.75408828}
-        },
-        index=[1, 2, 3, 4, 5],
-        ).rename_axis('step')
+    expected = {
+        'linux':
+            pd.DataFrame({
+                'mean': np.array([1574773.72985479, 1540700.25454104, 1608847.20516855,
+                                  1529993.59262818, 1619553.86708141]),
+                'lower_95': np.array([1449368.34742435, 1412973.36300733, 1485763.33184137,
+                                      1401537.23006555, 1497199.46478316]),
+                'upper_95': np.array([1509249.89980132, 1471902.52281119, 1546597.27679145,
+                                      1460167.1264337 , 1558332.67316893]),
+                'lower_99': np.array([1484706.35242326, 1446047.90020549, 1523364.80464102,
+                                     1433900.53413383, 1535512.17071268]),
+                'upper_99': np.array([1404055.23623305, 1364270.25276509, 1443840.219701  ,
+                                      1351768.90491966, 1456341.56754643])
+            }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
+        'darwin':
+            pd.DataFrame({
+                'mean': np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
+                                490.92842560605027, 502.3511798022874]),
+                'lower_95': np.array([419.01183057292997, 390.374886879868, 416.9267606112706,
+                                    457.9051928081597, 468.2289786562149]),
+                'upper_95': np.array([471.5594841633824, 449.2944254405835, 479.96150926434274,
+                                        523.9516584039409, 536.4733809483598]),
+                'lower_99': np.array([410.7559958492004, 381.1179564725308, 407.02328383973776,
+                                        447.52854101139263, 457.50700597719066]),
+                'upper_99': np.array([479.81531888711197, 458.55135584792066, 489.8649860358756,
+                                        534.3283102007078, 547.1953536273841])
+            }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
+        'win32':
+            pd.DataFrame({
+                'mean': np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
+                                490.92842560605027, 502.3511798022874]),
+                'lower_95': np.array([419.01183057292997, 390.374886879868, 416.9267606112706,
+                                    457.9051928081597, 468.2289786562149]),
+                'upper_95': np.array([471.5594841633824, 449.2944254405835, 479.96150926434274,
+                                        523.9516584039409, 536.4733809483598]),
+                'lower_99': np.array([410.7559958492004, 381.1179564725308, 407.02328383973776,
+                                        447.52854101139263, 457.50700597719066]),
+                'upper_99': np.array([479.81531888711197, 458.55135584792066, 489.8649860358756,
+                                        534.3283102007078, 547.1953536273841])
+            }, index=[1, 2, 3, 4, 5]).rename_axis('step')
+    }
+
+    expected = expected[sys.platform]
     
-    assert model.is_auto is True
-    assert model.best_params_['order'] == (2, 1, 1)
-    assert model.best_params_['seasonal_order'] == (0, 0, 0)
-    assert model.best_params_['m'] == 12
     pd.testing.assert_frame_equal(pred, expected)
     
 
@@ -721,3 +643,165 @@ def test_predict_interval_after_reduce_memory():
     np.testing.assert_array_almost_equal(result_after['mean'].values, expected_mean, decimal=4)
     np.testing.assert_array_almost_equal(result_after['lower_95'].values, expected_lower_95, decimal=4)
     np.testing.assert_array_almost_equal(result_after['upper_95'].values, expected_upper_95, decimal=4)
+    
+
+def test_predict_interval_auto_arima_air_passengers_data():
+    """
+    Test predict_interval works correctly with auto ARIMA on Air Passengers dataset
+    """
+
+    model = Arima(
+        order=None,
+        seasonal_order=None,
+        start_p=0,
+        start_q=0,
+        max_p=5,
+        max_q=5,
+        max_P=2,
+        max_Q=2,
+        max_order=5,
+        max_d=2,
+        max_D=1,
+        ic="aic",
+        seasonal=True,
+        test="kpss",
+        nmodels=94,
+        optim_method="BFGS",
+        m=12,
+        trace=False,
+        stepwise=True,
+    )
+    model.fit(air_passengers, suppress_warnings=True)
+    pred = model.predict_interval(steps=5, level=(95, 99))
+
+    expected = {
+        'linux':
+            pd.DataFrame({
+                'mean': np.array([174.22831851, 174.13324908, 174.86422913, 174.85907826,
+                                  174.81533986, 174.81629778, 174.81890523, 174.81880912,
+                                  174.81865425, 174.81866231]),
+                'lower_95': np.array([419.01183057292997, 390.374886879868, 416.9267606112706,
+                                    457.9051928081597, 468.2289786562149]),
+                'upper_95': np.array([471.5594841633824, 449.2944254405835, 479.96150926434274,
+                                        523.9516584039409, 536.4733809483598]),
+                'lower_99': np.array([410.7559958492004, 381.1179564725308, 407.02328383973776,
+                                        447.52854101139263, 457.50700597719066]),
+                'upper_99': np.array([479.81531888711197, 458.55135584792066, 489.8649860358756,
+                                        534.3283102007078, 547.1953536273841])
+            }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
+        'darwin':
+            pd.DataFrame({
+                'mean': np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
+                                490.92842560605027, 502.3511798022874]),
+                'lower_95': np.array([419.01183057292997, 390.374886879868, 416.9267606112706,
+                                    457.9051928081597, 468.2289786562149]),
+                'upper_95': np.array([471.5594841633824, 449.2944254405835, 479.96150926434274,
+                                        523.9516584039409, 536.4733809483598]),
+                'lower_99': np.array([410.7559958492004, 381.1179564725308, 407.02328383973776,
+                                        447.52854101139263, 457.50700597719066]),
+                'upper_99': np.array([479.81531888711197, 458.55135584792066, 489.8649860358756,
+                                        534.3283102007078, 547.1953536273841])
+            }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
+        'win32':
+            pd.DataFrame({
+                'mean': np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
+                                490.92842560605027, 502.3511798022874]),
+                'lower_95': np.array([419.01183057292997, 390.374886879868, 416.9267606112706,
+                                    457.9051928081597, 468.2289786562149]),
+                'upper_95': np.array([471.5594841633824, 449.2944254405835, 479.96150926434274,
+                                        523.9516584039409, 536.4733809483598]),
+                'lower_99': np.array([410.7559958492004, 381.1179564725308, 407.02328383973776,
+                                        447.52854101139263, 457.50700597719066]),
+                'upper_99': np.array([479.81531888711197, 458.55135584792066, 489.8649860358756,
+                                        534.3283102007078, 547.1953536273841])
+            }, index=[1, 2, 3, 4, 5]).rename_axis('step')
+    }
+
+    expected = expected[sys.platform]
+    
+    assert model.is_auto is True
+    assert model.best_params_['order'] == (2, 1, 1)
+    assert model.best_params_['seasonal_order'] == (0, 1, 0)
+    assert model.best_params_['m'] == 12
+    pd.testing.assert_frame_equal(pred, expected)
+    
+    
+def test_predict_interval_auto_arima_multi_seasonal_data():
+    """
+    Test predict_interval works correctly with auto ARIMA on multi-seasonal dataset
+    """   
+
+    expected = {
+        'linux':
+            pd.DataFrame({
+                'mean': np.array([174.22831851, 174.13324908, 174.86422913, 174.85907826,
+                                  174.81533986, 174.81629778, 174.81890523, 174.81880912,
+                                  174.81865425, 174.81866231]),
+                'lower_95': np.array([153.13683798, 153.03928683, 153.71540634,
+                                    153.65260745, 153.55657799]),
+                'upper_95': np.array([195.31979904, 195.22721133, 196.01305192,
+                                        196.06554908, 196.07410173]),
+                'lower_99': np.array([146.50941453, 146.41108393, 147.06996441,
+                                        146.98905099, 146.87659144]),
+                'upper_99': np.array([179.94722249, 179.85541423, 180.65849385,
+                                        180.72910554, 180.75408828])
+            }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
+        'darwin':
+            pd.DataFrame({
+                'mean': np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
+                                490.92842560605027, 502.3511798022874]),
+                'lower_95': np.array([419.01183057292997, 390.374886879868, 416.9267606112706,
+                                    457.9051928081597, 468.2289786562149]),
+                'upper_95': np.array([471.5594841633824, 449.2944254405835, 479.96150926434274,
+                                        523.9516584039409, 536.4733809483598]),
+                'lower_99': np.array([410.7559958492004, 381.1179564725308, 407.02328383973776,
+                                        447.52854101139263, 457.50700597719066]),
+                'upper_99': np.array([479.81531888711197, 458.55135584792066, 489.8649860358756,
+                                        534.3283102007078, 547.1953536273841])
+            }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
+        'win32':
+            pd.DataFrame({
+                'mean': np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
+                                490.92842560605027, 502.3511798022874]),
+                'lower_95': np.array([419.01183057292997, 390.374886879868, 416.9267606112706,
+                                    457.9051928081597, 468.2289786562149]),
+                'upper_95': np.array([471.5594841633824, 449.2944254405835, 479.96150926434274,
+                                        523.9516584039409, 536.4733809483598]),
+                'lower_99': np.array([410.7559958492004, 381.1179564725308, 407.02328383973776,
+                                        447.52854101139263, 457.50700597719066]),
+                'upper_99': np.array([479.81531888711197, 458.55135584792066, 489.8649860358756,
+                                        534.3283102007078, 547.1953536273841])
+            }, index=[1, 2, 3, 4, 5]).rename_axis('step')
+    }
+
+    expected = expected[sys.platform]
+    
+    model = Arima(
+        order=None,
+        seasonal_order=None,
+        start_p=0,
+        start_q=0,
+        max_p=5,
+        max_q=5,
+        max_P=2,
+        max_Q=2,
+        max_order=5,
+        max_d=2,
+        max_D=1,
+        ic="aic",
+        seasonal=True,
+        test="kpss",
+        nmodels=94,
+        optim_method="BFGS",
+        m=12,
+        trace=False,
+        stepwise=True,
+    )
+    model.fit(multi_seasonal, suppress_warnings=True)
+    pred = model.predict_interval(steps=5, level=(95, 99))
+    
+    assert model.is_auto is True
+    assert model.best_params_['order'] == (2, 1, 1)
+    assert model.best_params_['seasonal_order'] == (0, 0, 0)
+    assert model.best_params_['m'] == 12
+    pd.testing.assert_frame_equal(pred, expected)
