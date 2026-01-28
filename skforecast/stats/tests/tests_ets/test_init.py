@@ -1,8 +1,23 @@
 # Unit test __init__ method - Ets
 # ==============================================================================
-import numpy as np
+import re
 import pytest
 from ..._ets import Ets
+
+
+@pytest.mark.parametrize(
+    'm', 
+    [0, -1, 1.5, "12"],
+    ids=lambda x: f"m={x}"
+)
+def test_ets_init_ValueError_when_m_invalid(m):
+    """Test Ets raises ValueError when m is not a positive integer >= 1."""
+    err_msg = re.escape(
+        f"`m` must be a positive integer greater than or equal to 1."
+        f" Got {m}."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        Ets(m=m)
 
 
 def test_ets_init_default_params():

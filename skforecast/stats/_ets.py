@@ -184,6 +184,12 @@ class Ets(BaseEstimator, RegressorMixin):
         allow_multiplicative: bool = True,
         allow_multiplicative_trend: bool = False,
     ):
+        
+        if not isinstance(m, int) or m < 1:
+            raise ValueError(
+                f"`m` must be a positive integer greater than or equal to 1. "
+                f"Got {m}."
+            )
 
         self.m                          = m
         self.model                      = model if model is not None else "ZZZ"

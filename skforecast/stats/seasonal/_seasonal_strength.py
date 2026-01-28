@@ -18,7 +18,7 @@ from numba import njit
 
 
 @njit(cache=True)
-def _moving_average_jit(x: np.ndarray, window: int) -> np.ndarray:
+def _moving_average_jit(x: np.ndarray, window: int) -> np.ndarray:  # pragma: no cover
     """
     JIT-compiled centered moving average.
 
@@ -52,7 +52,7 @@ def _moving_average_jit(x: np.ndarray, window: int) -> np.ndarray:
 
 
 @njit(cache=True)
-def _seasonal_component_jit(detrended: np.ndarray, period: int) -> np.ndarray:
+def _seasonal_component_jit(detrended: np.ndarray, period: int) -> np.ndarray:  # pragma: no cover
     """
     JIT-compiled seasonal component extraction.
 
@@ -89,7 +89,7 @@ def _seasonal_component_jit(detrended: np.ndarray, period: int) -> np.ndarray:
 
 
 @njit(cache=True)
-def _seas_heuristic_jit(x: np.ndarray, period: int) -> float:
+def _seas_heuristic_jit(x: np.ndarray, period: int) -> float:  # pragma: no cover
     """
     JIT-compiled seasonal strength computation.
 

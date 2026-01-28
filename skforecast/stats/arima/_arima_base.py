@@ -14,7 +14,7 @@ import warnings
 
 @njit(cache=True)
 def state_prediction(a: np.ndarray, p: int, r: int, d: int, rd: int,
-                     phi: np.ndarray, delta: np.ndarray) -> np.ndarray:
+                     phi: np.ndarray, delta: np.ndarray) -> np.ndarray:  # pragma: no cover
     """
     Compute the one-step-ahead state prediction for an ARIMA model.
 
@@ -64,7 +64,7 @@ def state_prediction(a: np.ndarray, p: int, r: int, d: int, rd: int,
 
 @njit(cache=True)
 def predict_covariance_nodiff(P: np.ndarray, r: int, p: int, q: int,
-                               phi: np.ndarray, theta: np.ndarray) -> np.ndarray:
+                               phi: np.ndarray, theta: np.ndarray) -> np.ndarray:  # pragma: no cover
     """
     Predict the state covariance matrix when there is no differencing (d=0).
 
@@ -128,7 +128,7 @@ def predict_covariance_nodiff(P: np.ndarray, r: int, p: int, q: int,
 @njit(cache=True)
 def predict_covariance_with_diff(P: np.ndarray, r: int, d: int, p: int, q: int,
                                   rd: int, phi: np.ndarray, delta: np.ndarray,
-                                  theta: np.ndarray) -> np.ndarray:
+                                  theta: np.ndarray) -> np.ndarray:  # pragma: no cover
     """
     Predict the state covariance matrix when there is differencing (d > 0).
 
@@ -217,7 +217,7 @@ def predict_covariance_with_diff(P: np.ndarray, r: int, d: int, p: int, q: int,
 @njit(cache=True)
 def kalman_update(y_obs: float, anew: np.ndarray, delta: np.ndarray,
                   Pnew: np.ndarray, d: int, r: int, rd: int
-                  ) -> Tuple[np.ndarray, np.ndarray, float, float, float, float]:
+                  ) -> Tuple[np.ndarray, np.ndarray, float, float, float, float]:  # pragma: no cover
     """
     Perform the Kalman filter update step.
 
@@ -300,7 +300,7 @@ def compute_arima_likelihood_core(
     Pn_init: np.ndarray,
     update_start: int,
     give_resid: bool
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:  # pragma: no cover
     """
     Core Kalman filter likelihood computation (Numba-compatible).
 
@@ -448,7 +448,7 @@ def compute_arima_likelihood(
 
 
 @njit(cache=True)
-def transform_unconstrained_to_ar_params(p: int, raw: np.ndarray) -> np.ndarray:
+def transform_unconstrained_to_ar_params(p: int, raw: np.ndarray) -> np.ndarray:  # pragma: no cover
     """
     Convert unconstrained parameters to AR coefficients via Durbin-Levinson.
 
@@ -483,7 +483,7 @@ def transform_unconstrained_to_ar_params(p: int, raw: np.ndarray) -> np.ndarray:
 
 
 @njit(cache=True)
-def compute_arima_transform_gradient(x: np.ndarray, arma: np.ndarray) -> np.ndarray:
+def compute_arima_transform_gradient(x: np.ndarray, arma: np.ndarray) -> np.ndarray:  # pragma: no cover
     """
     Compute the Jacobian of the ARIMA parameter transformation.
 
@@ -542,7 +542,7 @@ def compute_arima_transform_gradient(x: np.ndarray, arma: np.ndarray) -> np.ndar
 
 
 @njit(cache=True)
-def undo_arima_parameter_transform(x: np.ndarray, arma: np.ndarray) -> np.ndarray:
+def undo_arima_parameter_transform(x: np.ndarray, arma: np.ndarray) -> np.ndarray:  # pragma: no cover
     """
     Undo the ARIMA parameter transformation (apply transformation to constrained params).
 
@@ -575,7 +575,7 @@ def undo_arima_parameter_transform(x: np.ndarray, arma: np.ndarray) -> np.ndarra
 
 
 @njit(cache=True)
-def time_series_convolution(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+def time_series_convolution(a: np.ndarray, b: np.ndarray) -> np.ndarray:  # pragma: no cover
     """
     Perform discrete convolution between two sequences.
 
@@ -611,7 +611,7 @@ def update_least_squares(
     d: np.ndarray,
     rbar: np.ndarray,
     thetab: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:  # pragma: no cover
     """
     Update least-squares regression quantities for Q0 computation.
 
@@ -672,7 +672,7 @@ def update_least_squares(
 
 
 @njit(cache=True)
-def inverse_ar_parameter_transform(phi: np.ndarray) -> np.ndarray:
+def inverse_ar_parameter_transform(phi: np.ndarray) -> np.ndarray:  # pragma: no cover
     """
     Compute inverse transformation from AR coefficients to unconstrained parameters.
 
@@ -713,7 +713,7 @@ def inverse_ar_parameter_transform(phi: np.ndarray) -> np.ndarray:
 
 
 @njit(cache=True)
-def inverse_arima_parameter_transform(theta: np.ndarray, arma: np.ndarray) -> np.ndarray:
+def inverse_arima_parameter_transform(theta: np.ndarray, arma: np.ndarray) -> np.ndarray:  # pragma: no cover
     """
     Apply inverse ARIMA parameter transformation.
 
@@ -748,7 +748,7 @@ def inverse_arima_parameter_transform(theta: np.ndarray, arma: np.ndarray) -> np
 
 
 @njit(cache=True)
-def compute_v(phi: np.ndarray, theta: np.ndarray, r: int) -> np.ndarray:
+def compute_v(phi: np.ndarray, theta: np.ndarray, r: int) -> np.ndarray:  # pragma: no cover
     """
     Compute the V vector for Q0 covariance matrix computation.
 
@@ -795,7 +795,7 @@ def compute_v(phi: np.ndarray, theta: np.ndarray, r: int) -> np.ndarray:
 
 
 @njit(cache=True)
-def handle_r_equals_1(p: int, phi: np.ndarray) -> np.ndarray:
+def handle_r_equals_1(p: int, phi: np.ndarray) -> np.ndarray:  # pragma: no cover
     """
     Handle the special case r=1 for Q0 computation.
 
@@ -820,7 +820,7 @@ def handle_r_equals_1(p: int, phi: np.ndarray) -> np.ndarray:
 
 
 @njit(cache=True)
-def handle_p_equals_0(V: np.ndarray, r: int) -> np.ndarray:
+def handle_p_equals_0(V: np.ndarray, r: int) -> np.ndarray:  # pragma: no cover
     """
     Handle the case p=0 (pure MA) for Q0 computation.
 
@@ -863,7 +863,7 @@ def handle_p_greater_than_0(
     r: int,
     num_params: int,
     nrbar: int
-) -> np.ndarray:
+) -> np.ndarray:  # pragma: no cover
     """
     Handle the case p>0 (AR present) for Q0 computation.
 
@@ -970,7 +970,7 @@ def handle_p_greater_than_0(
 
 
 @njit(cache=True)
-def unpack_full_matrix(res_flat: np.ndarray, r: int) -> np.ndarray:
+def unpack_full_matrix(res_flat: np.ndarray, r: int) -> np.ndarray:  # pragma: no cover
     """
     Unpack flat array into symmetric matrix.
 
@@ -1003,7 +1003,7 @@ def unpack_full_matrix(res_flat: np.ndarray, r: int) -> np.ndarray:
 
 
 @njit(cache=True)
-def compute_q0_covariance_matrix(phi: np.ndarray, theta: np.ndarray) -> np.ndarray:
+def compute_q0_covariance_matrix(phi: np.ndarray, theta: np.ndarray) -> np.ndarray:  # pragma: no cover
     """
     Compute initial state covariance matrix for ARIMA model (Gardner 1980 method).
 
@@ -1193,7 +1193,7 @@ def transform_arima_parameters(
     params_in: np.ndarray,
     arma: np.ndarray,
     trans: bool
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:  # pragma: no cover
     """
     Transform parameter vector to AR and MA coefficient vectors.
 
@@ -1266,7 +1266,7 @@ def compute_css_residuals(
     phi: np.ndarray,
     theta: np.ndarray,
     ncond: int
-) -> Tuple[float, np.ndarray]:
+) -> Tuple[float, np.ndarray]:  # pragma: no cover
     """
     Compute conditional sum of squares (CSS) and residuals.
 
@@ -1592,7 +1592,7 @@ def kalman_forecast_core(
     P: np.ndarray,
     Pn: np.ndarray,
     h: float
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:  # pragma: no cover
     """
     Core Kalman forecast computation (Numba-compatible).
 

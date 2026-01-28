@@ -26,7 +26,7 @@ from ._seasonal_strength import seas_heuristic
 
 
 @njit(cache=True)
-def _is_constant_jit(x: np.ndarray, tol: float) -> bool:
+def _is_constant_jit(x: np.ndarray, tol: float) -> bool:  # pragma: no cover
     """
     JIT-compiled constant check for arrays without NaN.
 

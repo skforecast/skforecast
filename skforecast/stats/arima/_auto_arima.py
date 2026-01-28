@@ -39,7 +39,7 @@ def _newmodel_jit(
     c_int: int,
     results: np.ndarray,
     k: int
-) -> bool:
+) -> bool:  # pragma: no cover
     """JIT-compiled check if model configuration has already been tried."""
     for i in range(k):
         if np.isnan(results[i, 0]):
@@ -52,7 +52,7 @@ def _newmodel_jit(
 
 
 @njit(cache=True)
-def _time_index_jit(n: int, m: int, start: float) -> np.ndarray:
+def _time_index_jit(n: int, m: int, start: float) -> np.ndarray:  # pragma: no cover
     """JIT-compiled time index generation."""
     m_safe = m if m > 0 else 1
     result = np.zeros(n)

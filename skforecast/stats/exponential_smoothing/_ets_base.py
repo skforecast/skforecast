@@ -27,7 +27,7 @@ def is_constant(y: NDArray[np.float64]) -> bool:
 
 
 @njit(cache=True, fastmath=True)
-def _admissible_jit(alpha: float, beta: float, gamma: float, phi: float, m: int) -> bool:
+def _admissible_jit(alpha: float, beta: float, gamma: float, phi: float, m: int) -> bool:  # pragma: no cover
     TOL = 1e-8
     if phi < 0.0 or phi > 1.0 + TOL:
         return False
@@ -108,7 +108,7 @@ def admissible(alpha: Optional[float],
 @njit(cache=True, fastmath=True)
 def _check_param_jit(alpha: float, beta: float, gamma: float, phi: float,
                      lower: NDArray[np.float64], upper: NDArray[np.float64],
-                     check_usual: bool, check_admissible: bool, m: int) -> bool:
+                     check_usual: bool, check_admissible: bool, m: int) -> bool:  # pragma: no cover
     if check_usual:
         if not np.isnan(alpha):
             if alpha < lower[0] or alpha > upper[0]:
@@ -284,7 +284,7 @@ class BoxCoxTransform:
 @njit(cache=True, fastmath=True)
 def _ets_step(l: float, b: float, s: NDArray[np.float64], y: float,
               m: int, error: int, trend: int, season: int,
-              alpha: float, beta: float, gamma: float, phi: float) -> Tuple:
+              alpha: float, beta: float, gamma: float, phi: float) -> Tuple:  # pragma: no cover
     TOL = 1e-10
 
     if trend == 0:
@@ -349,7 +349,7 @@ def _ets_step(l: float, b: float, s: NDArray[np.float64], y: float,
 @njit(cache=True, fastmath=True)
 def _ets_likelihood(y: NDArray[np.float64], init_states: NDArray[np.float64],
                     m: int, error: int, trend: int, season: int,
-                    alpha: float, beta: float, gamma: float, phi: float) -> Tuple:
+                    alpha: float, beta: float, gamma: float, phi: float) -> Tuple:  # pragma: no cover
     n = len(y)
     n_states = len(init_states)
 
@@ -397,7 +397,7 @@ def _ets_likelihood(y: NDArray[np.float64], init_states: NDArray[np.float64],
 
 
 @njit(cache=True, fastmath=True)
-def _fourier_jit(n: int, period: int, K: int, h: int) -> NDArray[np.float64]:
+def _fourier_jit(n: int, period: int, K: int, h: int) -> NDArray[np.float64]:  # pragma: no cover
     if h == 0:
         n_times = n
         times = np.arange(1.0, n + 1.0)
@@ -547,7 +547,7 @@ def _ets_objective_jit(x: NDArray[np.float64],
                        is_damped: bool, 
                        is_mult_season: bool,
                        check_usual: bool, 
-                       check_admissible: bool) -> float:
+                       check_admissible: bool) -> float:  # pragma: no cover
     """
     Module-level JIT-compiled objective function for ETS optimization.
     
@@ -946,7 +946,7 @@ def ets(y: NDArray[np.float64],
 
 @njit(cache=True, fastmath=True)
 def _forecast_ets(l: float, b: float, s: NDArray[np.float64],
-                  h: int, m: int, trend: int, season: int, phi: float) -> NDArray[np.float64]:
+                  h: int, m: int, trend: int, season: int, phi: float) -> NDArray[np.float64]:  # pragma: no cover
     """Generate h-step ahead forecasts"""
     forecasts = np.zeros(h)
     phi_sum = phi
