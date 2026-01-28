@@ -1199,8 +1199,8 @@ def auto_arima(
 
     if trace:
         print(
-            f"\nBest model found: ARIMA({bestfit['arma'][0]},{bestfit['arma'][5]},{bestfit['arma'][2]})"
-            f"({bestfit['arma'][6]},{bestfit['arma'][3]},{bestfit['arma'][4]})[{m}]"
+            f"\nBest model found: ARIMA({bestfit['arma'][0]},{bestfit['arma'][5]},{bestfit['arma'][1]})"
+            f"({bestfit['arma'][2]},{bestfit['arma'][6]},{bestfit['arma'][3]})[{m}]"
             f" with {ic}: {bestfit['ic']}\n"
         )
     bestfit['lambda'] = lambda_bc
