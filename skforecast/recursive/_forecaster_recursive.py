@@ -1451,13 +1451,30 @@ class ForecasterRecursive(ForecasterBase):
         last_window = np.tile(last_window_values[:, np.newaxis], (1, n_boot))
         last_window = np.vstack([last_window, np.full((steps, n_boot), np.nan)])
 
+        estimator_name = type(self.estimator).__name__
+        is_linear = isinstance(self.estimator, LinearModel)
+        is_lightgbm = estimator_name == 'LGBMRegressor'
+        is_xgboost = estimator_name == 'XGBRegressor'
+        
+        if is_linear:
+            coef = self.estimator.coef_
+            intercept = self.estimator.intercept_
+        elif is_lightgbm:
+            booster = self.estimator.booster_
+        elif is_xgboost:
+            booster = self.estimator.get_booster()
+        
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values is not None
+
         for i in range(steps):
 
-            if self.lags is not None:
+            if has_lags:
                 for j, lag in enumerate(self.lags):
                     X[:, j] = last_window[-(lag + steps - i), :]
             
-            if self.window_features is not None:
+            if has_window_features:
                 window_data = last_window[:-(steps - i), :]
                 # transform accepts 2D: (window_length, n_boot) -> (n_boot, n_stats)
                 # and concatenate along axis=1: (n_boot, total_window_features)
@@ -1466,10 +1483,17 @@ class ForecasterRecursive(ForecasterBase):
                     axis=1
                 )
             
-            if exog_values is not None:
+            if has_exog:
                 X[:, n_lags + n_window_features:] = exog_values[i]
-            
-            pred = self.estimator.predict(X).ravel()
+        
+            if is_linear:
+                pred = np.dot(X, coef) + intercept
+            elif is_lightgbm:
+                pred = booster.predict(X)
+            elif is_xgboost:
+                pred = booster.inplace_predict(X)
+            else:
+                pred = self.estimator.predict(X).ravel()
             
             if use_binned_residuals:
                 # sampled_residuals is a 3D array: (n_bins, steps, n_boot)
