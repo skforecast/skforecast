@@ -25,6 +25,8 @@ The main changes in this release are:
 
 **Added**
 
++ Support for `Python 3.14`.
+
 + <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[ETS]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
 
 + New argument `freeze_params` in the [backtesting_stats] function to allow freezing the parameters of the statistical models during backtesting. When set to `True`, the models will use the parameters obtained from the initial fit throughout the backtesting process, rather than re-estimating them at each step.
