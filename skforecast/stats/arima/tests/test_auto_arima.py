@@ -501,9 +501,9 @@ def test_auto_arima_all_nan_raises():
 
 
 def test_auto_arima_grid_search(ar1_series):
-    """Test auto_arima with grid search (stepwise=False)."""
+    """Test auto_arima with grid search (stepwise=True)."""
     fit = auto_arima(
-        ar1_series, m=1, stepwise=False, trace=False,
+        ar1_series, m=1, stepwise=True, trace=False,
         max_p=2, max_q=2, max_P=0, max_Q=0
     )
     
