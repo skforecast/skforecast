@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from ..._arima import Arima
+from .fixtures_arima import air_passengers
 
 
 # Fixture functions
@@ -381,3 +382,39 @@ def test_arima_fit_returns_self():
     assert np.all(np.isfinite(model.coef_))
     assert model.sigma2_ > 0
     assert model.model_ is not None
+
+
+def test_arima_fit_auto_arima_air_passengers_data():
+    """
+    Test fit works correctly with auto ARIMA mode when applied to
+    Air Passengers dataset.
+    """
+
+    model = Arima(
+        order=None,
+        seasonal_order=None,
+        start_p=0,
+        start_q=0,
+        max_p=5,
+        max_q=5,
+        max_P=2,
+        max_Q=2,
+        max_order=5,
+        max_d=2,
+        max_D=1,
+        ic="aic",
+        seasonal=True,
+        test="kpss",
+        nmodels=94,
+        optim_method="BFGS",
+        m=12,
+        trace=False,
+        stepwise=True,
+    )
+    model.fit(air_passengers, suppress_warnings=True)
+    
+    assert model.is_auto is True
+    assert model.best_params_['order'] == (2, 1, 1)
+    assert model.best_params_['seasonal_order'] == (0, 1, 0)
+    assert model.best_params_['m'] == 12
+    assert model.estimator_name_ == "AutoArima(2,1,1)(0,1,0)[12]"

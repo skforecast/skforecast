@@ -12,7 +12,7 @@ import sys
 import numpy as np
 import pandas as pd
 import inspect
-from copy import copy, deepcopy
+from copy import copy
 from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model._base import LinearModel

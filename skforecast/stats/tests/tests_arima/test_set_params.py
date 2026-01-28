@@ -237,3 +237,20 @@ def test_set_params_resets_memory_reduced_flag():
     model.set_params(order=(2, 0, 0))
     
     assert model.is_memory_reduced is False
+
+
+def test_set_params_to_auto_mode():
+    """
+    Test that set_params with order=None switches to auto mode and updates
+    estimator_name_ to AutoArima().
+    """
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
+    
+    assert model.is_auto is False
+    assert model.estimator_name_ == "Arima(1,0,0)"
+    
+    # Set order to None to switch to auto mode
+    model.set_params(order=None)
+    
+    assert model.is_auto is True
+    assert model.estimator_name_ == "AutoArima()"

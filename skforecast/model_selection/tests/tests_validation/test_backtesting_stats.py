@@ -14,6 +14,7 @@ from skforecast.model_selection import backtesting_stats
 from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
+from ....stats.tests.tests_arima.fixtures_arima import air_passengers
 from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import y_datetime
 from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import exog_datetime
 
@@ -1219,3 +1220,153 @@ def test_output_backtesting_stats_multiple_estimators_refit_True_interval_with_m
     # Check that lower_bound < pred < upper_bound
     assert (backtest_predictions['lower_bound'] < backtest_predictions['pred']).all()
     assert (backtest_predictions['pred'] < backtest_predictions['upper_bound']).all()
+
+
+@pytest.mark.skipif(
+    platform.system() == 'Darwin',
+    reason="ARIMA optimizer converges to different values on macOS"
+)
+def test_output_backtesting_stats_auto_arima_arar_freeze_params_False_gap_air_passengers():
+    """
+    Test output of backtesting_stats with Arima in auto mode (order=None, 
+    seasonal_order=None) and Arar estimators, freeze_params=False, gap=2.
+    """
+
+    arima_model = Arima(
+        order=None,
+        seasonal_order=None,
+        start_p=0,
+        start_q=0,
+        max_p=3,
+        max_q=3,
+        max_P=1,
+        max_Q=1,
+        max_order=5,
+        max_d=2,
+        max_D=1,
+        ic="aic",
+        seasonal=True,
+        test="kpss",
+        nmodels=94,
+        optim_method="BFGS",
+        m=12,
+        trace=False,
+        stepwise=True,
+    )
+
+    forecaster = ForecasterStats(estimator=[arima_model, Arar()])
+    
+    cv = TimeSeriesFold(
+             steps                 = 4,
+             initial_train_size    = len(air_passengers) - 25,
+             refit                 = True,
+             fixed_train_size      = True,
+             gap                   = 2,
+             allow_incomplete_fold = True
+         )
+    
+    metric, backtest_predictions = backtesting_stats(
+                                        forecaster        = forecaster,
+                                        y                 = air_passengers,
+                                        cv                = cv,
+                                        metric            = 'mean_squared_error',
+                                        freeze_params     = False,
+                                        verbose           = False,
+                                        suppress_warnings = True
+                                   )
+
+    if platform.system() == 'Windows':
+        pred = np.array([
+            324.39056041, 340.10229308, 368.36594786, 395.8690001 ,
+            354.37194124, 383.12152568, 369.3704818 , 400.36513771,
+            470.68571171, 489.47008406, 525.13830204, 550.55008119,
+            537.96708878, 564.55998644, 436.08061344, 462.02373038,
+            399.01574871, 407.75589214, 348.60372625, 353.68722631,
+            372.54122203, 386.24074229, 394.33853139, 410.67276845,
+            381.54091948, 385.7882863 , 443.89508682, 453.40807421,
+            431.97608402, 446.68136059, 454.94222745, 472.61938719,
+            495.10233702, 518.4513859 , 573.05240108, 600.48436578,
+            585.55331424, 616.97132163, 490.70852774, 511.4534994 ,
+            478.39345005, 456.12460312, 433.48247753, 405.13228127,
+            476.45577472, 444.53909803
+        ])
+        mse_expected = np.array([880.057541, 180.798112])
+    else:
+        # Linux
+        pred = np.array([
+            324.39056041, 340.10229308, 368.36594786, 395.8690001 ,
+            354.37194124, 383.12152568, 369.3704818 , 400.36513771,
+            470.68571171, 489.47008406, 525.13830204, 550.55008119,
+            537.96708878, 564.55998644, 436.08061344, 462.02373038,
+            399.01574871, 407.75589214, 348.60372625, 353.68722631,
+            372.54122203, 386.24074229, 394.33853139, 410.67276845,
+            381.54091948, 385.7882863 , 443.89508682, 453.40807421,
+            431.97608402, 446.68136059, 454.94222745, 472.61938719,
+            495.10233702, 518.4513859 , 573.05240108, 600.48436578,
+            585.55331424, 616.97132163, 490.70852774, 511.4534994 ,
+            478.39345005, 456.12460312, 433.48247753, 405.13228127,
+            476.45577472, 444.53909803
+        ])
+        mse_expected = np.array([880.057541, 180.798112])
+    
+    expected_metric = pd.DataFrame({
+        'estimator_id': ['skforecast.Arima', 'skforecast.Arar'],
+        'mean_squared_error': mse_expected
+    })
+    
+    expected_preds = pd.DataFrame(
+        data = {
+            'fold': [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2,
+                     2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5,
+                     5, 5],
+            'estimator_id': ['skforecast.Arima', 'skforecast.Arar', 'skforecast.Arima',
+                             'skforecast.Arar', 'skforecast.Arima', 'skforecast.Arar',
+                             'skforecast.Arima', 'skforecast.Arar', 'skforecast.Arima',
+                             'skforecast.Arar', 'skforecast.Arima', 'skforecast.Arar',
+                             'skforecast.Arima', 'skforecast.Arar', 'skforecast.Arima',
+                             'skforecast.Arar', 'skforecast.Arima', 'skforecast.Arar',
+                             'skforecast.Arima', 'skforecast.Arar', 'skforecast.Arima',
+                             'skforecast.Arar', 'skforecast.Arima', 'skforecast.Arar',
+                             'skforecast.Arima', 'skforecast.Arar', 'skforecast.Arima',
+                             'skforecast.Arar', 'skforecast.Arima', 'skforecast.Arar',
+                             'skforecast.Arima', 'skforecast.Arar', 'skforecast.Arima',
+                             'skforecast.Arar', 'skforecast.Arima', 'skforecast.Arar',
+                             'skforecast.Arima', 'skforecast.Arar', 'skforecast.Arima',
+                             'skforecast.Arar', 'skforecast.Arima', 'skforecast.Arar',
+                             'skforecast.Arima', 'skforecast.Arar', 'skforecast.Arima',
+                             'skforecast.Arar'],
+            'pred': pred,
+            'estimator_params': [
+                'AutoArima(1,1,0)(0,1,0)[12]', 'AutoArima(1,1,0)(0,1,0)[12]',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'AutoArima(1,1,0)(0,1,0)[12]',
+                'Arar(lags=(1, 2, 12, 13))', 'Arar(lags=(1, 2, 12, 13))',
+                'Arar(lags=(1, 2, 12, 13))', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,0,0)(0,1,0)[12]', 'AutoArima(1,0,0)(0,1,0)[12]',
+                'AutoArima(1,0,0)(0,1,0)[12]', 'AutoArima(1,0,0)(0,1,0)[12]',
+                'Arar(lags=(1, 2, 12, 13))', 'Arar(lags=(1, 2, 12, 13))',
+                'Arar(lags=(1, 2, 12, 13))', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'AutoArima(3,0,0)(0,1,0)[12]',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'AutoArima(3,0,0)(0,1,0)[12]',
+                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))',
+                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'AutoArima(3,0,0)(0,1,0)[12]',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'AutoArima(3,0,0)(0,1,0)[12]',
+                'Arar(lags=(1, 2, 10, 13))', 'Arar(lags=(1, 2, 10, 13))',
+                'Arar(lags=(1, 2, 10, 13))', 'Arar(lags=(1, 2, 10, 13))',
+                'AutoArima(1,0,0)(0,1,0)[12]', 'AutoArima(1,0,0)(0,1,0)[12]',
+                'AutoArima(1,0,0)(0,1,0)[12]', 'AutoArima(1,0,0)(0,1,0)[12]',
+                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))',
+                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'AutoArima(1,1,0)(0,1,0)[12]',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))'
+            ]
+        },
+        index = pd.Index([121, 121, 122, 122, 123, 123, 124, 124, 125, 125, 126, 126, 127, 127,
+                          128, 128, 129, 129, 130, 130, 131, 131, 132, 132, 133, 133, 134, 134,
+                          135, 135, 136, 136, 137, 137, 138, 138, 139, 139, 140, 140, 141, 141,
+                          142, 142, 143, 143])
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)

@@ -4,9 +4,9 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.stats import Sarimax, Arar, Ets
-from skforecast.recursive import ForecasterStats
 from sklearn.exceptions import NotFittedError
+from skforecast.stats import Sarimax, Arima, Arar, Ets
+from skforecast.recursive import ForecasterStats
 
 # Fixtures
 from .fixtures_forecaster_stats import y
@@ -43,6 +43,25 @@ def test_output_get_feature_importances_ForecasterStats_with_Sarimax_estimator()
                    'feature': ['exog', 'ar.L1', 'ma.L1', 'sigma2'],
                    'importance': np.array([0.9690539855149568, 0.4666537980992382, 
                                            -0.5263430267037418, 0.7862622654382363])
+               })
+
+    pd.testing.assert_frame_equal(expected, results)
+
+
+def test_output_get_feature_importances_ForecasterStats_with_Arima_estimator():
+    """
+    Test output of get_feature_importances ForecasterStats using Arima as
+    estimator.
+    """
+    forecaster = ForecasterStats(
+                     estimator = Arima(order=(1, 0, 1))
+                 )
+    forecaster.fit(y=y)
+    results = forecaster.get_feature_importances(sort_importance=False)
+
+    expected = pd.DataFrame({
+                   'feature': ['ar1', 'ma1', 'intercept'],
+                   'importance': np.array([0.46099346901512994, 0.3275833401520218, 0.6000376682194998])
                })
 
     pd.testing.assert_frame_equal(expected, results)
@@ -123,5 +142,6 @@ def test_output_get_feature_importances_ForecasterStats_with_Ets_estimator_sorte
     results = forecaster.get_feature_importances(sort_importance=True)
 
     # Check that results are sorted in descending order
-    assert all(results['importance'].iloc[i] >= results['importance'].iloc[i+1] 
-               for i in range(len(results)-1))
+    assert all(results['importance'].iloc[i] >= results['importance'].iloc[i + 1] 
+               for i in range(len(results) - 1))
+

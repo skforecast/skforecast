@@ -556,6 +556,15 @@ class Arima(BaseEstimator, RegressorMixin):
                     'seasonal_order': best_seasonal_order_,
                     'm': self.m
                 }
+                
+                # NOTE: Only needed to update `estimator_name_` when auto arima is used
+                p, d, q = best_model_order_
+                P, D, Q = best_seasonal_order_
+                if P == 0 and D == 0 and Q == 0:
+                    self.estimator_name_ = f"AutoArima({p},{d},{q})"
+                else:
+                    self.estimator_name_ = f"AutoArima({p},{d},{q})({P},{D},{Q})[{self.m}]"
+                
             else:
                 self.model_ = arima(
                     x              = y,

@@ -1,10 +1,9 @@
 # Unit test predict method - Arima
 # ==============================================================================
 import re
+import pytest
 import platform
 import numpy as np
-import sys
-import pytest
 from ..._arima import Arima
 from .fixtures_arima import air_passengers, multi_seasonal, fuel_consumption
 
@@ -344,20 +343,37 @@ def test_arima_predict_air_passengers_data():
     )
     model.fit(air_passengers, suppress_warnings=False)
     pred = model.predict(steps=10)
+
+    platform_name = platform.system()
+    if platform_name == 'Linux':
+        expected_coef = np.array([
+            0.21797412,  0.10190091, -0.60950889, -0.75357779,  0.66002656
+        ])
+        expected_pred = np.array([
+            449.90727977, 425.89942208, 459.84193732, 497.85003478,
+            510.28517537, 570.53014188, 657.56297822, 643.48037617,
+            547.49999804, 498.39931436
+        ])
+    elif platform_name == 'Darwin':
+        expected_coef = np.array([
+            0.21797412,  0.10190091, -0.60950889, -0.75357779,  0.66002656
+        ])
+        expected_pred = np.array([
+            449.90728, 425.89943, 459.84195, 497.85005, 510.28519, 570.53015,
+            657.56299, 643.48039, 547.50002, 498.39933
+        ])
+    else:
+        expected_coef = np.array([
+            0.21797412,  0.10190091, -0.60950889, -0.75357779,  0.66002656
+        ])
+        expected_pred = np.array([
+            449.90727977, 425.89942208, 459.84193732, 497.85003478,
+            510.28517537, 570.53014188, 657.56297822, 643.48037617,
+            547.49999804, 498.39931436
+        ])
     
-    np.testing.assert_array_almost_equal(
-        model.coef_,
-        np.array([0.21797412,  0.10190091, -0.60950889, -0.75357779,  0.66002656]),
-        decimal=5
-    )
     assert model.coef_names_ == ['ar1', 'ar2', 'ma1', 'sar1', 'sma1']
-    
-    # Check exact predicted values
-    expected_pred = np.array([
-        449.90727977, 425.89942208, 459.84193732, 497.85003478,
-        510.28517537, 570.53014188, 657.56297822, 643.48037617,
-        547.49999804, 498.39931436
-    ])
+    np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=5)
     np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
 
 
@@ -374,21 +390,41 @@ def test_arima_predict_multi_seasonal_data():
     )
     model.fit(multi_seasonal, suppress_warnings=False)
     pred = model.predict(steps=10)
+
+    platform_name = platform.system()
+    if platform_name == 'Linux':
+        expected_coef = np.array([
+            -0.50815818, -0.04561599, -0.04026491,  0.01633577, -0.06006012,
+            -0.48386679, -0.51610601, -0.0470779 , -0.97491034
+        ])
+        expected_pred = np.array([
+            174.63663927, 168.90121337, 173.57034418, 172.08613347,
+            173.80934415, 171.85540948, 175.37193414, 173.55968119,
+            172.87896427, 173.39779159
+        ])
+    elif platform_name == 'Darwin':
+        expected_coef = np.array([
+            -0.50839, -0.04576, -0.04046,  0.01624, -0.06011, -0.48352,
+            -0.5164 , -0.04699, -0.97493
+        ])
+        expected_pred = np.array([
+            174.63750031, 168.9002565, 173.57045868, 172.08342809,
+            173.81031671, 171.85569117, 175.3742861, 173.56080534,
+            172.8806044, 173.39614882
+        ])
+    else:
+        expected_coef = np.array([
+            -0.50907331, -0.0456846, -0.04037138,  0.01625521, -0.06005925,
+            -0.48301617, -0.51698024, -0.04698983, -0.97495403
+        ])
+        expected_pred = np.array([
+            174.63750031, 168.9002565, 173.57045868, 172.08342809,
+            173.81031671, 171.85569117, 175.3742861, 173.56080534,
+            172.8806044, 173.39614882
+        ])
     
-    np.testing.assert_array_almost_equal(
-        model.coef_,
-        np.array([-0.50815818, -0.04561599, -0.04026491,  0.01633577, -0.06006012,
-       -0.48386679, -0.51610601, -0.0470779 , -0.97491034]),
-        decimal=5
-    )
-    assert model.coef_names_ == model.coef_names_ 
-    
-    # Check exact predicted values
-    expected_pred = np.array([
-        174.63663927, 168.90121337, 173.57034418, 172.08613347,
-        173.80934415, 171.85540948, 175.37193414, 173.55968119,
-        172.87896427, 173.39779159
-    ])
+    assert model.coef_names_ == ['ar1', 'ar2', 'ar3', 'ar4', 'ar5', 'ma1', 'ma2', 'sar1', 'sma1']
+    np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=5)
     np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
 
 
@@ -480,17 +516,17 @@ def test_predict_fuel_consumption_data_with_exog():
     )
 
     expected = {
-        'linux': np.array([1574773.72985479, 1540700.25454104, 1608847.20516855,
+        'Linux': np.array([1574773.72985479, 1540700.25454104, 1608847.20516855,
                             1529993.59262818, 1619553.86708141]),
-        'darwin':
-            np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
-                      90.92842560605027, 502.3511798022874]),
-        'win32':
-            np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
-                        490.92842560605027, 502.3511798022874])
+        'Darwin':
+            np.array([1575342.67857, 1449382.68134, 1509290.95573, 1485000.88071,
+                      1404311.02049]),
+        'Windows':
+            np.array([1574766.35415552, 1449367.06186871, 1509255.77782939,
+                      1484690.16862425, 1404060.78688154])
     }
 
-    expected = expected[sys.platform]
+    expected = expected[platform.system()]
     
     np.testing.assert_array_almost_equal(pred, expected, decimal=5)
 
@@ -501,27 +537,36 @@ def test_arima_predict_auto_arima_air_passengers_data():
     Air Passengers dataset and returns exact values.
     """
 
-    expected = {
-        'linux': 
+    expected_order = {
+        'Linux': (2, 1, 1),
+        'Darwin': (1, 1, 0),
+        'Windows': (2, 1, 1)
+    }
+    expected_seasonal_order = {
+        'Linux': (0, 1, 0),
+        'Darwin': (0, 1, 0),
+        'Windows': (0, 1, 0)
+    }
+    expected_pred = {
+        'Linux': 
             np.array([
                 445.28565737, 419.83465616, 448.44413494, 490.92842561,
                 502.3511798 , 565.70976142, 653.01653442, 637.27830708,
                 539.5018538 , 492.69271213
             ]),
-        'darwin':
+        'Darwin':
             np.array([
                 445.28565737, 419.83465616, 448.44413494, 490.92842561,
                 502.3511798 , 565.70976142, 653.01653442, 637.27830708,
                 539.5018538 , 492.69271213
             ]),
-        'win32': 
+        'Windows': 
             np.array([
-                445.28565737, 419.83465616, 448.44413494, 490.92842561,
-                502.3511798 , 565.70976142, 653.01653442, 637.27830708,
-                539.5018538 , 492.69271213
+                445.28524764, 419.83438161, 448.44374789, 490.92802225,
+                502.35073213, 565.70928243, 653.01602408, 637.27776912,
+                539.50129062, 492.69212627
             ])
     }
-    expected = expected[sys.platform]
 
     model = Arima(
         order=None,
@@ -547,11 +592,12 @@ def test_arima_predict_auto_arima_air_passengers_data():
     model.fit(air_passengers, suppress_warnings=True)
     pred = model.predict(steps=10)
     
+    platform_name = platform.system()
     assert model.is_auto is True
-    assert model.best_params_['order'] == (2, 1, 1)
-    assert model.best_params_['seasonal_order'] == (0, 1, 0)
+    assert model.best_params_['order'] == expected_order[platform_name]
+    assert model.best_params_['seasonal_order'] == expected_seasonal_order[platform_name]
     assert model.best_params_['m'] == 12
-    np.testing.assert_array_almost_equal(pred, expected, decimal=5)
+    np.testing.assert_array_almost_equal(pred, expected_pred[platform_name], decimal=5)
 
 
 def test_arima_predict_auto_arima_multi_seasonal_data():
@@ -561,26 +607,25 @@ def test_arima_predict_auto_arima_multi_seasonal_data():
     """
 
     expected = {
-        'linux': 
+        'Linux': 
             np.array([
                 174.22831851, 174.13324908, 174.86422913, 174.85907826,
                 174.81533986, 174.81629778, 174.81890523, 174.81880912,
                 174.81865425, 174.81866231
             ]),
-        'darwin':
+        'Darwin':
             np.array([
-                174.22831851, 174.13324908, 174.86422913, 174.85907826,
-                174.81533986, 174.81629778, 174.81890523, 174.81880912,
-                174.81865425, 174.81866231
+                174.22838, 174.13326, 174.86414, 174.859  , 174.81527, 174.81623,
+                174.81884, 174.81874, 174.81859, 174.81859
             ]),
-        'win32': 
+        'Windows': 
             np.array([
-                174.22831851, 174.13324908, 174.86422913, 174.85907826,
-                174.81533986, 174.81629778, 174.81890523, 174.81880912,
-                174.81865425, 174.81866231
+                174.22838488, 174.13325775, 174.86414245, 174.85900122,
+                174.81527385, 174.81623065, 174.81883714, 174.81874113,
+                174.81858635, 174.8185944
             ])
     }
-    expected = expected[sys.platform]
+    expected = expected[platform.system()]
    
     model = Arima(
         order=None,
