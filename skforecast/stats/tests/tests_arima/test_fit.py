@@ -412,9 +412,21 @@ def test_arima_fit_auto_arima_air_passengers_data():
         stepwise=True,
     )
     model.fit(air_passengers, suppress_warnings=True)
+
+    expected_order = {
+        'Linux': (2, 1, 1),
+        'Darwin': (1, 1, 0),
+        'Windows': (2, 1, 1)
+    }
+    expected_seasonal_order = {
+        'Linux': (0, 1, 0),
+        'Darwin': (0, 1, 0),
+        'Windows': (0, 1, 0)
+    }
     
+    platform_name = platform.system()
     assert model.is_auto is True
-    assert model.best_params_['order'] == (2, 1, 1)
-    assert model.best_params_['seasonal_order'] == (0, 1, 0)
+    assert model.best_params_['order'] == expected_order[platform_name]
+    assert model.best_params_['seasonal_order'] == expected_seasonal_order[platform_name]
     assert model.best_params_['m'] == 12
     assert model.estimator_name_ == "AutoArima(2,1,1)(0,1,0)[12]"

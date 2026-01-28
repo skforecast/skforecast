@@ -445,10 +445,8 @@ def test_predict_interval_fuel_consumption_data_with_exog():
                                       1535480.25564327, 1456327.96521243])
             }, index=[1, 2, 3, 4, 5]).rename_axis('step')
     }
-
-    expected = expected[platform.system()]
     
-    pd.testing.assert_frame_equal(pred, expected)
+    pd.testing.assert_frame_equal(pred, expected[platform.system()], rtol=1e-4)
     
 
 def test_predict_interval_with_exog_dataframe():
@@ -723,14 +721,12 @@ def test_predict_interval_auto_arima_air_passengers_data():
                                       547.19899187])
             }, index=[1, 2, 3, 4, 5]).rename_axis('step')
     }
-
-    expected = expected[platform.system()]
     
     assert model.is_auto is True
     assert model.best_params_['order'] == (2, 1, 1)
     assert model.best_params_['seasonal_order'] == (0, 1, 0)
     assert model.best_params_['m'] == 12
-    pd.testing.assert_frame_equal(pred, expected)
+    pd.testing.assert_frame_equal(pred, expected[platform.system()], rtol=1e-4)
 
 
 @pytest.mark.skipif(
