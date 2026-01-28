@@ -2471,16 +2471,33 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window_boot[:window_size, :, :] = last_window[:, np.newaxis, :]
         last_window_boot[window_size:, :, :] = np.nan
 
+        estimator_name = type(self.estimator).__name__
+        is_linear = isinstance(self.estimator, LinearModel)
+        is_lightgbm = estimator_name == 'LGBMRegressor'
+        is_xgboost = estimator_name == 'XGBRegressor'
+
+        if is_linear:
+            coef = self.estimator.coef_
+            intercept = self.estimator.intercept_
+        elif is_lightgbm:
+            booster = self.estimator.booster_
+        elif is_xgboost:
+            booster = self.estimator.get_booster()
+
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values_dict is not None
+
         for step in range(steps):
 
-            if self.lags is not None:
+            if has_lags:
                 lags_indices = window_size + step - self.lags
                 # lagged_values shape: (n_lags, n_boot, n_levels)
                 lagged_values = last_window_boot[lags_indices, :, :]
                 # Reshape to (n_boot x n_levels, n_lags) with correct row ordering
                 features[:, :n_lags] = lagged_values.transpose(1, 2, 0).reshape(n_samples, n_lags)
 
-            if self.window_features is not None:
+            if has_window_features:
                 wf_col_offset = n_lags
                 for wf in self.window_features:
                     wf_in = last_window_boot[:window_size + step, :, :]
@@ -2491,11 +2508,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     features[:, wf_col_offset:wf_col_offset + n_wf_cols] = wf_out
                     wf_col_offset += n_wf_cols
 
-            if exog_values_dict is not None:
+            if has_exog:
                 # Reshape (n_levels, n_exog) to (n_boot × n_levels, n_exog)
                 features[:, -n_exog:] = np.tile(exog_values_dict[step + 1], (n_boot, 1))
 
-            pred = self.estimator.predict(features)
+            if is_linear:
+                pred = features.dot(coef) + intercept
+            elif is_lightgbm:
+                pred = booster.predict(features)
+            elif is_xgboost:
+                pred = booster.inplace_predict(features)
+            else:
+                pred = self.estimator.predict(features)
+
             # Reshape from (n_boot × n_levels,) to (n_levels, n_boot)
             pred = pred.reshape(n_boot, n_levels).T
             

@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
 from skforecast.recursive import ForecasterRecursive
 
 # Fixtures
@@ -145,6 +146,58 @@ def test_recursive_predict_bootstrapping_output_with_binned_residuals():
             0.321592,
             0.499459,
         ]
+    )
+
+    np.testing.assert_array_almost_equal(predictions.ravel(), expected)
+
+
+def test_recursive_predict_bootstrapping_output_with_binned_residuals_XGBRegressor():
+    """
+    Test _recursive_predict_bootstrapping output with binned residuals.
+    """
+    rng = np.random.default_rng(12345)
+    steps = 10
+    n_boot = 3
+    forecaster = ForecasterRecursive(
+        XGBRegressor(random_state=123, verbosity=0), lags=3
+    )
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
+    last_window_values, exog_values, _, _ = (
+        forecaster._create_predict_inputs(steps=steps, exog=exog_predict)
+    )
+
+    # Create 3D array with sampled residuals: (n_bins, steps, n_boot)
+    n_bins = len(forecaster.in_sample_residuals_by_bin_)
+    sampled_residuals = np.stack(
+        [
+            forecaster.in_sample_residuals_by_bin_[k][
+                rng.integers(
+                    low=0,
+                    high=len(forecaster.in_sample_residuals_by_bin_[k]),
+                    size=(steps, n_boot),
+                )
+            ]
+            for k in range(n_bins)
+        ],
+        axis=0,
+    )
+
+    predictions = forecaster._recursive_predict_bootstrapping(
+                      steps                = steps,
+                      last_window_values   = last_window_values,
+                      exog_values          = exog_values,
+                      sampled_residuals    = sampled_residuals,
+                      use_binned_residuals = True,
+                      n_boot               = n_boot
+                  )
+
+    expected = np.array(
+        [0.67552602, 0.67560297, 0.67535889, 0.65852594, 0.65849674,
+         0.65874082, 0.45930246, 0.45891166, 0.45814314, 0.4768694,
+         0.4772602, 0.47644559, 0.64128035, 0.64128035, 0.64103627,
+         0.73656684, 0.73829859, 0.73829859, 0.79324293, 0.79541755,
+         0.7932725, 0.54788256, 0.55307609, 0.55312443, 0.53551358,
+         0.53489548, 0.53551358, 0.38332888, 0.37806746, 0.37806746]
     )
 
     np.testing.assert_array_almost_equal(predictions.ravel(), expected)

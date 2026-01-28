@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.dummy import DummyRegressor
+from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
 from skforecast.preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
@@ -372,6 +374,110 @@ def test_recursive_predict_bootstrapping_with_window_features():
         [[53.66666667, 59.], [106.33333333, 111.66666667]],  # step 1
         [[55.55555556, 62.66666667], [109.11111111, 116.22222222]]   # step 2
     ])
+    
+    np.testing.assert_array_almost_equal(predictions, expected)
+
+
+def test_recursive_predict_bootstrapping_with_window_features_LGBMRegressor():
+    """
+    Test _recursive_predict_bootstrapping with window features.
+    Verifies that window features are correctly computed for all bootstrap samples
+    and that residuals propagate through recursive steps.
+    """
+    rolling = RollingFeatures(stats=['mean'], window_sizes=3)
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LGBMRegressor(random_state=123, verbose=-1),
+                     lags               = 3,
+                     window_features    = rolling,
+                     transformer_series = None
+                 )
+    forecaster.fit(series=series_2)
+
+    last_window, exog_values_dict, levels, _ = (
+        forecaster._create_predict_inputs(steps=3)
+    )
+    
+    n_boot = 5
+    # sampled_residuals shape: (steps, n_levels, n_boot)
+    sampled_residuals = np.zeros((3, 2, n_boot))
+    sampled_residuals[:, 0, 0] = 2.0  # level 0, boot 0
+    sampled_residuals[:, 0, 1] = 6.0  # level 0, boot 1
+    sampled_residuals[:, 1, 0] = 4.0  # level 1, boot 0
+    sampled_residuals[:, 1, 1] = 8.0  # level 1, boot 1
+    
+    predictions = forecaster._recursive_predict_bootstrapping(
+                      steps                = 3,
+                      levels               = levels,
+                      last_window          = last_window,
+                      n_boot               = n_boot,
+                      sampled_residuals    = sampled_residuals,
+                      use_binned_residuals = False,
+                      exog_values_dict     = exog_values_dict
+                  )
+    
+    # LGBMRegressor with window features learns the pattern
+    # Window features (rolling mean) are computed from the expanding window
+    # that includes residual-modified predictions from previous steps
+    expected = np.array(
+        [[[50.44474919, 54.44474919, 48.44474919, 48.44474919, 48.44474919],
+          [92.98278997, 96.98278997, 88.98278997, 88.98278997, 88.98278997]],
+         [[50.44474919, 54.73924901, 48.44474919, 48.44474919, 48.44474919],
+          [92.98278997, 96.98278997, 88.98278997, 88.98278997, 88.98278997]],
+         [[50.44474919, 54.73924901, 48.44474919, 48.44474919, 48.44474919],
+          [92.98278997, 96.98278997, 88.98278997, 88.98278997, 88.98278997]]]
+    )
+    
+    np.testing.assert_array_almost_equal(predictions, expected)
+
+
+def test_recursive_predict_bootstrapping_with_window_features_XGBRegressor():
+    """
+    Test _recursive_predict_bootstrapping with window features.
+    Verifies that window features are correctly computed for all bootstrap samples
+    and that residuals propagate through recursive steps.
+    """
+    rolling = RollingFeatures(stats=['mean'], window_sizes=3)
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = XGBRegressor(random_state=123, verbosity=0),
+                     lags               = 3,
+                     window_features    = rolling,
+                     transformer_series = None
+                 )
+    forecaster.fit(series=series_2)
+
+    last_window, exog_values_dict, levels, _ = (
+        forecaster._create_predict_inputs(steps=3)
+    )
+    
+    n_boot = 5
+    # sampled_residuals shape: (steps, n_levels, n_boot)
+    sampled_residuals = np.zeros((3, 2, n_boot))
+    sampled_residuals[:, 0, 0] = 2.0  # level 0, boot 0
+    sampled_residuals[:, 0, 1] = 6.0  # level 0, boot 1
+    sampled_residuals[:, 1, 0] = 4.0  # level 1, boot 0
+    sampled_residuals[:, 1, 1] = 8.0  # level 1, boot 1
+    
+    predictions = forecaster._recursive_predict_bootstrapping(
+                      steps                = 3,
+                      levels               = levels,
+                      last_window          = last_window,
+                      n_boot               = n_boot,
+                      sampled_residuals    = sampled_residuals,
+                      use_binned_residuals = False,
+                      exog_values_dict     = exog_values_dict
+                  )
+    
+    # XGBRegressor with window features learns the pattern
+    # Window features (rolling mean) are computed from the expanding window
+    # that includes residual-modified predictions from previous steps
+    expected = np.array(
+        [[[ 50.99549484,  54.99549484,  48.99549484,  48.99549484, 48.99549484],
+          [102.98706818, 106.98706818,  98.98706818,  98.98706818, 98.98706818]],
+         [[ 50.99549484,  60.96059418,  48.99549484,  48.99549484, 48.99549484],
+          [102.98706818, 106.98706818,  98.98706818,  98.98706818, 98.98706818]],
+         [[ 50.99549484,  66.97311401,  48.99549484,  48.99549484, 48.99549484],
+          [102.98706818, 106.98706818,  98.98706818,  98.98706818, 98.98706818]]]
+    )
     
     np.testing.assert_array_almost_equal(predictions, expected)
 

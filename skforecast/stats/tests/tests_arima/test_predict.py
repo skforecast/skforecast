@@ -667,7 +667,7 @@ def test_arima_predict_auto_arima_multi_seasonal_data():
     assert model.best_params_['order'] == (2, 1, 1)
     assert model.best_params_['seasonal_order'] == (0, 0, 0)
     assert model.best_params_['m'] == 12
-    assert model.estimator_name_ == "AutoArima(2,1,1)(0,0,0)[12]"
+    assert model.estimator_name_ == "AutoArima(2,1,1)"
     np.testing.assert_allclose(pred, expected[platform.system()], rtol=1e-4)
 
 
