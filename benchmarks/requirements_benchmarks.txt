@@ -7,5 +7,5 @@ joblib==1.5.2
 numba==0.61.2
 rich==14.1.0
 lightgbm==4.6.0
-statmodels==0.14.6
+statsmodels==0.14.6
 psutil
