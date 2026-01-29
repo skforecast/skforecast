@@ -32,15 +32,18 @@ from benchmarks import (
 np.random.seed(123)
 
 
-def verify_all_benchmarks_completed(output_dir: str) -> bool:
+def verify_all_benchmarks_completed(output_dir: str, start_time: pd.Timestamp) -> bool:
     """
-    Verify that all benchmarks completed successfully by checking for NaN values
-    in the benchmark results.
+    Verify that all benchmarks from the current run completed successfully 
+    by checking for NaN values in the benchmark results.
     
     Parameters
     ----------
     output_dir : str
         Directory where benchmark.joblib is saved.
+    start_time : pd.Timestamp
+        Timestamp when the current benchmark run started. Only benchmarks
+        with datetime >= start_time will be verified.
         
     Returns
     -------
@@ -55,9 +58,16 @@ def verify_all_benchmarks_completed(output_dir: str) -> bool:
     
     df = joblib.load(result_file)
     
+    # Filter only benchmarks from the current run (started after start_time)
+    df_current_run = df[df['datetime'] >= start_time]
+    
+    if len(df_current_run) == 0:
+        print("::error::No benchmarks found for the current run!")
+        return False
+    
     # Check for NaN values in timing columns (indicates failed benchmarks)
     timing_cols = ['run_time_avg', 'run_time_median', 'run_time_p95', 'run_time_std']
-    failed_benchmarks = df[df[timing_cols].isna().any(axis=1)]
+    failed_benchmarks = df_current_run[df_current_run[timing_cols].isna().any(axis=1)]
     
     if len(failed_benchmarks) > 0:
         print("::error::The following benchmarks FAILED (contain NaN values):")
@@ -65,6 +75,7 @@ def verify_all_benchmarks_completed(output_dir: str) -> bool:
             print(f"  - {row['function_name']}")
         return False
     
+    print(f"Verified {len(df_current_run)} benchmarks from current run.")
     return True
 
 
@@ -74,6 +85,9 @@ def main():
     """
 
     output_dir = "benchmarks"
+    
+    # Record start time to filter only current run benchmarks
+    start_time = pd.Timestamp.now()
 
     print(
         f"Running skforecast benchmarks (skforecast={skforecast_version}), "
@@ -87,8 +101,8 @@ def main():
     run_benchmark_ForecasterDirect(output_dir)
     run_benchmark_ForecasterDirectMultiVariate(output_dir)
 
-    # Verify all benchmarks completed successfully
-    if not verify_all_benchmarks_completed(output_dir):
+    # Verify all benchmarks completed successfully (only from current run)
+    if not verify_all_benchmarks_completed(output_dir, start_time):
         print("::error::Not all benchmarks completed successfully!")
         raise SystemExit(1)
     
