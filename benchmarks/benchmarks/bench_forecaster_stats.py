@@ -98,6 +98,18 @@ def run_benchmark_ForecasterStats(output_dir):
         transformer_exog=StandardScaler()
     )
 
+    # Warm-up calls (compile numba functions)
+    forecaster.fit(y=y, exog=exog, suppress_warnings=True)
+    forecaster.predict(steps=STEPS, exog=exog_pred, suppress_warnings=True)
+    forecaster.predict_interval(
+        steps=STEPS, exog=exog_pred, alpha=0.05, suppress_warnings=True
+    )
+    forecaster_auto.fit(y=y, exog=exog, suppress_warnings=True)
+    forecaster_auto.predict(steps=STEPS, exog=exog_pred, suppress_warnings=True)
+    forecaster_auto.predict_interval(
+        steps=STEPS, exog=exog_pred, alpha=0.05, suppress_warnings=True
+    )
+
     def ForecasterStats_fit(forecaster, y, exog):
         forecaster.fit(y=y, exog=exog, suppress_warnings=True)
 
@@ -138,7 +150,23 @@ def run_benchmark_ForecasterStats(output_dir):
             suppress_warnings=True
         )
 
-    def ForecasterStats_backtesting(forecaster, y, exog):
+    def ForecasterStats_backtesting(forecaster, y):
+        cv = TimeSeriesFold(
+                 initial_train_size=300,
+                 steps=24,
+                 refit=True
+             )
+        _ = backtesting_stats(
+                forecaster=forecaster,
+                y=y,
+                cv=cv,
+                metric='mean_squared_error',
+                n_jobs=1,
+                show_progress=False,
+                suppress_warnings=True
+            )
+
+    def ForecasterStats_backtesting_exog(forecaster, y, exog):
         cv = TimeSeriesFold(
                  initial_train_size=300,
                  steps=24,
@@ -155,7 +183,7 @@ def run_benchmark_ForecasterStats(output_dir):
                 suppress_warnings=True
             )
 
-    def ForecasterStats_backtesting_interval(forecaster, y, exog):
+    def ForecasterStats_backtesting_interval_exog(forecaster, y, exog):
         cv = TimeSeriesFold(
                  initial_train_size=300,
                  steps=24,
@@ -190,5 +218,6 @@ def run_benchmark_ForecasterStats(output_dir):
 
     # Backtesting benchmarks
     runner = BenchmarkRunner(repeat=8, output_dir=output_dir)
-    _ = runner.benchmark(ForecasterStats_backtesting, forecaster=forecaster, y=y, exog=exog)
-    _ = runner.benchmark(ForecasterStats_backtesting_interval, forecaster=forecaster, y=y, exog=exog)
+    _ = runner.benchmark(ForecasterStats_backtesting, forecaster=forecaster, y=y)
+    _ = runner.benchmark(ForecasterStats_backtesting_exog, forecaster=forecaster, y=y, exog=exog)
+    _ = runner.benchmark(ForecasterStats_backtesting_interval_exog, forecaster=forecaster, y=y, exog=exog)
