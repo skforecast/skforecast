@@ -287,7 +287,7 @@ def _create_and_compile_model_exog(
     else:
         n_exog = 0
 
-    lags, _, _ = initialize_lags('ForecasterRNN', lags)
+    lags, _, _ = initialize_lags('ForecasterRnn', lags)
     n_lags = len(lags)
 
     if not isinstance(steps, int):
@@ -527,7 +527,7 @@ def _create_and_compile_model_no_exog(
         )
     n_series = series.shape[1]
 
-    lags, _, _ = initialize_lags('ForecasterRNN', lags)
+    lags, _, _ = initialize_lags('ForecasterRnn', lags)
     n_lags = len(lags)
 
     if not isinstance(steps, int):

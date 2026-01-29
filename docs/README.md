@@ -77,7 +77,7 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterDirect]               |✔️|||✔️|✔️|✔️|✔️|✔️|
 |[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
 |[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
-|[ForecasterRNN]                  |✔️|✔️||✔️|✔️||✔️||
+|[ForecasterRnn]                  |✔️|✔️||✔️|✔️||✔️||
 |[ForecasterStats]                |✔️||✔️||✔️|✔️|✔️||
 |[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
 
@@ -85,7 +85,7 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 [ForecasterDirect]: ./user_guides/direct-multi-step-forecasting.ipynb
 [ForecasterRecursiveMultiSeries]: ./user_guides/independent-multi-time-series-forecasting.ipynb
 [ForecasterDirectMultiVariate]: ./user_guides/dependent-multi-series-multivariate-forecasting.ipynb
-[ForecasterRNN]: ./user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
+[ForecasterRnn]: ./user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
 [ForecasterStats]: ./user_guides/forecasting-sarimax-arima.ipynb
 [ForecasterRecursiveClassifier]: ./user_guides/autoregressive-classification-forecasting.ipynb
 
