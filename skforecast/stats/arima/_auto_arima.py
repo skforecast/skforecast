@@ -368,7 +368,7 @@ def fit_custom_arima(
         if np.any(valid_idx):
             first = np.argmax(valid_idx)
             last = len(x) - 1 - np.argmax(valid_idx[::-1])
-            n = np.sum(valid_idx[first:last+1])
+            n = np.sum(valid_idx[first:last + 1])
         else:
             n = 0
     else:
@@ -985,7 +985,10 @@ def auto_arima(
     constant = allowdrift or allowmean
 
     if trace and approximation:
-        print("\nFitting models using approximations...\n")
+        print(
+            "\nFitting models using approximations...\n\n"
+            f" ARIMA(p,d,q)(P,D,Q)[m]                     : {ic}"
+        )
 
     if not stepwise:
         bestfit = search_arima(
@@ -1141,7 +1144,7 @@ def auto_arima(
                 approximation=approximation, offset=offset,
                 xreg=xreg, method=method, **kwargs
             )
-            results[k-1, :] = [np_, d, nq, nP, D, nQ, int(constant), fit['ic']]
+            results[k - 1, :] = [np_, d, nq, nP, D, nQ, int(constant), fit['ic']]
 
             if fit['ic'] < bestfit['ic']:
                 bestfit = fit
@@ -1158,7 +1161,7 @@ def auto_arima(
                     approximation=approximation, offset=offset,
                     xreg=xreg, method=method, **kwargs
                 )
-                results[k-1, :] = [p, d, q, P, D, Q, int(new_constant), fit['ic']]
+                results[k - 1, :] = [p, d, q, P, D, Q, int(new_constant), fit['ic']]
 
                 if fit['ic'] < bestfit['ic']:
                     bestfit = fit
