@@ -165,6 +165,7 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterRnn]                  |✔️|✔️||✔️|✔️||✔️||
 |[ForecasterStats]                |✔️||✔️||✔️|✔️|✔️||
 |[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
+|[ForecasterEquivalentDate]       |✔️||✔️||✔️||||
 
 [ForecasterRecursive]: ../user_guides/autoregressive-forecaster.ipynb
 [ForecasterDirect]: ../user_guides/direct-multi-step-forecasting.ipynb
@@ -173,6 +174,7 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 [ForecasterRnn]: ../user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
 [ForecasterStats]: ../user_guides/forecasting-sarimax-arima.ipynb
 [ForecasterRecursiveClassifier]: ../user_guides/autoregressive-classification-forecasting.ipynb
+[ForecasterEquivalentDate]: ../user_guides/forecasting-baseline.ipynb
 
 To understand what can be done when initializing a forecaster with **skforecast** visit [Forecaster parameters](../quick-start/forecaster-parameters.md) and [Forecaster attributes](../quick-start/forecaster-attributes.ipynb).
 

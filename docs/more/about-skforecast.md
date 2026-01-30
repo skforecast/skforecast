@@ -88,19 +88,19 @@ Thank you for helping us make **skforecast** better! 🎉
 
 ## Citing skforecast
 
-[![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787)
+[![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.17880456)
 
 If you use skforecast for a scientific publication, we would appreciate citations to the published software.
 
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.20.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.20.0). Zenodo. https://doi.org/10.5281/zenodo.17880456
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.20.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.20.0) [Computer software]. https://doi.org/10.5281/zenodo.17880456
 ```
 
 **BibTeX**:
@@ -113,7 +113,7 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.20.0) [Compu
   year    = {2026},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},
-  doi     = {10.5281/zenodo.8382788}
+  doi     = {10.5281/zenodo.17880456}
 }
 ```
 
