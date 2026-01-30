@@ -176,6 +176,8 @@ class PopulationDriftDetector:
         fitting/predicting on MultiIndex DataFrames.
     series_names_in_ : list
         List of series IDs present during fitting when using MultiIndex DataFrames.
+    skforecast_version : str
+        Version of skforecast library used to create the detector.
     
     Notes
     -----
@@ -227,6 +229,7 @@ class PopulationDriftDetector:
         self.n_chunks_reference_data_  = None
         self.detectors_                = {}    # NOTE: Only used for multiseries
         self.series_names_in_          = None  # NOTE: Only used for multiseries
+        self.skforecast_version        = __version__
 
         error_msg = (
             "`chunk_size` must be a positive integer, a string compatible with "
@@ -296,7 +299,8 @@ class PopulationDriftDetector:
             f"Threshold method            = {self.threshold_method} \n"
             f"Max out of range proportion = {self.max_out_of_range_proportion} \n"
             f"Is fitted                   = {self.is_fitted} \n"
-            f"Fitted features             = {self.ref_features_}"
+            f"Fitted features             = {self.ref_features_} \n"
+            f"Skforecast version          = {self.skforecast_version} "
         )
 
         return info
@@ -327,6 +331,7 @@ class PopulationDriftDetector:
                     <li><strong>Threshold method:</strong> {self.threshold_method}</li>
                     <li><strong>Max out of range proportion:</strong> {self.max_out_of_range_proportion}</li>
                     <li><strong>Is fitted:</strong> {self.is_fitted}</li>
+                    <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
                 </ul>
             </details>
             <details>
@@ -919,6 +924,7 @@ class PopulationDriftDetector:
             'is_fitted', 
             'detectors_', 
             'series_names_in_',
+            'skforecast_version'
         ]
         
         attr_names = [

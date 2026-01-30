@@ -83,7 +83,7 @@ Direct multi-step forecasting consists of **training a different model for each 
 
 ### Multiple output forecasting
 
-Some machine learning models, such as long short-term memory (LSTM) neural networks, can **predict multiple values of a sequence simultaneously** (one-shot). This strategy implemented in the <code>ForecasterRnn</code> class.
+Some machine learning models, such as long short-term memory (LSTM) neural networks, can **predict multiple values of a sequence simultaneously** (one-shot). This strategy is implemented in the <code>ForecasterRnn</code> class.
 
 
 ## Forecasting Classification
@@ -127,7 +127,7 @@ To predict the next *n* steps, the strategy of [recursive multi-step forecasting
     <font size="2.5"> <i>Diagram of recursive forecasting with multiple independent time series</i></font>
 </p>
 
-The [`ForecasterRecursiveMultiSeries`](../user_guides/independent-multi-time-series-forecasting.ipynb) class cover this process. 
+The [`ForecasterRecursiveMultiSeries`](../user_guides/independent-multi-time-series-forecasting.ipynb) class covers this process. 
 
 ### Dependent Multi-Series Forecasting (multivariate time series)
 
@@ -162,17 +162,19 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterDirect]               |✔️|||✔️|✔️|✔️|✔️|✔️|
 |[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
 |[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
-|[ForecasterRNN]                  |✔️|✔️||✔️|✔️||✔️||
+|[ForecasterRnn]                  |✔️|✔️||✔️|✔️||✔️||
 |[ForecasterStats]                |✔️||✔️||✔️|✔️|✔️||
 |[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
+|[ForecasterEquivalentDate]       |✔️||✔️||✔️||||
 
 [ForecasterRecursive]: ../user_guides/autoregressive-forecaster.ipynb
 [ForecasterDirect]: ../user_guides/direct-multi-step-forecasting.ipynb
 [ForecasterRecursiveMultiSeries]: ../user_guides/independent-multi-time-series-forecasting.ipynb
 [ForecasterDirectMultiVariate]: ../user_guides/dependent-multi-series-multivariate-forecasting.ipynb
-[ForecasterRNN]: ../user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
+[ForecasterRnn]: ../user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
 [ForecasterStats]: ../user_guides/forecasting-sarimax-arima.ipynb
 [ForecasterRecursiveClassifier]: ../user_guides/autoregressive-classification-forecasting.ipynb
+[ForecasterEquivalentDate]: ../user_guides/forecasting-baseline.ipynb
 
 To understand what can be done when initializing a forecaster with **skforecast** visit [Forecaster parameters](../quick-start/forecaster-parameters.md) and [Forecaster attributes](../quick-start/forecaster-attributes.ipynb).
 
@@ -274,7 +276,7 @@ For example, consider the goal of predicting the 24 hours of day D+1, but the pr
 </p>
 
 
-## Backtesting with fold stride
+### Backtesting with fold stride
 
 This method involves **controlling how far the test set moves forward between folds**. For example, you might want to forecast the next 30 days but generate a new forecast every 7 days. In this setup, each test window is 30 days long (`steps=30`), while the stride between folds is one week (`fold_stride=7`). This means forecasts overlap, and the same observations are predicted multiple times, which provides a richer view of model consistency and stability across different forecast origins.
 
