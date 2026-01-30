@@ -1222,7 +1222,7 @@ def check_residuals_input(
     forecaster_name : str
         Forecaster name.
     use_in_sample_residuals : bool
-        Indicates if in sample or out sample residuals are used.
+        Indicates if in-sample or out-of-sample residuals are used.
     in_sample_residuals_ : numpy ndarray, dict
         Residuals of the model when predicting training data.
     out_sample_residuals_ : numpy ndarray, dict
@@ -1230,7 +1230,7 @@ def check_residuals_input(
     use_binned_residuals : bool
         Indicates if residuals are binned.
     in_sample_residuals_by_bin_ : dict
-        In sample residuals binned according to the predicted value each residual
+        In-sample residuals binned according to the predicted value each residual
         is associated with.
     out_sample_residuals_by_bin_ : dict
         Out of sample residuals binned according to the predicted value each residual

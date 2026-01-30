@@ -195,7 +195,7 @@ class ForecasterRecursive(ForecasterBase):
         the transformed scale. If `differentiation` is not `None`, residuals are
         stored after differentiation.
     in_sample_residuals_by_bin_ : dict
-        In sample residuals binned according to the predicted value each residual
+        In-sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
         `10_000 // self.binner.n_bins_` in the form `{bin: residuals}`. If 
         `transformer_y` is not `None`, residuals are stored in the transformed 
