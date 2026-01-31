@@ -139,7 +139,7 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.20.0) [Compu
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
   version = {0.20.0},
-  month   = {1},
+  month   = {2},
   year    = {2026},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},
