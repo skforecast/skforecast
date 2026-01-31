@@ -1052,9 +1052,9 @@ class Arima(BaseEstimator, RegressorMixin):
                 
         print("ARIMA Model Summary")
         print("=" * 60)
-        print(f"Model: {self.estimator_name_}")
-        print(f"Method: {self.model_['method']}")
-        print(f"Converged: {self.converged_}")
+        print(f"Model     : {self.estimator_name_}")
+        print(f"Method    : {self.model_['method']}")
+        print(f"Converged : {self.converged_}")
         print()
         
         print("Coefficients:")
