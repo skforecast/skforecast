@@ -34,9 +34,10 @@ nav:
       - Dependent multivariate series forecasting: user_guides/dependent-multi-series-multivariate-forecasting.ipynb
       - Deep learning Recurrent Neural Networks: user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
     - Statistical Models:
-      - ARIMA and SARIMAX: user_guides/forecasting-sarimax-arima.ipynb
+      - ForecasterStats: user_guides/forecasting-statistical-models.ipynb
+      - ARIMA, SARIMAX, AutoARIMA: user_guides/forecasting-sarimax-arima.ipynb
+      - ETS, AutoETS: user_guides/forecasting-ets.ipynb
       - ARAR: user_guides/forecasting-arar.ipynb
-      - ETS: user_guides/forecasting-ets.ipynb
     - Feature Engineering:
       - Exogenous variables: user_guides/exogenous-variables.ipynb
       - Window and custom features: user_guides/window-features-and-custom-features.ipynb
