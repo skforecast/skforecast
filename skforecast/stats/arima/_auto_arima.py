@@ -987,7 +987,8 @@ def auto_arima(
     if trace and approximation:
         print(
             "\nFitting models using approximations...\n\n"
-            f" ARIMA(p,d,q)(P,D,Q)[m]                     : {ic}"
+            f" ARIMA(p,d,q)(P,D,Q)[m]                     : {ic}\n"
+            f" ---------------------------------------------" + "-" * len(ic)
         )
 
     if not stepwise:

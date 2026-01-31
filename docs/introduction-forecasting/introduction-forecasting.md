@@ -103,6 +103,25 @@ Common use cases include:
 The [`ForecasterRecursiveClassifier`](../user_guides/autoregressive-classification-forecasting.ipynb) class in skforecast is designed specifically to handle these scenarios, allowing users to apply standard scikit-learn classifiers to time series problems.
 
 
+## Forecasting with statistical models
+
+While machine learning models require transforming the time series into a matrix of lags, **statistical models** such as **ARIMA**, **SARIMAX**, and **ETS** operate directly on the time series data. These models are based on well-established statistical theory and have been widely used for decades in forecasting applications.
+
+Key characteristics of statistical models:
+
+- **No matrix transformation required:** They work directly with the sequential structure of the time series.
+
+- **Interpretable parameters:** The model coefficients have clear statistical meaning.
+
+- **Built-in uncertainty quantification:** Prediction intervals are derived from the model's probabilistic framework.
+
+- **Automatic parameter selection:** Algorithms like **AutoARIMA** can automatically find optimal hyperparameters using information criteria (AIC, BIC).
+
+Statistical models are particularly well-suited for **univariate forecasting** with clear trend and seasonal patterns, and when **interpretability** is a priority. However, they may struggle with highly complex, non-linear relationships where machine learning approaches excel.
+
+The [`ForecasterStats`](../user_guides/forecasting-statistical-models.html) class in skforecast provides a unified interface for statistical models, allowing them to be used with the same API as machine learning forecasters, including backtesting and hyperparameter tuning capabilities.
+
+
 ## Global forecasting models
 
 **Univariate time series forecasting** focuses on modeling a single time series as a linear or nonlinear function of its own past values (lags), using historical observations to predict future ones. 
