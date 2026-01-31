@@ -1530,88 +1530,6 @@ def ar_check(ar: np.ndarray) -> bool:
     return np.all(np.abs(rts) > 1.0)
 
 
-def _reflect_polynomial_roots(coeffs: np.ndarray) -> np.ndarray:
-    """
-    Reflect roots inside unit circle to outside for AR/MA polynomials.
-    
-    This ensures stationarity (AR) or invertibility (MA) by reflecting
-    any roots with |root| < 1 to |root| > 1.
-
-    Parameters
-    ----------
-    coeffs : np.ndarray
-        AR or MA coefficients (not including the leading 1).
-
-    Returns
-    -------
-    np.ndarray
-        Coefficients with all polynomial roots reflected outside unit circle.
-    """
-    coeffs = np.asarray(coeffs)
-    n = len(coeffs)
-    if n == 0:
-        return coeffs
-
-    # Build polynomial: 1 + c1*z + c2*z^2 + ... (for AR: 1 - phi1*z - ...)
-    # For AR coefficients, the polynomial is 1 - phi1*z - phi2*z^2 - ...
-    # represented as [1, -phi1, -phi2, ...]
-    cdesc = np.concatenate([[1.0], coeffs])
-    nz = np.where(cdesc != 0.0)[0]
-    q0 = nz[-1] if len(nz) > 0 else 0
-
-    if q0 == 0:
-        return coeffs
-
-    cdesc_q = cdesc[:q0 + 1]
-    rts = np.roots(cdesc_q[::-1])
-
-    ind = np.abs(rts) < 1.0
-    if not np.any(ind):
-        return coeffs
-
-    if q0 == 1:
-        return np.concatenate([[1.0 / coeffs[0]], np.zeros(n - q0)])
-
-    # Reflect roots inside unit circle
-    rts[ind] = 1.0 / rts[ind]
-
-    # Reconstruct polynomial from roots
-    x = np.array([1.0], dtype=complex)
-    for root in rts:
-        x = np.concatenate([x, [0.0 + 0j]]) - np.concatenate([[0.0 + 0j], x]) / root
-
-    result = np.real(x[1:])
-    if len(result) < n:
-        result = np.concatenate([result, np.zeros(n - len(result))])
-
-    return result[:n]
-
-
-def ar_invert(ar: np.ndarray) -> np.ndarray:
-    """
-    Invert AR polynomial to ensure stationarity (all roots outside unit circle).
-    
-    Reflects any roots inside the unit circle to the outside, similar to
-    R's behavior when transform.pars=TRUE in stats::arima.
-
-    Parameters
-    ----------
-    ar : np.ndarray
-        AR coefficients.
-
-    Returns
-    -------
-    np.ndarray
-        Stationary AR coefficients (roots outside unit circle).
-    """
-    ar = np.asarray(ar)
-    if len(ar) == 0:
-        return ar
-    # AR polynomial is 1 - phi1*z - phi2*z^2 - ..., so negate coefficients
-    inverted = _reflect_polynomial_roots(-ar)
-    return -inverted
-
-
 def ma_invert(ma: np.ndarray) -> np.ndarray:
     """
     Invert MA polynomial to ensure invertibility.
@@ -1626,7 +1544,41 @@ def ma_invert(ma: np.ndarray) -> np.ndarray:
     np.ndarray
         Inverted MA coefficients (roots inside unit circle reflected outside).
     """
-    return _reflect_polynomial_roots(ma)
+    ma = np.asarray(ma)
+    q = len(ma)
+    if q == 0:
+        return ma
+
+    cdesc = np.concatenate([[1.0], ma])
+    nz = np.where(cdesc != 0.0)[0]
+    q0 = nz[-1] if len(nz) > 0 else 0
+
+    if q0 == 0:
+        return ma
+
+    cdesc_q = cdesc[:q0 + 1]
+    rts = np.roots(cdesc_q[::-1])
+
+    ind = np.abs(rts) < 1.0
+    if not np.any(ind):
+        return ma
+
+    if q0 == 1:
+        return np.concatenate([[1.0 / ma[0]], np.zeros(q - q0)])
+
+    # Reflect roots inside unit circle
+    rts[ind] = 1.0 / rts[ind]
+
+    # Reconstruct polynomial from roots
+    x = np.array([1.0], dtype=complex)
+    for root in rts:
+        x = np.concatenate([x, [0.0 + 0j]]) - np.concatenate([[0.0 + 0j], x]) / root
+
+    result = np.real(x[1:])
+    if len(result) < q:
+        result = np.concatenate([result, np.zeros(q - len(result))])
+
+    return result[:q]
 
 
 @njit(cache=True)
@@ -2517,27 +2469,25 @@ def arima(
                 res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
 
             if res['converged']:
-                init[mask] = res['x']
-
-            # Check stationarity of AR parts from CSS
-            # When transform_pars=True and CSS finds non-stationary parameters,
-            # reflect roots to make them stationary (matching R's approach)
-            if arma[0] > 0 and not ar_check(init[:arma[0]]):
-                if transform_pars:
-                    # Reflect AR roots to ensure stationarity
-                    init[:arma[0]] = ar_invert(init[:arma[0]])
+                # Check stationarity before accepting CSS results
+                css_params = init.copy()
+                css_params[mask] = res['x']
+                
+                # Check if CSS produced stationary parameters
+                if (arma[0] > 0 and not ar_check(css_params[:arma[0]])) or \
+                   (arma[2] > 0 and not ar_check(css_params[sum(arma[:2]):sum(arma[:3])])):
+                    warnings.warn(
+                        "CSS optimization produced non-stationary parameters. "
+                        "Falling back to ML estimation with zero starting values."
+                    )
+                    # Reset AR parameters to zeros (like statsmodels does)
+                    if arma[0] > 0:
+                        init[:arma[0]] = 0.0
+                    if arma[2] > 0:
+                        init[sum(arma[:2]):sum(arma[:3])] = 0.0
                 else:
-                    raise ValueError("Non-stationary AR part from CSS")
-
-            if arma[2] > 0:
-                sa_start = sum(arma[:2])
-                sa_end = sum(arma[:3])
-                if not ar_check(init[sa_start:sa_end]):
-                    if transform_pars:
-                        # Reflect seasonal AR roots to ensure stationarity
-                        init[sa_start:sa_end] = ar_invert(init[sa_start:sa_end])
-                    else:
-                        raise ValueError("Non-stationary seasonal AR part from CSS")
+                    # Use CSS results only if stationary
+                    init[mask] = res['x']
 
             ncond = 0
 
