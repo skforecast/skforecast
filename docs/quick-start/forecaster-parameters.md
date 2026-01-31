@@ -144,6 +144,7 @@ More information: [Weighted time series forecasting](../user_guides/weighted-tim
 ```python
 # Create a forecaster
 # ==============================================================================
+import numpy as np
 from sklearn.preprocessing import StandardScaler
 from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursive
@@ -215,8 +216,8 @@ More information: [Categorical features](../user_guides/categorical-features.ipy
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.recursive import ForecasterRecursive
 from lightgbm import LGBMRegressor
+from skforecast.recursive import ForecasterRecursive
 
 forecaster = ForecasterRecursive(
                  estimator        = LGBMRegressor(),
@@ -240,8 +241,8 @@ More information: [Intervals conditioned on predicted values (binned residuals)]
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.recursive import ForecasterRecursive
 from lightgbm import LGBMRegressor
+from skforecast.recursive import ForecasterRecursive
 
 forecaster = ForecasterRecursive(
                  estimator        = LGBMRegressor(),

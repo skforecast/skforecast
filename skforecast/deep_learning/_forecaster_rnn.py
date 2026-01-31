@@ -370,7 +370,7 @@ class ForecasterRnn(ForecasterBase):
         
         self.__skforecast_tags__ = {
             "library": "skforecast",
-            "forecaster_name": "ForecasterRNN",
+            "forecaster_name": "ForecasterRnn",
             "forecaster_task": "regression",
             "forecasting_scope": "global",  # single-series | global
             "forecasting_strategy": "deep_learning",  # recursive | direct | deep_learning

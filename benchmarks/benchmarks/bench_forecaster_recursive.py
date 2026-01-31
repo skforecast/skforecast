@@ -111,7 +111,7 @@ def run_benchmark_ForecasterRecursive(output_dir):
         forecaster._create_train_X_y(y=y, exog=exog)
 
     def ForecasterRecursive_fit(forecaster, y, exog):
-        forecaster.fit(y=y, exog=exog)
+        forecaster.fit(y=y, exog=exog, suppress_warnings=True)
 
     def ForecasterRecursive_check_predict_inputs(forecaster, exog):
         check_predict_input(

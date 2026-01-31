@@ -304,7 +304,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         transformed scale. If `differentiation` is not `None`, residuals are 
         stored after differentiation.
     in_sample_residuals_by_bin_ : dict
-        In sample residuals binned according to the predicted value each residual
+        In-sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
         `10_000 // self.binner.n_bins_` per series in the form `{series: residuals}`.
         If `transformer_series` is not `None`, residuals are stored in the 
@@ -3977,7 +3977,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         random_state: int = 123
     ) -> tuple[np.ndarray, dict[int, np.ndarray]]:
         """
-        Bin out sample residuals using the already fitted binner.
+        Bin out-of-sample residuals using the already fitted binner.
         `y_true` and `y_pred` are expected to be in the original scale of the
         time series. Residuals are calculated as `y_true` - `y_pred`, after 
         applying the necessary transformations and differentiations if the

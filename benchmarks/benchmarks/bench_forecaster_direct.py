@@ -104,7 +104,7 @@ def run_benchmark_ForecasterDirect(output_dir):
         forecaster._create_train_X_y(y=y, exog=exog)
 
     def ForecasterDirect_fit(forecaster, y, exog):
-        forecaster.fit(y=y, exog=exog)
+        forecaster.fit(y=y, exog=exog, suppress_warnings=True)
 
     def ForecasterDirect_check_predict_inputs(forecaster, exog):
         if parse(skforecast_version) >= parse("0.17.0"):

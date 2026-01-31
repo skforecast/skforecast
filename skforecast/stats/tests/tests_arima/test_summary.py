@@ -88,7 +88,7 @@ def test_summary_displays_convergence_status():
     
     output = captured_output.getvalue()
     
-    assert "Converged:" in output
+    assert "Converged :" in output
 
 
 def test_summary_displays_fit_statistics():

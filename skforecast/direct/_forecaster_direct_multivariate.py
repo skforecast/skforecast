@@ -251,7 +251,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         transformed scale. If `differentiation` is not `None`, residuals are 
         stored after differentiation.
     in_sample_residuals_by_bin_ : dict
-        In sample residuals binned according to the predicted value each residual
+        In-sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
         `10_000 // self.binner.n_bins_` per series in the form `{series: residuals}`.
         If `transformer_series` is not `None`, residuals are stored in the 

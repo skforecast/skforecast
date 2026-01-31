@@ -19,9 +19,10 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 <span style="font-size: 1.3em;">Statistical Models</span>
 
-- [ARIMA and SARIMAX](../user_guides/forecasting-sarimax-arima.ipynb)
+- [Forecasting with statistical models](../user_guides/forecasting-statistical-models.ipynb)
+- [ARIMA, SARIMAX, AutoARIMA](../user_guides/forecasting-sarimax-arima.ipynb)
 - [ARAR](../user_guides/forecasting-arar.ipynb)
-- [ETS](../user_guides/forecasting-ets.ipynb)
+- [ETS, AutoETS](../user_guides/forecasting-ets.ipynb)
 
 <span style="font-size: 1.3em;">Feature Engineering</span>
 

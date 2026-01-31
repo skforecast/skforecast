@@ -15,7 +15,7 @@ If you found **skforecast** useful, you can support us with a donation. Your con
     <img style="margin-bottom: 1em; width: 240px;" src="../img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
 </a>
 <a href="https://github.com/sponsors/JavierEscobarOrtiz" target="_blank" title="Become a GitHub Sponsor">
-    <img style="margin-bottom: 1em; ; width: 240px;" src="../img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
+    <img style="margin-bottom: 1em; width: 240px;" src="../img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
 </a>
 
 

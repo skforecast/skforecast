@@ -1142,7 +1142,7 @@ class ForecasterStats():
         estimator: object, 
         steps: int, 
         exog: pd.Series | pd.DataFrame | None
-    ) -> np.ndarray:
+    ) -> np.ndarray:  # pragma: no cover
         """Generate predictions using AEON models."""
         preds = estimator.iterative_forecast(
             y = self.last_window_.to_numpy(),
@@ -1155,7 +1155,7 @@ class ForecasterStats():
         estimator: object,
         steps: int,
         exog: pd.Series | pd.DataFrame | None
-    ) -> np.ndarray:
+    ) -> np.ndarray:  # pragma: no cover
         """Generate predictions using sktime ARIMA model."""
         fh = np.arange(1, steps + 1)
         preds = estimator.predict(fh=fh, X=exog).to_numpy()
@@ -1351,7 +1351,7 @@ class ForecasterStats():
         steps: int,
         exog: pd.Series | pd.DataFrame | None,
         alpha: float
-    ) -> np.ndarray:
+    ) -> np.ndarray:  # pragma: no cover
         """Generate prediction intervals using sktime ARIMA model."""
         fh = np.arange(1, steps + 1)
         preds = estimator.predict_interval(fh=fh, X=exog, coverage=1 - alpha).to_numpy()
@@ -1505,7 +1505,7 @@ class ForecasterStats():
         return estimator.get_feature_importances()
 
     @staticmethod
-    def _get_feature_importances_aeon_arima(estimator) -> pd.DataFrame:
+    def _get_feature_importances_aeon_arima(estimator) -> pd.DataFrame:  # pragma: no cover
         """Get feature importances for AEON ARIMA model."""
         return pd.DataFrame({
             'feature': [f'lag_{lag}' for lag in range(1, estimator.p + 1)] + ["ma", "intercept"],
@@ -1513,13 +1513,13 @@ class ForecasterStats():
         })
 
     @staticmethod
-    def _get_feature_importances_aeon_ets(estimator) -> pd.DataFrame:
+    def _get_feature_importances_aeon_ets(estimator) -> pd.DataFrame:  # pragma: no cover
         """Get feature importances for AEON ETS model."""
         warnings.warn("Feature importances is not available for the AEON ETS model.")
         return pd.DataFrame(columns=['feature', 'importance'])
     
     @staticmethod
-    def _get_feature_importances_sktime_arima(estimator) -> pd.DataFrame:
+    def _get_feature_importances_sktime_arima(estimator) -> pd.DataFrame:  # pragma: no cover
         """Get feature importances for sktime ARIMA model."""
         feature_importances = estimator._forecaster.params().to_frame().reset_index()
         feature_importances.columns = ['feature', 'importance']
@@ -1579,29 +1579,21 @@ class ForecasterStats():
         return results
 
     @staticmethod
+    def _get_info_criteria_sarimax(estimator, criteria: str, method: str) -> float:
+        """Get information criteria for SARIMAX statsmodels model."""
+       
+        return estimator.get_info_criteria(criteria=criteria, method=method)
+
+    @staticmethod
     def _get_info_criteria_skforecast_stats(estimator, criteria: str, method: str) -> float:
         """Get information criteria for skforecast Arima/Arar/Ets models."""
 
         return estimator.get_info_criteria(criteria=criteria)
 
     @staticmethod
-    def _get_info_criteria_sarimax(estimator, criteria: str, method: str) -> float:
-        """Get information criteria for SARIMAX statsmodels model."""
-       
-        return estimator.get_info_criteria(criteria=criteria, method=method)
-    
-    @staticmethod
-    def _get_info_criteria_sktime_arima(estimator, criteria: str, method: str) -> float:
-        """Get information criteria for sktime ARIMA model."""
-        if criteria not in {'aic', 'bic', 'hqic'}:
-            raise ValueError("`criteria` must be one of {'aic','bic','hqic'}")
-        if method not in {'standard', 'lutkepohl'}:
-            raise ValueError("`method` must be either 'standard' or 'lutkepohl'")
-
-        return estimator._forecaster.arima_res_.info_criteria(criteria=criteria, method=method)
-
-    @staticmethod
-    def _get_info_criteria_aeon(estimator, criteria: str, method: str) -> float:
+    def _get_info_criteria_aeon(
+        estimator, criteria: str, method: str
+    ) -> float:  # pragma: no cover
         """Get information criteria for AEON models."""
         if criteria != 'aic':
             raise ValueError(
@@ -1610,6 +1602,18 @@ class ForecasterStats():
             )
         
         return estimator.aic_
+    
+    @staticmethod
+    def _get_info_criteria_sktime_arima(
+        estimator, criteria: str, method: str
+    ) -> float:  # pragma: no cover
+        """Get information criteria for sktime ARIMA model."""
+        if criteria not in {'aic', 'bic', 'hqic'}:
+            raise ValueError("`criteria` must be one of {'aic','bic','hqic'}")
+        if method not in {'standard', 'lutkepohl'}:
+            raise ValueError("`method` must be either 'standard' or 'lutkepohl'")
+
+        return estimator._forecaster.arima_res_.info_criteria(criteria=criteria, method=method)
 
     def get_estimators_info(self) -> pd.DataFrame:
         """

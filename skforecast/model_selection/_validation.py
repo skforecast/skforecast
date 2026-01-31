@@ -1038,7 +1038,7 @@ def _backtesting_forecaster_multiseries(
             preds.insert(0, pred)
 
         if return_predictors:
-            # NOTE: ForecasterRNN is not allowed for return_predictors as it 
+            # NOTE: ForecasterRnn is not allowed for return_predictors as it 
             # returns two DataFrames, X_predict, exog_predict.
             # NOTE: Remove column 'level' as it already exists from predict()
             pred = forecaster.create_predict_X(
