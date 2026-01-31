@@ -741,7 +741,10 @@ def _print_dataset_info(
     )
 
     if shape is not None:
-        content += f"\n\n[bold]Shape:[/bold] {shape[0]} rows x {shape[1]} columns"
+        if len(shape) == 1:
+            content += f"\n\n[bold]Shape:[/bold] {shape[0]} rows"
+        else:
+            content += f"\n\n[bold]Shape:[/bold] {shape[0]} rows x {shape[1]} columns"
 
     console.print(Panel(content, title=f"[bold]{dataset_name}[/bold]", expand=False))
 
@@ -760,18 +763,18 @@ def fetch_dataset(
     ----------
     name: str
         Name of the dataset to fetch.
-    version: str, int, default `'latest'`
+    version: str, int, default 'latest'
         Version of the dataset to fetch. If 'latest', the latest version will be 
         fetched (the one in the main branch). For a list of available versions, 
         see the repository branches.
-    raw: bool, default `False`
+    raw: bool, default False
         If True, the raw dataset is fetched. If False, the preprocessed dataset 
         is fetched. The preprocessing consists of setting the column with the 
         date/time as index and converting the index to datetime. A frequency is 
         also set to the index.
-    kwargs_read_csv: dict, default `{}`
+    kwargs_read_csv: dict, default {}
         Kwargs to pass to pandas `read_csv` function.
-    verbose: bool, default `True`
+    verbose: bool, default True
         If True, print information about the dataset.
     
     Returns
@@ -846,7 +849,10 @@ def fetch_dataset(
     return df
 
 
-def load_demo_dataset(version: str = 'latest') -> pd.Series:
+def load_demo_dataset(
+    version: str = 'latest', 
+    verbose: bool = True
+) -> pd.Series:
     """
     Load demo data set with monthly expenditure ($AUD) on corticosteroid drugs that
     the Australian health system had between 1991 and 2008. Obtained from the book:
@@ -855,10 +861,12 @@ def load_demo_dataset(version: str = 'latest') -> pd.Series:
 
     Parameters
     ----------
-    version: str, default `'latest'`
+    version: str, default 'latest'
         Version of the dataset to fetch. If 'latest', the latest version will be
         fetched (the one in the main branch). For a list of available versions,
         see the repository branches.
+    verbose: bool, default True
+        If True, print information about the dataset.
 
     Returns
     -------
@@ -880,5 +888,8 @@ def load_demo_dataset(version: str = 'latest') -> pd.Series:
     df = df.asfreq('MS')
     df = df['y']
     df = df.sort_index()
+
+    if verbose:
+        _print_dataset_info('h2o', version=version, shape=df.shape)
 
     return df

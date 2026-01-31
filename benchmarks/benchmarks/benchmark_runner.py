@@ -95,6 +95,8 @@ class BenchmarkRunner:
         forecaster_name = type(forecaster).__name__ if forecaster else np.nan
         if forecaster_name == 'ForecasterRnn':
             estimator_name = forecaster.estimator.name if forecaster else np.nan
+        elif forecaster_name == 'ForecasterStats':
+            estimator_name = forecaster.estimator_ids[0] if forecaster else np.nan
         else:
             estimator_name = type(forecaster.estimator).__name__ if forecaster else np.nan
         

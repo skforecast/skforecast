@@ -10,19 +10,19 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.20.0 <small>In development</small> { id="0.20.0" }
+## 0.20.0 <small>Jan 30, 2026</small> { id="0.20.0" }
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the bootstrapped residuals calculation in all recursive forecasters achieving **10x speedup** in the interval prediction process. This improvement significantly reduces the time required to generate prediction intervals, enhancing overall performance and user experience.
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the **bootstrapped residuals calculation** in all recursive forecasters achieving **10x speedup in the interval prediction process**. This improvement significantly reduces the time required to generate prediction intervals, enhancing overall performance and user experience.
 
 + <span class="badge text-bg-feature">Feature</span> New skforecast <code>[Arima]</code> class in the <code>[stats]</code> module. Native and fast Python implementation of ARIMA model for time series forecasting that follows the scikit-learn interface. [User guide](../user_guides/forecasting-sarimax-arima.ipynb)
 
-+ <span class="badge text-bg-feature">Feature</span> <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[ETS]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
++ <span class="badge text-bg-feature">Feature</span> <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[Ets]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
 
-+ <span class="badge text-bg-feature">Feature</span> Added parameter `max_out_of_range_proportion` to <code>[PopulationDriftDetector]</code> to set the maximum allowed proportion of out-of-range observations (for numeric features) before triggering drift detection.
++ <span class="badge text-bg-feature">Feature</span> Added parameter `max_out_of_range_proportion` to <code>[PopulationDriftDetector]</code> to set the maximum allowed proportion of out-of-range observations (for numeric features) before triggering drift detection. [User guide](../user_guides/drift-detection.ipynb)
 
-+ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterSarimax]</code> has been removed, deprecated in version 0.19.0. Use the new <code>[ForecasterStats]</code> class in the <code>[recursive]</code> module, which offers enhanced capabilities and flexibility for statistical time series forecasting.
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterSarimax]</code> has been removed, deprecated in version **0.19.0**. Use the new <code>[ForecasterStats]</code> class in the <code>[recursive]</code> module, which offers enhanced capabilities and flexibility for statistical time series forecasting.
 
 
 **Added**
@@ -31,7 +31,7 @@ The main changes in this release are:
 
 + New skforecast <code>[Arima]</code> class in the <code>[stats]</code> module. Native and fast Python implementation of ARIMA model for time series forecasting that follows the scikit-learn interface. [User guide](../user_guides/forecasting-sarimax-arima.ipynb)
 
-+ <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[ETS]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
++ <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[Ets]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
 
 + New argument `freeze_params` in the [backtesting_stats] function to allow freezing the parameters of the statistical models during backtesting. When set to `True`, the models will use the parameters obtained from the initial fit throughout the backtesting process, rather than re-estimating them at each step.
 
@@ -1384,10 +1384,10 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- stats -->
 [stats]: ../api/stats.md
-[Sarimax]: ../api/stats.md#skforecast.stats._sarimax.Sarimax
-[Arar]: ../api/stats.md#skforecast.stats._arar.Arar
-[ETS]: ../api/stats.md#skforecast.stats._ets.ETS
 [Arima]: ../api/stats.md#skforecast.stats._arima.Arima
+[Sarimax]: ../api/stats.md#skforecast.stats._sarimax.Sarimax
+[Ets]: ../api/stats.md#skforecast.stats._ets.Ets
+[Arar]: ../api/stats.md#skforecast.stats._arar.Arar
 
 <!-- model_selection -->
 [model_selection]: ../api/model_selection.md
@@ -1402,9 +1402,10 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [random_search_forecaster_multiseries]: ../api/model_selection.md#skforecast.model_selection._search.random_search_forecaster_multiseries
 [bayesian_search_forecaster_multiseries]: ../api/model_selection.md#skforecast.model_selection._search.bayesian_search_forecaster_multiseries
 
-[backtesting_sarimax]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_sarimax
-[grid_search_sarimax]: ../api/model_selection.md#skforecast.model_selection._search.grid_search_sarimax
-[random_search_sarimax]: ../api/model_selection.md#skforecast.model_selection._search.random_search_sarimax
+[backtesting_stats]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_stats
+[grid_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.grid_search_stats
+[random_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.random_search_stats
+
 [BaseFold]: ../api/model_selection.md#skforecast.model_selection._split.BaseFold
 [TimeSeriesFold]: ../api/model_selection.md#skforecast.model_selection._split.TimeSeriesFold
 [OneStepAheadFold]: ../api/model_selection.md#skforecast.model_selection._split.OneStepAheadFold
@@ -1480,3 +1481,6 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [series_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
 [exog_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
 [ForecasterSarimax]: https://skforecast.org/0.19.0/api/forecastersarimax.html
+[backtesting_sarimax]: https://skforecast.org/0.19.0/api/model_selection.md#skforecast.model_selection._validation.backtesting_sarimax
+[grid_search_sarimax]: https://skforecast.org/0.19.0/api/model_selection.md#skforecast.model_selection._search.grid_search_sarimax
+[random_search_sarimax]: https://skforecast.org/0.19.0/api/model_selection.md#skforecast.model_selection._search.random_search_sarimax
