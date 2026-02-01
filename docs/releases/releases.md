@@ -1481,6 +1481,6 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [series_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
 [exog_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
 [ForecasterSarimax]: https://skforecast.org/0.19.0/api/forecastersarimax.html
-[backtesting_sarimax]: https://skforecast.org/0.19.0/api/model_selection.md#skforecast.model_selection._validation.backtesting_sarimax
-[grid_search_sarimax]: https://skforecast.org/0.19.0/api/model_selection.md#skforecast.model_selection._search.grid_search_sarimax
-[random_search_sarimax]: https://skforecast.org/0.19.0/api/model_selection.md#skforecast.model_selection._search.random_search_sarimax
+[backtesting_sarimax]: https://skforecast.org/0.19.0/api/model_selection.html#skforecast.model_selection._validation.backtesting_sarimax
+[grid_search_sarimax]: https://skforecast.org/0.19.0/api/model_selection.html#skforecast.model_selection._search.grid_search_sarimax
+[random_search_sarimax]: https://skforecast.org/0.19.0/api/model_selection.html#skforecast.model_selection._search.random_search_sarimax
