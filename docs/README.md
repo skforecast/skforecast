@@ -11,7 +11,7 @@
 [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/)
 [![Conda](https://img.shields.io/conda/v/conda-forge/skforecast?logo=Anaconda)](https://anaconda.org/conda-forge/skforecast)
 [![codecov](https://codecov.io/gh/skforecast/skforecast/branch/master/graph/badge.svg)](https://codecov.io/gh/skforecast/skforecast)
-[![Build status](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)
+[![Build status](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml)
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/skforecast/skforecast/graphs/commit-activity)
 [![Downloads](https://static.pepy.tech/badge/skforecast)](https://pepy.tech/project/skforecast)
@@ -51,7 +51,7 @@ We value your input! Here are a few ways you can participate:
 - **Contribute** to the project by [submitting code](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md), adding new features, or improving the documentation.
 - **Share your feedback** on LinkedIn to help spread the word about skforecast!
 
-Together, we can make time series forecasting accessible to everyone. Discover more in our contribution [contribution guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md)
+Together, we can make time series forecasting accessible to everyone. Discover more in our [contribution guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md)
 
 
 ## Installation & Dependencies
@@ -77,17 +77,19 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterDirect]               |✔️|||✔️|✔️|✔️|✔️|✔️|
 |[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
 |[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
-|[ForecasterRNN]                  |✔️|✔️||✔️|✔️||✔️||
+|[ForecasterRnn]                  |✔️|✔️||✔️|✔️||✔️||
 |[ForecasterStats]                |✔️||✔️||✔️|✔️|✔️||
 |[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
+|[ForecasterEquivalentDate]       |✔️||✔️||✔️||||
 
 [ForecasterRecursive]: ./user_guides/autoregressive-forecaster.ipynb
 [ForecasterDirect]: ./user_guides/direct-multi-step-forecasting.ipynb
 [ForecasterRecursiveMultiSeries]: ./user_guides/independent-multi-time-series-forecasting.ipynb
 [ForecasterDirectMultiVariate]: ./user_guides/dependent-multi-series-multivariate-forecasting.ipynb
-[ForecasterRNN]: ./user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
+[ForecasterRnn]: ./user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
 [ForecasterStats]: ./user_guides/forecasting-sarimax-arima.ipynb
 [ForecasterRecursiveClassifier]: ./user_guides/autoregressive-classification-forecasting.ipynb
+[ForecasterEquivalentDate]: ./user_guides/forecasting-baseline.ipynb
 
 
 ## Features
@@ -123,12 +125,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.20.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.20.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.20.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.20.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **BibTeX**:
@@ -137,11 +139,11 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.20.0) [Compu
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
   version = {0.20.0},
-  month   = {12},
+  month   = {2},
   year    = {2026},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},
-  doi     = {10.5281/zenodo.8382788}
+  doi     = {10.5281/zenodo.8382787}
 }
 ```
 
@@ -237,7 +239,7 @@ If you found **skforecast** useful, you can support us with a donation. Your con
 </a>
 <br>
 <a href="https://github.com/sponsors/JavierEscobarOrtiz" target="_blank" title="Become a GitHub Sponsor">
-    <img style="margin-bottom: 1em; ; width: 240px;" src="./img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
+    <img style="margin-bottom: 1em; width: 240px;" src="./img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
 </a>
 <br>
 

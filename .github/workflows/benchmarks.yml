@@ -92,7 +92,7 @@ jobs:
           fi
     
       - name: Commit & push updated joblib
-        if: always()
+        if: success()  # Only commit if all benchmarks completed successfully
         shell: bash
         run: |
           set -e

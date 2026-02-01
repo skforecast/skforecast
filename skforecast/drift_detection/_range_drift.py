@@ -53,6 +53,8 @@ class RangeDriftDetector:
         rather than global).
     is_fitted : bool
         Whether the detector has been fitted to the training data.
+    skforecast_version : str
+        Version of skforecast library used to create the detector.
     
     """
 
@@ -64,6 +66,7 @@ class RangeDriftDetector:
         self.exog_values_range_    = None
         self.series_specific_exog_ = False
         self.is_fitted             = False
+        self.skforecast_version    = __version__
 
     def __repr__(self) -> str:
         """
@@ -95,7 +98,8 @@ class RangeDriftDetector:
             f"Fitted exogenous       = {exog_names_in_} \n"
             f"Exogenous value ranges = {self.exog_values_range_} \n"
             f"Series-specific exog   = {self.series_specific_exog_} \n"
-            f"Is fitted              = {self.is_fitted}"
+            f"Is fitted              = {self.is_fitted} \n"
+            f"Skforecast version     = {self.skforecast_version}"
         )
 
         return info
@@ -133,6 +137,7 @@ class RangeDriftDetector:
                     <li><strong>Fitted exogenous:</strong> {exog_names_in_}</li>
                     <li><strong>Series-specific exogenous:</strong> {self.series_specific_exog_}</li>
                     <li><strong>Is fitted:</strong> {self.is_fitted}</li>
+                    <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
                 </ul>
             </details>
             <details>

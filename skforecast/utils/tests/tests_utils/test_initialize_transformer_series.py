@@ -14,7 +14,7 @@ from skforecast.exceptions import IgnoredArgumentWarning
     [('ForecasterRecursiveMultiSeries', 'onehot', {'col1': None, 'col2': None, '_unknown_level': None}),
      ('ForecasterRecursiveMultiSeries', None, {'_unknown_level': None}),
      ('ForecasterDirectMultiVariate', None, {'col1': None, 'col2': None}),
-     ('ForecasterRNN', None, {'col1': None, 'col2': None})])
+     ('ForecasterRnn', None, {'col1': None, 'col2': None})])
 def test_initialize_transformer_series_when_transformer_series_is_None(forecaster_name, encoding, expected):
     """
     Test initialize_transformer_series when `transformer_series` is None.
@@ -37,7 +37,7 @@ def test_initialize_transformer_series_when_transformer_series_is_None(forecaste
     [('ForecasterRecursiveMultiSeries', 'onehot', {'col1': StandardScaler(), 'col2': StandardScaler(), '_unknown_level': StandardScaler()}),
      ('ForecasterRecursiveMultiSeries', None, {'_unknown_level': StandardScaler()}),
      ('ForecasterDirectMultiVariate', None, {'col1': StandardScaler(), 'col2': StandardScaler()}),
-     ('ForecasterRNN', None, {'col1': StandardScaler(), 'col2': StandardScaler()})])
+     ('ForecasterRnn', None, {'col1': StandardScaler(), 'col2': StandardScaler()})])
 def test_initialize_transformer_series_when_transformer_series_is_StandardScaler(forecaster_name, encoding, expected):
     """
     Test initialize_transformer_series when `transformer_series` is a StandardScaler.
@@ -61,7 +61,7 @@ def test_initialize_transformer_series_when_transformer_series_is_StandardScaler
     "forecaster_name, encoding, expected", 
     [('ForecasterRecursiveMultiSeries', 'onehot', {'col1': StandardScaler(), 'col2': StandardScaler(), '_unknown_level': StandardScaler()}),
      ('ForecasterDirectMultiVariate', None, {'col1': StandardScaler(), 'col2': StandardScaler()}),
-     ('ForecasterRNN', None, {'col1': StandardScaler(), 'col2': StandardScaler()})])
+     ('ForecasterRnn', None, {'col1': StandardScaler(), 'col2': StandardScaler()})])
 def test_initialize_transformer_series_when_transformer_series_is_dict(forecaster_name, encoding, expected):
     """
     Test initialize_transformer_series when `transformer_series` is a dict.
@@ -92,7 +92,7 @@ def test_initialize_transformer_series_when_transformer_series_is_dict(forecaste
     "forecaster_name, encoding, expected", 
     [('ForecasterRecursiveMultiSeries', 'onehot', {'col1': StandardScaler(), 'col2': None, '_unknown_level': StandardScaler()}),
      ('ForecasterDirectMultiVariate', None, {'col1': StandardScaler(), 'col2': None}),
-     ('ForecasterRNN', None, {'col1': StandardScaler(), 'col2': None})])
+     ('ForecasterRnn', None, {'col1': StandardScaler(), 'col2': None})])
 def test_initialize_transformer_series_IgnoredArgumentWarning_transformer_series_levels_not_equal_to_series_names_in_(forecaster_name, encoding, expected):
     """
     Test IgnoredArgumentWarning is raised when `transformer_series` is a dict and its keys 

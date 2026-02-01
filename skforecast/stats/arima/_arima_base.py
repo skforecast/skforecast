@@ -2469,16 +2469,25 @@ def arima(
                 res = {'converged': opt_result.success, 'x': opt_result.x, 'fun': opt_result.fun}
 
             if res['converged']:
-                init[mask] = res['x']
-
-            if arma[0] > 0 and not ar_check(init[:arma[0]]):
-                raise ValueError("Non-stationary AR part from CSS")
-
-            if arma[2] > 0:
-                sa_start = sum(arma[:2])
-                sa_end = sum(arma[:3])
-                if not ar_check(init[sa_start:sa_end]):
-                    raise ValueError("Non-stationary seasonal AR part from CSS")
+                # Check stationarity before accepting CSS results
+                css_params = init.copy()
+                css_params[mask] = res['x']
+                
+                # Check if CSS produced stationary parameters
+                if (arma[0] > 0 and not ar_check(css_params[:arma[0]])) or \
+                   (arma[2] > 0 and not ar_check(css_params[sum(arma[:2]):sum(arma[:3])])):
+                    warnings.warn(
+                        "CSS optimization produced non-stationary parameters. "
+                        "Falling back to ML estimation with zero starting values."
+                    )
+                    # Reset AR parameters to zeros (like statsmodels does)
+                    if arma[0] > 0:
+                        init[:arma[0]] = 0.0
+                    if arma[2] > 0:
+                        init[sum(arma[:2]):sum(arma[:3])] = 0.0
+                else:
+                    # Use CSS results only if stationary
+                    init[mask] = res['x']
 
             ncond = 0
 
@@ -2510,7 +2519,7 @@ def arima(
 
         if not res['converged']:
             warnings.warn(
-                "Possible convergence problem."
+                "Possible convergence problem. "
                 "Try to increase 'maxiter' or change the optimization method."
             )
 
