@@ -1454,10 +1454,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#the-argument" class="md-nav__link">
+  <a href="#the-freeze_params-argument" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The argument
+        The freeze_params argument
       
     </span>
   </a>
@@ -6537,11 +6537,11 @@ ax.legend();</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="the-freeze_params-argument">The <code>freeze_params</code> argument<a class="anchor-link" href="#the-freeze_params-argument">¶</a></h3><p>For models that perform <strong>automatic selection</strong> (AutoArima, AutoETS), re-running the selection procedure in every backtesting fold can be computationally expensive. The <code>freeze_params</code> argument in the <code>backtesting_stats</code> function controls this behavior:</p>
+<h3 id="the-freeze_params-argument">The freeze_params argument<a class="anchor-link" href="#the-freeze_params-argument">¶</a></h3><p>For models that perform <strong>automatic selection</strong> (AutoArima, AutoETS), re-running the selection procedure in every backtesting fold can be computationally expensive. The <code>freeze_params</code> argument in the <code>backtesting_stats</code> function controls this behavior:</p>
 <ul>
-<li><p><code>freeze_params=True</code> (default): The model parameters found during the <strong>first fit</strong> (e.g., <code>order</code> and <code>seasonal_order</code> for ARIMA) are <strong>reused in all subsequent refits</strong>. Only the coefficients are re-estimated with new data. This significantly <strong>reduces runtime</strong>.</p>
+<li><p><code>freeze_params = True</code> (default): The model parameters found during the <strong>first fit</strong> (e.g., <code>order</code> and <code>seasonal_order</code> for ARIMA) are <strong>reused in all subsequent refits</strong>. Only the coefficients are re-estimated with new data. This significantly <strong>reduces runtime</strong>.</p>
 </li>
-<li><p><code>freeze_params=False</code>: Automatic model selection is performed <strong>independently in each refit</strong>, allowing parameters to adapt across folds. This increases runtime but may capture <strong>structural changes</strong> in the data. A <code>params</code> column is added to the output showing the parameters selected per fold.</p>
+<li><p><code>freeze_params = False</code>: Automatic model selection is performed <strong>independently in each refit</strong>, allowing parameters to adapt across folds. This increases runtime but may capture <strong>structural changes</strong> in the data. A <code>params</code> column is added to the output showing the parameters selected per fold.</p>
 </li>
 </ul>
 </div>
@@ -7106,7 +7106,7 @@ results_grid.head(5)</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=bd76adb2">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=712c0a1d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
