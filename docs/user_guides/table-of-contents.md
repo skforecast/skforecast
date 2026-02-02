@@ -92,7 +92,6 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Cyclical features in time series](../faq/cyclical-features-time-series.ipynb)
 - [Time series aggregation](../faq/time-series-aggregation.ipynb)
 - [Benchmarking skforecast](../faq/skforecast-benchmark.ipynb)
-- [Benchmarking statistical models](../faq/benchmark-statistical-models.ipynb)
 - [Parallelization in skforecast](../faq/parallelization-skforecast.ipynb)
 - [Profiling skforecast](../faq/profiling-skforecast.ipynb)
 
