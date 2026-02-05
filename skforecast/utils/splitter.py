@@ -2,6 +2,8 @@ from __future__ import annotations
 import pandas as pd
 import numpy as np
 import uuid
+import sys
+from .. import __version__
 
 
 class TimeSeriesSplitter:
@@ -30,6 +32,10 @@ class TimeSeriesSplitter:
         Minimum date across all stored DataFrames.
     _max_date : pd.Timestamp
         Maximum date across all stored DataFrames.
+    skforecast_version : str
+        Version of skforecast library used to create the splitter.
+    python_version : str
+        Version of Python used to create the splitter.
 
     Raises
     ------
@@ -126,6 +132,10 @@ class TimeSeriesSplitter:
         # Store min/max dates across all input DataFrames for reference
         self._min_date = min([df.index.min() for df in self.dataframes_])
         self._max_date = max([df.index.max() for df in self.dataframes_])
+
+        # Store version information
+        self.skforecast_version = __version__
+        self.python_version = sys.version.split(' ')[0]
 
     def __repr__(self) -> str:
         """
@@ -239,11 +249,13 @@ class TimeSeriesSplitter:
                     <li><strong>Format:</strong> Wide format (DatetimeIndex)</li>
                     <li><strong>Overall date range:</strong> {self._min_date} → {self._max_date}</li>
                     <li><strong>Splitting Methods:</strong> split_by_date, split_by_size</li>
+                    <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
+                    <li><strong>Python version:</strong> {self.python_version}</li>
                 </ul>
             </details>
             <p style="margin-top: 15px; font-size: 0.9em;">
                 <strong>Usage:</strong> Use <code>split_by_date()</code> or <code>split_by_size()</code> 
-                methods with <code>verbose=True</code> to see detailed split information.
+                methods with <code>verbose=True</code> to see detailed split.
             </p>
         </div>
         """
@@ -626,7 +638,8 @@ class TimeSeriesSplitter:
         header = f'DataFrame {idf + 1} - Split Information:'
         n_total = sum(len(s) for s in split)
         lines = [header]
-        for label, df in zip(['Train', 'Validation', 'Test'], split):
+        labels = ['Train', 'Validation', 'Test'] if len(split) == 3 else ['Train', 'Test']
+        for label, df in zip(labels, split):
             if len(df) > 0:
                 percentage = f'{len(df) / n_total:.1%}' if n_total > 0 else 'N/A'
                 date_range = f'{df.index.min()} → {df.index.max()}'

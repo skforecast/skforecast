@@ -5,15 +5,20 @@ import pandas as pd
 from skforecast.utils.splitter import TimeSeriesSplitter
 
 
+def create_sample_dataframe():
+    """Create a sample DataFrame with 100 rows and daily frequency."""
+    return pd.DataFrame(
+        {'value': range(100)},
+        index=pd.date_range('2023-01-01', periods=100, freq='d'),
+    )
+
+
 class TestTimeSeriesSplitterInitialization:
     """Test TimeSeriesSplitter initialization and validation."""
 
     def test_initialization_single_dataframe_wide_format(self):
         """Test initialization with single wide-format DataFrame."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         assert splitter.n_dataframes_ == 1
@@ -62,10 +67,7 @@ class TestTimeSeriesSplitterInitialization:
 
     def test_repr_method(self):
         """Test __repr__ method output."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
         repr_str = repr(splitter)
 
@@ -75,10 +77,7 @@ class TestTimeSeriesSplitterInitialization:
 
     def test_repr_html_method(self):
         """Test _repr_html_ method output."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
         html_repr = splitter._repr_html_()
 
@@ -87,16 +86,25 @@ class TestTimeSeriesSplitterInitialization:
         assert 'TimeSeriesSplitter' in html_repr
         assert 'style' in html_repr
 
+    def test_version_attributes(self):
+        """Test that skforecast_version and python_version are set."""
+        df = create_sample_dataframe()
+        splitter = TimeSeriesSplitter(df)
+
+        assert hasattr(splitter, 'skforecast_version')
+        assert hasattr(splitter, 'python_version')
+        assert isinstance(splitter.skforecast_version, str)
+        assert isinstance(splitter.python_version, str)
+        assert len(splitter.skforecast_version) > 0
+        assert len(splitter.python_version) > 0
+
 
 class TestTimeSeriesSplitterSplitByDate:
     """Test split_by_date method."""
 
     def test_split_by_date_train_test_only(self):
         """Test split with only train and test sets."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         train, test = splitter.split_by_date(
@@ -109,10 +117,7 @@ class TestTimeSeriesSplitterSplitByDate:
 
     def test_split_by_date_with_validation(self):
         """Test split with train, validation, and test sets."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         train, val, test = splitter.split_by_date(
@@ -144,10 +149,7 @@ class TestTimeSeriesSplitterSplitByDate:
 
     def test_split_by_date_invalid_date_order_raises_error(self):
         """Test that invalid date order raises ValueError."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         with pytest.raises(ValueError, match='must be earlier than'):
@@ -166,10 +168,7 @@ class TestTimeSeriesSplitterSplitByDate:
 
     def test_split_by_date_verbose_output(self, capsys):
         """Test verbose output."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         splitter.split_by_date(
@@ -182,10 +181,7 @@ class TestTimeSeriesSplitterSplitByDate:
 
     def test_split_by_date_out_of_range_raises_error(self):
         """Test that dates outside range raise ValueError."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         with pytest.raises(ValueError):
@@ -200,10 +196,7 @@ class TestTimeSeriesSplitterSplitBySize:
 
     def test_split_by_size_count_based_train_test(self):
         """Test size-based split using absolute counts."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         train, test = splitter.split_by_size(train_size=60, test_size=40)
@@ -213,10 +206,7 @@ class TestTimeSeriesSplitterSplitBySize:
 
     def test_split_by_size_proportion_based(self):
         """Test size-based split using proportions."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         train, test = splitter.split_by_size(train_size=0.6, test_size=0.4)
@@ -226,10 +216,7 @@ class TestTimeSeriesSplitterSplitBySize:
 
     def test_split_by_size_with_validation(self):
         """Test size-based split with validation set."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         train, val, test = splitter.split_by_size(
@@ -262,10 +249,7 @@ class TestTimeSeriesSplitterSplitBySize:
 
     def test_split_by_size_no_train_size_raises_error(self):
         """Test that train_size is required."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         # train_size defaults to None, which should return all data as test
@@ -276,10 +260,7 @@ class TestTimeSeriesSplitterSplitBySize:
 
     def test_split_by_size_invalid_proportion_raises_error(self):
         """Test that invalid proportion raises ValueError."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         with pytest.raises(ValueError, match='between 0 and 1'):
@@ -298,10 +279,7 @@ class TestTimeSeriesSplitterSplitBySize:
 
     def test_split_by_size_verbose_output(self, capsys):
         """Test verbose output."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         splitter.split_by_size(
@@ -314,10 +292,7 @@ class TestTimeSeriesSplitterSplitBySize:
 
     def test_split_by_size_no_validation_set(self):
         """Test split without validation set."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         train, test = splitter.split_by_size(train_size=0.7, test_size=0.3)
@@ -340,10 +315,7 @@ class TestTimeSeriesSplitterEdgeCases:
 
     def test_exact_date_boundaries(self):
         """Test with dates that are exact boundaries."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         train, test = splitter.split_by_date(
@@ -355,10 +327,7 @@ class TestTimeSeriesSplitterEdgeCases:
 
     def test_dataframe_is_copied(self):
         """Test that DataFrames are copied during initialization."""
-        df = pd.DataFrame(
-            {'value': range(10)},
-            index=pd.date_range('2023-01-01', periods=10, freq='d'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         # Modify original
@@ -380,10 +349,7 @@ class TestTimeSeriesSplitterEdgeCases:
 
     def test_split_by_date_start_train_equals_end_train(self):
         """Test that start_train must be earlier than end_train."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='D'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         with pytest.raises(ValueError, match='must be earlier than'):
@@ -391,10 +357,7 @@ class TestTimeSeriesSplitterEdgeCases:
 
     def test_split_by_date_end_train_greater_than_end_validation(self):
         """Test that end_train cannot be greater than end_validation."""
-        df = pd.DataFrame(
-            {'value': range(100)},
-            index=pd.date_range('2023-01-01', periods=100, freq='D'),
-        )
+        df = create_sample_dataframe()
         splitter = TimeSeriesSplitter(df)
 
         with pytest.raises(ValueError, match='must be earlier than or equal to'):
