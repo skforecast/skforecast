@@ -2017,7 +2017,7 @@ def test_output_backtesting_forecaster_refit_int_interval_yes_exog_not_allow_rem
                                            exog                    = exog_with_index,
                                            cv                      = cv,
                                            metric                  = 'mean_squared_error',
-                                           interval                = [5, 95],
+                                           interval                = 0.9,
                                            interval_method         = 'bootstrapping',
                                            n_boot                  = 500,
                                            random_state            = 123,

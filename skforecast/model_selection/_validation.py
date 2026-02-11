@@ -1008,14 +1008,16 @@ def _backtesting_forecaster_multiseries(
             if interval_method == 'bootstrapping':
                 if interval == 'bootstrapping':
                     pred = forecaster.predict_bootstrapping(**kwargs_interval)
-                elif isinstance(interval, (list, tuple)):
-                    quantiles = [q / 100 for q in interval]
-                    pred = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
-                    if len(interval) == 2:
-                        cols_names = ['level', 'lower_bound', 'upper_bound']
+                elif isinstance(interval, (float, list, tuple)):
+                    if isinstance(interval, float):
+                        quantiles = [0.5 - interval / 2, 0.5 + interval / 2]
                     else:
-                        cols_names = ['level'] + [f'p_{p}' for p in interval]  
-                    pred.columns = cols_names
+                        quantiles = [q / 100 for q in interval]
+                    pred = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
+                    if len(quantiles) == 2:
+                        pred.columns = ['level', 'lower_bound', 'upper_bound']
+                    else:
+                        pred.columns = ['level'] + [f'p_{p}' for p in interval]
                 else:
                     pred = forecaster.predict_dist(distribution=interval, **kwargs_interval)
                  
