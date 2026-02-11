@@ -581,9 +581,10 @@ def reshape_exog_long_to_dict(
         If True, drop columns with all values as NaN. This is useful when
         there are series without some exogenous variables.
     consolidate_dtypes: bool, default True
-        Consolidate the data types of the exogenous variables if, after setting
-        the frequency, NaNs have been introduced and the data types have changed
-        to float.
+        Consolidate the data types of the exogenous variables across all series.
+        If, after setting the frequency, NaNs are introduced in any series and
+        cause a column's dtype to change to float, that column is also cast to
+        float in every other series so that all series share the same dtypes.
     suppress_warnings: bool, default False
         If True, suppress warnings when exog is incomplete after setting the
         frequency.
@@ -603,17 +604,22 @@ def reshape_exog_long_to_dict(
         data = data.copy()
         data.index = data.index.set_names([data.index.names[0], None])
         exog_dict = {}
+        cols_float_dtype = set()
+        nans_introduced = False
         for k in data.index.levels[0]:
+            original_index = data.loc[k].index
             original_size = len(data.loc[k])
             exog_dict[k] = data.loc[k].asfreq(freq)
             if len(exog_dict[k]) != original_size:
+                nans_introduced = True
                 non_numeric_cols = []
                 if fill_value is not None:
                     numeric_cols = exog_dict[k].select_dtypes(include='number').columns
                     non_numeric_cols = exog_dict[k].columns.difference(numeric_cols)
+                    new_rows_mask = ~exog_dict[k].index.isin(original_index)
                     if len(numeric_cols) > 0:
-                        exog_dict[k][numeric_cols] = (
-                            exog_dict[k][numeric_cols].fillna(fill_value)
+                        exog_dict[k].loc[new_rows_mask, numeric_cols] = (
+                            exog_dict[k].loc[new_rows_mask, numeric_cols].fillna(fill_value)
                         )
                 if not suppress_warnings:
                     if fill_value is None:
@@ -632,6 +638,13 @@ def reshape_exog_long_to_dict(
                         f"{fill_msg} after setting the frequency.",
                         MissingValuesWarning
                     )
+                if consolidate_dtypes:
+                    cols_float_dtype.update(
+                        {
+                            col for col in exog_dict[k].columns
+                            if pd.api.types.is_float_dtype(exog_dict[k][col])
+                        }
+                    )
 
     else:
 
@@ -646,13 +659,17 @@ def reshape_exog_long_to_dict(
                 raise ValueError(f"Column '{col}' not found in `data`.")
 
         cols_float_dtype = {
-            col for col in data.columns 
-            if pd.api.types.is_float_dtype(data[col])
+            col for col in data.columns
+            if col not in (series_id, index)
+            and pd.api.types.is_float_dtype(data[col])
         }
 
         data_grouped = data.groupby(series_id, observed=True) 
         original_sizes = data_grouped.size()
         exog_dict = dict(tuple(data_grouped))
+        original_indices = {
+            k: set(v[index]) for k, v in exog_dict.items()
+        }
         exog_dict = {
             k: v.set_index(index).drop(columns=series_id).asfreq(freq)
             for k, v in exog_dict.items()
@@ -669,9 +686,10 @@ def reshape_exog_long_to_dict(
                 if fill_value is not None:
                     numeric_cols = v.select_dtypes(include='number').columns
                     non_numeric_cols = v.columns.difference(numeric_cols)
+                    new_rows_mask = ~v.index.isin(original_indices[k])
                     if len(numeric_cols) > 0:
-                        exog_dict[k][numeric_cols] = (
-                            v[numeric_cols].fillna(fill_value)
+                        exog_dict[k].loc[new_rows_mask, numeric_cols] = (
+                            v.loc[new_rows_mask, numeric_cols].fillna(fill_value)
                         )
                 if not suppress_warnings:
                     if fill_value is None:
@@ -698,9 +716,9 @@ def reshape_exog_long_to_dict(
                         }
                     )
 
-        if consolidate_dtypes and nans_introduced:
-            new_dtypes = {k: float for k in cols_float_dtype}
-            exog_dict = {k: v.astype(new_dtypes) for k, v in exog_dict.items()}
+    if consolidate_dtypes and nans_introduced:
+        new_dtypes = {col: float for col in cols_float_dtype}
+        exog_dict = {k: v.astype(new_dtypes) for k, v in exog_dict.items()}
 
     if drop_all_nan_cols:
         exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}

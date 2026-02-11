@@ -666,3 +666,137 @@ def test_check_output_reshape_exog_long_to_dict_with_fill_value_string_and_categ
 
         pd.testing.assert_frame_equal(results['A'], expected_A)
         pd.testing.assert_frame_equal(results['B'], expected_B)
+
+
+def test_fill_value_does_not_fill_preexisting_nans():
+    """
+    Test that fill_value only fills NaN values introduced by asfreq (gaps),
+    not NaN values that were already present in the original data.
+    """
+    data = pd.DataFrame({
+        'series_id': ['A'] * 3 + ['B'] * 3,
+        'datetime': pd.to_datetime(['2020-01-01', '2020-01-02', '2020-01-04'] * 2),
+        'exog_1': [1.0, np.nan, 4.0, 10.0, 20.0, np.nan],  # Pre-existing NaNs
+        'exog_2': [0.1, 0.2, 0.4, 1.0, 2.0, 4.0]
+    })
+
+    warn_msg = re.escape("Missing values have been filled with -999.0")
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = reshape_exog_long_to_dict(
+            data=data,
+            series_id='series_id',
+            index='datetime',
+            freq='D',
+            fill_value=-999.0,
+            suppress_warnings=False,
+        )
+
+    # Pre-existing NaN at 2020-01-02 for A and 2020-01-04 for B should remain NaN
+    # Only gaps at 2020-01-03 should be filled with -999.0
+    expected_A = pd.DataFrame(
+        {
+            'exog_1': [1.0, np.nan, -999.0, 4.0],
+            'exog_2': [0.1, 0.2, -999.0, 0.4]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+    expected_B = pd.DataFrame(
+        {
+            'exog_1': [10.0, 20.0, -999.0, np.nan],
+            'exog_2': [1.0, 2.0, -999.0, 4.0]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+
+    pd.testing.assert_frame_equal(results['A'], expected_A)
+    pd.testing.assert_frame_equal(results['B'], expected_B)
+
+
+def test_fill_value_does_not_fill_preexisting_nans_when_multiindex():
+    """
+    Test that fill_value only fills NaN values introduced by asfreq (gaps),
+    not NaN values already present, when input data is a MultiIndex DataFrame.
+    """
+    data = pd.DataFrame({
+        'series_id': ['A'] * 3 + ['B'] * 3,
+        'datetime': pd.to_datetime(['2020-01-01', '2020-01-02', '2020-01-04'] * 2),
+        'exog_1': [1.0, np.nan, 4.0, 10.0, 20.0, np.nan],
+        'exog_2': [0.1, 0.2, 0.4, 1.0, 2.0, 4.0]
+    })
+    data = data.set_index(['series_id', 'datetime'])
+
+    warn_msg = re.escape("Missing values have been filled with -999.0")
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = reshape_exog_long_to_dict(
+            data=data,
+            freq='D',
+            fill_value=-999.0,
+            suppress_warnings=False,
+        )
+
+    expected_A = pd.DataFrame(
+        {
+            'exog_1': [1.0, np.nan, -999.0, 4.0],
+            'exog_2': [0.1, 0.2, -999.0, 0.4]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+    expected_B = pd.DataFrame(
+        {
+            'exog_1': [10.0, 20.0, -999.0, np.nan],
+            'exog_2': [1.0, 2.0, -999.0, 4.0]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+
+    pd.testing.assert_frame_equal(results['A'], expected_A)
+    pd.testing.assert_frame_equal(results['B'], expected_B)
+
+
+def test_consolidate_dtypes_when_multiindex():
+    """
+    Test that consolidate_dtypes unifies dtypes across all series when input
+    is a MultiIndex DataFrame. If one series has gaps (int -> float due to NaN),
+    all series should have consistent float dtypes for those columns.
+    """
+    # series_1 has a gap (missing 2000-01-06), series_2 does not
+    np.random.seed(123)
+    exog_series_1 = pd.DataFrame({
+        'exog_1': np.random.normal(0, 1, 10),
+        'exog_2': np.random.choice(["A", "B", "C"], 10),
+        'exog_3': np.random.randint(0, 10, 10),
+        'series': 'series_1',
+    }, index=pd.date_range(start='1-1-2000', periods=10, freq='D'))
+    exog_series_2 = pd.DataFrame({
+        'exog_1': np.random.normal(0, 1, 10),
+        'exog_2': np.random.choice(["A", "B"], 10),
+        'exog_3': np.random.randint(0, 10, 10),
+        'series': 'series_2',
+    }, index=pd.date_range(start='1-1-2000', periods=10, freq='D'))
+
+    exog_long = (
+        pd.concat([exog_series_1, exog_series_2], axis=0)
+        .reset_index()
+        .rename(columns={"index": "datetime"})
+    )
+    # Remove one row from series_1 to create a gap
+    exog_long = exog_long.loc[
+        [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], :
+    ].copy()
+    exog_long["exog_2"] = exog_long["exog_2"].astype("category")
+    exog_long["series"] = exog_long["series"].astype("category")
+
+    # Set as MultiIndex
+    data = exog_long.set_index(["series", "datetime"])
+
+    exog_dict = reshape_exog_long_to_dict(
+        data=data,
+        freq="D",
+        consolidate_dtypes=True,
+        suppress_warnings=True,
+    )
+
+    pd.testing.assert_series_equal(
+        exog_dict['series_1'].dtypes,
+        exog_dict['series_2'].dtypes
+    )
