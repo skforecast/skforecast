@@ -4139,7 +4139,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                metric                  = 'mean_absolute_error',
                                                add_aggregated_metric   = False,                                            
                                                exog                    = series_wide_dt['l1'].rename('exog_1'),
-                                               interval                = [5, 95],
+                                               interval                = 0.90,
                                                interval_method         = "bootstrapping",
                                                n_boot                  = 100,
                                                random_state            = 123,

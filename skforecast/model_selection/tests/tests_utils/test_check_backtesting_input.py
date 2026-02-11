@@ -893,7 +893,23 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
     kwargs['interval'] = [0, 100, 101]
     err_msg = re.escape(
         "When `interval` is a list or tuple, all values must be "
-        "between 0 and 100 inclusive."
+        "between 0 and 100 inclusive. Got 101 in [0, 100, 101]."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
+    kwargs['interval'] = 0.
+    err_msg = re.escape(
+        "When `interval` is a float, it must be between 0 and 1 "
+        "exclusive. Got 0.0."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
+    kwargs['interval'] = 1.
+    err_msg = re.escape(
+        "When `interval` is a float, it must be between 0 and 1 "
+        "exclusive. Got 1.0."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(**kwargs)
