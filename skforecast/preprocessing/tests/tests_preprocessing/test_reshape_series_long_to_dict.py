@@ -182,8 +182,8 @@ def test_check_output_reshape_series_long_to_dict_when_multiindex():
                          ids=lambda x: f'fill_value: {x}')
 def test_check_output_reshape_series_long_to_dict_with_fill_value(fill_value, expected_fill):
     """
-    Check output of reshape_series_long_to_dict with fill_value parameter
-    when gaps are created by setting the frequency.
+    Check output and warning of reshape_series_long_to_dict with fill_value 
+    parameter when gaps are created by setting the frequency.
     """
     data = pd.DataFrame({
         "series_id": ["A"] * 4 + ["B"] * 4,
@@ -206,15 +206,21 @@ def test_check_output_reshape_series_long_to_dict_with_fill_value(fill_value, ex
             )
     }
 
-    results = reshape_series_long_to_dict(
-        data=data,
-        series_id="series_id",
-        index="index",
-        values="values",
-        freq="D",
-        fill_value=fill_value,
-        suppress_warnings=True
+    fill_msg = (
+        "NaNs have been introduced"
+        if fill_value is None
+        else f"Missing values have been filled with {fill_value}"
     )
+    msg = f"Series 'B' is incomplete. {fill_msg} after setting the frequency."
+    with pytest.warns(MissingValuesWarning, match=msg):
+        results = reshape_series_long_to_dict(
+            data=data,
+            series_id="series_id",
+            index="index",
+            values="values",
+            freq="D",
+            fill_value=fill_value,
+        )
 
     for k in expected.keys():
         pd.testing.assert_series_equal(results[k], expected[k])
@@ -225,8 +231,9 @@ def test_check_output_reshape_series_long_to_dict_with_fill_value(fill_value, ex
                          ids=lambda x: f'fill_value: {x}')
 def test_check_output_reshape_series_long_to_dict_with_fill_value_when_multiindex(fill_value, expected_fill):
     """
-    Check output of reshape_series_long_to_dict with fill_value parameter
-    when data is a MultiIndex DataFrame and gaps are created by setting the frequency.
+    Check output and warning of reshape_series_long_to_dict with fill_value 
+    parameter when data is a MultiIndex DataFrame and gaps are created by 
+    setting the frequency.
     """
     data = pd.DataFrame({
         "series_id": ["A"] * 4 + ["B"] * 4,
@@ -250,11 +257,18 @@ def test_check_output_reshape_series_long_to_dict_with_fill_value_when_multiinde
             )
     }
 
-    results = reshape_series_long_to_dict(
-        data=data,
-        freq="D",
-        fill_value=fill_value
+    fill_msg = (
+        "NaNs have been introduced"
+        if fill_value is None
+        else f"Missing values have been filled with {fill_value}"
     )
+    msg = f"Series 'B' is incomplete. {fill_msg} after setting the frequency."
+    with pytest.warns(MissingValuesWarning, match=msg):
+        results = reshape_series_long_to_dict(
+            data=data,
+            freq="D",
+            fill_value=fill_value
+        )
 
     for k in expected.keys():
         pd.testing.assert_series_equal(results[k], expected[k])
