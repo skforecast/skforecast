@@ -1,5 +1,6 @@
 # Unit test reshape_series_long_to_dict
 # ==============================================================================
+import re
 import pytest
 import numpy as np
 import pandas as pd
@@ -17,7 +18,7 @@ def test_TypeError_when_data_is_not_dataframe():
     """
     Raise TypeError if data is not a pandas DataFrame.
     """
-    err_msg = "`data` must be a pandas DataFrame."
+    err_msg = re.escape("`data` must be a pandas DataFrame.")
     with pytest.raises(TypeError, match=err_msg):
         reshape_series_long_to_dict(
             data='not_a_dataframe',
@@ -33,7 +34,7 @@ def test_reshape_series_long_to_dict_raise_value_error_when_arguments_series_id_
     Check that ValueError is raised when the input dataframe does not have MultiIndex and the
     arguments `series_id`, `index` and `values` are not provided
     """
-    err_msg = (
+    err_msg = re.escape(
         "Arguments `series_id`, `index`, and `values` must be "
         "specified when the input DataFrame does not have a MultiIndex. "
         "Please provide a value for each of these arguments."
@@ -48,7 +49,7 @@ def test_ValueError_when_series_id_not_in_data():
     """
     series_id = "series_id_not_in_data"
 
-    err_msg = f"Column '{series_id}' not found in `data`."
+    err_msg = re.escape(f"Column '{series_id}' not found in `data`.")
     with pytest.raises(ValueError, match=err_msg):
         reshape_series_long_to_dict(
             data=series_long,
@@ -65,7 +66,7 @@ def test_ValueError_when_index_not_in_data():
     """
     index = "series_id_not_in_data"
 
-    err_msg = f"Column '{index}' not found in `data`."
+    err_msg = re.escape(f"Column '{index}' not found in `data`.")
     with pytest.raises(ValueError, match=err_msg):
         reshape_series_long_to_dict(
             data=series_long,
@@ -82,7 +83,7 @@ def test_ValueError_when_values_not_in_data():
     """
     values = "values_not_in_data"
 
-    err_msg = f"Column '{values}' not found in `data`."
+    err_msg = re.escape(f"Column '{values}' not found in `data`.")
     with pytest.raises(ValueError, match=err_msg):
         reshape_series_long_to_dict(
             data=series_long,
@@ -118,10 +119,10 @@ def test_MissingValuesWarning_when_series_is_incomplete():
             )
     }
 
-    msg = (
+    warn_msg = re.escape(
         "Series 'B' is incomplete. NaNs have been introduced after setting the frequency."
     )
-    with pytest.warns(MissingValuesWarning, match=msg):
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = reshape_series_long_to_dict(
                       data=data,
                       series_id="series_id",
@@ -211,8 +212,10 @@ def test_check_output_reshape_series_long_to_dict_with_fill_value(fill_value, ex
         if fill_value is None
         else f"Missing values have been filled with {fill_value}"
     )
-    msg = f"Series 'B' is incomplete. {fill_msg} after setting the frequency."
-    with pytest.warns(MissingValuesWarning, match=msg):
+    warn_msg = re.escape(
+        f"Series 'B' is incomplete. {fill_msg} after setting the frequency."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = reshape_series_long_to_dict(
             data=data,
             series_id="series_id",
@@ -262,8 +265,10 @@ def test_check_output_reshape_series_long_to_dict_with_fill_value_when_multiinde
         if fill_value is None
         else f"Missing values have been filled with {fill_value}"
     )
-    msg = f"Series 'B' is incomplete. {fill_msg} after setting the frequency."
-    with pytest.warns(MissingValuesWarning, match=msg):
+    warn_msg = re.escape(
+        f"Series 'B' is incomplete. {fill_msg} after setting the frequency."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = reshape_series_long_to_dict(
             data=data,
             freq="D",

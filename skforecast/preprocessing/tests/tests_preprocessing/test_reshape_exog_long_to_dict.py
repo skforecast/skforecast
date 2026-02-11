@@ -267,11 +267,11 @@ def test_MissingValuesWarning_when_exog_are_incomplete_and_dropna_False():
         expected[k]['exog_2'] = expected[k]['exog_2'].astype(object)
         expected[k]['exog_3'] = expected[k]['exog_3'].astype(float)
     
-    msg = (
+    warn_msg = re.escape(
         "Exogenous variables for series 'A' are incomplete. NaNs have been introduced "
         "after setting the frequency."
     )
-    with pytest.warns(MissingValuesWarning, match=msg):
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = reshape_exog_long_to_dict(
             data=data,
             series_id='series_id',
@@ -388,12 +388,12 @@ def test_check_output_reshape_exog_long_to_dict_with_fill_value(fill_value, expe
         'exog_2': [0.1, 0.2, 0.4, 1.0, 2.0, 4.0]
     })
 
-    warn_match = (
+    warn_msg = re.escape(
         "NaNs have been introduced"
         if fill_value is None
         else f"Missing values have been filled with {fill_value}"
     )
-    with pytest.warns(MissingValuesWarning, match=re.escape(warn_match)):
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = reshape_exog_long_to_dict(
             data=data,
             series_id='series_id',
@@ -440,12 +440,12 @@ def test_check_output_reshape_exog_long_to_dict_with_fill_value_when_multiindex(
     })
     data = data.set_index(['series_id', 'datetime'])
 
-    warn_match = (
+    warn_msg = re.escape(
         "NaNs have been introduced"
         if fill_value is None
         else f"Missing values have been filled with {fill_value}"
     )
-    with pytest.warns(MissingValuesWarning, match=re.escape(warn_match)):
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = reshape_exog_long_to_dict(
             data=data,
             freq='D',
@@ -494,10 +494,10 @@ def test_check_output_reshape_exog_long_to_dict_with_fill_value_string_and_categ
     })
 
     if fill_value is not None:
-        msg = re.escape(
+        warn_msg = re.escape(
             "in numeric columns only. Non-numeric columns"
         )
-        with pytest.warns(MissingValuesWarning, match=msg):
+        with pytest.warns(MissingValuesWarning, match=warn_msg):
             results = reshape_exog_long_to_dict(
                 data=data,
                 series_id='series_id',
@@ -533,8 +533,8 @@ def test_check_output_reshape_exog_long_to_dict_with_fill_value_string_and_categ
         pd.testing.assert_frame_equal(results['A'], expected_A)
         pd.testing.assert_frame_equal(results['B'], expected_B)
     else:
-        warn_match = "NaNs have been introduced"
-        with pytest.warns(MissingValuesWarning, match=re.escape(warn_match)):
+        warn_msg = re.escape("NaNs have been introduced")
+        with pytest.warns(MissingValuesWarning, match=warn_msg):
             results = reshape_exog_long_to_dict(
                 data=data,
                 series_id='series_id',
@@ -595,10 +595,10 @@ def test_check_output_reshape_exog_long_to_dict_with_fill_value_string_and_categ
     data = data.set_index(['series_id', 'datetime'])
 
     if fill_value is not None:
-        msg = re.escape(
+        warn_msg = re.escape(
             "in numeric columns only. Non-numeric columns"
         )
-        with pytest.warns(MissingValuesWarning, match=msg):
+        with pytest.warns(MissingValuesWarning, match=warn_msg):
             results = reshape_exog_long_to_dict(
                 data=data,
                 freq='D',
@@ -632,8 +632,8 @@ def test_check_output_reshape_exog_long_to_dict_with_fill_value_string_and_categ
         pd.testing.assert_frame_equal(results['A'], expected_A)
         pd.testing.assert_frame_equal(results['B'], expected_B)
     else:
-        warn_match = "NaNs have been introduced"
-        with pytest.warns(MissingValuesWarning, match=re.escape(warn_match)):
+        warn_msg = re.escape("NaNs have been introduced")
+        with pytest.warns(MissingValuesWarning, match=warn_msg):
             results = reshape_exog_long_to_dict(
                 data=data,
                 freq='D',
