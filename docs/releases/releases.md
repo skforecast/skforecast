@@ -10,6 +10,28 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.20.1 <small>Feb 11, 2026</small> { id="0.20.1" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-danger">Fix</span> Fixed an issue in backtesting functions where passing `interval` as a single float (e.g. `interval=0.8` for 80% coverage) was not handled correctly when `interval_method` is set to `'bootstrapping'`, causing an error during prediction interval calculation.
+
++ <span class="badge text-bg-danger">Fix</span> Fixed an issue in <code>[reshape_exog_long_to_dict]</code> where the `fill_value` parameter was applied to all columns, causing errors with categorical columns and silent data corruption in string columns. Now, `fill_value` is only applied to numeric columns, and non-numeric columns retain NaN in the gaps. A warning is issued to inform the user.
+
+
+**Added**
+
+
+**Changed**
+
+
+**Fixed**
+
++ Fixed an issue in backtesting functions where passing `interval` as a single float (e.g. `interval=0.8` for 80% coverage) was not handled correctly when `interval_method` is set to `'bootstrapping'`, causing an error during prediction interval calculation.
+
++ Fixed an issue in <code>[reshape_exog_long_to_dict]</code> where the `fill_value` parameter was applied to all columns, causing errors with categorical columns and silent data corruption in string columns. Now, `fill_value` is only applied to numeric columns, and non-numeric columns retain NaN in the gaps. A warning is issued to inform the user.
+
+
 ## 0.20.0 <small>Feb 01, 2026</small> { id="0.20.0" }
 
 The main changes in this release are:
@@ -1481,6 +1503,6 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [series_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
 [exog_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
 [ForecasterSarimax]: https://skforecast.org/0.19.0/api/forecastersarimax.html
-[backtesting_sarimax]: https://skforecast.org/0.19.0/api/model_selection.md#skforecast.model_selection._validation.backtesting_sarimax
-[grid_search_sarimax]: https://skforecast.org/0.19.0/api/model_selection.md#skforecast.model_selection._search.grid_search_sarimax
-[random_search_sarimax]: https://skforecast.org/0.19.0/api/model_selection.md#skforecast.model_selection._search.random_search_sarimax
+[backtesting_sarimax]: https://skforecast.org/0.19.0/api/model_selection.html#skforecast.model_selection._validation.backtesting_sarimax
+[grid_search_sarimax]: https://skforecast.org/0.19.0/api/model_selection.html#skforecast.model_selection._search.grid_search_sarimax
+[random_search_sarimax]: https://skforecast.org/0.19.0/api/model_selection.html#skforecast.model_selection._search.random_search_sarimax

@@ -488,12 +488,24 @@ def reshape_series_long_to_dict(
     
     if isinstance(data.index, pd.MultiIndex):
 
+        data = data.copy()
         first_col = data.columns[0]
         data.index = data.index.set_names([data.index.names[0], None])
-        series_dict = {
-            id: data.loc[id][first_col].rename(id).asfreq(freq, fill_value=fill_value)
-            for id in data.index.levels[0]
-        }
+        series_dict = {}
+        for k in data.index.levels[0]:
+            original_size = len(data.loc[k])
+            series_dict[k] = data.loc[k][first_col].rename(k).asfreq(freq, fill_value=fill_value)
+            if not suppress_warnings and len(series_dict[k]) != original_size:
+                fill_msg = (
+                    "NaNs have been introduced"
+                    if fill_value is None
+                    else f"Missing values have been filled with {fill_value}"
+                )
+                warnings.warn(
+                    f"Series '{k}' is incomplete. {fill_msg} after "
+                    f"setting the frequency.",
+                    MissingValuesWarning
+                )
 
     else:
 
@@ -514,8 +526,13 @@ def reshape_series_long_to_dict(
             series_dict[k] = v.set_index(index)[values].asfreq(freq, fill_value=fill_value).rename(k)
             series_dict[k].index.name = None
             if not suppress_warnings and len(series_dict[k]) != original_sizes[k]:
+                fill_msg = (
+                    "NaNs have been introduced"
+                    if fill_value is None
+                    else f"Missing values have been filled with {fill_value}"
+                )
                 warnings.warn(
-                    f"Series '{k}' is incomplete. NaNs have been introduced after "
+                    f"Series '{k}' is incomplete. {fill_msg} after "
                     f"setting the frequency.",
                     MissingValuesWarning
                 )
@@ -557,14 +574,17 @@ def reshape_exog_long_to_dict(
     fill_value: float, default None
         Value to use for filling gaps created when setting the frequency with 
         `asfreq` (note this does not fill NaNs that already were present). If 
-        None, gaps will contain NaN values.
+        None, gaps will contain NaN values. Only applied to numeric columns;
+        non-numeric columns (e.g. string, categorical) will still contain NaN
+        in the gaps.
     drop_all_nan_cols: bool, default False
         If True, drop columns with all values as NaN. This is useful when
         there are series without some exogenous variables.
     consolidate_dtypes: bool, default True
-        Consolidate the data types of the exogenous variables if, after setting
-        the frequency, NaNs have been introduced and the data types have changed
-        to float.
+        Consolidate the data types of the exogenous variables across all series.
+        If, after setting the frequency, NaNs are introduced in any series and
+        cause a column's dtype to change to float, that column is also cast to
+        float in every other series so that all series share the same dtypes.
     suppress_warnings: bool, default False
         If True, suppress warnings when exog is incomplete after setting the
         frequency.
@@ -581,10 +601,50 @@ def reshape_exog_long_to_dict(
     
     if isinstance(data.index, pd.MultiIndex):
 
+        data = data.copy()
         data.index = data.index.set_names([data.index.names[0], None])
-        exog_dict = {
-            id: data.loc[id].asfreq(freq, fill_value=fill_value) for id in data.index.levels[0]
-        }
+        exog_dict = {}
+        cols_float_dtype = set()
+        nans_introduced = False
+        for k in data.index.levels[0]:
+            original_index = data.loc[k].index
+            original_size = len(data.loc[k])
+            exog_dict[k] = data.loc[k].asfreq(freq)
+            if len(exog_dict[k]) != original_size:
+                nans_introduced = True
+                non_numeric_cols = []
+                if fill_value is not None:
+                    numeric_cols = exog_dict[k].select_dtypes(include='number').columns
+                    non_numeric_cols = exog_dict[k].columns.difference(numeric_cols)
+                    new_rows_mask = ~exog_dict[k].index.isin(original_index)
+                    if len(numeric_cols) > 0:
+                        exog_dict[k].loc[new_rows_mask, numeric_cols] = (
+                            exog_dict[k].loc[new_rows_mask, numeric_cols].fillna(fill_value)
+                        )
+                if not suppress_warnings:
+                    if fill_value is None:
+                        fill_msg = "NaNs have been introduced"
+                    else:
+                        fill_msg = (
+                            f"Missing values have been filled with {fill_value}"
+                        )
+                        if len(non_numeric_cols) > 0:
+                            fill_msg += (
+                                f" in numeric columns only. Non-numeric columns "
+                                f"{list(non_numeric_cols)} still contain NaN"
+                            )
+                    warnings.warn(
+                        f"Exogenous variables for series '{k}' are incomplete. "
+                        f"{fill_msg} after setting the frequency.",
+                        MissingValuesWarning
+                    )
+                if consolidate_dtypes:
+                    cols_float_dtype.update(
+                        {
+                            col for col in exog_dict[k].columns
+                            if pd.api.types.is_float_dtype(exog_dict[k][col])
+                        }
+                    )
 
     else:
 
@@ -599,15 +659,19 @@ def reshape_exog_long_to_dict(
                 raise ValueError(f"Column '{col}' not found in `data`.")
 
         cols_float_dtype = {
-            col for col in data.columns 
-            if pd.api.types.is_float_dtype(data[col])
+            col for col in data.columns
+            if col not in (series_id, index)
+            and pd.api.types.is_float_dtype(data[col])
         }
 
         data_grouped = data.groupby(series_id, observed=True) 
         original_sizes = data_grouped.size()
         exog_dict = dict(tuple(data_grouped))
+        original_indices = {
+            k: set(v[index]) for k, v in exog_dict.items()
+        }
         exog_dict = {
-            k: v.set_index(index).asfreq(freq, fill_value=fill_value).drop(columns=series_id)
+            k: v.set_index(index).drop(columns=series_id).asfreq(freq)
             for k, v in exog_dict.items()
         }
 
@@ -615,27 +679,46 @@ def reshape_exog_long_to_dict(
             exog_dict[k].index.name = None
 
         nans_introduced = False
-        if not suppress_warnings or consolidate_dtypes:
-            for k, v in exog_dict.items():
-                if len(v) != original_sizes[k]:
-                    nans_introduced = True
-                    if not suppress_warnings:
-                        warnings.warn(
-                            f"Exogenous variables for series '{k}' are incomplete. "
-                            f"NaNs have been introduced after setting the frequency.",
-                            MissingValuesWarning
+        for k, v in exog_dict.items():
+            if len(v) != original_sizes[k]:
+                nans_introduced = True
+                non_numeric_cols = []
+                if fill_value is not None:
+                    numeric_cols = v.select_dtypes(include='number').columns
+                    non_numeric_cols = v.columns.difference(numeric_cols)
+                    new_rows_mask = ~v.index.isin(original_indices[k])
+                    if len(numeric_cols) > 0:
+                        exog_dict[k].loc[new_rows_mask, numeric_cols] = (
+                            v.loc[new_rows_mask, numeric_cols].fillna(fill_value)
                         )
-                    if consolidate_dtypes:
-                        cols_float_dtype.update(
-                            {
-                                col for col in v.columns 
-                                if pd.api.types.is_float_dtype(v[col])
-                            }
+                if not suppress_warnings:
+                    if fill_value is None:
+                        fill_msg = "NaNs have been introduced"
+                    else:
+                        fill_msg = (
+                            f"Missing values have been filled with {fill_value}"
                         )
+                        if len(non_numeric_cols) > 0:
+                            fill_msg += (
+                                f" in numeric columns only. Non-numeric columns "
+                                f"{list(non_numeric_cols)} still contain NaN"
+                            )
+                    warnings.warn(
+                        f"Exogenous variables for series '{k}' are incomplete. "
+                        f"{fill_msg} after setting the frequency.",
+                        MissingValuesWarning
+                    )
+                if consolidate_dtypes:
+                    cols_float_dtype.update(
+                        {
+                            col for col in v.columns 
+                            if pd.api.types.is_float_dtype(v[col])
+                        }
+                    )
 
-        if consolidate_dtypes and nans_introduced:
-            new_dtypes = {k: float for k in cols_float_dtype}
-            exog_dict = {k: v.astype(new_dtypes) for k, v in exog_dict.items()}
+    if consolidate_dtypes and nans_introduced:
+        new_dtypes = {col: float for col in cols_float_dtype}
+        exog_dict = {k: v.astype(new_dtypes) for k, v in exog_dict.items()}
 
     if drop_all_nan_cols:
         exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}

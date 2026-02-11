@@ -418,9 +418,15 @@ def check_backtesting_input(
                         for q in interval:
                             if (q < 0.) or (q > 100.):
                                 raise ValueError(
-                                    "When `interval` is a list or tuple, all values must be "
-                                    "between 0 and 100 inclusive."
+                                    f"When `interval` is a list or tuple, all values must be "
+                                    f"between 0 and 100 inclusive. Got {q} in {interval}."
                                 )
+                elif isinstance(interval, float):
+                    if (interval <= 0.) or (interval >= 1.):
+                        raise ValueError(
+                            f"When `interval` is a float, it must be between 0 and 1 "
+                            f"exclusive. Got {interval}."
+                        )
                 elif isinstance(interval, str):
                     if interval != 'bootstrapping':
                         raise ValueError(

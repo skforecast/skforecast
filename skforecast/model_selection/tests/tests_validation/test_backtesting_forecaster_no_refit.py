@@ -1492,7 +1492,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
                                        exog                    = exog_with_index,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = 0.90,
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,

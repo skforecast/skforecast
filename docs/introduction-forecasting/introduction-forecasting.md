@@ -119,7 +119,7 @@ Key characteristics of statistical models:
 
 Statistical models are particularly well-suited for **univariate forecasting** with clear trend and seasonal patterns, and when **interpretability** is a priority. However, they may struggle with highly complex, non-linear relationships where machine learning approaches excel.
 
-The [`ForecasterStats`](../user_guides/forecasting-statistical-models.html) class in skforecast provides a unified interface for statistical models, allowing them to be used with the same API as machine learning forecasters, including backtesting and hyperparameter tuning capabilities.
+The [`ForecasterStats`](../user_guides/forecasting-statistical-models.ipynb) class in skforecast provides a unified interface for statistical models, allowing them to be used with the same API as machine learning forecasters, including backtesting and hyperparameter tuning capabilities.
 
 
 ## Global forecasting models

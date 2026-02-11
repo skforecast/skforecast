@@ -1,5 +1,6 @@
 # Unit test reshape_series_wide_to_long
 # ==============================================================================
+import re
 import pytest
 import numpy as np
 import pandas as pd
@@ -10,7 +11,7 @@ def test_TypeError_when_data_is_not_dataframe():
     """
     Raise TypeError if data is not a pandas DataFrame.
     """
-    err_msg = "`data` must be a pandas DataFrame."
+    err_msg = re.escape("`data` must be a pandas DataFrame.")
     with pytest.raises(TypeError, match=err_msg):
         reshape_series_wide_to_long(data='not_a_dataframe')
 
@@ -24,7 +25,7 @@ def test_TypeError_when_data_not_DatetimeIndex():
         'series_2': np.arange(10, 20)
     })
 
-    err_msg = "`data` index must be a pandas DatetimeIndex."
+    err_msg = re.escape("`data` index must be a pandas DatetimeIndex.")
     with pytest.raises(TypeError, match=err_msg):
         reshape_series_wide_to_long(data=data)
 

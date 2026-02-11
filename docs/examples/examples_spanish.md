@@ -14,9 +14,6 @@ Esta sección proporciona tutoriales esenciales para los usuarios que están com
 
 <i class="fa-solid fa-sitemap fa" style="font-size: 25px; color: #00cc99;"></i> [Forecasting con gradient boosting: XGBoost, LightGBM y CatBoost](https://www.cienciadedatos.net/documentos/py39-forecasting-series-temporales-con-skforecast-xgboost-lightgbm-catboost.html)
 
-<i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color: #74C0FC;"></i> [Forecasting con XGBoost](https://www.cienciadedatos.net/documentos/py56-forecasting-series-temporales-con-xgboost.html)
-
-<i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color: #76b644;"></i> [Forecasting con LightGBM](https://www.cienciadedatos.net/documentos/py58-forecasting-series-temporales-con-lightgbm.html)
 
 <i class="fa-brands fa-youtube" style="font-size: 25px; color: #c4302b;"></i> [Workshop predicción de series temporales con machine learning 
 Universidad de Deusto / Deustuko Unibertsitatea](https://youtu.be/MlktVhReO0E)
@@ -58,6 +55,10 @@ Para usuarios experimentados que buscan profundizar en sus habilidades de foreca
 <i class="fa-solid fa-ghost" style="font-size: 25px; color: #2f5ee9;"></i> [Detección de anomalías en series temporales](https://cienciadedatos.net/documentos/py62-deteccion-anomalias-series-temporales.html)
 
 <i class="fa-solid fa-lock-open" style="font-size: 25px; color: #e70d44;"></i> [Data leakage en modelos de forecasting preentrenados](https://cienciadedatos.net/documentos/py63-data-leakage-modelos-forecasting-preentrenados.html)
+
+<i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color: #74C0FC;"></i> [Forecasting con XGBoost](https://www.cienciadedatos.net/documentos/py56-forecasting-series-temporales-con-xgboost.html)
+
+<i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color: #76b644;"></i> [Forecasting con LightGBM](https://www.cienciadedatos.net/documentos/py58-forecasting-series-temporales-con-lightgbm.html)
 
 
 ## Desafíos del Mundo Real y Estudios de Caso

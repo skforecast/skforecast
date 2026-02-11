@@ -10,17 +10,17 @@ This section provides essential tutorials for users who are just getting started
 
 <i class="fa-duotone fa-chart-line fa" style="font-size: 25px; color: #1DA1F2;"></i>  [Skforecast: time series forecasting with machine learning](https://www.cienciadedatos.net/documentos/py27-time-series-forecasting-python-scikitlearn.html)
 
-<i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #E60023;"></i> [ARIMA and SARIMAX models](https://www.cienciadedatos.net/documentos/py51-arima-sarimax-models-python.html)
+<i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #E60023;"></i> [Forecating with statistical models](https://cienciadedatos.net/documentos/py77-forecasting-statistical-models.html)
 
-<i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #17fd02ff;"></i> [ARAR forecasting models](https://cienciadedatos.net/documentos/py73-arar-forecasting-models-python.html)
+<i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #E60023;"></i> [ARIMA and SARIMAX models](https://www.cienciadedatos.net/documentos/py51-arima-sarimax-models-python.html)
 
 <i class="fa-solid fa-sitemap fa" style="font-size: 25px; color: #00cc99;"></i> [Forecasting with gradient boosting: XGBoost, LightGBM and CatBoost](https://www.cienciadedatos.net/documentos/py39-forecasting-time-series-with-skforecast-xgboost-lightgbm-catboost.html)
 
 <i class="fa-solid fa-table-list" style="font-size: 25px; color: #808080;"></i> [Forecasting of categorical time series](https://cienciadedatos.net/documentos/py72-classification-forecasting-categorical-series.html)
 
-<i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color: #74C0FC;"></i> [Forecasting with XGBoost](https://www.cienciadedatos.net/documentos/py56-forecasting-time-series-with-xgboost.html)
+<i class="fa-regular fa-pencil" style="font-size: 25px; color: #76b644;"></i> [Visualizing time series data](https://cienciadedatos.net/documentos/py71-visualizing-time-series-data.html)
 
-<i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color: #76b644;"></i> [Forecasting with LightGBM](https://www.cienciadedatos.net/documentos/py58-forecasting-time-series-with-lightgbm.html)
+<i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #E60023;"></i> [Exponential Smoothing Models](https://cienciadedatos.net/documentos/py76-exponential-smoothing-models.html)
 
 
 ## Global Models: Multi-Series Forecasting
@@ -68,6 +68,10 @@ For experienced users looking to deepen their forecasting skills, this section p
 <i class="fa-solid fa-gauge-high" style="font-size: 25px; color: #00eeffff;"></i> [Accelerate forecasting models with GPU](https://cienciadedatos.net/documentos/py65-accelerate-forecasting-models-gpu.html)
 
 <i class="fa-solid fa-gauge-high" style="font-size: 25px; color: #00eeffff;"></i> [Accelerate forecasting models with Intel® scikit-learn-intelex](https://cienciadedatos.net/documentos/py75-accelerate-forecasting-with-scikit-learn-intelex.html)
+
+<i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color: #74C0FC;"></i> [Forecasting with XGBoost](https://www.cienciadedatos.net/documentos/py56-forecasting-time-series-with-xgboost.html)
+
+<i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color: #76b644;"></i> [Forecasting with LightGBM](https://www.cienciadedatos.net/documentos/py58-forecasting-time-series-with-lightgbm.html)
 
 
 ## Real-World Challenges and Case Studies

@@ -1,6 +1,6 @@
 [project]
 name = "skforecast"
-version = "0.20.0"
+version = "0.20.1"
 description = "Skforecast is a Python library for time series forecasting using statistical and machine learning models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others."
 readme = "README.md"
 authors = [
@@ -94,12 +94,12 @@ docs = [
     "mike==2.1.3",
     "mkdocs==1.6.1",
     "mkdocs-jupyter==0.25.1",
-    "mkdocs-material==9.7.0",
+    "mkdocs-material==9.7.1",
     "mkdocstrings==0.30.1",
     "mkdocstrings-python==1.19.0",
     "notebook==6.5.7",
     "jupyter-contrib-nbextensions==0.7.0",
-    "black==25.11.0",
+    "black==26.1.0",
     # Si está el enlace de abajo, al hacer pip install .[docs] falla
     #"https://github.com/ipython-contrib/jupyter_contrib_nbextensions/tarball/master"
 ]
