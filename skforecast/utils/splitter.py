@@ -106,10 +106,6 @@ class TimeSeriesSplitter:
             # Use inner check_preprocess_series() preprocessing for each group
             series_dict, series_indexes = check_preprocess_series(series_input)
 
-            # -- Raise early error for empty data
-            if len(series_dict) == 0:
-                raise ValueError(f'Series group {i} is empty.')
-
             # -- Store the preprocess series data dict & index dict
             self.series_groups_.append(series_dict)
             self.series_indexes_.append(series_indexes)
@@ -127,15 +123,10 @@ class TimeSeriesSplitter:
                 self._max_indexes_.append(
                     max([idx.max() for idx in series_indexes.values()])
                 )
-            elif isinstance(first_index, pd.RangeIndex):
+            if isinstance(first_index, pd.RangeIndex):
                 self.index_freqs_.append(first_index.step)
                 self._min_indexes_.append(0)
                 self._max_indexes_.append(len(first_index) - 1)
-            else:
-                raise TypeError(
-                    f'Series group {i} must have DatetimeIndex or RangeIndex. '
-                    f'Got {index_type.__name__}.'
-                )
 
         # -- Store the number groups/series input
         self.n_groups_ = len(series)
@@ -355,11 +346,6 @@ class TimeSeriesSplitter:
             start_train_pos = self._convert_date_to_position(
                 start_train, first_index, 'start_train'
             )
-            if start_train_pos < 0:
-                raise ValueError(
-                    f'Group {group_idx}: start_train {start_train} cannot be earlier than '
-                    f'minimum date {first_index[0]}.'
-                )
 
         end_train_pos = self._convert_date_to_position(
             end_train, first_index, 'end_train'
@@ -580,8 +566,8 @@ class TimeSeriesSplitter:
                 )
 
             case _:
-                return ValueError(
-                    f'`output_format` {output_format} is not supported. '
+                raise ValueError(
+                    f'Output format `{output_format}` is not supported. '
                     f'Choose one of ["wide", "long", "long_multi_index", "dict"].'
                 )
 
