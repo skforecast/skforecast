@@ -43,6 +43,8 @@ Skforecast simplifies time series forecasting with machine learning by providing
 
 Whether you're building quick prototypes or deploying models in production, skforecast ensures a fast, reliable, and scalable experience.
 
+:computer: **Try [Skforecast Studio](https://studio.skforecast.org/)** — an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
+
 ### Get Involved
 
 We value your input! Here are a few ways you can participate:

@@ -42,6 +42,8 @@ Skforecast simplifies time series forecasting with machine learning by providing
 
 Whether you're building quick prototypes or deploying models in production, skforecast ensures a fast, reliable, and scalable experience.
 
+:computer: **Try [Skforecast Studio](https://studio.skforecast.org/)** — an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
+
 ### Get Involved
 
 We value your input! Here are a few ways you can participate:
@@ -69,6 +71,7 @@ Explore the full capabilities of **skforecast** with our comprehensive documenta
 | :books: [API Reference]                 | Comprehensive reference for skforecast functions and classes |
 | :memo: [Releases]                       | Keep track of major updates and changes |
 | :mag: [More]                            | Discover more about skforecast and its creators |
+| :computer: [Skforecast Studio]          | Build forecasting models visually with no code |
 
 [Introduction to forecasting]: https://skforecast.org/latest/introduction-forecasting/introduction-forecasting.html
 [Quick start]: https://skforecast.org/latest/quick-start/quick-start-skforecast.html
@@ -78,6 +81,7 @@ Explore the full capabilities of **skforecast** with our comprehensive documenta
 [API Reference]: https://skforecast.org/latest/api/forecasterrecursive.html
 [Releases]: https://skforecast.org/latest/releases/releases.html
 [More]: https://skforecast.org/latest/more/about-skforecast.html
+[Skforecast Studio]: https://studio.skforecast.org/
 
 
 # Installation & Dependencies

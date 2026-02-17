@@ -130,6 +130,8 @@ nav:
     - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
     - Profiling skforecast: faq/profiling-skforecast.ipynb
 
+  - Skforecast Studio: skforecast-studio/skforecast-studio.md
+
   - Releases: releases/releases.md
 
   - More: 
