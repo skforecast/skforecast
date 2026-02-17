@@ -1,0 +1,73 @@
+name: 🖥️ Skforecast Studio
+description: Report a bug, suggest a feature, or give feedback about Skforecast Studio (studio.skforecast.org)
+title: "[STUDIO]: "
+labels: ["skforecast-studio"]
+
+body:
+  - type: markdown
+    attributes:
+      value: >
+        This template is for issues related to [Skforecast Studio](https://studio.skforecast.org/),
+        the interactive no-code application for building time series forecasting models.
+        For issues related to the skforecast Python library, please use the other templates.
+
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Type of issue
+      description: What kind of issue are you reporting?
+      options:
+        - Bug
+        - Feature request
+        - UI/UX feedback
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the issue or suggestion.
+      placeholder: Describe the issue or suggestion...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce (if applicable)
+      description: If reporting a bug, describe the steps to reproduce it.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain the issue.
+      placeholder: Drag and drop images here...
+    validations:
+      required: false
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      description: Which browser and operating system are you using?
+      placeholder: e.g., Chrome 120 on Windows 11
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Any other information you'd like to add.
+      placeholder: Additional details...
+    validations:
+      required: false
