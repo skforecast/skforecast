@@ -1514,6 +1514,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
+        self.out_sample_residuals_              = None
+        self.out_sample_residuals_by_bin_       = None
         self.binner                             = {}
         self.binner_intervals_                  = {}
         self.is_fitted                          = False

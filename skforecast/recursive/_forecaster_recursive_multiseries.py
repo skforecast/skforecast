@@ -1804,6 +1804,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.encoding_mapping_                  = {}
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
+        self.out_sample_residuals_              = None
+        self.out_sample_residuals_by_bin_       = None
         self.binner                             = {}
         self.binner_intervals_                  = {}
         self.is_fitted                          = False
