@@ -1222,6 +1222,8 @@ class ForecasterDirect(ForecasterBase):
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
+        self.out_sample_residuals_              = None
+        self.out_sample_residuals_by_bin_       = None
         self.binner_intervals_                  = None
         self.filter_train_X_y_index_cache_      = {}
         self.filter_train_X_y_columns_cache_    = {}
