@@ -1,12 +1,11 @@
 # Skforecast Studio
 
-<a href="https://studio.skforecast.org/" target="_blank" title="Skforecast Studio">
-    <img src="https://img.shields.io/badge/Skforecast%20Studio-Launch%20App-f79939?style=for-the-badge&logo=rocket" alt="Launch Skforecast Studio">
-</a>
+[![Skforecast Studio](https://img.shields.io/badge/Skforecast%20Studio-Launch%20App-f79939?logo=rocket)](https://studio.skforecast.org/)
 
-**[Skforecast Studio](https://studio.skforecast.org/)** is an interactive, no-code application to build time series forecasting models visually — while automatically generating production-ready Python code using [skforecast](https://skforecast.org/).
 
-Whether you're exploring data, prototyping models, or generating deployment-ready code, Skforecast Studio helps you go from raw time series to forecasting pipeline in minutes — no coding required.
+**[Skforecast Studio](https://studio.skforecast.org/)** is an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using [skforecast](https://skforecast.org/).
+
+Whether you're exploring data, prototyping models, or generating deployment-ready code, Skforecast Studio helps you go from raw time series to forecasting pipeline in minutes, no coding required.
 
 
 ## Key Features
