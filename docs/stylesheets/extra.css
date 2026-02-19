@@ -243,3 +243,28 @@ Profile Cards (More section) Styles
     font-size: 15px;
     font-weight: bold;
 }
+
+/*
+===============================
+Sticky Banner Styles
+=============================== 
+*/
+/* Make the outdated version banner sticky at the top while scrolling - only when it has the warning class */
+.md-banner.md-banner--warning {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000; /* Ensure it stays above other content */
+  margin: 0;
+}
+
+/* Add padding to the header to prevent overlap - only when banner warning is present */
+.md-banner.md-banner--warning ~ .md-container .md-header {
+  top: 3rem; /* Adjust based on banner height */
+}
+
+/* Add padding to the main content to avoid being hidden - only when banner warning is present */
+.md-banner.md-banner--warning ~ .md-container .md-main {
+  margin-top: 3rem; /* Adjust based on banner height */
+}

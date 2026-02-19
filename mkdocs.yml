@@ -152,16 +152,9 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          inventories:
-            - https://docs.python.org/3/objects.inv
-            - https://mkdocstrings.github.io/autorefs/objects.inv
-            - https://www.mkdocs.org/objects.inv
-            - https://python-markdown.github.io/objects.inv
           options:
             docstring_style: numpy
             docstring_section_style: table
-            docstring_options:
-              ignore_init_summary: true
             filters: ["!__"] # exclude all members starting with __
             members_order: source
             merge_init_into_class: true
@@ -173,8 +166,8 @@ plugins:
             show_signature_annotations: false
             show_symbol_type_heading: false
             summary: true
-            extra:
-              render_references: true
+            group_by_category: true
+            show_category_heading: true
   - mkdocs-jupyter:
       allow_errors: False
       execute: False
@@ -203,6 +196,7 @@ theme:
     #- navigation.sections # To expand sections on the table of contents
     #- navigation.expand # To expand sections on the table of contents
     - navigation.top
+    - navigation.footer
     - navigation.instant
     - navigation.instant.prefetch
     - navigation.instant.progress
@@ -210,6 +204,8 @@ theme:
     - navigation.breadcrumbs
     - content.code.copy
     - content.code.annotate
+    - content.code.select
+    - content.tooltips
     - search.suggest
     - search.highlight
     - search.share
@@ -297,9 +293,3 @@ extra:
       link: https://discord.gg/3V52qpNkuj
     - icon: fontawesome/brands/creative-commons
       link: https://creativecommons.org/licenses/by-nc-sa/4.0/
-  social_image: img/logo-skforecast.png
-  seo:
-    description: >-
-      Skforecast is a Python library for time series forecasting using statistical and machine learning models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
-    keywords: time series, forecasting, machine learning, python, data science, scikit-learn, lightgbm, xgboost, catboost, keras, probabilistic forecasting, multiple time series forecasting
-    image: img/logo-skforecast.png
