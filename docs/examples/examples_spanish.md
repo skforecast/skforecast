@@ -40,9 +40,7 @@ Estos tutoriales se centran en modelos globales y en el pronóstico de series m�
 
 Para usuarios experimentados que buscan profundizar en sus habilidades de forecasting, esta sección ofrece técnicas avanzadas, como forecasting probabilístico y manejo de valores ausentes.
 
-<i class="fa-light fa-chart-line fa" style="font-size: 25px; color: #f26e1d;"></i>  [Forecasting probabilístico](https://cienciadedatos.net/documentos/py42-forecasting-probabilistico.html)
-
-<i class="fa-light fa-chart-line fa" style="font-size: 25px; color:rgb(128, 29, 242);"></i>  [Forecasting probabilístico: intervalos de predicción para forecasting multi-step](https://cienciadedatos.net/documentos/py60-forecasting-probabilistico-intervalos-prediccion-forecasting-multi-step.html)
+<i class="fa-light fa-chart-line fa" style="font-size: 25px; color: #f26e1d;"></i>  [Forecasting probabilístico con machine learning](https://cienciadedatos.net/documentos/py42-forecasting-probabilistico.html)
 
 <i class="fa-solid fa-tree" style="font-size: 25px; color:rgb(7, 104, 84);"></i> [Modelar series temporales con tendencia utilizando modelos de árboles](https://cienciadedatos.net/documentos/py49-modelar-tendencia-en-series-temporales-modelos-de-arboles.html)
 

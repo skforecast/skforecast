@@ -1582,7 +1582,7 @@ def test_output_backtesting_forecaster_return_predictors_same_predictions_as_pre
             backtest_predictions.iloc[[i]][
                 ['lag_1', 'lag_2', 'lag_3', 'exog']
             ]
-        )
+        ).item()
     
     pd.testing.assert_frame_equal(expected_metric, metric)
     np.testing.assert_array_almost_equal(results, backtest_predictions['pred'].to_numpy())

@@ -4447,7 +4447,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
             backtest_predictions.iloc[[i]][
                 ['l1_lag_1', 'l1_lag_2', 'l2_lag_1', 'l2_lag_2', 'exog_1']
             ]
-        )
+        ).item()
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     np.testing.assert_array_almost_equal(results, backtest_predictions['pred'].to_numpy())
