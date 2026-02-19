@@ -6,7 +6,7 @@ Skforecast is a Python library that simplifies time series forecasting using mac
 
 ## Quick Info
 
-- Version: 0.20.1
+- Version: 0.21.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -723,5 +723,5 @@ See full changelog: https://skforecast.org/latest/releases/releases.html
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.20.1) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```

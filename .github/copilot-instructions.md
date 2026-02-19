@@ -4,7 +4,7 @@ This file provides context for GitHub Copilot to generate accurate and up-to-dat
 
 ## About Skforecast
 
-Skforecast is a Python library (v0.20.1) for time series forecasting using machine learning and statistical models. It works with any estimator compatible with the scikit-learn API.
+Skforecast is a Python library (v0.21.0) for time series forecasting using machine learning and statistical models. It works with any estimator compatible with the scikit-learn API.
 
 **Repository**: https://github.com/skforecast/skforecast  
 **Documentation**: https://skforecast.org  
@@ -231,7 +231,7 @@ skforecast/
 Always use these import patterns - they reflect the current API:
 
 ```python
-# ✅ CORRECT Forecaster imports (v0.20.1+)
+# ✅ CORRECT Forecaster imports (v0.21.0+)
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.recursive import ForecasterRecursiveClassifier
