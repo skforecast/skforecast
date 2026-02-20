@@ -692,6 +692,13 @@ class ForecasterRecursive(ForecasterBase):
                 fit               = fit_transformer,
                 inverse_transform = False,
             )
+        if y.shape[1] != 1:
+            raise ValueError(
+                "`transformer_y` must return a single column. "
+                "Transformers that expand `y` into multiple feature columns are "
+                "not supported in `transformer_y`; use `window_features` or pass "
+                "those features through `exog` instead."
+            )
         y_values, y_index = check_extract_values_and_index(data=y, data_label='`y`')
         train_index = y_index[self.window_size:]
 

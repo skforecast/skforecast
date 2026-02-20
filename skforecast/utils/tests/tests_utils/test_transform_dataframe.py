@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import FunctionTransformer
 from skforecast.utils import transform_dataframe
 
 
@@ -149,4 +150,22 @@ def test_transform_dataframe_when_transformer_is_ColumnTransformer():
                   inverse_transform = False
               )
     
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_transform_dataframe_when_transformer_expands_columns_without_feature_names():
+    """
+    Test output column naming when transformer expands columns and has no feature names.
+    """
+    df_input = pd.DataFrame({'y': np.arange(4, dtype=float)})
+    transformer = FunctionTransformer(lambda X: np.c_[X, X**2], validate=False)
+
+    expected = pd.DataFrame(
+        {'y_0': [0.0, 1.0, 2.0, 3.0], 'y_1': [0.0, 1.0, 4.0, 9.0]}
+    )
+
+    results = transform_dataframe(
+        df=df_input, transformer=transformer, fit=True, inverse_transform=False
+    )
+
     pd.testing.assert_frame_equal(results, expected)
