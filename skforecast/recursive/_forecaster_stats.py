@@ -724,6 +724,13 @@ class ForecasterStats():
                 fit               = True,
                 inverse_transform = False
             )
+        if isinstance(y, pd.DataFrame):
+            raise ValueError(
+                "`transformer_y` must return a single column. "
+                "Transformers that expand `y` into multiple feature columns are "
+                "not supported in `transformer_y`; use `window_features` or pass "
+                "those features through `exog` instead."
+            )
 
         if exog is not None:
 
