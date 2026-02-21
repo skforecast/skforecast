@@ -306,6 +306,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                        )
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         self.window_features, self.window_features_names, self.max_size_window_features = (
             initialize_window_features(window_features)
         )
@@ -577,7 +581,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         X_data = None
         if self.lags is not None:
             y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
-            X_data = y_strided[:, self.window_size - self.lags]
+            if self.lags_are_contiguous:
+                # Basic slice → view (no copy); reversed to put lag_1 first.
+                X_data = y_strided[:, self.window_size - self.max_lag:][:, ::-1]
+            else:
+                # Non-contiguous lags require fancy indexing, which forces a copy.
+                X_data = y_strided[:, self.window_size - self.lags]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -1808,6 +1817,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             )
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         self.window_size = max(
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]

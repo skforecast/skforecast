@@ -296,6 +296,10 @@ class ForecasterRnn(ForecasterBase):
         self.lags, self.lags_names, self.max_lag = initialize_lags(
             type(self).__name__, lags
         )
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         n_lags_estimator = layer_init.output.shape[1]
         if len(self.lags) != n_lags_estimator:
             raise ValueError(
@@ -585,9 +589,14 @@ class ForecasterRnn(ForecasterBase):
         window_view = np.lib.stride_tricks.sliding_window_view(
             y[: len(y) - self.max_step], window_shape=self.window_size
         )
-        # Select only the rows we need and the specific lag columns
-        # Fancy indexing already creates a copy, no need for .astype(float, copy=True)
-        X_data = window_view[:n_rows, self.lags - 1]
+        # Select only the rows we need and the specific lag columns.
+        # RNN keeps chronological order (oldest lag first), so no reversal.
+        if self.lags_are_contiguous:
+            # Basic slice → view (no copy).
+            X_data = window_view[:n_rows, :len(self.lags)]
+        else:
+            # Non-contiguous lags require fancy indexing, which forces a copy.
+            X_data = window_view[:n_rows, self.lags - 1]
 
         # Use sliding_window_view for vectorized step creation
         y_view = np.lib.stride_tricks.sliding_window_view(

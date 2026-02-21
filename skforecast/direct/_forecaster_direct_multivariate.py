@@ -784,8 +784,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
             if data_to_return != 'y':
                 # If `data_to_return` is not 'y', it means is 'X' or 'both', X_data is created
-                lag_indices = [self.window_size - lag for lag in lags]
-                X_data = windows[:n_rows, lag_indices]
+                max_lag_local = int(lags.max())
+                if np.array_equal(lags, np.arange(1, max_lag_local + 1)):
+                    # Basic slice → view (no copy); reversed to put lag_1 first.
+                    X_data = windows[:n_rows, self.window_size - max_lag_local:self.window_size][:, ::-1]
+                else:
+                    # Non-contiguous lags require fancy indexing, which forces a copy.
+                    lag_indices = [self.window_size - lag for lag in lags]
+                    X_data = windows[:n_rows, lag_indices]
 
             if data_to_return != 'X':
                 # If `data_to_return` is not 'X', it means is 'y' or 'both', y_data is created
