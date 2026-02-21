@@ -368,6 +368,10 @@ class ForecasterDirect(ForecasterBase):
 
         self.estimators_ = {step: clone(self.estimator) for step in self.steps}
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         self.window_features, self.window_features_names, self.max_size_window_features = (
             initialize_window_features(window_features)
         )
@@ -641,8 +645,13 @@ class ForecasterDirect(ForecasterBase):
 
         X_data = None
         if self.lags is not None:
-            lag_indices = [self.window_size - lag for lag in self.lags]
-            X_data = windows[:, lag_indices]
+            if self.lags_are_contiguous:
+                # Basic slice → view (no copy); reversed to put lag_1 first.
+                X_data = windows[:, self.window_size - self.max_lag:self.window_size][:, ::-1]
+            else:
+                # Non-contiguous lags require fancy indexing, which forces a copy.
+                lag_indices = [self.window_size - lag for lag in self.lags]
+                X_data = windows[:, lag_indices]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -2480,6 +2489,10 @@ class ForecasterDirect(ForecasterBase):
             )
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         self.window_size = max(
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]
