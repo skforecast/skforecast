@@ -3,14 +3,27 @@
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import DecisionTreeRegressor
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
+from skforecast.preprocessing import RollingFeatures
 from skforecast.recursive import ForecasterRecursive
 
 # Fixtures
 from .fixtures_forecaster_recursive import y
 from .fixtures_forecaster_recursive import exog
 from .fixtures_forecaster_recursive import exog_predict
+
+
+# Subclasses with different class names to force the generic `else` prediction
+# branch in _recursive_predict_bootstrapping, used as the reference (slow) path.
+class _SlowRF(RandomForestRegressor):
+    pass
+
+
+class _SlowDT(DecisionTreeRegressor):
+    pass
 
 
 def test_recursive_predict_bootstrapping_output_with_residuals_zero():
@@ -391,3 +404,323 @@ def test_recursive_predict_bootstrapping_values_consistency():
     assert predictions.shape == (4, n_boot)
     for boot in range(n_boot):
         np.testing.assert_array_almost_equal(predictions[:, boot], expected_single_boot)
+
+
+def test_recursive_predict_bootstrapping_fast_path_RandomForestRegressor_matches_generic_path():
+    """
+    Test that the fast prediction path for RandomForestRegressor in
+    _recursive_predict_bootstrapping produces the same results as the generic
+    sklearn predict path (forced via a subclass that bypasses the fast-path
+    branch).
+    """
+    n_boot = 10
+    forecaster_fast = ForecasterRecursive(
+        RandomForestRegressor(n_estimators=10, random_state=123), lags=3
+    )
+    forecaster_fast.fit(y=y)
+
+    forecaster_slow = ForecasterRecursive(
+        _SlowRF(n_estimators=10, random_state=123), lags=3
+    )
+    forecaster_slow.fit(y=y)
+
+    last_window_values_fast, exog_values_fast, _, _ = (
+        forecaster_fast._create_predict_inputs(steps=10)
+    )
+    last_window_values_slow, exog_values_slow, _, _ = (
+        forecaster_slow._create_predict_inputs(steps=10)
+    )
+    sampled_residuals = np.zeros((10, n_boot))
+
+    predictions_fast = forecaster_fast._recursive_predict_bootstrapping(
+                           steps                = 10,
+                           last_window_values   = last_window_values_fast,
+                           exog_values          = exog_values_fast,
+                           sampled_residuals    = sampled_residuals,
+                           use_binned_residuals = False,
+                           n_boot               = n_boot
+                       )
+    predictions_slow = forecaster_slow._recursive_predict_bootstrapping(
+                           steps                = 10,
+                           last_window_values   = last_window_values_slow,
+                           exog_values          = exog_values_slow,
+                           sampled_residuals    = sampled_residuals,
+                           use_binned_residuals = False,
+                           n_boot               = n_boot
+                       )
+
+    np.testing.assert_array_almost_equal(predictions_fast, predictions_slow)
+
+
+def test_recursive_predict_bootstrapping_fast_path_RandomForestRegressor_with_exog_and_window_features():
+    """
+    Test that the fast prediction path for RandomForestRegressor in
+    _recursive_predict_bootstrapping matches the generic sklearn path when exog
+    and window features are used.
+    """
+    n_boot = 10
+    rolling = RollingFeatures(stats=['mean', 'std'], window_sizes=4)
+
+    forecaster_fast = ForecasterRecursive(
+        RandomForestRegressor(n_estimators=10, random_state=123),
+        lags=3,
+        window_features=rolling
+    )
+    forecaster_fast.fit(y=y, exog=exog)
+
+    forecaster_slow = ForecasterRecursive(
+        _SlowRF(n_estimators=10, random_state=123),
+        lags=3,
+        window_features=rolling
+    )
+    forecaster_slow.fit(y=y, exog=exog)
+
+    last_window_values_fast, exog_values_fast, _, _ = (
+        forecaster_fast._create_predict_inputs(steps=10, exog=exog_predict)
+    )
+    last_window_values_slow, exog_values_slow, _, _ = (
+        forecaster_slow._create_predict_inputs(steps=10, exog=exog_predict)
+    )
+    sampled_residuals = np.zeros((10, n_boot))
+
+    predictions_fast = forecaster_fast._recursive_predict_bootstrapping(
+                           steps                = 10,
+                           last_window_values   = last_window_values_fast,
+                           exog_values          = exog_values_fast,
+                           sampled_residuals    = sampled_residuals,
+                           use_binned_residuals = False,
+                           n_boot               = n_boot
+                       )
+    predictions_slow = forecaster_slow._recursive_predict_bootstrapping(
+                           steps                = 10,
+                           last_window_values   = last_window_values_slow,
+                           exog_values          = exog_values_slow,
+                           sampled_residuals    = sampled_residuals,
+                           use_binned_residuals = False,
+                           n_boot               = n_boot
+                       )
+
+    np.testing.assert_array_almost_equal(predictions_fast, predictions_slow)
+
+
+def test_recursive_predict_bootstrapping_fast_path_DecisionTreeRegressor_matches_generic_path():
+    """
+    Test that the fast prediction path for DecisionTreeRegressor in
+    _recursive_predict_bootstrapping produces the same results as the generic
+    sklearn predict path (forced via a subclass that bypasses the fast-path
+    branch).
+    """
+    n_boot = 10
+    forecaster_fast = ForecasterRecursive(
+        DecisionTreeRegressor(random_state=123), lags=3
+    )
+    forecaster_fast.fit(y=y)
+
+    forecaster_slow = ForecasterRecursive(
+        _SlowDT(random_state=123), lags=3
+    )
+    forecaster_slow.fit(y=y)
+
+    last_window_values_fast, exog_values_fast, _, _ = (
+        forecaster_fast._create_predict_inputs(steps=10)
+    )
+    last_window_values_slow, exog_values_slow, _, _ = (
+        forecaster_slow._create_predict_inputs(steps=10)
+    )
+    sampled_residuals = np.zeros((10, n_boot))
+
+    predictions_fast = forecaster_fast._recursive_predict_bootstrapping(
+                           steps                = 10,
+                           last_window_values   = last_window_values_fast,
+                           exog_values          = exog_values_fast,
+                           sampled_residuals    = sampled_residuals,
+                           use_binned_residuals = False,
+                           n_boot               = n_boot
+                       )
+    predictions_slow = forecaster_slow._recursive_predict_bootstrapping(
+                           steps                = 10,
+                           last_window_values   = last_window_values_slow,
+                           exog_values          = exog_values_slow,
+                           sampled_residuals    = sampled_residuals,
+                           use_binned_residuals = False,
+                           n_boot               = n_boot
+                       )
+
+    np.testing.assert_array_almost_equal(predictions_fast, predictions_slow)
+
+
+def test_recursive_predict_bootstrapping_fast_path_DecisionTreeRegressor_with_exog_and_window_features():
+    """
+    Test that the fast prediction path for DecisionTreeRegressor in
+    _recursive_predict_bootstrapping matches the generic sklearn path when exog
+    and window features are used.
+    """
+    n_boot = 10
+    rolling = RollingFeatures(stats=['mean', 'std'], window_sizes=4)
+
+    forecaster_fast = ForecasterRecursive(
+        DecisionTreeRegressor(random_state=123),
+        lags=3,
+        window_features=rolling
+    )
+    forecaster_fast.fit(y=y, exog=exog)
+
+    forecaster_slow = ForecasterRecursive(
+        _SlowDT(random_state=123),
+        lags=3,
+        window_features=rolling
+    )
+    forecaster_slow.fit(y=y, exog=exog)
+
+    last_window_values_fast, exog_values_fast, _, _ = (
+        forecaster_fast._create_predict_inputs(steps=10, exog=exog_predict)
+    )
+    last_window_values_slow, exog_values_slow, _, _ = (
+        forecaster_slow._create_predict_inputs(steps=10, exog=exog_predict)
+    )
+    sampled_residuals = np.zeros((10, n_boot))
+
+    predictions_fast = forecaster_fast._recursive_predict_bootstrapping(
+                           steps                = 10,
+                           last_window_values   = last_window_values_fast,
+                           exog_values          = exog_values_fast,
+                           sampled_residuals    = sampled_residuals,
+                           use_binned_residuals = False,
+                           n_boot               = n_boot
+                       )
+    predictions_slow = forecaster_slow._recursive_predict_bootstrapping(
+                           steps                = 10,
+                           last_window_values   = last_window_values_slow,
+                           exog_values          = exog_values_slow,
+                           sampled_residuals    = sampled_residuals,
+                           use_binned_residuals = False,
+                           n_boot               = n_boot
+                       )
+
+    np.testing.assert_array_almost_equal(predictions_fast, predictions_slow)
+
+
+def test_recursive_predict_bootstrapping_fast_path_RandomForestRegressor_with_binned_residuals():
+    """
+    Test that the fast prediction path for RandomForestRegressor in
+    _recursive_predict_bootstrapping produces the same results as the generic
+    sklearn predict path when use_binned_residuals=True.
+    """
+    rng = np.random.default_rng(12345)
+    steps = 10
+    n_boot = 5
+
+    forecaster_fast = ForecasterRecursive(
+        RandomForestRegressor(n_estimators=10, random_state=123), lags=3
+    )
+    forecaster_fast.fit(y=y, exog=exog, store_in_sample_residuals=True)
+
+    forecaster_slow = ForecasterRecursive(
+        _SlowRF(n_estimators=10, random_state=123), lags=3
+    )
+    forecaster_slow.fit(y=y, exog=exog, store_in_sample_residuals=True)
+
+    last_window_values_fast, exog_values_fast, _, _ = (
+        forecaster_fast._create_predict_inputs(steps=steps, exog=exog_predict)
+    )
+    last_window_values_slow, exog_values_slow, _, _ = (
+        forecaster_slow._create_predict_inputs(steps=steps, exog=exog_predict)
+    )
+
+    # Create 3D array with sampled residuals: (n_bins, steps, n_boot)
+    n_bins = len(forecaster_fast.in_sample_residuals_by_bin_)
+    sampled_residuals = np.stack(
+        [
+            forecaster_fast.in_sample_residuals_by_bin_[k][
+                rng.integers(
+                    low=0,
+                    high=len(forecaster_fast.in_sample_residuals_by_bin_[k]),
+                    size=(steps, n_boot),
+                )
+            ]
+            for k in range(n_bins)
+        ],
+        axis=0,
+    )
+
+    predictions_fast = forecaster_fast._recursive_predict_bootstrapping(
+                           steps                = steps,
+                           last_window_values   = last_window_values_fast,
+                           exog_values          = exog_values_fast,
+                           sampled_residuals    = sampled_residuals,
+                           use_binned_residuals = True,
+                           n_boot               = n_boot
+                       )
+    predictions_slow = forecaster_slow._recursive_predict_bootstrapping(
+                           steps                = steps,
+                           last_window_values   = last_window_values_slow,
+                           exog_values          = exog_values_slow,
+                           sampled_residuals    = sampled_residuals,
+                           use_binned_residuals = True,
+                           n_boot               = n_boot
+                       )
+
+    np.testing.assert_array_almost_equal(predictions_fast, predictions_slow)
+
+
+def test_recursive_predict_bootstrapping_fast_path_DecisionTreeRegressor_with_binned_residuals():
+    """
+    Test that the fast prediction path for DecisionTreeRegressor in
+    _recursive_predict_bootstrapping produces the same results as the generic
+    sklearn predict path when use_binned_residuals=True.
+    """
+    rng = np.random.default_rng(12345)
+    steps = 10
+    n_boot = 5
+
+    forecaster_fast = ForecasterRecursive(
+        DecisionTreeRegressor(random_state=123), lags=3
+    )
+    forecaster_fast.fit(y=y, exog=exog, store_in_sample_residuals=True)
+
+    forecaster_slow = ForecasterRecursive(
+        _SlowDT(random_state=123), lags=3
+    )
+    forecaster_slow.fit(y=y, exog=exog, store_in_sample_residuals=True)
+
+    last_window_values_fast, exog_values_fast, _, _ = (
+        forecaster_fast._create_predict_inputs(steps=steps, exog=exog_predict)
+    )
+    last_window_values_slow, exog_values_slow, _, _ = (
+        forecaster_slow._create_predict_inputs(steps=steps, exog=exog_predict)
+    )
+
+    # Create 3D array with sampled residuals: (n_bins, steps, n_boot)
+    n_bins = len(forecaster_fast.in_sample_residuals_by_bin_)
+    sampled_residuals = np.stack(
+        [
+            forecaster_fast.in_sample_residuals_by_bin_[k][
+                rng.integers(
+                    low=0,
+                    high=len(forecaster_fast.in_sample_residuals_by_bin_[k]),
+                    size=(steps, n_boot),
+                )
+            ]
+            for k in range(n_bins)
+        ],
+        axis=0,
+    )
+
+    predictions_fast = forecaster_fast._recursive_predict_bootstrapping(
+                           steps                = steps,
+                           last_window_values   = last_window_values_fast,
+                           exog_values          = exog_values_fast,
+                           sampled_residuals    = sampled_residuals,
+                           use_binned_residuals = True,
+                           n_boot               = n_boot
+                       )
+    predictions_slow = forecaster_slow._recursive_predict_bootstrapping(
+                           steps                = steps,
+                           last_window_values   = last_window_values_slow,
+                           exog_values          = exog_values_slow,
+                           sampled_residuals    = sampled_residuals,
+                           use_binned_residuals = True,
+                           n_boot               = n_boot
+                       )
+
+    np.testing.assert_array_almost_equal(predictions_fast, predictions_slow)
