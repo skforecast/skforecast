@@ -7,8 +7,7 @@
 
 Whether you're exploring data, prototyping models, or generating deployment-ready code, Skforecast Studio helps you go from raw time series to forecasting pipeline in minutes, no coding required.
 
-
-<p align="center">
+<p style="text-align: center">
   <img src="../img/skforecast-studio-screen.png" alt="Skforecast Studio" width="750">
 </p>
 
