@@ -1374,7 +1374,11 @@ class ForecasterRecursive(ForecasterBase):
         for i in range(steps):
 
             if has_lags:
-                X[:n_lags] = last_window[-self.lags - (steps - i)]
+                if self.lags_are_contiguous:
+                    offset = steps - i
+                    X[:n_lags] = last_window[-(offset + n_lags): -offset][::-1]
+                else:
+                    X[:n_lags] = last_window[-self.lags - (steps - i)]
             if has_window_features:
                 window_data = last_window[i : -(steps - i)]
                 X[n_lags : n_lags + n_window_features] = np.concatenate(
@@ -1503,8 +1507,12 @@ class ForecasterRecursive(ForecasterBase):
         for i in range(steps):
 
             if has_lags:
-                for j, lag in enumerate(self.lags):
-                    X[:, j] = last_window[-(lag + steps - i), :]
+                if self.lags_are_contiguous:
+                    offset = steps - i
+                    X[:, :n_lags] = last_window[-(offset + n_lags): -offset, :][::-1].T
+                else:
+                    for j, lag in enumerate(self.lags):
+                        X[:, j] = last_window[-(lag + steps - i), :]
             
             if has_window_features:
                 window_data = last_window[:-(steps - i), :]

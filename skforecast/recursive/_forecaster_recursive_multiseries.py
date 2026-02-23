@@ -2344,9 +2344,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         for i in range(steps):
 
             if has_lags:
-                features[:, :n_lags] = last_window[
-                    -self.lags - (steps - i), :
-                ].transpose()
+                if self.lags_are_contiguous:
+                    offset = steps - i
+                    features[:, :n_lags] = last_window[-(offset + n_lags): -offset, :][::-1].T
+                else:
+                    features[:, :n_lags] = last_window[-self.lags - (steps - i), :].transpose()
             if has_window_features:
                 window_data = last_window[i:-(steps - i), :]
                 features[:, n_lags:n_autoreg] = np.concatenate(
@@ -2523,9 +2525,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         for step in range(steps):
 
             if has_lags:
-                lags_indices = window_size + step - self.lags
-                # lagged_values shape: (n_lags, n_boot, n_levels)
-                lagged_values = last_window_boot[lags_indices, :, :]
+                if self.lags_are_contiguous:
+                    # Slice avoids the fancy-index allocation; [::-1] reverses to
+                    # put lag_1 (most-recent) first, matching the column ordering.
+                    lagged_values = last_window_boot[
+                        window_size + step - n_lags: window_size + step, :, :
+                    ][::-1, :, :]
+                else:
+                    # lagged_values shape: (n_lags, n_boot, n_levels)
+                    lags_indices = window_size + step - self.lags
+                    lagged_values = last_window_boot[lags_indices, :, :]
                 # Reshape to (n_boot x n_levels, n_lags) with correct row ordering
                 features[:, :n_lags] = lagged_values.transpose(1, 2, 0).reshape(n_samples, n_lags)
 
