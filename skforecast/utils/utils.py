@@ -1701,7 +1701,8 @@ def transform_numpy(
     array: np.ndarray,
     transformer: object | None,
     fit: bool = False,
-    inverse_transform: bool = False
+    inverse_transform: bool = False,
+    force_single_column: bool = False
 ) -> np.ndarray:
     """
     Transform raw values of a numpy ndarray with a scikit-learn alike 
@@ -1722,6 +1723,9 @@ def transform_numpy(
     inverse_transform : bool, default False
         Transform back the data to the original representation. This is not available
         when using transformers of class scikit-learn ColumnTransformers.
+    force_single_column : bool, default False
+        If `True`, raise an error if the transformer generates more than one
+        column. This ensures that the output array is always 1D or single-column.
 
     Returns
     -------
@@ -1756,12 +1760,7 @@ def transform_numpy(
             message="X does not have valid feature names", 
             category=UserWarning
         )
-        if not inverse_transform:
-            if fit:
-                array_transformed = transformer.fit_transform(array)
-            else:
-                array_transformed = transformer.transform(array)
-        else:
+        if inverse_transform:
             # Vectorized inverse transformation for 2D arrays with multiple columns.
             # Reshape to single column, transform, and reshape back.
             # This is faster than applying the transformer column by column.
@@ -1769,6 +1768,10 @@ def transform_numpy(
                 array = array.reshape(-1, 1)
                 reshaped_for_inverse = True
             array_transformed = transformer.inverse_transform(array)
+        elif fit:
+            array_transformed = transformer.fit_transform(array)
+        else:
+            array_transformed = transformer.transform(array)
 
     if hasattr(array_transformed, 'toarray'):
         # If the returned values are in sparse matrix format, it is converted to dense
@@ -1776,6 +1779,15 @@ def transform_numpy(
 
     if isinstance(array_transformed, (pd.Series, pd.DataFrame)):
         array_transformed = array_transformed.to_numpy()
+
+    if force_single_column and array_transformed.ndim > 1 and array_transformed.shape[1] > 1:
+        raise ValueError(
+            f"`transformer_y` and `transformer_series` must return a single column. "
+            f"The transformer generated {array_transformed.shape[1]} columns. "
+            f"Transformers that expand target series into multiple feature "
+            f"columns are not supported; use `window_features` or pass "
+            f"those features through `exog` instead."
+        )
 
     # Reshape back to original shape only if we reshaped for inverse_transform
     if reshaped_for_inverse:
@@ -1791,7 +1803,8 @@ def transform_series(
     series: pd.Series,
     transformer: object | None,
     fit: bool = False,
-    inverse_transform: bool = False
+    inverse_transform: bool = False,
+    force_single_column: bool = False
 ) -> pd.Series | pd.DataFrame:
     """
     Transform raw values of pandas Series with a scikit-learn alike 
@@ -1812,6 +1825,9 @@ def transform_series(
     inverse_transform : bool, default False
         Transform back the data to the original representation. This is not available
         when using transformers of class scikit-learn ColumnTransformers.
+    force_single_column : bool, default False
+        If `True`, raise an error if the transformer generates more than one
+        column. This ensures that the output is always a pandas Series.
 
     Returns
     -------
@@ -1829,17 +1845,12 @@ def transform_series(
     if transformer is None:
         return series
 
-    if series.name is None:
-        series.name = 'no_name'
-        
-    data = series.to_frame()
-
-    if fit and hasattr(transformer, 'fit'):
-        transformer.fit(data)
+    series_name = series.name if series.name is not None else 'no_name'
+    data = series.to_frame(name=series_name)
 
     # If argument feature_names_in_ exits, is overwritten to allow using the 
     # transformer on other series than those that were passed during fit.
-    if hasattr(transformer, 'feature_names_in_') and transformer.feature_names_in_[0] != data.columns[0]:
+    if not fit and hasattr(transformer, 'feature_names_in_') and transformer.feature_names_in_[0] != data.columns[0]:
         transformer = deepcopy(transformer)
         transformer.feature_names_in_ = np.array([data.columns[0]], dtype=object)
 
@@ -1847,6 +1858,8 @@ def transform_series(
         warnings.simplefilter("ignore", category=UserWarning)
         if inverse_transform:
             values_transformed = transformer.inverse_transform(data)
+        elif fit:
+            values_transformed = transformer.fit_transform(data)
         else:
             values_transformed = transformer.transform(data)   
 
@@ -1863,10 +1876,25 @@ def transform_series(
     elif isinstance(values_transformed, pd.DataFrame) and values_transformed.shape[1] == 1:
         series_transformed = values_transformed.squeeze()
     else:
+        if force_single_column:
+            raise ValueError(
+                f"`transformer_y` and `transformer_series` must return a single column. "
+                f"The transformer generated {values_transformed.shape[1]} columns. "
+                f"Transformers that expand target series into multiple feature "
+                f"columns are not supported; use `window_features` or pass "
+                f"those features through `exog` instead."
+            )
+        if hasattr(transformer, 'get_feature_names_out'):
+            feature_names_out = transformer.get_feature_names_out()
+            if len(feature_names_out) != values_transformed.shape[1]:
+                feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
+        else:
+            feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
+
         series_transformed = pd.DataFrame(
                                  data    = values_transformed,
                                  index   = data.index,
-                                 columns = transformer.get_feature_names_out()
+                                 columns = feature_names_out
                              )
 
     return series_transformed
@@ -1876,7 +1904,8 @@ def transform_dataframe(
     df: pd.DataFrame,
     transformer: object | None,
     fit: bool = False,
-    inverse_transform: bool = False
+    inverse_transform: bool = False,
+    force_single_column: bool = False
 ) -> pd.DataFrame:
     """
     Transform raw values of pandas DataFrame with a scikit-learn alike 
@@ -1897,6 +1926,9 @@ def transform_dataframe(
     inverse_transform : bool, default False
         Transform back the data to the original representation. This is not available
         when using transformers of class scikit-learn ColumnTransformers.
+    force_single_column : bool, default False
+        If `True`, raise an error if the transformer generates more than one
+        column. This ensures that the output DataFrame has a single column.
 
     Returns
     -------
@@ -1918,38 +1950,46 @@ def transform_dataframe(
             "`inverse_transform` is not available when using ColumnTransformers."
         )
  
-    if not inverse_transform:
-        if fit:
-            values_transformed = transformer.fit_transform(df)
-        else:
-            values_transformed = transformer.transform(df)
-    else:
+    if inverse_transform:
         values_transformed = transformer.inverse_transform(df)
+    elif fit:
+        values_transformed = transformer.fit_transform(df)
+    else:
+        values_transformed = transformer.transform(df)
 
     if hasattr(values_transformed, 'toarray'):
         # If the returned values are in sparse matrix format, it is converted to dense
         values_transformed = values_transformed.toarray()
 
-    if hasattr(transformer, 'get_feature_names_out'):
-        feature_names_out = transformer.get_feature_names_out()
-    elif hasattr(transformer, 'categories_'):   
-        feature_names_out = transformer.categories_
+    if isinstance(values_transformed, pd.DataFrame):
+        df_transformed = values_transformed
     else:
-        feature_names_out = df.columns
+        values_transformed = np.asarray(values_transformed)
+        if values_transformed.ndim == 1:
+            values_transformed = values_transformed.reshape(-1, 1)
 
-    values_transformed = np.asarray(values_transformed)
-    if values_transformed.ndim == 1:
-        values_transformed = values_transformed.reshape(-1, 1)
+        feature_names_out = (
+            transformer.get_feature_names_out()
+            if hasattr(transformer, 'get_feature_names_out')
+            else df.columns
+        )
+        if len(feature_names_out) != values_transformed.shape[1]:
+            feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
 
-    n_features_out = values_transformed.shape[1]
-    if len(feature_names_out) != n_features_out:
-        feature_names_out = [f'{df.columns[0]}_{i}' for i in range(n_features_out)]
+        df_transformed = pd.DataFrame(
+                             data    = values_transformed,
+                             index   = df.index,
+                             columns = feature_names_out
+                         )
 
-    df_transformed = pd.DataFrame(
-                         data    = values_transformed,
-                         index   = df.index,
-                         columns = feature_names_out
-                     )
+    if force_single_column and df_transformed.shape[1] > 1:
+        raise ValueError(
+            f"`transformer_y` and `transformer_series` must return a single column. "
+            f"The transformer generated {df_transformed.shape[1]} columns. "
+            f"Transformers that expand target series into multiple feature "
+            f"columns are not supported; use `window_features` or pass "
+            f"those features through `exog` instead."
+        )
 
     return df_transformed
 

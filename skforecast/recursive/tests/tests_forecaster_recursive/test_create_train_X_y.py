@@ -697,26 +697,6 @@ def test_create_train_X_y_output_when_exog_is_None_and_transformer_exog_is_not_N
     assert isinstance(results[7], type(None))
 
 
-def test_create_train_X_y_ValueError_when_transformer_y_returns_multiple_columns():
-    """
-    Test ValueError is raised when `transformer_y` expands `y` into multiple columns.
-    """
-    y = pd.Series(np.arange(10), name='y', dtype=float)
-    transformer_y = FunctionTransformer(lambda X: np.c_[X, X**2], validate=False)
-    forecaster = ForecasterRecursive(
-        LinearRegression(), lags=3, transformer_y=transformer_y
-    )
-
-    err_msg = re.escape(
-        "`transformer_y` must return a single column. "
-        "Transformers that expand `y` into multiple feature columns are "
-        "not supported in `transformer_y`; use `window_features` or pass "
-        "those features through `exog` instead."
-    )
-    with pytest.raises(ValueError, match=err_msg):
-        forecaster._create_train_X_y(y=y)
-
-
 def test_create_train_X_y_output_when_transformer_y_and_transformer_exog():
     """
     Test the output of _create_train_X_y when using transformer_y and transformer_exog.

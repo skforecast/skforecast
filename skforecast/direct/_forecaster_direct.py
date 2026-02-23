@@ -782,18 +782,13 @@ class ForecasterDirect(ForecasterBase):
 
         fit_transformer = False if self.is_fitted else True
         y = transform_dataframe(
-                df                = y, 
-                transformer       = self.transformer_y,
-                fit               = fit_transformer,
-                inverse_transform = False,
+                df                  = y, 
+                transformer         = self.transformer_y,
+                fit                 = fit_transformer,
+                inverse_transform   = False,
+                force_single_column = True
             )
-        if y.shape[1] != 1:
-            raise ValueError(
-                "`transformer_y` must return a single column. "
-                "Transformers that expand `y` into multiple feature columns are "
-                "not supported in `transformer_y`; use `window_features` or pass "
-                "those features through `exog` instead."
-            )
+        
         y_values, y_index = check_extract_values_and_index(data=y, data_label='`y`')
 
         if self.differentiation is not None:

@@ -1053,10 +1053,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 raise ValueError(f"Column '{col}' has missing values.")
 
             y_values = transform_numpy(
-                           array             = y_values,
-                           transformer       = self.transformer_series_[col],
-                           fit               = fit_transformer,
-                           inverse_transform = False
+                           array               = y_values,
+                           transformer         = self.transformer_series_[col],
+                           fit                 = fit_transformer,
+                           inverse_transform   = False,
+                           force_single_column = True
                        )
 
             if self.differentiation is not None:

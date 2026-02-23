@@ -930,10 +930,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         y_index = y.index
 
         y_values = transform_numpy(
-                       array             = y_values,
-                       transformer       = transformer_series,
-                       fit               = fit_transformer,
-                       inverse_transform = False
+                       array               = y_values,
+                       transformer         = transformer_series,
+                       fit                 = fit_transformer,
+                       inverse_transform   = False,
+                       force_single_column = True
                    )
 
         if self.differentiator_[series_name] is not None:

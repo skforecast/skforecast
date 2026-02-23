@@ -720,6 +720,7 @@ class ForecasterRnn(ForecasterBase):
                 transformer=self.transformer_series_[serie],
                 fit=fit_transformer,
                 inverse_transform=False,
+                force_single_column=True
             )
             X, y_steps = self._create_lags(x)
             X_train.append(X)
