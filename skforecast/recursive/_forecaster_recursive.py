@@ -1312,6 +1312,12 @@ class ForecasterRecursive(ForecasterBase):
         """
         Predict n steps ahead. It is an iterative process in which, each prediction,
         is used as a predictor for the next step.
+
+        Fast prediction paths (bypassing sklearn's predict overhead) are used for
+        the following estimators: linear models inheriting from sklearn's
+        `LinearModel` (np.dot), `LGBMRegressor` (booster.predict),
+        `XGBRegressor` (booster.inplace_predict), `RandomForestRegressor` and
+        `DecisionTreeRegressor` (tree_.predict).
         
         Parameters
         ----------
@@ -1387,12 +1393,12 @@ class ForecasterRecursive(ForecasterBase):
             elif is_xgboost:
                 pred = booster.inplace_predict(X.reshape(1, -1))
             elif is_rf:
-                X_f32 = np.ascontiguousarray(X.reshape(1, -1), dtype=np.float32)
+                X_f32 = X.reshape(1, -1).astype(np.float32)
                 preds = [tree.tree_.predict(X_f32).item() for tree in self.estimator.estimators_]
                 pred = np.mean(preds)
             elif is_dt:
-                X_f32 = np.ascontiguousarray(X.reshape(1, -1), dtype=np.float32)
-                pred = self.estimator.tree_.predict(X_f32).item()
+                X_f32 = X.reshape(1, -1).astype(np.float32)
+                pred = self.estimator.tree_.predict(X_f32)
             else:
                 pred = self.estimator.predict(X.reshape(1, -1)).ravel()
             
@@ -1420,6 +1426,12 @@ class ForecasterRecursive(ForecasterBase):
         Vectorized bootstrap prediction - predict all n_boot iterations per step.
         Instead of running n_boot sequential predictions, this method predicts 
         all bootstrap samples at once per step, significantly reducing overhead.
+
+        Fast prediction paths (bypassing sklearn's predict overhead) are used for
+        the following estimators: linear models inheriting from sklearn's
+        `LinearModel` (np.dot), `LGBMRegressor` (booster.predict),
+        `XGBRegressor` (booster.inplace_predict), `RandomForestRegressor` and
+        `DecisionTreeRegressor` (tree_.predict).
         
         Parameters
         ----------
@@ -1473,6 +1485,8 @@ class ForecasterRecursive(ForecasterBase):
         is_linear = isinstance(self.estimator, LinearModel)
         is_lightgbm = estimator_name == 'LGBMRegressor'
         is_xgboost = estimator_name == 'XGBRegressor'
+        is_rf = estimator_name == 'RandomForestRegressor'
+        is_dt = estimator_name == 'DecisionTreeRegressor'
         
         if is_linear:
             coef = self.estimator.coef_
@@ -1510,6 +1524,13 @@ class ForecasterRecursive(ForecasterBase):
                 pred = booster.predict(X)
             elif is_xgboost:
                 pred = booster.inplace_predict(X)
+            elif is_rf:
+                X_f32 = X.astype(np.float32)
+                preds = [tree.tree_.predict(X_f32)[:, 0] for tree in self.estimator.estimators_]
+                pred = np.mean(preds, axis=0)
+            elif is_dt:
+                X_f32 = X.astype(np.float32)
+                pred = self.estimator.tree_.predict(X_f32)[:, 0]
             else:
                 pred = self.estimator.predict(X).ravel()
             

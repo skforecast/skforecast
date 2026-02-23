@@ -2254,6 +2254,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Predict n steps for one or multiple levels. It is an iterative process
         in which, each prediction, is used as a predictor for the next step.
 
+        Fast prediction paths (bypassing sklearn's predict overhead) are used for
+        the following estimators: linear models inheriting from sklearn's
+        `LinearModel` (np.dot), `LGBMRegressor` (booster.predict),
+        `XGBRegressor` (booster.inplace_predict), `RandomForestRegressor` and
+        `DecisionTreeRegressor` (tree_.predict).
+
         Parameters
         ----------
         steps : int
@@ -2320,6 +2326,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         is_linear = isinstance(self.estimator, LinearModel)
         is_lightgbm = estimator_name == 'LGBMRegressor'
         is_xgboost = estimator_name == 'XGBRegressor'
+        is_rf = estimator_name == 'RandomForestRegressor'
+        is_dt = estimator_name == 'DecisionTreeRegressor'
 
         if is_linear:
             coef = self.estimator.coef_
@@ -2357,6 +2365,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 pred = booster.predict(features)
             elif is_xgboost:
                 pred = booster.inplace_predict(features)
+            elif is_rf:
+                X_f32 = features.astype(np.float32)
+                preds = [tree.tree_.predict(X_f32)[:, 0] for tree in self.estimator.estimators_]
+                pred = np.mean(preds, axis=0)
+            elif is_dt:
+                X_f32 = features.astype(np.float32)
+                pred = self.estimator.tree_.predict(X_f32)[:, 0]
             else:
                 pred = self.estimator.predict(features)
 
@@ -2390,6 +2405,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         method predicts all (n_levels x n_boot) samples at once per step. This
         reduces the number of `estimator.predict()` calls from (n_boot x steps)
         to just (steps), providing significant performance improvements.
+
+        Fast prediction paths (bypassing sklearn's predict overhead) are used for
+        the following estimators: linear models inheriting from sklearn's
+        `LinearModel` (np.dot), `LGBMRegressor` (booster.predict),
+        `XGBRegressor` (booster.inplace_predict), `RandomForestRegressor` and
+        `DecisionTreeRegressor` (tree_.predict).
 
         Parameters
         ----------
@@ -2484,6 +2505,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         is_linear = isinstance(self.estimator, LinearModel)
         is_lightgbm = estimator_name == 'LGBMRegressor'
         is_xgboost = estimator_name == 'XGBRegressor'
+        is_rf = estimator_name == 'RandomForestRegressor'
+        is_dt = estimator_name == 'DecisionTreeRegressor'
 
         if is_linear:
             coef = self.estimator.coef_
@@ -2527,6 +2550,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 pred = booster.predict(features)
             elif is_xgboost:
                 pred = booster.inplace_predict(features)
+            elif is_rf:
+                X_f32 = features.astype(np.float32)
+                preds = [tree.tree_.predict(X_f32)[:, 0] for tree in self.estimator.estimators_]
+                pred = np.mean(preds, axis=0)
+            elif is_dt:
+                X_f32 = features.astype(np.float32)
+                pred = self.estimator.tree_.predict(X_f32)[:, 0]
             else:
                 pred = self.estimator.predict(features)
 
