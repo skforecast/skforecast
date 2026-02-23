@@ -8,6 +8,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import FunctionTransformer
 from skforecast.exceptions import MissingValuesWarning
 from skforecast.preprocessing import TimeSeriesDifferentiator
 from skforecast.preprocessing import RollingFeatures
@@ -694,6 +695,26 @@ def test_create_train_X_y_output_when_exog_is_None_and_transformer_exog_is_not_N
     assert results[5] == expected[5]
     assert isinstance(results[6], type(None))
     assert isinstance(results[7], type(None))
+
+
+def test_create_train_X_y_ValueError_when_transformer_y_returns_multiple_columns():
+    """
+    Test ValueError is raised when `transformer_y` expands `y` into multiple columns.
+    """
+    y = pd.Series(np.arange(10), name='y', dtype=float)
+    transformer_y = FunctionTransformer(lambda X: np.c_[X, X**2], validate=False)
+    forecaster = ForecasterRecursive(
+        LinearRegression(), lags=3, transformer_y=transformer_y
+    )
+
+    err_msg = re.escape(
+        "`transformer_y` must return a single column. "
+        "Transformers that expand `y` into multiple feature columns are "
+        "not supported in `transformer_y`; use `window_features` or pass "
+        "those features through `exog` instead."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster._create_train_X_y(y=y)
 
 
 def test_create_train_X_y_output_when_transformer_y_and_transformer_exog():

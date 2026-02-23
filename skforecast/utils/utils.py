@@ -1937,6 +1937,14 @@ def transform_dataframe(
     else:
         feature_names_out = df.columns
 
+    values_transformed = np.asarray(values_transformed)
+    if values_transformed.ndim == 1:
+        values_transformed = values_transformed.reshape(-1, 1)
+
+    n_features_out = values_transformed.shape[1]
+    if len(feature_names_out) != n_features_out:
+        feature_names_out = [f'{df.columns[0]}_{i}' for i in range(n_features_out)]
+
     df_transformed = pd.DataFrame(
                          data    = values_transformed,
                          index   = df.index,
