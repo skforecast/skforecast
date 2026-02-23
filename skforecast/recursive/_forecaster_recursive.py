@@ -1352,6 +1352,8 @@ class ForecasterRecursive(ForecasterBase):
         is_linear = isinstance(self.estimator, LinearModel)
         is_lightgbm = estimator_name == 'LGBMRegressor'
         is_xgboost = estimator_name == 'XGBRegressor'
+        is_rf = estimator_name == 'RandomForestRegressor'
+        is_dt = estimator_name == 'DecisionTreeRegressor'
         
         if is_linear:
             coef = self.estimator.coef_
@@ -1386,6 +1388,13 @@ class ForecasterRecursive(ForecasterBase):
                 pred = booster.predict(X.reshape(1, -1))
             elif is_xgboost:
                 pred = booster.inplace_predict(X.reshape(1, -1))
+            elif is_rf:
+                X_f32 = np.ascontiguousarray(X.reshape(1, -1), dtype=np.float32)
+                preds = [tree.tree_.predict(X_f32).item() for tree in self.estimator.estimators_]
+                pred = np.mean(preds)
+            elif is_dt:
+                X_f32 = np.ascontiguousarray(X.reshape(1, -1), dtype=np.float32)
+                pred = self.estimator.tree_.predict(X_f32).item()
             else:
                 pred = self.estimator.predict(X.reshape(1, -1)).ravel()
             
