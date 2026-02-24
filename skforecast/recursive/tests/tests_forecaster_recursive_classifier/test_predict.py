@@ -25,6 +25,32 @@ from .fixtures_forecaster_recursive_classifier import y, y_dt
 from .fixtures_forecaster_recursive_classifier import exog, exog_dt, exog_predict, exog_dt_predict
 
 
+def test_predict_does_not_modify_y_exog():
+    """
+    Test forecaster.predict does not modify y, exog, exog_predict or last_window.
+    """
+    last_window = y.iloc[-4:].copy()
+
+    y_copy = y.copy()
+    exog_copy = exog.copy()
+    last_window_copy = last_window.copy()
+    exog_predict_copy = exog_predict.copy()
+
+    forecaster = ForecasterRecursiveClassifier(
+        estimator=LogisticRegression(),
+        lags=3,
+        window_features=RollingFeaturesClassification(stats=['proportion'], window_sizes=4),
+        transformer_exog=StandardScaler(),
+    )
+    forecaster.fit(y=y, exog=exog)
+    _ = forecaster.predict(steps=5, exog=exog_predict, last_window=last_window)
+
+    pd.testing.assert_series_equal(y, y_copy)
+    pd.testing.assert_series_equal(exog, exog_copy)
+    pd.testing.assert_series_equal(last_window, last_window_copy)
+    pd.testing.assert_series_equal(exog_predict, exog_predict_copy)
+
+
 def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.

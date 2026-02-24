@@ -37,6 +37,38 @@ transformer_exog = ColumnTransformer(
                    )
 
 
+def test_predict_does_not_modify_series_exog():
+    """
+    Test forecaster.predict does not modify series, exog, exog_predict or
+    last_window.
+    """
+
+    last_window = series.iloc[-4:].copy()
+
+    series_copy = series.copy()
+    exog_copy = exog.copy()
+    last_window_copy = last_window.copy()
+    exog_predict_copy = exog_predict.copy()
+
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(),
+        level='l1',
+        lags=3,
+        steps=2,
+        window_features=RollingFeatures(stats=['mean'], window_sizes=3),
+        transformer_series=StandardScaler(),
+        transformer_exog=transformer_exog,
+        differentiation=1,
+    )
+    forecaster.fit(series=series, exog=exog)
+    _ = forecaster.predict(steps=2, exog=exog_predict, last_window=last_window)
+
+    pd.testing.assert_frame_equal(series, series_copy)
+    pd.testing.assert_frame_equal(exog, exog_copy)
+    pd.testing.assert_frame_equal(last_window, last_window_copy)
+    pd.testing.assert_frame_equal(exog_predict, exog_predict_copy)
+
+
 @pytest.mark.parametrize("steps", [[1, 2.0, 3], [1, 4.]], 
                          ids=lambda steps: f'steps: {steps}')
 def test_predict_TypeError_when_steps_list_contain_floats(steps):

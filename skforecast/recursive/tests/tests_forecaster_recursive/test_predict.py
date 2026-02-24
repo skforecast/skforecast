@@ -144,6 +144,46 @@ def test_predict_output_when_with_transform_y_and_transform_exog():
     pd.testing.assert_series_equal(predictions, expected)
 
 
+def test_predict_does_not_modify_y_exog():
+    """
+    Test forecaster.predict does not modify y and exog.
+    """
+    y = pd.Series(np.array([-0.59, 0.02, -0.9, 1.09, -3.61, 0.72, -0.11, -0.4]))
+    exog = pd.DataFrame({
+        'col_1': [7.5, 24.4, 60.3, 57.3, 50.7, 41.4, 87.2, 47.4],
+        'col_2': ['a', 'a', 'a', 'a', 'b', 'b', 'b', 'b']
+    })
+    exog_predict = exog.copy()
+    exog_predict.index = pd.RangeIndex(start=8, stop=16)
+    last_window = y.iloc[-6:].copy()
+
+    y_copy = y.copy()
+    exog_copy = exog.copy()
+    last_window_copy = last_window.copy()
+    exog_predict_copy = exog_predict.copy()
+
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(),
+        lags=5,
+        window_features=RollingFeatures(stats=['mean'], window_sizes=3),
+        transformer_y=StandardScaler(),
+        transformer_exog=ColumnTransformer(
+            [('scale', StandardScaler(), ['col_1']),
+             ('onehot', OneHotEncoder(), ['col_2'])],
+            remainder='passthrough',
+            verbose_feature_names_out=False
+        ),
+        differentiation=1,
+    )
+    forecaster.fit(y=y, exog=exog)
+    _ = forecaster.predict(steps=5, exog=exog_predict, last_window=last_window)
+
+    pd.testing.assert_series_equal(y, y_copy)
+    pd.testing.assert_frame_equal(exog, exog_copy)
+    pd.testing.assert_series_equal(last_window, last_window_copy)
+    pd.testing.assert_frame_equal(exog_predict, exog_predict_copy)
+
+
 def test_predict_output_when_and_weight_func():
     """
     Test predict output when using LinearRegression as estimator and custom_weights.

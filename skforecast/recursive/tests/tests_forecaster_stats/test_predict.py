@@ -28,6 +28,27 @@ from .fixtures_forecaster_stats import df_exog_lw_datetime
 from .fixtures_forecaster_stats import df_exog_lw_predict_datetime
 
 
+def test_predict_does_not_modify_y_exog():
+    """
+    Test forecaster.predict does not modify y, exog or exog_predict.
+    """
+    y_copy = y.copy()
+    exog_copy = exog.copy()
+    exog_predict_copy = exog_predict.copy()
+
+    forecaster = ForecasterStats(
+        estimator=Sarimax(order=(1, 0, 1)),
+        transformer_y=StandardScaler(),
+        transformer_exog=StandardScaler(),
+    )
+    forecaster.fit(y=y, exog=exog)
+    _ = forecaster.predict(steps=5, exog=exog_predict)
+
+    pd.testing.assert_series_equal(y, y_copy)
+    pd.testing.assert_series_equal(exog, exog_copy)
+    pd.testing.assert_series_equal(exog_predict, exog_predict_copy)
+
+
 def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
