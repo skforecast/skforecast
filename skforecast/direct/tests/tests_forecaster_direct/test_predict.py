@@ -28,6 +28,35 @@ from .fixtures_forecaster_direct import exog_predict as exog_predict_categorical
 from .fixtures_forecaster_direct import data  # to test results when using differentiation
 
 
+def test_predict_does_not_modify_y_exog():
+    """
+    Test forecaster.predict does not modify y, exog, exog_predict or last_window.
+    """
+    last_window = y_categorical.iloc[-6:].copy()
+
+    y_copy = y_categorical.copy()
+    exog_copy = exog_categorical.copy()
+    last_window_copy = last_window.copy()
+    exog_predict_categorical_copy = exog_predict_categorical.copy()
+
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(),
+        lags=5,
+        steps=2,
+        window_features=RollingFeatures(stats=['mean'], window_sizes=3),
+        transformer_y=StandardScaler(),
+        transformer_exog=StandardScaler(),
+        differentiation=1,
+    )
+    forecaster.fit(y=y_categorical, exog=exog_categorical)
+    _ = forecaster.predict(steps=2, exog=exog_predict_categorical, last_window=last_window)
+
+    pd.testing.assert_series_equal(y_categorical, y_copy)
+    pd.testing.assert_series_equal(exog_categorical, exog_copy)
+    pd.testing.assert_series_equal(last_window, last_window_copy)
+    pd.testing.assert_series_equal(exog_predict_categorical, exog_predict_categorical_copy)
+
+
 @pytest.mark.parametrize("steps", [[1, 2.0, 3], [1, 4.]], 
                          ids=lambda steps: f'steps: {steps}')
 def test_predict_TypeError_when_steps_list_contain_floats(steps):
