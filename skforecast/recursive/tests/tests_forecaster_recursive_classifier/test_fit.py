@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from lightgbm import LGBMClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
 from skforecast.preprocessing import RollingFeaturesClassification
 from skforecast.recursive import ForecasterRecursiveClassifier
 
@@ -24,6 +25,24 @@ def custom_weights(index):  # pragma: no cover
               )
     
     return weights
+
+
+def test_forecaster_fit_does_not_modify_y_exog():
+    """
+    Test forecaster.fit does not modify y and exog.
+    """
+    y_copy = y.copy()
+    exog_copy = exog.copy()
+    forecaster = ForecasterRecursiveClassifier(
+        estimator=LogisticRegression(),
+        lags=3,
+        window_features=RollingFeaturesClassification(stats=['proportion'], window_sizes=4),
+        transformer_exog=StandardScaler(),
+    )
+    forecaster.fit(y=y, exog=exog)
+
+    pd.testing.assert_series_equal(y, y_copy)
+    pd.testing.assert_series_equal(exog, exog_copy)
 
 
 def test_forecaster_y_exog_features_stored():

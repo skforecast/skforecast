@@ -6,12 +6,34 @@ from pytest import approx
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
 from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirect
 
 # Fixtures
 from .fixtures_forecaster_direct import y
 from .fixtures_forecaster_direct import exog
+
+
+def test_forecaster_fit_does_not_modify_y_exog():
+    """
+    Test forecaster.fit does not modify y and exog.
+    """
+    y_copy = y.copy()
+    exog_copy = exog.copy()
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(),
+        lags=3,
+        steps=2,
+        window_features=RollingFeatures(stats=['mean'], window_sizes=4),
+        transformer_y=StandardScaler(),
+        transformer_exog=StandardScaler(),
+        differentiation=1,
+    )
+    forecaster.fit(y=y, exog=exog)
+
+    pd.testing.assert_series_equal(y, y_copy)
+    pd.testing.assert_series_equal(exog, exog_copy)
 
 
 def test_forecaster_y_exog_features_stored():

@@ -12,6 +12,21 @@ from skforecast.recursive import ForecasterEquivalentDate
 from .fixtures_forecaster_equivalent_date import y
 
 
+def test_forecaster_fit_does_not_modify_y():
+    """
+    Test forecaster.fit does not modify y.
+    """
+    y_copy = y.copy()
+    forecaster = ForecasterEquivalentDate(
+        offset=3,
+        n_offsets=2,
+        agg_func=np.mean,
+    )
+    forecaster.fit(y=y)
+
+    pd.testing.assert_series_equal(y, y_copy)
+
+
 def test_fit_TypeError_when_y_is_not_a_Series():
     """
     Test TypeError is raised when y is not a pandas Series.

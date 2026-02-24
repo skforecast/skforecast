@@ -23,6 +23,28 @@ transformer_exog = ColumnTransformer(
                    )
 
 
+def test_forecaster_fit_does_not_modify_series_exog():
+    """
+    Test forecaster.fit does not modify series and exog.
+    """
+    series_copy = series_fixtures.copy()
+    exog_copy = exog.copy()
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(),
+        level='l1',
+        lags=3,
+        steps=2,
+        window_features=RollingFeatures(stats=['mean'], window_sizes=4),
+        transformer_series=StandardScaler(),
+        transformer_exog=transformer_exog,
+        differentiation=1,
+    )
+    forecaster.fit(series=series_fixtures, exog=exog)
+
+    pd.testing.assert_frame_equal(series_fixtures, series_copy)
+    pd.testing.assert_frame_equal(exog, exog_copy)
+
+
 def test_forecaster_series_exog_features_stored():
     """
     Test forecaster stores series and exog features after fitting.
