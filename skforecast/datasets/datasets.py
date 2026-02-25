@@ -7,9 +7,9 @@
 # coding=utf-8
 
 from __future__ import annotations
+import warnings
 import pandas as pd
 import textwrap
-from urllib.parse import urlparse
 from rich.console import Console
 from rich.panel import Panel
 
@@ -96,11 +96,11 @@ datasets = {
         'sep': ',',
         'index_col': 'datetime',
         'date_format': '%Y-%m-%d %H:%M:%S',
-        'freq': 'H',
+        'freq': 'h',
         'file_type': 'csv',
         'description': (
             'Hourly measures of several air chemical pollutant at Valencia city '
-            '(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following '
+            '(Avd. Francia) from 2019-01-01 to 2023-12-31. Including the following '
             'variables: pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), '
             'PM10 (µg/m³), NOx (µg/m³), O3 (µg/m³), Veloc. (m/s), Direc. (degrees), '
             'SO2 (µg/m³).'
@@ -119,11 +119,11 @@ datasets = {
         'sep': ',',
         'index_col': 'datetime',
         'date_format': '%Y-%m-%d %H:%M:%S',
-        'freq': 'H',
+        'freq': 'h',
         'file_type': 'csv',
         'description': (
             'Hourly measures of several air chemical pollutant at Valencia city '
-            '(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following '
+            '(Avd. Francia) from 2019-01-01 to 2023-12-31. Including the following '
             'variables: pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), '
             'PM10 (µg/m³), NOx (µg/m³), O3 (µg/m³), Veloc. (m/s), Direc. (degrees), '
             'SO2 (µg/m³). Missing values have been imputed using linear interpolation.'
@@ -142,7 +142,7 @@ datasets = {
         'sep': ',',
         'index_col': 'date',
         'date_format': '%Y-%m-%d',
-        'freq': '1D',
+        'freq': 'D',
         'file_type': 'csv',
         'description': (
             'Daily visits to the cienciadedatos.net website registered with the '
@@ -161,7 +161,7 @@ datasets = {
         'sep': ',',
         'index_col': 'date_time',
         'date_format': '%Y-%m-%d %H:%M:%S',
-        'freq': 'H',
+        'freq': 'h',
         'file_type': 'csv',
         'description': (
             'Hourly usage of the bike share system in the city of Washington D.C. '
@@ -181,7 +181,7 @@ datasets = {
         'sep': ',',
         'index_col': 'date_time',
         'date_format': '%Y-%m-%d %H:%M:%S',
-        'freq': 'H',
+        'freq': 'h',
         'file_type': 'csv',
         'description': (
             'Hourly usage of the bike share system in the city of Washington D.C. '
@@ -258,7 +258,7 @@ datasets = {
             'Scraped data using the Wikipediatrend package in R.'
         ),
         'source': (
-            'https://github.com/facebook/prophet/blob/{version}/examples/'
+            'https://github.com/facebook/prophet/blob/main/examples/'
             'example_wp_log_peyton_manning.csv'
         )
     },
@@ -375,7 +375,7 @@ datasets = {
         'sep': None,
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d %H:%M:%S',
-        'freq': 'H',
+        'freq': 'h',
         'file_type': 'parquet',
         'description': "Time series with hourly frequency from the M4 competition.",
         'source': (
@@ -393,7 +393,7 @@ datasets = {
         )
     },
     'ashrae_daily': {
-        'url': 'https://drive.google.com/file/d/1fMsYjfhrFLmeFjKG3jenXjDa5s984ThC/view?usp=sharing',
+        'url': 'https://huggingface.co/datasets/skforecast/ashrae_daily/resolve/main/ashrae_daily.parquet',
         'sep': None,
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d',
@@ -410,7 +410,7 @@ datasets = {
         )
     },
     'bdg2_daily': {
-        'url': 'https://drive.google.com/file/d/1KHYopzclKvS1F6Gt6GoJWKnxiuZ2aqen/view?usp=sharing',
+        'url': 'https://huggingface.co/datasets/skforecast/bdg2_daily/resolve/main/bdg2_daily.parquet',
         'sep': None,
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d',
@@ -429,7 +429,7 @@ datasets = {
         )
     },
     'bdg2_daily_sample': {
-        'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/{version}/data/bdg2_daily_sample.csv',
+        'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/{version}/data/bdg2_daily_sample.csv',
         'sep': ',',
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d',
@@ -448,11 +448,11 @@ datasets = {
         )
     },
     'bdg2_hourly': {
-        'url': 'https://drive.google.com/file/d/1I2i5mZJ82Cl_SHPTaWJmLoaXnntdCgh7/view?usp=sharing',
+        'url': 'https://huggingface.co/datasets/skforecast/bdg2_hourly/resolve/main/bdg2_hourly.parquet',
         'sep': None,
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d %H:%M:%S',
-        'freq': 'H',
+        'freq': 'h',
         'file_type': 'parquet',
         'description': (
             "Hourly energy consumption data from the The Building Data Genome Project 2 "
@@ -467,14 +467,14 @@ datasets = {
         )
     },
     'bdg2_hourly_sample': {
-        'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/{version}/data/bdg2_hourly_sample.csv',
+        'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/{version}/data/bdg2_hourly_sample.csv',
         'sep': ',',
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d %H:%M:%S',
-        'freq': 'H',
+        'freq': 'h',
         'file_type': 'csv',
         'description': (
-            "Daily energy consumption data of two buildings sampled from the "
+            "Hourly energy consumption data of two buildings sampled from the "
             "The Building Data Genome Project 2. "
             "https://github.com/buds-lab/building-data-genome-project-2"
         ),
@@ -486,12 +486,7 @@ datasets = {
         )
     },
     'm5': {
-        'url': [
-            'https://drive.google.com/file/d/1JOqBsSHegly6iSJFgmkugAko734c6ZW5/view?usp=sharing',
-            'https://drive.google.com/file/d/1BhO1BUvs-d7ipXrm7caC3Wd_d0C_6PZ8/view?usp=sharing',
-            'https://drive.google.com/file/d/1oHwkQ_QycJVTZMb6bH8C2klQB971gXXA/view?usp=sharing',
-            'https://drive.google.com/file/d/1OvYzFlDG04YgTvju2k02vHEOj0nIuwei/view?usp=sharing'
-        ],
+        'url': 'https://huggingface.co/datasets/skforecast/m5_daily/resolve/main/m5_daily.parquet',
         'sep': None,
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d',
@@ -508,7 +503,7 @@ datasets = {
     'ett_m1': {
         'url': (
             'https://raw.githubusercontent.com/skforecast/'
-            'skforecast-datasets/refs/heads/{version}/data/ETTm1.csv'
+            'skforecast-datasets/{version}/data/ETTm1.csv'
         ),
         'sep': ',',
         'index_col': 'date',
@@ -592,8 +587,8 @@ datasets = {
     },
     'expenditures_australia': {
         'url': (
-            'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/'
-            '{version}/data/expenditures_australia.csv'
+            'https://raw.githubusercontent.com/skforecast/'
+            'skforecast-datasets/{version}/data/expenditures_australia.csv'
         ),
         'sep': ',',
         'index_col': 'date',
@@ -612,8 +607,8 @@ datasets = {
     },
     'public_transport_madrid': {
         'url': (
-            'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/'
-            '{version}/data/public-transport-madrid.csv'
+            'https://raw.githubusercontent.com/skforecast/'
+            'skforecast-datasets/{version}/data/public-transport-madrid.csv'
         ),
         'sep': ',',
         'index_col': 'date',
@@ -630,8 +625,8 @@ datasets = {
     },
     'turbine_emission': {
         'url': (
-            'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/'
-            '{version}/data/turbine_emission.csv'
+            'https://raw.githubusercontent.com/skforecast/'
+            'skforecast-datasets/{version}/data/turbine_emission.csv'
         ),
         'sep': ',',
         'index_col': 'datetime',
@@ -677,7 +672,7 @@ def show_datasets_info(
 
     """
 
-    datasets_names = datasets_names or sorted(datasets.keys())
+    datasets_names = datasets_names or sorted(datasets)
     version = 'main' if version == 'latest' else f'{version}'
 
     for dataset_name in datasets_names:
@@ -721,7 +716,7 @@ def _print_dataset_info(
     if info is None:
         raise ValueError(
             f"Dataset '{dataset_name}' not found. "
-            f"Available datasets are: {sorted(datasets.keys())}"
+            f"Available datasets are: {sorted(datasets)}"
         )
     
     console = Console()
@@ -729,8 +724,6 @@ def _print_dataset_info(
     source = info['source']
     source = textwrap.fill(source, width=80)
     url = info['url']
-    if isinstance(url, list):
-        url = "Data is stored in multiple files:\n  " + "\n  ".join(url)
     if '{version}' in url:
         url = url.format(version=version)
     url = textwrap.fill(url, width=80)
@@ -753,7 +746,7 @@ def fetch_dataset(
     name: str,
     version: str | int = 'latest',
     raw: bool = False,
-    kwargs_read_csv: dict = {},
+    kwargs_read: dict | None = None,
     verbose: bool = True
 ) -> pd.DataFrame:
     """
@@ -772,8 +765,9 @@ def fetch_dataset(
         is fetched. The preprocessing consists of setting the column with the 
         date/time as index and converting the index to datetime. A frequency is 
         also set to the index.
-    kwargs_read_csv: dict, default {}
-        Kwargs to pass to pandas `read_csv` function.
+    kwargs_read: dict, default None
+        Kwargs to pass to pandas `pd.read_csv` or `pd.read_parquet` function 
+        depending on the dataset file type.
     verbose: bool, default True
         If True, print information about the dataset.
     
@@ -784,12 +778,13 @@ def fetch_dataset(
     
     """
 
+    kwargs_read = kwargs_read or {}
     version = 'main' if version == 'latest' else f'{version}'
-    
-    if name not in datasets.keys():
+
+    if name not in datasets:
         raise ValueError(
             f"Dataset '{name}' not found. "
-            f"Available datasets are: {sorted(datasets.keys())}"
+            f"Available datasets are: {sorted(datasets)}"
         )
     
     url = datasets[name]['url']
@@ -797,51 +792,38 @@ def fetch_dataset(
         url = url.format(version=version)
     file_type = datasets[name]['file_type']
 
-    if not isinstance(url, list):
-        parsed = urlparse(url)
-        if parsed.scheme == "https" and parsed.netloc == "drive.google.com":
-            file_id = url.split('/')[-2]
-            url = 'https://drive.google.com/uc?id=' + file_id
-        if file_type == 'csv':
-            try:
-                sep = datasets[name]['sep']
-                df = pd.read_csv(url, sep=sep, **kwargs_read_csv)
-            except Exception as e:
-                raise ValueError(
-                    f"Error reading dataset '{name}' from {url}: {str(e)}."
-                )
-        if file_type == 'parquet':
-            try:
-                df = pd.read_parquet(url)
-            except Exception as e:
-                raise ValueError(
-                    f"Error reading dataset '{name}' from {url}: {str(e)}."
-                )
-    else:
-        try: 
-            df = []
-            for url_partition in url:
-                path = 'https://drive.google.com/uc?export=download&id=' + url_partition.split('/')[-2]
-                df.append(pd.read_parquet(path))
+    if file_type == 'csv':
+        try:
+            sep = datasets[name]['sep']
+            df = pd.read_csv(url, sep=sep, **kwargs_read)
         except Exception as e:
             raise ValueError(
                 f"Error reading dataset '{name}' from {url}: {str(e)}."
             )
-        df = pd.concat(df, axis=0).reset_index(drop=True)
+    elif file_type == 'parquet':
+        try:
+            df = pd.read_parquet(url, **kwargs_read)
+        except Exception as e:
+            raise ValueError(
+                f"Error reading dataset '{name}' from {url}: {str(e)}."
+            )
 
     if not raw:
         try:
             index_col = datasets[name]['index_col']
             freq = datasets[name]['freq']
-            if freq == 'H' and pd.__version__ >= '2.2.0':
-                freq = "h"
+            if freq == 'h' and tuple(int(x) for x in pd.__version__.split('.')[:2]) < (2, 2):
+                freq = 'H'
             date_format = datasets[name]['date_format']
             df = df.set_index(index_col)
             df.index = pd.to_datetime(df.index, format=date_format)
             df = df.asfreq(freq)
             df = df.sort_index()
-        except:
-            pass
+        except Exception as e:
+            warnings.warn(
+                f"Could not preprocess dataset '{name}': {e}",
+                stacklevel=2
+            )
     
     if verbose:
         _print_dataset_info(name, version=version, shape=df.shape)

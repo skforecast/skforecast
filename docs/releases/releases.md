@@ -20,6 +20,8 @@ The main changes in this release are:
 
 **Changed**
 
++ `kwargs_read_csv` has been renamed to `kwargs_read` in the `fetch_dataset` function. The new name reflects that the keyword arguments are passed to both `pd.read_csv` and `pd.read_parquet`, depending on the dataset file type.
+
 
 **Fixed**
 
