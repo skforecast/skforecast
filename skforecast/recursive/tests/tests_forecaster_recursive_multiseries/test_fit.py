@@ -27,58 +27,77 @@ transformer_exog = ColumnTransformer(
                    )
 
 
-def test_forecaster_fit_does_not_modify_series_exog():
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "lags": 3},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4)},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_forecaster_fit_does_not_modify_series_exog(forecaster_kwargs):
     """
     Test forecaster.fit does not modify series and exog.
     """
-    series_copy = series_wide_range.copy()
-    exog_copy = exog_wide_range.copy()
-    forecaster = ForecasterRecursiveMultiSeries(
-        estimator=LinearRegression(),
-        lags=3,
-        window_features=RollingFeatures(stats=['mean'], window_sizes=4),
-        transformer_series=StandardScaler(),
-        transformer_exog=transformer_exog,
-        differentiation=1,
-    )
-    forecaster.fit(series=series_wide_range, exog=exog_wide_range)
+    series_local = series_wide_range.copy()
+    exog_local = exog_wide_range[['exog_1']].copy()
+    series_copy = series_local.copy()
+    exog_copy = exog_local.copy()
 
-    pd.testing.assert_frame_equal(series_wide_range, series_copy)
-    pd.testing.assert_frame_equal(exog_wide_range, exog_copy)
+    forecaster = ForecasterRecursiveMultiSeries(**forecaster_kwargs)
+    forecaster.fit(series=series_local, exog=exog_local)
+
+    pd.testing.assert_frame_equal(series_local, series_copy)
+    pd.testing.assert_frame_equal(exog_local, exog_copy)
 
 
-def test_forecaster_fit_does_not_modify_series_exog_dict():
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "lags": 3},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4)},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_forecaster_fit_does_not_modify_series_exog_dict(forecaster_kwargs):
     """
     Test forecaster.fit does not modify series and exog when passed as dictionaries.
-    Each element of the dictionaries is checked individually.
-    exog_dict_range has a DataFrame for 'l1' and a Series for 'l2', so the
-    per-element type is verified with the appropriate assertion.
     """
-    # exog_dict_range['l1'] contains a string column; use a numeric-only variant
-    # so that StandardScaler can be applied without a ColumnTransformer.
     exog_dict_numeric = {
         'l1': exog_wide_range[['exog_1']].copy(),
         'l2': exog_wide_range['exog_1'].copy(),
     }
-    series_copy = {k: v.copy() for k, v in series_dict_range.items()}
-    exog_copy = {k: v.copy() for k, v in exog_dict_numeric.items()}
-    forecaster = ForecasterRecursiveMultiSeries(
-        estimator=LinearRegression(),
-        lags=3,
-        window_features=RollingFeatures(stats=['mean'], window_sizes=4),
-        transformer_series=StandardScaler(),
-        transformer_exog=StandardScaler(),
-        differentiation=1,
-    )
-    forecaster.fit(series=series_dict_range, exog=exog_dict_numeric)
+    series_local = {k: v.copy() for k, v in series_dict_range.items()}
+    exog_local = {k: v.copy() for k, v in exog_dict_numeric.items()}
+    series_copy = {k: v.copy() for k, v in series_local.items()}
+    exog_copy = {k: v.copy() for k, v in exog_local.items()}
 
-    for k in series_dict_range:
-        pd.testing.assert_series_equal(series_dict_range[k], series_copy[k])
-    for k in exog_dict_numeric:
-        if isinstance(exog_dict_numeric[k], pd.DataFrame):
-            pd.testing.assert_frame_equal(exog_dict_numeric[k], exog_copy[k])
+    forecaster = ForecasterRecursiveMultiSeries(**forecaster_kwargs)
+    forecaster.fit(series=series_local, exog=exog_local)
+
+    for k in series_local:
+        pd.testing.assert_series_equal(series_local[k], series_copy[k])
+    for k in exog_local:
+        if isinstance(exog_local[k], pd.DataFrame):
+            pd.testing.assert_frame_equal(exog_local[k], exog_copy[k])
         else:
-            pd.testing.assert_series_equal(exog_dict_numeric[k], exog_copy[k])
+            pd.testing.assert_series_equal(exog_local[k], exog_copy[k])
 
 
 def test_forecaster_series_exog_features_stored():

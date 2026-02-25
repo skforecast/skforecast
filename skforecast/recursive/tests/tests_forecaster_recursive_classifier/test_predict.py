@@ -25,30 +25,40 @@ from .fixtures_forecaster_recursive_classifier import y, y_dt
 from .fixtures_forecaster_recursive_classifier import exog, exog_dt, exog_predict, exog_dt_predict
 
 
-def test_predict_does_not_modify_y_exog():
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LogisticRegression(), "lags": 3},
+        {"estimator": LogisticRegression(), "lags": 3,
+         "window_features": RollingFeaturesClassification(stats=['proportion'], window_sizes=4)},
+        {"estimator": LogisticRegression(), "lags": 3,
+         "window_features": RollingFeaturesClassification(stats=['proportion'], window_sizes=4),
+         "transformer_exog": StandardScaler()},
+    ],
+    ids=["base", "window_features", "transformers"]
+)
+def test_predict_does_not_modify_y_exog(forecaster_kwargs):
     """
     Test forecaster.predict does not modify y, exog, exog_predict or last_window.
     """
-    last_window = y.iloc[-4:].copy()
+    y_local = y.copy()
+    exog_local = exog.copy()
+    exog_predict_local = exog_predict.copy()
+    last_window_local = y_local.iloc[-4:].copy()
 
-    y_copy = y.copy()
-    exog_copy = exog.copy()
-    last_window_copy = last_window.copy()
-    exog_predict_copy = exog_predict.copy()
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+    exog_predict_copy = exog_predict_local.copy()
+    last_window_copy = last_window_local.copy()
 
-    forecaster = ForecasterRecursiveClassifier(
-        estimator=LogisticRegression(),
-        lags=3,
-        window_features=RollingFeaturesClassification(stats=['proportion'], window_sizes=4),
-        transformer_exog=StandardScaler(),
-    )
-    forecaster.fit(y=y, exog=exog)
-    _ = forecaster.predict(steps=5, exog=exog_predict, last_window=last_window)
+    forecaster = ForecasterRecursiveClassifier(**forecaster_kwargs)
+    forecaster.fit(y=y_local, exog=exog_local)
+    _ = forecaster.predict(steps=5, exog=exog_predict_local, last_window=last_window_local)
 
-    pd.testing.assert_series_equal(y, y_copy)
-    pd.testing.assert_series_equal(exog, exog_copy)
-    pd.testing.assert_series_equal(last_window, last_window_copy)
-    pd.testing.assert_series_equal(exog_predict, exog_predict_copy)
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
+    pd.testing.assert_series_equal(last_window_local, last_window_copy)
+    pd.testing.assert_series_equal(exog_predict_local, exog_predict_copy)
 
 
 def test_predict_NotFittedError_when_fitted_is_False():

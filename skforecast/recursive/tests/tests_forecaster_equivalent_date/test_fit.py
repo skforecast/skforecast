@@ -16,15 +16,16 @@ def test_forecaster_fit_does_not_modify_y():
     """
     Test forecaster.fit does not modify y.
     """
-    y_copy = y.copy()
+    y_local = y.copy()
+    y_copy = y_local.copy()
     forecaster = ForecasterEquivalentDate(
         offset=3,
         n_offsets=2,
         agg_func=np.mean,
     )
-    forecaster.fit(y=y)
+    forecaster.fit(y=y_local)
 
-    pd.testing.assert_series_equal(y, y_copy)
+    pd.testing.assert_series_equal(y_local, y_copy)
 
 
 def test_fit_TypeError_when_y_is_not_a_Series():

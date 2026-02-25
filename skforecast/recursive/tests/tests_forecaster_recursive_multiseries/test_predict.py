@@ -44,37 +44,46 @@ series_2 = pd.DataFrame(
 ).to_dict(orient='series')
 
 
-def test_predict_does_not_modify_series_exog():
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "lags": 3},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3)},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_predict_does_not_modify_series_exog(forecaster_kwargs):
     """
     Test forecaster.predict does not modify series, exog, exog_predict or
     last_window.
     """
-    # Use only the numeric column so StandardScaler can be applied directly.
-    exog_fit = exog_wide_range[['exog_1']].copy()
-    exog_pred = exog_pred_wide_range[['exog_1']].copy()
-    last_window = pd.DataFrame(series_dict_range).iloc[-4:].copy()
+    series_local = {k: v.copy() for k, v in series_dict_range.items()}
+    exog_local = exog_wide_range[['exog_1']].copy()
+    exog_predict_local = exog_pred_wide_range[['exog_1']].copy()
+    last_window_local = pd.DataFrame(series_local).iloc[-4:].copy()
 
-    series_copy = {k: v.copy() for k, v in series_dict_range.items()}
-    exog_fit_copy = exog_fit.copy()
-    exog_pred_copy = exog_pred.copy()
-    last_window_copy = last_window.copy()
+    series_copy = {k: v.copy() for k, v in series_local.items()}
+    exog_copy = exog_local.copy()
+    exog_predict_copy = exog_predict_local.copy()
+    last_window_copy = last_window_local.copy()
 
-    forecaster = ForecasterRecursiveMultiSeries(
-        estimator=LinearRegression(),
-        lags=3,
-        window_features=RollingFeatures(stats=['mean'], window_sizes=3),
-        transformer_series=StandardScaler(),
-        transformer_exog=StandardScaler(),
-        differentiation=1,
-    )
-    forecaster.fit(series=series_dict_range, exog=exog_fit)
-    _ = forecaster.predict(steps=5, exog=exog_pred, last_window=last_window)
+    forecaster = ForecasterRecursiveMultiSeries(**forecaster_kwargs)
+    forecaster.fit(series=series_local, exog=exog_local)
+    _ = forecaster.predict(steps=5, exog=exog_predict_local, last_window=last_window_local)
 
-    for k in series_dict_range:
-        pd.testing.assert_series_equal(series_dict_range[k], series_copy[k])
-    pd.testing.assert_frame_equal(exog_fit, exog_fit_copy)
-    pd.testing.assert_frame_equal(exog_pred, exog_pred_copy)
-    pd.testing.assert_frame_equal(last_window, last_window_copy)
+    for k in series_local:
+        pd.testing.assert_series_equal(series_local[k], series_copy[k])
+    pd.testing.assert_frame_equal(exog_local, exog_copy)
+    pd.testing.assert_frame_equal(exog_predict_local, exog_predict_copy)
+    pd.testing.assert_frame_equal(last_window_local, last_window_copy)
 
 
 def test_predict_NotFittedError_when_fitted_is_False():
