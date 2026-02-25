@@ -448,7 +448,7 @@ datasets = {
         )
     },
     'bdg2_hourly': {
-        'url': 'https://drive.google.com/file/d/1I2i5mZJ82Cl_SHPTaWJmLoaXnntdCgh7/view?usp=sharing',
+        'url': 'https://huggingface.co/datasets/skforecast/bdg2_hourly/resolve/main/bdg2_hourly.parquet',
         'sep': None,
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d %H:%M:%S',
@@ -486,12 +486,7 @@ datasets = {
         )
     },
     'm5': {
-        'url': [
-            'https://drive.google.com/file/d/1JOqBsSHegly6iSJFgmkugAko734c6ZW5/view?usp=sharing',
-            'https://drive.google.com/file/d/1BhO1BUvs-d7ipXrm7caC3Wd_d0C_6PZ8/view?usp=sharing',
-            'https://drive.google.com/file/d/1oHwkQ_QycJVTZMb6bH8C2klQB971gXXA/view?usp=sharing',
-            'https://drive.google.com/file/d/1OvYzFlDG04YgTvju2k02vHEOj0nIuwei/view?usp=sharing'
-        ],
+        'url': 'https://huggingface.co/datasets/skforecast/m5_daily/resolve/main/m5_daily.parquet',
         'sep': None,
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d',
