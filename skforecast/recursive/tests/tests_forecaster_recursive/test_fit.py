@@ -27,7 +27,23 @@ def custom_weights(index):  # pragma: no cover
     return weights
 
 
-def test_forecaster_fit_does_not_modify_y_exog():
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "lags": 3},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4)},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_forecaster_fit_does_not_modify_y_exog(forecaster_kwargs):
     """
     Test forecaster.fit does not modify y and exog.
     """
@@ -36,18 +52,12 @@ def test_forecaster_fit_does_not_modify_y_exog():
     y_copy = y_local.copy()
     exog_copy = exog_local.copy()
 
-    forecaster = ForecasterRecursive(
-        estimator=LinearRegression(),
-        lags=3,
-        window_features=RollingFeatures(stats=['mean'], window_sizes=4),
-        transformer_y=StandardScaler(),
-        transformer_exog=StandardScaler(),
-        differentiation=1,
-    )
+    forecaster = ForecasterRecursive(**forecaster_kwargs)
     forecaster.fit(y=y_local, exog=exog_local)
 
     pd.testing.assert_series_equal(y_local, y_copy)
     pd.testing.assert_series_equal(exog_local, exog_copy)
+
 
 def test_forecaster_y_exog_features_stored():
     """

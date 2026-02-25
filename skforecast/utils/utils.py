@@ -2339,6 +2339,89 @@ def set_cpu_gpu_device(
     return original_device
 
 
+def _build_predict_function(
+    estimator: object,
+) -> callable:
+    """
+    Build an optimized predict callable for a fitted estimator. The returned
+    function takes a 2D numpy array `X` of shape `(n_samples, n_features)` and
+    returns predictions as a 1D numpy array of shape `(n_samples,)`.
+
+    Fast prediction paths (bypassing sklearn's ``predict`` overhead) are used
+    for the following estimator types:
+
+    - Linear models inheriting from sklearn's ``LinearModel`` (``np.dot``)
+    - ``LGBMRegressor`` (``booster_.predict``)
+    - ``XGBRegressor`` (``get_booster().inplace_predict``)
+    - ``RandomForestRegressor`` (per-tree ``tree_.predict``)
+    - ``DecisionTreeRegressor`` (``tree_.predict``)
+
+    For any other estimator the standard ``estimator.predict`` method is used.
+
+    Parameters
+    ----------
+    estimator : object
+        A fitted scikit-learn compatible estimator.
+
+    Returns
+    -------
+    predict_fn : callable
+        A function ``predict_fn(X) -> np.ndarray`` where ``X`` has shape
+        ``(n_samples, n_features)`` and the output has shape ``(n_samples,)``.
+    """
+
+    estimator_name = type(estimator).__name__
+
+    if isinstance(estimator, LinearModel):
+        coef = estimator.coef_
+        intercept = estimator.intercept_
+
+        def predict_fn(X):
+            return np.dot(X, coef) + intercept
+
+        return predict_fn
+
+    if estimator_name == 'LGBMRegressor':
+        booster = estimator.booster_
+
+        def predict_fn(X):
+            return booster.predict(X)
+
+        return predict_fn
+
+    if estimator_name == 'XGBRegressor':
+        booster = estimator.get_booster()
+
+        def predict_fn(X):
+            return booster.inplace_predict(X)
+
+        return predict_fn
+
+    if estimator_name == 'RandomForestRegressor':
+        trees = estimator.estimators_
+
+        def predict_fn(X):
+            X_f32 = X.astype(np.float32)
+            preds = [tree.tree_.predict(X_f32)[:, 0] for tree in trees]
+            return np.mean(preds, axis=0)
+
+        return predict_fn
+
+    if estimator_name == 'DecisionTreeRegressor':
+        tree_ = estimator.tree_
+
+        def predict_fn(X):
+            return tree_.predict(X.astype(np.float32))[:, 0]
+
+        return predict_fn
+
+    # Generic fallback
+    def predict_fn(X):
+        return estimator.predict(X).ravel()
+
+    return predict_fn
+
+
 def check_preprocess_series(
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
 ) -> tuple[dict[str, pd.Series], dict[str, pd.Index]]:

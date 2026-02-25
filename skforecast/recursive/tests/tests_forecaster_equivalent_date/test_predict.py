@@ -16,21 +16,22 @@ def test_predict_does_not_modify_y():
     """
     Test forecaster.predict does not modify y or last_window.
     """
-    last_window = y.iloc[-7:].copy()
+    y_local = y.copy()
+    last_window_local = y_local.iloc[-7:].copy()
 
-    y_copy = y.copy()
-    last_window_copy = last_window.copy()
+    y_copy = y_local.copy()
+    last_window_copy = last_window_local.copy()
 
     forecaster = ForecasterEquivalentDate(
         offset=7,
         n_offsets=1,
         agg_func=np.mean,
     )
-    forecaster.fit(y=y)
-    _ = forecaster.predict(steps=5, last_window=last_window)
+    forecaster.fit(y=y_local)
+    _ = forecaster.predict(steps=5, last_window=last_window_local)
 
-    pd.testing.assert_series_equal(y, y_copy)
-    pd.testing.assert_series_equal(last_window, last_window_copy)
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(last_window_local, last_window_copy)
 
 
 def test_predict_NotFittedError_when_fitted_is_False():

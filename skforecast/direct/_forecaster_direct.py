@@ -15,7 +15,6 @@ import inspect
 from copy import copy
 from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
-from sklearn.linear_model._base import LinearModel
 from sklearn.pipeline import Pipeline
 from joblib import Parallel, delayed, cpu_count
 
@@ -44,6 +43,7 @@ from ..utils import (
     transform_dataframe,
     select_n_jobs_fit_forecaster,
     get_style_repr_html,
+    _build_predict_function,
     set_skforecast_warnings,
     initialize_estimator
 )
@@ -614,7 +614,7 @@ class ForecasterDirect(ForecasterBase):
         Note that the returned matrix `X_data` contains the lag 1 in the first 
         column, the lag 2 in the in the second column and so on.
 
-        The returned matrices are views into the original `y` so care must be taken
+        The Returned matrices may be views into the original `y` so care must be taken
         when modifying them.
 
         Parameters
@@ -636,7 +636,7 @@ class ForecasterDirect(ForecasterBase):
 
         Notes
         -----
-        Returned matrices are views into the original `y` so care must be taken
+        Returned matrices may be views into the original `y` so care must be taken
         when modifying them.
 
         """
@@ -1727,37 +1727,16 @@ class ForecasterDirect(ForecasterBase):
 
         estimators = [self.estimators_[step] for step in steps]
         
-        estimator_name = type(self.estimator).__name__
-        is_linear = isinstance(self.estimator, LinearModel)
-        is_lightgbm = estimator_name == 'LGBMRegressor'
-        is_xgboost = estimator_name == 'XGBRegressor'
-        
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", 
                 message="X does not have valid feature names", 
                 category=UserWarning
             )
-            if is_linear:
-                predictions = np.array([
-                    np.dot(X.ravel(), estimator.coef_) + estimator.intercept_
-                    for estimator, X in zip(estimators, Xs)
-                ])
-            elif is_lightgbm:
-                predictions = np.array([
-                    estimator.booster_.predict(X).item()
-                    for estimator, X in zip(estimators, Xs)
-                ])
-            elif is_xgboost:
-                predictions = np.array([
-                    estimator.get_booster().inplace_predict(X).item()
-                    for estimator, X in zip(estimators, Xs)
-                ])
-            else:
-                predictions = np.array([
-                    estimator.predict(X).ravel().item()
-                    for estimator, X in zip(estimators, Xs)
-                ])
+            predict_fns = [_build_predict_function(est) for est in estimators]
+            predictions = np.array([
+                fn(X).item() for fn, X in zip(predict_fns, Xs)
+            ])
 
         return predictions
 

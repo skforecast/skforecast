@@ -23,26 +23,36 @@ transformer_exog = ColumnTransformer(
                    )
 
 
-def test_forecaster_fit_does_not_modify_series_exog():
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4)},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_forecaster_fit_does_not_modify_series_exog(forecaster_kwargs):
     """
     Test forecaster.fit does not modify series and exog.
     """
-    series_copy = series_fixtures.copy()
-    exog_copy = exog.copy()
-    forecaster = ForecasterDirectMultiVariate(
-        estimator=LinearRegression(),
-        level='l1',
-        lags=3,
-        steps=2,
-        window_features=RollingFeatures(stats=['mean'], window_sizes=4),
-        transformer_series=StandardScaler(),
-        transformer_exog=transformer_exog,
-        differentiation=1,
-    )
-    forecaster.fit(series=series_fixtures, exog=exog)
+    series_local = series_fixtures.copy()
+    exog_local = exog[['exog_1']].copy()
+    series_copy = series_local.copy()
+    exog_copy = exog_local.copy()
 
-    pd.testing.assert_frame_equal(series_fixtures, series_copy)
-    pd.testing.assert_frame_equal(exog, exog_copy)
+    forecaster = ForecasterDirectMultiVariate(**forecaster_kwargs)
+    forecaster.fit(series=series_local, exog=exog_local)
+
+    pd.testing.assert_frame_equal(series_local, series_copy)
+    pd.testing.assert_frame_equal(exog_local, exog_copy)
 
 
 def test_forecaster_series_exog_features_stored():

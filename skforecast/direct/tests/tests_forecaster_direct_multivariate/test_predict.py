@@ -37,36 +37,45 @@ transformer_exog = ColumnTransformer(
                    )
 
 
-def test_predict_does_not_modify_series_exog():
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3)},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_predict_does_not_modify_series_exog(forecaster_kwargs):
     """
     Test forecaster.predict does not modify series, exog, exog_predict or
     last_window.
     """
+    series_local = series.copy()
+    exog_local = exog[['exog_1']].copy()
+    exog_predict_local = exog_predict[['exog_1']].copy()
+    last_window_local = series_local.iloc[-4:].copy()
 
-    last_window = series.iloc[-4:].copy()
+    series_copy = series_local.copy()
+    exog_copy = exog_local.copy()
+    exog_predict_copy = exog_predict_local.copy()
+    last_window_copy = last_window_local.copy()
 
-    series_copy = series.copy()
-    exog_copy = exog.copy()
-    last_window_copy = last_window.copy()
-    exog_predict_copy = exog_predict.copy()
+    forecaster = ForecasterDirectMultiVariate(**forecaster_kwargs)
+    forecaster.fit(series=series_local, exog=exog_local)
+    _ = forecaster.predict(steps=2, exog=exog_predict_local, last_window=last_window_local)
 
-    forecaster = ForecasterDirectMultiVariate(
-        estimator=LinearRegression(),
-        level='l1',
-        lags=3,
-        steps=2,
-        window_features=RollingFeatures(stats=['mean'], window_sizes=3),
-        transformer_series=StandardScaler(),
-        transformer_exog=transformer_exog,
-        differentiation=1,
-    )
-    forecaster.fit(series=series, exog=exog)
-    _ = forecaster.predict(steps=2, exog=exog_predict, last_window=last_window)
-
-    pd.testing.assert_frame_equal(series, series_copy)
-    pd.testing.assert_frame_equal(exog, exog_copy)
-    pd.testing.assert_frame_equal(last_window, last_window_copy)
-    pd.testing.assert_frame_equal(exog_predict, exog_predict_copy)
+    pd.testing.assert_frame_equal(series_local, series_copy)
+    pd.testing.assert_frame_equal(exog_local, exog_copy)
+    pd.testing.assert_frame_equal(last_window_local, last_window_copy)
+    pd.testing.assert_frame_equal(exog_predict_local, exog_predict_copy)
 
 
 @pytest.mark.parametrize("steps", [[1, 2.0, 3], [1, 4.]], 
