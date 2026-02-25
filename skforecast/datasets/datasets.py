@@ -429,7 +429,7 @@ datasets = {
         )
     },
     'bdg2_daily_sample': {
-        'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/{version}/data/bdg2_daily_sample.csv',
+        'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/{version}/data/bdg2_daily_sample.csv',
         'sep': ',',
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d',
@@ -467,7 +467,7 @@ datasets = {
         )
     },
     'bdg2_hourly_sample': {
-        'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/{version}/data/bdg2_hourly_sample.csv',
+        'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/{version}/data/bdg2_hourly_sample.csv',
         'sep': ',',
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d %H:%M:%S',
@@ -503,7 +503,7 @@ datasets = {
     'ett_m1': {
         'url': (
             'https://raw.githubusercontent.com/skforecast/'
-            'skforecast-datasets/refs/heads/{version}/data/ETTm1.csv'
+            'skforecast-datasets/{version}/data/ETTm1.csv'
         ),
         'sep': ',',
         'index_col': 'date',
@@ -587,8 +587,8 @@ datasets = {
     },
     'expenditures_australia': {
         'url': (
-            'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/'
-            '{version}/data/expenditures_australia.csv'
+            'https://raw.githubusercontent.com/skforecast/'
+            'skforecast-datasets/{version}/data/expenditures_australia.csv'
         ),
         'sep': ',',
         'index_col': 'date',
@@ -607,8 +607,8 @@ datasets = {
     },
     'public_transport_madrid': {
         'url': (
-            'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/'
-            '{version}/data/public-transport-madrid.csv'
+            'https://raw.githubusercontent.com/skforecast/'
+            'skforecast-datasets/{version}/data/public-transport-madrid.csv'
         ),
         'sep': ',',
         'index_col': 'date',
@@ -625,8 +625,8 @@ datasets = {
     },
     'turbine_emission': {
         'url': (
-            'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/'
-            '{version}/data/turbine_emission.csv'
+            'https://raw.githubusercontent.com/skforecast/'
+            'skforecast-datasets/{version}/data/turbine_emission.csv'
         ),
         'sep': ',',
         'index_col': 'datetime',
