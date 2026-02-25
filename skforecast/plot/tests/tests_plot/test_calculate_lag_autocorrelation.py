@@ -167,3 +167,23 @@ def test_calculate_lag_autocorrelation_output_last_n_samples():
         data=data, n_lags=4, last_n_samples=10, sort_by="lag"
     )
     pd.testing.assert_frame_equal(results, expected)
+
+
+def test_calculate_lag_autocorrelation_dataframe_input_and_acf_kwargs():
+    """
+    Test that a single-column DataFrame produces the same result as the
+    equivalent Series and that acf_kwargs (e.g. fft=True) are forwarded
+    without error.
+    """
+    data_series = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    data_df = data_series.to_frame()
+
+    results_series = calculate_lag_autocorrelation(data=data_series, n_lags=4)
+    results_df = calculate_lag_autocorrelation(data=data_df, n_lags=4)
+    pd.testing.assert_frame_equal(results_series, results_df)
+
+    data = pd.Series(range(50))
+    results = calculate_lag_autocorrelation(
+        data=data, n_lags=5, acf_kwargs={"fft": True}
+    )
+    assert len(results) == 5
