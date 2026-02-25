@@ -15,7 +15,6 @@ import inspect
 from copy import copy
 from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
-from sklearn.linear_model._base import LinearModel
 from sklearn.pipeline import Pipeline
 
 from .. import __version__
@@ -41,6 +40,7 @@ from ..utils import (
     transform_dataframe,
     get_style_repr_html,
     set_cpu_gpu_device,
+    _build_predict_function,
     set_skforecast_warnings,
     initialize_estimator
 )
@@ -541,7 +541,7 @@ class ForecasterRecursive(ForecasterBase):
         
         Notes
         -----
-        Returned matrices are views into the original `y` so care must be taken
+        Returned matrices may be views into the original `y` so care must be taken
         when modifying them.
 
         """
@@ -1354,66 +1354,40 @@ class ForecasterRecursive(ForecasterBase):
         predictions = np.full(shape=steps, fill_value=np.nan, dtype=float)
         last_window = np.concatenate((last_window_values, predictions))
 
-        estimator_name = type(self.estimator).__name__
-        is_linear = isinstance(self.estimator, LinearModel)
-        is_lightgbm = estimator_name == 'LGBMRegressor'
-        is_xgboost = estimator_name == 'XGBRegressor'
-        is_rf = estimator_name == 'RandomForestRegressor'
-        is_dt = estimator_name == 'DecisionTreeRegressor'
-        
-        if is_linear:
-            coef = self.estimator.coef_
-            intercept = self.estimator.intercept_
-        elif is_lightgbm:
-            booster = self.estimator.booster_
-        elif is_xgboost:
-            booster = self.estimator.get_booster()
-        
+        predict_fn = _build_predict_function(self.estimator)
+
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
         
         for i in range(steps):
 
+            remaining = steps - i
+
             if has_lags:
                 if self.lags_are_contiguous:
-                    offset = steps - i
-                    X[:n_lags] = last_window[-(offset + n_lags): -offset][::-1]
+                    X[:n_lags] = last_window[-(remaining + n_lags): -remaining][::-1]
                 else:
-                    X[:n_lags] = last_window[-self.lags - (steps - i)]
+                    X[:n_lags] = last_window[-self.lags - remaining]
+            
             if has_window_features:
-                window_data = last_window[i : -(steps - i)]
+                window_data = last_window[i : -remaining]
                 X[n_lags : n_lags + n_window_features] = np.concatenate(
                     [
                         wf.transform(window_data)
                         for wf in self.window_features
                     ]
                 )
+            
             if has_exog:
                 X[n_lags + n_window_features:] = exog_values[i]
         
-            if is_linear:
-                pred = np.dot(X, coef) + intercept
-            elif is_lightgbm:
-                pred = booster.predict(X.reshape(1, -1))
-            elif is_xgboost:
-                pred = booster.inplace_predict(X.reshape(1, -1))
-            elif is_rf:
-                X_f32 = X.reshape(1, -1).astype(np.float32)
-                preds = [tree.tree_.predict(X_f32).item() for tree in self.estimator.estimators_]
-                pred = np.mean(preds)
-            elif is_dt:
-                X_f32 = X.reshape(1, -1).astype(np.float32)
-                pred = self.estimator.tree_.predict(X_f32)
-            else:
-                pred = self.estimator.predict(X.reshape(1, -1)).ravel()
-            
-            pred = pred.item()
+            pred = predict_fn(X.reshape(1, -1)).item()
             predictions[i] = pred
 
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
-            last_window[-(steps - i)] = pred
+            last_window[-remaining] = pred
 
         set_cpu_gpu_device(estimator=self.estimator, device=original_device)
 
@@ -1487,37 +1461,27 @@ class ForecasterRecursive(ForecasterBase):
         last_window = np.tile(last_window_values[:, np.newaxis], (1, n_boot))
         last_window = np.vstack([last_window, np.full((steps, n_boot), np.nan)])
 
-        estimator_name = type(self.estimator).__name__
-        is_linear = isinstance(self.estimator, LinearModel)
-        is_lightgbm = estimator_name == 'LGBMRegressor'
-        is_xgboost = estimator_name == 'XGBRegressor'
-        is_rf = estimator_name == 'RandomForestRegressor'
-        is_dt = estimator_name == 'DecisionTreeRegressor'
-        
-        if is_linear:
-            coef = self.estimator.coef_
-            intercept = self.estimator.intercept_
-        elif is_lightgbm:
-            booster = self.estimator.booster_
-        elif is_xgboost:
-            booster = self.estimator.get_booster()
-        
+        predict_fn = _build_predict_function(self.estimator)
+
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
 
+        if use_binned_residuals:
+            boot_indices = np.arange(n_boot)
+
         for i in range(steps):
+
+            remaining = steps - i
 
             if has_lags:
                 if self.lags_are_contiguous:
-                    offset = steps - i
-                    X[:, :n_lags] = last_window[-(offset + n_lags): -offset, :][::-1].T
+                    X[:, :n_lags] = last_window[-(remaining + n_lags): -remaining, :][::-1].T
                 else:
-                    for j, lag in enumerate(self.lags):
-                        X[:, j] = last_window[-(lag + steps - i), :]
+                    X[:, :n_lags] = last_window[-(self.lags + remaining), :].T
             
             if has_window_features:
-                window_data = last_window[:-(steps - i), :]
+                window_data = last_window[:-remaining, :]
                 # transform accepts 2D: (window_length, n_boot) -> (n_boot, n_stats)
                 # and concatenate along axis=1: (n_boot, total_window_features)
                 X[:, n_lags:n_lags + n_window_features] = np.concatenate(
@@ -1528,32 +1492,17 @@ class ForecasterRecursive(ForecasterBase):
             if has_exog:
                 X[:, n_lags + n_window_features:] = exog_values[i]
         
-            if is_linear:
-                pred = np.dot(X, coef) + intercept
-            elif is_lightgbm:
-                pred = booster.predict(X)
-            elif is_xgboost:
-                pred = booster.inplace_predict(X)
-            elif is_rf:
-                X_f32 = X.astype(np.float32)
-                preds = [tree.tree_.predict(X_f32)[:, 0] for tree in self.estimator.estimators_]
-                pred = np.mean(preds, axis=0)
-            elif is_dt:
-                X_f32 = X.astype(np.float32)
-                pred = self.estimator.tree_.predict(X_f32)[:, 0]
-            else:
-                pred = self.estimator.predict(X).ravel()
+            pred = predict_fn(X)
             
             if use_binned_residuals:
                 # sampled_residuals is a 3D array: (n_bins, steps, n_boot)
-                boot_indices = np.arange(n_boot)
                 pred_bins = self.binner.transform(pred).astype(int)
                 pred += sampled_residuals[pred_bins, i, boot_indices]
             else:
                 pred += sampled_residuals[i, :]
             
             predictions[i, :] = pred
-            last_window[-(steps - i), :] = pred
+            last_window[-remaining, :] = pred
 
         set_cpu_gpu_device(estimator=self.estimator, device=original_device)
 

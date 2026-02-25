@@ -55,6 +55,7 @@ from ..utils import (
     set_skforecast_warnings,
     get_style_repr_html,
     set_cpu_gpu_device,
+    _build_predict_function,
     initialize_estimator
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -617,7 +618,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             "probabilistic_methods": ["bootstrapping", "conformal"],
             "handles_binned_residuals": True
         }
-        
 
     def __repr__(
         self
@@ -774,7 +774,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Note that the returned matrix `X_data` contains the lag 1 in the first 
         column, the lag 2 in the in the second column and so on.
 
-        Returned matrices are views into the original `y` so care must be taken
+        Returned matrices may be views into the original `y` so care must be taken
         when modifying them.
 
         Parameters
@@ -796,7 +796,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Notes
         -----
-        Returned matrices are views into the original `y` so care must be taken
+        Returned matrices may be views into the original `y` so care must be taken
         when modifying them.
 
         """
@@ -1007,7 +1007,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                   )
 
         return X_train_autoreg, X_train_window_features_names_out_, X_train_exog, y_train
-
 
     def _create_train_X_y(
         self,
@@ -1720,7 +1719,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return weights
 
-
     def fit(
         self,
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -2323,20 +2321,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         last_window = np.concatenate((last_window.to_numpy(), predictions), axis=0)
 
-        estimator_name = type(self.estimator).__name__
-        is_linear = isinstance(self.estimator, LinearModel)
-        is_lightgbm = estimator_name == 'LGBMRegressor'
-        is_xgboost = estimator_name == 'XGBRegressor'
-        is_rf = estimator_name == 'RandomForestRegressor'
-        is_dt = estimator_name == 'DecisionTreeRegressor'
-
-        if is_linear:
-            coef = self.estimator.coef_
-            intercept = self.estimator.intercept_
-        elif is_lightgbm:
-            booster = self.estimator.booster_
-        elif is_xgboost:
-            booster = self.estimator.get_booster()
+        predict_fn = _build_predict_function(self.estimator)
 
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
@@ -2344,14 +2329,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         for i in range(steps):
 
+            remaining = steps - i
+
             if has_lags:
                 if self.lags_are_contiguous:
-                    offset = steps - i
-                    features[:, :n_lags] = last_window[-(offset + n_lags): -offset, :][::-1].T
+                    features[:, :n_lags] = last_window[-(remaining + n_lags): -remaining, :][::-1].T
                 else:
-                    features[:, :n_lags] = last_window[-self.lags - (steps - i), :].transpose()
+                    features[:, :n_lags] = last_window[-self.lags - remaining, :].transpose()
+            
             if has_window_features:
-                window_data = last_window[i:-(steps - i), :]
+                window_data = last_window[i:-remaining, :]
                 features[:, n_lags:n_autoreg] = np.concatenate(
                     [
                         wf.transform(window_data) 
@@ -2359,24 +2346,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     ],
                     axis=1
                 )
+            
             if has_exog:
                 features[:, -n_exog:] = exog_values_dict[i + 1]
 
-            if is_linear:
-                pred = features.dot(coef) + intercept
-            elif is_lightgbm:
-                pred = booster.predict(features)
-            elif is_xgboost:
-                pred = booster.inplace_predict(features)
-            elif is_rf:
-                X_f32 = features.astype(np.float32)
-                preds = [tree.tree_.predict(X_f32)[:, 0] for tree in self.estimator.estimators_]
-                pred = np.mean(preds, axis=0)
-            elif is_dt:
-                X_f32 = features.astype(np.float32)
-                pred = self.estimator.tree_.predict(X_f32)[:, 0]
-            else:
-                pred = self.estimator.predict(features)
+            pred = predict_fn(features)
 
             predictions[i, :] = pred
 
@@ -2386,7 +2360,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
-            last_window[-(steps - i), :] = pred
+            last_window[-remaining, :] = pred
 
         set_cpu_gpu_device(estimator=self.estimator, device=original_device)
 
@@ -2504,24 +2478,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window_boot[:window_size, :, :] = last_window[:, np.newaxis, :]
         last_window_boot[window_size:, :, :] = np.nan
 
-        estimator_name = type(self.estimator).__name__
-        is_linear = isinstance(self.estimator, LinearModel)
-        is_lightgbm = estimator_name == 'LGBMRegressor'
-        is_xgboost = estimator_name == 'XGBRegressor'
-        is_rf = estimator_name == 'RandomForestRegressor'
-        is_dt = estimator_name == 'DecisionTreeRegressor'
-
-        if is_linear:
-            coef = self.estimator.coef_
-            intercept = self.estimator.intercept_
-        elif is_lightgbm:
-            booster = self.estimator.booster_
-        elif is_xgboost:
-            booster = self.estimator.get_booster()
+        predict_fn = _build_predict_function(self.estimator)
 
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values_dict is not None
+
+        if use_binned_residuals:
+            boot_indices = np.arange(n_boot)
+            level_binners = [
+                self.binner.get(level, self.binner['_unknown_level'])
+                for level in levels
+            ]
 
         for step in range(steps):
 
@@ -2536,15 +2504,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     # lagged_values shape: (n_lags, n_boot, n_levels)
                     lags_indices = window_size + step - self.lags
                     lagged_values = last_window_boot[lags_indices, :, :]
+                
                 # Reshape to (n_boot x n_levels, n_lags) with correct row ordering
                 features[:, :n_lags] = lagged_values.transpose(1, 2, 0).reshape(n_samples, n_lags)
 
             if has_window_features:
                 wf_col_offset = n_lags
+                # Reshape to (window_length, n_samples)
+                wf_in = last_window_boot[:window_size + step, :, :].reshape(window_size + step, n_samples)
                 for wf in self.window_features:
-                    wf_in = last_window_boot[:window_size + step, :, :]
-                    # Reshape to (window_length, n_samples)
-                    wf_in = wf_in.reshape(window_size + step, n_samples)
                     wf_out = wf.transform(wf_in)
                     n_wf_cols = wf_out.shape[1]
                     features[:, wf_col_offset:wf_col_offset + n_wf_cols] = wf_out
@@ -2554,21 +2522,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 # Reshape (n_levels, n_exog) to (n_boot × n_levels, n_exog)
                 features[:, -n_exog:] = np.tile(exog_values_dict[step + 1], (n_boot, 1))
 
-            if is_linear:
-                pred = features.dot(coef) + intercept
-            elif is_lightgbm:
-                pred = booster.predict(features)
-            elif is_xgboost:
-                pred = booster.inplace_predict(features)
-            elif is_rf:
-                X_f32 = features.astype(np.float32)
-                preds = [tree.tree_.predict(X_f32)[:, 0] for tree in self.estimator.estimators_]
-                pred = np.mean(preds, axis=0)
-            elif is_dt:
-                X_f32 = features.astype(np.float32)
-                pred = self.estimator.tree_.predict(X_f32)[:, 0]
-            else:
-                pred = self.estimator.predict(features)
+            pred = predict_fn(features)
 
             # Reshape from (n_boot × n_levels,) to (n_levels, n_boot)
             pred = pred.reshape(n_boot, n_levels).T
@@ -2578,11 +2532,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 features.flags.writeable = True
 
             if use_binned_residuals:
-                boot_indices = np.arange(n_boot)
                 # Vectorized residual lookup for all levels and boots
                 # sampled_residuals shape: (n_bins, steps, n_boot, n_levels)
-                for j, level in enumerate(levels):
-                    binner = self.binner.get(level, self.binner['_unknown_level'])
+                for j, binner in enumerate(level_binners):
                     # Transform all predictions for this level at once (n_boot predictions)
                     predicted_bins = binner.transform(pred[j, :]).astype(int)
                     # Vectorized lookup: sampled_residuals[predicted_bins, step, boot_indices, j]
