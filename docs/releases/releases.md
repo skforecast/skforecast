@@ -10,6 +10,28 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.21.0 <small>In development</small> { id="0.21.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Optimized internal prediction loops in `_recursive_predict` and `_recursive_predict_bootstrapping` for <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>. Changes include vectorized lag indexing for non-contiguous lags (~50% faster with 15-20 lags), pre-computation of loop-invariant values, and reduced redundant operations. These improvements result in faster `predict` methods calls, especially in scenarios with many lags and bootstrap iterations.
+
+
+**Added**
+
+
+**Changed**
+
++ Optimized internal prediction loops in `_recursive_predict` and `_recursive_predict_bootstrapping` for <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>. Changes include vectorized lag indexing for non-contiguous lags (~50% faster with 15-20 lags), pre-computation of loop-invariant values, and reduced redundant operations. These improvements result in faster `predict` methods calls, especially in scenarios with many lags and bootstrap iterations.
+
++ `kwargs_read_csv` has been renamed to `kwargs_read` in the `fetch_dataset` function. The new name reflects that the keyword arguments are passed to both `pd.read_csv` and `pd.read_parquet`, depending on the dataset file type.
+
+
+**Fixed**
+
++ Fixed an issue where using a `transformer_y` or `transformer_series` that expands the target into multiple columns (e.g., `OneHotEncoder`) produced a non-descriptive internal error. Now, a clear `ValueError` is raised explaining that transformers applied to the target series must return a single column. ([#1126](https://github.com/skforecast/skforecast/pull/1126))
+
+
 ## 0.20.1 <small>Feb 11, 2026</small> { id="0.20.1" }
 
 The main changes in this release are:
