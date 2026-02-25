@@ -111,6 +111,8 @@ def plot_multivariate_time_series_corr(
 
     if ax is None:
         fig, ax = plt.subplots(1, 1, **fig_kw)
+    else:
+        fig = ax.get_figure()
     
     sns.heatmap(
         corr,

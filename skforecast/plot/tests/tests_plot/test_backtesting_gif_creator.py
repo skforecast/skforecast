@@ -6,6 +6,7 @@ import pytest
 import numpy as np
 import pandas as pd
 import matplotlib
+from pathlib import Path
 from skforecast.model_selection import TimeSeriesFold
 from ... import backtesting_gif_creator
 
@@ -107,3 +108,72 @@ def test_backtesting_gif_creator_output(cv_kwargs):
     backtesting_gif_creator(data=data['y'], cv=cv, filename="backtesting.gif", dpi=50)
     backtesting_gif_creator(data=data, cv=cv_window_size, filename="backtesting.gif", dpi=50)
     os.remove("backtesting.gif")
+
+
+def test_backtesting_gif_creator_output_returns_path():
+    """
+    Test that backtesting_gif_creator returns a Path object ending in '.gif'.
+    """
+    matplotlib.use("Agg")
+    data = pd.Series(np.arange(0, 100))
+    cv = TimeSeriesFold(steps=10, initial_train_size=70, verbose=False)
+
+    result = backtesting_gif_creator(data=data, cv=cv, filename="test_output.gif", dpi=50)
+
+    assert isinstance(result, Path)
+    assert str(result).endswith(".gif")
+    Path("test_output.gif").unlink(missing_ok=True)
+
+
+def test_backtesting_gif_creator_output_file_is_created():
+    """
+    Test that backtesting_gif_creator creates a GIF file at the returned path.
+    """
+    matplotlib.use("Agg")
+    filename = "test_file_created.gif"
+    data = pd.Series(np.arange(0, 100))
+    cv = TimeSeriesFold(steps=10, initial_train_size=70, verbose=False)
+
+    result = backtesting_gif_creator(data=data, cv=cv, filename=filename, dpi=50)
+
+    assert Path(filename).exists()
+    Path(filename).unlink()
+
+
+def test_backtesting_gif_creator_output_custom_colors():
+    """
+    Test that backtesting_gif_creator runs without error when a valid full
+    colors dict is passed.
+    """
+    matplotlib.use("Agg")
+    data = pd.Series(np.arange(0, 100))
+    cv = TimeSeriesFold(steps=10, initial_train_size=70, verbose=False)
+    colors = {
+        "train": "#00aa00",
+        "last_window": "#ff9900",
+        "gap": "#888888",
+        "test": "#0055cc",
+        "v_lines": "#111111",
+    }
+
+    result = backtesting_gif_creator(data=data, cv=cv, colors=colors, filename="test_colors.gif", dpi=50)
+
+    assert isinstance(result, Path)
+    Path("test_colors.gif").unlink(missing_ok=True)
+
+
+def test_backtesting_gif_creator_output_plot_last_window():
+    """
+    Test that backtesting_gif_creator runs without error when plot_last_window
+    is True and cv has a window_size set.
+    """
+    matplotlib.use("Agg")
+    data = pd.Series(np.arange(0, 100))
+    cv = TimeSeriesFold(steps=10, initial_train_size=70, window_size=10, verbose=False)
+
+    result = backtesting_gif_creator(
+        data=data, cv=cv, plot_last_window=True, filename="test_last_window.gif", dpi=50
+    )
+
+    assert isinstance(result, Path)
+    Path("test_last_window.gif").unlink(missing_ok=True)
