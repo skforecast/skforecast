@@ -1,46 +1,24 @@
 # Unit test set_dark_theme
 # ==============================================================================
 import copy
+import pytest
 import matplotlib
 from skforecast.plot import set_dark_theme
 
 _EXPECTED_FACECOLOR = "#001633"
 
 
-def test_set_dark_theme_returns_none():
+def test_set_dark_theme_default():
     """
-    Test that set_dark_theme returns None.
+    Test that set_dark_theme returns None and sets the expected rcParam keys
+    including facecolor, grid, spines and line width.
     """
     saved = copy.deepcopy(dict(matplotlib.rcParams))
     try:
         result = set_dark_theme()
-    finally:
-        matplotlib.rcParams.update(saved)
-
-    assert result is None
-
-
-def test_set_dark_theme_modifies_facecolor():
-    """
-    Test that set_dark_theme sets figure.facecolor and axes.facecolor to the
-    expected dark-navy colour.
-    """
-    saved = copy.deepcopy(dict(matplotlib.rcParams))
-    try:
-        set_dark_theme()
+        assert result is None
         assert matplotlib.rcParams["figure.facecolor"] == _EXPECTED_FACECOLOR
         assert matplotlib.rcParams["axes.facecolor"] == _EXPECTED_FACECOLOR
-    finally:
-        matplotlib.rcParams.update(saved)
-
-
-def test_set_dark_theme_modifies_expected_keys():
-    """
-    Test that set_dark_theme updates a representative set of rcParam keys.
-    """
-    saved = copy.deepcopy(dict(matplotlib.rcParams))
-    try:
-        set_dark_theme()
         assert matplotlib.rcParams["axes.grid"] is True
         assert matplotlib.rcParams["axes.spines.left"] is False
         assert matplotlib.rcParams["axes.spines.right"] is False
@@ -51,28 +29,23 @@ def test_set_dark_theme_modifies_expected_keys():
         matplotlib.rcParams.update(saved)
 
 
-def test_set_dark_theme_custom_style():
+@pytest.mark.parametrize(
+    "custom_style, expected_linewidth",
+    [
+        ({}, 1.5),
+        ({"lines.linewidth": 5.0}, 5.0),
+    ],
+    ids=["empty_dict", "override_linewidth"],
+)
+def test_set_dark_theme_custom_style(custom_style, expected_linewidth):
     """
-    Test that custom_style values override the default dark theme.
-    """
-    saved = copy.deepcopy(dict(matplotlib.rcParams))
-    try:
-        set_dark_theme(custom_style={"lines.linewidth": 5.0})
-        assert matplotlib.rcParams["lines.linewidth"] == 5.0
-        # Base dark theme key should still be set
-        assert matplotlib.rcParams["figure.facecolor"] == _EXPECTED_FACECOLOR
-    finally:
-        matplotlib.rcParams.update(saved)
-
-
-def test_set_dark_theme_empty_custom_style():
-    """
-    Test that passing an empty dict for custom_style still applies the default
-    dark theme without error.
+    Test that custom_style values override defaults when provided and that
+    passing an empty dict still applies the default dark theme.
     """
     saved = copy.deepcopy(dict(matplotlib.rcParams))
     try:
-        set_dark_theme(custom_style={})
+        set_dark_theme(custom_style=custom_style)
         assert matplotlib.rcParams["figure.facecolor"] == _EXPECTED_FACECOLOR
+        assert matplotlib.rcParams["lines.linewidth"] == expected_linewidth
     finally:
         matplotlib.rcParams.update(saved)

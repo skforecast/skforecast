@@ -1,5 +1,6 @@
 # Unit test plot_prediction_intervals
 # ==============================================================================
+import pytest
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -38,74 +39,16 @@ def _make_fixtures(steps: int = 24, seed: int = 123):
     return predictions, y_true, target_variable
 
 
-def test_plot_prediction_intervals_returns_none():
-    """
-    Test that plot_prediction_intervals returns None.
-    """
-    matplotlib.use("Agg")
-    predictions, y_true, target_variable = _make_fixtures()
-
-    result = plot_prediction_intervals(
-        predictions=predictions,
-        y_true=y_true,
-        target_variable=target_variable,
-    )
-
-    assert result is None
-    plt.close("all")
-
-
 def test_plot_prediction_intervals_output_with_ax():
     """
-    Test that plot_prediction_intervals draws real values, predictions (lines) and
-    the fill-between region (collection) on the provided Axes.
+    Test that plot_prediction_intervals returns None, draws real values and
+    predictions (lines), the fill-between region (collection), sets titles
+    and creates a legend with the expected labels on the provided Axes.
     """
-    matplotlib.use("Agg")
     predictions, y_true, target_variable = _make_fixtures()
     fig, ax = plt.subplots()
-
-    plot_prediction_intervals(
-        predictions=predictions,
-        y_true=y_true,
-        target_variable=target_variable,
-        ax=ax,
-    )
-
-    assert len(ax.lines) >= 2           # real value + prediction lines
-    assert len(ax.collections) >= 1     # fill_between region
-    plt.close(fig)
-
-
-def test_plot_prediction_intervals_output_without_ax():
-    """
-    Test that plot_prediction_intervals creates its own figure when no ax is
-    provided and still draws lines and collections on the current axes.
-    """
-    matplotlib.use("Agg")
-    predictions, y_true, target_variable = _make_fixtures()
 
     result = plot_prediction_intervals(
-        predictions=predictions,
-        y_true=y_true,
-        target_variable=target_variable,
-    )
-
-    assert result is None
-    ax = plt.gca()
-    assert len(ax.lines) >= 2
-    assert len(ax.collections) >= 1
-    plt.close("all")
-
-
-def test_plot_prediction_intervals_output_with_titles():
-    """
-    Test that plot_prediction_intervals sets title, xlabel and ylabel when provided.
-    """
-    matplotlib.use("Agg")
-    predictions, y_true, target_variable = _make_fixtures()
-    fig, ax = plt.subplots()
-
-    plot_prediction_intervals(
         predictions=predictions,
         y_true=y_true,
         target_variable=target_variable,
@@ -115,46 +58,51 @@ def test_plot_prediction_intervals_output_with_titles():
         ax=ax,
     )
 
+    assert result is None
+    assert len(ax.lines) >= 2           # real value + prediction lines
+    assert len(ax.collections) >= 1     # fill_between region
     assert ax.get_title() == "Test Title"
     assert ax.get_xlabel() == "X Label"
     assert ax.get_ylabel() == "Y Label"
-    plt.close(fig)
-
-
-def test_plot_prediction_intervals_output_legend():
-    """
-    Test that the legend is created with the expected labels.
-    """
-    matplotlib.use("Agg")
-    predictions, y_true, target_variable = _make_fixtures()
-    fig, ax = plt.subplots()
-
-    plot_prediction_intervals(
-        predictions=predictions,
-        y_true=y_true,
-        target_variable=target_variable,
-        ax=ax,
-    )
-
     legend = ax.get_legend()
     assert legend is not None
     legend_texts = [t.get_text() for t in legend.get_texts()]
     assert "real value" in legend_texts
     assert "prediction" in legend_texts
     assert "prediction interval" in legend_texts
-    plt.close(fig)
+
+
+def test_plot_prediction_intervals_output_without_ax():
+    """
+    Test that plot_prediction_intervals creates its own figure when no ax is
+    provided and still draws lines and collections on the current axes.
+    """
+    predictions, y_true, target_variable = _make_fixtures()
+
+    result = plot_prediction_intervals(
+        predictions=predictions,
+        y_true=y_true,
+        target_variable=target_variable,
+    )
+
+    assert result is None
+    fig = plt.gcf()
+    ax = fig.axes[0]
+    assert len(ax.lines) >= 2
+    assert len(ax.collections) >= 1
 
 
 def test_plot_prediction_intervals_output_initial_x_zoom():
     """
-    Test that plot_prediction_intervals applies initial_x_zoom without error.
+    Test that plot_prediction_intervals applies initial_x_zoom and the x-axis
+    limits reflect the requested zoom range.
     """
-    matplotlib.use("Agg")
     predictions, y_true, target_variable = _make_fixtures()
     fig, ax = plt.subplots()
-    zoom = [predictions.index[0], predictions.index[len(predictions) // 2]]
+    zoom_end = predictions.index[len(predictions) // 2]
+    zoom = [predictions.index[0], zoom_end]
 
-    result = plot_prediction_intervals(
+    plot_prediction_intervals(
         predictions=predictions,
         y_true=y_true,
         target_variable=target_variable,
@@ -162,15 +110,23 @@ def test_plot_prediction_intervals_output_initial_x_zoom():
         ax=ax,
     )
 
-    assert result is None
-    plt.close(fig)
+    xlim = ax.get_xlim()
+    # After applying zoom the right limit should be less than the full range
+    fig_no_zoom, ax_no_zoom = plt.subplots()
+    plot_prediction_intervals(
+        predictions=predictions,
+        y_true=y_true,
+        target_variable=target_variable,
+        ax=ax_no_zoom,
+    )
+    xlim_full = ax_no_zoom.get_xlim()
+    assert xlim[1] < xlim_full[1]
 
 
 def test_plot_prediction_intervals_output_y_true_as_dataframe():
     """
     Test that plot_prediction_intervals works when y_true is a DataFrame.
     """
-    matplotlib.use("Agg")
     predictions, y_true_series, target_variable = _make_fixtures()
     y_true_df = y_true_series.to_frame()
     fig, ax = plt.subplots()
@@ -184,4 +140,3 @@ def test_plot_prediction_intervals_output_y_true_as_dataframe():
 
     assert len(ax.lines) >= 2
     assert len(ax.collections) >= 1
-    plt.close(fig)

@@ -39,7 +39,7 @@ def plot_residuals(
     ----------
     residuals : pandas Series, numpy ndarray, default None.
         Values of residuals. If `None`, residuals are calculated internally using
-        `y_true` and `y_true`.
+        `y_true` and `y_pred`.
     y_true : pandas Series, numpy ndarray, default None.
         Ground truth (correct) values. Ignored if residuals is not `None`.
     y_pred : pandas Series, numpy ndarray, default None. 
@@ -434,7 +434,7 @@ def backtesting_gif_creator(
     title_template: str = "Backtesting — Fold {fold_num} (refit: {refit})",
     fps: int = 2,
     dpi: int = 100
-) -> str:
+) -> Path:
     """
     Create a GIF of the backtesting folds using Matplotlib FuncAnimation.
 
@@ -471,7 +471,7 @@ def backtesting_gif_creator(
 
     Returns
     -------
-    filename_path : str
+    filename_path : Path
         Path to the output GIF file.
 
     """
