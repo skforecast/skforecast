@@ -573,7 +573,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
         Notes
         -----
-        Returned matrices are views into the original `y` so care must be taken
+        Returned matrices may be views into the original `y` so care must be taken
         when modifying them.
 
         """
@@ -1443,10 +1443,16 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         for i in range(steps):
 
+            remaining = steps - i
+
             if has_lags:
-                X[:n_lags] = last_window[-self.lags - (steps - i)]
+                if self.lags_are_contiguous:
+                    X[:n_lags] = last_window[-(remaining + n_lags): -remaining][::-1]
+                else:
+                    X[:n_lags] = last_window[-self.lags - remaining]
+            
             if has_window_features:
-                window_data = last_window[i : -(steps - i)]
+                window_data = last_window[i : -remaining]
                 X[n_lags : n_lags + n_window_features] = np.concatenate(
                     [
                         wf.transform(window_data)
@@ -1466,7 +1472,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
-            last_window[-(steps - i)] = pred
+            last_window[-remaining] = pred
 
         set_cpu_gpu_device(estimator=self.estimator, device=original_device)
 
