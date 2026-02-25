@@ -19,23 +19,16 @@ def test_load_demo_dataset_returns_correct_series():
     assert df.shape == (204,)
 
 
-def test_load_demo_dataset_verbose_true_prints_output(capsys):
+def test_load_demo_dataset_verbose(capsys):
     """
-    `load_demo_dataset` with `verbose=True` prints a panel containing the
-    dataset name and shape information to stdout.
+    `load_demo_dataset` prints dataset info when `verbose=True` and produces
+    no output when `verbose=False`.
     """
     load_demo_dataset(verbose=True)
-
     captured = capsys.readouterr()
     assert 'h2o' in captured.out
     assert '204' in captured.out
 
-
-def test_load_demo_dataset_verbose_false_no_output(capsys):
-    """
-    `load_demo_dataset` with `verbose=False` produces no stdout output.
-    """
     load_demo_dataset(verbose=False)
-
     captured = capsys.readouterr()
     assert captured.out == ''

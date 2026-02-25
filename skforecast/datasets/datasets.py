@@ -7,9 +7,9 @@
 # coding=utf-8
 
 from __future__ import annotations
+import warnings
 import pandas as pd
 import textwrap
-from urllib.parse import urlparse
 from rich.console import Console
 from rich.panel import Panel
 
@@ -716,7 +716,7 @@ def _print_dataset_info(
     if info is None:
         raise ValueError(
             f"Dataset '{dataset_name}' not found. "
-            f"Available datasets are: {sorted(datasets.keys())}"
+            f"Available datasets are: {sorted(datasets)}"
         )
     
     console = Console()
@@ -724,8 +724,6 @@ def _print_dataset_info(
     source = info['source']
     source = textwrap.fill(source, width=80)
     url = info['url']
-    if isinstance(url, list):
-        url = "Data is stored in multiple files:\n  " + "\n  ".join(url)
     if '{version}' in url:
         url = url.format(version=version)
     url = textwrap.fill(url, width=80)
@@ -748,7 +746,7 @@ def fetch_dataset(
     name: str,
     version: str | int = 'latest',
     raw: bool = False,
-    kwargs_read_csv: dict | None = None,
+    kwargs_read: dict | None = None,
     verbose: bool = True
 ) -> pd.DataFrame:
     """
@@ -767,8 +765,9 @@ def fetch_dataset(
         is fetched. The preprocessing consists of setting the column with the 
         date/time as index and converting the index to datetime. A frequency is 
         also set to the index.
-    kwargs_read_csv: dict, default None
-        Kwargs to pass to pandas `read_csv` function.
+    kwargs_read: dict, default None
+        Kwargs to pass to pandas `pd.read_csv` or `pd.read_parquet` function 
+        depending on the dataset file type.
     verbose: bool, default True
         If True, print information about the dataset.
     
@@ -779,13 +778,13 @@ def fetch_dataset(
     
     """
 
-    kwargs_read_csv = kwargs_read_csv or {}
+    kwargs_read = kwargs_read or {}
     version = 'main' if version == 'latest' else f'{version}'
 
     if name not in datasets:
         raise ValueError(
             f"Dataset '{name}' not found. "
-            f"Available datasets are: {sorted(datasets.keys())}"
+            f"Available datasets are: {sorted(datasets)}"
         )
     
     url = datasets[name]['url']
@@ -793,51 +792,38 @@ def fetch_dataset(
         url = url.format(version=version)
     file_type = datasets[name]['file_type']
 
-    if not isinstance(url, list):
-        parsed = urlparse(url)
-        if parsed.scheme == "https" and parsed.netloc == "drive.google.com":
-            file_id = url.split('/')[-2]
-            url = 'https://drive.google.com/uc?id=' + file_id
-        if file_type == 'csv':
-            try:
-                sep = datasets[name]['sep']
-                df = pd.read_csv(url, sep=sep, **kwargs_read_csv)
-            except Exception as e:
-                raise ValueError(
-                    f"Error reading dataset '{name}' from {url}: {str(e)}."
-                )
-        elif file_type == 'parquet':
-            try:
-                df = pd.read_parquet(url)
-            except Exception as e:
-                raise ValueError(
-                    f"Error reading dataset '{name}' from {url}: {str(e)}."
-                )
-    else:
-        try: 
-            df = []
-            for url_partition in url:
-                path = 'https://drive.google.com/uc?export=download&id=' + url_partition.split('/')[-2]
-                df.append(pd.read_parquet(path))
+    if file_type == 'csv':
+        try:
+            sep = datasets[name]['sep']
+            df = pd.read_csv(url, sep=sep, **kwargs_read)
         except Exception as e:
             raise ValueError(
                 f"Error reading dataset '{name}' from {url}: {str(e)}."
             )
-        df = pd.concat(df, axis=0).reset_index(drop=True)
+    elif file_type == 'parquet':
+        try:
+            df = pd.read_parquet(url, **kwargs_read)
+        except Exception as e:
+            raise ValueError(
+                f"Error reading dataset '{name}' from {url}: {str(e)}."
+            )
 
     if not raw:
         try:
             index_col = datasets[name]['index_col']
             freq = datasets[name]['freq']
-            if freq == 'H' and tuple(int(x) for x in pd.__version__.split('.')[:2]) >= (2, 2):
-                freq = 'h'
+            if freq == 'h' and tuple(int(x) for x in pd.__version__.split('.')[:2]) < (2, 2):
+                freq = 'H'
             date_format = datasets[name]['date_format']
             df = df.set_index(index_col)
             df.index = pd.to_datetime(df.index, format=date_format)
             df = df.asfreq(freq)
             df = df.sort_index()
-        except Exception:
-            pass
+        except Exception as e:
+            warnings.warn(
+                f"Could not preprocess dataset '{name}': {e}",
+                stacklevel=2
+            )
     
     if verbose:
         _print_dataset_info(name, version=version, shape=df.shape)
