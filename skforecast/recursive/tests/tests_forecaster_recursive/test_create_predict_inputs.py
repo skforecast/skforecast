@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
 from skforecast.recursive import ForecasterRecursive
+from skforecast.preprocessing import TimeSeriesDifferentiator
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
@@ -59,6 +60,7 @@ def test_create_predict_inputs_when_estimator_is_LinearRegression():
     assert results[1] is None
     pd.testing.assert_index_equal(results[2], expected[2])
     assert results[3] == expected[3]
+    assert results[4] is None
 
 
 def test_create_predict_inputs_when_with_transform_y():
@@ -91,6 +93,7 @@ def test_create_predict_inputs_when_with_transform_y():
     assert results[1] is None
     pd.testing.assert_index_equal(results[2], expected[2])
     assert results[3] == expected[3]
+    assert results[4] is None
 
 
 def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series():
@@ -123,6 +126,7 @@ def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series()
     np.testing.assert_array_almost_equal(results[1], expected[1])
     pd.testing.assert_index_equal(results[2], expected[2])
     assert results[3] == expected[3]
+    assert results[4] is None
 
 
 def test_create_predict_inputs_when_with_transform_y_and_transform_exog_df():
@@ -172,6 +176,7 @@ def test_create_predict_inputs_when_with_transform_y_and_transform_exog_df():
     np.testing.assert_array_almost_equal(results[1], expected[1])
     pd.testing.assert_index_equal(results[2], expected[2])
     assert results[3] == expected[3]
+    assert results[4] is None
 
 
 def test_create_predict_inputs_when_categorical_features_native_implementation_HistGradientBoostingRegressor():
@@ -234,6 +239,7 @@ def test_create_predict_inputs_when_categorical_features_native_implementation_H
     np.testing.assert_array_almost_equal(results[1], expected[1])
     pd.testing.assert_index_equal(results[2], expected[2])
     assert results[3] == expected[3]
+    assert results[4] is None
 
 
 def test_create_predict_inputs_when_with_exog_differentiation_is_1():
@@ -291,3 +297,33 @@ def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     np.testing.assert_array_almost_equal(results[1], expected[1])
     pd.testing.assert_index_equal(results[2], expected[2])
     assert results[3] == expected[3]
+    assert isinstance(results[4], TimeSeriesDifferentiator)
+    assert results[4] is not forecaster.differentiator
+
+
+def test_create_predict_inputs_does_not_mutate_differentiator():
+    """
+    Test that _create_predict_inputs does not mutate self.differentiator
+    when differentiation is used. The differentiator state after fit() should
+    remain unchanged after calling _create_predict_inputs.
+    """
+
+    end_train = '2003-03-01 23:59:00'
+
+    forecaster = ForecasterRecursive(
+                     estimator       = LinearRegression(),
+                     lags            = 15,
+                     differentiation = 1
+                 )
+    forecaster.fit(y=data.loc[:end_train])
+
+    # Store differentiator state after fit
+    last_values_after_fit = forecaster.differentiator.last_values.copy()
+    initial_values_after_fit = forecaster.differentiator.initial_values.copy()
+
+    # Call _create_predict_inputs (should NOT mutate self.differentiator)
+    forecaster._create_predict_inputs(steps=5)
+
+    # Verify differentiator state is unchanged
+    assert forecaster.differentiator.last_values == last_values_after_fit
+    assert forecaster.differentiator.initial_values == initial_values_after_fit

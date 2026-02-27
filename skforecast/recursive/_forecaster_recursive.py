@@ -1173,7 +1173,7 @@ class ForecasterRecursive(ForecasterBase):
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         check_inputs: bool = True
-    ) -> tuple[np.ndarray, np.ndarray | None, pd.Index, int]:
+    ) -> tuple[np.ndarray, np.ndarray | None, pd.Index, int, object | None]:
         """
         Create the inputs needed for the first iteration of the prediction 
         process. As this is a recursive process, the last window is updated at 
@@ -1223,6 +1223,11 @@ class ForecasterRecursive(ForecasterBase):
             Index of the predictions.
         steps: int
             Number of future steps predicted.
+        differentiator : TimeSeriesDifferentiator, None
+            A copy of the differentiator fitted with the last window values.
+            `None` if no differentiation is applied. This is used to reverse
+            the differentiation of predictions without mutating the forecaster's
+            internal state.
         
         """
 
@@ -1273,7 +1278,10 @@ class ForecasterRecursive(ForecasterBase):
                                  inverse_transform = False
                              )
         if self.differentiation is not None:
-            last_window_values = self.differentiator.fit_transform(last_window_values)
+            differentiator = copy(self.differentiator)
+            last_window_values = differentiator.fit_transform(last_window_values)
+        else:
+            differentiator = None
 
         if exog is not None:
 
@@ -1303,7 +1311,7 @@ class ForecasterRecursive(ForecasterBase):
                                steps = steps,
                            )
 
-        return last_window_values, exog_values, prediction_index, steps
+        return last_window_values, exog_values, prediction_index, steps, differentiator
 
     def _recursive_predict(
         self,
@@ -1552,7 +1560,8 @@ class ForecasterRecursive(ForecasterBase):
             last_window_values,
             exog_values,
             prediction_index,
-            steps
+            steps,
+            _
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -1666,7 +1675,8 @@ class ForecasterRecursive(ForecasterBase):
             last_window_values,
             exog_values,
             prediction_index,
-            steps
+            steps,
+            differentiator
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -1686,8 +1696,8 @@ class ForecasterRecursive(ForecasterBase):
                               exog_values        = exog_values
                           )
 
-        if self.differentiation is not None:
-            predictions = self.differentiator.inverse_transform_next_window(predictions)
+        if differentiator is not None:
+            predictions = differentiator.inverse_transform_next_window(predictions)
 
         predictions = transform_numpy(
                           array             = predictions,
@@ -1768,7 +1778,8 @@ class ForecasterRecursive(ForecasterBase):
             last_window_values,
             exog_values,
             prediction_index,
-            steps
+            steps,
+            differentiator
         ) = self._create_predict_inputs(
                 steps                   = steps, 
                 last_window             = last_window, 
@@ -1814,9 +1825,9 @@ class ForecasterRecursive(ForecasterBase):
                 n_boot               = n_boot
             )
 
-        if self.differentiation is not None:
+        if differentiator is not None:
             boot_predictions = (
-                self.differentiator.inverse_transform_next_window(boot_predictions)
+                differentiator.inverse_transform_next_window(boot_predictions)
             )
         
         if self.transformer_y:
@@ -1898,7 +1909,8 @@ class ForecasterRecursive(ForecasterBase):
             last_window_values,
             exog_values,
             prediction_index,
-            steps
+            steps,
+            differentiator
         ) = self._create_predict_inputs(
                 steps                   = steps,
                 last_window             = last_window,
@@ -1942,9 +1954,9 @@ class ForecasterRecursive(ForecasterBase):
         upper_bound = predictions + correction_factor
         predictions = np.column_stack([predictions, lower_bound, upper_bound])
 
-        if self.differentiation is not None:
+        if differentiator is not None:
             predictions = (
-                self.differentiator.inverse_transform_next_window(predictions)
+                differentiator.inverse_transform_next_window(predictions)
             )
         
         if self.transformer_y:
