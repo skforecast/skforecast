@@ -33,10 +33,6 @@ class RangeDriftDetector:
     drift statistics since it is used to check single observations during
     inference. Suitable for real-time applications.
 
-    Parameters
-    ----------
-    self
-
     Attributes
     ----------
     series_names_in_ : list
@@ -533,7 +529,7 @@ class RangeDriftDetector:
             first iteration of the prediction (t + 1).
         exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
-        verbose : bool, default False
+        verbose : bool, default True
             Whether to print a summary of the check.
         suppress_warnings : bool, default False
             Whether to suppress warnings.

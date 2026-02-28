@@ -2268,7 +2268,7 @@ def select_n_jobs_fit_forecaster(
     forecaster_name : str
         Forecaster name.
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
 
     Returns
     -------
@@ -3190,9 +3190,9 @@ def initialize_estimator(
     Parameters
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API, default None
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     regressor : estimator or pipeline compatible with the scikit-learn API, default None
-        Deprecated. An instance of a estimator or pipeline compatible with the
+        Deprecated. An instance of an estimator or pipeline compatible with the
         scikit-learn API.
 
     Returns

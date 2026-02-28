@@ -117,7 +117,7 @@ class ForecasterEquivalentDate():
     training_range_ : pandas Index
         First and last values of index of the data used during training.
     series_name_in_ : str
-        Names of the series provided by the user during training.
+        Name of the series provided by the user during training.
     in_sample_residuals_ : numpy ndarray
         Residuals of the model when predicting training data. Only stored up to
         10_000 values. If `transformer_y` is not `None`, residuals are stored in
@@ -402,7 +402,7 @@ class ForecasterEquivalentDate():
             except KeyError:
                 raise ValueError(
                     f"The length of `y` ({len(y)}), must be greater than or equal "
-                    f"to the window size ({self.window_size}). This is because  "
+                    f"to the window size ({self.window_size}). This is because "
                     f"the offset ({self.offset}) is larger than the available "
                     f"data. Try to decrease the size of the offset ({self.offset}), "
                     f"the number of `n_offsets` ({self.n_offsets}) or increase the "
@@ -412,7 +412,7 @@ class ForecasterEquivalentDate():
             if len(y) <= self.window_size:
                 raise ValueError(
                     f"Length of `y` must be greater than the maximum window size "
-                    f"needed by the forecaster. This is because  "
+                    f"needed by the forecaster. This is because "
                     f"the offset ({self.offset}) is larger than the available "
                     f"data. Try to decrease the size of the offset ({self.offset}), "
                     f"the number of `n_offsets` ({self.n_offsets}) or increase the "

@@ -73,7 +73,6 @@ def grid_search_forecaster(
     cv : TimeSeriesFold, OneStepAheadFold
         TimeSeriesFold or OneStepAheadFold object with the information needed to split
         the data into folds.
-        **New in version 0.14.0**
     param_grid : dict
         Dictionary with parameters names (`str`) as keys and lists of parameter
         settings to try as values.
@@ -181,7 +180,6 @@ def random_search_forecaster(
     cv : TimeSeriesFold, OneStepAheadFold
         TimeSeriesFold or OneStepAheadFold object with the information needed to split
         the data into folds.
-        **New in version 0.14.0**
     param_distributions : dict
         Dictionary with parameters names (`str`) as keys and 
         distributions or lists of parameters to try.
@@ -291,7 +289,6 @@ def _evaluate_grid_hyperparameters(
     cv : TimeSeriesFold, OneStepAheadFold
         TimeSeriesFold or OneStepAheadFold object with the information needed to split
         the data into folds.
-        **New in version 0.14.0**
     param_grid : dict
         Dictionary with parameters names (`str`) as keys and lists of parameter
         settings to try as values.
@@ -569,7 +566,6 @@ def bayesian_search_forecaster(
     cv : TimeSeriesFold, OneStepAheadFold
         TimeSeriesFold or OneStepAheadFold object with the information needed to split
         the data into folds.
-        **New in version 0.14.0**
     search_space : Callable (optuna)
         Function with argument `trial` which returns a dictionary with parameters names 
         (`str`) as keys and Trial object from optuna (trial.suggest_float, 
@@ -690,7 +686,6 @@ def _bayesian_search_optuna(
     cv : TimeSeriesFold, OneStepAheadFold
         TimeSeriesFold or OneStepAheadFold object with the information needed to split
         the data into folds.
-        **New in version 0.
     search_space : Callable
         Function with argument `trial` which returns a dictionary with parameters names 
         (`str`) as keys and Trial object from optuna (trial.suggest_float, 
@@ -1033,7 +1028,6 @@ def grid_search_forecaster_multiseries(
     cv : TimeSeriesFold, OneStepAheadFold
         TimeSeriesFold or OneStepAheadFold object with the information needed to split
         the data into folds.
-        **New in version 0.14.0**
     param_grid : dict
         Dictionary with parameters names (`str`) as keys and lists of parameter
         settings to try as values.
@@ -1640,6 +1634,9 @@ def bayesian_search_forecaster_multiseries(
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
+    cv : TimeSeriesFold, OneStepAheadFold
+        TimeSeriesFold or OneStepAheadFold object with the information needed to split
+        the data into folds.
     search_space : Callable
         Function with argument `trial` which returns a dictionary with parameters names 
         (`str`) as keys and Trial object from optuna (trial.suggest_float, 
@@ -1833,7 +1830,6 @@ def _bayesian_search_optuna_multiseries(
 
         - column levels: levels configuration for each iteration.
         - column lags: lags configuration for each iteration.
-        - column lags_label: descriptive label or alias for the lags.
         - column params: parameters configuration for each iteration.
         - n columns with metrics: metric/s value/s estimated for each iteration.
         There is one column for each metric and aggregation method. The name of
@@ -2212,7 +2208,6 @@ def grid_search_stats(
         Training time series. 
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data into folds.
-        **New in version 0.14.0**
     param_grid : dict
         Dictionary with parameters names (`str`) as keys and lists of parameter
         settings to try as values.
@@ -2307,7 +2302,6 @@ def random_search_stats(
         Training time series. 
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data into folds.
-        **New in version 0.14.0**
     param_distributions : dict
         Dictionary with parameters names (`str`) as keys and 
         distributions or lists of parameters to try.
@@ -2404,7 +2398,6 @@ def _evaluate_grid_hyperparameters_stats(
         Training time series. 
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data into folds.
-        **New in version 0.14.0**
     param_grid : dict
         Dictionary with parameters names (`str`) as keys and lists of parameter
         settings to try as values.

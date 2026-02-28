@@ -78,7 +78,7 @@ class ForecasterRnn(ForecasterBase):
     Parameters
     ----------
     estimator : estimator or pipeline compatible with the Keras API
-        An instance of a estimator or pipeline compatible with the Keras API.
+        An instance of an estimator or pipeline compatible with the Keras API.
     levels : str, list
         Name of one or more time series to be predicted. This determine the series
         the forecaster will be handling. If `None`, all series used during training
@@ -112,7 +112,7 @@ class ForecasterRnn(ForecasterBase):
     Attributes
     ----------
     estimator : estimator or pipeline compatible with the Keras API
-        An instance of a estimator or pipeline compatible with the Keras API.
+        An instance of an estimator or pipeline compatible with the Keras API.
         An instance of this estimator is trained for each step. All of them
         are stored in `self.estimators_`.
     levels : str, list
