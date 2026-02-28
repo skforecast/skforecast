@@ -377,12 +377,14 @@ class ForecasterEquivalentDate():
                 )
         
         # Reset values in case the forecaster has already been fitted.
-        self.last_window_    = None
-        self.index_type_     = None
-        self.index_freq_     = None
-        self.training_range_ = None
-        self.series_name_in_ = None
-        self.is_fitted       = False
+        self.last_window_             = None
+        self.index_type_              = None
+        self.index_freq_              = None
+        self.training_range_          = None
+        self.series_name_in_          = None
+        self.out_sample_residuals_        = None
+        self.out_sample_residuals_by_bin_ = None
+        self.is_fitted                = False
 
         _, y_index = check_extract_values_and_index(
             data=y, data_label='`y`', return_values=False
