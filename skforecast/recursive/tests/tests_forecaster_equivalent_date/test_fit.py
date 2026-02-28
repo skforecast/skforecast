@@ -84,7 +84,7 @@ def test_fit_ValueError_length_y_less_than_window_size_offset_int():
 
     err_msg = re.escape(
         "Length of `y` must be greater than the maximum window size "
-        "needed by the forecaster. This is because  "
+        "needed by the forecaster. This is because "
         "the offset (6) is larger than the available "
         "data. Try to decrease the size of the offset (6), "
         "the number of `n_offsets` (2) or increase the "
@@ -117,7 +117,7 @@ def test_fit_ValueError_length_y_less_than_window_size_offset_DateOffset(offset,
 
     err_msg = re.escape(
         f"The length of `y` (10), must be greater than or equal "
-        f"to the window size ({forecaster.window_size}). This is because  "
+        f"to the window size ({forecaster.window_size}). This is because "
         f"the offset ({forecaster.offset}) is larger than the available "
         f"data. Try to decrease the size of the offset ({forecaster.offset}), "
         f"the number of `n_offsets` (2) or increase the "

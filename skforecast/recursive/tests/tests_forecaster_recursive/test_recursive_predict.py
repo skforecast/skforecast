@@ -65,7 +65,7 @@ def test_recursive_predict_output_when_estimator_is_LinearRegression():
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)))
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -91,7 +91,7 @@ def test_recursive_predict_output_when_estimator_is_Ridge_StandardScaler():
                  )
     forecaster.fit(y=pd.Series(np.arange(50), name='y'))
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -115,7 +115,7 @@ def test_recursive_predict_output_with_window_features_LGBMRegressor():
     )
     forecaster.fit(y=y, exog=exog)
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=10, exog=exog_predict)
     )
     predictions = forecaster._recursive_predict(
@@ -142,7 +142,7 @@ def test_recursive_predict_output_with_window_features_XGBRegressor():
     )
     forecaster.fit(y=y, exog=exog)
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=10, exog=exog_predict)
     )
     predictions = forecaster._recursive_predict(
@@ -170,7 +170,7 @@ def test_recursive_predict_output_with_two_window_features():
     )
     forecaster.fit(y=y, exog=exog)
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=10, exog=exog_predict)
     )
     predictions = forecaster._recursive_predict(
@@ -203,10 +203,10 @@ def test_recursive_predict_fast_path_RandomForestRegressor_matches_generic_path(
     )
     forecaster_slow.fit(y=y)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10)
     )
 
@@ -245,10 +245,10 @@ def test_recursive_predict_fast_path_RandomForestRegressor_with_exog_and_window_
     )
     forecaster_slow.fit(y=y, exog=exog)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10, exog=exog_predict)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10, exog=exog_predict)
     )
 
@@ -282,10 +282,10 @@ def test_recursive_predict_fast_path_DecisionTreeRegressor_matches_generic_path(
     )
     forecaster_slow.fit(y=y)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10)
     )
 
@@ -324,10 +324,10 @@ def test_recursive_predict_fast_path_DecisionTreeRegressor_with_exog_and_window_
     )
     forecaster_slow.fit(y=y, exog=exog)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10, exog=exog_predict)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10, exog=exog_predict)
     )
 
@@ -361,10 +361,10 @@ def test_recursive_predict_fast_path_LinearRegression_matches_generic_path():
     )
     forecaster_slow.fit(y=y)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10)
     )
 
@@ -403,10 +403,10 @@ def test_recursive_predict_fast_path_LinearRegression_with_exog_and_window_featu
     )
     forecaster_slow.fit(y=y, exog=exog)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10, exog=exog_predict)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10, exog=exog_predict)
     )
 
@@ -440,10 +440,10 @@ def test_recursive_predict_fast_path_LGBMRegressor_matches_generic_path():
     )
     forecaster_slow.fit(y=y)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10)
     )
 
@@ -482,10 +482,10 @@ def test_recursive_predict_fast_path_LGBMRegressor_with_exog_and_window_features
     )
     forecaster_slow.fit(y=y, exog=exog)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10, exog=exog_predict)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10, exog=exog_predict)
     )
 
@@ -520,10 +520,10 @@ def test_recursive_predict_fast_path_XGBRegressor_matches_generic_path():
     )
     forecaster_slow.fit(y=y)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10)
     )
 
@@ -562,10 +562,10 @@ def test_recursive_predict_fast_path_XGBRegressor_with_exog_and_window_features(
     )
     forecaster_slow.fit(y=y, exog=exog)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10, exog=exog_predict)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10, exog=exog_predict)
     )
 

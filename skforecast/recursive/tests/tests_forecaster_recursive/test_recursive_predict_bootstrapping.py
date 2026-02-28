@@ -33,7 +33,7 @@ def test_recursive_predict_bootstrapping_output_with_residuals_zero():
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)))
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     # Create 2D array with sampled residuals: (steps, n_boot)
@@ -61,7 +61,7 @@ def test_recursive_predict_bootstrapping_output_with_residuals_last_step():
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)))
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     # Create 2D array with sampled residuals: (steps, n_boot)
@@ -88,7 +88,7 @@ def test_recursive_predict_bootstrapping_output_with_residuals():
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)))
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     # Create 2D array with sampled residuals: (steps, n_boot)
@@ -117,7 +117,7 @@ def test_recursive_predict_bootstrapping_output_with_binned_residuals():
     n_boot = 1
     forecaster = ForecasterRecursive(LGBMRegressor(verbose=-1), lags=3)
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=steps, exog=exog_predict)
     )
 
@@ -175,7 +175,7 @@ def test_recursive_predict_bootstrapping_output_with_binned_residuals_XGBRegress
         XGBRegressor(random_state=123, verbosity=0), lags=3
     )
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=steps, exog=exog_predict)
     )
 
@@ -224,7 +224,7 @@ def test_recursive_predict_bootstrapping_output_with_multiple_boots():
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)))
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     n_boot = 3
@@ -271,7 +271,7 @@ def test_recursive_predict_bootstrapping_output_with_window_features():
     )
     forecaster.fit(y=pd.Series(np.arange(50)))
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     n_boot = 2
@@ -307,7 +307,7 @@ def test_recursive_predict_bootstrapping_output_with_different_lags():
     forecaster = ForecasterRecursive(LinearRegression(), lags=5)
     forecaster.fit(y=pd.Series(np.arange(50)))
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=3)
     )
     n_boot = 2
@@ -344,7 +344,7 @@ def test_recursive_predict_bootstrapping_output_with_exog():
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)), exog=exog_data)
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=7, exog=exog_pred)
     )
     n_boot = 3
@@ -383,7 +383,7 @@ def test_recursive_predict_bootstrapping_values_consistency():
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)))
 
-    last_window_values, exog_values, _, _ = (
+    last_window_values, exog_values, _, _, _ = (
         forecaster._create_predict_inputs(steps=4)
     )
     n_boot = 4
@@ -424,10 +424,10 @@ def test_recursive_predict_bootstrapping_fast_path_RandomForestRegressor_matches
     )
     forecaster_slow.fit(y=y)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10)
     )
     sampled_residuals = np.zeros((10, n_boot))
@@ -475,10 +475,10 @@ def test_recursive_predict_bootstrapping_fast_path_RandomForestRegressor_with_ex
     )
     forecaster_slow.fit(y=y, exog=exog)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10, exog=exog_predict)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10, exog=exog_predict)
     )
     sampled_residuals = np.zeros((10, n_boot))
@@ -521,10 +521,10 @@ def test_recursive_predict_bootstrapping_fast_path_DecisionTreeRegressor_matches
     )
     forecaster_slow.fit(y=y)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10)
     )
     sampled_residuals = np.zeros((10, n_boot))
@@ -572,10 +572,10 @@ def test_recursive_predict_bootstrapping_fast_path_DecisionTreeRegressor_with_ex
     )
     forecaster_slow.fit(y=y, exog=exog)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=10, exog=exog_predict)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=10, exog=exog_predict)
     )
     sampled_residuals = np.zeros((10, n_boot))
@@ -620,10 +620,10 @@ def test_recursive_predict_bootstrapping_fast_path_RandomForestRegressor_with_bi
     )
     forecaster_slow.fit(y=y, exog=exog, store_in_sample_residuals=True)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=steps, exog=exog_predict)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=steps, exog=exog_predict)
     )
 
@@ -683,10 +683,10 @@ def test_recursive_predict_bootstrapping_fast_path_DecisionTreeRegressor_with_bi
     )
     forecaster_slow.fit(y=y, exog=exog, store_in_sample_residuals=True)
 
-    last_window_values_fast, exog_values_fast, _, _ = (
+    last_window_values_fast, exog_values_fast, _, _, _ = (
         forecaster_fast._create_predict_inputs(steps=steps, exog=exog_predict)
     )
-    last_window_values_slow, exog_values_slow, _, _ = (
+    last_window_values_slow, exog_values_slow, _, _, _ = (
         forecaster_slow._create_predict_inputs(steps=steps, exog=exog_predict)
     )
 
