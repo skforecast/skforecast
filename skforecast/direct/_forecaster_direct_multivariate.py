@@ -56,14 +56,14 @@ from ..model_selection._utils import _extract_data_folds_multiseries
 
 class ForecasterDirectMultiVariate(ForecasterBase):
     """
-    This class turns any estimator compatible with the scikit-learn API into a
+    This class turns any estimator compatible with the scikit-learn API into an
     autoregressive multivariate direct multi-step forecaster. A separate model 
     is created for each forecast time step. See documentation for more details.
 
     Parameters
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     level : str
         Name of the time series to be predicted.
     steps : int
@@ -120,13 +120,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         skforecast.utils.select_n_jobs_fit_forecaster.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : estimator or pipeline compatible with the Keras API
+    regressor : estimator or pipeline compatible with the scikit-learn API
         **Deprecated**, alias for `estimator`.
 
     Attributes
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
         An instance of this estimator is trained for each step. All of them 
         are stored in `self.estimators_`.
     estimators_ : dict
@@ -662,7 +662,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         # Return the combined style and content
         return style + content
-
     
     def _create_data_to_return_dict(
         self, 
@@ -748,10 +747,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Create the lagged values and their target variable from a time series.
 
         Note that the returned matrix `X_data` contains the lag 1 in the first 
-        column, the lag 2 in the in the second column and so on.
-
-        The Returned matrices may be views into the original `y` so care must be taken
-        when modifying them.
+        column, the lag 2 in the second column and so on.
 
         Parameters
         ----------
@@ -854,7 +850,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             X_train_window_features.append(X_train_wf)
 
         return X_train_window_features, X_train_window_features_names_out_
-
 
     def _create_train_X_y(
         self,
@@ -1187,7 +1182,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             exog_dtypes_out_
         )
 
-
     def create_train_X_y(
         self,
         series: pd.DataFrame,
@@ -1236,7 +1230,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         set_skforecast_warnings(suppress_warnings, action='default')
 
         return X_train, y_train
-
 
     def filter_train_X_y_for_step(
         self,
@@ -1308,7 +1301,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             y_train_step.name = y_train_step.name.replace(f"_step_{step}", "")
 
         return X_train_step, y_train_step
-
 
     def _train_test_split_one_step_ahead(
         self,
@@ -1411,7 +1403,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         X_test_encoding = pd.Series(self.level, index=X_test.index)
 
         return X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding
-
 
     def create_sample_weights(
         self,
@@ -1739,7 +1730,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         check_inputs: bool = True
-    ) -> tuple[list[np.ndarray], list[str], list[int], pd.Index]:
+    ) -> tuple[list[np.ndarray], list[str], list[int], pd.Index, object | None]:
         """
         Create the inputs needed for the prediction process.
         
@@ -1790,6 +1781,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Steps to predict.
         prediction_index : pandas Index
             Index of the predictions.
+        differentiator : TimeSeriesDifferentiator, None
+            A copy of the differentiator for `self.level` fitted with the 
+            last window values. `None` if no differentiation is applied. 
+            This is used to reverse the differentiation of predictions 
+            without mutating the forecaster's internal state.
         
         """
         
@@ -1836,6 +1832,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         X_autoreg = []
         Xs_col_names = []
+        differentiator_level = None
         for series in self.X_train_series_names_in_:
             last_window_series = transform_numpy(
                                      array             = last_window[series].to_numpy(),
@@ -1845,7 +1842,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                                  )
             
             if self.differentiation is not None:
-                last_window_series = self.differentiator_[series].fit_transform(last_window_series)
+                differentiator = copy(self.differentiator_[series])
+                last_window_series = differentiator.fit_transform(last_window_series)
+                if series == self.level:
+                    differentiator_level = differentiator
 
             if self.lags is not None:
                 X_lags = last_window_series[-self.lags_[series]]
@@ -1920,7 +1920,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             prediction_index.freq = last_window.index.freq
 
         # HACK: Why no use self.X_train_features_names_out_ as Xs_col_names?
-        return Xs, Xs_col_names, steps, prediction_index
+        return Xs, Xs_col_names, steps, prediction_index, differentiator_level
 
     def create_predict_X(
         self,
@@ -1978,7 +1978,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Xs,
             Xs_col_names,
             steps,
-            prediction_index
+            prediction_index,
+            _
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -2117,7 +2118,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Xs,
             _,
             steps,
-            prediction_index
+            prediction_index,
+            differentiator
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -2128,10 +2130,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         predictions = self._direct_predict(steps=steps, Xs=Xs)
 
         if self.differentiation is not None:
-            predictions = (
-                self.differentiator_[self.level]
-                .inverse_transform_next_window(predictions)
-            )
+            predictions = differentiator.inverse_transform_next_window(predictions)
         
         predictions = transform_numpy(
                           array             = predictions,
@@ -2234,7 +2233,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Xs,
             _,
             steps,
-            prediction_index
+            prediction_index,
+            differentiator
         ) = self._create_predict_inputs(
                 steps                   = steps, 
                 last_window             = last_window, 
@@ -2278,8 +2278,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if self.differentiation is not None:
             boot_predictions = (
-                self.differentiator_[self.level]
-                .inverse_transform_next_window(boot_predictions)
+                differentiator.inverse_transform_next_window(boot_predictions)
             )
 
         if self.transformer_series_[self.level]:
@@ -2369,7 +2368,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Xs,
             _,
             steps,
-            prediction_index
+            prediction_index,
+            differentiator
         ) = self._create_predict_inputs(
                 steps                   = steps, 
                 last_window             = last_window, 
@@ -2405,10 +2405,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         predictions = np.column_stack([predictions, lower_bound, upper_bound])
 
         if self.differentiation is not None:
-            predictions = (
-                self.differentiator_[self.level]
-                .inverse_transform_next_window(predictions)
-            )
+            predictions = differentiator.inverse_transform_next_window(predictions)
 
         if self.transformer_series_[self.level]:
             predictions = transform_numpy(
@@ -2598,7 +2595,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         levels: Any = None
     ) -> pd.DataFrame:
         """
-        Bootstrapping based predicted quantiles.
+        Calculate the specified quantiles for each step. After generating 
+        multiple forecasting predictions through a bootstrapping process, each 
+        quantile is calculated for each step.
         
         Parameters
         ----------

@@ -55,7 +55,7 @@ class ForecasterRecursive(ForecasterBase):
     Parameters
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     lags : int, list, numpy ndarray, range, default None
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
     
@@ -97,13 +97,13 @@ class ForecasterRecursive(ForecasterBase):
         **New in version 0.14.0**
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : estimator or pipeline compatible with the Keras API
+    regressor : estimator or pipeline compatible with the scikit-learn API
         **Deprecated**, alias for `estimator`.
     
     Attributes
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     lags : numpy ndarray
         Lags used as predictors.
     lags_names : list
@@ -163,7 +163,7 @@ class ForecasterRecursive(ForecasterBase):
     training_range_ : pandas Index
         First and last values of index of the data used during training.
     series_name_in_ : str
-        Names of the series provided by the user during training.
+        Name of the series provided by the user during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -520,7 +520,7 @@ class ForecasterRecursive(ForecasterBase):
         Create the lagged values and their target variable from a time series.
         
         Note that the returned matrix `X_data` contains the lag 1 in the first 
-        column, the lag 2 in the in the second column and so on.
+        column, the lag 2 in the second column and so on.
         
         Parameters
         ----------
@@ -859,7 +859,7 @@ class ForecasterRecursive(ForecasterBase):
         X_train : pandas DataFrame
             Training values (predictors).
         y_train : pandas Series
-            Values of the time series related to each row of `X_data`.
+            Values of the time series related to each row of `X_train`.
         
         """
 
@@ -1641,7 +1641,7 @@ class ForecasterRecursive(ForecasterBase):
         check_inputs: bool = True
     ) -> pd.Series:
         """
-        Predict n steps ahead. It is an recursive process in which, each prediction,
+        Predict n steps ahead. It is a recursive process in which, each prediction,
         is used as a predictor for the next step.
         
         Parameters
@@ -1955,9 +1955,7 @@ class ForecasterRecursive(ForecasterBase):
         predictions = np.column_stack([predictions, lower_bound, upper_bound])
 
         if differentiator is not None:
-            predictions = (
-                differentiator.inverse_transform_next_window(predictions)
-            )
+            predictions = differentiator.inverse_transform_next_window(predictions)
         
         if self.transformer_y:
             predictions = transform_numpy(

@@ -70,7 +70,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     Parameters
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     lags : int, list, numpy ndarray, range, default None
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
     
@@ -154,13 +154,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         **New in version 0.14.0**
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : estimator or pipeline compatible with the Keras API
+    regressor : estimator or pipeline compatible with the scikit-learn API
         **Deprecated**, alias for `estimator`.
     
     Attributes
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     lags : numpy ndarray
         Lags used as predictors.
     lags_names : list
@@ -772,10 +772,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Create the lagged values and their target variable from a time series.
         
         Note that the returned matrix `X_data` contains the lag 1 in the first 
-        column, the lag 2 in the in the second column and so on.
-
-        Returned matrices may be views into the original `y` so care must be taken
-        when modifying them.
+        column, the lag 2 in the second column and so on.
 
         Parameters
         ----------
@@ -903,17 +900,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Returns
         -------
-        X_train_lags : pandas DataFrame
-            Training values of lags.
-            Shape: (len(y) - self.max_lag, len(self.lags))
+        X_train_autoreg : pandas DataFrame
+            Training values of the autoregressive predictors (lags and window features)
+            and the column '_level_skforecast'.
         X_train_window_features_names_out_ : list
             Names of the window features.
         X_train_exog : pandas DataFrame
             Training values of exogenous variables.
-            Shape: (len(y) - self.max_lag, len(exog.columns))
         y_train : pandas Series
             Values (target) of the time series related to each row of `X_train`.
-            Shape: (len(y) - self.max_lag, )
         
         """
 
@@ -2060,6 +2055,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Names of the series (levels) to be predicted.
         prediction_index : pandas Index
             Index of the predictions.
+        differentiators : dict
+            Dictionary with a copy of the differentiator fitted with the last
+            window values for each level. Used to reverse the differentiation
+            of predictions without mutating the forecaster's internal state.
+            Empty dict if no differentiation is applied.
         
         """
 
@@ -2174,6 +2174,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window_matrix = np.full(
             shape=last_window.shape, fill_value=np.nan, order='F', dtype=float
         )
+
+        differentiators = {}
         exog_values_all_levels = []
         for idx_level, level in enumerate(levels):
             last_window_level = last_window_values[:, idx_level]
@@ -2185,11 +2187,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
 
             if self.differentiation is not None:
-                if level not in self.differentiator_.keys():
-                    self.differentiator_[level] = copy(self.differentiator_['_unknown_level'])
-                if self.differentiator_[level] is not None:
+                if level in self.differentiator_.keys():
+                    differentiators[level] = copy(self.differentiator_[level])
+                else:
+                    differentiators[level] = copy(self.differentiator_['_unknown_level'])
+                if differentiators[level] is not None:
                     last_window_level = (
-                        self.differentiator_[level].fit_transform(last_window_level)
+                        differentiators[level].fit_transform(last_window_level)
                     )
 
             last_window_matrix[:, idx_level] = last_window_level
@@ -2240,7 +2244,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             exog_values_dict = None
 
-        return last_window, exog_values_dict, levels, prediction_index
+        return last_window, exog_values_dict, levels, prediction_index, differentiators
 
     def _recursive_predict(
         self,
@@ -2606,7 +2610,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window,
             exog_values_dict,
             levels,
-            prediction_index
+            prediction_index,
+            _
         ) = self._create_predict_inputs(
                 steps        = steps,
                 levels       = levels,
@@ -2740,7 +2745,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         check_inputs: bool = True
     ) -> pd.DataFrame:
         """
-        Predict n steps ahead. It is an recursive process in which, each prediction,
+        Predict n steps ahead. It is a recursive process in which, each prediction,
         is used as a predictor for the next step. Only levels whose last window
         ends at the same datetime index can be predicted together.
 
@@ -2782,7 +2787,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window,
             exog_values_dict,
             levels,
-            prediction_index
+            prediction_index,
+            differentiators
         ) = self._create_predict_inputs(
                 steps        = steps,
                 levels       = levels,
@@ -2805,10 +2811,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                           )
         
         for i, level in enumerate(levels):
-            if self.differentiation is not None and self.differentiator_[level] is not None:
+            if differentiators.get(level) is not None:
                 predictions[:, i] = (
-                    self
-                    .differentiator_[level]
+                    differentiators[level]
                     .inverse_transform_next_window(predictions[:, i])
                 )
 
@@ -2903,7 +2908,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window,
             exog_values_dict,
             levels,
-            prediction_index
+            prediction_index,
+            differentiators
         ) = self._create_predict_inputs(
                 steps                   = steps,
                 levels                  = levels,
@@ -2972,9 +2978,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         for i, level in enumerate(levels):
 
-            if self.differentiation is not None and self.differentiator_[level] is not None:
+            if differentiators.get(level) is not None:
                 boot_predictions[:, i, :] = (
-                    self.differentiator_[level]
+                    differentiators[level]
                     .inverse_transform_next_window(boot_predictions[:, i, :])
                 )
             
@@ -3005,8 +3011,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self,
         steps: int | str | pd.Timestamp,
         levels: str | list[str] | None = None,
-        last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         nominal_coverage: float = 0.95,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True
@@ -3025,13 +3031,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
-        last_window : pandas Series, pandas DataFrame, default None
+        last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
-            If `last_window = None`, the values stored in` self.last_window_` are
+            If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, default None
+        exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
         nominal_coverage : float, default 0.95
             Nominal coverage, also known as expected coverage, of the prediction
@@ -3067,7 +3073,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window,
             exog_values_dict,
             levels,
-            prediction_index
+            prediction_index,
+            differentiators
         ) = self._create_predict_inputs(
                 steps                   = steps,
                 levels                  = levels,
@@ -3130,9 +3137,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         for i, level in enumerate(levels):
 
-            if self.differentiation is not None and self.differentiator_[level] is not None:
+            if differentiators.get(level) is not None:
                 predictions[i, :, :] = (
-                    self.differentiator_[level]
+                    differentiators[level]
                     .inverse_transform_next_window(predictions[i, :, :])
                 )
             
