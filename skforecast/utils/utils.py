@@ -3219,3 +3219,104 @@ def initialize_estimator(
         raise TypeError("__init__() missing 1 required positional argument: 'estimator'")
     
     return estimator
+
+
+def deepcopy_forecaster(
+    forecaster: object,
+    include_in_sample_residuals: bool = False,
+    include_out_sample_residuals: bool = False,
+    include_last_window: bool = False,
+) -> object:
+    """
+    Create a lightweight deep copy of a forecaster by temporarily
+    replacing heavy fitted attributes with lightweight placeholders
+    before copying.
+
+    Estimators are always replaced with unfitted clones (same
+    hyperparameters) to avoid copying expensive fitted state (e.g.,
+    tree structures, model weights). For sklearn-compatible estimators
+    `sklearn.base.clone` is used; for statistical models
+    (`ForecasterStats`) `copy.copy` is used instead. Additional
+    heavy attributes (residuals and last window) can be optionally
+    included via parameters.
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster object to copy. Can be any skforecast forecaster:
+        `ForecasterRecursive`, `ForecasterDirect`, `ForecasterRecursiveMultiSeries`, 
+        `ForecasterDirectMultiVariate` or `ForecasterStats`.
+    include_in_sample_residuals : bool, default `False`
+        If `True`, `in_sample_residuals_` and `in_sample_residuals_by_bin_` are 
+        preserved in the copy. These are recomputed during `fit()`, so they can 
+        safely be excluded when the copy will be re-fitted.
+    include_out_sample_residuals : bool, default `False`
+        If `True`, `out_sample_residuals_` and `out_sample_residuals_by_bin_` are 
+        preserved in the copy. These are user-provided via `set_out_sample_residuals()`
+        and are NOT recomputed during `fit()`, so they must be included when the 
+        copy needs them for prediction intervals with `use_in_sample_residuals=False`.
+    include_last_window : bool, default `False`
+        If `True`, `last_window_` is preserved in the copy. For most forecasters 
+        this stores only the last `window_size` observations (small), but for
+        `ForecasterStats` it contains ALL training data.
+
+    Returns
+    -------
+    forecaster_copy : object
+        Lightweight deep copy of the forecaster with unfitted estimator(s) and 
+        optionally without residuals and last window.
+
+    """
+
+    # Save references to heavy attributes before replacing them
+    saved = {}
+
+    # 1. Replace fitted estimator with unfitted clone (same hyperparameters)
+    if hasattr(forecaster, 'estimator'):
+        saved['estimator'] = forecaster.estimator
+        forecaster.estimator = clone(forecaster.estimator)
+
+    # 2. Replace fitted estimators collection
+    if hasattr(forecaster, 'estimators_') and forecaster.estimators_ is not None:
+        saved['estimators_'] = forecaster.estimators_
+        if isinstance(forecaster.estimators_, dict):
+            # ForecasterDirect, ForecasterDirectMultiVariate: dict of fitted estimators
+            forecaster.estimators_ = {
+                step: clone(forecaster.estimator)
+                for step in forecaster.estimators_
+            }
+        elif isinstance(forecaster.estimators_, list):
+            # ForecasterStats: list of fitted stats models
+            forecaster.estimators_ = [
+                copy(est) for est in forecaster.estimators
+            ]
+
+    # 3. Optionally replace residuals with None
+    _residual_attrs = []
+    if not include_in_sample_residuals:
+        _residual_attrs += ['in_sample_residuals_', 'in_sample_residuals_by_bin_']
+    if not include_out_sample_residuals:
+        _residual_attrs += ['out_sample_residuals_', 'out_sample_residuals_by_bin_']
+
+    for attr in _residual_attrs:
+        if hasattr(forecaster, attr) and getattr(forecaster, attr) is not None:
+            saved[attr] = getattr(forecaster, attr)
+            setattr(forecaster, attr, None)
+
+    # 4. Optionally replace last_window_ with None
+    if (
+        not include_last_window
+        and hasattr(forecaster, 'last_window_')
+        and forecaster.last_window_ is not None
+    ):
+        saved['last_window_'] = forecaster.last_window_
+        forecaster.last_window_ = None
+
+    # Perform the (now lightweight) deep copy
+    forecaster_copy = deepcopy(forecaster)
+
+    # Restore original heavy attributes on the original forecaster
+    for attr, value in saved.items():
+        setattr(forecaster, attr, value)
+
+    return forecaster_copy

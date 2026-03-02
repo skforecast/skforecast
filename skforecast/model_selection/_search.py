@@ -1,4 +1,4 @@
-################################################################################
+﻿################################################################################
 #                     skforecast.model_selection._search                       #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
@@ -37,7 +37,8 @@ from ..utils import (
     date_to_index_position, 
     check_preprocess_series,
     check_preprocess_exog_multiseries,
-    set_skforecast_warnings
+    set_skforecast_warnings,
+    deepcopy_forecaster
 )
 
 
@@ -343,7 +344,7 @@ def _evaluate_grid_hyperparameters(
 
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
-    forecaster_search = deepcopy(forecaster)
+    forecaster_search = deepcopy_forecaster(forecaster)
     is_regression = forecaster_search.__skforecast_tags__['forecaster_task'] == 'regression'
     cv_name = type(cv).__name__
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
@@ -750,7 +751,7 @@ def _bayesian_search_optuna(
 
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
-    forecaster_search = deepcopy(forecaster)
+    forecaster_search = deepcopy_forecaster(forecaster)
     forecaster_name = type(forecaster_search).__name__
     is_regression = forecaster_search.__skforecast_tags__['forecaster_task'] == 'regression'
     cv_name = type(cv).__name__
@@ -1348,7 +1349,7 @@ def _evaluate_grid_hyperparameters_multiseries(
 
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
-    forecaster_search = deepcopy(forecaster)
+    forecaster_search = deepcopy_forecaster(forecaster)
     if type(forecaster_search).__name__ == 'ForecasterRecursiveMultiSeries':
         series, series_indexes = check_preprocess_series(series)
         if exog is not None:
@@ -1842,7 +1843,7 @@ def _bayesian_search_optuna_multiseries(
     
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
-    forecaster_search = deepcopy(forecaster)
+    forecaster_search = deepcopy_forecaster(forecaster)
     forecaster_name = type(forecaster_search).__name__
     cv_name = type(cv).__name__
 

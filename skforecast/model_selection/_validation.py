@@ -27,7 +27,8 @@ from ..model_selection._utils import (
 from ..utils import (
     check_preprocess_series,
     check_preprocess_exog_multiseries,
-    set_skforecast_warnings
+    set_skforecast_warnings,
+    deepcopy_forecaster
 )
 
 
@@ -415,7 +416,12 @@ def _backtesting_forecaster(
 
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
-    forecaster = deepcopy(forecaster)
+    if cv.initial_train_size is not None:
+        forecaster = deepcopy_forecaster(
+            forecaster, include_out_sample_residuals=True
+        )
+    else:
+        forecaster = deepcopy(forecaster)
     is_regression = forecaster.__skforecast_tags__['forecaster_task'] == 'regression'
     cv = deepcopy(cv)
 
@@ -1126,7 +1132,12 @@ def _backtesting_forecaster_multiseries(
 
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
-    forecaster = deepcopy(forecaster)
+    if cv.initial_train_size is not None:
+        forecaster = deepcopy_forecaster(
+            forecaster, include_out_sample_residuals=True
+        )
+    else:
+        forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
 
     cv.set_params({
@@ -1560,6 +1571,135 @@ def backtesting_forecaster_multiseries(
     return metrics_levels, backtest_predictions
 
 
+def _fit_predict_forecaster_stats(
+    fold: list,
+    forecaster: object,
+    y: pd.Series,
+    exog: pd.Series | pd.DataFrame | None,
+    steps: int,
+    gap: int,
+    alpha: float | None,
+    interval: list[float] | tuple[float] | None,
+    refit: bool | int,
+    folds: list,
+    freeze_params: bool,
+    suppress_warnings: bool
+) -> tuple[pd.DataFrame, np.ndarray | None]:
+    """
+    Fit the forecaster and predict `steps` ahead. This is a module-level
+    auxiliary function used to parallelize `_backtesting_stats`.
+
+    Defined at module level (instead of as a nested closure) so that
+    `joblib.Parallel` can serialize it efficiently with `pickle` rather
+    than `cloudpickle`, avoiding unnecessary closure overhead.
+
+    Parameters
+    ----------
+    fold : list
+        Fold metadata as produced by `TimeSeriesFold.split`.
+    forecaster : object
+        Forecaster model (ForecasterStats).
+    y : pandas Series
+        Full training time series.
+    exog : pandas Series, pandas DataFrame, or None
+        Full exogenous variable/s.
+    steps : int
+        Number of steps to predict.
+    gap : int
+        Number of observations between training end and test start.
+    alpha : float or None
+        Confidence level for prediction intervals.
+    interval : list, tuple, or None
+        Percentiles for prediction intervals.
+    refit : bool or int
+        Whether to refit in each fold.
+    folds : list
+        All folds metadata (needed to identify the first fold).
+    freeze_params : bool
+        Whether estimator params are frozen after first fit.
+    suppress_warnings : bool
+        Whether to suppress skforecast warnings.
+
+    Returns
+    -------
+    pred : pandas DataFrame
+        Predictions for the fold.
+    estimator_names_ : numpy ndarray or None
+        Estimator names repeated for each step. `None` if `freeze_params`
+        is `True`.
+
+    """
+
+    # In each iteration the model is fitted before making predictions.
+    # if fixed_train_size the train size doesn't increase but moves by `steps`
+    # in each iteration. if False the train size increases by `steps` in each
+    # iteration.
+    train_iloc_start = fold[1][0]
+    train_iloc_end   = fold[1][1]
+    test_iloc_start  = fold[3][0]
+    test_iloc_end    = fold[3][1]
+
+    if refit:
+        last_window_iloc_start = fold[1][1]  # Same as train_iloc_end
+        last_window_iloc_end   = fold[2][1]
+    else:
+        last_window_iloc_end   = fold[3][0]  # test_iloc_start
+        last_window_iloc_start = last_window_iloc_end - steps
+
+    if fold[5] is False:
+        # When the model is not fitted, last_window and last_window_exog must
+        # be updated to include the data needed to make predictions.
+        last_window_y = y.iloc[last_window_iloc_start:last_window_iloc_end]
+        last_window_exog = exog.iloc[last_window_iloc_start:last_window_iloc_end] if exog is not None else None
+    else:
+        # The model is fitted before making predictions. If `fixed_train_size`
+        # the train size doesn't increase but moves by `steps` in each iteration.
+        # If `False` the train size increases by `steps` in each  iteration.
+        y_train = y.iloc[train_iloc_start:train_iloc_end, ]
+        exog_train = exog.iloc[train_iloc_start:train_iloc_end, ] if exog is not None else None
+
+        last_window_y = None
+        last_window_exog = None
+
+        forecaster.fit(y=y_train, exog=exog_train, suppress_warnings=suppress_warnings)
+
+    exog_test = exog.iloc[test_iloc_start:test_iloc_end, ] if exog is not None else None
+
+    # After the first fit, Sarimax must use the last windows stored in the model
+    if fold == folds[0]:
+        last_window_y = None
+        last_window_exog = None
+
+    steps = len(range(test_iloc_start, test_iloc_end))
+    if alpha is None and interval is None:
+        pred = forecaster.predict(
+                   steps             = steps,
+                   last_window       = last_window_y,
+                   last_window_exog  = last_window_exog,
+                   exog              = exog_test,
+                   suppress_warnings = suppress_warnings
+               )
+    else:
+        pred = forecaster.predict_interval(
+                   steps             = steps,
+                   exog              = exog_test,
+                   alpha             = alpha,
+                   interval          = interval,
+                   last_window       = last_window_y,
+                   last_window_exog  = last_window_exog,
+                   suppress_warnings = suppress_warnings
+               )
+
+    if gap > 0:
+        pred = pred.iloc[forecaster.n_estimators * gap:, :]
+
+    estimator_names_ = None
+    if not freeze_params:
+        estimator_names_ = np.repeat(forecaster.estimator_names_, steps - gap)
+
+    return pred, estimator_names_
+
+
 def _backtesting_stats(
     forecaster: object,
     y: pd.Series,
@@ -1676,7 +1816,7 @@ def _backtesting_stats(
 
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
-    forecaster = deepcopy(forecaster)
+    forecaster = deepcopy_forecaster(forecaster)
     cv = deepcopy(cv)
 
     # NOTE: Only skforecast.Sarimax allows refit=False, if other estimators are 
@@ -1784,83 +1924,6 @@ def _backtesting_stats(
        
     folds_tqdm = tqdm(folds) if show_progress else folds
 
-    def _fit_predict_forecaster(
-        fold, forecaster, y, exog, steps, gap, alpha, interval, suppress_warnings
-    ) -> pd.DataFrame:
-        """
-        Fit the forecaster and predict `steps` ahead. This is an auxiliary 
-        function used to parallelize the backtesting_forecaster function.
-        """
-
-        # In each iteration the model is fitted before making predictions. 
-        # if fixed_train_size the train size doesn't increase but moves by `steps` 
-        # in each iteration. if False the train size increases by `steps` in each 
-        # iteration.
-        train_iloc_start = fold[1][0]
-        train_iloc_end   = fold[1][1]
-        test_iloc_start  = fold[3][0]
-        test_iloc_end    = fold[3][1]
-
-        if refit:
-            last_window_iloc_start = fold[1][1]  # Same as train_iloc_end
-            last_window_iloc_end   = fold[2][1]
-        else:
-            last_window_iloc_end   = fold[3][0]  # test_iloc_start
-            last_window_iloc_start = last_window_iloc_end - steps
-
-        if fold[5] is False:
-            # When the model is not fitted, last_window and last_window_exog must 
-            # be updated to include the data needed to make predictions.
-            last_window_y = y.iloc[last_window_iloc_start:last_window_iloc_end]
-            last_window_exog = exog.iloc[last_window_iloc_start:last_window_iloc_end] if exog is not None else None 
-        else:
-            # The model is fitted before making predictions. If `fixed_train_size`  
-            # the train size doesn't increase but moves by `steps` in each iteration. 
-            # If `False` the train size increases by `steps` in each  iteration.
-            y_train = y.iloc[train_iloc_start:train_iloc_end, ]
-            exog_train = exog.iloc[train_iloc_start:train_iloc_end, ] if exog is not None else None
-            
-            last_window_y = None
-            last_window_exog = None
-
-            forecaster.fit(y=y_train, exog=exog_train, suppress_warnings=suppress_warnings)
-
-        exog_test = exog.iloc[test_iloc_start:test_iloc_end, ] if exog is not None else None
-
-        # After the first fit, Sarimax must use the last windows stored in the model
-        if fold == folds[0]:
-            last_window_y = None
-            last_window_exog = None
-
-        steps = len(range(test_iloc_start, test_iloc_end))
-        if alpha is None and interval is None:
-            pred = forecaster.predict(
-                       steps             = steps,
-                       last_window       = last_window_y,
-                       last_window_exog  = last_window_exog,
-                       exog              = exog_test,
-                       suppress_warnings = suppress_warnings
-                   )
-        else:
-            pred = forecaster.predict_interval(
-                       steps             = steps,
-                       exog              = exog_test,
-                       alpha             = alpha,
-                       interval          = interval,
-                       last_window       = last_window_y,
-                       last_window_exog  = last_window_exog,
-                       suppress_warnings = suppress_warnings
-                   )
-
-        if gap > 0:
-            pred = pred.iloc[forecaster.n_estimators * gap:, :]
-
-        estimator_names_ = None
-        if not freeze_params:
-            estimator_names_ = np.repeat(forecaster.estimator_names_, steps - gap)
-        
-        return pred, estimator_names_
-
     kwargs_fit_predict_forecaster = {
         "forecaster": forecaster,
         "y": y,
@@ -1869,10 +1932,13 @@ def _backtesting_stats(
         "gap": gap,
         "alpha": alpha,
         "interval": interval,
+        "refit": refit,
+        "folds": folds,
+        "freeze_params": freeze_params,
         "suppress_warnings": suppress_warnings
     }
     results = Parallel(n_jobs=n_jobs)(
-        delayed(_fit_predict_forecaster)(
+        delayed(_fit_predict_forecaster_stats)(
             fold=fold, **kwargs_fit_predict_forecaster
         )
         for fold in folds_tqdm
