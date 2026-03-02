@@ -200,10 +200,10 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive():
 
     def search_space(trial):
         search_space  = {
-            'n_estimators'    : trial.suggest_int('n_estimators', 10, 20),
+            'n_estimators': trial.suggest_int('n_estimators', 10, 20),
             'min_samples_leaf': trial.suggest_float('min_samples_leaf', 0.1, 1., log=True),
-            'max_features'    : trial.suggest_categorical('max_features', ['log2', 'sqrt']),
-            'lags'            : trial.suggest_categorical('lags', [2, 4])
+            'max_features': trial.suggest_categorical('max_features', ['log2', 'sqrt']),
+            'lags': trial.suggest_categorical('lags', [2, 4])
         } 
         
         return search_space
@@ -320,10 +320,10 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterRec
 
     def search_space(trial):
         search_space  = {
-            'n_estimators'    : trial.suggest_int('n_estimators', 10, 20),
+            'n_estimators': trial.suggest_int('n_estimators', 10, 20),
             'min_samples_leaf': trial.suggest_float('min_samples_leaf', 0.1, 1., log=True),
-            'max_features'    : trial.suggest_categorical('max_features', ['log2', 'sqrt']),
-            'lags'            : trial.suggest_categorical('lags', [2, 4])
+            'max_features': trial.suggest_categorical('max_features', ['log2', 'sqrt']),
+            'lags': trial.suggest_categorical('lags', [2, 4])
         } 
         
         return search_space
@@ -531,9 +531,9 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
     def search_space(trial):
         search_space  = {
             'n_estimators': trial.suggest_int('n_estimators', 2, 10),
-            'max_depth'   : trial.suggest_int('max_depth', 2, 10, log=True),
+            'max_depth': trial.suggest_int('max_depth', 2, 10, log=True),
             'max_features': trial.suggest_categorical('max_features', ['log2', 'sqrt']),
-            'lags'        : trial.suggest_categorical('lags', [2, 4])
+            'lags': trial.suggest_categorical('lags', [2, 4])
         } 
         
         return search_space
@@ -846,10 +846,10 @@ def test_results_output_bayesian_search_forecaster_ForecasterDirect():
     
     def search_space(trial):
         search_space  = {
-            'n_estimators'    : trial.suggest_int('n_estimators', 10, 20),
+            'n_estimators': trial.suggest_int('n_estimators', 10, 20),
             'min_samples_leaf': trial.suggest_float('min_samples_leaf', 0.1, 1., log=True),
-            'max_features'    : trial.suggest_categorical('max_features', ['log2', 'sqrt']),
-            'lags'            : trial.suggest_categorical('lags', [2, 4])
+            'max_features': trial.suggest_categorical('max_features', ['log2', 'sqrt']),
+            'lags': trial.suggest_categorical('lags', [2, 4])
         } 
         
         return search_space
@@ -973,10 +973,10 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterDir
     
     def search_space(trial):
         search_space  = {
-            'n_estimators'    : trial.suggest_int('n_estimators', 10, 20),
+            'n_estimators': trial.suggest_int('n_estimators', 10, 20),
             'min_samples_leaf': trial.suggest_float('min_samples_leaf', 0.1, 1., log=True),
-            'max_features'    : trial.suggest_categorical('max_features', ['log2', 'sqrt']),
-            'lags'            : trial.suggest_categorical('lags', [2, 4])
+            'max_features': trial.suggest_categorical('max_features', ['log2', 'sqrt']),
+            'lags': trial.suggest_categorical('lags', [2, 4])
         } 
         
         return search_space
@@ -1086,10 +1086,10 @@ def test_bayesian_search_forecaster_output_file():
 
     def search_space(trial):
         search_space  = {
-            'n_estimators'    : trial.suggest_int('n_estimators', 10, 20),
+            'n_estimators': trial.suggest_int('n_estimators', 10, 20),
             'min_samples_leaf': trial.suggest_float('min_samples_leaf', 0.1, 1., log=True),
-            'max_features'    : trial.suggest_categorical('max_features', ['log2', 'sqrt']),
-            'lags'            : trial.suggest_categorical('lags', [2, 4])
+            'max_features': trial.suggest_categorical('max_features', ['log2', 'sqrt']),
+            'lags': trial.suggest_categorical('lags', [2, 4])
         } 
         
         return search_space
@@ -1270,7 +1270,6 @@ def test_ValueError_bayesian_search_forecaster_when_return_best_and_len_y_exog_d
         )
 
 
-
 def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_window_features_with_mocked():
     """
     Test output of bayesian_search_forecaster in ForecasterRecursive with window features 
@@ -1367,6 +1366,7 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
     })
 
     pd.testing.assert_frame_equal(results, expected_results)
+
 
 def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_with_mocked():
     """

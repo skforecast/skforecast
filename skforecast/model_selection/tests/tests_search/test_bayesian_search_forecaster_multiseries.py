@@ -237,10 +237,10 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_mocked_when_
 
     def search_space(trial):
         search_space  = {
-            'n_estimators'    : trial.suggest_int('n_estimators', 10, 20),
+            'n_estimators': trial.suggest_int('n_estimators', 10, 20),
             'min_samples_leaf': trial.suggest_float('min_samples_leaf', 0.1, 1., log=True),
-            'max_features'    : trial.suggest_categorical('max_features', ['log2', 'sqrt']),
-            'lags'            : trial.suggest_categorical('lags', [2, 4])
+            'max_features': trial.suggest_categorical('max_features', ['log2', 'sqrt']),
+            'lags': trial.suggest_categorical('lags', [2, 4])
         }
         
         return search_space
@@ -360,7 +360,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
     def search_space(trial):
         search_space  = {
             'alpha': trial.suggest_float('alpha', 1e-2, 1.0),
-            'lags' : trial.suggest_categorical('lags', [2, 4])
+            'lags': trial.suggest_categorical('lags', [2, 4])
         }
         
         return search_space
@@ -459,7 +459,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
     def search_space(trial):
         search_space  = {
             'alpha': trial.suggest_float('alpha', 1e-2, 1.0),
-            'lags' : trial.suggest_categorical('lags', [2, 4])
+            'lags': trial.suggest_categorical('lags', [2, 4])
         }
 
         return search_space
@@ -630,7 +630,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
     def search_space(trial):
         search_space  = {
             'alpha': trial.suggest_float('alpha', 1e-2, 1.0),
-            'lags' : trial.suggest_categorical('lags', [2, 4])
+            'lags': trial.suggest_categorical('lags', [2, 4])
         }
 
         return search_space
@@ -795,8 +795,8 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_creat
 
     def search_space(trial):
         search_space  = {
-            'alpha' : trial.suggest_float('alpha', 2e-2, 2.0),
-            'lags'  : trial.suggest_categorical('lags', [2, 4])
+            'alpha': trial.suggest_float('alpha', 2e-2, 2.0),
+            'lags': trial.suggest_categorical('lags', [2, 4])
         }
         
         return search_space
@@ -899,7 +899,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_study
     def search_space(trial):
         search_space  = {
             'n_estimators': trial.suggest_int('n_estimators', 100, 200),
-            'max_depth'   : trial.suggest_int('max_depth', 20, 35, log=True),
+            'max_depth': trial.suggest_int('max_depth', 20, 35, log=True),
             'max_features': trial.suggest_categorical('max_features', ['log2', 'sqrt']),
             'lags': trial.suggest_categorical('lags', [2, 4])
         }
@@ -1491,7 +1491,6 @@ def test_ValueError_bayesian_search_forecaster_multiseries_when_return_best_and_
         )
 
 
-
 @pytest.mark.parametrize("initial_train_size",
                          [1000, '2014-09-26 00:00:00', pd.to_datetime('2014-09-26 00:00:00')],
                          ids=lambda initial_train_size: f'initial_train_size: {initial_train_size}')
@@ -1592,7 +1591,6 @@ def test_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVariate_one
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-
 @pytest.mark.parametrize("series",
                          [series_wide_range, series_dict_range],
                          ids = lambda series: f'series type: {type(series)}')
@@ -1672,7 +1670,6 @@ def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries(s
     })
 
     pd.testing.assert_frame_equal(results, expected_results)
-
 
 
 @pytest.mark.parametrize("initial_train_size",
@@ -2088,7 +2085,6 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_mult
     pd.testing.assert_frame_equal(expected, results_search)
 
 
-
 def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_window_features_with_mocked():
     """
     Test output of bayesian_search_forecaster_multiseries in ForecasterRecursiveMultiSeries
@@ -2168,7 +2164,6 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_wind
             })
 
     pd.testing.assert_frame_equal(expected, results_search)
-
 
 
 def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with_mocked():
@@ -2280,7 +2275,6 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
     pd.testing.assert_frame_equal(expected, results_search)
 
 
-
 def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with_mocked_skip_folds():
     """
     Test output of bayesian_search_forecaster_multiseries in ForecasterRecursiveMultiSeries 
@@ -2364,7 +2358,6 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
     })
 
     pd.testing.assert_frame_equal(expected, results_search)
-
 
 
 def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_with_window_features():
@@ -2472,7 +2465,6 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-
 def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate():
     """
     Test output of bayesian_search_forecaster_multivariate in 
@@ -2568,7 +2560,6 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirect
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
     pd.testing.assert_frame_equal(results, expected_results)
-
 
 
 def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate_window_features():
