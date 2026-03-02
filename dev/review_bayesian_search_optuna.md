@@ -14,7 +14,7 @@ De los ~15 puntos identificados en la evaluación inicial, **6 son realmente nec
 
 ## NECESARIOS — Deben implementarse
 
-### 1. Mutable default arguments (`dict = {}`)
+### 1. Mutable default arguments (`dict = {}`) (HECHO)
 
 **Tipo:** Bug  
 **Riesgo real:** Medio  
@@ -71,7 +71,7 @@ finally:
 
 ---
 
-### 3. Filtrar trials por `TrialState.COMPLETE` en `study.get_trials()`
+### 3. Filtrar trials por `TrialState.COMPLETE` en `study.get_trials()` (HECHO)
 
 **Tipo:** Bug potencial  
 **Riesgo real:** Bajo-Medio  
@@ -95,7 +95,7 @@ Con el comportamiento por defecto de optuna >= 3.0 (`catch=()`), las excepciones
 
 ---
 
-### 4. Cachear `_train_test_split_one_step_ahead` en el path `OneStepAheadFold`
+### 4. Cachear `_train_test_split_one_step_ahead` en el path `OneStepAheadFold` (HECHO)
 
 **Tipo:** Optimización de rendimiento  
 **Impacto:** Alto (>50% speedup cuando lags no están en el search_space)  
@@ -141,7 +141,7 @@ def _objective(trial, ...):
 
 ---
 
-### 5. Usar `trial.set_user_attr()` en vez del hack con `nonlocal metric_values`
+### 5. Usar `trial.set_user_attr()` en vez del hack con `nonlocal metric_values` (HECHO)
 
 **Tipo:** Mejora de diseño + robustez  
 **Impacto:** Medio  
@@ -224,7 +224,7 @@ metrics, _ = backtesting_forecaster_multiseries(
 
 ## RECOMENDABLES — Mejoran la calidad, poco esfuerzo
 
-### 7. Añadir `else: kwargs_study_optimize['show_progress_bar'] = False`
+### 7. Añadir `else: kwargs_study_optimize['show_progress_bar'] = False` (HECHO)
 
 **Tipo:** Inconsistencia menor  
 **Esfuerzo:** Trivial
@@ -246,7 +246,7 @@ Si el usuario pasa `show_progress=False` pero en una llamada anterior (con mutab
 
 ---
 
-### 8. Normalizar el `print()` de `return_best` a `warnings.warn()`
+### 8. Normalizar el `print()` de `return_best` a `warnings.warn()` (HECHO)
 
 **Tipo:** Mejora de API  
 **Esfuerzo:** Trivial
@@ -268,7 +268,7 @@ warnings.warn(
 
 ---
 
-### 9. Inconsistencia del parámetro `output_file`
+### 9. Inconsistencia del parámetro `output_file` (HECHO)
 
 **Tipo:** Inconsistencia de API (solo documentar, no cambiar)
 
