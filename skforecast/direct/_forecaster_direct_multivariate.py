@@ -22,6 +22,7 @@ from itertools import chain
 
 from .. import __version__
 from ..base import ForecasterBase
+from ._forecaster_direct import _fit_one_step_estimator
 from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     initialize_lags,
@@ -1525,68 +1526,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             exog_dtypes_out_
         ) = self._create_train_X_y(series=series, exog=exog)
 
-        def fit_forecaster(estimator, X_train, y_train, step):
-            """
-            Auxiliary function to fit each of the forecaster's estimators in parallel.
-
-            Parameters
-            ----------
-            estimator : object
-                Estimator to be fitted.
-            X_train : pandas DataFrame
-                Dataframe created with the `_create_train_X_y` method, first return.
-            y_train : dict
-                Dict created with the `_create_train_X_y` method, second return.
-            step : int
-                Step of the forecaster to be fitted.
-            
-            Returns
-            -------
-            Tuple with the step, fitted estimator, in-sample residuals, true values
-            and predicted values for the step.
-
-            """
-
-            X_train_step, y_train_step = self.filter_train_X_y_for_step(
-                                             step          = step,
-                                             X_train       = X_train,
-                                             y_train       = y_train,
-                                             remove_suffix = True
-                                         )
-            sample_weight = self.create_sample_weights(X_train=X_train_step)
-            if sample_weight is not None:
-                estimator.fit(
-                    X             = X_train_step,
-                    y             = y_train_step,
-                    sample_weight = sample_weight,
-                    **self.fit_kwargs
-                )
-            else:
-                estimator.fit(
-                    X = X_train_step,
-                    y = y_train_step,
-                    **self.fit_kwargs
-                )
-
-            # NOTE: This is done to save time during fit in functions such as backtesting()
-            y_true_step = None
-            y_pred_step = None
-            if self._probabilistic_mode is not False:
-                y_true_step = y_train_step.to_numpy()
-                y_pred_step = estimator.predict(X_train_step)
-
-            return step, estimator, y_true_step, y_pred_step
-
-        results_fit = (
-            Parallel(n_jobs=self.n_jobs)
-            (delayed(fit_forecaster)
-            (
-                estimator = copy(self.estimator),
-                X_train   = X_train,
-                y_train   = y_train,
-                step      = step
+        results_fit = Parallel(n_jobs=self.n_jobs)(
+            delayed(_fit_one_step_estimator)(
+                forecaster = self,
+                estimator  = copy(self.estimator),
+                X_train    = X_train,
+                y_train    = y_train,
+                step       = step
             )
-            for step in self.steps)
+            for step in self.steps
         )
 
         self.estimators_ = {step: estimator for step, estimator, *_ in results_fit}

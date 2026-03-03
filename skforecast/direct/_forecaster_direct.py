@@ -50,6 +50,77 @@ from ..utils import (
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
 
+def _fit_one_step_estimator(
+    forecaster: object,
+    estimator: object,
+    X_train: pd.DataFrame,
+    y_train: dict,
+    step: int
+) -> tuple:
+    """
+    Fit a single estimator for a given step of a direct forecaster.
+
+    Defined at module level (instead of as a nested closure) so that
+    `joblib.Parallel` can serialize it efficiently with `pickle` rather
+    than `cloudpickle`, avoiding unnecessary closure overhead.
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster instance (ForecasterDirect or ForecasterDirectMultiVariate).
+    estimator : object
+        Estimator to be fitted.
+    X_train : pandas DataFrame
+        Dataframe created with the `create_train_X_y` method, first return.
+    y_train : dict
+        Dict created with the `create_train_X_y` method, second return.
+    step : int
+        Step of the forecaster to be fitted.
+
+    Returns
+    -------
+    step : int
+        Step number.
+    estimator : object
+        Fitted estimator.
+    y_true_step : numpy ndarray, None
+        True values for the step (only if probabilistic mode is active).
+    y_pred_step : numpy ndarray, None
+        Predicted values for the step (only if probabilistic mode is active).
+
+    """
+
+    X_train_step, y_train_step = forecaster.filter_train_X_y_for_step(
+                                     step          = step,
+                                     X_train       = X_train,
+                                     y_train       = y_train,
+                                     remove_suffix = True
+                                 )
+    sample_weight = forecaster.create_sample_weights(X_train=X_train_step)
+    if sample_weight is not None:
+        estimator.fit(
+            X             = X_train_step,
+            y             = y_train_step,
+            sample_weight = sample_weight,
+            **forecaster.fit_kwargs
+        )
+    else:
+        estimator.fit(
+            X = X_train_step,
+            y = y_train_step,
+            **forecaster.fit_kwargs
+        )
+
+    # NOTE: This is done to save time during fit in functions such as backtesting()
+    y_true_step = None
+    y_pred_step = None
+    if forecaster._probabilistic_mode is not False:
+        y_true_step = y_train_step.to_numpy()
+        y_pred_step = estimator.predict(X_train_step)
+
+    return step, estimator, y_true_step, y_pred_step
+
+
 class ForecasterDirect(ForecasterBase):
     """
     This class turns any estimator compatible with the scikit-learn API into an
@@ -1245,74 +1316,23 @@ class ForecasterDirect(ForecasterBase):
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
 
-        def fit_forecaster(estimator, X_train, y_train, step):
-            """
-            Auxiliary function to fit each of the forecaster's estimators in parallel.
-
-            Parameters
-            ----------
-            estimator : object
-                Estimator to be fitted.
-            X_train : pandas DataFrame
-                Dataframe created with the `create_train_X_y` method, first return.
-            y_train : dict
-                Dict created with the `create_train_X_y` method, second return.
-            step : int
-                Step of the forecaster to be fitted.
-            
-            Returns
-            -------
-            Tuple with the step, fitted estimator, true values and predicted 
-            values for the step.
-
-            """
-
-            X_train_step, y_train_step = self.filter_train_X_y_for_step(
-                                             step          = step,
-                                             X_train       = X_train,
-                                             y_train       = y_train,
-                                             remove_suffix = True
-                                         )
-            sample_weight = self.create_sample_weights(X_train=X_train_step)
-            if sample_weight is not None:
-                estimator.fit(
-                    X             = X_train_step,
-                    y             = y_train_step,
-                    sample_weight = sample_weight,
-                    **self.fit_kwargs
-                )
-            else:
-                estimator.fit(
-                    X = X_train_step,
-                    y = y_train_step,
-                    **self.fit_kwargs
-                )
-
-            # NOTE: This is done to save time during fit in functions such as backtesting()
-            y_true_step = None
-            y_pred_step = None
-            if self._probabilistic_mode is not False:
-                y_true_step = y_train_step.to_numpy()
-                y_pred_step = estimator.predict(X_train_step)
-
-            return step, estimator, y_true_step, y_pred_step
-
-        results_fit = (
-            Parallel(n_jobs=self.n_jobs)
-            (delayed(fit_forecaster)
-            (
-                estimator = copy(self.estimator),
-                X_train   = X_train,
-                y_train   = y_train,
-                step      = step
+        results_fit = Parallel(n_jobs=self.n_jobs)(
+            delayed(_fit_one_step_estimator)(
+                forecaster = self,
+                estimator  = copy(self.estimator),
+                X_train    = X_train,
+                y_train    = y_train,
+                step       = step
             )
-            for step in self.steps)
+            for step in self.steps
         )
 
         self.estimators_ = {step: estimator for step, estimator, *_ in results_fit}
 
         if self._probabilistic_mode is not False:
-            y_true, y_pred = zip(*[(y_true, y_pred) for *_, y_true, y_pred in results_fit])
+            y_true, y_pred = zip(
+                *[(y_true, y_pred) for *_, y_true, y_pred in results_fit]
+            )
             self._binning_in_sample_residuals(
                 y_true                    = np.concatenate(y_true),
                 y_pred                    = np.concatenate(y_pred),
