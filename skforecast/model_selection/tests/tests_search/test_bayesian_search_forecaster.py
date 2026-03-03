@@ -151,9 +151,10 @@ def test_ValueError_bayesian_search_forecaster_when_search_space_names_do_not_ma
         return search_space
     
     err_msg = re.escape(
-        ("Some of the key values do not match the search_space key names.\n"
-         "  Search Space keys  : ['alpha', 'lags']\n"
-         "  Trial objects keys : ['not_alpha', 'lags'].")
+        "`search_space` dict keys must match the names passed to "
+        "`trial.suggest_*()`.\n"
+        "  Dict keys    : ['alpha', 'lags']\n"
+        "  Suggest names: ['not_alpha', 'lags']"
     )
     with pytest.raises(ValueError, match = err_msg):
         bayesian_search_forecaster(

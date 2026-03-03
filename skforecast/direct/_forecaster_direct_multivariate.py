@@ -45,7 +45,7 @@ from ..utils import (
     transform_numpy,
     transform_dataframe,
     select_n_jobs_fit_forecaster,
-    set_skforecast_warnings,
+    manage_warnings,
     get_style_repr_html,
     _build_predict_function,
     initialize_estimator
@@ -1182,6 +1182,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             exog_dtypes_out_
         )
 
+    @manage_warnings
     def create_train_X_y(
         self,
         series: pd.DataFrame,
@@ -1217,8 +1218,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         output = self._create_train_X_y(
                      series = series, 
                      exog   = exog
@@ -1226,8 +1225,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         X_train = output[0]
         y_train = output[1]
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return X_train, y_train
 
@@ -1447,6 +1444,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         return sample_weight
 
+    @manage_warnings
     def fit(
         self,
         series: pd.DataFrame,
@@ -1491,8 +1489,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-        
         # Reset values in case the forecaster has already been fitted.
         self.lags_                              = None
         self.last_window_                       = None
@@ -1640,8 +1636,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             self.last_window_ = series.iloc[-self.window_size:, ][
                 self.X_train_series_names_in_
             ].copy()
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
     def _binning_in_sample_residuals(
         self,
@@ -1922,6 +1916,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         # HACK: Why no use self.X_train_features_names_out_ as Xs_col_names?
         return Xs, Xs_col_names, steps, prediction_index, differentiator_level
 
+    @manage_warnings
     def create_predict_X(
         self,
         steps: int | list[int] | None = None,
@@ -1972,8 +1967,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         (
             Xs,
             Xs_col_names,
@@ -2012,8 +2005,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html",
                 DataTransformationWarning
             )
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return X_predict
 
@@ -2062,6 +2053,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict(
         self,
         steps: int | list[int] | None = None,
@@ -2112,8 +2104,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         (
             Xs,
             _,
@@ -2150,11 +2140,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             {"level": np.tile([self.level], len(steps)), "pred": predictions},
             index = prediction_index,
         )
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
+    @manage_warnings
     def predict_bootstrapping(
         self,
         steps: int | list[int] | None = None,
@@ -2168,10 +2157,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         levels: Any = None
     ) -> pd.DataFrame:
         """
-        Generate multiple forecasting predictions using a bootstrapping process. 
+        Generate multiple forecasting predictions using a bootstrapping process.
         By sampling from a collection of past observed errors (the residuals),
-        each iteration of bootstrapping generates a different set of predictions. 
-        See the References section for more information. 
+        each iteration of bootstrapping generates a different set of predictions.
+        See the References section for more information.
         
         Parameters
         ----------
@@ -2227,8 +2216,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-        
         (
             Xs,
             _,
@@ -2298,10 +2285,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                            )
         boot_predictions.insert(0, 'level', np.tile([self.level], len(steps)))
 
-        set_skforecast_warnings(suppress_warnings, action='default')
-        
         return boot_predictions
-    
+
     def _predict_interval_conformal(
         self,
         steps: int | list[int] | None = None,
@@ -2424,6 +2409,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int | list[int] | None = None,
@@ -2520,8 +2506,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         if method == "bootstrapping":
             
             if isinstance(interval, (list, tuple)):
@@ -2577,10 +2561,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 f"Invalid `method` '{method}'. Choose 'bootstrapping' or 'conformal'."
             )
 
-        set_skforecast_warnings(suppress_warnings, action='default')
-
         return predictions
 
+    @manage_warnings
     def predict_quantiles(
         self,
         steps: int | list[int] | None = None,
@@ -2657,8 +2640,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         check_interval(quantiles=quantiles)
 
         predictions = self.predict_bootstrapping(
@@ -2677,10 +2658,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         )
         predictions = predictions[['level'] + quantiles_cols]
 
-        set_skforecast_warnings(suppress_warnings, action='default')
-
         return predictions
 
+    @manage_warnings
     def predict_dist(
         self,
         distribution: object,
@@ -2763,8 +2743,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 "from scipy.stats, with methods `_pdf` and `fit`."
             )
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-        
         predictions = self.predict_bootstrapping(
                           steps                   = steps,
                           last_window             = last_window,
@@ -2785,8 +2763,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             )
         )
         predictions = predictions[['level'] + param_names]
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
@@ -2961,6 +2937,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             self.window_size += self.differentiation
             self.differentiator.set_params(window_size=self.window_size)
 
+    @manage_warnings
     def set_in_sample_residuals(
         self,
         series: pd.DataFrame,
@@ -3010,8 +2987,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         None
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         if not self.is_fitted:
             raise NotFittedError(
@@ -3090,8 +3065,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.exog_in_ = original_exog_in_
         self.X_train_window_features_names_out_ = original_X_train_window_features_names_out_
         self.X_train_direct_exog_names_out_ = original_X_train_direct_exog_names_out_
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
     def set_out_sample_residuals(
         self,

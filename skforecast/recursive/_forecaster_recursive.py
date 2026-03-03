@@ -41,7 +41,7 @@ from ..utils import (
     get_style_repr_html,
     set_cpu_gpu_device,
     _build_predict_function,
-    set_skforecast_warnings,
+    manage_warnings,
     initialize_estimator
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -964,6 +964,7 @@ class ForecasterRecursive(ForecasterBase):
 
         return sample_weight
 
+    @manage_warnings
     def fit(
         self,
         y: pd.Series,
@@ -1007,8 +1008,6 @@ class ForecasterRecursive(ForecasterBase):
         None
         
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         # TODO: create a method reset_forecaster() to reset all attributes
         # Reset values in case the forecaster has already been fitted.
@@ -1090,8 +1089,6 @@ class ForecasterRecursive(ForecasterBase):
                 .copy()
                 .to_frame(name=y.name if y.name is not None else 'y')
             )
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
     def _binning_in_sample_residuals(
         self,
@@ -1516,12 +1513,14 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def create_predict_X(
         self,
         steps: int,
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        check_inputs: bool = True
+        check_inputs: bool = True,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Create the predictors needed to predict `steps` ahead. As it is a recursive
@@ -1633,12 +1632,14 @@ class ForecasterRecursive(ForecasterBase):
 
         return X_predict
 
+    @manage_warnings
     def predict(
         self,
         steps: int | str | pd.Timestamp,
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        check_inputs: bool = True
+        check_inputs: bool = True,
+        suppress_warnings: bool = False
     ) -> pd.Series:
         """
         Predict n steps ahead. It is a recursive process in which, each prediction,
@@ -1663,6 +1664,10 @@ class ForecasterRecursive(ForecasterBase):
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
@@ -1714,6 +1719,7 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_bootstrapping(
         self,
         steps: int | str | pd.Timestamp,
@@ -1722,7 +1728,8 @@ class ForecasterRecursive(ForecasterBase):
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Generate multiple forecasting predictions using a bootstrapping process.
@@ -1760,6 +1767,10 @@ class ForecasterRecursive(ForecasterBase):
             If `False`, residuals are selected randomly.
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
@@ -1973,6 +1984,7 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int | str | pd.Timestamp,
@@ -1983,7 +1995,8 @@ class ForecasterRecursive(ForecasterBase):
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Predict n steps ahead and estimate prediction intervals using either 
@@ -2039,6 +2052,10 @@ class ForecasterRecursive(ForecasterBase):
             If `False`, residuals are selected randomly.
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
@@ -2075,14 +2092,16 @@ class ForecasterRecursive(ForecasterBase):
                                    n_boot                  = n_boot,
                                    random_state            = random_state,
                                    use_in_sample_residuals = use_in_sample_residuals,
-                                   use_binned_residuals    = use_binned_residuals
+                                   use_binned_residuals    = use_binned_residuals,
+                                   suppress_warnings       = suppress_warnings
                                )
 
             predictions = self.predict(
-                              steps        = steps,
-                              last_window  = last_window,
-                              exog         = exog,
-                              check_inputs = False
+                              steps             = steps,
+                              last_window       = last_window,
+                              exog              = exog,
+                              check_inputs      = False,
+                              suppress_warnings = suppress_warnings
                           )
             
             predictions_interval = boot_predictions.quantile(q=interval, axis=1).transpose()
@@ -2113,6 +2132,7 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_quantiles(
         self,
         steps: int | str | pd.Timestamp,
@@ -2123,6 +2143,7 @@ class ForecasterRecursive(ForecasterBase):
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Calculate the specified quantiles for each step. After generating 
@@ -2162,6 +2183,10 @@ class ForecasterRecursive(ForecasterBase):
             If `False`, residuals are selected randomly.
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
@@ -2184,7 +2209,8 @@ class ForecasterRecursive(ForecasterBase):
                                n_boot                  = n_boot,
                                random_state            = random_state,
                                use_in_sample_residuals = use_in_sample_residuals,
-                               use_binned_residuals    = use_binned_residuals
+                               use_binned_residuals    = use_binned_residuals,
+                               suppress_warnings       = suppress_warnings
                            )
 
         predictions = boot_predictions.quantile(q=quantiles, axis=1).transpose()
@@ -2192,6 +2218,7 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_dist(
         self,
         steps: int | str | pd.Timestamp,
@@ -2202,6 +2229,7 @@ class ForecasterRecursive(ForecasterBase):
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Fit a given probability distribution for each step. After generating 
@@ -2241,6 +2269,10 @@ class ForecasterRecursive(ForecasterBase):
             If `False`, residuals are selected randomly.
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -2267,7 +2299,8 @@ class ForecasterRecursive(ForecasterBase):
                           n_boot                  = n_boot,
                           random_state            = random_state,
                           use_in_sample_residuals = use_in_sample_residuals,
-                          use_binned_residuals    = use_binned_residuals
+                          use_binned_residuals    = use_binned_residuals,
+                          suppress_warnings       = suppress_warnings
                       )       
 
         param_names = [

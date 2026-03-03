@@ -189,7 +189,7 @@ for trial in study.get_trials(states=[TrialState.COMPLETE]):
 
 ---
 
-### 6. Falta `suppress_warnings` en `backtesting_forecaster` (path TimeSeriesFold)
+### 6. Falta `suppress_warnings` en `backtesting_forecaster` (path TimeSeriesFold) (HECHO)
 
 **Tipo:** Bug de inconsistencia  
 **Riesgo real:** Bajo (spam de warnings)  

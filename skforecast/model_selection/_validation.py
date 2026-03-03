@@ -27,7 +27,7 @@ from ..model_selection._utils import (
 from ..utils import (
     check_preprocess_series,
     check_preprocess_exog_multiseries,
-    set_skforecast_warnings,
+    manage_warnings,
     deepcopy_forecaster
 )
 
@@ -110,7 +110,8 @@ def _fit_predict_forecaster(
     use_binned_residuals: bool,
     random_state: int,
     return_predictors: bool,
-    is_regression: bool
+    is_regression: bool,
+    suppress_warnings: bool = False
 ) -> pd.DataFrame:
     """
     Fit the forecaster and predict `steps` ahead. This is a module-level
@@ -161,6 +162,10 @@ def _fit_predict_forecaster(
         Whether to return predictor values.
     is_regression : bool
         Whether the forecaster is a regression model.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings are suppressed during execution.
+        See `skforecast.exceptions.warn_skforecast_categories` for the
+        list of warnings that are suppressed.
 
     Returns
     -------
@@ -176,7 +181,8 @@ def _fit_predict_forecaster(
         forecaster.fit(
             y                         = y_train,
             exog                      = exog_train,
-            store_in_sample_residuals = store_in_sample_residuals
+            store_in_sample_residuals = store_in_sample_residuals,
+            suppress_warnings         = suppress_warnings
         )
 
     steps = test_iloc_end - test_iloc_start
@@ -197,7 +203,8 @@ def _fit_predict_forecaster(
                 'n_boot': n_boot,
                 'use_in_sample_residuals': use_in_sample_residuals,
                 'use_binned_residuals': use_binned_residuals,
-                'random_state': random_state
+                'random_state': random_state,
+                'suppress_warnings': suppress_warnings
             }
             if interval_method == 'bootstrapping':
                 if interval == 'bootstrapping':
@@ -226,26 +233,29 @@ def _fit_predict_forecaster(
         # the same checks.
         if interval is None or interval_method != 'conformal':
             pred = forecaster.predict(
-                       steps        = steps,
-                       last_window  = last_window_y,
-                       exog         = exog_test,
-                       check_inputs = True if interval is None else False
+                       steps             = steps,
+                       last_window       = last_window_y,
+                       exog              = exog_test,
+                       check_inputs      = True if interval is None else False,
+                       suppress_warnings = suppress_warnings
                    )
             preds.insert(0, pred)
     else:
         pred = forecaster.predict_proba(
-                   steps       = steps,
-                   last_window = last_window_y,
-                   exog        = exog_test
+                   steps             = steps,
+                   last_window       = last_window_y,
+                   exog              = exog_test,
+                   suppress_warnings = suppress_warnings
                )
         preds.append(pred)
 
     if return_predictors:
         pred = forecaster.create_predict_X(
-                   steps        = steps,
-                   last_window  = last_window_y,
-                   exog         = exog_test,
-                   check_inputs = False
+                   steps             = steps,
+                   last_window       = last_window_y,
+                   exog              = exog_test,
+                   check_inputs      = False,
+                   suppress_warnings = suppress_warnings
                )
         preds.append(pred)
 
@@ -260,6 +270,7 @@ def _fit_predict_forecaster(
     return pred
 
 
+@manage_warnings
 def _backtesting_forecaster(
     forecaster: object,
     y: pd.Series,
@@ -414,8 +425,6 @@ def _backtesting_forecaster(
     
     """
 
-    set_skforecast_warnings(suppress_warnings, action='ignore')
-
     if cv.initial_train_size is not None:
         forecaster = deepcopy_forecaster(
             forecaster, include_out_sample_residuals=True
@@ -484,7 +493,8 @@ def _backtesting_forecaster(
         forecaster.fit(
             y                         = y.iloc[:initial_train_size, ],
             exog                      = exog_train,
-            store_in_sample_residuals = store_in_sample_residuals
+            store_in_sample_residuals = store_in_sample_residuals,
+            suppress_warnings         = suppress_warnings
         )
         folds[0][5] = False
 
@@ -520,7 +530,8 @@ def _backtesting_forecaster(
         "use_binned_residuals": use_binned_residuals,
         "random_state": random_state,
         "return_predictors": return_predictors,
-        'is_regression': is_regression
+        'is_regression': is_regression,
+        "suppress_warnings": suppress_warnings
     }
     backtest_predictions = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(
@@ -580,9 +591,7 @@ def _backtesting_forecaster(
         data    = metric_values,
         columns = [m.__name__ for m in metrics]
     )
-    
-    set_skforecast_warnings(suppress_warnings, action='default')
-    
+
     return metric_values, backtest_predictions
 
 
@@ -963,6 +972,7 @@ def _fit_predict_forecaster_multiseries(
     return pred, levels_predict
 
 
+@manage_warnings
 def _backtesting_forecaster_multiseries(
     forecaster: object,
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -1129,8 +1139,6 @@ def _backtesting_forecaster_multiseries(
            https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
 
     """
-
-    set_skforecast_warnings(suppress_warnings, action='ignore')
 
     if cv.initial_train_size is not None:
         forecaster = deepcopy_forecaster(
@@ -1324,12 +1332,11 @@ def _backtesting_forecaster_multiseries(
         .reset_index('level')
         .rename_axis(None, axis=0)
     )
-    
-    set_skforecast_warnings(suppress_warnings, action='default')
 
     return metrics_levels, backtest_predictions
 
 
+@manage_warnings
 def backtesting_forecaster_multiseries(
     forecaster: object,
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -1511,9 +1518,7 @@ def backtesting_forecaster_multiseries(
             f"for all other types of forecasters use the functions available in "
             f"the `model_selection` module. Got {forecaster_name}"
         )
-    
-    set_skforecast_warnings(suppress_warnings, action='ignore')
-    
+
     if forecaster_name == 'ForecasterRecursiveMultiSeries':
         series, series_indexes = check_preprocess_series(series)
         if exog is not None:
@@ -1525,9 +1530,7 @@ def backtesting_forecaster_multiseries(
                           exog              = exog,
                           exog_dict         = exog_dict
                       )
-    
-    set_skforecast_warnings(suppress_warnings, action='default')
-    
+
     check_backtesting_input(
         forecaster              = forecaster,
         cv                      = cv,
@@ -1700,6 +1703,7 @@ def _fit_predict_forecaster_stats(
     return pred, estimator_names_
 
 
+@manage_warnings
 def _backtesting_stats(
     forecaster: object,
     y: pd.Series,
@@ -1813,8 +1817,6 @@ def _backtesting_stats(
     the output DataFrame has non-contiguous indexes.
     
     """
-
-    set_skforecast_warnings(suppress_warnings, action='ignore')
 
     forecaster = deepcopy_forecaster(forecaster)
     cv = deepcopy(cv)
@@ -2004,8 +2006,6 @@ def _backtesting_stats(
             columns = [m.__name__ for m in metrics]
         )
         metric_values.insert(0, 'estimator_id', forecaster.estimator_ids)
-    
-    set_skforecast_warnings(suppress_warnings, action='default')
 
     return metric_values, backtest_predictions
 

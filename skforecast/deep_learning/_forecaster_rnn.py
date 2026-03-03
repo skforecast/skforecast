@@ -39,7 +39,7 @@ from ..utils import (
     input_to_frame,
     prepare_levels_multiseries,
     prepare_steps_direct,
-    set_skforecast_warnings,
+    manage_warnings,
     transform_dataframe,
     transform_numpy,
     transform_series,
@@ -868,6 +868,7 @@ class ForecasterRnn(ForecasterBase):
             exog_dtypes_out_
         )
     
+    @manage_warnings
     def create_train_X_y(
         self,
         series: pd.DataFrame,
@@ -905,8 +906,6 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         output = self._create_train_X_y(series=series, exog=exog)
 
         X_train = output[0]
@@ -914,10 +913,9 @@ class ForecasterRnn(ForecasterBase):
         y_train = output[2]
         dimension_names = output[3]
         
-        set_skforecast_warnings(suppress_warnings, action='default')
-
         return X_train, exog_train, y_train, dimension_names
 
+    @manage_warnings
     def fit(
         self,
         series: pd.DataFrame,
@@ -959,8 +957,6 @@ class ForecasterRnn(ForecasterBase):
         None
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action="ignore")
 
         # Reset values in case the forecaster has already been fitted.
         self.last_window_ = None
@@ -1102,8 +1098,6 @@ class ForecasterRnn(ForecasterBase):
 
         if store_last_window:
             self.last_window_ = series.iloc[-self.max_lag :, :].copy()
-
-        set_skforecast_warnings(suppress_warnings, action="default")
 
     def _create_predict_inputs(
         self,
@@ -1288,6 +1282,7 @@ class ForecasterRnn(ForecasterBase):
 
         return X, X_predict_dimension_names, steps, levels, prediction_index
 
+    @manage_warnings
     def create_predict_X(
         self,
         steps: int | list[int] | None = None,
@@ -1341,8 +1336,6 @@ class ForecasterRnn(ForecasterBase):
         
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         (
             X,
             X_predict_dimension_names,
@@ -1387,10 +1380,9 @@ class ForecasterRnn(ForecasterBase):
                 DataTransformationWarning
             )
         
-        set_skforecast_warnings(suppress_warnings, action='default')
-
         return X_predict, exog_predict
 
+    @manage_warnings
     def predict(
         self,
         steps: int | list[int] | None = None,
@@ -1442,8 +1434,6 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action="ignore")
-
         (
             X,
             _,
@@ -1483,10 +1473,8 @@ class ForecasterRnn(ForecasterBase):
         )
         predictions = predictions[predictions['level'].isin(levels)]
 
-        set_skforecast_warnings(suppress_warnings, action="default")
-
         return predictions
-    
+
     def _predict_interval_conformal(
         self,
         steps: int | list[int] | None = None,
@@ -1620,6 +1608,7 @@ class ForecasterRnn(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int | list[int] | None = None,
@@ -1706,8 +1695,6 @@ class ForecasterRnn(ForecasterBase):
     
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         if method == "conformal":
 
             if isinstance(interval, (list, tuple)):
@@ -1730,8 +1717,6 @@ class ForecasterRnn(ForecasterBase):
                 f"Invalid `method` '{method}'. Only 'conformal' is available."
             )
         
-        set_skforecast_warnings(suppress_warnings, action='default')
-
         return predictions
 
     def plot_history(
@@ -1896,6 +1881,7 @@ class ForecasterRnn(ForecasterBase):
 
         pass
 
+    @manage_warnings
     def set_in_sample_residuals(
         self,
         series: pd.DataFrame,
@@ -1937,8 +1923,6 @@ class ForecasterRnn(ForecasterBase):
         None
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         if not self.is_fitted:
             raise NotFittedError(
@@ -2003,8 +1987,6 @@ class ForecasterRnn(ForecasterBase):
                     rng.integers(low=0, high=len(residuals_level), size=10_000)
                 ]
             self.in_sample_residuals_[level] = residuals_level
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
     def set_out_sample_residuals(
         self,

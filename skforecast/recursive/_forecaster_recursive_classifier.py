@@ -36,7 +36,8 @@ from ..utils import (
     expand_index,
     transform_dataframe,
     get_style_repr_html,
-    set_cpu_gpu_device
+    set_cpu_gpu_device,
+    manage_warnings
 )
 
 
@@ -1109,12 +1110,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         return sample_weight
 
 
+    @manage_warnings
     def fit(
         self,
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
-        store_in_sample_residuals: Any = None
+        store_in_sample_residuals: Any = None,
+        suppress_warnings: bool = False
     ) -> None:
         """
         Training Forecaster.
@@ -1134,6 +1137,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             Whether or not to store the last window (`last_window_`) of training data.
         store_in_sample_residuals : Ignored
             Not used, present here for API consistency by convention.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -1478,12 +1485,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def create_predict_X(
         self,
         steps: int,
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        check_inputs: bool = True
+        check_inputs: bool = True,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Create the predictors needed to predict `steps` ahead. As it is a recursive
@@ -1509,6 +1518,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -1672,11 +1685,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         return predictions
     
+    @manage_warnings
     def predict_proba(
         self,
         steps: int | str | pd.Timestamp,
         last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None
+        exog: pd.Series | pd.DataFrame | None = None,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Predict class probabilities n steps ahead. It is a recursive process in 
@@ -1698,6 +1713,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
         
         Returns
         -------

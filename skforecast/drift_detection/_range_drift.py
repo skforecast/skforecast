@@ -20,7 +20,7 @@ from ..exceptions import (
     UnknownLevelWarning
 )
 from ..utils import (
-    set_skforecast_warnings,
+    manage_warnings,
     get_style_repr_html
 )
 
@@ -512,6 +512,7 @@ class RangeDriftDetector:
 
         self.is_fitted = True
 
+    @manage_warnings
     def predict(
         self,
         last_window: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
@@ -563,8 +564,6 @@ class RangeDriftDetector:
             raise TypeError(
                 "`exog` must be a pandas Series, DataFrame, dict or None."
             )
-        
-        set_skforecast_warnings(suppress_warnings, action='ignore')
         
         flag_out_of_range = False
 
@@ -655,7 +654,5 @@ class RangeDriftDetector:
                 out_of_range_exog          = out_of_range_exog,
                 out_of_range_exog_ranges   = out_of_range_exog_ranges
             )
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return flag_out_of_range, out_of_range_series, out_of_range_exog

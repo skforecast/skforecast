@@ -39,14 +39,9 @@ from ..utils import (
     date_to_index_position, 
     check_preprocess_series,
     check_preprocess_exog_multiseries,
-    set_skforecast_warnings,
+    manage_warnings,
     deepcopy_forecaster
 )
-
-
-# TODO: Review general warnings strategy, va con los puntos 2 y 6
-# TODO: 2.6 La validación de `search_space` keys es insuficiente
-# TODO: Actualizar docu con esto study.trials[results.loc[0, 'trial_number']]
 
 
 def grid_search_forecaster(
@@ -266,6 +261,7 @@ def random_search_forecaster(
     return results
 
 
+@manage_warnings
 def _evaluate_grid_hyperparameters(
     forecaster: object,
     y: pd.Series,
@@ -349,8 +345,6 @@ def _evaluate_grid_hyperparameters(
 
     """
 
-    set_skforecast_warnings(suppress_warnings, action='ignore')
-
     forecaster_search = deepcopy_forecaster(forecaster)
     is_regression = forecaster_search.__skforecast_tags__['forecaster_task'] == 'regression'
     cv_name = type(cv).__name__
@@ -369,7 +363,7 @@ def _evaluate_grid_hyperparameters(
             y                 = y,
             exog              = exog,
             show_progress     = show_progress,
-            suppress_warnings = False
+            suppress_warnings = suppress_warnings
         )
 
         cv = deepcopy(cv)
@@ -452,15 +446,16 @@ def _evaluate_grid_hyperparameters(
                 if cv_name == 'TimeSeriesFold':
 
                     metric_values = backtesting_forecaster(
-                                        forecaster    = forecaster_search,
-                                        y             = y,
-                                        cv            = cv,
-                                        metric        = metric,
-                                        exog          = exog,
-                                        interval      = None,
-                                        n_jobs        = n_jobs,
-                                        verbose       = verbose,
-                                        show_progress = False
+                                        forecaster        = forecaster_search,
+                                        y                 = y,
+                                        cv                = cv,
+                                        metric            = metric,
+                                        exog              = exog,
+                                        interval          = None,
+                                        n_jobs            = n_jobs,
+                                        verbose           = verbose,
+                                        show_progress     = False,
+                                        suppress_warnings = suppress_warnings
                                     )[0]
                     metric_values = metric_values.iloc[0, :].to_list()
 
@@ -528,7 +523,12 @@ def _evaluate_grid_hyperparameters(
         forecaster.set_lags(best_lags)
         forecaster.set_params(best_params)
 
-        forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
+        forecaster.fit(
+            y                         = y,
+            exog                      = exog,
+            store_in_sample_residuals = True,
+            suppress_warnings         = suppress_warnings
+        )
         
         if verbose:
             print(
@@ -540,11 +540,10 @@ def _evaluate_grid_hyperparameters(
                 f"metric: {best_metric}"
             )
 
-    set_skforecast_warnings(suppress_warnings, action='default')
-    
     return results
 
 
+@manage_warnings
 def bayesian_search_forecaster(
     forecaster: object,
     y: pd.Series,
@@ -648,8 +647,6 @@ def bayesian_search_forecaster(
             f"`exog` must have same number of samples as `y`. "
             f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
         )
-    
-    set_skforecast_warnings(suppress_warnings, action='ignore')
 
     forecaster_search = deepcopy_forecaster(forecaster)
     forecaster_name = type(forecaster_search).__name__
@@ -671,7 +668,7 @@ def bayesian_search_forecaster(
             y                 = y,
             exog              = exog,
             show_progress     = show_progress,
-            suppress_warnings = False
+            suppress_warnings = suppress_warnings
         )
 
         cv = deepcopy(cv)
@@ -719,23 +716,32 @@ def bayesian_search_forecaster(
             metric            = metric,
             n_jobs            = n_jobs,
             verbose           = verbose,
+            suppress_warnings = suppress_warnings,
         ) -> float:
             
             sample = search_space(trial)
+            if sample.keys() != trial.params.keys():
+                raise ValueError(
+                    f"`search_space` dict keys must match the names passed to "
+                    f"`trial.suggest_*()`.\n"
+                    f"  Dict keys    : {list(sample.keys())}\n"
+                    f"  Suggest names: {list(trial.params.keys())}"
+                )
             sample_params = {k: v for k, v in sample.items() if k != 'lags'}
             forecaster_search.set_params(sample_params)
             if "lags" in sample:
                 forecaster_search.set_lags(sample['lags'])
             
             metrics, _ = backtesting_forecaster(
-                             forecaster    = forecaster_search,
-                             y             = y,
-                             cv            = cv,
-                             exog          = exog,
-                             metric        = metric,
-                             n_jobs        = n_jobs,
-                             verbose       = verbose,
-                             show_progress = False
+                             forecaster        = forecaster_search,
+                             y                 = y,
+                             cv                = cv,
+                             exog              = exog,
+                             metric            = metric,
+                             n_jobs            = n_jobs,
+                             verbose           = verbose,
+                             show_progress     = False,
+                             suppress_warnings = suppress_warnings
                          )
             metrics = metrics.iloc[0, :].to_list()
             
@@ -762,6 +768,13 @@ def bayesian_search_forecaster(
         ) -> float:
             
             sample = search_space(trial)
+            if sample.keys() != trial.params.keys():
+                raise ValueError(
+                    f"`search_space` dict keys must match the names passed to "
+                    f"`trial.suggest_*()`.\n"
+                    f"  Dict keys    : {list(sample.keys())}\n"
+                    f"  Suggest names: {list(trial.params.keys())}"
+                )
             sample_params = {k: v for k, v in sample.items() if k != 'lags'}
             forecaster_search.set_params(sample_params)
 
@@ -832,25 +845,18 @@ def bayesian_search_forecaster(
 
     study = optuna.create_study(**kwargs_create_study)
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            category = UserWarning,
-            message  = "Choices for a categorical distribution should be*"
-        )
-        study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
-        best_trial = study.best_trial
-        search_space_best = search_space(best_trial)
-
-    if output_file is not None:
-        handler.close()
-
-    if search_space_best.keys() != best_trial.params.keys():
-        raise ValueError(
-            f"Some of the key values do not match the search_space key names.\n"
-            f"  Search Space keys  : {list(search_space_best.keys())}\n"
-            f"  Trial objects keys : {list(best_trial.params.keys())}."
-        )
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category = UserWarning,
+                message  = "Choices for a categorical distribution should be*"
+            )
+            study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
+    finally:
+        if output_file is not None:
+            handler.close()
+            logger.removeHandler(handler)
     
     lags_list = []
     params_list = []
@@ -891,7 +897,12 @@ def bayesian_search_forecaster(
         forecaster.set_lags(best_lags)
         forecaster.set_params(best_params)
 
-        forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
+        forecaster.fit(
+            y                         = y,
+            exog                      = exog,
+            store_in_sample_residuals = True,
+            suppress_warnings         = suppress_warnings
+        )
         
         if verbose:
             print(
@@ -903,8 +914,6 @@ def bayesian_search_forecaster(
                 f"metric: {best_metric}"
             )
 
-    set_skforecast_warnings(suppress_warnings, action='default')
-            
     return results, study
 
 
@@ -1161,6 +1170,7 @@ def random_search_forecaster_multiseries(
     return results
 
 
+@manage_warnings
 def _evaluate_grid_hyperparameters_multiseries(
     forecaster: object,
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -1259,8 +1269,6 @@ def _evaluate_grid_hyperparameters_multiseries(
         - additional n columns with param = value.
     
     """
-
-    set_skforecast_warnings(suppress_warnings, action='ignore')
 
     forecaster_search = deepcopy_forecaster(forecaster)
     if type(forecaster_search).__name__ == 'ForecasterRecursiveMultiSeries':
@@ -1516,11 +1524,10 @@ def _evaluate_grid_hyperparameters_multiseries(
                 f"  Levels: {levels_print}"
             )
 
-    set_skforecast_warnings(suppress_warnings, action='default')
-    
     return results
 
 
+@manage_warnings
 def bayesian_search_forecaster_multiseries(
     forecaster: object,
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -1633,8 +1640,6 @@ def bayesian_search_forecaster_multiseries(
         best trial via `study.best_trial`.
     
     """
-   
-    set_skforecast_warnings(suppress_warnings, action='ignore')
 
     forecaster_search = deepcopy_forecaster(forecaster)
     forecaster_name = type(forecaster_search).__name__
@@ -1749,6 +1754,13 @@ def bayesian_search_forecaster_multiseries(
         ) -> float:
             
             sample = search_space(trial)
+            if sample.keys() != trial.params.keys():
+                raise ValueError(
+                    f"`search_space` dict keys must match the names passed to "
+                    f"`trial.suggest_*()`.\n"
+                    f"  Dict keys    : {list(sample.keys())}\n"
+                    f"  Suggest names: {list(trial.params.keys())}"
+                )
             sample_params = {k: v for k, v in sample.items() if k != 'lags'}
             forecaster_search.set_params(sample_params)
             if "lags" in sample:
@@ -1804,6 +1816,13 @@ def bayesian_search_forecaster_multiseries(
         ) -> float:
             
             sample = search_space(trial)
+            if sample.keys() != trial.params.keys():
+                raise ValueError(
+                    f"`search_space` dict keys must match the names passed to "
+                    f"`trial.suggest_*()`.\n"
+                    f"  Dict keys    : {list(sample.keys())}\n"
+                    f"  Suggest names: {list(trial.params.keys())}"
+                )
             sample_params = {k: v for k, v in sample.items() if k != 'lags'}
             forecaster_search.set_params(sample_params)
 
@@ -1893,25 +1912,18 @@ def bayesian_search_forecaster_multiseries(
 
     study = optuna.create_study(**kwargs_create_study)
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            category=UserWarning,
-            message="Choices for a categorical distribution should be*"
-        )
-        study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
-        best_trial = study.best_trial
-        search_space_best = search_space(best_trial)
-
-    if output_file is not None:
-        handler.close()
-       
-    if search_space_best.keys() != best_trial.params.keys():
-        raise ValueError(
-            f"Some of the key values do not match the search_space key names.\n"
-            f"  Search Space keys  : {list(search_space_best.keys())}\n"
-            f"  Trial objects keys : {list(best_trial.params.keys())}"
-        )
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=UserWarning,
+                message="Choices for a categorical distribution should be*"
+            )
+            study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
+    finally:
+        if output_file is not None:
+            handler.close()
+            logger.removeHandler(handler)
     
     lags_list = []
     params_list = []
@@ -2001,8 +2013,6 @@ def bayesian_search_forecaster_multiseries(
                 f"  Levels: {levels_print}"
             )
 
-    set_skforecast_warnings(suppress_warnings, action='default')
-            
     return results, study
 
 

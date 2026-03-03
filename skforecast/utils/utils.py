@@ -13,7 +13,8 @@ import inspect
 from pathlib import Path
 import platform
 import sys
-from typing import Any, Callable
+from functools import wraps
+from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
 import joblib
@@ -36,6 +37,12 @@ from ..exceptions import (
     UnknownLevelWarning,
     InputTypeWarning
 )
+
+# Type variables for the manage_warnings decorator. ParamSpec preserves the
+# decorated function's parameter signature, and TypeVar preserves its return
+# type, so that type checkers see the original signatures through the wrapper.
+P = ParamSpec('P')
+R = TypeVar('R')
 
 optional_dependencies = {
     'stats': [
@@ -1994,6 +2001,52 @@ def transform_dataframe(
     return df_transformed
 
 
+def manage_warnings(func: Callable[P, R]) -> Callable[P, R]:
+    """
+    Decorator that safely manages skforecast warning suppression using
+    `warnings.catch_warnings()` context manager. If the decorated function
+    receives a `suppress_warnings=True` keyword argument, all skforecast
+    warnings are suppressed within its execution scope. Warning filter state
+    is automatically saved and restored, making this safe for nested calls
+    and exception scenarios.
+
+    By using `warnings.catch_warnings()`, the filter state is saved on entry and 
+    restored on exit — even if an exception is raised — so nested decorated 
+    functions never interfere with each other's suppression settings.
+
+    The decorator's type signature uses module-level type variables:
+
+    - ``P`` (`ParamSpec`): Captures the full parameter specification
+      (positional and keyword arguments) of the decorated function, so that
+      type checkers preserve the original call signature through the wrapper.
+    - ``R`` (`TypeVar`): Captures the return type of the decorated function,
+      ensuring the wrapper advertises the same return type.
+
+    Parameters
+    ----------
+    func : Callable[P, R]
+        The function to decorate. Expected to accept a `suppress_warnings`
+        keyword argument.
+
+    Returns
+    -------
+    Callable[P, R]
+        The wrapped function with safe warning management.
+
+    """
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        suppress = kwargs.get('suppress_warnings', False)
+        with warnings.catch_warnings():
+            if suppress:
+                for category in warn_skforecast_categories:
+                    warnings.filterwarnings('ignore', category=category)
+            return func(*args, **kwargs)
+    return wrapper
+
+
+@manage_warnings
 def save_forecaster(
     forecaster: object, 
     file_name: str,
@@ -2027,8 +2080,6 @@ def save_forecaster(
 
     """
 
-    set_skforecast_warnings(suppress_warnings, action='ignore')
-    
     file_name = Path(file_name).with_suffix('.joblib')
 
     # Save forecaster
@@ -2072,9 +2123,8 @@ def save_forecaster(
     if verbose:
         forecaster.summary()
 
-    set_skforecast_warnings(suppress_warnings, action='default')
 
-
+@manage_warnings
 def load_forecaster(
     file_name: str,
     verbose: bool = True,
@@ -2103,8 +2153,6 @@ def load_forecaster(
     
     """
 
-    set_skforecast_warnings(suppress_warnings, action='ignore')
-
     forecaster = joblib.load(filename=Path(file_name))
     forecaster_v = forecaster.skforecast_version
 
@@ -2120,8 +2168,6 @@ def load_forecaster(
 
     if verbose:
         forecaster.summary()
-        
-    set_skforecast_warnings(suppress_warnings, action='default')
 
     return forecaster
 
@@ -2983,34 +3029,6 @@ def prepare_steps_direct(
     return steps_direct
 
 
-def set_skforecast_warnings(
-    suppress_warnings: bool,
-    action: str = 'default'
-) -> None:
-    """
-    Set skforecast warnings action.
-
-    Parameters
-    ----------
-    suppress_warnings : bool
-        If `True`, skforecast warnings will be suppressed. If `False`, skforecast
-        warnings will be shown as default. See 
-        skforecast.exceptions.warn_skforecast_categories for more information.
-    action : str, default `'default'`
-        Action to be taken when a warning is raised. See the warnings module
-        for more information.
-
-    Returns
-    -------
-    None
-    
-    """
-
-    if suppress_warnings:
-        for category in warn_skforecast_categories:
-            warnings.filterwarnings(action, category=category)
-
-
 def get_style_repr_html(
     is_fitted: bool = False
 ) -> tuple[str, str]:
@@ -3272,7 +3290,7 @@ def deepcopy_forecaster(
     saved = {}
 
     # 1. Replace fitted estimator with unfitted clone (same hyperparameters)
-    if hasattr(forecaster, 'estimator'):
+    if hasattr(forecaster, 'estimator') and forecaster.estimator is not None:
         saved['estimator'] = forecaster.estimator
         forecaster.estimator = clone(forecaster.estimator)
 
@@ -3288,7 +3306,7 @@ def deepcopy_forecaster(
         elif isinstance(forecaster.estimators_, list):
             # ForecasterStats: list of fitted stats models
             forecaster.estimators_ = [
-                copy(est) for est in forecaster.estimators
+                clone(est) for est in forecaster.estimators
             ]
 
     # 3. Optionally replace residuals with None

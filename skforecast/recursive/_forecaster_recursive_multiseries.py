@@ -52,7 +52,7 @@ from ..utils import (
     expand_index,
     transform_numpy,
     transform_dataframe,
-    set_skforecast_warnings,
+    manage_warnings,
     get_style_repr_html,
     set_cpu_gpu_device,
     _build_predict_function,
@@ -1349,6 +1349,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window_
         )
 
+    @manage_warnings
     def create_train_X_y(
         self,
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -1405,8 +1406,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         output = self._create_train_X_y(
                      series            = series, 
                      exog              = exog, 
@@ -1418,8 +1417,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if self.encoding is None:
             X_train = X_train.drop(columns='_level_skforecast')
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return X_train, y_train
 
@@ -1714,6 +1711,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return weights
 
+    @manage_warnings
     def fit(
         self,
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -1785,8 +1783,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         across series for each variable.
         
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         # TODO: create a method reset_forecaster() to reset all attributes
         # Reset values in case the forecaster has already been fitted.
@@ -1914,8 +1910,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if store_last_window:
             self.last_window_ = last_window_
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
     def _binning_in_sample_residuals(
         self,
@@ -2557,6 +2551,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return boot_predictions
 
+    @manage_warnings
     def create_predict_X(
         self,
         steps: int,
@@ -2603,8 +2598,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             index.
         
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         (
             last_window,
@@ -2730,11 +2723,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html",
                 DataTransformationWarning
             )
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return X_predict
 
+    @manage_warnings
     def predict(
         self,
         steps: int,
@@ -2780,8 +2772,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             and `pred`.
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         (
             last_window,
@@ -2829,11 +2819,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             {"level": np.tile(levels, n_steps), "pred": predictions.ravel()},
             index = np.repeat(prediction_index, n_levels),
         )
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
+    @manage_warnings
     def predict_bootstrapping(
         self,
         steps: int,
@@ -2901,8 +2890,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                https://otexts.com/fpp3/prediction-intervals.html
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         (
             last_window,
@@ -3002,11 +2989,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                columns = boot_columns
                            )
         boot_predictions.insert(0, 'level', np.tile(levels, steps))
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return boot_predictions
-    
+
     def _predict_interval_conformal(
         self,
         steps: int | str | pd.Timestamp,
@@ -3164,6 +3149,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int,
@@ -3255,8 +3241,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         if method == "bootstrapping":
             
             if isinstance(interval, (list, tuple)):
@@ -3316,12 +3300,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             raise ValueError(
                 f"Invalid `method` '{method}'. Choose 'bootstrapping' or 'conformal'."
             )
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
-
+    @manage_warnings
     def predict_quantiles(
         self,
         steps: int,
@@ -3393,8 +3375,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         check_interval(quantiles=quantiles)
 
         predictions = self.predict_bootstrapping(
@@ -3414,12 +3394,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             predictions.iloc[:, 1:].quantile(q=quantiles, axis=1).transpose()
         )
         predictions = predictions[['level'] + quantiles_cols]
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
-
+    @manage_warnings
     def predict_dist(
         self,
         steps: int,
@@ -3497,8 +3475,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 "from scipy.stats, with methods `_pdf` and `fit`."
             )
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         predictions = self.predict_bootstrapping(
                           steps                   = steps,
                           levels                  = levels,
@@ -3522,8 +3498,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
         )
         predictions = predictions[['level'] + param_names]
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
@@ -3672,6 +3646,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             else:
                 self.differentiator.set_params(window_size=self.window_size)
 
+    @manage_warnings
     def set_in_sample_residuals(
         self,
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -3719,8 +3694,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         None
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         if not self.is_fitted:
             raise NotFittedError(
@@ -3794,8 +3767,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             store_in_sample_residuals = True,
             random_state              = random_state
         )
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
     def set_out_sample_residuals(
         self, 

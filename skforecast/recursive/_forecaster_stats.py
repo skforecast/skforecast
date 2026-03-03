@@ -29,7 +29,7 @@ from ..utils import (
     transform_numpy,
     transform_dataframe,
     get_style_repr_html,
-    set_skforecast_warnings,
+    manage_warnings,
     initialize_estimator
 )
 
@@ -642,6 +642,7 @@ class ForecasterStats():
 
         return style + content
 
+    @manage_warnings
     def fit(
         self,
         y: pd.Series,
@@ -673,8 +674,6 @@ class ForecasterStats():
         None
         
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         self.estimators_             = [copy(est) for est in self.estimators]
         self.estimator_names_        = [None] * len(self.estimators)
@@ -795,8 +794,6 @@ class ForecasterStats():
             self.extended_index_ = first_sarimax.sarimax_res.fittedvalues.index.copy()
         else:
             self.extended_index_ = y.index
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
     def _create_predict_inputs(
         self,
@@ -1005,6 +1002,7 @@ class ForecasterStats():
 
         return prediction_index
 
+    @manage_warnings
     def predict(
         self,
         steps: int,
@@ -1057,8 +1055,6 @@ class ForecasterStats():
             - For a single estimator: pandas Series with predicted values.
         
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         last_window, last_window_exog, exog, prediction_index = (
             self._create_predict_inputs(
@@ -1113,8 +1109,6 @@ class ForecasterStats():
                 {"estimator_id": np.tile(estimator_ids, steps), "pred": predictions.ravel()},
                 index = np.repeat(prediction_index, n_estimators),
             )
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
@@ -1162,6 +1156,7 @@ class ForecasterStats():
         preds = estimator.predict(fh=fh, X=exog).to_numpy()
         return preds
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int,
@@ -1231,8 +1226,6 @@ class ForecasterStats():
               'pred', 'lower_bound', 'upper_bound'.
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         # If interval and alpha take alpha, if interval transform to alpha
         if alpha is None:
@@ -1312,8 +1305,6 @@ class ForecasterStats():
             predictions.index = prediction_index
         else:
             predictions.insert(0, 'estimator_id', np.tile(estimator_ids, steps))
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 

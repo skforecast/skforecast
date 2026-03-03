@@ -22,7 +22,8 @@ from ..utils import (
     check_interval,
     check_extract_values_and_index,
     expand_index,
-    get_style_repr_html
+    get_style_repr_html,
+    manage_warnings
 )
 from ..preprocessing import QuantileBinner
 
@@ -327,12 +328,14 @@ class ForecasterEquivalentDate():
 
         return style + content
 
+    @manage_warnings
     def fit(
         self,
         y: pd.Series,
         store_in_sample_residuals: bool = False,
         random_state: int = 123,
-        exog: Any = None
+        exog: Any = None,
+        suppress_warnings: bool = False
     ) -> None:
         """
         Training Forecaster.
@@ -351,6 +354,10 @@ class ForecasterEquivalentDate():
             residuals are always deterministic.
         exog : Ignored
             Not used, present here for API consistency by convention.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
         
         Returns
         -------
@@ -558,12 +565,14 @@ class ForecasterEquivalentDate():
 
             self.in_sample_residuals_ = residuals
 
+    @manage_warnings
     def predict(
         self,
         steps: int,
         last_window: pd.Series | None = None,
         check_inputs: bool = True,
-        exog: Any = None
+        exog: Any = None,
+        suppress_warnings: bool = False
     ) -> pd.Series:
         """
         Predict n steps ahead.
@@ -583,6 +592,10 @@ class ForecasterEquivalentDate():
             for internal use and is not recommended to be changed.
         exog : Ignored
             Not used, present here for API consistency by convention.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -702,6 +715,7 @@ class ForecasterEquivalentDate():
         
         return predictions
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int,
@@ -712,7 +726,8 @@ class ForecasterEquivalentDate():
         use_binned_residuals: bool = True,
         random_state: Any = None,
         exog: Any = None,
-        n_boot: Any = None
+        n_boot: Any = None,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Predict n steps ahead and estimate prediction intervals using conformal 
@@ -761,6 +776,10 @@ class ForecasterEquivalentDate():
             Not used, present here for API consistency by convention.
         n_boot : Ignored
             Not used, present here for API consistency by convention.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
