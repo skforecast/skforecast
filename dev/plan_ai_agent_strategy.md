@@ -4,7 +4,7 @@
 
 **Fecha de creación**: 2026-02-27  
 **Estado**: Draft  
-**Última revisión**: -
+**Última revisión**: 2026-03-03
 
 ---
 
@@ -12,11 +12,12 @@
 
 1. [Resumen ejecutivo](#resumen-ejecutivo)
 2. [Perfiles de usuario objetivo](#perfiles-de-usuario-objetivo)
-3. [Opciones evaluadas](#opciones-evaluadas)
-4. [Plan de acción por prioridad](#plan-de-acción-por-prioridad)
-5. [Detalle de cada iniciativa](#detalle-de-cada-iniciativa)
-6. [Comunicación y distribución](#comunicación-y-distribución)
-7. [Qué NO hacer](#qué-no-hacer)
+3. [Principio fundamental: fuente única de verdad](#principio-fundamental-fuente-única-de-verdad)
+4. [Opciones evaluadas](#opciones-evaluadas)
+5. [Plan de acción por prioridad](#plan-de-acción-por-prioridad)
+6. [Detalle de cada iniciativa](#detalle-de-cada-iniciativa)
+7. [Comunicación y distribución](#comunicación-y-distribución)
+8. [Qué NO hacer](#qué-no-hacer)
 
 ---
 
@@ -27,7 +28,17 @@ Hay tres perfiles de usuario que queremos cubrir:
 2. **Analistas con algo de código**: Quieren copiar/pegar código funcional generado por AI.
 3. **No-coders**: Quieren respuestas ("¿cuánto voy a vender mañana?") sin ver código.
 
-La estrategia es **distribuir el mismo conocimiento de skforecast en múltiples formatos**, cada uno adaptado a una plataforma y perfil de usuario.
+La estrategia es **mantener el conocimiento de skforecast en dos archivos fuente** (`llms.txt` y `llms-full.txt`) y **generar automáticamente** todos los archivos de contexto para cada plataforma mediante un script. Esto garantiza consistencia y elimina el riesgo de desincronización cuando la API cambie.
+
+### Canales de impacto (de mayor a menor alcance)
+
+| Canal | Alcance | Quién lo ve |
+|-------|---------|-------------|
+| **Training data** (docs web, Stack Overflow, Kaggle, blogs) | Todo usuario de cualquier LLM | Usuarios que nunca han oído de skforecast |
+| **`llms.txt` en skforecast.org** | LLMs con web search (ChatGPT, Perplexity, etc.) | Usuarios que piden usar skforecast a un LLM |
+| **Custom GPTs / Gems / Projects** | Usuarios de ChatGPT/Gemini/Claude | Usuarios que buscan soluciones de forecasting |
+| **Archivos de contexto en repo** | Devs con el repo clonado en un IDE | Contribuidores y devs que trabajan con el código |
+| **MCP Server** | Usuarios con Python + IDE compatible | Power users y analistas |
 
 ---
 
@@ -35,9 +46,153 @@ La estrategia es **distribuir el mismo conocimiento de skforecast en múltiples 
 
 | Perfil | Herramienta habitual | Qué necesita | Solución |
 |--------|---------------------|--------------|----------|
-| Dev vibecoder | VS Code, Cursor, Claude Code | Que el LLM genere código correcto de skforecast | Archivos de contexto en el repo |
-| Analista | ChatGPT, Colab | Código end-to-end listo para ejecutar | Custom GPT + instrucciones ricas |
-| No-coder | ChatGPT, Claude Desktop | Respuesta directa sin ver código | Custom GPT con Code Interpreter / MCP |
+| Dev vibecoder | VS Code, Cursor, Claude Code | Que el LLM genere código correcto de skforecast | Archivos de contexto en el repo (auto-generados) |
+| Analista | ChatGPT, Colab | Código end-to-end listo para ejecutar | Custom GPT + llms-full.txt como knowledge |
+| No-coder | ChatGPT, Claude Desktop | Respuesta directa sin ver código | Custom GPT con Code Interpreter / MCP Server |
+
+---
+
+## Principio fundamental: fuente única de verdad
+
+### El problema
+
+Múltiples plataformas requieren el mismo conocimiento en formatos distintos:
+- `.github/copilot-instructions.md` (VS Code Copilot)
+- `AGENTS.md` (Claude Code, OpenAI Codex)
+- `.claude/CLAUDE.md` (Claude Code)
+- `.cursor/rules/skforecast.mdc` (Cursor IDE)
+- `llms.txt` / `llms-full.txt` (web, cualquier LLM)
+- Knowledge files del Custom GPT
+
+Si se mantienen manualmente, **se desincronizarán inevitablemente** cuando la API cambie (nueva versión, imports nuevos, parámetros modificados).
+
+### La solución: 2 archivos fuente + 1 script
+
+Se mantienen manualmente **solo 3 archivos**:
+
+| Archivo fuente | Contenido | Para quién |
+|----------------|-----------|-----------|
+| `llms.txt` | Resumen corto de skforecast (~730 líneas) con API reference, imports, ejemplos básicos | Cualquier LLM (web, IDEs, Custom GPTs) |
+| `llms-full.txt` | Versión exhaustiva: todo lo de `llms.txt` + workflows end-to-end completos, guía de decisión de forecaster, errores comunes de LLMs, mejores prácticas | LLMs que necesitan contexto profundo |
+| `tools/ai_context_header.md` | Sección pequeña específica para desarrollo del repo: cómo correr tests, code style, estructura de contribución | Solo devs trabajando dentro del repo |
+
+Un script `tools/generate_ai_context_files.py` genera automáticamente:
+
+```
+Archivos fuente (mantenidos manualmente):
+  llms.txt                        ← Resumen de API (~730 líneas)
+  llms-full.txt                   ← Referencia completa + workflows
+  tools/ai_context_header.md      ← Sección de desarrollo del repo
+
+Script genera (NO editar manualmente, regenerar con el script):
+  llms-full.txt                         → docs/llms-full.txt (web: skforecast.org/llms-full.txt)
+  llms.txt                              → docs/llms.txt (web: skforecast.org/llms.txt)
+  ai_context_header + llms-full.txt     → .github/copilot-instructions.md
+  ai_context_header + llms-full.txt     → AGENTS.md
+  ai_context_header + llms-full.txt     → .claude/CLAUDE.md
+  ai_context_header + llms-full.txt     → .windsurfrules
+  frontmatter + ai_context_header
+    + llms-full.txt                     → .cursor/rules/skforecast.mdc
+```
+
+### Flujo de actualización (cada release)
+
+```
+1. Editar llms.txt y/o llms-full.txt con los cambios de API
+2. Ejecutar: python tools/generate_ai_context_files.py
+3. Commit de todos los archivos generados
+4. Subir llms-full.txt actualizado al Custom GPT como knowledge file
+```
+
+### Contenido del script `tools/generate_ai_context_files.py`
+
+```python
+"""
+Generate AI context files for all platforms from source files.
+
+Source files (maintained manually):
+    - llms.txt                    : Short API summary for any LLM
+    - llms-full.txt               : Comprehensive reference + workflows
+    - tools/ai_context_header.md  : Repo-dev-specific instructions (testing, style)
+
+Generated files (DO NOT edit manually):
+    - .github/copilot-instructions.md
+    - AGENTS.md
+    - .claude/CLAUDE.md
+    - .windsurfrules
+    - .cursor/rules/skforecast.mdc
+    - docs/llms.txt
+    - docs/llms-full.txt
+"""
+
+import shutil
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+
+# Source files
+LLMS_TXT = ROOT / "llms.txt"
+LLMS_FULL = ROOT / "llms-full.txt"
+DEV_HEADER = ROOT / "tools" / "ai_context_header.md"
+
+AUTOGEN_NOTICE = (
+    "<!-- AUTO-GENERATED FILE. DO NOT EDIT MANUALLY. -->\n"
+    "<!-- Source: llms-full.txt + tools/ai_context_header.md -->\n"
+    "<!-- Regenerate with: python tools/generate_ai_context_files.py -->\n\n"
+)
+
+CURSOR_FRONTMATTER = (
+    "---\n"
+    "description: Rules for working with skforecast time series forecasting library\n"
+    "globs: [\"**/*.py\", \"**/*.ipynb\"]\n"
+    "---\n\n"
+)
+
+def read(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+def write(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    print(f"  Generated: {path.relative_to(ROOT)}")
+
+def main():
+    llms_txt = read(LLMS_TXT)
+    llms_full = read(LLMS_FULL)
+    dev_header = read(DEV_HEADER) if DEV_HEADER.exists() else ""
+    
+    # Dev files = header + full content
+    dev_content = AUTOGEN_NOTICE + dev_header + "\n\n" + llms_full
+
+    print("Generating AI context files...")
+
+    # 1. .github/copilot-instructions.md
+    write(ROOT / ".github" / "copilot-instructions.md", dev_content)
+
+    # 2. AGENTS.md (Claude Code, OpenAI Codex)
+    write(ROOT / "AGENTS.md", dev_content)
+
+    # 3. .claude/CLAUDE.md
+    write(ROOT / ".claude" / "CLAUDE.md", dev_content)
+
+    # 4. .windsurfrules (Windsurf / Codeium)
+    write(ROOT / ".windsurfrules", dev_content)
+
+    # 5. .cursor/rules/skforecast.mdc
+    cursor_content = CURSOR_FRONTMATTER + dev_content
+    write(ROOT / ".cursor" / "rules" / "skforecast.mdc", cursor_content)
+
+    # 6. docs/llms.txt (for web: skforecast.org/llms.txt)
+    write(ROOT / "docs" / "llms.txt", llms_txt)
+
+    # 7. docs/llms-full.txt (for web: skforecast.org/llms-full.txt)
+    write(ROOT / "docs" / "llms-full.txt", llms_full)
+
+    print("\nDone! Remember to update the Custom GPT knowledge file manually.")
+
+if __name__ == "__main__":
+    main()
+```
 
 ---
 
@@ -45,78 +200,130 @@ La estrategia es **distribuir el mismo conocimiento de skforecast en múltiples 
 
 | Opción | Pros | Contras | Veredicto |
 |--------|------|---------|-----------|
-| **Archivos de contexto en repo** (copilot-instructions.md, AGENTS.md, .cursor/rules) | Coste cero, máximo alcance para devs, se mantiene con la API | Limitado a devs con IDE | ✅ HACER (Prioridad 1) |
+| **Archivos de contexto en repo** (auto-generados) | Coste cero, máximo alcance para devs, se mantiene con la API, fuente única | Limitado a devs con IDE | ✅ HACER (Prioridad 1) |
+| **`llms-full.txt` en skforecast.org** | Funciona para CUALQUIER LLM en cualquier plataforma, incluso web | Requiere que el LLM busque la URL o el usuario la pegue | ✅ HACER (Prioridad 1) |
 | **Custom GPT (ChatGPT)** | Alcance masivo, funciona para no-coders, coste cero de desarrollo | Requiere ChatGPT Plus, datos van a OpenAI, límites sandbox | ✅ HACER (Prioridad 1) |
 | **Google Gem + Claude Project** | Cubre otros ecosistemas | Menor alcance que ChatGPT | ✅ HACER (Prioridad 2) |
-| **MCP Server con tools** | Datos locales, sin límites, multi-plataforma | Desarrollo significativo (2-4 semanas), usuario necesita Python | ✅ HACER (Prioridad 3) |
+| **Estrategia de contenido para training data** | Impacto a largo plazo: los LLMs recomiendan skforecast sin contexto extra | Requiere esfuerzo continuo, resultados lentos | ✅ HACER (Prioridad 2) |
+| **MCP Server con tools** | Datos locales, sin límites, multi-plataforma (todos los IDEs) | Desarrollo significativo, usuario necesita Python | ✅ HACER (Prioridad 2-3, empezar MVP) |
 | **Agente custom con backend propio** | Control total de la experiencia | Caro, requiere infra, compite con tools existentes del usuario | ❌ NO HACER |
 
 ---
 
 ## Plan de acción por prioridad
 
-### 🔴 Prioridad 1 — Impacto inmediato, coste mínimo (1-2 días)
+### 🔴 Prioridad 1 — Fuente única + distribución inmediata (1-2 días)
 
 | # | Tarea | Estado | Notas |
 |---|-------|--------|-------|
-| 1.1 | Crear `AGENTS.md` en la raíz del repo | ⬜ Pendiente | Para Claude Code y OpenAI Codex. Contenido basado en copilot-instructions.md |
-| 1.2 | Crear `.cursor/rules/skforecast.mdc` | ⬜ Pendiente | Para usuarios de Cursor IDE |
-| 1.3 | Enriquecer instrucciones con workflows end-to-end | ⬜ Pendiente | Añadir a copilot-instructions.md, AGENTS.md y llms.txt |
-| 1.4 | Añadir guía de decisión de forecaster | ⬜ Pendiente | Tabla "qué forecaster usar según el caso" |
-| 1.5 | Añadir sección de errores comunes | ⬜ Pendiente | Errores frecuentes que cometen los LLMs |
-| 1.6 | Crear Custom GPT en ChatGPT (Code Interpreter) | ⬜ Pendiente | System prompt + llms.txt como knowledge |
-| 1.7 | Probar Custom GPT con datasets reales | ⬜ Pendiente | Validar que genera código correcto y respuestas claras |
+| 1.0 | Crear `llms-full.txt` a partir de `llms.txt` + contenido de `copilot-instructions.md` | ⬜ Pendiente | Fusionar y enriquecer con workflows, guía de decisión, errores comunes |
+| 1.1 | Crear `tools/ai_context_header.md` con info de desarrollo | ⬜ Pendiente | Testing, code style, contribución — solo para devs del repo |
+| 1.2 | Crear script `tools/generate_ai_context_files.py` | ⬜ Pendiente | Genera todos los archivos de contexto desde las fuentes |
+| 1.3 | Ejecutar script → generar `AGENTS.md`, `.claude/CLAUDE.md`, `.windsurfrules`, `.cursor/rules/skforecast.mdc`, actualizar `copilot-instructions.md` | ⬜ Pendiente | Verificar que cada archivo se lee correctamente en su plataforma |
+| 1.4 | Copiar `llms.txt` y `llms-full.txt` a `docs/` para la web | ⬜ Pendiente | Verificar que MkDocs los sirve como estáticos en skforecast.org |
+| 1.5 | Enriquecer `llms-full.txt` con workflows end-to-end | ⬜ Pendiente | Scripts completos para los 5 escenarios más comunes |
+| 1.6 | Añadir guía de decisión de forecaster a `llms-full.txt` | ⬜ Pendiente | Tabla "qué forecaster usar según el caso" |
+| 1.7 | Añadir sección de errores comunes a `llms-full.txt` | ⬜ Pendiente | Errores frecuentes que cometen los LLMs |
+| 1.8 | Crear Custom GPT en ChatGPT (Code Interpreter) | ⬜ Pendiente | System prompt + `llms-full.txt` como knowledge |
+| 1.9 | Probar Custom GPT con datasets reales | ⬜ Pendiente | Validar que genera código correcto y respuestas claras |
 
-### 🟡 Prioridad 2 — Ampliar ecosistema (1 semana)
+### 🟡 Prioridad 2 — Ampliar ecosistema + contenido (1-2 semanas)
 
 | # | Tarea | Estado | Notas |
 |---|-------|--------|-------|
 | 2.1 | Crear Google Gem para Gemini | ⬜ Pendiente | Mismas instrucciones adaptadas |
 | 2.2 | Crear Claude Project con instrucciones | ⬜ Pendiente | Para usuarios de Claude |
-| 2.3 | Publicar Custom GPT en GPT Store | ⬜ Pendiente | Requiere pruebas previas (1.7) |
+| 2.3 | Publicar Custom GPT en GPT Store | ⬜ Pendiente | Requiere pruebas previas (1.9) |
 | 2.4 | Añadir links en README, docs y web | ⬜ Pendiente | Sección "AI Assistants" |
 | 2.5 | Crear notebook de demos para el Custom GPT | ⬜ Pendiente | Casos de uso típicos documentados |
+| 2.6 | Estrategia de contenido: responder en Stack Overflow con skforecast | ⬜ Continuo | Buscar preguntas de forecasting y responder usando skforecast |
+| 2.7 | Publicar 2-3 notebooks en Kaggle con buen SEO | ⬜ Pendiente | Forecasting competiciones populares con skforecast |
+| 2.8 | MCP Server MVP: implementar tools `load_and_analyze_data` + `forecast` | ⬜ Pendiente | Solo 2 tools como prueba de concepto |
+| 2.9 | Añadir "actualizar archivos AI" al checklist de release | ⬜ Pendiente | En CONTRIBUTING.md o release process docs |
 
-### 🟢 Prioridad 3 — MCP Server (1-2 meses)
+### 🟢 Prioridad 3 — MCP Server completo (1-2 meses)
 
 | # | Tarea | Estado | Notas |
 |---|-------|--------|-------|
 | 3.1 | Diseñar API de tools de alto nivel | ⬜ Pendiente | Ver sección detallada abajo |
-| 3.2 | Implementar tool `load_and_analyze_data` | ⬜ Pendiente | Detectar columnas, frecuencia, missing values |
-| 3.3 | Implementar tool `forecast` | ⬜ Pendiente | Train + predict + intervals en una sola llamada |
-| 3.4 | Implementar tool `compare_models` | ⬜ Pendiente | Comparar varios enfoques automáticamente |
-| 3.5 | Implementar tool `explain_forecast` | ⬜ Pendiente | Tendencia, estacionalidad, importancia de features |
-| 3.6 | Empaquetar como `skforecast-mcp` en PyPI | ⬜ Pendiente | Instalable con `pip install skforecast-mcp` |
-| 3.7 | Documentar configuración para Claude Desktop / VS Code | ⬜ Pendiente | Guía step-by-step |
-| 3.8 | Tests y validación con datasets variados | ⬜ Pendiente | |
+| 3.2 | Implementar tool `compare_models` | ⬜ Pendiente | Comparar varios enfoques automáticamente |
+| 3.3 | Implementar tool `explain_forecast` | ⬜ Pendiente | Tendencia, estacionalidad, importancia de features |
+| 3.4 | Empaquetar como `skforecast-mcp` en PyPI | ⬜ Pendiente | Instalable con `pip install skforecast-mcp` |
+| 3.5 | Documentar configuración para Claude Desktop / VS Code | ⬜ Pendiente | Guía step-by-step |
+| 3.6 | Tests y validación con datasets variados | ⬜ Pendiente | |
 
 ---
 
 ## Detalle de cada iniciativa
 
-### 1. Archivos de contexto en el repositorio
+### 1. Archivos de contexto: fuente única y generación automática
 
-#### Estado actual (ya existe)
-- `.github/copilot-instructions.md` — Muy completo en referencia de API
-- `llms.txt` — Buen resumen para cualquier LLM
+#### Arquitectura de archivos
 
-#### Archivos a crear
-
-**`AGENTS.md`** (raíz del repo):
-- Leído automáticamente por Claude Code y OpenAI Codex
-- Contenido igual a copilot-instructions.md + workflows end-to-end
-
-**`.cursor/rules/skforecast.mdc`**:
-- Leído automáticamente por Cursor IDE
-- Formato con frontmatter:
-```yaml
----
-description: Rules for working with skforecast time series forecasting library
-globs: ["**/*.py", "**/*.ipynb"]
----
+```
+skforecast/
+├── llms.txt                              ← FUENTE 1: Resumen corto (mantener manualmente)
+├── llms-full.txt                         ← FUENTE 2: Referencia completa (mantener manualmente)
+├── tools/
+│   ├── ai_context_header.md              ← FUENTE 3: Header de desarrollo (mantener manualmente)
+│   └── generate_ai_context_files.py      ← Script que genera todo
+│
+│  ── ARCHIVOS GENERADOS (NO editar manualmente) ──
+├── .github/copilot-instructions.md       ← Generado: header + llms-full.txt
+├── AGENTS.md                             ← Generado: header + llms-full.txt
+├── .claude/CLAUDE.md                     ← Generado: header + llms-full.txt
+├── .windsurfrules                        ← Generado: header + llms-full.txt
+├── .cursor/rules/skforecast.mdc          ← Generado: frontmatter + header + llms-full.txt
+└── docs/
+    ├── llms.txt                          ← Generado: copia para web
+    └── llms-full.txt                     ← Generado: copia para web
 ```
 
-#### Contenido a añadir en todos los archivos de instrucciones
+#### ¿Quién lee cada archivo?
+
+| Archivo | Plataforma | Cuándo se lee | Audiencia |
+|---------|-----------|---------------|-----------|
+| `skforecast.org/llms.txt` | Cualquier LLM con web search | Cuando busca info de skforecast | Todos |
+| `skforecast.org/llms-full.txt` | Cualquier LLM cuando el usuario pega la URL | Bajo demanda | Todos |
+| `.github/copilot-instructions.md` | VS Code / GitHub Copilot | Auto al abrir el repo | Devs con repo clonado |
+| `AGENTS.md` | Claude Code, OpenAI Codex | Auto al abrir el repo | Devs con repo clonado |
+| `.claude/CLAUDE.md` | Claude Code | Auto al abrir el repo | Devs con repo clonado |
+| `.windsurfrules` | Windsurf / Codeium | Auto al abrir el repo | Devs con repo clonado |
+| `.cursor/rules/skforecast.mdc` | Cursor IDE | Auto al abrir el repo | Devs con repo clonado |
+
+**Nota importante**: Los archivos del repo solo sirven para devs que clonan el repositorio. Para el usuario típico que hace `pip install skforecast` y trabaja en su propio proyecto, **lo que importa es la versión web** (`skforecast.org/llms.txt`) y el **training data** del LLM (documentación, blogs, Stack Overflow).
+
+#### Contenido de `tools/ai_context_header.md`
+
+```markdown
+# Skforecast — Development Context
+
+## For Contributors Working Inside This Repository
+
+### Testing
+```bash
+pytest skforecast/recursive/tests/ -vv
+pytest --cov=skforecast --cov-report=html
+```
+
+### Code Style
+- NumPy-style docstrings
+- Type hints for function signatures
+- PEP 8 compliant (max line length 88, enforced by ruff)
+- Relative imports within package
+
+### Dependencies
+Core: numpy>=1.24, pandas>=1.5, scikit-learn>=1.2, scipy>=1.3.2, optuna>=2.10, joblib>=1.1, numba>=0.59, tqdm>=4.57, rich>=13.9
+Optional: statsmodels>=0.12 (stats), matplotlib>=3.3 (plotting), keras>=3.0 (deep learning)
+
+---
+
+# Skforecast — Complete API & Workflow Reference
+
+(The content below is the full `llms-full.txt` and applies to any user of skforecast)
+```
+
+#### Contenido a incluir en `llms-full.txt` (añadido respecto a `llms.txt`)
 
 **A) Workflows end-to-end** (el usuario dice QUÉ quiere, no CÓMO):
 
@@ -127,7 +334,7 @@ Se deben incluir scripts completos y funcionales para estos escenarios:
 - "Quiero usar ARIMA" → script con ForecasterStats + Arima
 - "Quiero predecir con intervalos de confianza" → script con predict_interval + backtesting
 
-Cada workflow debe incluir: imports, instalación, carga de datos, split, entrenamiento, predicción, evaluación y visualización.
+Cada workflow debe incluir: imports, carga de datos, split, entrenamiento, predicción, evaluación y visualización.
 
 **B) Guía de decisión de forecaster**:
 
@@ -169,11 +376,13 @@ experience.
 ## Your behavior:
 1. When a user asks a forecasting question, use Code Interpreter to run real Python 
    code with skforecast. Install it silently with: !pip install skforecast lightgbm -q
-2. NEVER show code to the user unless they explicitly ask for it.
+2. Show a brief summary of what you're doing (e.g., "Training a LightGBM model with 
+   24 lags on your monthly data..."), then show the results.
 3. Answer in PLAIN LANGUAGE with the prediction, confidence interval, and a chart.
-4. If the user uploads a file, auto-detect the date column, frequency, and target.
-5. If accuracy is poor, say so honestly and suggest what data would help.
-6. Always validate with backtesting before giving a final prediction.
+4. Include code in a collapsed/brief block so interested users can see and adapt it.
+5. If the user uploads a file, auto-detect the date column, frequency, and target.
+6. If accuracy is poor, say so honestly and suggest what data would help.
+7. Always validate with backtesting before giving a final prediction.
 
 ## When the user uploads a file:
 - Auto-detect date column (parse dates), frequency, and target variable
@@ -201,8 +410,7 @@ and !pip install commands at the top.
 ```
 
 #### Knowledge files a subir
-- `llms.txt` (el que ya tenemos)
-- Opcionalmente: 1-2 notebooks de ejemplo exportados como .py o .md
+- `llms-full.txt` (referencia completa con workflows)
 
 #### Publicación
 - Nombre: **"Skforecast - Time Series Forecasting"**
@@ -217,18 +425,37 @@ and !pip install commands at the top.
 Mismo contenido que el Custom GPT, adaptado a cada plataforma:
 
 - **Google Gem**: Pegamos las instrucciones en la configuración del Gem. No tiene Code Interpreter equivalente, así que se limita a generar código para que el usuario lo ejecute en Colab.
-- **Claude Project**: Subimos llms.txt y el prompt como instrucciones del proyecto. Claude no ejecuta código, pero genera código muy preciso si tiene el contexto.
+- **Claude Project**: Subimos `llms-full.txt` y el prompt como instrucciones del proyecto. Claude no ejecuta código, pero genera código muy preciso si tiene el contexto.
 
 ---
 
-### 4. MCP Server (`skforecast-mcp`)
+### 4. Estrategia de contenido para training data
+
+**Por qué es importante**: Los archivos de contexto solo sirven cuando están en el workspace del IDE o cuando el usuario pega la URL. Lo que REALMENTE hace que un LLM "sepa" skforecast **sin ningún contexto extra** es el training data: contenido público en la web que el LLM vio durante su entrenamiento.
+
+| Canal | Acción | Impacto |
+|-------|--------|---------|
+| **Stack Overflow** | Buscar preguntas de time series forecasting y responder usando skforecast | Alto — peso enorme en training data de LLMs |
+| **Kaggle notebooks** | Publicar 2-3 notebooks en competiciones populares de forecasting | Alto — muy indexado y visible |
+| **Blog posts** | Publicar tutoriales en Medium / Towards Data Science | Medio — buen SEO |
+| **Documentation web** | Ya existe y es completa | Ya cubierto |
+| **GitHub Discussions** | Responder preguntas de usuarios con ejemplos completos | Medio |
+
+**Regla**: Cada pieza de contenido público debe usar los **imports actuales** correctos. Un solo blog post con `from skforecast.ForecasterAutoreg import ForecasterAutoreg` que un LLM memorice causa miles de errores a usuarios.
+
+---
+
+### 5. MCP Server (`skforecast-mcp`)
 
 #### Filosofía de diseño
 - Tools de **ALTO NIVEL**: el LLM no programa skforecast, lo usa como herramienta
 - Cada tool es una operación completa (no exponer .fit()/.predict() por separado)
 - El LLM decide cuándo usar cada tool basándose en la pregunta del usuario
+- Las imágenes se retornan como base64 en el resultado (no como rutas a archivos)
 
 #### Tools a implementar
+
+**MVP (Prioridad 2):**
 
 ```python
 @tool
@@ -267,10 +494,14 @@ def forecast(
         model_used: str,
         lags_used: list[int],
         backtesting_metric: {name: str, value: float},
-        plot_path: str  # Path to saved chart
+        plot_base64: str  # Chart as base64-encoded PNG
     }
     """
+```
 
+**Completo (Prioridad 3):**
+
+```python
 @tool
 def compare_models(
     file_path: str,
@@ -329,7 +560,7 @@ skforecast-mcp/
 │       └── utils/
 │           ├── __init__.py
 │           ├── auto_detect.py  # Auto-detect columns, frequency
-│           └── plotting.py     # Generate charts
+│           └── plotting.py     # Generate charts as base64
 └── tests/
 ```
 
@@ -374,12 +605,13 @@ Añadir una sección visible:
 
 **No coding experience?** Use our AI assistants:
 - **ChatGPT**: [Skforecast GPT](link) — Upload your CSV and ask your question
-- **Any LLM**: Pass [https://skforecast.org/llms.txt](https://skforecast.org/llms.txt) as context
+- **Any LLM**: Pass [https://skforecast.org/llms-full.txt](https://skforecast.org/llms-full.txt) as context
 
-**Developer using AI coding tools?** Skforecast works out of the box:
+**Developer using AI coding tools?** Skforecast works out of the box with:
 - **VS Code Copilot**: Instructions auto-loaded from `.github/copilot-instructions.md`
 - **Cursor**: Instructions auto-loaded from `.cursor/rules/`
-- **Claude Code / Codex**: Instructions auto-loaded from `AGENTS.md`
+- **Claude Code**: Instructions auto-loaded from `AGENTS.md` and `.claude/CLAUDE.md`
+- **OpenAI Codex**: Instructions auto-loaded from `AGENTS.md`
 ```
 
 ### En la documentación web (skforecast.org)
@@ -388,6 +620,7 @@ Crear una página "AI Assistants" en la sección de user guides con:
 - Links a todos los agentes
 - Instrucciones para usar skforecast con cada herramienta AI
 - Ejemplos de prompts que funcionan bien
+- Link a `llms-full.txt` con instrucción: "Pega esta URL en tu LLM para que sepa usar skforecast"
 
 ### En redes sociales / blog
 
@@ -402,8 +635,9 @@ Post de lanzamiento: *"Ahora puedes hacer forecasting sin escribir código. Sube
 | Crear un agente custom con backend/servidor propio | Coste de infra enorme para un proyecto OSS, el usuario tiene que confiar en un tercero con su API key |
 | Exponer la API de bajo nivel de skforecast como tools del MCP | Demasiado complejo para que un LLM lo use correctamente en nombre de un no-coder |
 | Construir una web app completa para no-coders | Eso es un producto entero (ya existe Skforecast Studio) |
-| Mantener un solo formato de instrucciones | Cada plataforma tiene su convención; hay que cubrirlas todas |
+| Editar manualmente los archivos generados | Se sobreescribirán la próxima vez que se ejecute el script. Editar SOLO las fuentes |
 | Crear instrucciones solo con referencia de API | Los LLMs necesitan workflows completos end-to-end, no solo documentación |
+| Ignorar el training data | Los archivos de contexto solo sirven en IDEs. Lo que hace que un LLM conozca skforecast a nivel global es el contenido público (docs, SO, Kaggle, blogs) |
 
 ---
 
@@ -411,11 +645,27 @@ Post de lanzamiento: *"Ahora puedes hacer forecasting sin escribir código. Sube
 
 | Semana | Tareas |
 |--------|--------|
-| **Semana 1** | 1.1-1.5: Crear AGENTS.md, .cursor/rules, enriquecer instrucciones |
-| **Semana 1** | 1.6-1.7: Crear y probar Custom GPT |
+| **Semana 1** | 1.0-1.4: Crear llms-full.txt, header, script, generar archivos, publicar en web |
+| **Semana 1** | 1.5-1.7: Enriquecer llms-full.txt con workflows, guía de decisión, errores comunes |
+| **Semana 1** | 1.8-1.9: Crear y probar Custom GPT |
 | **Semana 2** | 2.1-2.5: Google Gem, Claude Project, publicar GPT, actualizar docs |
+| **Semana 2** | 2.8: MCP Server MVP (2 tools) |
+| **Semana 3-4** | 2.6-2.7: Stack Overflow, Kaggle notebooks |
 | **Semana 3-4** | Recoger feedback de usuarios y iterar sobre instrucciones y GPT |
-| **Mes 2-3** | 3.1-3.8: Diseñar, implementar y publicar MCP Server |
+| **Mes 2-3** | 3.1-3.6: MCP Server completo, publicar en PyPI |
+
+---
+
+## Proceso de mantenimiento (cada release)
+
+| Paso | Acción |
+|------|--------|
+| 1 | Actualizar `llms.txt` con cambios de versión, nuevos imports, nueva API |
+| 2 | Actualizar `llms-full.txt` con nuevos workflows, cambios en parámetros |
+| 3 | Ejecutar `python tools/generate_ai_context_files.py` |
+| 4 | Commit de todos los archivos generados junto con el release |
+| 5 | Subir `llms-full.txt` actualizado al Custom GPT como knowledge file |
+| 6 | Verificar que `skforecast.org/llms.txt` y `llms-full.txt` están actualizados |
 
 ---
 
@@ -426,3 +676,27 @@ Post de lanzamiento: *"Ahora puedes hacer forecasting sin escribir código. Sube
 - Descargas de `skforecast-mcp` en PyPI (cuando se lance)
 - Feedback cualitativo de usuarios en GitHub Discussions / Twitter
 - Reducción de issues causados por imports deprecados (señal de que los LLMs generan código correcto)
+- Posición de skforecast en respuestas de LLMs cuando se pregunta "best Python library for time series forecasting"
+
+---
+
+## Consideración pendiente: tamaño de `llms-full.txt` en archivos de IDE
+
+Los archivos de IDE (`.github/copilot-instructions.md`, `AGENTS.md`, `.claude/CLAUDE.md`, `.windsurfrules`, `.cursor/rules/skforecast.mdc`) se **auto-inyectan en cada prompt**. Si `llms-full.txt` crece demasiado (>2000 líneas), puede causar:
+
+- **Gasto innecesario de tokens** en cada interacción
+- **Truncamiento** en plataformas con límites de contexto más estrictos
+- **Dilución** del contenido importante entre demasiado texto
+
+**Evaluar cuando `llms.txt` y `llms-full.txt` tengan su contenido definitivo.** Si `llms-full.txt` queda en un tamaño razonable (<2000 líneas), usar directamente en los archivos de IDE como está planificado. Si crece mucho, cambiar los archivos de IDE para que usen `llms.txt` (corto) + dev header, y reservar `llms-full.txt` solo para:
+- Web (`skforecast.org/llms-full.txt`)
+- Knowledge file del Custom GPT
+- Claude Project / Google Gem
+
+El script se adaptaría fácilmente: cambiar la variable fuente de `llms_full` a `llms_txt` para los archivos de IDE.
+
+```python
+# Si llms-full.txt es demasiado grande, cambiar esto en el script:
+dev_content = AUTOGEN_NOTICE + dev_header + "\n\n" + llms_full   # ← actual
+dev_content = AUTOGEN_NOTICE + dev_header + "\n\n" + llms_txt    # ← alternativa si es muy grande
+```
