@@ -351,10 +351,10 @@ def test_arima_fit_method_ml():
 
 def test_arima_fit_without_mean():
     """
-    Test fitting with include_mean=False and verify exact coefficient values.
+    Test fitting with fit_intercept=False and verify exact coefficient values.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0), include_mean=False)
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0), fit_intercept=False)
     model.fit(y)
     
     # Check exact coefficient (only AR, no intercept)

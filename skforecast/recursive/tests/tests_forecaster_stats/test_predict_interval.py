@@ -6,7 +6,7 @@ import platform
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.stats import Sarimax, Arar, Ets
+from skforecast.stats import Sarimax, Arar, Ets, Arima
 from skforecast.recursive import ForecasterStats
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
@@ -550,3 +550,30 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators(estimator, 
 
     pd.testing.assert_frame_equal(predictions, expected_results, atol=0.0001)
 
+
+def test_predict_interval_output_ForecasterStats_skforecast_Arima():
+    """
+    Test predict_interval output of ForecasterStats using skforecast Arima estimator.
+    """
+    forecaster = ForecasterStats(
+                     estimator=Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
+                 )
+    forecaster.fit(y=y)
+    predictions = forecaster.predict_interval(steps=5, alpha=0.05)
+
+    expected = pd.DataFrame(
+                   data=np.array(
+                       [[0.61870549, 0.33895708, 0.89845390],
+                        [0.60954556, 0.31868131, 0.90040980],
+                        [0.60532119, 0.31214711, 0.89849527],
+                        [0.60337301, 0.30971000, 0.89703601],
+                        [0.60247455, 0.30870766, 0.89624143]]
+                   ),
+                   columns=['pred', 'lower_bound', 'upper_bound'],
+                   index=pd.RangeIndex(start=50, stop=55, step=1)
+               )
+
+    pd.testing.assert_frame_equal(predictions, expected, atol=1e-4)
+    # Verify ordering: lower_bound <= pred <= upper_bound for all steps
+    assert (predictions['lower_bound'] <= predictions['pred']).all()
+    assert (predictions['pred'] <= predictions['upper_bound']).all()
