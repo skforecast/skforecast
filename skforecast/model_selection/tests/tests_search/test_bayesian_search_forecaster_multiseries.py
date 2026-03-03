@@ -334,7 +334,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_mocked_when_
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error__weighted_average': float, 'n_estimators': int, 'min_samples_leaf': float})
 
-    pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
 
 def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_with_levels():
@@ -435,7 +435,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
-    pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
 
 def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_with_multiple_metrics_aggregated():
@@ -600,7 +600,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
         ],
     })
 
-    pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
 
 def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_window_features_multiple_metrics_aggregated():
@@ -771,7 +771,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
         ],
     })
 
-    pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
 
 def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_create_study():
@@ -874,7 +874,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_creat
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error__weighted_average': float, 'alpha': float})
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 @pytest.mark.skipif(sys.platform == "darwin", reason="Fails in MacOS")
@@ -935,7 +935,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_study
         index=pd.RangeIndex(start=0, stop=1, step=1)
     ).astype({'mean_absolute_error__weighted_average': float, 'n_estimators': int, 'max_depth': int})
 
-    pd.testing.assert_frame_equal(results.head(1), expected_results.head(1), check_dtype=False)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]).head(1), expected_results.head(1), check_dtype=False)
 
 
 def test_results_output_bayesian_search_forecaster_multiseries_when_lags_is_not_provided():
@@ -1031,7 +1031,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_when_lags_is_not_
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error__weighted_average': float, 'alpha': float})
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 def test_results_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVariate():
@@ -1130,7 +1130,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterDirectM
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 def test_results_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVariate_lags_dict():
@@ -1232,7 +1232,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterDirectM
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 def test_evaluate_bayesian_search_forecaster_multiseries_when_return_best_ForecasterRecursiveMultiSeries():
@@ -1353,9 +1353,9 @@ def test_results_opt_best_output_bayesian_search_forecaster_multiseries_with_out
                            show_progress = show_progress
                        )[1]
 
-    assert best_trial.number == results_opt_best.number
-    assert best_trial.values == approx(results_opt_best.values)
-    assert best_trial.params == results_opt_best.params
+    assert best_trial.number == results_opt_best.best_trial.number
+    assert best_trial.values == approx(results_opt_best.best_trial.values)
+    assert best_trial.params == results_opt_best.best_trial.params
 
 
 def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_output_file():
@@ -1588,7 +1588,7 @@ def test_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVariate_one
         index=pd.RangeIndex(start=0, stop=5, step=1)
     )
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 @pytest.mark.parametrize("series",
@@ -1669,7 +1669,7 @@ def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries(s
         'alpha': float
     })
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 @pytest.mark.parametrize("initial_train_size",
@@ -1824,7 +1824,7 @@ def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_o
         index=pd.RangeIndex(start=0, stop=5, step=1),
     )
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 @pytest.mark.parametrize("initial_train_size",
@@ -1979,7 +1979,7 @@ def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_o
         index=pd.RangeIndex(start=0, stop=5, step=1),
     )
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_multiple_metrics_aggregated_with_mocked():
@@ -2082,7 +2082,7 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_mult
         }
     )
 
-    pd.testing.assert_frame_equal(expected, results_search)
+    pd.testing.assert_frame_equal(expected, results_search.drop(columns=["trial_number"]))
 
 
 def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_window_features_with_mocked():
@@ -2163,7 +2163,7 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_wind
                 'max_depth': [3, 3, 3],
             })
 
-    pd.testing.assert_frame_equal(expected, results_search)
+    pd.testing.assert_frame_equal(expected, results_search.drop(columns=["trial_number"]))
 
 
 def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with_mocked():
@@ -2272,7 +2272,7 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
         }
     )
 
-    pd.testing.assert_frame_equal(expected, results_search)
+    pd.testing.assert_frame_equal(expected, results_search.drop(columns=["trial_number"]))
 
 
 def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with_mocked_skip_folds():
@@ -2357,7 +2357,7 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
         'max_depth': int
     })
 
-    pd.testing.assert_frame_equal(expected, results_search)
+    pd.testing.assert_frame_equal(expected, results_search.drop(columns=["trial_number"]))
 
 
 def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_with_window_features():
@@ -2462,7 +2462,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error__weighted_average': float, 'alpha': float})
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate():
@@ -2559,7 +2559,7 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirect
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate_window_features():
@@ -2661,6 +2661,6 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirect
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 

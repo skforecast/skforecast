@@ -286,7 +286,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive():
         index=pd.RangeIndex(start=0, stop=10, step=1)
     )
 
-    pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
 
 def test_results_output_bayesian_search_forecaster_window_features_ForecasterRecursive():
@@ -404,7 +404,7 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterRec
         ],
     })
 
-    pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
     
 
 def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwargs_create_study():
@@ -501,7 +501,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwargs_study_optimize():
@@ -589,7 +589,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
         index=pd.RangeIndex(start=0, stop=5, step=1)
     ).astype({'mean_absolute_error': float, 'n_estimators': int, 'max_depth': int})
 
-    pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
 
 def test_results_output_bayesian_search_forecaster_ForecasterRecursive_when_lags_not_in_search_space():
@@ -679,7 +679,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_when_lags
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
     
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 def test_evaluate_bayesian_search_forecaster_when_return_best_ForecasterRecursive():
@@ -814,9 +814,9 @@ def test_results_opt_best_output_bayesian_search_forecaster_with_output_study_be
                            verbose            = verbose
                        )[1]
 
-    assert best_trial.number == results_opt_best.number
-    assert best_trial.values == results_opt_best.values
-    assert best_trial.params == results_opt_best.params
+    assert best_trial.number == results_opt_best.best_trial.number
+    assert best_trial.values == results_opt_best.best_trial.values
+    assert best_trial.params == results_opt_best.best_trial.params
 
 
 def test_results_output_bayesian_search_forecaster_ForecasterDirect():
@@ -938,7 +938,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterDirect():
         'min_samples_leaf': float
     })
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 def test_results_output_bayesian_search_forecaster_window_features_ForecasterDirect():
@@ -1057,7 +1057,7 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterDir
         ],
     })
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
     
 def test_bayesian_search_forecaster_output_file():
@@ -1221,7 +1221,7 @@ def test_bayesian_search_forecaster_outputs_backtesting_one_step_ahead(
             verbose      = False
         )[0]
 
-    pd.testing.assert_frame_equal(results_backtesting, results_one_step_ahead)
+    pd.testing.assert_frame_equal(results_backtesting.drop(columns=["trial_number"]), results_one_step_ahead.drop(columns=["trial_number"]))
 
 
 def test_ValueError_bayesian_search_forecaster_when_return_best_and_len_y_exog_different():
@@ -1365,7 +1365,7 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
         ],
     })
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_with_mocked():
@@ -1453,6 +1453,6 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
-    pd.testing.assert_frame_equal(results, expected_results)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 

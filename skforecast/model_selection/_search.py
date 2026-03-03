@@ -45,10 +45,7 @@ from ..utils import (
 
 
 # TODO: Review general warnings strategy, va con los puntos 2 y 6
-# TODO: Eliminar funciones privadas de bayesian (HECHO)
-# TODO: 1.7 y 3.1 No hay forma de devolver el `study` object
 # TODO: 2.6 La validación de `search_space` keys es insuficiente
-# TODO: 3.2 añadir `trial_number` al DataFrame de resultados
 # TODO: Actualizar docu con esto study.trials[results.loc[0, 'trial_number']]
 
 
@@ -634,12 +631,15 @@ def bayesian_search_forecaster(
     results : pandas DataFrame
         Results for each combination of parameters.
 
+        - column trial_number: optuna trial number for each iteration. Use
+          `study.trials[trial_number]` to access the full optuna trial object.
         - column lags: lags configuration for each iteration.
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
         - additional n columns with param = value.
-    best_trial : optuna object
-        The best optimization result returned as a FrozenTrial optuna object.
+    study : optuna Study
+        The optuna study object containing all optimization trials. Access the
+        best trial via `study.best_trial`.
     
     """
 
@@ -854,6 +854,7 @@ def bayesian_search_forecaster(
     
     lags_list = []
     params_list = []
+    trial_number_list = []
     for trial in study.get_trials(states=[TrialState.COMPLETE]):
         estimator_params = {k: v for k, v in trial.params.items() if k != 'lags'}
         lags = trial.params.get(
@@ -862,10 +863,12 @@ def bayesian_search_forecaster(
         )
         params_list.append(estimator_params)
         lags_list.append(initialize_lags(forecaster_name=forecaster_name, lags=lags)[0])
+        trial_number_list.append(trial.number)
         for m_name in metric_dict:
             metric_dict[m_name].append(trial.user_attrs[m_name])
 
     results = pd.DataFrame({
+                  'trial_number': trial_number_list,
                   'lags': lags_list,
                   'params': params_list,
                   **metric_dict
@@ -902,7 +905,7 @@ def bayesian_search_forecaster(
 
     set_skforecast_warnings(suppress_warnings, action='default')
             
-    return results, best_trial
+    return results, study
 
 
 def grid_search_forecaster_multiseries(
@@ -1617,14 +1620,17 @@ def bayesian_search_forecaster_multiseries(
     results : pandas DataFrame
         Results for each combination of parameters.
 
+        - column trial_number: optuna trial number for each iteration. Use
+          `study.trials[trial_number]` to access the full optuna trial object.
         - column levels: levels configuration for each iteration.
         - column lags: lags configuration for each iteration.
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration. The resulting 
         metric will be the average of the optimization of all levels.
         - additional n columns with param = value.
-    best_trial : optuna object
-        The best optimization result returned as a FrozenTrial optuna object.
+    study : optuna Study
+        The optuna study object containing all optimization trials. Access the
+        best trial via `study.best_trial`.
     
     """
    
@@ -1910,6 +1916,7 @@ def bayesian_search_forecaster_multiseries(
     lags_list = []
     params_list = []
     metrics_data = []
+    trial_number_list = []
     for trial in study.get_trials(states=[TrialState.COMPLETE]):
         estimator_params = {k: v for k, v in trial.params.items() if k != 'lags'}
         lags = trial.params.get(
@@ -1918,6 +1925,7 @@ def bayesian_search_forecaster_multiseries(
         )
         params_list.append(estimator_params)
         lags_list.append(lags)
+        trial_number_list.append(trial.number)
         metrics_data.append(
             {m_name: trial.user_attrs[m_name] for m_name in metric_names}
         )
@@ -1949,9 +1957,10 @@ def bayesian_search_forecaster_multiseries(
         lags_list = lags_list_initialized
 
     results = pd.DataFrame(metrics_data)
-    results.insert(0, 'levels', [levels] * len(results))
-    results.insert(1, 'lags', lags_list)
-    results.insert(2, 'params', params_list)
+    results.insert(0, 'trial_number', trial_number_list)
+    results.insert(1, 'levels', [levels] * len(results))
+    results.insert(2, 'lags', lags_list)
+    results.insert(3, 'params', params_list)
     results = (
         results
         .sort_values(by=metric_names[0], ascending=True)
@@ -1994,7 +2003,7 @@ def bayesian_search_forecaster_multiseries(
 
     set_skforecast_warnings(suppress_warnings, action='default')
             
-    return results, best_trial
+    return results, study
 
 
 def grid_search_stats(

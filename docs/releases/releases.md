@@ -18,6 +18,10 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized and refactored Bayesian search functions (<code>bayesian_search_forecaster</code>, <code>bayesian_search_forecaster_multiseries</code>). Key improvements include: better default TPE sampler configuration (`multivariate=True`, `group=True`, `consider_endpoints=True`) for more effective hyperparameter optimization, caching of train/test splits in `OneStepAheadFold` to avoid redundant computation when the same lag configuration is evaluated multiple times, default `n_trials` increased from 10 to 20, and `kwargs_create_study`/`kwargs_study_optimize` defaults changed from `{}` to `None`. Additionally, the `return_best` refit summary message is now controlled by the `verbose` parameter across all search functions.
 
++ <span class="badge text-bg-api-change">API Change</span> <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> now return the full optuna `Study` object as the second element of the tuple instead of `best_trial`. The best trial is still accessible via `study.best_trial`. This enables access to all optimization trials, optuna visualizations, and study resumption.
+
++ <span class="badge text-bg-enhancement">Enhancement</span> <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> results DataFrame now includes a `trial_number` column, allowing users to correlate result rows with specific optuna trials via `study.trials[trial_number]`.
+
 
 **Added**
 
@@ -27,6 +31,10 @@ The main changes in this release are:
 + Optimized internal prediction loops in `_recursive_predict` and `_recursive_predict_bootstrapping` for <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>. Changes include vectorized lag indexing for non-contiguous lags (~50% faster with 15-20 lags), pre-computation of loop-invariant values, and reduced redundant operations. These improvements result in faster `predict` methods calls, especially in scenarios with many lags and bootstrap iterations.
 
 + Optimized and refactored Bayesian search functions (`bayesian_search_forecaster`, `bayesian_search_forecaster_multiseries`). Key improvements include: better default TPE sampler configuration (`multivariate=True`, `group=True`, `consider_endpoints=True`) for more effective hyperparameter optimization, caching of train/test splits in `OneStepAheadFold` to avoid redundant computation when the same lag configuration is evaluated multiple times, default `n_trials` increased from 10 to 20, and `kwargs_create_study`/`kwargs_study_optimize` defaults changed from `{}` to `None`. Additionally, the `return_best` refit summary message is now controlled by the `verbose` parameter across all search functions.
+
++ <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> now return the full optuna `Study` object as the second element of the tuple instead of `best_trial`. The best trial is still accessible via `study.best_trial`.
+
++ <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> results DataFrame now includes a `trial_number` column, allowing users to correlate result rows with specific optuna trials via `study.trials[trial_number]`.
 
 + `kwargs_read_csv` has been renamed to `kwargs_read` in the `fetch_dataset` function. The new name reflects that the keyword arguments are passed to both `pd.read_csv` and `pd.read_parquet`, depending on the dataset file type.
 
