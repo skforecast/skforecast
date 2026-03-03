@@ -47,11 +47,10 @@ def test_arima_init_default_params():
     assert model.order == (0, 0, 0)
     assert model.seasonal_order == (0, 0, 0)
     assert model.m == 1
-    assert model.include_mean is True
-    assert model.transform_pars is True
+    assert model.fit_intercept is True
+    assert model.enforce_stationarity is True
     assert model.method == "CSS-ML"
     assert model.n_cond is None
-    assert model.SSinit == "Gardner1980"
     assert model.optim_method == "BFGS"
     assert model.optim_kwargs == {'maxiter': 1000}
     assert model.kappa == 1e6
@@ -66,24 +65,22 @@ def test_arima_init_with_explicit_params():
         order=(1, 1, 1),
         seasonal_order=(1, 1, 1),
         m=12,
-        include_mean=False,
-        transform_pars=False,
+        fit_intercept=False,
+        enforce_stationarity=False,
         method="ML",
         n_cond=10,
-        SSinit="Rossignol2011",
         optim_method="L-BFGS-B",
         optim_kwargs={'maxiter': 100},
         kappa=1e5
     )
-    
+
     assert model.order == (1, 1, 1)
     assert model.seasonal_order == (1, 1, 1)
     assert model.m == 12
-    assert model.include_mean is False
-    assert model.transform_pars is False
+    assert model.fit_intercept is False
+    assert model.enforce_stationarity is False
     assert model.method == "ML"
     assert model.n_cond == 10
-    assert model.SSinit == "Rossignol2011"
     assert model.optim_method == "L-BFGS-B"
     assert model.optim_kwargs == {'maxiter': 100}
     assert model.kappa == 1e5
