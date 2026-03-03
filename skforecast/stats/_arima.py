@@ -533,9 +533,9 @@ class Arima(BaseEstimator, RegressorMixin):
                     kappa              = self.kappa
                 )
                 
-                os = self.model_['order_spec']
-                best_model_order_ = (os.p, os.d, os.q)
-                best_seasonal_order_ = (os.P, os.D, os.Q)
+                order_spec = self.model_['order_spec']
+                best_model_order_ = (order_spec.p, order_spec.d, order_spec.q)
+                best_seasonal_order_ = (order_spec.P, order_spec.D, order_spec.Q)
                 self.best_params_ = {
                     'order': best_model_order_,
                     'seasonal_order': best_seasonal_order_,

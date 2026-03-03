@@ -649,10 +649,10 @@ def search_arima(
         if trace:
             print("\nNow re-fitting the best model(s) without approximations...\n")
 
-        os = bestfit['order_spec']
-        p, q, P, Q = os.p, os.q, os.P, os.Q
-        d_ = os.d
-        D_ = os.D
+        order_spec = bestfit['order_spec']
+        p, q, P, Q = order_spec.p, order_spec.q, order_spec.P, order_spec.Q
+        d_ = order_spec.d
+        D_ = order_spec.D
 
         newbestfit = fit_custom_arima(
             x, m,
@@ -1199,10 +1199,10 @@ def auto_arima(
                 break
 
     if trace:
-        bos = bestfit['order_spec']
+        order_spec = bestfit['order_spec']
         print(
-            f"\nBest model found: ARIMA({bos.p},{bos.d},{bos.q})"
-            f"({bos.P},{bos.D},{bos.Q})[{m}]"
+            f"\nBest model found: ARIMA({order_spec.p},{order_spec.d},{order_spec.q})"
+            f"({order_spec.P},{order_spec.D},{order_spec.Q})[{m}]"
             f" with {ic}: {bestfit['ic']}\n"
         )
     bestfit['lambda'] = lambda_bc
