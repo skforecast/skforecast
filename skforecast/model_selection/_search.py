@@ -512,7 +512,14 @@ def _evaluate_grid_hyperparameters(
         .reset_index(drop=True)
     )
     results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
-    
+
+    if results.empty:
+        warnings.warn(
+            "No valid parameter combinations found. All combinations raised exceptions.",
+            RuntimeWarning
+        )
+        return results
+
     if return_best:
         
         best_lags = results.loc[0, 'lags']
@@ -1479,6 +1486,13 @@ def _evaluate_grid_hyperparameters_multiseries(
                     with open(output_file, 'a', newline='') as f:
                         f.write('\t'.join([str(r) for r in row]) + '\n')
 
+    if not metrics_list:
+        warnings.warn(
+            "No valid parameter combinations found. All combinations raised exceptions.",
+            RuntimeWarning
+        )
+        return pd.DataFrame()
+
     results = pd.concat(metrics_list, axis=0)
     results.insert(0, 'levels', [levels] * len(results))
     results.insert(1, 'lags', lags_list)
@@ -2207,6 +2221,7 @@ def random_search_stats(
     return results
 
 
+@manage_warnings
 def _evaluate_grid_hyperparameters_stats(
     forecaster: object,
     y: pd.Series,
@@ -2299,6 +2314,8 @@ def _evaluate_grid_hyperparameters_stats(
             f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
         )
 
+    forecaster_search = deepcopy_forecaster(forecaster)
+
     if not isinstance(metric, list):
         metric = [metric]
     metric_dict = {
@@ -2324,9 +2341,9 @@ def _evaluate_grid_hyperparameters_stats(
     for params in param_grid:
 
         try:
-            forecaster.set_params(params)
+            forecaster_search.set_params(params)
             metric_values = backtesting_stats(
-                                forecaster        = forecaster,
+                                forecaster        = forecaster_search,
                                 y                 = y,
                                 cv                = cv,
                                 metric            = metric,
@@ -2375,7 +2392,14 @@ def _evaluate_grid_hyperparameters_stats(
         .reset_index(drop=True)
     )
     results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
-    
+
+    if results.empty:
+        warnings.warn(
+            "No valid parameter combinations found. All combinations raised exceptions.",
+            RuntimeWarning
+        )
+        return results
+
     if return_best:
         
         best_params = results.loc[0, 'params']

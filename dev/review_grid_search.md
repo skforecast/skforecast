@@ -16,7 +16,7 @@ De los 14 puntos identificados, **5 son necesarios** (bugs reales o inconsistenc
 
 ## NECESARIOS — Deben implementarse
 
-### 1. `_evaluate_grid_hyperparameters_stats` sin `@manage_warnings`
+### 1. ~~`_evaluate_grid_hyperparameters_stats` sin `@manage_warnings`~~ **Done**
 
 **Tipo:** Bug  
 **Riesgo real:** Medio  
@@ -48,7 +48,7 @@ Sin `@manage_warnings` (que envuelve en `warnings.catch_warnings()`), este filtr
 
 ---
 
-### 2. `_evaluate_grid_hyperparameters_stats` no usa `deepcopy_forecaster` — muta el forecaster del usuario
+### 2. ~~`_evaluate_grid_hyperparameters_stats` no usa `deepcopy_forecaster` — muta el forecaster del usuario~~ **Done**
 
 **Tipo:** Bug  
 **Riesgo real:** Alto  
@@ -93,7 +93,7 @@ if return_best:
 
 ---
 
-### 3. Sin protección contra `results` vacío cuando todas las combinaciones fallan
+### 3. ~~Sin protección contra `results` vacío cuando todas las combinaciones fallan~~ **Done**
 
 **Tipo:** Bug (edge case)  
 **Riesgo real:** Bajo-Medio  
@@ -382,9 +382,9 @@ Parece redundante (ya se borró al inicio), pero es **defensivo y correcto**: si
 
 | #  | Issue | Tipo | Necesario | Esfuerzo | Afecta a |
 |----|-------|------|-----------|----------|----------|
-| 1  | `_evaluate_grid_hyperparameters_stats` sin `@manage_warnings` | Bug | **SÍ** | Trivial | `grid_search_stats`, `random_search_stats` |
-| 2  | Stats no usa `deepcopy_forecaster` — muta forecaster | Bug | **SÍ** | Bajo | `grid_search_stats`, `random_search_stats` |
-| 3  | Sin protección contra `results` vacío | Bug | **SÍ** | Bajo | 3 funciones `_evaluate_*` |
+| 1  | ~~`_evaluate_grid_hyperparameters_stats` sin `@manage_warnings`~~ **Done** | Bug | **SÍ** | Trivial | `grid_search_stats`, `random_search_stats` |
+| 2  | ~~Stats no usa `deepcopy_forecaster` — muta forecaster~~ **Done** | Bug | **SÍ** | Bajo | `grid_search_stats`, `random_search_stats` |
+| 3  | ~~Sin protección contra `results` vacío~~ **Done** | Bug | **SÍ** | Bajo | 3 funciones `_evaluate_*` |
 | 4  | `param_grid` re-wrapped en tqdm (nesting) | Defecto | **SÍ** | Trivial | `_evaluate_grid_*`, `_evaluate_grid_*_multiseries` |
 | 5  | Multiseries sin `is_regression` check + falta `direction` | Inconsistencia | **SÍ** | Trivial | `_evaluate_grid_*_multiseries`, `bayesian_search_*_multiseries` |
 | 6  | Warning suppression inconsistente single vs multi | Inconsistencia | Recomendable | Trivial | `_evaluate_grid_hyperparameters` |
