@@ -135,19 +135,19 @@ def test_arima_predict_returns_correct_shape_and_values():
     # Test 1 step prediction
     pred = model.predict(steps=1)
     assert pred.shape == (1,)
-    np.testing.assert_almost_equal(pred[0], -1.6134967874292199, decimal=5)
-
-    # Test 10 steps prediction (AR(1) forecasts decay to intercept)
+    np.testing.assert_almost_equal(pred[0], -1.613497, decimal=6)
+    
+    # Test 10 steps prediction (R-based implementation - AR(1) forecasts decay to intercept)
     pred = model.predict(steps=10)
     assert isinstance(pred, np.ndarray)
     assert pred.shape == (10,)
-    expected_pred = np.array([-1.61349679, -1.18913291, -0.8868684, -0.67157243, -0.51822213, -0.40899427, -0.33119381, -0.27577836, -0.23630722, -0.20819285])
+    expected_pred = np.array([-1.6134968158909693, -1.1891329639587627, -0.8868684748513417, -0.671572518422975, -0.5182222224908184, -0.40899437793394966, -0.33119392796404723, -0.2757784792744241, -0.23630734569280293, -0.20819297644995455])
     np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
 
     # Test 1 step prediction
     pred = model.predict(steps=1)
     assert pred.shape == (1,)
-    np.testing.assert_almost_equal(pred[0], -1.6134967874292199, decimal=5)
+    np.testing.assert_almost_equal(pred[0], -1.6134968158909693, decimal=5)
 
     # Test 50 steps prediction - predictions decay toward intercept
     pred = model.predict(steps=50)
@@ -165,8 +165,8 @@ def test_arima_predict_returns_finite_and_exact_values():
     
     pred = model.predict(steps=5)
     assert np.all(np.isfinite(pred))
-    # Check first 5 values (forecasts decay toward intercept)
-    expected_pred = np.array([-1.60935984, -1.10754556, -0.77628867, -0.55761987, -0.41327255])
+    # Check first 5 values (R-based implementation - forecasts decay)
+    expected_pred = np.array([-1.6103516001266247, -1.1072627028353699, -0.7753950199537363, -0.5564751440943749, -0.4120624322866638])
     np.testing.assert_array_almost_equal(pred[:5], expected_pred, decimal=5)
     # For ARIMA(1,0,1) predictions decay toward intercept
     assert np.all(np.isfinite(pred))
@@ -239,8 +239,8 @@ def test_arima_predict_consistency():
     # Predictions should be identical
     np.testing.assert_array_almost_equal(pred1, pred2)
 
-    # Check exact values (forecasts decay toward intercept)
-    expected_pred = np.array([-1.60935984, -1.10754556, -0.77628867, -0.55761987, -0.41327255, -0.31798621, -0.25508594, -0.21356431, -0.18615511, -0.16806179])
+    # Check exact values (R-based implementation - forecasts decay)
+    expected_pred = np.array([-1.6103516001266247, -1.1072627028353699, -0.7753950199537363, -0.5564751440943749, -0.4120624322866638, -0.316799125335701, -0.2539577207416437, -0.2125037521807288, -0.18515822226219755, -0.16711946668620342])
     np.testing.assert_array_almost_equal(pred1, expected_pred, decimal=5)
 
 
@@ -257,8 +257,8 @@ def test_arima_predict_seasonal_model():
     pred = model.predict(steps=5)
     assert pred.shape == (5,)
     assert np.all(np.isfinite(pred))
-    # Check first 5 values (seasonal decay)
-    expected_pred_start = np.array([2.59146752, 2.48890481, 2.38744626, 2.30466908, 2.21979508])
+    # Check first 5 values (R-based implementation - seasonal decay)
+    expected_pred_start = np.array([2.6823667306424746, 2.6706837793404903, 2.6512215984190295, 2.652740977916483, 2.642508147894773])
     np.testing.assert_array_almost_equal(pred[:5], expected_pred_start, decimal=4)
 
 
@@ -300,9 +300,9 @@ def test_arima_predict_with_differencing():
     
     # Expected values from skforecast implementation
     expected_pred = np.array([
-        -10.38328947, -10.38329738, -10.38329734, -10.38329734,
-        -10.38329734, -10.38329734, -10.38329734, -10.38329734,
-        -10.38329734, -10.38329734
+        -10.38329029, -10.38329819, -10.38329815, -10.38329815,
+        -10.38329815, -10.38329815, -10.38329815, -10.38329815,
+        -10.38329815, -10.38329815
     ])
     np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
 
@@ -325,7 +325,7 @@ def test_arima_predict_ma_model():
     # MA(1) forecasts should converge quickly to mean
     # Expected values from skforecast implementation
     expected_pred = np.array([
-        -0.10100203, -0.1039547, -0.1039547, -0.1039547, -0.1039547
+        -0.10094798, -0.10395163, -0.10395163, -0.10395163, -0.10395163
     ])
     np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
 
@@ -344,18 +344,37 @@ def test_arima_predict_air_passengers_data():
     model.fit(air_passengers, suppress_warnings=False)
     pred = model.predict(steps=10)
 
-    expected_coef = np.array([
-        0.57655285, 0.23048522, -0.98090342, -0.93688392, 0.85971439
-    ])
-    expected_pred = np.array([
-        448.09333297, 423.88721629, 458.43899853, 498.09725889,
-        510.25520497, 568.95468453, 656.71760162, 642.02925408,
-        547.19632004, 497.94294517
-    ])
-
+    platform_name = platform.system()
+    if platform_name == 'Linux':
+        expected_coef = np.array([
+            0.21797412,  0.10190091, -0.60950889, -0.75357779,  0.66002656
+        ])
+        expected_pred = np.array([
+            449.90727977, 425.89942208, 459.84193732, 497.85003478,
+            510.28517537, 570.53014188, 657.56297822, 643.48037617,
+            547.49999804, 498.39931436
+        ])
+    elif platform_name == 'Darwin':
+        expected_coef = np.array([
+            0.21797412,  0.10190091, -0.60950889, -0.75357779,  0.66002656
+        ])
+        expected_pred = np.array([
+            449.90728, 425.89943, 459.84195, 497.85005, 510.28519, 570.53015,
+            657.56299, 643.48039, 547.50002, 498.39933
+        ])
+    else:
+        expected_coef = np.array([
+            0.21797412,  0.10190091, -0.60950889, -0.75357779,  0.66002656
+        ])
+        expected_pred = np.array([
+            449.90727977, 425.89942208, 459.84193732, 497.85003478,
+            510.28517537, 570.53014188, 657.56297822, 643.48037617,
+            547.49999804, 498.39931436
+        ])
+    
     assert model.coef_names_ == ['ar1', 'ar2', 'ma1', 'sar1', 'sma1']
-    np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=2)
-    np.testing.assert_array_almost_equal(pred, expected_pred, decimal=2)
+    np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=5)
+    np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
 
 
 def test_arima_predict_multi_seasonal_data():
@@ -372,16 +391,37 @@ def test_arima_predict_multi_seasonal_data():
     model.fit(multi_seasonal, suppress_warnings=False)
     pred = model.predict(steps=10)
 
-    expected_coef = np.array([
-        -0.50771885, -0.04577332, -0.04034762, 0.01609814, -0.06015838,
-        -0.48427446, -0.51572118, -0.04678275, -0.97496519
-    ])
-    expected_pred = np.array([
-        174.62926832, 168.90557295, 173.56344223, 172.08788695,
-        173.80911065, 171.86014034, 175.37610935, 173.56315404,
-        172.87984319, 173.39731174
-    ])
-
+    platform_name = platform.system()
+    if platform_name == 'Linux':
+        expected_coef = np.array([
+            -0.50815818, -0.04561599, -0.04026491,  0.01633577, -0.06006012,
+            -0.48386679, -0.51610601, -0.0470779 , -0.97491034
+        ])
+        expected_pred = np.array([
+            174.63663927, 168.90121337, 173.57034418, 172.08613347,
+            173.80934415, 171.85540948, 175.37193414, 173.55968119,
+            172.87896427, 173.39779159
+        ])
+    elif platform_name == 'Darwin':
+        expected_coef = np.array([
+            -0.50839, -0.04576, -0.04046,  0.01624, -0.06011, -0.48352,
+            -0.5164 , -0.04699, -0.97493
+        ])
+        expected_pred = np.array([
+            174.63553, 168.89795, 173.56873, 172.08578, 173.81006, 171.85623,
+            175.37377, 173.56013, 172.87945, 173.39727
+        ])
+    else:
+        expected_coef = np.array([
+            -0.50907331, -0.0456846, -0.04037138,  0.01625521, -0.06005925,
+            -0.48301617, -0.51698024, -0.04698983, -0.97495403
+        ])
+        expected_pred = np.array([
+            174.63750031, 168.9002565, 173.57045868, 172.08342809,
+            173.81031671, 171.85569117, 175.3742861, 173.56080534,
+            172.8806044, 173.39614882
+        ])
+    
     assert model.coef_names_ == ['ar1', 'ar2', 'ar3', 'ar4', 'ar5', 'ma1', 'ma2', 'sar1', 'sma1']
     np.testing.assert_allclose(model.coef_, expected_coef, atol=1e-3)
     np.testing.assert_allclose(pred, expected_pred, rtol=1e-4)
@@ -456,10 +496,11 @@ def test_predict_fuel_consumption_data_with_exog():
                 order=(1, 1, 1),
                 seasonal_order=(1, 1, 1),
                 m=12,
-                fit_intercept = True,
-                enforce_stationarity = True,
+                include_mean = True,
+                transform_pars = True,
                 method = "CSS-ML",
                 n_cond = None,
+                SSinit = "Gardner1980",
                 optim_method = "BFGS",
                 optim_kwargs = {"maxiter": 2000},
             )
@@ -473,11 +514,17 @@ def test_predict_fuel_consumption_data_with_exog():
         exog=fuel_consumption.loc['1989-09-01':].drop(columns=['y']),
     )
 
-    expected = np.array([
-        1574769.82817936, 1449368.44399194, 1509265.14575579,
-        1484681.44198045, 1404070.94702908
-    ])
-    np.testing.assert_allclose(pred, expected, rtol=1e-4)
+    expected = {
+        'Linux': np.array([1574773.72985, 1449368.34742, 1509249.8998 , 1484706.35242,
+                            1404055.23623]),
+        'Darwin':
+            np.array([1575342.67857, 1449382.68134, 1509290.95573, 1485000.88071,
+                      1404311.02049]),
+        'Windows':
+            np.array([1574766.35415552, 1449367.06186871, 1509255.77782939,
+                      1484690.16862425, 1404060.78688154])
+    }
+    np.testing.assert_allclose(pred, expected[platform.system()], rtol=1e-4)
 
 
 def test_arima_predict_auto_arima_air_passengers_data():
@@ -486,14 +533,40 @@ def test_arima_predict_auto_arima_air_passengers_data():
     Air Passengers dataset and returns exact values.
     """
 
-    expected_order = (2, 1, 1)
-    expected_seasonal_order = (0, 1, 0)
-    expected_estimator_name = "AutoArima(2,1,1)(0,1,0)[12]"
-    expected_pred = np.array([
-        445.56810006, 420.28762041, 449.04990788, 491.65672001,
-        503.18017215, 566.62089458, 653.99463684, 638.31090126,
-        540.57869761, 493.80541080
-    ])
+    expected_order = {
+        'Linux': (2, 1, 1),
+        'Darwin': (1, 1, 0),
+        'Windows': (2, 1, 1)
+    }
+    expected_seasonal_order = {
+        'Linux': (0, 1, 0),
+        'Darwin': (0, 1, 0),
+        'Windows': (0, 1, 0)
+    }
+    expected_estimator_name_ = {
+        'Linux': "AutoArima(2,1,1)(0,1,0)[12]",
+        'Darwin': "AutoArima(1,1,0)(0,1,0)[12]",
+        'Windows': "AutoArima(2,1,1)(0,1,0)[12]"
+    }
+    expected_pred = {
+        'Linux': 
+            np.array([
+                445.28565737, 419.83465616, 448.44413494, 490.92842561,
+                502.3511798 , 565.70976142, 653.01653442, 637.27830708,
+                539.5018538 , 492.69271213
+            ]),
+        'Darwin':
+            np.array([
+                444.30787, 418.21309, 446.24227, 488.23328, 499.23605, 562.2352 ,
+                649.23546, 633.23538, 535.2354 , 488.2354
+            ]),
+        'Windows': 
+            np.array([
+                445.28524764, 419.83438161, 448.44374789, 490.92802225,
+                502.35073213, 565.70928243, 653.01602408, 637.27776912,
+                539.50129062, 492.69212627
+            ])
+    }
 
     model = Arima(
         order=None,
@@ -524,13 +597,14 @@ def test_arima_predict_auto_arima_air_passengers_data():
     )
     model.fit(air_passengers, suppress_warnings=True)
     pred = model.predict(steps=10)
-
+    
+    platform_name = platform.system()
     assert model.is_auto is True
-    assert model.best_params_['order'] == expected_order
-    assert model.best_params_['seasonal_order'] == expected_seasonal_order
+    assert model.best_params_['order'] == expected_order[platform_name]
+    assert model.best_params_['seasonal_order'] == expected_seasonal_order[platform_name]
     assert model.best_params_['m'] == 12
-    assert model.estimator_name_ == expected_estimator_name
-    np.testing.assert_allclose(pred, expected_pred, rtol=1e-4)
+    assert model.estimator_name_ == expected_estimator_name_[platform_name]
+    np.testing.assert_allclose(pred, expected_pred[platform.system()], rtol=1e-4)
 
 
 def test_arima_predict_auto_arima_multi_seasonal_data():
@@ -539,12 +613,26 @@ def test_arima_predict_auto_arima_multi_seasonal_data():
     multi_seasonal dataset and returns exact values.
     """
 
-    expected_pred = np.array([
-        174.22844329, 174.1332421, 174.86406979, 174.85893904,
-        174.81521813, 174.81617385, 174.81877978, 174.81868387,
-        174.81852912, 174.81853717
-    ])
-
+    expected = {
+        'Linux': 
+            np.array([
+                174.22831851, 174.13324908, 174.86422913, 174.85907826,
+                174.81533986, 174.81629778, 174.81890523, 174.81880912,
+                174.81865425, 174.81866231
+            ]),
+        'Darwin':
+            np.array([
+                174.22838, 174.13326, 174.86414, 174.859  , 174.81527, 174.81623,
+                174.81884, 174.81874, 174.81859, 174.81859
+            ]),
+        'Windows': 
+            np.array([
+                174.22838488, 174.13325775, 174.86414245, 174.85900122,
+                174.81527385, 174.81623065, 174.81883714, 174.81874113,
+                174.81858635, 174.8185944
+            ])
+    }
+   
     model = Arima(
         order=None,
         seasonal_order=None,
@@ -574,13 +662,13 @@ def test_arima_predict_auto_arima_multi_seasonal_data():
     )
     model.fit(multi_seasonal, suppress_warnings=True)
     pred = model.predict(steps=10)
-
+    
     assert model.is_auto is True
     assert model.best_params_['order'] == (2, 1, 1)
     assert model.best_params_['seasonal_order'] == (0, 0, 0)
     assert model.best_params_['m'] == 12
     assert model.estimator_name_ == "AutoArima(2,1,1)"
-    np.testing.assert_allclose(pred, expected_pred, rtol=1e-4)
+    np.testing.assert_allclose(pred, expected[platform.system()], rtol=1e-4)
 
 
 def test_arima_predict_after_reduce_memory_raises():
@@ -608,7 +696,7 @@ def test_arima_predict_after_reduce_memory_raises():
     
     # Expected values
     expected_pred = np.array([
-        -1.61349679, -1.18913291, -0.8868684,
-        -0.67157243, -0.51822213
+        -1.6134968158909693, -1.1891329639587627, -0.8868684748513417, 
+        -0.671572518422975, -0.5182222224908184
     ])
     np.testing.assert_array_almost_equal(pred_after, expected_pred, decimal=5)

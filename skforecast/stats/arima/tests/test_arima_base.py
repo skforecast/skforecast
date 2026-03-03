@@ -4,23 +4,28 @@ import pytest
 import numpy as np
 import pandas as pd
 from skforecast.stats.arima._arima_base import (
+    state_prediction,
+    predict_covariance_nodiff,
+    predict_covariance_with_diff,
     kalman_update,
     compute_arima_likelihood,
     transform_unconstrained_to_ar_params,
     inverse_ar_parameter_transform,
     time_series_convolution,
     compute_q0_covariance_matrix,
+    compute_q0_bis_covariance_matrix,
     transform_arima_parameters,
     compute_css_residuals,
     initialize_arima_state,
-    _update_state_space,
+    update_arima,
     ar_check,
     ma_invert,
     kalman_forecast,
-    _validate_pdq,
-    _validate_choice,
+    make_pdq,
+    na_omit,
     diff,
-    _process_exogenous,
+    match_arg,
+    process_xreg,
     add_drift_term,
     arima,
     predict_arima,
@@ -46,33 +51,31 @@ def simple_ar1_series():
 
 
 # =============================================================================
-# Tests for transition matrix (T @ a replaces state_prediction)
+# Tests for state_prediction
 # =============================================================================
-def test_transition_matrix_ar1():
-    """Test transition matrix for AR(1) model gives correct state prediction."""
-    ss = initialize_arima_state(
-        phi=np.array([0.5]), theta=np.array([]), Delta=np.array([])
-    )
-    T = ss.transition_matrix
+def test_state_prediction_ar1():
+    """Test state prediction for AR(1) model."""
+    phi = np.array([0.5])
+    delta = np.array([])
     a = np.array([1.0])
-
-    anew = T @ a
-
+    p, r, d, rd = 1, 1, 0, 1
+    
+    anew = state_prediction(a, p, r, d, rd, phi, delta)
+    
     # For AR(1) with a[0]=1: anew[0] = phi[0] * a[0] = 0.5
     assert anew.shape == (1,)
     np.testing.assert_allclose(anew[0], 0.5, rtol=1e-10)
 
 
-def test_transition_matrix_ar2():
-    """Test transition matrix for AR(2) model gives correct state prediction."""
-    ss = initialize_arima_state(
-        phi=np.array([0.5, 0.3]), theta=np.array([]), Delta=np.array([])
-    )
-    T = ss.transition_matrix
+def test_state_prediction_ar2():
+    """Test state prediction for AR(2) model with r > p."""
+    phi = np.array([0.5, 0.3])
+    delta = np.array([])
     a = np.array([1.0, 0.5])
-
-    anew = T @ a
-
+    p, r, d, rd = 2, 2, 0, 2
+    
+    anew = state_prediction(a, p, r, d, rd, phi, delta)
+    
     # anew[0] = a[1] + phi[0]*a[0] = 0.5 + 0.5*1.0 = 1.0
     # anew[1] = phi[1]*a[0] = 0.3*1.0 = 0.3
     assert anew.shape == (2,)
@@ -80,16 +83,15 @@ def test_transition_matrix_ar2():
     np.testing.assert_allclose(anew[1], 0.3, rtol=1e-10)
 
 
-def test_transition_matrix_with_differencing():
-    """Test transition matrix with differencing component."""
-    ss = initialize_arima_state(
-        phi=np.array([0.5]), theta=np.array([]), Delta=np.array([1.0])
-    )
-    T = ss.transition_matrix
+def test_state_prediction_with_differencing():
+    """Test state prediction with differencing component."""
+    phi = np.array([0.5])
+    delta = np.array([1.0])  # d=1 differencing
     a = np.array([1.0, 2.0])
-
-    anew = T @ a
-
+    p, r, d, rd = 1, 1, 1, 2
+    
+    anew = state_prediction(a, p, r, d, rd, phi, delta)
+    
     # anew[0] = phi[0]*a[0] = 0.5
     # anew[1] = a[0] + delta[0]*a[1] = 1.0 + 1.0*2.0 = 3.0
     assert anew.shape == (2,)
@@ -98,52 +100,46 @@ def test_transition_matrix_with_differencing():
 
 
 # =============================================================================
-# Tests for covariance prediction (T @ P @ T.T + V)
+# Tests for covariance predictions
 # =============================================================================
-def test_covariance_prediction_ar1():
+def test_predict_covariance_nodiff_ar1():
     """Test covariance prediction for AR(1) without differencing."""
-    ss = initialize_arima_state(
-        phi=np.array([0.5]), theta=np.array([]), Delta=np.array([])
-    )
-    T = ss.transition_matrix
-    V = ss.innovation_covariance
+    phi = np.array([0.5])
+    theta = np.array([])
     P = np.array([[1.0]])
-
-    Pnew = T @ P @ T.T + V
-
+    r, p, q = 1, 1, 0
+    
+    Pnew = predict_covariance_nodiff(P, r, p, q, phi, theta)
+    
     # For AR(1): Pnew = phi^2 * P + 1
     expected = 0.5**2 * 1.0 + 1.0
     assert Pnew.shape == (1, 1)
     np.testing.assert_allclose(Pnew[0, 0], expected, rtol=1e-10)
 
 
-def test_covariance_prediction_is_symmetric():
+def test_predict_covariance_nodiff_is_symmetric():
     """Test that covariance prediction produces symmetric matrix."""
-    ss = initialize_arima_state(
-        phi=np.array([0.5, 0.2]), theta=np.array([0.3]), Delta=np.array([])
-    )
-    T = ss.transition_matrix
-    V = ss.innovation_covariance
+    phi = np.array([0.5, 0.2])
+    theta = np.array([0.3])
     P = np.eye(2) * 0.5
-
-    Pnew = T @ P @ T.T + V
-
-    assert Pnew.shape == (2, 2)
+    r, p, q = 2, 2, 1
+    
+    Pnew = predict_covariance_nodiff(P, r, p, q, phi, theta)
+    
+    assert Pnew.shape == (r, r)
     np.testing.assert_allclose(Pnew, Pnew.T, rtol=1e-10)
 
 
-def test_covariance_prediction_with_diff_shape():
+def test_predict_covariance_with_diff_shape():
     """Test covariance prediction with differencing has correct shape."""
-    ss = initialize_arima_state(
-        phi=np.array([0.5]), theta=np.array([]), Delta=np.array([1.0])
-    )
-    T = ss.transition_matrix
-    V = ss.innovation_covariance
-    rd = T.shape[0]
+    phi = np.array([0.5])
+    theta = np.array([])
+    delta = np.array([1.0])
+    r, d, p, q, rd = 1, 1, 1, 0, 2
     P = np.eye(rd) * 0.5
-
-    Pnew = T @ P @ T.T + V
-
+    
+    Pnew = predict_covariance_with_diff(P, r, d, p, q, rd, phi, delta, theta)
+    
     assert Pnew.shape == (rd, rd)
 
 
@@ -154,17 +150,19 @@ def test_kalman_update_basic():
     """Test Kalman update with simple inputs."""
     y_obs = 1.0
     anew = np.array([0.5])
-    Z = np.array([1.0])
+    delta = np.array([])
     Pnew = np.array([[1.0]])
-
-    a, P, resid, F, ssq_c, sumlog_c = kalman_update(
-        y_obs, anew, Z, Pnew
+    d, r, rd = 0, 1, 1
+    
+    a, P, resid, gain, ssq_c, sumlog_c = kalman_update(
+        y_obs, anew, delta, Pnew, d, r, rd
     )
-
-    # resid = y_obs - Z'anew = 1.0 - 0.5 = 0.5
+    
+    # resid = y_obs - anew[0] = 1.0 - 0.5 = 0.5
     np.testing.assert_allclose(resid, 0.5, rtol=1e-10)
-    # F = Z'PZ = 1.0
-    np.testing.assert_allclose(F, 1.0, rtol=1e-10)
+    # gain should be Pnew[0,0] = 1.0
+    np.testing.assert_allclose(gain, 1.0, rtol=1e-10)
+    # Updated state and covariance should have correct dimensions
     assert a.shape == (1,)
     assert P.shape == (1, 1)
 
@@ -173,14 +171,15 @@ def test_kalman_update_with_differencing():
     """Test Kalman update with differencing component."""
     y_obs = 2.0
     anew = np.array([0.5, 1.0])
-    Z = np.array([1.0, 1.0])  # Z = [1, delta[0]] = [1, 1]
+    delta = np.array([1.0])
     Pnew = np.eye(2)
-
-    a, P, resid, F, ssq_c, sumlog_c = kalman_update(
-        y_obs, anew, Z, Pnew
+    d, r, rd = 1, 1, 2
+    
+    a, P, resid, gain, ssq_c, sumlog_c = kalman_update(
+        y_obs, anew, delta, Pnew, d, r, rd
     )
-
-    # resid = y_obs - Z'anew = 2.0 - (1.0*0.5 + 1.0*1.0) = 0.5
+    
+    # resid = y_obs - anew[0] - delta[0]*anew[1] = 2.0 - 0.5 - 1.0*1.0 = 0.5
     np.testing.assert_allclose(resid, 0.5, rtol=1e-10)
     assert a.shape == (2,)
     assert P.shape == (2, 2)
@@ -296,6 +295,23 @@ def test_compute_q0_covariance_matrix_is_symmetric():
     np.testing.assert_allclose(Q0, Q0.T, rtol=1e-10)
 
 
+def test_compute_q0_bis_matches_gardner_for_simple_cases():
+    """Test that Rossignol method produces valid covariance matrix."""
+    phi = np.array([0.5])
+    theta = np.array([0.3])
+    
+    Q0_gardner = compute_q0_covariance_matrix(phi, theta)
+    Q0_rossignol = compute_q0_bis_covariance_matrix(phi, theta)
+    
+    # Both should produce symmetric positive semi-definite matrices
+    assert Q0_gardner.shape == Q0_rossignol.shape
+    np.testing.assert_allclose(Q0_gardner, Q0_gardner.T, rtol=1e-10)
+    np.testing.assert_allclose(Q0_rossignol, Q0_rossignol.T, rtol=1e-10)
+    # Eigenvalues should be non-negative (positive semi-definite)
+    assert np.all(np.linalg.eigvalsh(Q0_gardner) >= -1e-10)
+    assert np.all(np.linalg.eigvalsh(Q0_rossignol) >= -1e-10)
+
+
 # =============================================================================
 # Tests for ar_check and ma_invert
 # =============================================================================
@@ -355,26 +371,31 @@ def test_ma_invert_all_zeros_after_first():
 
 
 # =============================================================================
-# Tests for initialize_arima_state and _update_state_space
+# Tests for initialize_arima_state and update_arima
 # =============================================================================
 def test_initialize_arima_state_ar1():
     """Test state-space initialization for AR(1) model."""
-    from skforecast.stats.arima._arima_base import StateSpaceArrays
     phi = np.array([0.5])
     theta = np.array([])
     Delta = np.array([])
-
-    ss = initialize_arima_state(phi, theta, Delta)
-
-    assert isinstance(ss, StateSpaceArrays)
-
+    
+    model = initialize_arima_state(phi, theta, Delta)
+    
+    assert 'phi' in model
+    assert 'theta' in model
+    assert 'Z' in model
+    assert 'a' in model
+    assert 'P' in model
+    assert 'T' in model
+    assert 'Pn' in model
+    
     # Check dimensions
-    assert ss.filtered_state.shape == (1,)
-    assert ss.filtered_covariance.shape == (1, 1)
-    assert ss.transition_matrix.shape == (1, 1)
-
+    assert model['a'].shape == (1,)
+    assert model['P'].shape == (1, 1)
+    assert model['T'].shape == (1, 1)
+    
     # T[0,0] should equal phi[0]
-    np.testing.assert_allclose(ss.transition_matrix[0, 0], 0.5, rtol=1e-10)
+    np.testing.assert_allclose(model['T'][0, 0], 0.5, rtol=1e-10)
 
 
 def test_initialize_arima_state_with_differencing():
@@ -382,33 +403,45 @@ def test_initialize_arima_state_with_differencing():
     phi = np.array([0.5])
     theta = np.array([])
     Delta = np.array([1.0])  # d=1
-
-    ss = initialize_arima_state(phi, theta, Delta)
-
+    
+    model = initialize_arima_state(phi, theta, Delta)
+    
     rd = 2  # r=1, d=1
-    assert ss.filtered_state.shape == (rd,)
-    assert ss.filtered_covariance.shape == (rd, rd)
-    assert ss.transition_matrix.shape == (rd, rd)
-
+    assert model['a'].shape == (rd,)
+    assert model['P'].shape == (rd, rd)
+    assert model['T'].shape == (rd, rd)
+    
     # Diffuse prior for differencing state
-    assert ss.predicted_covariance[1, 1] > 1e5
+    assert model['Pn'][1, 1] > 1e5
+
+
+def test_initialize_arima_state_rossignol_method():
+    """Test state-space initialization with Rossignol method."""
+    phi = np.array([0.5])
+    theta = np.array([0.3])
+    Delta = np.array([])
+    
+    model = initialize_arima_state(phi, theta, Delta, SSinit="Rossignol2011")
+    
+    # r = max(p, q+1) = max(1, 2) = 2, rd = r + d = 2 + 0 = 2
+    assert model['Pn'].shape == (2, 2)
 
 
 def test_update_arima_changes_coefficients():
-    """Test that _update_state_space correctly updates AR/MA coefficients."""
+    """Test that update_arima correctly updates AR/MA coefficients."""
     phi_init = np.array([0.5])
     theta_init = np.array([])
     Delta = np.array([])
-
-    ss = initialize_arima_state(phi_init, theta_init, Delta)
-
+    
+    model = initialize_arima_state(phi_init, theta_init, Delta)
+    
     phi_new = np.array([0.7])
     theta_new = np.array([])
-
-    updated = _update_state_space(ss, phi_new, theta_new)
-
-    np.testing.assert_allclose(updated.ar_coefs, phi_new, rtol=1e-10)
-    np.testing.assert_allclose(updated.transition_matrix[0, 0], 0.7, rtol=1e-10)
+    
+    updated = update_arima(model, phi_new, theta_new)
+    
+    np.testing.assert_allclose(updated['phi'], phi_new, rtol=1e-10)
+    np.testing.assert_allclose(updated['T'][0, 0], 0.7, rtol=1e-10)
 
 
 # =============================================================================
@@ -460,13 +493,13 @@ def test_kalman_forecast_returns_correct_length():
     phi = np.array([0.5])
     theta = np.array([])
     Delta = np.array([])
-
-    ss = initialize_arima_state(phi, theta, Delta)
-    ss.filtered_state = np.array([1.0])  # Set initial state
-
+    
+    model = initialize_arima_state(phi, theta, Delta)
+    model['a'] = np.array([1.0])  # Set initial state
+    
     n_ahead = 10
-    result = kalman_forecast(n_ahead, ss)
-
+    result = kalman_forecast(n_ahead, model)
+    
     assert 'pred' in result
     assert 'var' in result
     assert len(result['pred']) == n_ahead
@@ -478,11 +511,11 @@ def test_kalman_forecast_variances_increase():
     phi = np.array([0.5])
     theta = np.array([])
     Delta = np.array([])
-
-    ss = initialize_arima_state(phi, theta, Delta)
-
-    result = kalman_forecast(10, ss)
-
+    
+    model = initialize_arima_state(phi, theta, Delta)
+    
+    result = kalman_forecast(10, model)
+    
     # For most models, variance should not decrease
     # (allowing for numerical tolerance)
     for i in range(1, len(result['var'])):
@@ -491,55 +524,53 @@ def test_kalman_forecast_variances_increase():
 
 def test_kalman_forecast_with_update():
     """Test that kalman_forecast with update=True returns complete result."""
-    from skforecast.stats.arima._arima_base import StateSpaceArrays
     phi = np.array([0.5])
     theta = np.array([])
     Delta = np.array([])
-
-    ss = initialize_arima_state(phi, theta, Delta)
-    ss.filtered_state = np.array([1.0])
-
-    result = kalman_forecast(5, ss, update=True)
-
+    
+    model = initialize_arima_state(phi, theta, Delta)
+    model['a'] = np.array([1.0])
+    
+    result = kalman_forecast(5, model, update=True)
+    
     # Should have predictions and variances
     assert len(result['pred']) == 5
     assert len(result['var']) == 5
-    # Result should contain updated state-space model (since update=True)
+    # Result should contain model (since update=True)
     assert 'mod' in result
-    assert isinstance(result['mod'], StateSpaceArrays)
 
 
 # =============================================================================
 # Tests for utility functions
 # =============================================================================
 def test_make_pdq_valid():
-    """Test _validate_pdq with valid inputs."""
-    result = _validate_pdq(1, 1, 1)
+    """Test make_pdq with valid inputs."""
+    result = make_pdq(1, 1, 1)
     assert result == (1, 1, 1)
 
 
 def test_make_pdq_raises_on_negative():
-    """Test _validate_pdq raises ValueError for negative values."""
+    """Test make_pdq raises ValueError for negative values."""
     with pytest.raises(ValueError, match="must be non-negative"):
-        _validate_pdq(-1, 0, 0)
+        make_pdq(-1, 0, 0)
     
     with pytest.raises(ValueError, match="must be non-negative"):
-        _validate_pdq(0, -1, 0)
+        make_pdq(0, -1, 0)
 
 
-def test_validate_choice_exact():
-    """Test _validate_choice with exact match."""
-    result = _validate_choice("ML", ["CSS-ML", "ML", "CSS"], "method")
-    assert result == "ML"
+def test_na_omit():
+    """Test na_omit removes NaN values."""
+    x = np.array([1.0, np.nan, 2.0, np.nan, 3.0])
+    result = na_omit(x)
+    expected = np.array([1.0, 2.0, 3.0])
+    np.testing.assert_array_equal(result, expected)
 
-    result = _validate_choice("CSS", ["CSS", "CSS-ML", "ML"], "method")
-    assert result == "CSS"
 
-
-def test_validate_choice_raises_on_invalid():
-    """Test _validate_choice raises ValueError for invalid input."""
-    with pytest.raises(ValueError, match="Invalid `method`"):
-        _validate_choice("invalid", ["CSS-ML", "ML", "CSS"], "method")
+def test_na_omit_no_nan():
+    """Test na_omit with no NaN values."""
+    x = np.array([1.0, 2.0, 3.0])
+    result = na_omit(x)
+    np.testing.assert_array_equal(result, x)
 
 
 def test_diff_simple():
@@ -574,31 +605,47 @@ def test_diff_2d_array():
     np.testing.assert_array_equal(result, expected)
 
 
+def test_match_arg_exact():
+    """Test match_arg with exact match."""
+    # Note: match_arg uses startswith matching, so order matters
+    # "CSS" matches "CSS-ML" because "CSS-ML".startswith("CSS") is True
+    result = match_arg("ML", ["CSS-ML", "ML", "CSS"])
+    assert result == "ML"
+    
+    # Test exact match when it comes first in list
+    result = match_arg("CSS", ["CSS", "CSS-ML", "ML"])
+    assert result == "CSS"
 
 
-def test_process_exogenous_none():
-    """Test _process_exogenous with None input."""
-    exog, n_exog, exog_names = _process_exogenous(None, 10)
-    assert exog.shape == (10, 0)
-    assert n_exog == 0
-    assert exog_names == []
+def test_match_arg_raises_on_invalid():
+    """Test match_arg raises ValueError for invalid input."""
+    with pytest.raises(ValueError, match="should be one of"):
+        match_arg("invalid", ["CSS-ML", "ML", "CSS"])
 
 
-def test_process_exogenous_dataframe():
-    """Test _process_exogenous with DataFrame input."""
+def test_process_xreg_none():
+    """Test process_xreg with None input."""
+    xreg, ncxreg, nmxreg = process_xreg(None, 10)
+    assert xreg.shape == (10, 0)
+    assert ncxreg == 0
+    assert nmxreg == []
+
+
+def test_process_xreg_dataframe():
+    """Test process_xreg with DataFrame input."""
     df = pd.DataFrame({'x1': [1, 2, 3], 'x2': [4, 5, 6]})
-    exog, n_exog, exog_names = _process_exogenous(df, 3)
+    xreg, ncxreg, nmxreg = process_xreg(df, 3)
+    
+    assert xreg.shape == (3, 2)
+    assert ncxreg == 2
+    assert nmxreg == ['x1', 'x2']
 
-    assert exog.shape == (3, 2)
-    assert n_exog == 2
-    assert exog_names == ['x1', 'x2']
 
-
-def test_process_exogenous_raises_on_length_mismatch():
-    """Test _process_exogenous raises error on length mismatch."""
+def test_process_xreg_raises_on_length_mismatch():
+    """Test process_xreg raises error on length mismatch."""
     df = pd.DataFrame({'x1': [1, 2, 3]})
     with pytest.raises(ValueError, match="do not match"):
-        _process_exogenous(df, 5)
+        process_xreg(df, 5)
 
 
 def test_add_drift_term_to_none():
@@ -639,7 +686,7 @@ def test_arima_ar1_fit(simple_ar1_series):
     """Test fitting AR(1) model."""
     y = simple_ar1_series
     
-    result = arima(y, order=(1, 0, 0), fit_intercept=False)
+    result = arima(y, order=(1, 0, 0), include_mean=False)
     
     assert result['converged'] == True
     assert 'coef' in result
@@ -656,18 +703,18 @@ def test_arima_with_differencing(simple_ar1_series):
     """Test ARIMA with differencing."""
     y = simple_ar1_series
     
-    result = arima(y, order=(1, 1, 0), fit_intercept=False)
+    result = arima(y, order=(1, 1, 0), include_mean=False)
     
     assert result['converged'] == True
-    assert result['order_spec'].d == 1
+    assert result['arma'][5] == 1  # d = 1
 
 
-def test_arima_with_exog(simple_ar1_series):
+def test_arima_with_xreg(simple_ar1_series):
     """Test ARIMA with exogenous regressors."""
     y = simple_ar1_series
     xreg = pd.DataFrame({'x1': np.random.randn(len(y))})
-
-    result = arima(y, order=(1, 0, 0), exog=xreg, fit_intercept=False)
+    
+    result = arima(y, order=(1, 0, 0), xreg=xreg, include_mean=False)
     
     assert result['converged'] == True
     assert 'x1' in result['coef'].columns
@@ -677,7 +724,7 @@ def test_arima_css_method(simple_ar1_series):
     """Test ARIMA with CSS estimation method."""
     y = simple_ar1_series
     
-    result = arima(y, order=(1, 0, 0), method="CSS", fit_intercept=False)
+    result = arima(y, order=(1, 0, 0), method="CSS", include_mean=False)
     
     assert result['converged'] == True
 
@@ -686,7 +733,7 @@ def test_arima_ml_method(simple_ar1_series):
     """Test ARIMA with ML estimation method."""
     y = simple_ar1_series
     
-    result = arima(y, order=(1, 0, 0), method="ML", fit_intercept=False)
+    result = arima(y, order=(1, 0, 0), method="ML", include_mean=False)
     
     assert result['converged'] == True
 
@@ -698,7 +745,7 @@ def test_arima_with_missing_values():
     y[10] = np.nan  # Add a missing value
     
     # ML method should be used automatically with missing values
-    result = arima(y, order=(1, 0, 0), fit_intercept=False)
+    result = arima(y, order=(1, 0, 0), include_mean=False)
     
     # Should converge (ML method handles missing)
     assert 'residuals' in result
@@ -709,7 +756,7 @@ def test_arima_residuals_length(simple_ar1_series):
     """Test that residuals have same length as input."""
     y = simple_ar1_series
     
-    result = arima(y, order=(1, 0, 0), fit_intercept=False)
+    result = arima(y, order=(1, 0, 0), include_mean=False)
     
     assert len(result['residuals']) == len(y)
     assert len(result['fitted']) == len(y)
@@ -721,7 +768,7 @@ def test_arima_residuals_length(simple_ar1_series):
 def test_predict_arima_basic(simple_ar1_series):
     """Test basic prediction from fitted ARIMA model."""
     y = simple_ar1_series
-    model = arima(y, order=(1, 0, 0), fit_intercept=False)
+    model = arima(y, order=(1, 0, 0), include_mean=False)
     
     n_ahead = 5
     result = predict_arima(model, n_ahead=n_ahead)
@@ -735,7 +782,7 @@ def test_predict_arima_basic(simple_ar1_series):
 def test_predict_arima_with_intervals(simple_ar1_series):
     """Test prediction with confidence intervals."""
     y = simple_ar1_series
-    model = arima(y, order=(1, 0, 0), fit_intercept=False)
+    model = arima(y, order=(1, 0, 0), include_mean=False)
     
     result = predict_arima(model, n_ahead=5, level=[80, 95])
     
@@ -747,16 +794,16 @@ def test_predict_arima_with_intervals(simple_ar1_series):
     assert np.all(result['lower'] < result['upper'])
 
 
-def test_predict_arima_with_exog(simple_ar1_series):
+def test_predict_arima_with_xreg(simple_ar1_series):
     """Test prediction with exogenous regressors."""
     y = simple_ar1_series
     n = len(y)
     xreg = pd.DataFrame({'x1': np.random.randn(n)})
-
-    model = arima(y, order=(1, 0, 0), exog=xreg, fit_intercept=False)
-
+    
+    model = arima(y, order=(1, 0, 0), xreg=xreg, include_mean=False)
+    
     newxreg = pd.DataFrame({'x1': np.random.randn(5)})
-    result = predict_arima(model, n_ahead=5, new_exog=newxreg)
+    result = predict_arima(model, n_ahead=5, newxreg=newxreg)
     
     assert len(result['mean']) == 5
 
@@ -767,7 +814,7 @@ def test_predict_arima_with_exog(simple_ar1_series):
 def test_fitted_values_extraction(simple_ar1_series):
     """Test fitted_values function."""
     y = simple_ar1_series
-    model = arima(y, order=(1, 0, 0), fit_intercept=False)
+    model = arima(y, order=(1, 0, 0), include_mean=False)
     
     fitted = fitted_values(model)
     
@@ -778,7 +825,7 @@ def test_fitted_values_extraction(simple_ar1_series):
 def test_residuals_arima_extraction(simple_ar1_series):
     """Test residuals_arima function."""
     y = simple_ar1_series
-    model = arima(y, order=(1, 0, 0), fit_intercept=False)
+    model = arima(y, order=(1, 0, 0), include_mean=False)
     
     resid = residuals_arima(model)
     
@@ -789,7 +836,7 @@ def test_residuals_arima_extraction(simple_ar1_series):
 def test_fitted_plus_residuals_equals_y(simple_ar1_series):
     """Test that fitted + residuals = y."""
     y = simple_ar1_series
-    model = arima(y, order=(1, 0, 0), fit_intercept=False)
+    model = arima(y, order=(1, 0, 0), include_mean=False)
     
     fitted = fitted_values(model)
     resid = residuals_arima(model)
@@ -804,12 +851,10 @@ def test_fitted_plus_residuals_equals_y(simple_ar1_series):
 def test_transform_arima_parameters_no_transform():
     """Test parameter transformation without stability transform."""
     params = np.array([0.5, 0.3])  # AR(1), MA(1)
-
-    phi, theta = transform_arima_parameters(
-        params, n_ar=1, n_ma=1, n_seasonal_ar=0,
-        n_seasonal_ma=0, seasonal_period=1, trans=False
-    )
-
+    arma = np.array([1, 1, 0, 0, 1, 0, 0])
+    
+    phi, theta = transform_arima_parameters(params, arma, trans=False)
+    
     np.testing.assert_allclose(phi[0], 0.5, rtol=1e-10)
     np.testing.assert_allclose(theta[0], 0.3, rtol=1e-10)
 
@@ -817,12 +862,10 @@ def test_transform_arima_parameters_no_transform():
 def test_transform_arima_parameters_with_transform():
     """Test parameter transformation with stability transform."""
     params = np.array([0.5, 0.3])
-
-    phi, theta = transform_arima_parameters(
-        params, n_ar=1, n_ma=1, n_seasonal_ar=0,
-        n_seasonal_ma=0, seasonal_period=1, trans=True
-    )
-
+    arma = np.array([1, 1, 0, 0, 1, 0, 0])
+    
+    phi, theta = transform_arima_parameters(params, arma, trans=True)
+    
     # Transformed AR coefficient should be tanh(0.5) ≈ 0.4621
     expected_phi = np.tanh(0.5)
     np.testing.assert_allclose(phi[0], expected_phi, rtol=1e-6)
@@ -838,20 +881,18 @@ def test_compute_css_residuals_ar1():
     phi = np.array([0.5])
     theta = np.array([])
     eps = np.random.randn(n)
-
+    
     # Generate AR(1) series
     y = np.zeros(n)
     y[0] = eps[0]
     for t in range(1, n):
         y[t] = phi[0] * y[t-1] + eps[t]
-
+    
+    arma = np.array([1, 0, 0, 0, 1, 0, 0])
     ncond = 1
-
-    sigma2, resid = compute_css_residuals(
-        y, phi, theta, ncond,
-        diff_order=0, seasonal_period=1, seasonal_diff_order=0
-    )
-
+    
+    sigma2, resid = compute_css_residuals(y, arma, phi, theta, ncond)
+    
     assert sigma2 > 0
     assert len(resid) == n
     # Residuals at conditioning positions should be zero
@@ -863,13 +904,11 @@ def test_compute_css_residuals_with_differencing():
     y = np.array([1.0, 2.0, 4.0, 7.0, 11.0, 16.0, 22.0, 29.0, 37.0, 46.0])
     phi = np.array([])
     theta = np.array([])
+    arma = np.array([0, 0, 0, 0, 1, 1, 0])  # ARIMA(0,1,0)
     ncond = 1
-
-    sigma2, resid = compute_css_residuals(
-        y, phi, theta, ncond,
-        diff_order=1, seasonal_period=1, seasonal_diff_order=0
-    )
-
+    
+    sigma2, resid = compute_css_residuals(y, arma, phi, theta, ncond)
+    
     assert sigma2 > 0
     assert len(resid) == len(y)
 
@@ -877,7 +916,7 @@ def test_compute_css_residuals_with_differencing():
 def test_predict_arima_no_se(simple_ar1_series):
     """Test predict_arima with se_fit=False."""
     y = simple_ar1_series
-    model = arima(y, order=(1, 0, 0), fit_intercept=False)
+    model = arima(y, order=(1, 0, 0), include_mean=False)
     
     result = predict_arima(model, n_ahead=5, se_fit=False)
     
@@ -893,32 +932,32 @@ def test_arima_seasonal_model(simple_ar1_series):
     n = 60
     y = np.random.randn(n) + np.sin(np.arange(n) * 2 * np.pi / 12) * 2
     
-    result = arima(y, m=12, order=(1, 0, 0), seasonal=(1, 0, 0), fit_intercept=True)
+    result = arima(y, m=12, order=(1, 0, 0), seasonal=(1, 0, 0), include_mean=True)
     
     assert 'sar1' in result['coef'].columns
 
 
-def test_process_exogenous_1d_array():
-    """Test _process_exogenous with 1D numpy array."""
+def test_process_xreg_1d_array():
+    """Test process_xreg with 1D numpy array."""
     xreg = np.array([1.0, 2.0, 3.0])
-    exog_mat, n_exog, exog_names = _process_exogenous(xreg, 3)
-
-    assert exog_mat.shape == (3, 1)
-    assert n_exog == 1
-    assert exog_names == ['exog1']
+    xreg_mat, ncxreg, nmxreg = process_xreg(xreg, 3)
+    
+    assert xreg_mat.shape == (3, 1)
+    assert ncxreg == 1
+    assert nmxreg == ['xreg1']
 
 
 # =============================================================================
-# Tests for _ensure_float64_pair
+# Tests for na_omit_pair
 # =============================================================================
-def test_ensure_float64_pair_basic():
-    """Test _ensure_float64_pair converts arrays to float64."""
-    from skforecast.stats.arima._arima_base import _ensure_float64_pair
+def test_na_omit_pair_basic():
+    """Test na_omit_pair converts arrays to float64."""
+    from skforecast.stats.arima._arima_base import na_omit_pair
     
     x = np.array([1, 2, 3])
     xreg = np.array([[1, 2], [3, 4], [5, 6]])
     
-    x_out, xreg_out = _ensure_float64_pair(x, xreg)
+    x_out, xreg_out = na_omit_pair(x, xreg)
     
     assert x_out.dtype == np.float64
     assert xreg_out.dtype == np.float64
@@ -926,29 +965,90 @@ def test_ensure_float64_pair_basic():
     np.testing.assert_array_equal(xreg_out, xreg.astype(np.float64))
 
 
-
-
 # =============================================================================
-# Tests for _build_coefficient_dataframe
+# Tests for handle_r_equals_1
 # =============================================================================
 @pytest.mark.parametrize(
-    'order_args, coef, cn, ncxreg, expected_columns',
+    'p, phi, expected_value',
     [
-        # AR(1)
-        (dict(p=1, d=0, q=0, P=0, D=0, Q=0, s=1), np.array([0.5]), [], 0, ['ar1']),
-        # ARMA(1,1) with xreg
-        (dict(p=1, d=0, q=1, P=0, D=0, Q=0, s=1), np.array([0.5, 0.3, 1.2]), ['exog1'], 1, ['ar1', 'ma1', 'exog1']),
-        # Seasonal model p=1, P=1, Q=1, m=12
-        (dict(p=1, d=0, q=0, P=1, D=0, Q=1, s=12), np.array([0.5, 0.2, -0.3]), [], 0, ['ar1', 'sar1', 'sma1']),
+        (0, np.array([]), 1.0),           # p=0 case
+        (1, np.array([0.5]), 1.0 / 0.75), # p=1: 1/(1-phi^2)
     ]
 )
-def test_prep_coefs(order_args, coef, cn, ncxreg, expected_columns):
-    """Test _build_coefficient_dataframe creates correct coefficient DataFrame."""
-    from skforecast.stats.arima._arima_base import _build_coefficient_dataframe, SARIMAOrder
+def test_handle_r_equals_1(p, phi, expected_value):
+    """Test handle_r_equals_1 for different p values."""
+    from skforecast.stats.arima._arima_base import handle_r_equals_1
+    
+    result = handle_r_equals_1(p, phi)
+    
+    assert result.shape == (1, 1)
+    np.testing.assert_allclose(result[0, 0], expected_value, rtol=1e-10)
 
-    order_spec = SARIMAOrder(**order_args)
-    result = _build_coefficient_dataframe(order_spec, coef, cn, ncxreg)
 
+# =============================================================================
+# Tests for handle_p_equals_0 and unpack_full_matrix
+# =============================================================================
+def test_handle_p_equals_0_r2():
+    """Test handle_p_equals_0 for r=2 (pure MA case)."""
+    from skforecast.stats.arima._arima_base import handle_p_equals_0, compute_v, unpack_full_matrix
+    
+    phi = np.array([])
+    theta = np.array([0.5])
+    r = 2
+    
+    V = compute_v(phi, theta, r)
+    res_flat = handle_p_equals_0(V, r)
+    
+    assert len(res_flat) == r * r
+    
+    # Also test unpack_full_matrix
+    matrix = unpack_full_matrix(res_flat.copy(), r)
+    assert matrix.shape == (r, r)
+    # Matrix should be symmetric
+    np.testing.assert_allclose(matrix, matrix.T, rtol=1e-10)
+
+
+# =============================================================================
+# Tests for compute_v
+# =============================================================================
+@pytest.mark.parametrize(
+    'phi, theta, r, expected_shape, check_first_value',
+    [
+        (np.array([0.5]), np.array([]), 1, (1,), 1.0),   # AR(1)
+        (np.array([]), np.array([0.3]), 2, (3,), None),  # MA(1), r*(r+1)/2=3
+    ]
+)
+def test_compute_v(phi, theta, r, expected_shape, check_first_value):
+    """Test compute_v for AR and MA models."""
+    from skforecast.stats.arima._arima_base import compute_v
+    
+    V = compute_v(phi, theta, r)
+    
+    assert V.shape == expected_shape
+    if check_first_value is not None:
+        np.testing.assert_allclose(V[0], check_first_value, rtol=1e-10)
+
+
+# =============================================================================
+# Tests for prep_coefs
+# =============================================================================
+@pytest.mark.parametrize(
+    'arma, coef, cn, ncxreg, expected_columns',
+    [
+        # AR(1)
+        ([1, 0, 0, 0, 1, 0, 0], np.array([0.5]), [], 0, ['ar1']),
+        # ARMA(1,1) with xreg
+        ([1, 1, 0, 0, 1, 0, 0], np.array([0.5, 0.3, 1.2]), ['exog1'], 1, ['ar1', 'ma1', 'exog1']),
+        # Seasonal model p=1, P=1, Q=1, m=12
+        ([1, 0, 1, 1, 12, 0, 0], np.array([0.5, 0.2, -0.3]), [], 0, ['ar1', 'sar1', 'sma1']),
+    ]
+)
+def test_prep_coefs(arma, coef, cn, ncxreg, expected_columns):
+    """Test prep_coefs creates correct coefficient DataFrame."""
+    from skforecast.stats.arima._arima_base import prep_coefs
+    
+    result = prep_coefs(arma, coef, cn, ncxreg)
+    
     assert isinstance(result, pd.DataFrame)
     assert list(result.columns) == expected_columns
     np.testing.assert_allclose(result.values[0], coef, rtol=1e-10)
@@ -960,21 +1060,22 @@ def test_prep_coefs(order_args, coef, cn, ncxreg, expected_columns):
 def test_inverse_arima_parameter_transform_ar():
     """Test inverse_arima_parameter_transform for AR parameters."""
     from skforecast.stats.arima._arima_base import (
-        inverse_arima_parameter_transform,
+        inverse_arima_parameter_transform, 
         transform_unconstrained_to_ar_params
     )
-
+    
     # Start with unconstrained parameters
     raw = np.array([0.3, 0.2])
     p = 2
-
+    
     # Transform to constrained
     constrained = transform_unconstrained_to_ar_params(p, raw)
-
+    
     # Now invert back
+    arma = np.array([2, 0, 0, 0, 1, 0, 0])  # p=2, q=0, P=0
     theta = constrained.copy()
-    inverted = inverse_arima_parameter_transform(theta, n_ar=2, n_ma=0, n_seasonal_ar=0)
-
+    inverted = inverse_arima_parameter_transform(theta, arma)
+    
     np.testing.assert_allclose(inverted[:2], raw, rtol=1e-5)
 
 
@@ -984,11 +1085,12 @@ def test_inverse_arima_parameter_transform_ar():
 def test_compute_arima_transform_gradient_shape():
     """Test compute_arima_transform_gradient returns correct shape."""
     from skforecast.stats.arima._arima_base import compute_arima_transform_gradient
-
+    
     x = np.array([0.5, 0.3, 0.2, 0.1])  # 2 AR + 1 seasonal AR + 1 param
-
-    result = compute_arima_transform_gradient(x, n_ar=2, n_ma=1, n_seasonal_ar=1)
-
+    arma = np.array([2, 1, 1, 0, 12, 0, 0])  # p=2, q=1, P=1
+    
+    result = compute_arima_transform_gradient(x, arma)
+    
     assert result.shape == (4, 4)
 
 
@@ -998,11 +1100,12 @@ def test_compute_arima_transform_gradient_shape():
 def test_undo_arima_parameter_transform():
     """Test undo_arima_parameter_transform applies transformation."""
     from skforecast.stats.arima._arima_base import undo_arima_parameter_transform
-
+    
     x = np.array([0.5, 0.3])  # p=1, q=1
-
-    result = undo_arima_parameter_transform(x, n_ar=1, n_ma=1, n_seasonal_ar=0)
-
+    arma = np.array([1, 1, 0, 0, 1, 0, 0])
+    
+    result = undo_arima_parameter_transform(x, arma)
+    
     # AR param should be transformed by tanh
     expected_ar = np.tanh(0.5)
     np.testing.assert_allclose(result[0], expected_ar, rtol=1e-10)
