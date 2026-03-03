@@ -2016,10 +2016,10 @@ def manage_warnings(func: Callable[P, R]) -> Callable[P, R]:
 
     The decorator's type signature uses module-level type variables:
 
-    - ``P`` (`ParamSpec`): Captures the full parameter specification
+    - `P` (`ParamSpec`): Captures the full parameter specification
       (positional and keyword arguments) of the decorated function, so that
       type checkers preserve the original call signature through the wrapper.
-    - ``R`` (`TypeVar`): Captures the return type of the decorated function,
+    - `R` (`TypeVar`): Captures the return type of the decorated function,
       ensuring the wrapper advertises the same return type.
 
     Parameters
