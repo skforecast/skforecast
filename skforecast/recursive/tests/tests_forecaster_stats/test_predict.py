@@ -28,6 +28,36 @@ from .fixtures_forecaster_stats import df_exog_lw_datetime
 from .fixtures_forecaster_stats import df_exog_lw_predict_datetime
 
 
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": Sarimax(order=(1, 0, 1))},
+        {"estimator": Sarimax(order=(1, 0, 1)),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler()},
+    ],
+    ids=["base", "transformers"]
+)
+def test_predict_does_not_modify_y_exog(forecaster_kwargs):
+    """
+    Test forecaster.predict does not modify y, exog or exog_predict.
+    """
+    y_local = y.copy()
+    exog_local = exog.copy()
+    exog_predict_local = exog_predict.copy()
+
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+    exog_predict_copy = exog_predict_local.copy()
+
+    forecaster = ForecasterStats(**forecaster_kwargs)
+    forecaster.fit(y=y_local, exog=exog_local)
+    _ = forecaster.predict(steps=5, exog=exog_predict_local)
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
+    pd.testing.assert_series_equal(exog_predict_local, exog_predict_copy)
+
+
 def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.

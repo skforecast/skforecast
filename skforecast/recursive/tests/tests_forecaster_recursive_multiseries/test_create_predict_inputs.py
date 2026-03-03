@@ -14,6 +14,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
 
+from ....preprocessing import TimeSeriesDifferentiator
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
@@ -133,6 +134,7 @@ def test_output_create_predict_inputs_when_estimator_is_LinearRegression():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == {}
 
 
 def test_create_predict_inputs_output_when_with_transform_series():
@@ -164,6 +166,7 @@ def test_create_predict_inputs_output_when_with_transform_series():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == {}
 
 
 @pytest.mark.parametrize("transformer_series", 
@@ -214,6 +217,7 @@ def test_create_predict_inputs_when_transform_series_and_transform_exog(transfor
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == {}
 
 
 @pytest.mark.parametrize("transformer_series", 
@@ -273,6 +277,7 @@ def test_create_predict_inputs_when_transform_series_and_transform_exog_differen
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == {}
 
 
 def test_create_predict_inputs_output_when_categorical_features_native_implementation_HistGradientBoostingRegressor():
@@ -352,6 +357,7 @@ def test_create_predict_inputs_output_when_categorical_features_native_implement
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == {}
 
 
 def test_create_predict_inputs_output_when_series_and_exog_dict():
@@ -412,6 +418,7 @@ def test_create_predict_inputs_output_when_series_and_exog_dict():
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == {}
 
 
 @pytest.mark.parametrize("differentiation", 
@@ -530,6 +537,9 @@ def test_create_predict_inputs_when_exog_differentiation_1_and_transformer_serie
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert set(results[4].keys()) == {'1', '2'}
+    for level in results[4]:
+        assert isinstance(results[4][level], TimeSeriesDifferentiator)
 
 
 @pytest.mark.parametrize("levels", 
@@ -609,6 +619,7 @@ def test_create_predict_inputs_when_series_and_exog_dict_unknown_level(levels):
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == {}
 
 
 @pytest.mark.parametrize("levels", 
@@ -686,3 +697,90 @@ def test_create_predict_inputs_when_series_and_exog_dict_unknown_level_encoding_
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == {}
+
+
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'id_1000': 1, 'id_1001': 1, 'id_1003': 1, 'id_1004': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_create_predict_inputs_when_unknown_level_and_differentiation(differentiation):
+    """
+    Test output _create_predict_inputs when series and exog are dictionaries,
+    unknown level is included, and differentiation is set. Verifies that
+    results[4] (differentiators) contains entries for all levels including
+    unknown ones (copied from '_unknown_level').\n    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator          = LGBMRegressor(
+            n_estimators=2, random_state=123, verbose=-1, max_depth=2
+        ),
+        lags               = 5,
+        encoding           = 'ordinal',
+        dropna_from_series = False,
+        transformer_series = StandardScaler(),
+        transformer_exog   = StandardScaler(),
+        differentiation    = differentiation
+    )
+    forecaster.fit(
+        series=series_dict_nans_train, exog=exog_dict_nans_train, suppress_warnings=True
+    )
+
+    levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
+    last_window = pd.DataFrame(
+        {k: v for k, v in forecaster.last_window_.items() if k in levels}
+    )
+    last_window['id_1005'] = last_window['id_1004']
+    exog_dict_nans_test_2 = exog_dict_nans_test.copy()
+    exog_dict_nans_test_2['id_1005'] = exog_dict_nans_test_2['id_1004']
+    results = forecaster._create_predict_inputs(
+        steps=5, levels=levels, last_window=last_window, exog=exog_dict_nans_test_2
+    )
+
+    expected = (
+        pd.DataFrame(
+            {'id_1000': np.array([np.nan, -0.1939735 , -0.1045049 , -0.03909364, -0.58191753, -0.69769838]),
+             'id_1001': np.array([np.nan,  0.08806471,  0.15136117,  0.30960169,  0.48435361, -0.01100806]),
+             'id_1003': np.array([np.nan, -0.36050495, -0.12033983, -0.29137132,  0.65985353,  3.77817872]),
+             'id_1004': np.array([np.nan,  0.05600424,  0.21733957, -0.16030719, -0.91508802, -0.5076395 ]),
+             'id_1005': np.array([np.nan,  0.04735092,  0.18375801, -0.13553782, -0.77369602, -0.42920315])},
+            index = pd.date_range(start='2016-07-26', periods=6, freq='D')
+        ),
+        {1: np.array([[ 0.01311204,  1.42216832,         np.nan,         np.nan],
+                      [ 0.01311204,  1.42216832,  1.11184323, -0.90109483],
+                      [ 0.01311204,         np.nan,  1.11184323, -0.90109483],
+                      [ 0.01311204,  1.42216832,  1.11184323, -0.90109483],
+                      [ 0.01311204,  1.42216832,  1.11184323, -0.90109483]]),
+         2: np.array([[ 1.11949358,  0.89003132,         np.nan,         np.nan],
+                      [ 1.11949358,  0.89003132,  1.13329737, -0.00734789],
+                      [ 1.11949358,         np.nan,  1.13329737, -0.00734789],
+                      [ 1.11949358,  0.89003132,  1.13329737, -0.00734789],
+                      [ 1.11949358,  0.89003132,  1.13329737, -0.00734789]]),
+         3: np.array([[ 1.39274726, -0.30566966,         np.nan,         np.nan],
+                      [ 1.39274726, -0.30566966,  1.1783584 , -0.36991557],
+                      [ 1.39274726,         np.nan,  1.1783584 , -0.36991557],
+                      [ 1.39274726, -0.30566966,  1.1783584 , -0.36991557],
+                      [ 1.39274726, -0.30566966,  1.1783584 , -0.36991557]]),
+         4: np.array([[ 0.62710747, -1.2645474 ,         np.nan,         np.nan],
+                      [ 0.62710747, -1.2645474 ,  1.04291408,  0.83758735],
+                      [ 0.62710747,         np.nan,  1.04291408,  0.83758735],
+                      [ 0.62710747, -1.2645474 ,  1.04291408,  0.83758735],
+                      [ 0.62710747, -1.2645474 ,  1.04291408,  0.83758735]]),
+         5: np.array([[-0.6008834 , -1.2645474 ,         np.nan,         np.nan],
+                      [-0.6008834 , -1.2645474 ,  1.00588921, -0.64236935],
+                      [-0.6008834 ,         np.nan,  1.00588921, -0.64236935],
+                      [-0.6008834 , -1.2645474 ,  1.00588921, -0.64236935],
+                      [-0.6008834 , -1.2645474 ,  1.00588921, -0.64236935]])
+        },
+        ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005'],
+        pd.date_range(start='2016-08-01', periods=5, freq='D')
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    for k in results[1].keys():
+        np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
+    assert results[2] == expected[2]
+    pd.testing.assert_index_equal(results[3], expected[3])
+    assert set(results[4].keys()) == set(levels)
+    for level in levels:
+        assert isinstance(results[4][level], TimeSeriesDifferentiator)
+    # Unknown level 'id_1005' should get a copy from '_unknown_level', not modify self.differentiator_
+    assert 'id_1005' not in forecaster.differentiator_

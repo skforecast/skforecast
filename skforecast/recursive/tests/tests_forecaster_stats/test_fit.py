@@ -4,13 +4,39 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 from skforecast.stats import Sarimax, Arar, Arima, Ets
 from skforecast.recursive import ForecasterStats
 from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
-from .fixtures_forecaster_stats import y
+from .fixtures_forecaster_stats import y, exog
 from .fixtures_forecaster_stats import y_datetime
+
+
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": Sarimax(order=(1, 0, 1))},
+        {"estimator": Sarimax(order=(1, 0, 1)),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler()},
+    ],
+    ids=["base", "transformers"]
+)
+def test_forecaster_fit_does_not_modify_y_exog(forecaster_kwargs):
+    """
+    Test forecaster.fit does not modify y and exog.
+    """
+    y_local = y.copy()
+    exog_local = exog.copy()
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+
+    forecaster = ForecasterStats(**forecaster_kwargs)
+    forecaster.fit(y=y_local, exog=exog_local)
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
 
 
 def test_fit_ValueError_when_len_exog_is_not_the_same_as_len_y():

@@ -13,7 +13,8 @@ import inspect
 from pathlib import Path
 import platform
 import sys
-from typing import Any, Callable
+from functools import wraps
+from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
 import joblib
@@ -36,6 +37,12 @@ from ..exceptions import (
     UnknownLevelWarning,
     InputTypeWarning
 )
+
+# Type variables for the manage_warnings decorator. ParamSpec preserves the
+# decorated function's parameter signature, and TypeVar preserves its return
+# type, so that type checkers see the original signatures through the wrapper.
+P = ParamSpec('P')
+R = TypeVar('R')
 
 optional_dependencies = {
     'stats': [
@@ -1994,6 +2001,52 @@ def transform_dataframe(
     return df_transformed
 
 
+def manage_warnings(func: Callable[P, R]) -> Callable[P, R]:
+    """
+    Decorator that safely manages skforecast warning suppression using
+    `warnings.catch_warnings()` context manager. If the decorated function
+    receives a `suppress_warnings=True` keyword argument, all skforecast
+    warnings are suppressed within its execution scope. Warning filter state
+    is automatically saved and restored, making this safe for nested calls
+    and exception scenarios.
+
+    By using `warnings.catch_warnings()`, the filter state is saved on entry and 
+    restored on exit — even if an exception is raised — so nested decorated 
+    functions never interfere with each other's suppression settings.
+
+    The decorator's type signature uses module-level type variables:
+
+    - `P` (`ParamSpec`): Captures the full parameter specification
+      (positional and keyword arguments) of the decorated function, so that
+      type checkers preserve the original call signature through the wrapper.
+    - `R` (`TypeVar`): Captures the return type of the decorated function,
+      ensuring the wrapper advertises the same return type.
+
+    Parameters
+    ----------
+    func : Callable[P, R]
+        The function to decorate. Expected to accept a `suppress_warnings`
+        keyword argument.
+
+    Returns
+    -------
+    Callable[P, R]
+        The wrapped function with safe warning management.
+
+    """
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        suppress = kwargs.get('suppress_warnings', False)
+        with warnings.catch_warnings():
+            if suppress:
+                for category in warn_skforecast_categories:
+                    warnings.filterwarnings('ignore', category=category)
+            return func(*args, **kwargs)
+    return wrapper
+
+
+@manage_warnings
 def save_forecaster(
     forecaster: object, 
     file_name: str,
@@ -2027,8 +2080,6 @@ def save_forecaster(
 
     """
 
-    set_skforecast_warnings(suppress_warnings, action='ignore')
-    
     file_name = Path(file_name).with_suffix('.joblib')
 
     # Save forecaster
@@ -2072,9 +2123,8 @@ def save_forecaster(
     if verbose:
         forecaster.summary()
 
-    set_skforecast_warnings(suppress_warnings, action='default')
 
-
+@manage_warnings
 def load_forecaster(
     file_name: str,
     verbose: bool = True,
@@ -2103,8 +2153,6 @@ def load_forecaster(
     
     """
 
-    set_skforecast_warnings(suppress_warnings, action='ignore')
-
     forecaster = joblib.load(filename=Path(file_name))
     forecaster_v = forecaster.skforecast_version
 
@@ -2120,8 +2168,6 @@ def load_forecaster(
 
     if verbose:
         forecaster.summary()
-        
-    set_skforecast_warnings(suppress_warnings, action='default')
 
     return forecaster
 
@@ -2268,7 +2314,7 @@ def select_n_jobs_fit_forecaster(
     forecaster_name : str
         Forecaster name.
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
 
     Returns
     -------
@@ -2337,6 +2383,89 @@ def set_cpu_gpu_device(
             pass
 
     return original_device
+
+
+def _build_predict_function(
+    estimator: object,
+) -> callable:
+    """
+    Build an optimized predict callable for a fitted estimator. The returned
+    function takes a 2D numpy array `X` of shape `(n_samples, n_features)` and
+    returns predictions as a 1D numpy array of shape `(n_samples,)`.
+
+    Fast prediction paths (bypassing sklearn's ``predict`` overhead) are used
+    for the following estimator types:
+
+    - Linear models inheriting from sklearn's ``LinearModel`` (``np.dot``)
+    - ``LGBMRegressor`` (``booster_.predict``)
+    - ``XGBRegressor`` (``get_booster().inplace_predict``)
+    - ``RandomForestRegressor`` (per-tree ``tree_.predict``)
+    - ``DecisionTreeRegressor`` (``tree_.predict``)
+
+    For any other estimator the standard ``estimator.predict`` method is used.
+
+    Parameters
+    ----------
+    estimator : object
+        A fitted scikit-learn compatible estimator.
+
+    Returns
+    -------
+    predict_fn : callable
+        A function ``predict_fn(X) -> np.ndarray`` where ``X`` has shape
+        ``(n_samples, n_features)`` and the output has shape ``(n_samples,)``.
+    """
+
+    estimator_name = type(estimator).__name__
+
+    if isinstance(estimator, LinearModel):
+        coef = estimator.coef_
+        intercept = estimator.intercept_
+
+        def predict_fn(X):
+            return np.dot(X, coef) + intercept
+
+        return predict_fn
+
+    if estimator_name == 'LGBMRegressor':
+        booster = estimator.booster_
+
+        def predict_fn(X):
+            return booster.predict(X)
+
+        return predict_fn
+
+    if estimator_name == 'XGBRegressor':
+        booster = estimator.get_booster()
+
+        def predict_fn(X):
+            return booster.inplace_predict(X)
+
+        return predict_fn
+
+    if estimator_name == 'RandomForestRegressor':
+        trees = estimator.estimators_
+
+        def predict_fn(X):
+            X_f32 = X.astype(np.float32)
+            preds = [tree.tree_.predict(X_f32)[:, 0] for tree in trees]
+            return np.mean(preds, axis=0)
+
+        return predict_fn
+
+    if estimator_name == 'DecisionTreeRegressor':
+        tree_ = estimator.tree_
+
+        def predict_fn(X):
+            return tree_.predict(X.astype(np.float32))[:, 0]
+
+        return predict_fn
+
+    # Generic fallback
+    def predict_fn(X):
+        return estimator.predict(X).ravel()
+
+    return predict_fn
 
 
 def check_preprocess_series(
@@ -2900,34 +3029,6 @@ def prepare_steps_direct(
     return steps_direct
 
 
-def set_skforecast_warnings(
-    suppress_warnings: bool,
-    action: str = 'default'
-) -> None:
-    """
-    Set skforecast warnings action.
-
-    Parameters
-    ----------
-    suppress_warnings : bool
-        If `True`, skforecast warnings will be suppressed. If `False`, skforecast
-        warnings will be shown as default. See 
-        skforecast.exceptions.warn_skforecast_categories for more information.
-    action : str, default `'default'`
-        Action to be taken when a warning is raised. See the warnings module
-        for more information.
-
-    Returns
-    -------
-    None
-    
-    """
-
-    if suppress_warnings:
-        for category in warn_skforecast_categories:
-            warnings.filterwarnings(action, category=category)
-
-
 def get_style_repr_html(
     is_fitted: bool = False
 ) -> tuple[str, str]:
@@ -3107,9 +3208,9 @@ def initialize_estimator(
     Parameters
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API, default None
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     regressor : estimator or pipeline compatible with the scikit-learn API, default None
-        Deprecated. An instance of a estimator or pipeline compatible with the
+        Deprecated. An instance of an estimator or pipeline compatible with the
         scikit-learn API.
 
     Returns
@@ -3136,3 +3237,104 @@ def initialize_estimator(
         raise TypeError("__init__() missing 1 required positional argument: 'estimator'")
     
     return estimator
+
+
+def deepcopy_forecaster(
+    forecaster: object,
+    include_in_sample_residuals: bool = False,
+    include_out_sample_residuals: bool = False,
+    include_last_window: bool = False,
+) -> object:
+    """
+    Create a lightweight deep copy of a forecaster by temporarily
+    replacing heavy fitted attributes with lightweight placeholders
+    before copying.
+
+    Estimators are always replaced with unfitted clones (same
+    hyperparameters) to avoid copying expensive fitted state (e.g.,
+    tree structures, model weights). For sklearn-compatible estimators
+    `sklearn.base.clone` is used; for statistical models
+    (`ForecasterStats`) `copy.copy` is used instead. Additional
+    heavy attributes (residuals and last window) can be optionally
+    included via parameters.
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster object to copy. Can be any skforecast forecaster:
+        `ForecasterRecursive`, `ForecasterDirect`, `ForecasterRecursiveMultiSeries`, 
+        `ForecasterDirectMultiVariate` or `ForecasterStats`.
+    include_in_sample_residuals : bool, default `False`
+        If `True`, `in_sample_residuals_` and `in_sample_residuals_by_bin_` are 
+        preserved in the copy. These are recomputed during `fit()`, so they can 
+        safely be excluded when the copy will be re-fitted.
+    include_out_sample_residuals : bool, default `False`
+        If `True`, `out_sample_residuals_` and `out_sample_residuals_by_bin_` are 
+        preserved in the copy. These are user-provided via `set_out_sample_residuals()`
+        and are NOT recomputed during `fit()`, so they must be included when the 
+        copy needs them for prediction intervals with `use_in_sample_residuals=False`.
+    include_last_window : bool, default `False`
+        If `True`, `last_window_` is preserved in the copy. For most forecasters 
+        this stores only the last `window_size` observations (small), but for
+        `ForecasterStats` it contains ALL training data.
+
+    Returns
+    -------
+    forecaster_copy : object
+        Lightweight deep copy of the forecaster with unfitted estimator(s) and 
+        optionally without residuals and last window.
+
+    """
+
+    # Save references to heavy attributes before replacing them
+    saved = {}
+
+    # 1. Replace fitted estimator with unfitted clone (same hyperparameters)
+    if hasattr(forecaster, 'estimator') and forecaster.estimator is not None:
+        saved['estimator'] = forecaster.estimator
+        forecaster.estimator = clone(forecaster.estimator)
+
+    # 2. Replace fitted estimators collection
+    if hasattr(forecaster, 'estimators_') and forecaster.estimators_ is not None:
+        saved['estimators_'] = forecaster.estimators_
+        if isinstance(forecaster.estimators_, dict):
+            # ForecasterDirect, ForecasterDirectMultiVariate: dict of fitted estimators
+            forecaster.estimators_ = {
+                step: clone(forecaster.estimator)
+                for step in forecaster.estimators_
+            }
+        elif isinstance(forecaster.estimators_, list):
+            # ForecasterStats: list of fitted stats models
+            forecaster.estimators_ = [
+                clone(est) for est in forecaster.estimators
+            ]
+
+    # 3. Optionally replace residuals with None
+    _residual_attrs = []
+    if not include_in_sample_residuals:
+        _residual_attrs += ['in_sample_residuals_', 'in_sample_residuals_by_bin_']
+    if not include_out_sample_residuals:
+        _residual_attrs += ['out_sample_residuals_', 'out_sample_residuals_by_bin_']
+
+    for attr in _residual_attrs:
+        if hasattr(forecaster, attr) and getattr(forecaster, attr) is not None:
+            saved[attr] = getattr(forecaster, attr)
+            setattr(forecaster, attr, None)
+
+    # 4. Optionally replace last_window_ with None
+    if (
+        not include_last_window
+        and hasattr(forecaster, 'last_window_')
+        and forecaster.last_window_ is not None
+    ):
+        saved['last_window_'] = forecaster.last_window_
+        forecaster.last_window_ = None
+
+    # Perform the (now lightweight) deep copy
+    forecaster_copy = deepcopy(forecaster)
+
+    # Restore original heavy attributes on the original forecaster
+    for attr, value in saved.items():
+        setattr(forecaster, attr, value)
+
+    return forecaster_copy

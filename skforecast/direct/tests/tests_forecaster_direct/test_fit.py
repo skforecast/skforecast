@@ -6,12 +6,45 @@ from pytest import approx
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
 from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirect
 
 # Fixtures
 from .fixtures_forecaster_direct import y
 from .fixtures_forecaster_direct import exog
+
+
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "lags": 3, "steps": 2},
+        {"estimator": LinearRegression(), "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4)},
+        {"estimator": LinearRegression(), "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_forecaster_fit_does_not_modify_y_exog(forecaster_kwargs):
+    """
+    Test forecaster.fit does not modify y and exog.
+    """
+    y_local = y.copy()
+    exog_local = exog.copy()
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+
+    forecaster = ForecasterDirect(**forecaster_kwargs)
+    forecaster.fit(y=y_local, exog=exog_local)
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
 
 
 def test_forecaster_y_exog_features_stored():

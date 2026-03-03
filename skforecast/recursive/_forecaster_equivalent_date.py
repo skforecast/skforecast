@@ -22,7 +22,8 @@ from ..utils import (
     check_interval,
     check_extract_values_and_index,
     expand_index,
-    get_style_repr_html
+    get_style_repr_html,
+    manage_warnings
 )
 from ..preprocessing import QuantileBinner
 
@@ -117,7 +118,7 @@ class ForecasterEquivalentDate():
     training_range_ : pandas Index
         First and last values of index of the data used during training.
     series_name_in_ : str
-        Names of the series provided by the user during training.
+        Name of the series provided by the user during training.
     in_sample_residuals_ : numpy ndarray
         Residuals of the model when predicting training data. Only stored up to
         10_000 values. If `transformer_y` is not `None`, residuals are stored in
@@ -327,12 +328,14 @@ class ForecasterEquivalentDate():
 
         return style + content
 
+    @manage_warnings
     def fit(
         self,
         y: pd.Series,
         store_in_sample_residuals: bool = False,
         random_state: int = 123,
-        exog: Any = None
+        exog: Any = None,
+        suppress_warnings: bool = False
     ) -> None:
         """
         Training Forecaster.
@@ -351,6 +354,10 @@ class ForecasterEquivalentDate():
             residuals are always deterministic.
         exog : Ignored
             Not used, present here for API consistency by convention.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
         
         Returns
         -------
@@ -402,7 +409,7 @@ class ForecasterEquivalentDate():
             except KeyError:
                 raise ValueError(
                     f"The length of `y` ({len(y)}), must be greater than or equal "
-                    f"to the window size ({self.window_size}). This is because  "
+                    f"to the window size ({self.window_size}). This is because "
                     f"the offset ({self.offset}) is larger than the available "
                     f"data. Try to decrease the size of the offset ({self.offset}), "
                     f"the number of `n_offsets` ({self.n_offsets}) or increase the "
@@ -412,7 +419,7 @@ class ForecasterEquivalentDate():
             if len(y) <= self.window_size:
                 raise ValueError(
                     f"Length of `y` must be greater than the maximum window size "
-                    f"needed by the forecaster. This is because  "
+                    f"needed by the forecaster. This is because "
                     f"the offset ({self.offset}) is larger than the available "
                     f"data. Try to decrease the size of the offset ({self.offset}), "
                     f"the number of `n_offsets` ({self.n_offsets}) or increase the "
@@ -558,12 +565,14 @@ class ForecasterEquivalentDate():
 
             self.in_sample_residuals_ = residuals
 
+    @manage_warnings
     def predict(
         self,
         steps: int,
         last_window: pd.Series | None = None,
         check_inputs: bool = True,
-        exog: Any = None
+        exog: Any = None,
+        suppress_warnings: bool = False
     ) -> pd.Series:
         """
         Predict n steps ahead.
@@ -583,6 +592,10 @@ class ForecasterEquivalentDate():
             for internal use and is not recommended to be changed.
         exog : Ignored
             Not used, present here for API consistency by convention.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -702,6 +715,7 @@ class ForecasterEquivalentDate():
         
         return predictions
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int,
@@ -712,7 +726,8 @@ class ForecasterEquivalentDate():
         use_binned_residuals: bool = True,
         random_state: Any = None,
         exog: Any = None,
-        n_boot: Any = None
+        n_boot: Any = None,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Predict n steps ahead and estimate prediction intervals using conformal 
@@ -761,6 +776,10 @@ class ForecasterEquivalentDate():
             Not used, present here for API consistency by convention.
         n_boot : Ignored
             Not used, present here for API consistency by convention.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------

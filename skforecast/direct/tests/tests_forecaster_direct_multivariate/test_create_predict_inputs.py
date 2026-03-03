@@ -14,6 +14,7 @@ from sklearn.compose import make_column_transformer
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import TimeSeriesDifferentiator
 from skforecast.direct import ForecasterDirectMultiVariate
 
 # Fixtures
@@ -97,6 +98,7 @@ def test_create_predict_inputs_output(steps):
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 def test_create_predict_inputs_output_when_list_interspersed():
@@ -126,6 +128,7 @@ def test_create_predict_inputs_output_when_list_interspersed():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 def test_create_predict_inputs_output_when_different_lags():
@@ -158,6 +161,7 @@ def test_create_predict_inputs_output_when_different_lags():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 def test_create_predict_inputs_output_when_lags_dict_with_None_in_level_lags():
@@ -186,6 +190,7 @@ def test_create_predict_inputs_output_when_lags_dict_with_None_in_level_lags():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 def test_create_predict_inputs_output_when_lags_dict_with_None_but_no_in_level():
@@ -214,6 +219,7 @@ def test_create_predict_inputs_output_when_lags_dict_with_None_but_no_in_level()
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 def test_create_predict_inputs_output_when_last_window():
@@ -250,6 +256,7 @@ def test_create_predict_inputs_output_when_last_window():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 def test_create_predict_inputs_output_when_exog():
@@ -281,6 +288,7 @@ def test_create_predict_inputs_output_when_exog():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 def test_create_predict_inputs_output_with_transform_series():
@@ -319,6 +327,7 @@ def test_create_predict_inputs_output_with_transform_series():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 def test_create_predict_inputs_output_with_transform_series_as_dict():
@@ -358,6 +367,7 @@ def test_create_predict_inputs_output_with_transform_series_as_dict():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'], 
@@ -407,6 +417,7 @@ def test_create_predict_inputs_output_with_transform_series_and_transform_exog(n
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 def test_create_predict_inputs_output_when_categorical_features_native_implementation_HistGradientBoostingRegressor():
@@ -495,6 +506,7 @@ def test_create_predict_inputs_output_when_categorical_features_native_implement
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 def test_create_predict_inputs_when_with_exog_differentiation_is_1():
@@ -580,6 +592,8 @@ def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert isinstance(results[4], TimeSeriesDifferentiator)
+    assert results[4] is not forecaster.differentiator_[forecaster.level]
 
 
 def test_create_predict_inputs_output_window_features():
@@ -624,6 +638,7 @@ def test_create_predict_inputs_output_window_features():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 def test_create_predict_inputs_output_with_2_window_features():
@@ -667,6 +682,7 @@ def test_create_predict_inputs_output_with_2_window_features():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
 
 
 def test_create_predict_inputs_output_window_features_and_no_lags():
@@ -709,3 +725,51 @@ def test_create_predict_inputs_output_window_features_and_no_lags():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
+
+
+def test_create_predict_inputs_does_not_mutate_differentiator():
+    """
+    Test that _create_predict_inputs does not mutate the forecaster's
+    differentiator when differentiation is applied.
+    """
+    end_train = '2003-03-01 23:59:00'
+    arr = data.to_numpy(copy=True)
+    series_diff = pd.DataFrame(
+        {'l1': arr,
+         'l2': arr},
+        index=data.index
+    )
+
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator       = LinearRegression(),
+                     level           = 'l1',
+                     steps           = 5,
+                     lags            = 15,
+                     differentiation = 1
+                )
+    forecaster.fit(series=series_diff.loc[:end_train])
+
+    differentiator_initial_values = {
+        k: v.initial_values.copy() for k, v in forecaster.differentiator_.items()
+    }
+    differentiator_last_values = {
+        k: v.last_values.copy() for k, v in forecaster.differentiator_.items()
+    }
+
+    # Call _create_predict_inputs twice to verify no side effects
+    results_1 = forecaster._create_predict_inputs()
+    results_2 = forecaster._create_predict_inputs()
+
+    for series_name in forecaster.differentiator_:
+        np.testing.assert_array_equal(
+            forecaster.differentiator_[series_name].initial_values,
+            differentiator_initial_values[series_name]
+        )
+        np.testing.assert_array_equal(
+            forecaster.differentiator_[series_name].last_values,
+            differentiator_last_values[series_name]
+        )
+    # Both calls should produce identical results
+    for step in range(len(results_1[0])):
+        np.testing.assert_almost_equal(results_1[0][step], results_2[0][step])

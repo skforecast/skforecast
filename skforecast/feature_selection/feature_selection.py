@@ -7,11 +7,11 @@
 
 from __future__ import annotations
 import re
-from copy import deepcopy
 from itertools import chain
 import warnings
 import numpy as np
 import pandas as pd
+from ..utils import deepcopy_forecaster
 
 
 def select_features(
@@ -104,7 +104,7 @@ def select_features(
             "`subsample` must be a number greater than 0 and less than or equal to 1."
         )
     
-    forecaster = deepcopy(forecaster)
+    forecaster = deepcopy_forecaster(forecaster)
     forecaster.is_fitted = False
     X_train, y_train = forecaster.create_train_X_y(y=y, exog=exog)
     if forecaster_name == 'ForecasterDirect':
@@ -316,7 +316,7 @@ def select_features_multiseries(
             "`subsample` must be a number greater than 0 and less than or equal to 1."
         )
     
-    forecaster = deepcopy(forecaster)
+    forecaster = deepcopy_forecaster(forecaster)
     forecaster.is_fitted = False
     output = forecaster._create_train_X_y(series=series, exog=exog)
     X_train = output[0]

@@ -23,7 +23,7 @@ def test_direct_predict_output_when_estimator_is_LinearRegression():
         transformer_series=None
     )
     forecaster.fit(series=series)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.60056539, 0.42924504, 0.34173573, 0.44231236, 0.40133213])
@@ -43,7 +43,7 @@ def test_direct_predict_output_when_estimator_is_LinearRegression_with_exog():
         transformer_series=None
     )
     forecaster.fit(series=series, exog=exog)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.57527255, 0.41857122, 0.53297714, 0.51553216, 0.45969602])
@@ -60,7 +60,7 @@ def test_direct_predict_output_when_estimator_is_LGBMRegressor():
         transformer_series=None
     )
     forecaster.fit(series=series)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.56942973, 0.51214016, 0.40635497, 0.48158903, 0.49029841])
@@ -80,7 +80,7 @@ def test_direct_predict_output_when_estimator_is_LGBMRegressor_with_exog():
         transformer_series=None
     )
     forecaster.fit(series=series, exog=exog)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.63485683, 0.49703737, 0.46674625, 0.54557163, 0.51988782])
@@ -97,7 +97,7 @@ def test_direct_predict_output_when_estimator_is_RandomForestRegressor():
         level='l1', lags=5, steps=5, transformer_series=None
     )
     forecaster.fit(series=series)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.57157055, 0.47276495, 0.49586004, 0.58315325, 0.40988631])
@@ -117,7 +117,7 @@ def test_direct_predict_output_when_estimator_is_RandomForestRegressor_with_exog
         level='l1', lags=5, steps=5, transformer_series=None
     )
     forecaster.fit(series=series, exog=exog)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.58637475, 0.46978312, 0.4462907 , 0.57861253, 0.40648166])
@@ -134,7 +134,7 @@ def test_direct_predict_output_when_estimator_is_XGBRegressor():
         level='l1', lags=5, steps=5, transformer_series=None
     )
     forecaster.fit(series=series)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.79249394, 0.36357051, 0.46422222, 0.52599514, 0.39951146])
@@ -154,7 +154,7 @@ def test_direct_predict_output_when_estimator_is_XGBRegressor_with_exog():
         level='l1', lags=5, steps=5, transformer_series=None
     )
     forecaster.fit(series=series, exog=exog)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.73904371, 0.36545673, 0.47884795, 0.64205378, 0.53937113])
@@ -172,7 +172,7 @@ def test_direct_predict_output_when_estimator_is_LinearRegression_with_list_step
         transformer_series=None
     )
     forecaster.fit(series=series)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=[1, 3, 5])
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=[1, 3, 5])
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.60056539, 0.34173573, 0.40133213])

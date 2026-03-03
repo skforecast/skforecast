@@ -1568,3 +1568,46 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         )
 
     return metrics_levels, predictions
+
+
+def _make_lags_hashable(lags, sentinel: object) -> int | tuple | None:
+    """
+    Convert a lags value into a hashable type suitable for use as a
+    dictionary key in the split cache of bayesian search functions.
+
+    Parameters
+    ----------
+    lags : int, list, numpy ndarray, range, dict, None, or sentinel
+        Lag configuration to convert. Supported types:
+
+        - `int`: returned as-is.
+        - `list`, `numpy ndarray`, `range`: converted to `tuple`.
+        - `dict`: converted to a sorted `tuple` of `(key, value)`
+          pairs, where each value is itself converted to `tuple` when
+          it is a list, ndarray, or range.
+        - `None`: returned as-is (valid lags value in skforecast).
+        - *sentinel*: returned as-is (indicates lags were not present in
+          the search space).
+    sentinel : object
+        Sentinel object used to distinguish "lags not included in the
+        search space" from `lags=None`. Each caller must pass its own
+        `_SENTINEL` instance created with `object()`.
+
+    Returns
+    -------
+    lags : int, tuple, None
+        A hashable representation of `lags` that can be used as a
+        dictionary key.
+    
+    """
+
+    if lags is sentinel or lags is None:
+        return lags
+    if isinstance(lags, (list, np.ndarray, range)):
+        return tuple(lags)
+    if isinstance(lags, dict):
+        return tuple(
+            (k, tuple(v) if isinstance(v, (list, np.ndarray, range)) else v)
+            for k, v in sorted(lags.items())
+        )
+    return lags

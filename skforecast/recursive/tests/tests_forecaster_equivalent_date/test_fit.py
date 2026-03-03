@@ -12,6 +12,22 @@ from skforecast.recursive import ForecasterEquivalentDate
 from .fixtures_forecaster_equivalent_date import y
 
 
+def test_forecaster_fit_does_not_modify_y():
+    """
+    Test forecaster.fit does not modify y.
+    """
+    y_local = y.copy()
+    y_copy = y_local.copy()
+    forecaster = ForecasterEquivalentDate(
+        offset=3,
+        n_offsets=2,
+        agg_func=np.mean,
+    )
+    forecaster.fit(y=y_local)
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+
+
 def test_fit_TypeError_when_y_is_not_a_Series():
     """
     Test TypeError is raised when y is not a pandas Series.
@@ -68,7 +84,7 @@ def test_fit_ValueError_length_y_less_than_window_size_offset_int():
 
     err_msg = re.escape(
         "Length of `y` must be greater than the maximum window size "
-        "needed by the forecaster. This is because  "
+        "needed by the forecaster. This is because "
         "the offset (6) is larger than the available "
         "data. Try to decrease the size of the offset (6), "
         "the number of `n_offsets` (2) or increase the "
@@ -101,7 +117,7 @@ def test_fit_ValueError_length_y_less_than_window_size_offset_DateOffset(offset,
 
     err_msg = re.escape(
         f"The length of `y` (10), must be greater than or equal "
-        f"to the window size ({forecaster.window_size}). This is because  "
+        f"to the window size ({forecaster.window_size}). This is because "
         f"the offset ({forecaster.offset}) is larger than the available "
         f"data. Try to decrease the size of the offset ({forecaster.offset}), "
         f"the number of `n_offsets` (2) or increase the "
