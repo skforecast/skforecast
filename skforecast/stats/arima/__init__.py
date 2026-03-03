@@ -13,10 +13,12 @@ from ._arima_base import (
     ar_check,
     ma_invert,
     diff,
-    na_omit,
     initialize_arima_state,
     compute_arima_likelihood,
     kalman_forecast,
+    ArimaResult,
+    SARIMAOrder,
+    StateSpaceArrays,
 )
 
 from ._auto_arima import (
@@ -81,7 +83,10 @@ __all__ = [
     'is_constant',
     'ar_check',
     'ma_invert',
-    'na_omit',
+    # Data structures
+    'ArimaResult',
+    'SARIMAOrder',
+    'StateSpaceArrays',
 
     # Advanced/internal
     'initialize_arima_state',
