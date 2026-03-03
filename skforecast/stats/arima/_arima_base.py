@@ -1617,7 +1617,6 @@ def _update_state_space(
     p = len(phi)
     q = len(theta)
     r = max(p, q + 1)
-    d = len(ss.differencing_poly)
 
     ss.ar_coefs = phi
     ss.ma_coefs = theta
@@ -1626,12 +1625,10 @@ def _update_state_space(
     if p > 0:
         ss.transition_matrix[:p, 0] = phi
 
-    # Rebuild innovation vector R = [1, θ₁, ..., θᵣ₋₁, 0, ..., 0]
-    # and innovation covariance V = R·R'
-    theta_padded = np.zeros(r - 1)
-    theta_padded[:min(q, r - 1)] = theta[:min(q, r - 1)]
-    R_vec = np.concatenate([[1.0], theta_padded, np.zeros(d)])
-    ss.innovation_covariance = np.outer(R_vec, R_vec)
+    # ML optimization uses the companion Kalman core directly from
+    # (phi, theta, Delta) and does not consume innovation_covariance.
+    # Skip rebuilding V here to avoid repeated O(rd^2) allocations.
+    # A fully consistent state-space object is rebuilt at the optimum.
 
     # Recompute stationary initial covariance P₀ via Lyapunov equation
     if r > 1:
@@ -2684,9 +2681,21 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
         }
     else:
         obj_fn = lambda p: _ml_objective(p, c.enforce_stationarity)
+        minimize_options = dict(c.opt_options)
+        # Seasonal ML with exogenous regressors is prone to very long BFGS runs
+        # due to finite-difference gradient noise. A modest gtol dramatically
+        # reduces iterations while preserving solution quality in practice.
+        if (
+            c.optim_method == "BFGS"
+            and c.exog_original is not None
+            and c.n_exog > 0
+            and (c.order_spec.P > 0 or c.order_spec.Q > 0)
+            and "gtol" not in minimize_options
+        ):
+            minimize_options["gtol"] = 1e-3
         result = opt.minimize(
             obj_fn, init[c.free_param_mask],
-            method=c.optim_method, options=c.opt_options
+            method=c.optim_method, options=minimize_options
         )
         optim_result = {'converged': result.success, 'x': result.x, 'fun': result.fun}
 
