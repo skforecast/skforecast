@@ -1283,7 +1283,7 @@ def _evaluate_grid_hyperparameters_multiseries(
     """
 
     forecaster_search = deepcopy_forecaster(forecaster)
-    if forecaster_search.__skforecast_tags__['forecasting_strategy'] == 'recursive':
+    if type(forecaster_search).__name__ == 'ForecasterRecursiveMultiSeries':
         series, series_indexes = check_preprocess_series(series)
         if exog is not None:
             series_names_in_ = list(series.keys())
@@ -1500,7 +1500,8 @@ def _evaluate_grid_hyperparameters_multiseries(
             "No valid parameter combinations found. All combinations raised exceptions.",
             RuntimeWarning
         )
-        return pd.DataFrame()
+        columns = ['levels', 'lags', 'lags_label', 'params', *metric_names]
+        return pd.DataFrame(columns=columns)
 
     is_regression = forecaster_search.__skforecast_tags__['forecaster_task'] == 'regression'
     results = pd.concat(metrics_list, axis=0)
@@ -1670,7 +1671,7 @@ def bayesian_search_forecaster_multiseries(
     forecaster_name = forecaster_search.__skforecast_tags__['forecaster_name']
     cv_name = type(cv).__name__
 
-    if forecaster_search.__skforecast_tags__['forecasting_strategy'] == 'recursive':
+    if forecaster_name == 'ForecasterRecursiveMultiSeries':
         series, series_indexes = check_preprocess_series(series)
         if exog is not None:
             series_names_in_ = list(series.keys())
@@ -1972,7 +1973,7 @@ def bayesian_search_forecaster_multiseries(
             {m_name: trial.user_attrs[m_name] for m_name in metric_names}
         )
     
-    if forecaster_search.__skforecast_tags__['forecasting_strategy'] != 'direct':
+    if forecaster_name not in ['ForecasterDirectMultiVariate']:
         lags_list = [
             initialize_lags(forecaster_name=forecaster_name, lags=lag)[0]
             for lag in lags_list
