@@ -400,3 +400,28 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False():
     assert forecaster.in_sample_residuals_ is None
     assert forecaster.in_sample_residuals_by_bin_ is None
     assert forecaster.binner_intervals_ is None
+
+
+def test_fit_resets_out_sample_residuals_on_refit():
+    """
+    Test that out_sample_residuals_ and out_sample_residuals_by_bin_ are reset
+    to None when the forecaster is refitted.
+    """
+    forecaster = ForecasterEquivalentDate(
+                     offset    = 2,
+                     n_offsets = 2,
+                     agg_func  = np.mean,
+                 )
+    forecaster.fit(y=y)
+    forecaster.set_out_sample_residuals(
+        y_true=np.arange(1, 45, dtype=float),
+        y_pred=np.zeros(44),
+    )
+
+    assert forecaster.out_sample_residuals_ is not None
+    assert forecaster.out_sample_residuals_by_bin_ is not None
+
+    forecaster.fit(y=y)
+
+    assert forecaster.out_sample_residuals_ is None
+    assert forecaster.out_sample_residuals_by_bin_ is None

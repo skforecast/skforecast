@@ -972,6 +972,8 @@ class ForecasterRnn(ForecasterBase):
         self.y_train_dim_names_ = None
         self.exog_train_dim_names_ = None
         self.in_sample_residuals_ = None
+        self.out_sample_residuals_ = None
+        self.out_sample_residuals_by_bin_ = None
         self.is_fitted = False
         self.fit_date = None
         self.keras_backend_ = keras.backend.backend()
