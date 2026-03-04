@@ -240,6 +240,7 @@ if __name__ == "__main__":
 | 2.7 | Publicar 2-3 notebooks en Kaggle con buen SEO | ⬜ Pendiente | Forecasting competiciones populares con skforecast |
 | 2.8 | MCP Server MVP: implementar tools `load_and_analyze_data` + `forecast` | ⬜ Pendiente | Solo 2 tools como prueba de concepto |
 | 2.9 | Añadir "actualizar archivos AI" al checklist de release | ⬜ Pendiente | En CONTRIBUTING.md o release process docs |
+| 2.10 | Crear workflow `ai-context-drift-check.yml` | ⬜ Pendiente | Cron semanal: detecta cambios API, abre PR acumulativa |
 
 ### 🟢 Prioridad 3 — MCP Server completo (1-2 meses)
 
@@ -594,6 +595,251 @@ skforecast-mcp/
 
 ---
 
+### 6. Workflow de detección de cambios API (`ai-context-drift-check`)
+
+#### Problema
+
+Entre releases, se van acumulando cambios en la rama de desarrollo (ej. `0.21.x`) que afectan a la API pública: nuevos parámetros, exports, deprecaciones. Es fácil olvidar reflejarlos en `llms.txt` / `llms-full.txt` cuando llega el momento del release.
+
+#### Solución: GitHub Action con cron semanal + PR acumulativa
+
+Un workflow que se ejecuta cada lunes, analiza el diff de la rama de desarrollo contra el último release tag, y mantiene **una sola PR abierta** que se va engordando con los cambios detectados cada semana.
+
+```
+Semana 1: workflow detecta cambios → crea PR con tools/ai_changes_pending.md
+Semana 2: workflow detecta más cambios → actualiza la misma PR (append)
+Semana 3: sin cambios API → no toca la PR
+Release: tú mergeas la PR → usas la lista para actualizar llms.txt/llms-full.txt
+```
+
+#### Archivo controlado: `tools/ai_changes_pending.md`
+
+```markdown
+# Pending API changes for AI context files
+
+> This file is auto-updated weekly by the `ai-context-drift-check` workflow.
+> After updating `llms.txt` / `llms-full.txt`, clear the sections below and
+> keep only this header.
+
+---
+
+## Detected 2026-03-04 (0.21.x, commits abc123..def456)
+
+### Modified signatures
+- `bayesian_search_forecaster()`: new param `suppress_warnings: bool = False`
+- `backtesting_forecaster()`: new param `use_binned_residuals: bool = True`
+
+### New exports
+- `skforecast.preprocessing.ConformalIntervalCalibrator`
+
+### Dependency changes
+- `optuna>=2.10` → `optuna>=3.0`
+
+---
+
+## Detected 2026-03-11 (0.21.x, commits def456..789abc)
+
+### Modified signatures
+- `RollingFeatures.__init__()`: param `window_sizes` renamed to `windows`
+
+### Deprecated
+- `check_exog` → use `validate_exog`
+
+---
+```
+
+#### Qué detecta el workflow (sin LLM, puro `git diff` + `grep`)
+
+| Categoría | Cómo lo detecta |
+|-----------|----------------|
+| Exports nuevos/eliminados | `git diff` en `*/__init__.py` — líneas `+`/`-` con imports |
+| Firmas modificadas | `git diff` en `*.py` — líneas con `def ` que cambian |
+| Archivos nuevos en módulos públicos | `git diff --name-status` — archivos con status `A` |
+| Cambios en dependencias | `git diff` en `pyproject.toml` |
+| Deprecaciones | `git diff` en `*.py` — líneas con `deprecated` (case-insensitive) |
+
+Excluye automáticamente: `tests/`, `docs/`, `dev/`, `tools/`, `benchmarks/`.
+
+#### Workflow: `.github/workflows/ai-context-drift-check.yml`
+
+```yaml
+name: AI Context Drift Check
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Every Monday at 8:00 UTC
+  workflow_dispatch:       # Manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for tags
+
+      - name: Detect API changes
+        id: detect
+        run: |
+          # Find latest release tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            echo "No tags found, skipping."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          DEV_BRANCH="${{ github.ref_name }}"
+          RANGE="${LAST_TAG}..${DEV_BRANCH}"
+          TODAY=$(date +%Y-%m-%d)
+          COMMITS_SHORT=$(git log --oneline $RANGE -- '*.py' 'pyproject.toml' | head -5)
+          COMMIT_START=$(echo $LAST_TAG | cut -c1-7)
+          COMMIT_END=$(git rev-parse --short HEAD)
+
+          # Collect changes
+          CHANGES=""
+
+          # 1. Modified signatures (public functions)
+          SIGS=$(git diff $RANGE -- 'skforecast/**/*.py' \
+            ':!skforecast/**/tests/**' \
+            | grep -E '^\+.*def [a-z_]+\(' \
+            | grep -v '__' \
+            | sed 's/^+//' | sed 's/^[[:space:]]*/- /' || true)
+          if [ -n "$SIGS" ]; then
+            CHANGES="${CHANGES}\n### Modified signatures\n${SIGS}\n"
+          fi
+
+          # 2. New exports
+          EXPORTS=$(git diff $RANGE -- 'skforecast/**/__init__.py' \
+            | grep '^+' | grep -v '^\+\+\+' \
+            | grep -E '(import|from)' \
+            | sed 's/^+//' | sed 's/^[[:space:]]*/- /' || true)
+          if [ -n "$EXPORTS" ]; then
+            CHANGES="${CHANGES}\n### New/modified exports\n${EXPORTS}\n"
+          fi
+
+          # 3. New files
+          NEW_FILES=$(git diff --name-status $RANGE -- 'skforecast/**/*.py' \
+            ':!skforecast/**/tests/**' \
+            | grep '^A' | awk '{print "- " $2}' || true)
+          if [ -n "$NEW_FILES" ]; then
+            CHANGES="${CHANGES}\n### New files\n${NEW_FILES}\n"
+          fi
+
+          # 4. Dependency changes
+          DEPS=$(git diff $RANGE -- 'pyproject.toml' \
+            | grep -E '^\+.*>=' \
+            | sed 's/^+//' | sed 's/^[[:space:]]*/- /' || true)
+          if [ -n "$DEPS" ]; then
+            CHANGES="${CHANGES}\n### Dependency changes\n${DEPS}\n"
+          fi
+
+          # 5. Deprecations
+          DEPRECATED=$(git diff $RANGE -- 'skforecast/**/*.py' \
+            ':!skforecast/**/tests/**' \
+            | grep -i 'deprecated' | grep '^\+' \
+            | sed 's/^+//' | sed 's/^[[:space:]]*/- /' | head -10 || true)
+          if [ -n "$DEPRECATED" ]; then
+            CHANGES="${CHANGES}\n### Deprecated\n${DEPRECATED}\n"
+          fi
+
+          if [ -z "$CHANGES" ]; then
+            echo "No API changes detected."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Build new section
+          SECTION="## Detected ${TODAY} (${DEV_BRANCH}, commits ${COMMIT_START}..${COMMIT_END})\n${CHANGES}\n---\n"
+          echo "$SECTION" > /tmp/new_changes.txt
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+
+      - name: Update pending changes file
+        if: steps.detect.outputs.has_changes == 'true'
+        run: |
+          FILE="tools/ai_changes_pending.md"
+          if [ ! -f "$FILE" ]; then
+            cat > "$FILE" << 'EOF'
+          # Pending API changes for AI context files
+
+          > This file is auto-updated weekly by the `ai-context-drift-check` workflow.
+          > After updating `llms.txt` / `llms-full.txt`, clear the sections below and
+          > keep only this header.
+
+          ---
+
+          EOF
+          fi
+          # Append new section
+          cat /tmp/new_changes.txt >> "$FILE"
+
+      - name: Create or update PR
+        if: steps.detect.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ai-context-drift-check
+          title: "🔄 AI context files — API changes detected"
+          body: |
+            Automated weekly check detected API changes that may need to be
+            reflected in `llms.txt` / `llms-full.txt`.
+
+            Review `tools/ai_changes_pending.md` for details.
+
+            **When ready:**
+            1. Merge this PR
+            2. Update `llms.txt` / `llms-full.txt` using the list (VS Code + Copilot)
+            3. Run `python tools/generate_ai_context_files.py`
+            4. Clear `tools/ai_changes_pending.md` (keep only header)
+          labels: documentation, ai-context
+          commit-message: "docs: update ai_changes_pending.md with detected API changes"
+```
+
+#### Flujo de trabajo completo
+
+```
+┌─────────────────────────────────────────────────┐
+│  GitHub Actions (cron lunes, gratis repos pub.)  │
+│  Detecta diff API → actualiza PR acumulativa     │
+└──────────────────────┬──────────────────────────┘
+                       │ notificación (cuando quieras)
+                       ▼
+┌─────────────────────────────────────────────────┐
+│  Mergeas la PR → ahora ai_changes_pending.md    │
+│  tiene la lista de cambios en tu rama local      │
+└──────────────────────┬──────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────┐
+│  VS Code + Copilot Pro (empresa)                 │
+│  "Mira tools/ai_changes_pending.md y actualiza   │
+│   llms-full.txt con estos cambios"               │
+│  → Copilot aplica los cambios, tú revisas        │
+└──────────────────────┬──────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────┐
+│  python tools/generate_ai_context_files.py       │
+│  Limpiar ai_changes_pending.md → commit todo     │
+└─────────────────────────────────────────────────┘
+```
+
+**Coste total**: 0€ (GitHub Actions es gratis para repos públicos, `peter-evans/create-pull-request` es una action gratuita, no requiere LLM).
+
+#### Opciones descartadas para este workflow
+
+| Opción | Por qué se descarta |
+|--------|-------------------|
+| `.github/instructions/*.md` (Copilot instrucciones por carpeta) | Se inyectan **además de** `copilot-instructions.md` — con el mismo contenido duplicaría tokens. Solo útil en monorepos con zonas muy distintas (React + Python + Terraform). skforecast es temáticamente uniforme |
+| `.github/agents/*.md` (Copilot custom agents `@nombre`) | No se auto-inyectan — el usuario debe invocar `@agent-name`. Solo funcionan en Copilot Chat. Muy nicho, casi ningún proyecto OSS los usa todavía. Considerar en el futuro si emerge un caso de uso claro (ej. `@skforecast-reviewer`) |
+| Que el workflow edite directamente `llms-full.txt` con un LLM | Riesgo de que el LLM malinterprete un cambio, invente sintaxis o meta ruido. La fuente de verdad no debe editarse automáticamente |
+| Abrir Issues en vez de PR | Una PR con archivo controlado queda en el repo, es visible en el diff, y es acumulativa. Un Issue es fácil de ignorar y se pierde entre otros |
+
+---
+
 ## Comunicación y distribución
 
 ### En el README del repo
@@ -650,6 +896,7 @@ Post de lanzamiento: *"Ahora puedes hacer forecasting sin escribir código. Sube
 | **Semana 1** | 1.8-1.9: Crear y probar Custom GPT |
 | **Semana 2** | 2.1-2.5: Google Gem, Claude Project, publicar GPT, actualizar docs |
 | **Semana 2** | 2.8: MCP Server MVP (2 tools) |
+| **Semana 2** | 2.10: Crear workflow `ai-context-drift-check.yml` |
 | **Semana 3-4** | 2.6-2.7: Stack Overflow, Kaggle notebooks |
 | **Semana 3-4** | Recoger feedback de usuarios y iterar sobre instrucciones y GPT |
 | **Mes 2-3** | 3.1-3.6: MCP Server completo, publicar en PyPI |
@@ -660,12 +907,14 @@ Post de lanzamiento: *"Ahora puedes hacer forecasting sin escribir código. Sube
 
 | Paso | Acción |
 |------|--------|
-| 1 | Actualizar `llms.txt` con cambios de versión, nuevos imports, nueva API |
-| 2 | Actualizar `llms-full.txt` con nuevos workflows, cambios en parámetros |
-| 3 | Ejecutar `python tools/generate_ai_context_files.py` |
-| 4 | Commit de todos los archivos generados junto con el release |
-| 5 | Subir `llms-full.txt` actualizado al Custom GPT como knowledge file |
-| 6 | Verificar que `skforecast.org/llms.txt` y `llms-full.txt` están actualizados |
+| 1 | Mergear la PR acumulativa de `ai-context-drift-check` (si hay cambios pendientes) |
+| 2 | Revisar `tools/ai_changes_pending.md` — usar como checklist de qué actualizar |
+| 3 | Actualizar `llms.txt` y `llms-full.txt` con los cambios (VS Code + Copilot Pro) |
+| 4 | Limpiar `tools/ai_changes_pending.md` (dejar solo el header) |
+| 5 | Ejecutar `python tools/generate_ai_context_files.py` |
+| 6 | Commit de todos los archivos generados junto con el release |
+| 7 | Subir `llms-full.txt` actualizado al Custom GPT como knowledge file |
+| 8 | Verificar que `skforecast.org/llms.txt` y `llms-full.txt` están actualizados |
 
 ---
 
