@@ -99,7 +99,7 @@ skforecast/
 │   └── feature_selection.py # select_features, select_features_multiseries
 │
 ├── metrics/                 # Time series specific metrics
-│   └── metrics.py           # MASE, RMSSE, sMAPE, CRPS, coverage
+│   └── metrics.py           # MASE, RMSSE, sMAPE, CRPS, coverage, pinball loss
 │
 ├── drift_detection/         # Data drift monitoring
 │   ├── _range_drift.py      # RangeDriftDetector (lightweight)
@@ -109,10 +109,11 @@ skforecast/
 │   └── utils.py             # check_*, initialize_*, transform_*, expand_index
 │
 ├── exceptions/              # Custom warnings and exceptions
-│   └── exceptions.py        # DataTransformationWarning, IgnoredArgumentWarning, etc.
+│   └── exceptions.py        # DataTypeWarning, DataTransformationWarning,
+│                            # IgnoredArgumentWarning, MissingValuesWarning, etc.
 │
 ├── datasets/                # Sample datasets for examples
-│   └── datasets.py          # fetch_dataset function
+│   └── datasets.py          # fetch_dataset, load_demo_dataset, show_datasets_info
 │
 ├── plot/                    # Visualization utilities
 │   └── plot.py              # Plotting functions for forecasts and diagnostics
@@ -196,7 +197,7 @@ from lightgbm import LGBMRegressor
 forecaster = ForecasterRecursiveMultiSeries(
     estimator=LGBMRegressor(n_estimators=100, random_state=123),
     lags=24,
-    encoding='ordinal'  # or 'onehot', 'onehot_drop_first'
+    encoding='ordinal'  # 'ordinal', 'ordinal_category', 'onehot', or None
 )
 forecaster.fit(series=series)
 
@@ -247,7 +248,7 @@ forecaster = ForecasterRecursive(
 predictions = forecaster.predict_interval(
     steps=10,
     interval=[10, 90],  # 80% prediction interval
-    method='bootstrapping',  # or 'quantile_residuals', 'conformal'
+    method='bootstrapping',  # or 'conformal'
     n_boot=500
 )
 # Returns DataFrame with columns: pred, lower_bound, upper_bound
@@ -482,8 +483,8 @@ forecaster = ForecasterStats(estimator=auto_arima)
 forecaster.fit(y=data['target'])
 predictions = forecaster.predict(steps=10)
 
-# ETS model (Error-Trend-Seasonal)
-ets_model = Ets(error='add', trend='add', seasonal='add', seasonal_periods=12)
+# ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None, Z=Auto)
+ets_model = Ets(model='AAA', m=12)  # Additive Error, Additive Trend, Additive Seasonal
 forecaster = ForecasterStats(estimator=ets_model)
 forecaster.fit(y=data['target'])
 predictions = forecaster.predict(steps=10)
@@ -641,6 +642,7 @@ from skforecast.preprocessing import RollingFeatures
 from skforecast.preprocessing import RollingFeaturesClassification
 from skforecast.preprocessing import TimeSeriesDifferentiator
 from skforecast.preprocessing import DateTimeFeatureTransformer
+from skforecast.preprocessing import create_datetime_features
 from skforecast.preprocessing import QuantileBinner
 from skforecast.preprocessing import ConformalIntervalCalibrator
 # Data reshaping utilities
@@ -655,6 +657,8 @@ from skforecast.feature_selection import select_features_multiseries
 
 # Datasets
 from skforecast.datasets import fetch_dataset
+from skforecast.datasets import load_demo_dataset
+from skforecast.datasets import show_datasets_info
 # Available: h2o, h2o_exog, fuel_consumption, items_sales, air_quality_valencia,
 # air_quality_valencia_no_missing, website_visits, bike_sharing, bike_sharing_extended_features,
 # australia_tourism, uk_daily_flights, wikipedia_visits, vic_electricity, vic_electricity_classification,
@@ -666,9 +670,11 @@ from skforecast.datasets import fetch_dataset
 from skforecast.metrics import mean_absolute_scaled_error
 from skforecast.metrics import root_mean_squared_scaled_error
 from skforecast.metrics import symmetric_mean_absolute_percentage_error
+from skforecast.metrics import add_y_train_argument
 from skforecast.metrics import crps_from_predictions
 from skforecast.metrics import crps_from_quantiles
 from skforecast.metrics import calculate_coverage
+from skforecast.metrics import create_mean_pinball_loss
 
 # Statistical models (used with ForecasterStats)
 from skforecast.stats import Arima, Ets, Sarimax, Arar
@@ -677,35 +683,6 @@ from skforecast.stats import Arima, Ets, Sarimax, Arar
 from skforecast.drift_detection import RangeDriftDetector
 from skforecast.drift_detection import PopulationDriftDetector
 ```
-
-## Common Parameters
-
-### ForecasterRecursive / ForecasterDirect
-- `estimator`: Any scikit-learn compatible regressor
-- `lags`: int, list, or numpy array defining lag features
-- `window_features`: RollingFeatures object for rolling statistics
-- `transformer_y`: Transformer for target variable (e.g., StandardScaler)
-- `transformer_exog`: Transformer for exogenous variables
-- `differentiation`: int, order of differencing to apply
-
-### ForecasterRecursiveMultiSeries
-- Same as above, plus:
-- `encoding`: 'ordinal', 'onehot', or 'onehot_drop_first'
-- `transformer_series`: Transformer(s) for series
-
-### backtesting_forecaster
-- `forecaster`: Forecaster object
-- `y`: Time series data
-- `cv`: TimeSeriesFold object with cross-validation configuration
-- `metric`: Evaluation metric(s)
-- `exog`: Exogenous variables (optional)
-- `interval`: Prediction intervals (optional)
-
-### TimeSeriesFold (cv parameter)
-- `steps`: Forecast horizon
-- `initial_train_size`: Size of initial training set
-- `refit`: Whether to refit model at each iteration
-- `fixed_train_size`: Whether to use expanding or sliding window
 
 ## Tips for Best Results
 
