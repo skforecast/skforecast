@@ -762,3 +762,30 @@ def test_fit_encoding_mapping(encoding, encoding_mapping_):
     forecaster.fit(series=series, suppress_warnings=True)
     
     assert forecaster.encoding_mapping_ == encoding_mapping_
+
+
+def test_fit_resets_out_sample_residuals_on_refit():
+    """
+    Test that out_sample_residuals_ and out_sample_residuals_by_bin_ are reset
+    to None when the forecaster is refitted.
+    """
+    series = {
+        '1': pd.Series(np.arange(50, dtype=float)),
+        '2': pd.Series(np.arange(50, dtype=float)),
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding='ordinal'
+    )
+    forecaster.fit(series=series, suppress_warnings=True)
+    forecaster.set_out_sample_residuals(
+        y_true={'1': np.arange(1, 48, dtype=float), '2': np.arange(1, 48, dtype=float)},
+        y_pred={'1': np.zeros(47), '2': np.zeros(47)},
+    )
+
+    assert forecaster.out_sample_residuals_ is not None
+    assert forecaster.out_sample_residuals_by_bin_ is not None
+
+    forecaster.fit(series=series, suppress_warnings=True)
+
+    assert forecaster.out_sample_residuals_ is None
+    assert forecaster.out_sample_residuals_by_bin_ is None

@@ -132,10 +132,14 @@ def test_fit_resets_out_sample_residuals_on_refit():
     to None when the forecaster is refitted.
     """
     forecaster = ForecasterRnn(estimator=model, levels=levels, lags=lags)
-    forecaster.out_sample_residuals_ = {"1": np.array([0.1, -0.2, 0.3])}
-    forecaster.out_sample_residuals_by_bin_ = {"1": np.array([0.1])}
+    forecaster.fit(series)
+    forecaster.set_out_sample_residuals(
+        y_true={"1": np.array([1.0, 2.0, 3.0, 4.0, 5.0])},
+        y_pred={"1": np.array([0.0, 0.0, 0.0, 0.0, 0.0])},
+    )
+
+    assert forecaster.out_sample_residuals_ is not None
 
     forecaster.fit(series)
 
     assert forecaster.out_sample_residuals_ is None
-    assert forecaster.out_sample_residuals_by_bin_ is None

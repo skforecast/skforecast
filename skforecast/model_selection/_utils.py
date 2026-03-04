@@ -210,6 +210,7 @@ def check_backtesting_input(
         "ForecasterRecursiveMultiSeries"
     ]
     # NOTE: ForecasterStats has interval but not with bootstrapping or conformal
+    # NOTE: ForecasterRnn has interval with conformal but not bootstrapping
     forecasters_boot_conformal = [
         "ForecasterRecursive",
         "ForecasterDirect",
@@ -437,6 +438,12 @@ def check_backtesting_input(
                 raise ValueError(
                     f"`interval_method` must be 'bootstrapping' or 'conformal'. "
                     f"Got {interval_method}."
+                )
+        elif forecaster_name == 'ForecasterRnn':
+            if use_binned_residuals:
+                raise ValueError(
+                    "`use_binned_residuals` is not supported for ForecasterRnn. "
+                    "Set `use_binned_residuals=False`."
                 )
         else:
             if forecaster_name == 'ForecasterRecursiveClassifier':

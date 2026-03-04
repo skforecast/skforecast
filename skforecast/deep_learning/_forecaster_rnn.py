@@ -267,8 +267,10 @@ class ForecasterRnn(ForecasterBase):
         self.X_train_dim_names_ = None
         self.y_train_dim_names_ = None
         self.history_ = None 
-        self.is_fitted = False
+        self.in_sample_residuals_ = None
+        self.out_sample_residuals_ = None
         self.creation_date = pd.Timestamp.today().strftime("%Y-%m-%d %H:%M:%S")
+        self.is_fitted = False
         self.fit_date = None
         self.keras_backend_ = None
         self.skforecast_version = __version__
@@ -280,9 +282,7 @@ class ForecasterRnn(ForecasterBase):
         self.source_code_weight_func = None  # Ignored in this forecaster
         self.dropna_from_series = False  # Ignored in this forecaster
         self.encoding = None  # Ignored in this forecaster
-        self.in_sample_residuals_ = None  # Ignored in this forecaster
         self.in_sample_residuals_by_bin_ = None  # Ignored in this forecaster
-        self.out_sample_residuals_ = None  # Ignored in this forecaster
         self.out_sample_residuals_by_bin_ = None  # Ignored in this forecaster
         self.differentiation = None  # Ignored in this forecaster
         self.differentiation_max = None  # Ignored in this forecaster
@@ -973,7 +973,6 @@ class ForecasterRnn(ForecasterBase):
         self.exog_train_dim_names_ = None
         self.in_sample_residuals_ = None
         self.out_sample_residuals_ = None
-        self.out_sample_residuals_by_bin_ = None
         self.is_fitted = False
         self.fit_date = None
         self.keras_backend_ = keras.backend.backend()

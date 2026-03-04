@@ -108,10 +108,12 @@ def _fit_predict_forecaster(
     n_boot: int,
     use_in_sample_residuals: bool,
     use_binned_residuals: bool,
+    out_sample_residuals_: np.ndarray | None,
+    out_sample_residuals_by_bin_: dict[int, np.ndarray] | None,
     random_state: int,
     return_predictors: bool,
     is_regression: bool,
-    suppress_warnings: bool = False
+    suppress_warnings: bool
 ) -> pd.DataFrame:
     """
     Fit the forecaster and predict `steps` ahead. This is a module-level
@@ -143,7 +145,7 @@ def _fit_predict_forecaster(
     forecaster : object
         Forecaster model.
     store_in_sample_residuals : bool
-        Whether to store in-sample residuals during ``fit()``.
+        Whether to store in-sample residuals during `fit()`.
     gap : int
         Number of observations between training end and test start.
     interval : float, list, tuple, str, object, or None
@@ -156,6 +158,11 @@ def _fit_predict_forecaster(
         Whether to use in-sample residuals for intervals.
     use_binned_residuals : bool
         Whether to bin residuals by predicted value.
+    out_sample_residuals_ : np.ndarray, default None
+        Pre-validated out-of-sample residuals to restore after each `fit()` call 
+        (which resets them to `None`).
+    out_sample_residuals_by_bin_ : dict, default None
+        Pre-validated out-of-sample residuals indexed by predicted-value bin.
     random_state : int
         Random seed.
     return_predictors : bool
@@ -184,6 +191,10 @@ def _fit_predict_forecaster(
             store_in_sample_residuals = store_in_sample_residuals,
             suppress_warnings         = suppress_warnings
         )
+        if out_sample_residuals_ is not None:
+            forecaster.out_sample_residuals_ = out_sample_residuals_
+        if out_sample_residuals_by_bin_ is not None:
+            forecaster.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_
 
     steps = test_iloc_end - test_iloc_start
     if type(forecaster).__name__ == 'ForecasterDirect' and gap > 0:
@@ -425,9 +436,13 @@ def _backtesting_forecaster(
     
     """
 
+    need_out_sample_residuals = (
+        interval is not None and not use_in_sample_residuals
+    )
+
     if cv.initial_train_size is not None:
         forecaster = deepcopy_forecaster(
-            forecaster, include_out_sample_residuals=True
+            forecaster, include_out_sample_residuals=need_out_sample_residuals
         )
     else:
         forecaster = deepcopy(forecaster)
@@ -486,6 +501,17 @@ def _backtesting_forecaster(
     window_size = cv.window_size
     gap = cv.gap
 
+    # Save out-of-sample residuals before any fit() call. Since fit() resets
+    # them to None, they must be preserved and restored after each fit so that
+    # probabilistic predictions with use_in_sample_residuals=False keep working.
+    out_sample_residuals_ = None
+    out_sample_residuals_by_bin_ = None
+    if need_out_sample_residuals:
+        if use_binned_residuals:
+            out_sample_residuals_by_bin_ = forecaster.out_sample_residuals_by_bin_
+        else:
+            out_sample_residuals_ = forecaster.out_sample_residuals_
+
     if initial_train_size is not None:
         # NOTE: This allows for parallelization when `refit` is `False`. The initial 
         # Forecaster fit occurs outside of the auxiliary function.
@@ -496,6 +522,10 @@ def _backtesting_forecaster(
             store_in_sample_residuals = store_in_sample_residuals,
             suppress_warnings         = suppress_warnings
         )
+        if out_sample_residuals_ is not None:
+            forecaster.out_sample_residuals_ = out_sample_residuals_
+        if out_sample_residuals_by_bin_ is not None:
+            forecaster.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_
         folds[0][5] = False
 
     if refit:
@@ -528,6 +558,8 @@ def _backtesting_forecaster(
         "n_boot": n_boot,
         "use_in_sample_residuals": use_in_sample_residuals,
         "use_binned_residuals": use_binned_residuals,
+        "out_sample_residuals_": out_sample_residuals_,
+        "out_sample_residuals_by_bin_": out_sample_residuals_by_bin_,
         "random_state": random_state,
         "return_predictors": return_predictors,
         'is_regression': is_regression,
@@ -813,6 +845,8 @@ def _fit_predict_forecaster_multiseries(
     n_boot: int,
     use_in_sample_residuals: bool,
     use_binned_residuals: bool,
+    out_sample_residuals_: dict[str, np.ndarray] | None,
+    out_sample_residuals_by_bin_: dict[str, dict[int, np.ndarray]] | None,
     random_state: int,
     return_predictors: bool,
     suppress_warnings: bool
@@ -851,6 +885,11 @@ def _fit_predict_forecaster_multiseries(
         Whether to use in-sample residuals for intervals.
     use_binned_residuals : bool
         Whether to bin residuals by predicted value.
+    out_sample_residuals_ : dict, default None
+        Pre-validated out-of-sample residuals to restore after each `fit()` call 
+        (which resets them to `None`).
+    out_sample_residuals_by_bin_ : dict, default None
+        Pre-validated out-of-sample residuals indexed by predicted-value bin.
     random_state : int
         Random seed.
     return_predictors : bool
@@ -884,6 +923,10 @@ def _fit_predict_forecaster_multiseries(
             store_in_sample_residuals = store_in_sample_residuals,
             suppress_warnings         = suppress_warnings
         )
+        if out_sample_residuals_ is not None:
+            forecaster.out_sample_residuals_ = out_sample_residuals_
+        if out_sample_residuals_by_bin_ is not None:
+            forecaster.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_
 
     if type(forecaster).__name__ == 'ForecasterDirectMultiVariate' and gap > 0:
         # Select only the steps that need to be predicted if gap > 0
@@ -1140,9 +1183,13 @@ def _backtesting_forecaster_multiseries(
 
     """
 
+    need_out_sample_residuals = (
+        interval is not None and not use_in_sample_residuals
+    )
+
     if cv.initial_train_size is not None:
         forecaster = deepcopy_forecaster(
-            forecaster, include_out_sample_residuals=True
+            forecaster, include_out_sample_residuals=need_out_sample_residuals
         )
     else:
         forecaster = deepcopy(forecaster)
@@ -1206,6 +1253,17 @@ def _backtesting_forecaster_multiseries(
     initial_train_size = cv.initial_train_size
     gap = cv.gap
 
+    # Save out-of-sample residuals before any fit() call. Since fit() resets
+    # them to None, they must be preserved and restored after each fit so that
+    # probabilistic predictions with use_in_sample_residuals=False keep working.
+    out_sample_residuals_ = None
+    out_sample_residuals_by_bin_ = None
+    if need_out_sample_residuals:
+        if use_binned_residuals:
+            out_sample_residuals_by_bin_ = forecaster.out_sample_residuals_by_bin_
+        else:
+            out_sample_residuals_ = forecaster.out_sample_residuals_
+
     if initial_train_size is not None:
         # NOTE: This allows for parallelization when `refit` is `False`. The initial 
         # Forecaster fit occurs outside of the auxiliary function.
@@ -1226,6 +1284,10 @@ def _backtesting_forecaster_multiseries(
             store_in_sample_residuals = store_in_sample_residuals,
             suppress_warnings         = suppress_warnings
         )
+        if out_sample_residuals_ is not None:
+            forecaster.out_sample_residuals_ = out_sample_residuals_
+        if out_sample_residuals_by_bin_ is not None:
+            forecaster.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_
         folds[0][5] = False
         
     if refit:
@@ -1276,6 +1338,8 @@ def _backtesting_forecaster_multiseries(
         "n_boot": n_boot,
         "use_in_sample_residuals": use_in_sample_residuals,
         "use_binned_residuals": use_binned_residuals,
+        "out_sample_residuals_": out_sample_residuals_,
+        "out_sample_residuals_by_bin_": out_sample_residuals_by_bin_,
         "random_state": random_state,
         "return_predictors": return_predictors,
         "suppress_warnings": suppress_warnings

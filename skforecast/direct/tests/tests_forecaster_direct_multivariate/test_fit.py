@@ -447,3 +447,26 @@ def test_fit_last_window_stored_when_lags_dict_with_None(level):
     pd.testing.assert_frame_equal(forecaster.last_window_, expected)
     assert forecaster.series_names_in_ == ['l1', 'l2']
     assert forecaster.X_train_series_names_in_ == ['l1']
+
+
+def test_fit_resets_out_sample_residuals_on_refit():
+    """
+    Test that out_sample_residuals_ and out_sample_residuals_by_bin_ are reset
+    to None when the forecaster is refitted.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
+    )
+    forecaster.fit(series=series_fixtures)
+    forecaster.set_out_sample_residuals(
+        y_true={'l1': np.arange(1, 46, dtype=float)},
+        y_pred={'l1': np.zeros(45)},
+    )
+
+    assert forecaster.out_sample_residuals_ is not None
+    assert forecaster.out_sample_residuals_by_bin_ is not None
+
+    forecaster.fit(series=series_fixtures)
+
+    assert forecaster.out_sample_residuals_ is None
+    assert forecaster.out_sample_residuals_by_bin_ is None

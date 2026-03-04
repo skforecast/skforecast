@@ -931,6 +931,42 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
         check_backtesting_input(**kwargs)
 
 
+def test_check_backtesting_input_ValueError_when_ForecasterRnn_and_use_binned_residuals():
+    """
+    Test ValueError is raised in check_backtesting_input when `use_binned_residuals`
+    is True and the forecaster is a ForecasterRnn.
+    """
+    # Mock ForecasterRnn to avoid keras dependency
+    class ForecasterRnn:
+        def __init__(self):
+            self.window_size = 2
+            self.max_step = 10
+    
+    forecaster = ForecasterRnn()
+    
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(series_wide_range) - 12,
+         )
+    
+    err_msg = re.escape(
+        "`use_binned_residuals` is not supported for ForecasterRnn. "
+        "Set `use_binned_residuals=False`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster          = forecaster,
+            cv                  = cv,
+            metric              = 'mean_absolute_error',
+            series              = series_wide_range,
+            interval            = [10, 90],
+            interval_method     = 'conformal',
+            use_binned_residuals = True,
+            show_progress       = False,
+            suppress_warnings   = False
+        )
+
+
 def test_check_backtesting_input_ValueError_when_interval_and_ForecasterRecursiveClassifier():
     """
     Test ValueError is raised in check_backtesting_input when `interval` is not None
