@@ -143,7 +143,7 @@ if results.empty:
 
 ---
 
-### 4. `param_grid` se re-envuelve en `tqdm` en cada iteración del outer loop — nesting de objetos tqdm
+### 4. ~~`param_grid` se re-envuelve en `tqdm` en cada iteración del outer loop — nesting de objetos tqdm~~ **Done**
 
 **Tipo:** Defecto de código  
 **Riesgo real:** Bajo (no hay pérdida de datos, pero código incorrecto)  
@@ -187,7 +187,7 @@ for lags_k, lags_v in lags_grid_tqdm:
 
 ---
 
-### 5. Multiseries (grid y bayesian) siempre ordena `ascending=True` — falta check `is_regression`
+### 5. ~~Multiseries (grid y bayesian) siempre ordena `ascending=True` — falta check `is_regression`~~ **Done**
 
 **Tipo:** Bug latente / Inconsistencia  
 **Riesgo real:** Bajo (actualmente todos los multiseries son regresión)  
@@ -255,7 +255,7 @@ Ambas persiguen el mismo objetivo: suprimir warnings repetitivas dentro del loop
 
 ---
 
-### 7. Posición del check de `exog` para `return_best` inconsistente
+### 7. ~~Posición del check de `exog` para `return_best` inconsistente~~ **Done**
 
 **Tipo:** Inconsistencia menor  
 **Esfuerzo:** Trivial
@@ -280,7 +280,7 @@ En la versión grid, si el check falla, se ha desperdiciado una deep copy. Es m�
 
 ---
 
-### 8. `aggregate_metric` con default mutable (lista literal)
+### 8. ~~`aggregate_metric` con default mutable (lista literal)~~ **Done**
 
 **Tipo:** Anti-patrón menor  
 **Esfuerzo:** Trivial
@@ -305,7 +305,7 @@ if aggregate_metric is None:
 
 ---
 
-### 9. `type().__name__` vs `__skforecast_tags__` para checks de tipo
+### 9. ~~`type().__name__` vs `__skforecast_tags__` para checks de tipo~~ **Done**
 
 **Tipo:** Inconsistencia de estilo  
 **Esfuerzo:** Bajo
@@ -385,12 +385,12 @@ Parece redundante (ya se borró al inicio), pero es **defensivo y correcto**: si
 | 1  | ~~`_evaluate_grid_hyperparameters_stats` sin `@manage_warnings`~~ **Done** | Bug | **SÍ** | Trivial | `grid_search_stats`, `random_search_stats` |
 | 2  | ~~Stats no usa `deepcopy_forecaster` — muta forecaster~~ **Done** | Bug | **SÍ** | Bajo | `grid_search_stats`, `random_search_stats` |
 | 3  | ~~Sin protección contra `results` vacío~~ **Done** | Bug | **SÍ** | Bajo | 3 funciones `_evaluate_*` |
-| 4  | `param_grid` re-wrapped en tqdm (nesting) | Defecto | **SÍ** | Trivial | `_evaluate_grid_*`, `_evaluate_grid_*_multiseries` |
-| 5  | Multiseries sin `is_regression` check + falta `direction` | Inconsistencia | **SÍ** | Trivial | `_evaluate_grid_*_multiseries`, `bayesian_search_*_multiseries` |
+| 4  | ~~`param_grid` re-wrapped en tqdm (nesting)~~ **Done** | Defecto | **SÍ** | Trivial | `_evaluate_grid_*`, `_evaluate_grid_*_multiseries` |
+| 5  | ~~Multiseries sin `is_regression` check + falta `direction`~~ **Done** | Inconsistencia | **SÍ** | Trivial | `_evaluate_grid_*_multiseries`, `bayesian_search_*_multiseries` |
 | 6  | Warning suppression inconsistente single vs multi | Inconsistencia | Recomendable | Trivial | `_evaluate_grid_hyperparameters` |
-| 7  | Posición del check `exog`/`return_best` | Inconsistencia | Recomendable | Trivial | `_evaluate_grid_hyperparameters` |
-| 8  | `aggregate_metric` default mutable | Anti-patrón | Recomendable | Trivial | 4 funciones multiseries |
-| 9  | `type().__name__` vs `__skforecast_tags__` | Estilo | Recomendable | Bajo | Funciones multiseries |
+| 7  | ~~Posición del check `exog`/`return_best`~~ **Done** | Inconsistencia | Recomendable | Trivial | `_evaluate_grid_hyperparameters` |
+| 8  | ~~`aggregate_metric` default mutable~~ **Done** | Anti-patrón | Recomendable | Trivial | 4 funciones multiseries |
+| 9  | ~~`type().__name__` vs `__skforecast_tags__`~~ **Done** | Estilo | Recomendable | Bajo | Funciones multiseries |
 | 10 | Cacheo de split en grid | Perf | No (innecesario) | — | — |
 | 11 | `json_normalize` vs `apply(pd.Series)` | Perf | No (despreciable) | — | — |
 | 12 | Warning refit en loop | Diseño | No (correcto) | — | — |
