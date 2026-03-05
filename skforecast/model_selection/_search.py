@@ -629,7 +629,9 @@ def bayesian_search_forecaster(
         a file.
     kwargs_create_study : dict, default None
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
-        If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
+        If default, the direction is set to 'minimize' for regression tasks or
+        'maximize' for classification tasks, and a 
+        `TPESampler(multivariate=True, group=True, consider_endpoints=True, seed=random_state)` 
         sampler is used during optimization.
     kwargs_study_optimize : dict, default None
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
@@ -1643,7 +1645,9 @@ def bayesian_search_forecaster_multiseries(
         a file.
     kwargs_create_study : dict, default None
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
-        If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
+        If default, the direction is set to 'minimize' for regression tasks or
+        'maximize' for classification tasks, and a 
+        `TPESampler(multivariate=True, group=True, consider_endpoints=True, seed=random_state)` 
         sampler is used during optimization.
     kwargs_study_optimize : dict, default None
         Additional keyword arguments (key, value mappings) to pass to study.optimize().

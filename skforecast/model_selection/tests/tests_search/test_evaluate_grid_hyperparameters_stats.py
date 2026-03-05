@@ -168,6 +168,39 @@ def test_evaluate_grid_hyperparameters_stats_warn_when_non_valid_params():
     pd.testing.assert_frame_equal(results, expected_results)
 
 
+def test_evaluate_grid_hyperparameters_stats_warns_when_all_params_raise_exceptions():
+    """
+    Test that a RuntimeWarning is raised and an empty DataFrame is returned
+    when all parameter combinations in param_grid are invalid and raise
+    exceptions during evaluation.
+    """
+    # All trend values are invalid for Sarimax
+    param_grid = [
+        {"order": (0, 1, 0), "seasonal_order": (0, 0, 0, 0), "trend": "no-valid-1"},
+        {"order": (0, 1, 0), "seasonal_order": (0, 0, 0, 0), "trend": "no-valid-2"},
+    ]
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1), maxiter=500))
+    cv = TimeSeriesFold(steps=12, initial_train_size=20)
+
+    warn_msg = re.escape(
+        "No valid parameter combinations found. All combinations raised exceptions."
+    )
+    with pytest.warns(RuntimeWarning, match=warn_msg):
+        results = _evaluate_grid_hyperparameters_stats(
+            forecaster    = forecaster,
+            y             = y_datetime,
+            cv            = cv,
+            param_grid    = param_grid,
+            metric        = "mean_absolute_error",
+            return_best   = False,
+            suppress_warnings = True,
+            show_progress = False,
+        )
+
+    assert results.empty
+    assert isinstance(results, pd.DataFrame)
+
+
 def test_exception_evaluate_grid_hyperparameters_stats_metric_list_duplicate_names():
     """
     Test exception is raised in _evaluate_grid_hyperparameters_stats when a `list` of 
