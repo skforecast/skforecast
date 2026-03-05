@@ -345,6 +345,12 @@ def _evaluate_grid_hyperparameters(
 
     """
 
+    if return_best and exog is not None and (len(exog) != len(y)):
+        raise ValueError(
+            f"`exog` must have same number of samples as `y`. "
+            f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
+        )
+
     forecaster_search = deepcopy_forecaster(forecaster)
     is_regression = forecaster_search.__skforecast_tags__['forecaster_task'] == 'regression'
     cv_name = type(cv).__name__
@@ -379,12 +385,6 @@ def _evaluate_grid_hyperparameters(
             'differentiation': forecaster_search.differentiation_max,
             'verbose': verbose
         })
-
-    if return_best and exog is not None and (len(exog) != len(y)):
-        raise ValueError(
-            f"`exog` must have same number of samples as `y`. "
-            f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
-        )
    
     if not isinstance(metric, list):
         metric = [metric] 
@@ -438,9 +438,11 @@ def _evaluate_grid_hyperparameters(
             )
 
         if show_progress:
-            param_grid = tqdm(param_grid, desc='params grid', position=1, leave=False)
+            param_grid_tqdm = tqdm(param_grid, desc='params grid', position=1, leave=False)
+        else:
+            param_grid_tqdm = param_grid
 
-        for params in param_grid:
+        for params in param_grid_tqdm:
             try:
                 forecaster_search.set_params(params)
                 if cv_name == 'TimeSeriesFold':
@@ -512,7 +514,14 @@ def _evaluate_grid_hyperparameters(
         .reset_index(drop=True)
     )
     results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
-    
+
+    if results.empty:
+        warnings.warn(
+            "No valid parameter combinations found. All combinations raised exceptions.",
+            RuntimeWarning
+        )
+        return results
+
     if return_best:
         
         best_lags = results.loc[0, 'lags']
@@ -620,7 +629,9 @@ def bayesian_search_forecaster(
         a file.
     kwargs_create_study : dict, default None
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
-        If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
+        If default, the direction is set to 'minimize' for regression tasks or
+        'maximize' for classification tasks, and a 
+        `TPESampler(multivariate=True, group=True, consider_endpoints=True, seed=random_state)` 
         sampler is used during optimization.
     kwargs_study_optimize : dict, default None
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
@@ -923,7 +934,7 @@ def grid_search_forecaster_multiseries(
     cv: TimeSeriesFold | OneStepAheadFold,
     param_grid: dict,
     metric: str | Callable | list[str | Callable],
-    aggregate_metric: str | list[str] = ['weighted_average', 'average', 'pooling'],
+    aggregate_metric: str | list[str] | None = None,
     levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     lags_grid: (
@@ -963,10 +974,11 @@ def grid_search_forecaster_multiseries(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    aggregate_metric : str, list, default `['weighted_average', 'average', 'pooling']`
+    aggregate_metric : str, list, default None
         Aggregation method/s used to combine the metric/s of all levels (series)
         when multiple levels are predicted. If list, the first aggregation method
-        is used to select the best parameters.
+        is used to select the best parameters. If `None`,
+        `['weighted_average', 'average', 'pooling']` is used.
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
@@ -1045,7 +1057,7 @@ def random_search_forecaster_multiseries(
     cv: TimeSeriesFold | OneStepAheadFold,
     param_distributions: dict,
     metric: str | Callable | list[str | Callable],
-    aggregate_metric: str | list[str] = ['weighted_average', 'average', 'pooling'],
+    aggregate_metric: str | list[str] | None = None,
     levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     lags_grid: (
@@ -1087,10 +1099,11 @@ def random_search_forecaster_multiseries(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    aggregate_metric : str, list, default `['weighted_average', 'average', 'pooling']`
+    aggregate_metric : str, list, default None
         Aggregation method/s used to combine the metric/s of all levels (series)
         when multiple levels are predicted. If list, the first aggregation method
-        is used to select the best parameters.
+        is used to select the best parameters. If `None`,
+        `['weighted_average', 'average', 'pooling']` is used.
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
@@ -1177,7 +1190,7 @@ def _evaluate_grid_hyperparameters_multiseries(
     cv: TimeSeriesFold | OneStepAheadFold,
     param_grid: dict,
     metric: str | Callable | list[str | Callable],
-    aggregate_metric: str | list[str] = ['weighted_average', 'average', 'pooling'],
+    aggregate_metric: str | list[str] | None = None,
     levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     lags_grid: (
@@ -1216,10 +1229,11 @@ def _evaluate_grid_hyperparameters_multiseries(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    aggregate_metric : str, list, default `['weighted_average', 'average', 'pooling']`
+    aggregate_metric : str, list, default None
         Aggregation method/s used to combine the metric/s of all levels (series)
         when multiple levels are predicted. If list, the first aggregation method
-        is used to select the best parameters.
+        is used to select the best parameters. If `None`,
+        `['weighted_average', 'average', 'pooling']` is used.
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
@@ -1324,6 +1338,8 @@ def _evaluate_grid_hyperparameters_multiseries(
             'verbose': verbose
         })
     
+    if aggregate_metric is None:
+        aggregate_metric = ['weighted_average', 'average', 'pooling']
     if isinstance(aggregate_metric, str):
         aggregate_metric = [aggregate_metric]
     allowed_aggregate_metrics = ['average', 'weighted_average', 'pooling']
@@ -1400,9 +1416,11 @@ def _evaluate_grid_hyperparameters_multiseries(
             )
 
         if show_progress:
-            param_grid = tqdm(param_grid, desc='params grid', position=1, leave=False)
+            param_grid_tqdm = tqdm(param_grid, desc='params grid', position=1, leave=False)
+        else:
+            param_grid_tqdm = param_grid
         
-        for params in param_grid:
+        for params in param_grid_tqdm:
             
             try:
                 forecaster_search.set_params(params)
@@ -1479,6 +1497,15 @@ def _evaluate_grid_hyperparameters_multiseries(
                     with open(output_file, 'a', newline='') as f:
                         f.write('\t'.join([str(r) for r in row]) + '\n')
 
+    if not metrics_list:
+        warnings.warn(
+            "No valid parameter combinations found. All combinations raised exceptions.",
+            RuntimeWarning
+        )
+        columns = ['levels', 'lags', 'lags_label', 'params', *metric_names]
+        return pd.DataFrame(columns=columns)
+
+    is_regression = forecaster_search.__skforecast_tags__['forecaster_task'] == 'regression'
     results = pd.concat(metrics_list, axis=0)
     results.insert(0, 'levels', [levels] * len(results))
     results.insert(1, 'lags', lags_list)
@@ -1486,7 +1513,7 @@ def _evaluate_grid_hyperparameters_multiseries(
     results.insert(3, 'params', params_list)
     results = (
         results
-        .sort_values(by=metric_names[0], ascending=True)
+        .sort_values(by=metric_names[0], ascending=True if is_regression else False)
         .reset_index(drop=True)
     )
     results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
@@ -1534,7 +1561,7 @@ def bayesian_search_forecaster_multiseries(
     cv: TimeSeriesFold | OneStepAheadFold,
     search_space: Callable,
     metric: str | Callable | list[str | Callable],
-    aggregate_metric: str | list[str] = ['weighted_average', 'average', 'pooling'],
+    aggregate_metric: str | list[str] | None = None,
     levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     n_trials: int = 20,
@@ -1573,10 +1600,11 @@ def bayesian_search_forecaster_multiseries(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    aggregate_metric : str, list, default `['weighted_average', 'average', 'pooling']`
+    aggregate_metric : str, list, default None
         Aggregation method/s used to combine the metric/s of all levels (series)
         when multiple levels are predicted. If list, the first aggregation method
-        is used to select the best parameters.
+        is used to select the best parameters. If `None`,
+        `['weighted_average', 'average', 'pooling']` is used.
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
@@ -1617,7 +1645,9 @@ def bayesian_search_forecaster_multiseries(
         a file.
     kwargs_create_study : dict, default None
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
-        If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
+        If default, the direction is set to 'minimize' for regression tasks or
+        'maximize' for classification tasks, and a 
+        `TPESampler(multivariate=True, group=True, consider_endpoints=True, seed=random_state)` 
         sampler is used during optimization.
     kwargs_study_optimize : dict, default None
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
@@ -1642,7 +1672,7 @@ def bayesian_search_forecaster_multiseries(
     """
 
     forecaster_search = deepcopy_forecaster(forecaster)
-    forecaster_name = type(forecaster_search).__name__
+    forecaster_name = forecaster_search.__skforecast_tags__['forecaster_name']
     cv_name = type(cv).__name__
 
     if forecaster_name == 'ForecasterRecursiveMultiSeries':
@@ -1697,6 +1727,8 @@ def bayesian_search_forecaster_multiseries(
             'verbose': verbose
         })
     
+    if aggregate_metric is None:
+        aggregate_metric = ['weighted_average', 'average', 'pooling']
     if isinstance(aggregate_metric, str):
         aggregate_metric = [aggregate_metric]
     allowed_aggregate_metrics = ['average', 'weighted_average', 'pooling']
@@ -1884,7 +1916,10 @@ def bayesian_search_forecaster_multiseries(
 
             return metrics.loc[0, metric_names[0]]
     
+    is_regression = forecaster_search.__skforecast_tags__['forecaster_task'] == 'regression'
     kwargs_create_study = kwargs_create_study.copy() if kwargs_create_study is not None else {}
+    if 'direction' not in kwargs_create_study:
+        kwargs_create_study['direction'] = 'minimize' if is_regression else 'maximize'
     if 'sampler' not in kwargs_create_study:
         kwargs_create_study['sampler'] = TPESampler(
             multivariate=True, group=True, consider_endpoints=True, seed=random_state
@@ -1975,7 +2010,7 @@ def bayesian_search_forecaster_multiseries(
     results.insert(3, 'params', params_list)
     results = (
         results
-        .sort_values(by=metric_names[0], ascending=True)
+        .sort_values(by=metric_names[0], ascending=True if is_regression else False)
         .reset_index(drop=True)
     )
     results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
@@ -2207,6 +2242,7 @@ def random_search_stats(
     return results
 
 
+@manage_warnings
 def _evaluate_grid_hyperparameters_stats(
     forecaster: object,
     y: pd.Series,
@@ -2299,6 +2335,8 @@ def _evaluate_grid_hyperparameters_stats(
             f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
         )
 
+    forecaster_search = deepcopy_forecaster(forecaster)
+
     if not isinstance(metric, list):
         metric = [metric]
     metric_dict = {
@@ -2324,9 +2362,9 @@ def _evaluate_grid_hyperparameters_stats(
     for params in param_grid:
 
         try:
-            forecaster.set_params(params)
+            forecaster_search.set_params(params)
             metric_values = backtesting_stats(
-                                forecaster        = forecaster,
+                                forecaster        = forecaster_search,
                                 y                 = y,
                                 cv                = cv,
                                 metric            = metric,
@@ -2375,7 +2413,14 @@ def _evaluate_grid_hyperparameters_stats(
         .reset_index(drop=True)
     )
     results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
-    
+
+    if results.empty:
+        warnings.warn(
+            "No valid parameter combinations found. All combinations raised exceptions.",
+            RuntimeWarning
+        )
+        return results
+
     if return_best:
         
         best_params = results.loc[0, 'params']
