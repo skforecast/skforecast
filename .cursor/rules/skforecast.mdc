@@ -1,3 +1,7 @@
+---
+description: Skforecast Python library for time series forecasting with ML models
+globs: "**/*.py"
+---
 <!-- AUTO-GENERATED FILE. DO NOT EDIT MANUALLY. -->
 <!-- Source: tools/ai/llms-base.txt + tools/ai/ai_context_header.md -->
 <!-- Regenerate with: python tools/ai/generate_ai_context_files.py -->

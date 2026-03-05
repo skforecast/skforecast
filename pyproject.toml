@@ -125,6 +125,7 @@ Homepage = "https://www.skforecast.org"
 Repository = "https://github.com/skforecast/skforecast"
 Documentation = "https://www.skforecast.org"
 "Release Notes" = "https://skforecast.org/latest/releases/releases"
+"LLM Context" = "https://skforecast.org/llms.txt"
 Download = "https://pypi.org/project/skforecast/#files"
 Tracker = "https://github.com/skforecast/skforecast/issues"
 
