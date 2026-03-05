@@ -189,19 +189,19 @@ View the [citation file](https://github.com/skforecast/skforecast/blob/master/CI
 If you found **skforecast** useful, you can support us with a donation. Your contribution will help us **continue developing, maintaining, and improving** this project. Every contribution, no matter the size, makes a difference. **Thank you for your support!**
 
 <br>
-<a href="https://opencollective.com/skforecast" target="_blank" title="Sponsor us on Open Collective">
+<a href="https://opencollective.com/skforecast" target="_blank" rel="noopener noreferrer" title="Sponsor us on Open Collective">
     <img style="margin-bottom: 1em; width: 240px;" src="./images/opencollective_button.png" alt="Sponsor on Open Collective">
 </a>
 <br>
-<a href="https://www.buymeacoffee.com/skforecast" target="_blank" title="Buy me a coffee skforecast">
+<a href="https://www.buymeacoffee.com/skforecast" target="_blank" rel="noopener noreferrer" title="Buy me a coffee skforecast">
     <img style="margin-bottom: 1em; width: 240px;" src="./images/buymeacoffee_button.png" alt="Buy me a coffee skforecast">
 </a>
 <br>
-<a href="https://github.com/sponsors/JoaquinAmatRodrigo" target="_blank" title="Become a GitHub Sponsor">
+<a href="https://github.com/sponsors/JoaquinAmatRodrigo" target="_blank" rel="noopener noreferrer" title="Become a GitHub Sponsor">
     <img style="margin-bottom: 1em; width: 240px;" src="./images/github_sponsor_button.png" alt="Become a GitHub Sponsor">
 </a>
 <br>
-<a href="https://github.com/sponsors/JavierEscobarOrtiz" target="_blank" title="Become a GitHub Sponsor">
+<a href="https://github.com/sponsors/JavierEscobarOrtiz" target="_blank" rel="noopener noreferrer" title="Become a GitHub Sponsor">
     <img style="margin-bottom: 1em; width: 240px;" src="./images/github_sponsor_button.png" alt="Become a GitHub Sponsor">
 </a>
 <br>
