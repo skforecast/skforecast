@@ -2,6 +2,13 @@
 
 If you found **skforecast** useful, you can support us with a donation. Your contribution will help us **continue developing, maintaining, and improving** this project. Every contribution, no matter the size, makes a difference. **Thank you for your support!**
 
+<span style="font-size: 1.3em;">💙 Open Collective</span>
+
+<a href="https://opencollective.com/skforecast" target="_blank" title="Sponsor us on Open Collective">
+    <img style="margin-bottom: 1em; width: 240px;" src="../img/opencollective_button.png" alt="Sponsor us on Open Collective">
+</a>
+
+
 <span style="font-size: 1.3em;">☕ Buy us a coffee</span>
 
 <a href="https://www.buymeacoffee.com/skforecast" target="_blank" title="Buy me a coffee skforecast">
