@@ -935,6 +935,12 @@ def _extract_data_folds_multiseries(
         test_iloc_start        = fold[3][0]
         test_iloc_end          = fold[3][1]
 
+        if callable(exog):
+            exog_current = exog(span_index[last_window_iloc_end - 1])
+            is_exog_dict = isinstance(exog_current, dict)
+        else:
+            exog_current = exog
+
         if is_series_dict or is_exog_dict:
             # Subtract 1 to the iloc indexes to get the loc indexes
             train_loc_start       = span_index[train_iloc_start]
@@ -993,14 +999,14 @@ def _extract_data_folds_multiseries(
         
         levels_last_window = list(series_last_window.columns)
 
-        if exog is not None:
+        if exog_current is not None:
             if not is_exog_dict:
-                exog_train = exog.iloc[train_iloc_start:train_iloc_end, ]
-                exog_test = exog.iloc[test_iloc_start:test_iloc_end, ]
+                exog_train = exog_current.iloc[train_iloc_start:train_iloc_end, ]
+                exog_test = exog_current.iloc[test_iloc_start:test_iloc_end, ]
             else:
                 exog_train = {}
                 exog_test = {}
-                for k, v in exog.items():
+                for k, v in exog_current.items():
                     if v is None:
                         exog_train[k] = None
                         exog_test[k] = None
