@@ -246,7 +246,12 @@ def _backtesting_forecaster(
     if initial_train_size is not None:
         # NOTE: This allows for parallelization when `refit` is `False`. The initial 
         # Forecaster fit occurs outside of the auxiliary function.
-        exog_train = exog.iloc[:initial_train_size, ] if exog is not None else None
+        if callable(exog):
+            exog_initial = exog(y.index[initial_train_size - 1])
+            exog_train = exog_initial.iloc[:initial_train_size, ] if exog_initial is not None else None
+        else:
+            exog_train = exog.iloc[:initial_train_size, ] if exog is not None else None
+        
         forecaster.fit(
             y                         = y.iloc[:initial_train_size, ],
             exog                      = exog_train,
@@ -290,6 +295,11 @@ def _backtesting_forecaster(
         test_iloc_start        = fold[3][0]
         test_iloc_end          = fold[3][1]
 
+        if callable(exog):
+            exog_current = exog(y.index[last_window_iloc_end - 1])
+        else:
+            exog_current = exog
+
         if fold[5] is False:
             # When the model is not fitted, last_window must be updated to include
             # the data needed to make predictions.
@@ -300,7 +310,7 @@ def _backtesting_forecaster(
             # If `False` the train size increases by `steps` in each iteration.
             y_train = y.iloc[train_iloc_start:train_iloc_end, ]
             exog_train = (
-                exog.iloc[train_iloc_start:train_iloc_end,] if exog is not None else None
+                exog_current.iloc[train_iloc_start:train_iloc_end,] if exog_current is not None else None
             )
             last_window_y = None
             forecaster.fit(
@@ -309,7 +319,7 @@ def _backtesting_forecaster(
                 store_in_sample_residuals = store_in_sample_residuals
             )
 
-        next_window_exog = exog.iloc[test_iloc_start:test_iloc_end, ] if exog is not None else None
+        next_window_exog = exog_current.iloc[test_iloc_start:test_iloc_end, ] if exog_current is not None else None
 
         steps = len(range(test_iloc_start, test_iloc_end))
         if type(forecaster).__name__ == 'ForecasterDirect' and gap > 0:
@@ -679,7 +689,7 @@ def _backtesting_forecaster_multiseries(
     metric: str | Callable | list[str | Callable],
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
-    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | Callable | None = None,
     interval: float | list[float] | tuple[float] | str | object | None = None,
     interval_method: str = 'conformal',
     n_boot: int = 250,
@@ -1146,7 +1156,7 @@ def backtesting_forecaster_multiseries(
     metric: str | Callable | list[str | Callable],
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
-    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | Callable | None = None,
     interval: float | list[float] | tuple[float] | str | object | None = None,
     interval_method: str = 'conformal',
     n_boot: int = 250,
@@ -1325,7 +1335,7 @@ def backtesting_forecaster_multiseries(
     
     if forecaster_name == 'ForecasterRecursiveMultiSeries':
         series, series_indexes = check_preprocess_series(series)
-        if exog is not None:
+        if exog is not None and not callable(exog):
             series_names_in_ = list(series.keys())
             exog_dict = {serie: None for serie in series_names_in_}
             exog, _ = check_preprocess_exog_multiseries(
