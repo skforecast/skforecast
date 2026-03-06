@@ -31,7 +31,9 @@ New internal dataclasses:
 
 ## 2. Bugs
 
-### BUG-1: Operator precedence in ternary exogenous adjustment (HIGH)
+### ADD #pragma: no cover to all @jit functions
+
+### BUG-1: Operator precedence in ternary exogenous adjustment (HIGH) Sí
 
 **Files**: `_arima_base.py` — `_fit_css._css_objective()` (line ~2 570), `_fit_ml._ml_objective()` (line ~2 670)
 
@@ -58,7 +60,7 @@ This same pattern appears **4 times** in `_fit_css` and `_fit_ml` (both in objec
 
 ---
 
-### BUG-2: Kalman filter `update_start` off-by-one (MEDIUM)
+### BUG-2: Kalman filter `update_start` off-by-one (MEDIUM) Confirmar Resu
 
 **File**: `_arima_base.py`, `_arima_kalman_core()` (line ~1 330)
 
@@ -77,7 +79,7 @@ R's `stats::KalmanLike` uses `if(t >= antefirst)` which is inclusive. The `>=` v
 
 ---
 
-### BUG-3: Fitted values use raw residuals from ML path (MEDIUM)
+### BUG-3: Fitted values use raw residuals from ML path (MEDIUM) Confirmar con resul
 
 **File**: `_arima_base.py`, `_build_arima_result()` (line ~2 907)
 
@@ -95,7 +97,7 @@ For the **CSS** path, `fit.resid` comes from `compute_css_residuals()` which ret
 
 ---
 
-### BUG-4: `_build_arima_result` σ² uses standardized residuals for ML (MEDIUM)
+### BUG-4: `_build_arima_result` σ² uses standardized residuals for ML (MEDIUM) confirmar con Resul
 
 **File**: `_arima_base.py`, `_build_arima_result()` (line ~2 911)
 
@@ -109,7 +111,7 @@ Same root cause as BUG-3: for ML, `fit.resid` are standardized innovations, so `
 
 ---
 
-### BUG-5: `forecast_arima` silently overwrites `level` when `fan=True` (LOW)
+### BUG-5: `forecast_arima` silently overwrites `level` when `fan=True` (LOW) Sí
 
 **File**: `_auto_arima.py`, `forecast_arima()` (line ~1 748)
 
@@ -127,7 +129,7 @@ When `level` is not None AND `fan=True`, the user-supplied `level` is silently d
 
 ---
 
-### BUG-6: `forecast_arima` returns empty list instead of default levels (LOW)
+### BUG-6: `forecast_arima` returns empty list instead of default levels (LOW) Sí
 
 **File**: `_auto_arima.py`, `forecast_arima()` (line ~1 755)
 
@@ -142,7 +144,7 @@ Meanwhile `predict_arima()` would return intervals if called with `level=None` d
 
 ---
 
-### BUG-7: `fit_custom_arima` σ² recalculation inconsistency (LOW)
+### BUG-7: `fit_custom_arima` σ² recalculation inconsistency (LOW) Resul
 
 **File**: `_auto_arima.py`, `fit_custom_arima()` (line ~455)
 
@@ -207,7 +209,7 @@ The `@njit` convolution function is only exercised by the test suite, not by any
 
 ## 4. Optimization Opportunities
 
-### OPT-1: `_update_state_space` skips V matrix rebuild → Kalman forecast uses stale V (MEDIUM)
+### OPT-1: `_update_state_space` skips V matrix rebuild → Kalman forecast uses stale V (MEDIUM)  Solo documentar, no cambiar código
 
 **File**: `_arima_base.py`, `_update_state_space()` (lines 1 630–1 634)
 
@@ -222,7 +224,7 @@ The comment correctly notes that `_arima_kalman_core` doesn't use `ss.innovation
 
 This is safe **only if** `kalman_forecast()` is never called with the intermediate `ss_holder[0]` from the optimization loop — which it isn't currently. But the inconsistency is fragile and should be documented more prominently or removed by always rebuilding V.
 
-### OPT-2: `_fit_css` calls `compute_arima_likelihood` wastefully (MEDIUM)
+### OPT-2: `_fit_css` calls `compute_arima_likelihood` wastefully (MEDIUM) Verificar que compute_arima_likelihood no altera nada.
 
 **File**: `_arima_base.py`, `_fit_css()` (line ~2 572)
 
@@ -239,7 +241,7 @@ The likely intent was to populate `state_space.filtered_state` and `filtered_cov
 
 **Fix**: Remove the `compute_arima_likelihood(...)` line from `_fit_css`.
 
-### OPT-3: `_fit_ml._ml_objective` builds Pnew redundantly (LOW)
+### OPT-3: `_fit_ml._ml_objective` builds Pnew redundantly (LOW)  No implementar
 
 Inside the ML objective closure:
 ```python
@@ -250,7 +252,7 @@ ss_holder[0] = _update_state_space(ss_holder[0], phi_exp, theta_exp)
 
 Consider caching P₀ when only the AR coefficients change by a small delta (warm-starting the Lyapunov solver from the previous solution), or providing an option to skip P₀ recomputation during CSS-ML warm start where it's less critical.
 
-### OPT-4: Stepwise search `results` array fixed at 94 rows (LOW)
+### OPT-4: Stepwise search `results` array fixed at 94 rows (LOW) No implementar
 
 **File**: `_auto_arima.py`, `auto_arima()` (line ~1 025)
 
@@ -262,7 +264,7 @@ The default `nmodels=94` is a hard limit. Once `k > nmodels`, the search stops w
 
 This isn't a performance problem (94×8 floats is negligible), but the hard cap means large search spaces silently truncate. Consider dynamically growing the array or computing the actual upper bound from the search space.
 
-### OPT-5: `ArimaResult.__setitem__` silently ignores writes to `'arma'` and `'model'` (LOW)
+### OPT-5: `ArimaResult.__setitem__` silently ignores writes to `'arma'` and `'model'` (LOW) No implementar
 
 **File**: `_arima_base.py`, `ArimaResult.__setitem__()` (lines ~276–280)
 
@@ -276,7 +278,7 @@ def __setitem__(self, key, value):
 
 Writes like `result['arma'] = something` silently succeed with no effect. This can hide bugs in downstream code that expects the write to persist. A more explicit behavior would be to raise `AttributeError` or `TypeError` indicating these keys are read-only.
 
-### OPT-6: Hessian step size is global constant (LOW)
+### OPT-6: Hessian step size is global constant (LOW) No implementar
 
 **File**: `_arima_base.py`, `_HESSIAN_STEP_SIZE = 1e-2`
 
