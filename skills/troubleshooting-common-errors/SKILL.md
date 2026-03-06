@@ -19,7 +19,7 @@ The most frequent LLM error. Old import paths no longer exist.
 | `from skforecast.ForecasterAutoregMultiSeries import ForecasterAutoregMultiSeries` | `from skforecast.recursive import ForecasterRecursiveMultiSeries` |
 | `from skforecast.ForecasterAutoregDirect import ForecasterAutoregDirect` | `from skforecast.direct import ForecasterDirect` |
 | `from skforecast.ForecasterAutoregMultiVariate import ForecasterAutoregMultiVariate` | `from skforecast.direct import ForecasterDirectMultiVariate` |
-| `from skforecast.model_selection import backtesting_forecaster_multiseries` (wrong module path) | `from skforecast.model_selection import backtesting_forecaster_multiseries` |
+| `from skforecast.model_selection_multiseries import backtesting_forecaster_multiseries` | `from skforecast.model_selection import backtesting_forecaster_multiseries` |
 
 ## Wrong Class/Function Names
 

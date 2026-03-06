@@ -48,13 +48,10 @@ SKILL_ORDER: list[str] = [
     "complete-api-reference",
 ]
 
-# IDE targets — each tuple is (relative_path, needs_cursor_frontmatter)
-IDE_TARGETS: list[tuple[str, bool]] = [
-    (".github/copilot-instructions.md", False),
-    ("AGENTS.md", False),
-    (".claude/CLAUDE.md", False),
-    (".windsurfrules", False),
-    (".cursor/rules/skforecast.mdc", True),
+# IDE targets
+IDE_TARGETS: list[str] = [
+    ".github/copilot-instructions.md",
+    "AGENTS.md",
 ]
 
 AUTOGEN_NOTICE_IDE = textwrap.dedent("""\
@@ -70,14 +67,6 @@ AUTOGEN_NOTICE_FULL = textwrap.dedent("""\
     <!-- Regenerate with: python tools/ai/generate_ai_context_files.py -->
 
 """)
-
-CURSOR_FRONTMATTER = textwrap.dedent("""\
-    ---
-    description: Skforecast Python library for time series forecasting with ML models
-    globs: "**/*.py"
-    ---
-""")
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -303,9 +292,6 @@ def build_ide_content(header: str, llms_base_txt: str) -> str:
     return AUTOGEN_NOTICE_IDE + header.rstrip("\n") + "\n\n" + llms_base_txt.rstrip("\n") + "\n"
 
 
-def build_cursor_content(header: str, llms_base_txt: str) -> str:
-    """Build Cursor IDE file with its required frontmatter."""
-    return CURSOR_FRONTMATTER + AUTOGEN_NOTICE_IDE + header.rstrip("\n") + "\n\n" + llms_base_txt.rstrip("\n") + "\n"
 
 
 # ---------------------------------------------------------------------------
@@ -355,14 +341,9 @@ def generate(*, check_only: bool = False) -> bool:
 
     # IDE files
     ide_content = build_ide_content(header, llms_base_txt)
-    cursor_content = build_cursor_content(header, llms_base_txt)
 
-    for relpath, is_cursor in IDE_TARGETS:
-        target = ROOT / relpath
-        if is_cursor:
-            outputs[target] = cursor_content
-        else:
-            outputs[target] = ide_content
+    for relpath in IDE_TARGETS:
+        outputs[ROOT / relpath] = ide_content
 
     # docs/ copies — index + full
     outputs[ROOT / "docs" / "llms.txt"] = llms_index_txt

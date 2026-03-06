@@ -15,7 +15,7 @@ Use prediction intervals to quantify forecast uncertainty. Skforecast offers thr
 
 | Method | Forecasters | Description |
 |--------|-------------|-------------|
-| **Bootstrapping** | Recursive, Direct, EquivalentDate | Resample from training residuals |
+| **Bootstrapping** | Recursive, Direct | Resample from training residuals |
 | **Conformal** | All ML forecasters | Distribution-free intervals via conformal prediction |
 | **Built-in** | ForecasterStats (ARIMA, ETS) | Parametric intervals from the statistical model |
 

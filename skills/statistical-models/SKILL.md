@@ -65,8 +65,8 @@ forecaster = ForecasterStats(estimator=auto_arima)
 forecaster.fit(y=data['target'])
 
 # Check selected order
-print(forecaster.estimator.order)
-print(forecaster.estimator.seasonal_order)
+print(forecaster.estimator.best_params_['order'])
+print(forecaster.estimator.best_params_['seasonal_order'])
 
 predictions = forecaster.predict(steps=12)
 ```

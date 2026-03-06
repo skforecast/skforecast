@@ -118,7 +118,7 @@ predictions = forecaster.predict(steps=10, exog=exog_calendar.loc[forecast_index
 ```python
 from skforecast.preprocessing import create_datetime_features
 
-exog_calendar = create_datetime_features(data.index)
+exog_calendar = create_datetime_features(data)
 ```
 
 ## Data Transformers (Scaling)
