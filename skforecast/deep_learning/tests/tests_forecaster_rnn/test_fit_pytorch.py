@@ -124,3 +124,22 @@ def test_fit_with_exog_and_validation_data():
     assert forecaster.keras_backend_ == "torch"
     assert forecaster.history_ is not None
     assert forecaster.exog_names_in_ == ["exog1", "exog2"]
+
+
+def test_fit_resets_out_sample_residuals_on_refit():
+    """
+    Test that out_sample_residuals_ and out_sample_residuals_by_bin_ are reset
+    to None when the forecaster is refitted.
+    """
+    forecaster = ForecasterRnn(estimator=model, levels=levels, lags=lags)
+    forecaster.fit(series)
+    forecaster.set_out_sample_residuals(
+        y_true={"1": np.array([1.0, 2.0, 3.0, 4.0, 5.0])},
+        y_pred={"1": np.array([0.0, 0.0, 0.0, 0.0, 0.0])},
+    )
+
+    assert forecaster.out_sample_residuals_ is not None
+
+    forecaster.fit(series)
+
+    assert forecaster.out_sample_residuals_ is None

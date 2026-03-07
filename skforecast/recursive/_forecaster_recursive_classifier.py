@@ -36,7 +36,8 @@ from ..utils import (
     expand_index,
     transform_dataframe,
     get_style_repr_html,
-    set_cpu_gpu_device
+    set_cpu_gpu_device,
+    manage_warnings
 )
 
 
@@ -48,7 +49,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     Parameters
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     lags : int, list, numpy ndarray, range, default None
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
     
@@ -89,7 +90,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     Attributes
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     lags : numpy ndarray
         Lags used as predictors.
     lags_names : list
@@ -147,7 +148,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     training_range_ : pandas Index
         First and last values of index of the data used during training.
     series_name_in_ : str
-        Names of the series provided by the user during training.
+        Name of the series provided by the user during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -306,6 +307,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                        )
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         self.window_features, self.window_features_names, self.max_size_window_features = (
             initialize_window_features(window_features)
         )
@@ -544,7 +549,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         Create the lagged values and their target variable from a time series.
         
         Note that the returned matrix `X_data` contains the lag 1 in the first 
-        column, the lag 2 in the in the second column and so on.
+        column, the lag 2 in the second column and so on.
         
         Parameters
         ----------
@@ -569,7 +574,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
         Notes
         -----
-        Returned matrices are views into the original `y` so care must be taken
+        Returned matrices may be views into the original `y` so care must be taken
         when modifying them.
 
         """
@@ -577,7 +582,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         X_data = None
         if self.lags is not None:
             y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
-            X_data = y_strided[:, self.window_size - self.lags]
+            if self.lags_are_contiguous:
+                # Basic slice → view (no copy); reversed to put lag_1 first.
+                X_data = y_strided[:, self.window_size - self.max_lag:][:, ::-1]
+            else:
+                # Non-contiguous lags require fancy indexing, which forces a copy.
+                X_data = y_strided[:, self.window_size - self.lags]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -944,7 +954,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         X_train : pandas DataFrame
             Training values (predictors).
         y_train : pandas Series
-            Values of the time series related to each row of `X_data`.
+            Values of the time series related to each row of `X_train`.
 
         Notes
         -----
@@ -1100,12 +1110,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         return sample_weight
 
 
+    @manage_warnings
     def fit(
         self,
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
-        store_in_sample_residuals: Any = None
+        store_in_sample_residuals: Any = None,
+        suppress_warnings: bool = False
     ) -> None:
         """
         Training Forecaster.
@@ -1125,6 +1137,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             Whether or not to store the last window (`last_window_`) of training data.
         store_in_sample_residuals : Ignored
             Not used, present here for API consistency by convention.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -1428,18 +1444,29 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 shape=(steps, self.n_classes_), fill_value=np.nan, dtype=float
             )
 
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values is not None
+
         for i in range(steps):
 
-            if self.lags is not None:
-                X[:n_lags] = last_window[-self.lags - (steps - i)]
-            if self.window_features is not None:
+            remaining = steps - i
+
+            if has_lags:
+                if self.lags_are_contiguous:
+                    X[:n_lags] = last_window[-(remaining + n_lags): -remaining][::-1]
+                else:
+                    X[:n_lags] = last_window[-self.lags - remaining]
+            
+            if has_window_features:
+                window_data = last_window[i : -remaining]
                 X[n_lags : n_lags + n_window_features] = np.concatenate(
                     [
-                        wf.transform(last_window[i : -(steps - i)])
+                        wf.transform(window_data)
                         for wf in self.window_features
                     ]
                 )
-            if exog_values is not None:
+            if has_exog:
                 X[n_lags + n_window_features:] = exog_values[i]
 
             if predict_proba:
@@ -1452,18 +1479,20 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
-            last_window[-(steps - i)] = pred
+            last_window[-remaining] = pred
 
         set_cpu_gpu_device(estimator=self.estimator, device=original_device)
 
         return predictions
 
+    @manage_warnings
     def create_predict_X(
         self,
         steps: int,
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        check_inputs: bool = True
+        check_inputs: bool = True,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Create the predictors needed to predict `steps` ahead. As it is a recursive
@@ -1489,6 +1518,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -1590,7 +1623,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None
     ) -> pd.Series:
         """
-        Predict n steps ahead. It is an recursive process in which, each prediction,
+        Predict n steps ahead. It is a recursive process in which, each prediction,
         is used as a predictor for the next step.
         
         Parameters
@@ -1652,11 +1685,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         return predictions
     
+    @manage_warnings
     def predict_proba(
         self,
         steps: int | str | pd.Timestamp,
         last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None
+        exog: pd.Series | pd.DataFrame | None = None,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Predict class probabilities n steps ahead. It is a recursive process in 
@@ -1678,6 +1713,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
         
         Returns
         -------
@@ -1732,7 +1771,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     ) -> None:
         """
         Set new values to the parameters of the scikit-learn model stored in the
-        forecaster.
+        forecaster. After calling this method, the forecaster is reset to an 
+        unfitted state. The `fit` method must be called before prediction.
         
         Parameters
         ----------
@@ -1747,6 +1787,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         self.estimator = clone(self.estimator)
         self.estimator.set_params(**params)
+        self.is_fitted = False
 
     def set_fit_kwargs(
         self, 
@@ -1801,6 +1842,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             )
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         self.window_size = max(
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]

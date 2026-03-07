@@ -20,7 +20,7 @@ from ..exceptions import (
     UnknownLevelWarning
 )
 from ..utils import (
-    set_skforecast_warnings,
+    manage_warnings,
     get_style_repr_html
 )
 
@@ -32,10 +32,6 @@ class RangeDriftDetector:
     The detector is intentionally lightweight: it does not compute advanced
     drift statistics since it is used to check single observations during
     inference. Suitable for real-time applications.
-
-    Parameters
-    ----------
-    self
 
     Attributes
     ----------
@@ -53,6 +49,8 @@ class RangeDriftDetector:
         rather than global).
     is_fitted : bool
         Whether the detector has been fitted to the training data.
+    skforecast_version : str
+        Version of skforecast library used to create the detector.
     
     """
 
@@ -64,6 +62,7 @@ class RangeDriftDetector:
         self.exog_values_range_    = None
         self.series_specific_exog_ = False
         self.is_fitted             = False
+        self.skforecast_version    = __version__
 
     def __repr__(self) -> str:
         """
@@ -95,7 +94,8 @@ class RangeDriftDetector:
             f"Fitted exogenous       = {exog_names_in_} \n"
             f"Exogenous value ranges = {self.exog_values_range_} \n"
             f"Series-specific exog   = {self.series_specific_exog_} \n"
-            f"Is fitted              = {self.is_fitted}"
+            f"Is fitted              = {self.is_fitted} \n"
+            f"Skforecast version     = {self.skforecast_version}"
         )
 
         return info
@@ -133,6 +133,7 @@ class RangeDriftDetector:
                     <li><strong>Fitted exogenous:</strong> {exog_names_in_}</li>
                     <li><strong>Series-specific exogenous:</strong> {self.series_specific_exog_}</li>
                     <li><strong>Is fitted:</strong> {self.is_fitted}</li>
+                    <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
                 </ul>
             </details>
             <details>
@@ -233,7 +234,7 @@ class RangeDriftDetector:
         """
 
         if isinstance(feature_range, tuple):
-            return X.min() < feature_range[0] or X.max() > feature_range[1]
+            return bool(X.min() < feature_range[0] or X.max() > feature_range[1])
         else:
             unseen = set(X.dropna().unique()) - feature_range
             return bool(unseen)
@@ -506,10 +507,12 @@ class RangeDriftDetector:
                 self.exog_values_range_[key] = self._get_features_range(X=value)
 
             self.exog_names_in_ = list(dict.fromkeys(self.exog_names_in_))
-            self.series_specific_exog_ = any(key in self.series_names_in_ for key in exog.keys())
+            series_names_set = set(self.series_names_in_)
+            self.series_specific_exog_ = any(key in series_names_set for key in exog.keys())
 
         self.is_fitted = True
 
+    @manage_warnings
     def predict(
         self,
         last_window: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
@@ -527,7 +530,7 @@ class RangeDriftDetector:
             first iteration of the prediction (t + 1).
         exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
-        verbose : bool, default False
+        verbose : bool, default True
             Whether to print a summary of the check.
         suppress_warnings : bool, default False
             Whether to suppress warnings.
@@ -562,19 +565,18 @@ class RangeDriftDetector:
                 "`exog` must be a pandas Series, DataFrame, dict or None."
             )
         
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-        
         flag_out_of_range = False
 
         out_of_range_series = []
         out_of_range_series_ranges = []
         if last_window is not None:
             last_window = self._normalize_input(last_window, name="last_window")
+            series_names_set = set(self.series_names_in_)
             for key, value in last_window.items():
                 if isinstance(value, pd.Series):
                     value = value.to_frame()
                 for col in value.columns:
-                    if key not in self.series_names_in_:
+                    if key not in series_names_set:
                         warnings.warn(
                             f"'{key}' was not seen during training. Its range is unknown.",
                             UnknownLevelWarning
@@ -598,6 +600,7 @@ class RangeDriftDetector:
         if exog is not None:
             series_ids = list(last_window.keys()) if last_window is not None else self.series_names_in_
             exog = self._normalize_input(exog, name="exog", series_ids=series_ids)
+            exog_names_set = set(self.exog_names_in_) if self.exog_names_in_ else set()
             for key, value in exog.items():
 
                 if isinstance(value, pd.Series):
@@ -613,7 +616,7 @@ class RangeDriftDetector:
                     if not isinstance(features_ranges, dict):
                         features_ranges = {key: features_ranges}
                     
-                    if col not in self.exog_names_in_:
+                    if col not in exog_names_set:
                         warnings.warn(
                             f"'{col}' was not seen during training. Its range is unknown.",
                             MissingExogWarning,
@@ -651,7 +654,5 @@ class RangeDriftDetector:
                 out_of_range_exog          = out_of_range_exog,
                 out_of_range_exog_ranges   = out_of_range_exog_ranges
             )
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return flag_out_of_range, out_of_range_series, out_of_range_exog

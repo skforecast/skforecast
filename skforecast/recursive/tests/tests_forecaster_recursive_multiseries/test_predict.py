@@ -18,6 +18,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
 
+from copy import deepcopy
 from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.preprocessing import RollingFeatures
 from skforecast.preprocessing import TimeSeriesDifferentiator
@@ -42,6 +43,48 @@ series_2 = pd.DataFrame(
     {'1': pd.Series(np.arange(start=0, stop=50)), 
      '2': pd.Series(np.arange(start=50, stop=100))}
 ).to_dict(orient='series')
+
+
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "lags": 3},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3)},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_predict_does_not_modify_series_exog(forecaster_kwargs):
+    """
+    Test forecaster.predict does not modify series, exog, exog_predict or
+    last_window.
+    """
+    series_local = {k: v.copy() for k, v in series_dict_range.items()}
+    exog_local = exog_wide_range[['exog_1']].copy()
+    exog_predict_local = exog_pred_wide_range[['exog_1']].copy()
+    last_window_local = pd.DataFrame(series_local).iloc[-4:].copy()
+
+    series_copy = {k: v.copy() for k, v in series_local.items()}
+    exog_copy = exog_local.copy()
+    exog_predict_copy = exog_predict_local.copy()
+    last_window_copy = last_window_local.copy()
+
+    forecaster = ForecasterRecursiveMultiSeries(**forecaster_kwargs)
+    forecaster.fit(series=series_local, exog=exog_local)
+    _ = forecaster.predict(steps=5, exog=exog_predict_local, last_window=last_window_local)
+
+    for k in series_local:
+        pd.testing.assert_series_equal(series_local[k], series_copy[k])
+    pd.testing.assert_frame_equal(exog_local, exog_copy)
+    pd.testing.assert_frame_equal(exog_predict_local, exog_predict_copy)
+    pd.testing.assert_frame_equal(last_window_local, last_window_copy)
 
 
 def test_predict_NotFittedError_when_fitted_is_False():
@@ -694,6 +737,62 @@ def test_predict_output_when_series_and_exog_dict():
 @pytest.mark.parametrize("differentiation", 
                          [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
                          ids = lambda diff: f'differentiation: {diff}')
+def test_predict_idempotent_when_differentiation(differentiation):
+    """
+    Test predict returns identical results when called twice consecutively
+    with differentiation. Also verifies that self.differentiator_ is not
+    modified after predict (no side effects).
+    """
+    end_train = '2003-01-30 23:59:00'
+
+    series_datetime = series_wide_dt.copy()
+    series_datetime.index = pd.date_range(
+        start='2003-01-01', periods=len(series_datetime), freq='D'
+    )
+    series_dict_datetime = {
+        "1": series_datetime['1'].loc[:end_train],
+        "2": series_datetime['2'].loc[:end_train]
+    }
+
+    rng = np.random.default_rng(9876)
+    exog = pd.Series(
+        rng.normal(loc=0, scale=1, size=len(series_wide_dt)), name='exog'
+    )
+    exog.index = pd.date_range(start='2003-01-01', periods=len(exog), freq='D')
+    exog_dict_datetime = {
+        "1": exog.loc[:end_train],
+        "2": exog.loc[:end_train]
+    }
+    exog_pred = {
+        '1': exog.loc[end_train:],
+        '2': exog.loc[end_train:]
+    }
+
+    steps = len(series_datetime.loc[end_train:])
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(), lags=15, transformer_series=StandardScaler(),
+        differentiation=differentiation
+    )
+    forecaster.fit(series=series_dict_datetime, exog=exog_dict_datetime)
+
+    differentiator_before = deepcopy(forecaster.differentiator_)
+
+    predictions_1 = forecaster.predict(steps=steps, exog=exog_pred)
+    predictions_2 = forecaster.predict(steps=steps, exog=exog_pred)
+
+    pd.testing.assert_frame_equal(predictions_1, predictions_2)
+    for level in differentiator_before:
+        if differentiator_before[level] is not None:
+            np.testing.assert_array_equal(
+                forecaster.differentiator_[level].initial_values,
+                differentiator_before[level].initial_values
+            )
+
+
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
 def test_predict_output_when_with_exog_and_differentiation_is_1(differentiation):
     """
     Test predict output when using LinearRegression as estimator and differentiation=1.
@@ -1037,6 +1136,53 @@ def test_predict_output_when_series_and_exog_dict_unknown_level(levels):
         columns=["id_1000", "id_1001", "id_1003", "id_1004", "id_1005"],
     )
 
+    expected = expected_df_to_long_format(expected)
+
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_output_when_heterogeneous_differentiation_dict():
+    """
+    Test predict output when using a heterogeneous differentiation dict
+    with different orders per series (e.g. {'1': 1, '2': 2}).
+    """
+    series_dt = series_wide_dt.copy()
+    series_dt.index = pd.date_range(start='2003-01-01', periods=len(series_dt), freq='D')
+
+    end_train = '2003-01-30 23:59:00'
+
+    rng = np.random.default_rng(9876)
+    exog = pd.Series(
+        rng.normal(loc=0, scale=1, size=len(series_dt)), index=series_dt.index, name='exog'
+    )
+
+    steps = len(series_dt.loc[end_train:])
+    exog_pred = {
+        '1': exog.loc[end_train:],
+        '2': exog.loc[end_train:]
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(), lags=13, transformer_series=StandardScaler(),
+        differentiation={'1': 1, '2': 2, '_unknown_level': 1}
+    )
+    forecaster.fit(
+        series={'1': series_dt['1'].loc[:end_train], '2': series_dt['2'].loc[:end_train]},
+        exog={'1': exog.loc[:end_train], '2': exog.loc[:end_train]}
+    )
+    predictions = forecaster.predict(steps=steps, exog=exog_pred)
+
+    expected = pd.DataFrame(
+        {'1': np.array([0.78447445, 0.59569516, 0.64503116, 0.65233752, 0.39331827,
+                        0.33802006, 0.0810483 , 0.58876596, 0.5122754 , 0.60336901,
+                        0.46508737, 0.77330937, 0.43557654, 0.47699955, 0.58122697,
+                        0.1701123 , 0.74940213, 0.3215311 , 0.34409577, 0.60226041]),
+         '2': np.array([ 0.72326234,  0.44841367,  0.70317161,  0.25551067,  0.50565563,
+                         0.05472426, -0.10832966, -0.19273854,  0.23524354, -0.04595948,
+                        -0.29164503, -0.07091469, -0.48580218, -0.55117844, -0.67644911,
+                        -0.78541613, -0.8371177 , -0.73605311, -1.37071367, -1.25120734])},
+        index=pd.date_range(start='2003-01-31', periods=steps, freq='D')
+    )
     expected = expected_df_to_long_format(expected)
 
     pd.testing.assert_frame_equal(predictions, expected)

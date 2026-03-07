@@ -30,4 +30,3 @@
 ::: skforecast.utils.utils.prepare_levels_multiseries
 ::: skforecast.utils.utils.preprocess_levels_self_last_window_multiseries
 ::: skforecast.utils.utils.prepare_steps_direct
-::: skforecast.utils.utils.set_skforecast_warnings

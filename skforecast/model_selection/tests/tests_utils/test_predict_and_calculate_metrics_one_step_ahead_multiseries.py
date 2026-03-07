@@ -27,142 +27,143 @@ from ..fixtures_model_selection_multiseries import (
 )
 
 
-def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
-    """
-    Check if function raises errors when input parameters have wrong types.
-    """
+# NOTE: Ignored, inputs checks are commented out in the function.
+# def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
+#     """
+#     Check if function raises errors when input parameters have wrong types.
+#     """
 
-    # Mock inputs
-    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=678), lags=3)
+#     # Mock inputs
+#     forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=678), lags=3)
     
-    initial_train_size = 927
-    metrics = ['mean_absolute_error']
-    levels = ['item_1', 'item_2', 'item_3']
-    add_aggregated_metric = True
+#     initial_train_size = 927
+#     metrics = ['mean_absolute_error']
+#     levels = ['item_1', 'item_2', 'item_3']
+#     add_aggregated_metric = True
 
-    (
-        X_train,
-        y_train,
-        X_test,
-        y_test,
-        X_train_encoding,
-        X_test_encoding
-    ) = forecaster._train_test_split_one_step_ahead(
-            series             = series_dict_dt_item_sales,
-            exog               = exog_wide_dt_item_sales,
-            initial_train_size = initial_train_size,
-        )
+#     (
+#         X_train,
+#         y_train,
+#         X_test,
+#         y_test,
+#         X_train_encoding,
+#         X_test_encoding
+#     ) = forecaster._train_test_split_one_step_ahead(
+#             series             = series_dict_dt_item_sales,
+#             exog               = exog_wide_dt_item_sales,
+#             initial_train_size = initial_train_size,
+#         )
 
-    # Test invalid type for series
-    err_msg = re.escape(
-        "`series` must be a pandas DataFrame or a dictionary of pandas DataFrames."
-    )
-    with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, "invalid_series_type", X_train, y_train, X_test, y_test, 
-            X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
-        )
+#     # Test invalid type for series
+#     err_msg = re.escape(
+#         "`series` must be a pandas DataFrame or a dictionary of pandas DataFrames."
+#     )
+#     with pytest.raises(TypeError, match=err_msg):
+#         _predict_and_calculate_metrics_one_step_ahead_multiseries(
+#             forecaster, "invalid_series_type", X_train, y_train, X_test, y_test, 
+#             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
+#         )
 
-    # Test invalid type for X_train
-    X_train_invalid = "invalid_X_train_type"
-    err_msg = re.escape(
-        f"`X_train` must be a pandas DataFrame. Got: {type(X_train_invalid)}"
-    )
-    with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series_dict_dt_item_sales, X_train_invalid, y_train, X_test, y_test, 
-            X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
-        )
+#     # Test invalid type for X_train
+#     X_train_invalid = "invalid_X_train_type"
+#     err_msg = re.escape(
+#         f"`X_train` must be a pandas DataFrame. Got: {type(X_train_invalid)}"
+#     )
+#     with pytest.raises(TypeError, match=err_msg):
+#         _predict_and_calculate_metrics_one_step_ahead_multiseries(
+#             forecaster, series_dict_dt_item_sales, X_train_invalid, y_train, X_test, y_test, 
+#             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
+#         )
 
-    # Test invalid type for y_train
-    y_train_invalid = "invalid_y_train_type"
-    err_msg = re.escape(
-        f"`y_train` must be a pandas Series or a dictionary of pandas Series. "
-        f"Got: {type(y_train_invalid)}"
-    )  
-    with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series_dict_dt_item_sales, X_train, y_train_invalid, X_test, y_test, 
-            X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
-        )
+#     # Test invalid type for y_train
+#     y_train_invalid = "invalid_y_train_type"
+#     err_msg = re.escape(
+#         f"`y_train` must be a pandas Series or a dictionary of pandas Series. "
+#         f"Got: {type(y_train_invalid)}"
+#     )  
+#     with pytest.raises(TypeError, match=err_msg):
+#         _predict_and_calculate_metrics_one_step_ahead_multiseries(
+#             forecaster, series_dict_dt_item_sales, X_train, y_train_invalid, X_test, y_test, 
+#             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
+#         )
 
-    # Test invalid type for X_test
-    X_test_invalid = "invalid_X_test_type"
-    err_msg = re.escape(
-        f"`X_test` must be a pandas DataFrame. Got: {type(X_test_invalid)}"
-    )
-    with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test_invalid, y_test, 
-            X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
-        )
+#     # Test invalid type for X_test
+#     X_test_invalid = "invalid_X_test_type"
+#     err_msg = re.escape(
+#         f"`X_test` must be a pandas DataFrame. Got: {type(X_test_invalid)}"
+#     )
+#     with pytest.raises(TypeError, match=err_msg):
+#         _predict_and_calculate_metrics_one_step_ahead_multiseries(
+#             forecaster, series_dict_dt_item_sales, X_train, y_train, X_test_invalid, y_test, 
+#             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
+#         )
 
-    # Test invalid type for y_test
-    y_test_invalid = "invalid_y_test_type"
-    err_msg = re.escape(
-        f"`y_test` must be a pandas Series or a dictionary of pandas Series. "
-        f"Got: {type(y_test_invalid)}"
-    )
-    with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test_invalid, 
-            X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
-        )
+#     # Test invalid type for y_test
+#     y_test_invalid = "invalid_y_test_type"
+#     err_msg = re.escape(
+#         f"`y_test` must be a pandas Series or a dictionary of pandas Series. "
+#         f"Got: {type(y_test_invalid)}"
+#     )
+#     with pytest.raises(TypeError, match=err_msg):
+#         _predict_and_calculate_metrics_one_step_ahead_multiseries(
+#             forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test_invalid, 
+#             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
+#         )
 
-    # Test invalid type for X_train_encoding
-    X_train_encoding_invalid = "invalid_X_train_encoding_type"
-    err_msg = re.escape(
-        f"`X_train_encoding` must be a pandas Series. Got: {type(X_train_encoding_invalid)}"
-    )
-    with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
-            X_train_encoding_invalid, X_test_encoding, levels, metrics, add_aggregated_metric
-        )
+#     # Test invalid type for X_train_encoding
+#     X_train_encoding_invalid = "invalid_X_train_encoding_type"
+#     err_msg = re.escape(
+#         f"`X_train_encoding` must be a pandas Series. Got: {type(X_train_encoding_invalid)}"
+#     )
+#     with pytest.raises(TypeError, match=err_msg):
+#         _predict_and_calculate_metrics_one_step_ahead_multiseries(
+#             forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
+#             X_train_encoding_invalid, X_test_encoding, levels, metrics, add_aggregated_metric
+#         )
 
-    # Test invalid type for X_test_encoding
-    X_test_encoding_invalid = "invalid_X_test_encoding_type"
-    err_msg = re.escape(
-        f"`X_test_encoding` must be a pandas Series. Got: {type(X_test_encoding_invalid)}"
-    )
-    with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
-            X_train_encoding, X_test_encoding_invalid, levels, metrics, add_aggregated_metric
-        )
+#     # Test invalid type for X_test_encoding
+#     X_test_encoding_invalid = "invalid_X_test_encoding_type"
+#     err_msg = re.escape(
+#         f"`X_test_encoding` must be a pandas Series. Got: {type(X_test_encoding_invalid)}"
+#     )
+#     with pytest.raises(TypeError, match=err_msg):
+#         _predict_and_calculate_metrics_one_step_ahead_multiseries(
+#             forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
+#             X_train_encoding, X_test_encoding_invalid, levels, metrics, add_aggregated_metric
+#         )
 
-    # Test invalid type for levels
-    levels_invalid = "invalid_levels_type"
-    err_msg = re.escape(
-        f"`levels` must be a list. Got: {type(levels_invalid)}"
-    )
-    with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
-            X_train_encoding, X_test_encoding, levels_invalid, metrics, add_aggregated_metric
-        )
+#     # Test invalid type for levels
+#     levels_invalid = "invalid_levels_type"
+#     err_msg = re.escape(
+#         f"`levels` must be a list. Got: {type(levels_invalid)}"
+#     )
+#     with pytest.raises(TypeError, match=err_msg):
+#         _predict_and_calculate_metrics_one_step_ahead_multiseries(
+#             forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
+#             X_train_encoding, X_test_encoding, levels_invalid, metrics, add_aggregated_metric
+#         )
 
-    # Test invalid type for metrics
-    metrics_invalid = "invalid_metrics_type"
-    err_msg = re.escape(
-        f"`metrics` must be a list. Got: {type(metrics_invalid)}"
-    )
-    with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
-            X_train_encoding, X_test_encoding, levels, metrics_invalid, add_aggregated_metric
-        )
+#     # Test invalid type for metrics
+#     metrics_invalid = "invalid_metrics_type"
+#     err_msg = re.escape(
+#         f"`metrics` must be a list. Got: {type(metrics_invalid)}"
+#     )
+#     with pytest.raises(TypeError, match=err_msg):
+#         _predict_and_calculate_metrics_one_step_ahead_multiseries(
+#             forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
+#             X_train_encoding, X_test_encoding, levels, metrics_invalid, add_aggregated_metric
+#         )
 
-    # Test invalid type for add_aggregated_metric
-    add_aggregated_metric_invalid = "invalid_add_aggregated_metric_type"
-    err_msg = re.escape(
-        f"`add_aggregated_metric` must be a boolean. Got: {type(add_aggregated_metric_invalid)}"
-    )
-    with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
-            X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric_invalid
-        )
+#     # Test invalid type for add_aggregated_metric
+#     add_aggregated_metric_invalid = "invalid_add_aggregated_metric_type"
+#     err_msg = re.escape(
+#         f"`add_aggregated_metric` must be a boolean. Got: {type(add_aggregated_metric_invalid)}"
+#     )
+#     with pytest.raises(TypeError, match=err_msg):
+#         _predict_and_calculate_metrics_one_step_ahead_multiseries(
+#             forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
+#             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric_invalid
+#         )
 
 
 @pytest.mark.parametrize(

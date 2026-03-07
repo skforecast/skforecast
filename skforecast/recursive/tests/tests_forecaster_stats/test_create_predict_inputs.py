@@ -88,102 +88,6 @@ def test_create_predict_inputs_ValueError_when_ForecasterStats_last_window_exog_
         )
 
 
-def test_create_predict_inputs_output_ForecasterStats():
-    """
-    Test _create_predict_inputs output of ForecasterStats.
-    """
-    forecaster = ForecasterStats(estimator = Sarimax())
-    forecaster.fit(y=y)
-    results = forecaster._create_predict_inputs(steps=5)
-
-    expected = (
-        None,
-        None,
-        None
-    )
-    
-    assert results == expected
-
-
-def test_create_predict_inputs_output_ForecasterStats_with_exog():
-    """
-    Test _create_predict_inputs output of ForecasterStats with exogenous variables.
-    """
-    forecaster = ForecasterStats(estimator = Sarimax())
-    forecaster.fit(y=y, exog=exog)
-    results = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
-
-    expected = (
-        None,
-        None,
-        pd.DataFrame(
-            {'exog': np.array([1.27501789, 1.31081724, 1.34284965, 1.37614005, 1.41412559])},
-            index = pd.RangeIndex(start=50, stop=55, step=1)
-        )
-    )
-    
-    assert results[0] == expected[0]
-    assert results[1] == expected[1]
-    pd.testing.assert_frame_equal(results[2], expected[2])
-
-
-def test_create_predict_inputs_output_ForecasterStats_with_transform_y():
-    """
-    Test _create_predict_inputs output of ForecasterStats with a 
-    StandardScaler() as transformer_y.
-    """        
-    forecaster = ForecasterStats(
-                     estimator     = Sarimax(),
-                     transformer_y = StandardScaler()
-                 )
-    forecaster.fit(y=y)
-    results = forecaster._create_predict_inputs(steps=5)
-
-    expected = (
-        None,
-        None,
-        None
-    )
-    
-    assert results == expected
-
-
-def test_create_predict_inputs_output_ForecasterStats_with_transform_y_and_transform_exog():
-    """
-    Test _create_predict_inputs output of ForecasterStats, StandardScaler
-    as transformer_y and transformer_exog as transformer_exog.
-    """    
-    transformer_exog = ColumnTransformer(
-                           [('scale', StandardScaler(), ['exog_1']),
-                            ('onehot', OneHotEncoder(), ['exog_2'])],
-                           remainder = 'passthrough',
-                           verbose_feature_names_out = False
-                       )
-
-    forecaster = ForecasterStats(
-                     estimator        = Sarimax(),
-                     transformer_y    = StandardScaler(),
-                     transformer_exog = transformer_exog
-                 )
-    forecaster.fit(y=y, exog=df_exog)
-    results = forecaster._create_predict_inputs(steps=5, exog=df_exog_predict)
-
-    expected = (
-        None,
-        None,
-        pd.DataFrame(
-            {'exog_1': np.array([-0.20710692, 0.10403839, 0.38244384, 0.67178294, 1.00192923]),
-             'exog_2_a': np.array([1., 0., 1., 0., 1.]),
-             'exog_2_b': np.array([0., 1., 0., 1., 0.])},
-            index = pd.RangeIndex(start=50, stop=55, step=1)
-        )
-    )
-    
-    assert results[0] == expected[0]
-    assert results[1] == expected[1]
-    pd.testing.assert_frame_equal(results[2], expected[2])
-
-
 def test_create_predict_inputs_ValueError_when_last_window_index_does_not_follow_training_set():
     """
     Raise ValueError if `last_window` index does not start at the end 
@@ -198,11 +102,11 @@ def test_create_predict_inputs_ValueError_when_last_window_index_does_not_follow
     forecaster.fit(y=y_test)
 
     err_msg = re.escape(
-        (f"To make predictions unrelated to the original data, `last_window` "
-         f"has to start at the end of the index seen by the forecaster.\n"
-         f"    Series last index         : 2022-02-19 00:00:00.\n"
-         f"    Expected index            : 2022-02-20 00:00:00.\n"
-         f"    `last_window` index start : 2022-03-01 00:00:00.")
+        "To make predictions unrelated to the original data, `last_window` "
+        "has to start at the end of the index seen by the forecaster.\n"
+        "    Series last index         : 2022-02-19 00:00:00.\n"
+        "    Expected index            : 2022-02-20 00:00:00.\n"
+        "    `last_window` index start : 2022-03-01 00:00:00."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_predict_inputs(steps=5, last_window=lw_test)
@@ -229,11 +133,11 @@ def test_create_predict_inputs_ValueError_when_last_window_exog_index_does_not_f
     forecaster.fit(y=y_test, exog=exog_test)
 
     err_msg = re.escape(
-        (f"To make predictions unrelated to the original data, `last_window_exog` "
-         f"has to start at the end of the index seen by the forecaster.\n"
-         f"    Series last index              : 2022-02-19 00:00:00.\n"
-         f"    Expected index                 : 2022-02-20 00:00:00.\n"
-         f"    `last_window_exog` index start : 2022-03-01 00:00:00.")
+        "To make predictions unrelated to the original data, `last_window_exog` "
+        "has to start at the end of the index seen by the forecaster.\n"
+        "    Series last index              : 2022-02-19 00:00:00.\n"
+        "    Expected index                 : 2022-02-20 00:00:00.\n"
+        "    `last_window_exog` index start : 2022-03-01 00:00:00."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_predict_inputs(
@@ -244,6 +148,78 @@ def test_create_predict_inputs_ValueError_when_last_window_exog_index_does_not_f
         )
 
 
+def test_create_predict_inputs_output_ForecasterStats_no_last_window_no_exog():
+    """
+    Test _create_predict_inputs output of ForecasterStats when no
+    last_window or exogenous variables are used.
+    """
+    forecaster = ForecasterStats(estimator = Sarimax())
+    forecaster.fit(y=y)
+    results = forecaster._create_predict_inputs(steps=5)
+
+    expected_prediction_index = pd.RangeIndex(start=50, stop=55, step=1)
+    
+    assert results[0] is None
+    assert results[1] is None
+    assert results[2] is None
+    pd.testing.assert_index_equal(results[3], expected_prediction_index)
+
+
+def test_create_predict_inputs_output_ForecasterStats_with_exog():
+    """
+    Test _create_predict_inputs output of ForecasterStats with exogenous variables.
+    """
+    forecaster = ForecasterStats(estimator = Sarimax())
+    forecaster.fit(y=y, exog=exog)
+    results = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
+
+    expected_exog = pd.DataFrame(
+        {'exog': np.array([1.27501789, 1.31081724, 1.34284965, 1.37614005, 1.41412559])},
+        index = pd.RangeIndex(start=50, stop=55, step=1)
+    )
+    expected_prediction_index = pd.RangeIndex(start=50, stop=55, step=1)
+    
+    assert results[0] is None
+    assert results[1] is None
+    pd.testing.assert_frame_equal(results[2], expected_exog)
+    pd.testing.assert_index_equal(results[3], expected_prediction_index)
+
+
+def test_create_predict_inputs_output_ForecasterStats_with_transform_y_and_transform_exog():
+    """
+    Test _create_predict_inputs output of ForecasterStats, StandardScaler
+    as transformer_y and transformer_exog as transformer_exog. transformer_y
+    is not applied since no last_window is provided.
+    """    
+    transformer_exog = ColumnTransformer(
+                           [('scale', StandardScaler(), ['exog_1']),
+                            ('onehot', OneHotEncoder(), ['exog_2'])],
+                           remainder = 'passthrough',
+                           verbose_feature_names_out = False
+                       )
+
+    forecaster = ForecasterStats(
+                     estimator        = Sarimax(),
+                     transformer_y    = StandardScaler(),
+                     transformer_exog = transformer_exog
+                 )
+    forecaster.fit(y=y, exog=df_exog)
+    results = forecaster._create_predict_inputs(steps=5, exog=df_exog_predict)
+
+    expected_exog = pd.DataFrame(
+        {'exog_1': np.array([-0.20710692, 0.10403839, 0.38244384, 0.67178294, 1.00192923]),
+         'exog_2_a': np.array([1., 0., 1., 0., 1.]),
+         'exog_2_b': np.array([0., 1., 0., 1., 0.])},
+        index = pd.RangeIndex(start=50, stop=55, step=1)
+    )
+    expected_prediction_index = pd.RangeIndex(start=50, stop=55, step=1)
+    
+    assert results[0] is None
+    assert results[1] is None
+    pd.testing.assert_frame_equal(results[2], expected_exog)
+    pd.testing.assert_index_equal(results[3], expected_prediction_index)
+
+
 def test_create_predict_inputs_output_ForecasterStats_with_last_window():
     """
     Test _create_predict_inputs output of ForecasterStats with `last_window`.
@@ -252,28 +228,28 @@ def test_create_predict_inputs_output_ForecasterStats_with_last_window():
     forecaster.fit(y=y_datetime)
     results = forecaster._create_predict_inputs(steps=5, last_window=y_lw_datetime)
 
-    expected = (
-        pd.Series(
-            np.array([0.59418877, 0.70775844, 0.71950195, 0.74432369, 0.80485511,
-                      0.78854235, 0.9710894 , 0.84683354, 0.46382252, 0.48527317,
-                      0.5280586 , 0.56233647, 0.5885704 , 0.66948036, 0.67799365,
-                      0.76299549, 0.79972374, 0.77052192, 0.99438934, 0.80054443,
-                      0.49055721, 0.52440799, 0.53664948, 0.55209054, 0.60336564,
-                      0.68124538, 0.67807535, 0.79489265, 0.7846239 , 0.8130087 ,
-                      0.9777323 , 0.89308148, 0.51269597, 0.65299589, 0.5739764 ,
-                      0.63923842, 0.70387188, 0.77064824, 0.84618588, 0.89272889,
-                      0.89789988, 0.94728069, 1.05070727, 0.96965567, 0.57329151,
-                      0.61850684, 0.61899573, 0.66520922, 0.72652015, 0.85586494]),
-            index = pd.date_range(start='2050', periods=50, freq='YE'),
-            name = 'y'
-        ),
-        None,
-        None
+    expected_last_window = pd.Series(
+        np.array([0.59418877, 0.70775844, 0.71950195, 0.74432369, 0.80485511,
+                  0.78854235, 0.9710894 , 0.84683354, 0.46382252, 0.48527317,
+                  0.5280586 , 0.56233647, 0.5885704 , 0.66948036, 0.67799365,
+                  0.76299549, 0.79972374, 0.77052192, 0.99438934, 0.80054443,
+                  0.49055721, 0.52440799, 0.53664948, 0.55209054, 0.60336564,
+                  0.68124538, 0.67807535, 0.79489265, 0.7846239 , 0.8130087 ,
+                  0.9777323 , 0.89308148, 0.51269597, 0.65299589, 0.5739764 ,
+                  0.63923842, 0.70387188, 0.77064824, 0.84618588, 0.89272889,
+                  0.89789988, 0.94728069, 1.05070727, 0.96965567, 0.57329151,
+                  0.61850684, 0.61899573, 0.66520922, 0.72652015, 0.85586494]),
+        index = pd.date_range(start='2050', periods=50, freq='YE'),
+        name = 'y'
     )
+
+    # The prediction index starts right after the end of the training data
+    expected_prediction_index = pd.date_range(start='2050', periods=5, freq='YE')
     
-    pd.testing.assert_series_equal(results[0], expected[0])
-    assert results[1] == expected[1]
-    assert results[2] == expected[2]
+    pd.testing.assert_series_equal(results[0], expected_last_window)
+    assert results[1] is None
+    assert results[2] is None
+    pd.testing.assert_index_equal(results[3], expected_prediction_index)
 
 
 def test_create_predict_inputs_output_ForecasterStats_with_last_window_and_exog():
@@ -290,43 +266,45 @@ def test_create_predict_inputs_output_ForecasterStats_with_last_window_and_exog(
                   last_window_exog = exog_lw_datetime
               )
 
-    expected = (
-        pd.Series(
-            np.array([0.59418877, 0.70775844, 0.71950195, 0.74432369, 0.80485511,
-                      0.78854235, 0.9710894 , 0.84683354, 0.46382252, 0.48527317,
-                      0.5280586 , 0.56233647, 0.5885704 , 0.66948036, 0.67799365,
-                      0.76299549, 0.79972374, 0.77052192, 0.99438934, 0.80054443,
-                      0.49055721, 0.52440799, 0.53664948, 0.55209054, 0.60336564,
-                      0.68124538, 0.67807535, 0.79489265, 0.7846239 , 0.8130087 ,
-                      0.9777323 , 0.89308148, 0.51269597, 0.65299589, 0.5739764 ,
-                      0.63923842, 0.70387188, 0.77064824, 0.84618588, 0.89272889,
-                      0.89789988, 0.94728069, 1.05070727, 0.96965567, 0.57329151,
-                      0.61850684, 0.61899573, 0.66520922, 0.72652015, 0.85586494]),
-            index = pd.date_range(start='2050', periods=50, freq='YE'),
-            name = 'y'
-        ),
-        pd.DataFrame(
-            {'exog': np.array([1.27501789, 1.31081724, 1.34284965, 1.37614005, 1.41412559,
-                               1.45299631, 1.5056625 , 1.53112882, 1.47502858, 1.4111122 ,
-                               1.35901545, 1.27726486, 1.22561223, 1.2667438 , 1.3052879 ,
-                               1.35227527, 1.39975273, 1.43614303, 1.50112483, 1.52563498,
-                               1.47114733, 1.41608418, 1.36930969, 1.28084993, 1.24141417,
-                               1.27955181, 1.31028528, 1.36193391, 1.40844058, 1.4503692 ,
-                               1.50966658, 1.55266781, 1.49622847, 1.46990287, 1.42209641,
-                               1.35439763, 1.31655571, 1.36814617, 1.40678416, 1.47053466,
-                               1.52226695, 1.57094872, 1.62696052, 1.65165448, 1.587767  ,
-                               1.5318884 , 1.4662314 , 1.38913179, 1.34050469, 1.39701938])},
-            index = pd.date_range(start='2050', periods=50, freq='YE')
-        ),
-        pd.DataFrame(
-            {'exog': np.array([1.44651487, 1.48776549, 1.54580785, 1.58822301, 1.6196549])},
-            index = pd.date_range(start='2100', periods=5, freq='YE')
-        )
+    expected_last_window = pd.Series(
+        np.array([0.59418877, 0.70775844, 0.71950195, 0.74432369, 0.80485511,
+                  0.78854235, 0.9710894 , 0.84683354, 0.46382252, 0.48527317,
+                  0.5280586 , 0.56233647, 0.5885704 , 0.66948036, 0.67799365,
+                  0.76299549, 0.79972374, 0.77052192, 0.99438934, 0.80054443,
+                  0.49055721, 0.52440799, 0.53664948, 0.55209054, 0.60336564,
+                  0.68124538, 0.67807535, 0.79489265, 0.7846239 , 0.8130087 ,
+                  0.9777323 , 0.89308148, 0.51269597, 0.65299589, 0.5739764 ,
+                  0.63923842, 0.70387188, 0.77064824, 0.84618588, 0.89272889,
+                  0.89789988, 0.94728069, 1.05070727, 0.96965567, 0.57329151,
+                  0.61850684, 0.61899573, 0.66520922, 0.72652015, 0.85586494]),
+        index = pd.date_range(start='2050', periods=50, freq='YE'),
+        name = 'y'
     )
+    expected_last_window_exog = pd.DataFrame(
+        {'exog': np.array([1.27501789, 1.31081724, 1.34284965, 1.37614005, 1.41412559,
+                           1.45299631, 1.5056625 , 1.53112882, 1.47502858, 1.4111122 ,
+                           1.35901545, 1.27726486, 1.22561223, 1.2667438 , 1.3052879 ,
+                           1.35227527, 1.39975273, 1.43614303, 1.50112483, 1.52563498,
+                           1.47114733, 1.41608418, 1.36930969, 1.28084993, 1.24141417,
+                           1.27955181, 1.31028528, 1.36193391, 1.40844058, 1.4503692 ,
+                           1.50966658, 1.55266781, 1.49622847, 1.46990287, 1.42209641,
+                           1.35439763, 1.31655571, 1.36814617, 1.40678416, 1.47053466,
+                           1.52226695, 1.57094872, 1.62696052, 1.65165448, 1.587767  ,
+                           1.5318884 , 1.4662314 , 1.38913179, 1.34050469, 1.39701938])},
+        index = pd.date_range(start='2050', periods=50, freq='YE')
+    )
+    expected_exog = pd.DataFrame(
+        {'exog': np.array([1.44651487, 1.48776549, 1.54580785, 1.58822301, 1.6196549])},
+        index = pd.date_range(start='2100', periods=5, freq='YE')
+    )
+
+    # The prediction index starts right after the end of the training data
+    expected_prediction_index = pd.date_range(start='2050', periods=5, freq='YE')
     
-    pd.testing.assert_series_equal(results[0], expected[0])
-    pd.testing.assert_frame_equal(results[1], expected[1])
-    pd.testing.assert_frame_equal(results[2], expected[2])
+    pd.testing.assert_series_equal(results[0], expected_last_window)
+    pd.testing.assert_frame_equal(results[1], expected_last_window_exog)
+    pd.testing.assert_frame_equal(results[2], expected_exog)
+    pd.testing.assert_index_equal(results[3], expected_prediction_index)
 
 
 def test_create_predict_inputs_output_ForecasterStats_with_last_window_and_exog_and_transformers():
@@ -431,9 +409,12 @@ def test_create_predict_inputs_output_ForecasterStats_with_last_window_and_exog_
                              [2.78826001, 1.        , 0.        ]]),
             columns = ['exog_1', 'exog_2_a', 'exog_2_b'],
             index = pd.date_range(start='2100', periods=5, freq='YE')
-        )
+        ),
+        # The prediction index starts right after the end of the training data
+        pd.date_range(start='2050', periods=5, freq='YE')
     )
     
     pd.testing.assert_series_equal(results[0], expected[0])
     pd.testing.assert_frame_equal(results[1], expected[1])
     pd.testing.assert_frame_equal(results[2], expected[2])
+    pd.testing.assert_index_equal(results[3], expected[3])

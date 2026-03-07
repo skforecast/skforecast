@@ -11,7 +11,8 @@ def test_reshape_series_exog_dict_to_long_raises_ValueError_when_both_None():
     """
     Test that ValueError is raised when both series and exog are None.
     """
-    with pytest.raises(ValueError, match="Both `series` and `exog` cannot be None."):
+    error_msg = re.escape("Both `series` and `exog` cannot be None.")
+    with pytest.raises(ValueError, match=error_msg):
         reshape_series_exog_dict_to_long(series=None, exog=None)
 
 
@@ -19,7 +20,8 @@ def test_reshape_series_exog_dict_to_long_raises_TypeError_when_series_not_dict(
     """
     Test that TypeError is raised when series is not a dictionary.
     """
-    with pytest.raises(TypeError, match="`series` must be a dictionary"):
+    error_msg = re.escape("`series` must be a dictionary")
+    with pytest.raises(TypeError, match=error_msg):
         reshape_series_exog_dict_to_long(series=[1, 2, 3], exog=None)
 
 
@@ -41,7 +43,8 @@ def test_reshape_series_exog_dict_to_long_raises_TypeError_when_exog_not_dict():
     """
     Test that TypeError is raised when exog is not a dictionary.
     """
-    with pytest.raises(TypeError, match="`exog` must be a dictionary"):
+    error_msg = re.escape("`exog` must be a dictionary")
+    with pytest.raises(TypeError, match=error_msg):
         reshape_series_exog_dict_to_long(series=None, exog=[1, 2, 3])
 
 

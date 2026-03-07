@@ -6,6 +6,8 @@ import pytest
 import numpy as np
 import pandas as pd
 import matplotlib
+import matplotlib.pyplot as plt
+from pathlib import Path
 from skforecast.model_selection import TimeSeriesFold
 from ... import backtesting_gif_creator
 
@@ -17,7 +19,6 @@ def test_backtesting_gif_creator_raise_error_invalid_arguments():
     """
 
     # Don't use interactive backends during testing
-    matplotlib.use("Agg")
 
     data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     cv = TimeSeriesFold(
@@ -107,3 +108,58 @@ def test_backtesting_gif_creator_output(cv_kwargs):
     backtesting_gif_creator(data=data['y'], cv=cv, filename="backtesting.gif", dpi=50)
     backtesting_gif_creator(data=data, cv=cv_window_size, filename="backtesting.gif", dpi=50)
     os.remove("backtesting.gif")
+
+
+def test_backtesting_gif_creator_output_returns_path_and_file(tmp_path):
+    """
+    Test that backtesting_gif_creator returns a Path object ending in '.gif'
+    and that the file actually exists on disk.
+    """
+    data = pd.Series(np.arange(0, 100))
+    cv = TimeSeriesFold(steps=10, initial_train_size=70, verbose=False)
+    gif_file = str(tmp_path / "test_output.gif")
+
+    result = backtesting_gif_creator(data=data, cv=cv, filename=gif_file, dpi=50)
+
+    assert isinstance(result, Path)
+    assert str(result).endswith(".gif")
+    assert result.exists()
+
+
+def test_backtesting_gif_creator_output_custom_colors(tmp_path):
+    """
+    Test that backtesting_gif_creator runs without error when a valid full
+    colors dict is passed.
+    """
+    data = pd.Series(np.arange(0, 100))
+    cv = TimeSeriesFold(steps=10, initial_train_size=70, verbose=False)
+    colors = {
+        "train": "#00aa00",
+        "last_window": "#ff9900",
+        "gap": "#888888",
+        "test": "#0055cc",
+        "v_lines": "#111111",
+    }
+    gif_file = str(tmp_path / "test_colors.gif")
+
+    result = backtesting_gif_creator(
+        data=data, cv=cv, colors=colors, filename=gif_file, dpi=50
+    )
+
+    assert isinstance(result, Path)
+
+
+def test_backtesting_gif_creator_output_plot_last_window(tmp_path):
+    """
+    Test that backtesting_gif_creator runs without error when plot_last_window
+    is True and cv has a window_size set.
+    """
+    data = pd.Series(np.arange(0, 100))
+    cv = TimeSeriesFold(steps=10, initial_train_size=70, window_size=10, verbose=False)
+    gif_file = str(tmp_path / "test_last_window.gif")
+
+    result = backtesting_gif_creator(
+        data=data, cv=cv, plot_last_window=True, filename=gif_file, dpi=50
+    )
+
+    assert isinstance(result, Path)

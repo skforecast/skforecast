@@ -558,8 +558,8 @@ def test_check_backtesting_input_ValueError_Sarimax_Equivalent_when_initial_trai
          )
     
     err_msg = re.escape(
-        f"`initial_train_size` must be an integer smaller than the "
-        f"length of `y` ({len(y)})."
+        f"When using {type(forecaster).__name__}, `initial_train_size` must be an "
+        f"integer smaller than the length of `y` ({len(y)})."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
@@ -694,8 +694,8 @@ def test_check_backtesting_input_ValueError_when_skip_folds_in_ForecasterStats()
 
 @pytest.mark.parametrize("boolean_argument", 
                          ['add_aggregated_metric', 'use_in_sample_residuals', 
-                          'use_binned_residuals', 'return_predictors', 'show_progress', 
-                          'suppress_warnings', 'suppress_warnings_fit'], 
+                          'use_binned_residuals', 'return_predictors', 'freeze_params', 
+                          'show_progress', 'suppress_warnings'], 
                          ids = lambda argument: f'{argument}')
 def test_check_backtesting_input_TypeError_when_boolean_arguments_not_bool(boolean_argument):
     """
@@ -721,9 +721,9 @@ def test_check_backtesting_input_TypeError_when_boolean_arguments_not_bool(boole
         'use_in_sample_residuals': False,
         'use_binned_residuals': False,
         'return_predictors': False,
+        'freeze_params': False,
         'show_progress': False,
-        'suppress_warnings': False,
-        'suppress_warnings_fit': False
+        'suppress_warnings': False
     }
     boolean_arguments[boolean_argument] = 'not_bool'
     
@@ -893,7 +893,23 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
     kwargs['interval'] = [0, 100, 101]
     err_msg = re.escape(
         "When `interval` is a list or tuple, all values must be "
-        "between 0 and 100 inclusive."
+        "between 0 and 100 inclusive. Got 101 in [0, 100, 101]."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
+    kwargs['interval'] = 0.
+    err_msg = re.escape(
+        "When `interval` is a float, it must be between 0 and 1 "
+        "exclusive. Got 0.0."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
+    kwargs['interval'] = 1.
+    err_msg = re.escape(
+        "When `interval` is a float, it must be between 0 and 1 "
+        "exclusive. Got 1.0."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(**kwargs)
@@ -913,6 +929,42 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(**kwargs)
+
+
+def test_check_backtesting_input_ValueError_when_ForecasterRnn_and_use_binned_residuals():
+    """
+    Test ValueError is raised in check_backtesting_input when `use_binned_residuals`
+    is True and the forecaster is a ForecasterRnn.
+    """
+    # Mock ForecasterRnn to avoid keras dependency
+    class ForecasterRnn:
+        def __init__(self):
+            self.window_size = 2
+            self.max_step = 10
+    
+    forecaster = ForecasterRnn()
+    
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(series_wide_range) - 12,
+         )
+    
+    err_msg = re.escape(
+        "`use_binned_residuals` is not supported for ForecasterRnn. "
+        "Set `use_binned_residuals=False`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster          = forecaster,
+            cv                  = cv,
+            metric              = 'mean_absolute_error',
+            series              = series_wide_range,
+            interval            = [10, 90],
+            interval_method     = 'conformal',
+            use_binned_residuals = True,
+            show_progress       = False,
+            suppress_warnings   = False
+        )
 
 
 def test_check_backtesting_input_ValueError_when_interval_and_ForecasterRecursiveClassifier():

@@ -4139,7 +4139,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                metric                  = 'mean_absolute_error',
                                                add_aggregated_metric   = False,                                            
                                                exog                    = series_wide_dt['l1'].rename('exog_1'),
-                                               interval                = [5, 95],
+                                               interval                = 0.90,
                                                interval_method         = "bootstrapping",
                                                n_boot                  = 100,
                                                random_state            = 123,
@@ -4447,7 +4447,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
             backtest_predictions.iloc[[i]][
                 ['l1_lag_1', 'l1_lag_2', 'l2_lag_1', 'l2_lag_2', 'exog_1']
             ]
-        )
+        ).item()
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     np.testing.assert_array_almost_equal(results, backtest_predictions['pred'].to_numpy())

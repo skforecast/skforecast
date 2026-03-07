@@ -13,11 +13,12 @@ import numpy as np
 import pandas as pd
 import inspect
 from copy import copy, deepcopy
-import sklearn
-from sklearn.exceptions import NotFittedError
-from sklearn.pipeline import Pipeline
 from sklearn.base import clone
+from sklearn.exceptions import NotFittedError
+from sklearn.linear_model._base import LinearModel
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
+from sklearn.svm._base import BaseLibSVM
 
 from .. import __version__
 from ..base import ForecasterBase
@@ -51,9 +52,10 @@ from ..utils import (
     expand_index,
     transform_numpy,
     transform_dataframe,
-    set_skforecast_warnings,
+    manage_warnings,
     get_style_repr_html,
     set_cpu_gpu_device,
+    _build_predict_function,
     initialize_estimator
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -68,7 +70,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     Parameters
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     lags : int, list, numpy ndarray, range, default None
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
     
@@ -152,13 +154,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         **New in version 0.14.0**
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : estimator or pipeline compatible with the Keras API
+    regressor : estimator or pipeline compatible with the scikit-learn API
         **Deprecated**, alias for `estimator`.
     
     Attributes
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     lags : numpy ndarray
         Lags used as predictors.
     lags_names : list
@@ -303,7 +305,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         transformed scale. If `differentiation` is not `None`, residuals are 
         stored after differentiation.
     in_sample_residuals_by_bin_ : dict
-        In sample residuals binned according to the predicted value each residual
+        In-sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
         `10_000 // self.binner.n_bins_` per series in the form `{series: residuals}`.
         If `transformer_series` is not `None`, residuals are stored in the 
@@ -434,6 +436,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self._probabilistic_mode                = "binned"
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         self.window_features, self.window_features_names, self.max_size_window_features = (
             initialize_window_features(window_features)
         )
@@ -473,13 +479,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                dtype      = int
                            ).set_output(transform='pandas')
 
-        scaling_estimators = tuple(
-            member[1]
-            for member in inspect.getmembers(sklearn.linear_model, inspect.isclass)
-            + inspect.getmembers(sklearn.svm, inspect.isclass)
-        )
-
-        if self.transformer_series is None and isinstance(estimator, scaling_estimators):
+        if self.transformer_series is None and isinstance(estimator, (LinearModel, BaseLibSVM)):
             warnings.warn(
                 "When using a linear model, it is recommended to use a transformer_series "
                 "to ensure all series are in the same scale. You can use, for example, a "
@@ -618,7 +618,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             "probabilistic_methods": ["bootstrapping", "conformal"],
             "handles_binned_residuals": True
         }
-        
 
     def __repr__(
         self
@@ -773,10 +772,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Create the lagged values and their target variable from a time series.
         
         Note that the returned matrix `X_data` contains the lag 1 in the first 
-        column, the lag 2 in the in the second column and so on.
-
-        Returned matrices are views into the original `y` so care must be taken
-        when modifying them.
+        column, the lag 2 in the second column and so on.
 
         Parameters
         ----------
@@ -797,7 +793,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Notes
         -----
-        Returned matrices are views into the original `y` so care must be taken
+        Returned matrices may be views into the original `y` so care must be taken
         when modifying them.
 
         """
@@ -805,7 +801,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         X_data = None
         if self.lags is not None:
             y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
-            X_data = y_strided[:, self.window_size - self.lags]
+            if self.lags_are_contiguous:
+                # Basic slice → view (no copy); reversed to put lag_1 first.
+                X_data = y_strided[:, self.window_size - self.max_lag:][:, ::-1]
+            else:
+                # Non-contiguous lags require fancy indexing, which forces a copy.
+                X_data = y_strided[:, self.window_size - self.lags]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -899,17 +900,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Returns
         -------
-        X_train_lags : pandas DataFrame
-            Training values of lags.
-            Shape: (len(y) - self.max_lag, len(self.lags))
+        X_train_autoreg : pandas DataFrame
+            Training values of the autoregressive predictors (lags and window features)
+            and the column '_level_skforecast'.
         X_train_window_features_names_out_ : list
             Names of the window features.
         X_train_exog : pandas DataFrame
             Training values of exogenous variables.
-            Shape: (len(y) - self.max_lag, len(exog.columns))
         y_train : pandas Series
             Values (target) of the time series related to each row of `X_train`.
-            Shape: (len(y) - self.max_lag, )
         
         """
 
@@ -935,10 +934,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         y_index = y.index
 
         y_values = transform_numpy(
-                       array             = y_values,
-                       transformer       = transformer_series,
-                       fit               = fit_transformer,
-                       inverse_transform = False
+                       array               = y_values,
+                       transformer         = transformer_series,
+                       fit                 = fit_transformer,
+                       inverse_transform   = False,
+                       force_single_column = True
                    )
 
         if self.differentiator_[series_name] is not None:
@@ -1002,7 +1002,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                   )
 
         return X_train_autoreg, X_train_window_features_names_out_, X_train_exog, y_train
-
 
     def _create_train_X_y(
         self,
@@ -1350,6 +1349,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window_
         )
 
+    @manage_warnings
     def create_train_X_y(
         self,
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -1406,8 +1406,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         output = self._create_train_X_y(
                      series            = series, 
                      exog              = exog, 
@@ -1419,8 +1417,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if self.encoding is None:
             X_train = X_train.drop(columns='_level_skforecast')
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return X_train, y_train
 
@@ -1715,7 +1711,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return weights
 
-
+    @manage_warnings
     def fit(
         self,
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -1788,8 +1784,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         # TODO: create a method reset_forecaster() to reset all attributes
         # Reset values in case the forecaster has already been fitted.
         self.last_window_                       = None
@@ -1809,6 +1803,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.encoding_mapping_                  = {}
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
+        self.out_sample_residuals_              = None
+        self.out_sample_residuals_by_bin_       = None
         self.binner                             = {}
         self.binner_intervals_                  = {}
         self.is_fitted                          = False
@@ -1916,8 +1912,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if store_last_window:
             self.last_window_ = last_window_
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
     def _binning_in_sample_residuals(
         self,
@@ -2057,6 +2051,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Names of the series (levels) to be predicted.
         prediction_index : pandas Index
             Index of the predictions.
+        differentiators : dict
+            Dictionary with a copy of the differentiator fitted with the last
+            window values for each level. Used to reverse the differentiation
+            of predictions without mutating the forecaster's internal state.
+            Empty dict if no differentiation is applied.
         
         """
 
@@ -2171,6 +2170,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window_matrix = np.full(
             shape=last_window.shape, fill_value=np.nan, order='F', dtype=float
         )
+
+        differentiators = {}
         exog_values_all_levels = []
         for idx_level, level in enumerate(levels):
             last_window_level = last_window_values[:, idx_level]
@@ -2182,11 +2183,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
 
             if self.differentiation is not None:
-                if level not in self.differentiator_.keys():
-                    self.differentiator_[level] = copy(self.differentiator_['_unknown_level'])
-                if self.differentiator_[level] is not None:
+                if level in self.differentiator_.keys():
+                    differentiators[level] = copy(self.differentiator_[level])
+                else:
+                    differentiators[level] = copy(self.differentiator_['_unknown_level'])
+                if differentiators[level] is not None:
                     last_window_level = (
-                        self.differentiator_[level].fit_transform(last_window_level)
+                        differentiators[level].fit_transform(last_window_level)
                     )
 
             last_window_matrix[:, idx_level] = last_window_level
@@ -2237,21 +2240,24 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             exog_values_dict = None
 
-        return last_window, exog_values_dict, levels, prediction_index
-
+        return last_window, exog_values_dict, levels, prediction_index, differentiators
 
     def _recursive_predict(
         self,
         steps: int,
         levels: list,
         last_window: pd.DataFrame,
-        exog_values_dict: dict[str, np.ndarray] | None = None,
-        residuals: np.ndarray | None = None,
-        use_binned_residuals: bool = True
+        exog_values_dict: dict[str, np.ndarray] | None = None
     ) -> np.ndarray:
         """
         Predict n steps for one or multiple levels. It is an iterative process
         in which, each prediction, is used as a predictor for the next step.
+
+        Fast prediction paths (bypassing sklearn's predict overhead) are used for
+        the following estimators: linear models inheriting from sklearn's
+        `LinearModel` (np.dot), `LGBMRegressor` (booster.predict),
+        `XGBRegressor` (booster.inplace_predict), `RandomForestRegressor` and
+        `DecisionTreeRegressor` (tree_.predict).
 
         Parameters
         ----------
@@ -2266,14 +2272,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Exogenous variable/s included as predictor/s for each series in 
             each step. The keys are the steps and the values are numpy arrays
             where each column is an exog and each row a series (level).
-        residuals : numpy ndarray, default None
-            Residuals used to generate bootstrapping predictions in the form
-            (steps, levels).
-        use_binned_residuals : bool, default True
-            If `True`, residuals are selected based on the predicted values 
-            (binned selection).
-            If `False`, residuals are selected randomly.
-            **New in version 0.15.0**
 
         Returns
         -------
@@ -2323,57 +2321,239 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         last_window = np.concatenate((last_window.to_numpy(), predictions), axis=0)
 
+        predict_fn = _build_predict_function(self.estimator)
+
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values_dict is not None
+
         for i in range(steps):
+
+            remaining = steps - i
+
+            if has_lags:
+                if self.lags_are_contiguous:
+                    features[:, :n_lags] = last_window[-(remaining + n_lags): -remaining, :][::-1].T
+                else:
+                    features[:, :n_lags] = last_window[-self.lags - remaining, :].transpose()
             
-            if self.lags is not None:
-                features[:, :n_lags] = last_window[
-                    -self.lags - (steps - i), :
-                ].transpose()
-            if self.window_features is not None:
+            if has_window_features:
+                window_data = last_window[i:-remaining, :]
                 features[:, n_lags:n_autoreg] = np.concatenate(
                     [
-                        wf.transform(last_window[i:-(steps - i), :]) 
+                        wf.transform(window_data) 
                         for wf in self.window_features
                     ],
                     axis=1
                 )
-            if exog_values_dict is not None:
+            
+            if has_exog:
                 features[:, -n_exog:] = exog_values_dict[i + 1]
 
-            pred = self.estimator.predict(features)
-            # NOTE: CatBoost makes the input array read-only.
+            pred = predict_fn(features)
+
+            predictions[i, :] = pred
+
+            # NOTE: CatBoost may make the input array read-only after predict
             if not features.flags.writeable:
                 features.flags.writeable = True
             
-            if residuals is not None:
-
-                if use_binned_residuals:
-                    step_residual = np.full(
-                        shape=n_levels, fill_value=np.nan, dtype=float
-                    )
-                    for j, level in enumerate(levels):
-                        predicted_bin = (
-                            self.binner
-                            .get(level, self.binner['_unknown_level'])
-                            .transform(pred[j])
-                            .item()
-                        )
-                        step_residual[j] = residuals[predicted_bin][i, j]
-                else:
-                    step_residual = residuals[i, :]
-                
-                pred += step_residual
-            
-            predictions[i, :] = pred 
-
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
-            last_window[-(steps - i), :] = pred
+            last_window[-remaining, :] = pred
 
         set_cpu_gpu_device(estimator=self.estimator, device=original_device)
 
         return predictions
 
+    def _recursive_predict_bootstrapping(
+        self,
+        steps: int,
+        levels: list,
+        last_window: pd.DataFrame,
+        n_boot: int,
+        sampled_residuals: np.ndarray,
+        use_binned_residuals: bool,
+        exog_values_dict: dict[str, np.ndarray] | None = None,
+    ) -> np.ndarray:
+        """
+        Vectorized bootstrap prediction for multiple series. Instead of looping
+        over n_boot iterations and calling `_recursive_predict` each time, this
+        method predicts all (n_levels x n_boot) samples at once per step. This
+        reduces the number of `estimator.predict()` calls from (n_boot x steps)
+        to just (steps), providing significant performance improvements.
+
+        Fast prediction paths (bypassing sklearn's predict overhead) are used for
+        the following estimators: linear models inheriting from sklearn's
+        `LinearModel` (np.dot), `LGBMRegressor` (booster.predict),
+        `XGBRegressor` (booster.inplace_predict), `RandomForestRegressor` and
+        `DecisionTreeRegressor` (tree_.predict).
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps to predict.
+        levels : list
+            Names of the time series (levels) to be predicted.
+        last_window : pandas DataFrame
+            Series values used to create the predictors (lags) needed in the
+            first iteration of the prediction (t + 1). Shape: (window_size, n_levels).
+        n_boot : int
+            Number of bootstrap iterations used for prediction intervals.
+        sampled_residuals : numpy ndarray
+            Pre-sampled residuals for all bootstrap iterations.
+
+            - If `use_binned_residuals=True`: 4D array of shape 
+            (n_bins, steps, n_boot, n_levels).
+            - If `use_binned_residuals=False`: 3D array of shape 
+            (steps, n_levels, n_boot).
+        use_binned_residuals : bool
+            If `True`, residuals are selected based on the predicted value bins.
+            If `False`, residuals are selected randomly without binning.
+        exog_values_dict : dict, default None
+            Exogenous variables indexed by step. Each key is a step (1 to steps),
+            and each value is a numpy array of shape (n_levels, n_exog).
+
+        Returns
+        -------
+        boot_predictions : numpy ndarray
+            Bootstrap predictions with shape (steps, n_levels, n_boot).
+
+        """
+
+        original_device = set_cpu_gpu_device(estimator=self.estimator, device='cpu')
+
+        n_levels = len(levels)
+        n_lags = len(self.lags) if self.lags is not None else 0
+        n_window_features = (
+            len(self.X_train_window_features_names_out_)
+            if self.window_features is not None
+            else 0
+        )
+        n_autoreg = n_lags + n_window_features
+        n_exog = len(self.X_train_exog_names_out_) if exog_values_dict is not None else 0
+
+        # Total samples per step: n_boot × n_levels
+        # Row ordering: [level0_boot0, level1_boot0, ..., levelN_boot0, level0_boot1, ...]
+        n_samples = n_levels * n_boot
+
+        # Build level encoding (repeated for all bootstrap samples)
+        if self.encoding is not None:
+            if self.encoding == "onehot":
+                levels_encoded = np.zeros(
+                    (n_levels, len(self.X_train_series_names_in_)), dtype=float
+                )
+                for i, level in enumerate(levels):
+                    if level in self.X_train_series_names_in_:
+                        levels_encoded[i, self.X_train_series_names_in_.index(level)] = 1.
+            else:
+                levels_encoded = np.array(
+                    [self.encoding_mapping_.get(level, np.nan) for level in levels],
+                    dtype="float64"
+                ).reshape(-1, 1)
+            levels_encoded_shape = levels_encoded.shape[1]
+            # Tile to (n_boot × n_levels, encoded_shape): pattern repeats n_boot times
+            levels_encoded = np.tile(levels_encoded, (n_boot, 1))
+        else:
+            levels_encoded_shape = 0
+
+        features_shape = n_autoreg + levels_encoded_shape + n_exog
+        features = np.full(
+            shape=(n_samples, features_shape), fill_value=np.nan, order='C', dtype=float
+        )
+        if self.encoding is not None:
+            features[:, n_autoreg: n_autoreg + levels_encoded_shape] = levels_encoded
+
+        boot_predictions = np.full(
+            shape=(steps, n_levels, n_boot), fill_value=np.nan, order='C', dtype=float
+        )
+
+        # Expand last_window to 3D: (window_size + steps, n_boot, n_levels)
+        # All bootstrap samples start with identical last_window values
+        last_window = last_window.to_numpy()
+        window_size = last_window.shape[0]
+        last_window_boot = np.empty(
+            (window_size + steps, n_boot, n_levels), dtype=float, order='C'
+        )
+        last_window_boot[:window_size, :, :] = last_window[:, np.newaxis, :]
+        last_window_boot[window_size:, :, :] = np.nan
+
+        predict_fn = _build_predict_function(self.estimator)
+
+        has_lags = self.lags is not None
+        has_window_features = self.window_features is not None
+        has_exog = exog_values_dict is not None
+
+        if use_binned_residuals:
+            boot_indices = np.arange(n_boot)
+            level_binners = [
+                self.binner.get(level, self.binner['_unknown_level'])
+                for level in levels
+            ]
+
+        for step in range(steps):
+
+            if has_lags:
+                if self.lags_are_contiguous:
+                    # Slice avoids the fancy-index allocation; [::-1] reverses to
+                    # put lag_1 (most-recent) first, matching the column ordering.
+                    lagged_values = last_window_boot[
+                        window_size + step - n_lags: window_size + step, :, :
+                    ][::-1, :, :]
+                else:
+                    # lagged_values shape: (n_lags, n_boot, n_levels)
+                    lags_indices = window_size + step - self.lags
+                    lagged_values = last_window_boot[lags_indices, :, :]
+                
+                # Reshape to (n_boot x n_levels, n_lags) with correct row ordering
+                features[:, :n_lags] = lagged_values.transpose(1, 2, 0).reshape(n_samples, n_lags)
+
+            if has_window_features:
+                wf_col_offset = n_lags
+                # Reshape to (window_length, n_samples)
+                wf_in = last_window_boot[:window_size + step, :, :].reshape(window_size + step, n_samples)
+                for wf in self.window_features:
+                    wf_out = wf.transform(wf_in)
+                    n_wf_cols = wf_out.shape[1]
+                    features[:, wf_col_offset:wf_col_offset + n_wf_cols] = wf_out
+                    wf_col_offset += n_wf_cols
+
+            if has_exog:
+                # Reshape (n_levels, n_exog) to (n_boot × n_levels, n_exog)
+                features[:, -n_exog:] = np.tile(exog_values_dict[step + 1], (n_boot, 1))
+
+            pred = predict_fn(features)
+
+            # Reshape from (n_boot × n_levels,) to (n_levels, n_boot)
+            pred = pred.reshape(n_boot, n_levels).T
+            
+            # NOTE: CatBoost makes the input array read-only.
+            if not features.flags.writeable:
+                features.flags.writeable = True
+
+            if use_binned_residuals:
+                # Vectorized residual lookup for all levels and boots
+                # sampled_residuals shape: (n_bins, steps, n_boot, n_levels)
+                for j, binner in enumerate(level_binners):
+                    # Transform all predictions for this level at once (n_boot predictions)
+                    predicted_bins = binner.transform(pred[j, :]).astype(int)
+                    # Vectorized lookup: sampled_residuals[predicted_bins, step, boot_indices, j]
+                    pred[j, :] += sampled_residuals[predicted_bins, step, boot_indices, j]
+            else:
+                # sampled_residuals shape: (steps, n_levels, n_boot)
+                pred += sampled_residuals[step, :, :]
+
+            boot_predictions[step, :, :] = pred
+
+            # Update last_window_boot with new predictions for next step
+            # pred is (n_levels, n_boot), transpose for (n_boot, n_levels) layout
+            last_window_boot[window_size + step, :, :] = pred.T
+
+        set_cpu_gpu_device(estimator=self.estimator, device=original_device)
+
+        return boot_predictions
+
+    @manage_warnings
     def create_predict_X(
         self,
         steps: int,
@@ -2421,13 +2601,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         (
             last_window,
             exog_values_dict,
             levels,
-            prediction_index
+            prediction_index,
+            _
         ) = self._create_predict_inputs(
                 steps        = steps,
                 levels       = levels,
@@ -2546,11 +2725,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html",
                 DataTransformationWarning
             )
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return X_predict
 
+    @manage_warnings
     def predict(
         self,
         steps: int,
@@ -2561,7 +2739,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         check_inputs: bool = True
     ) -> pd.DataFrame:
         """
-        Predict n steps ahead. It is an recursive process in which, each prediction,
+        Predict n steps ahead. It is a recursive process in which, each prediction,
         is used as a predictor for the next step. Only levels whose last window
         ends at the same datetime index can be predicted together.
 
@@ -2597,13 +2775,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         (
             last_window,
             exog_values_dict,
             levels,
-            prediction_index
+            prediction_index,
+            differentiators
         ) = self._create_predict_inputs(
                 steps        = steps,
                 levels       = levels,
@@ -2626,10 +2803,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                           )
         
         for i, level in enumerate(levels):
-            if self.differentiation is not None and self.differentiator_[level] is not None:
+            if differentiators.get(level) is not None:
                 predictions[:, i] = (
-                    self
-                    .differentiator_[level]
+                    differentiators[level]
                     .inverse_transform_next_window(predictions[:, i])
                 )
 
@@ -2645,11 +2821,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             {"level": np.tile(levels, n_steps), "pred": predictions.ravel()},
             index = np.repeat(prediction_index, n_levels),
         )
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
+    @manage_warnings
     def predict_bootstrapping(
         self,
         steps: int,
@@ -2718,13 +2893,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         (
             last_window,
             exog_values_dict,
             levels,
-            prediction_index
+            prediction_index,
+            differentiators
         ) = self._create_predict_inputs(
                 steps                   = steps,
                 levels                  = levels,
@@ -2744,40 +2918,36 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         n_levels = len(levels)
         rng = np.random.default_rng(seed=random_state)
-        sampled_residuals_grid = np.full(
-                                     shape      = (steps, n_boot, n_levels),
-                                     fill_value = np.nan,
-                                     order      = 'F',
-                                     dtype      = float
-                                 )
+        
         if use_binned_residuals:
-            sampled_residuals = {
-                k: sampled_residuals_grid.copy() 
-                for k in range(self.binner_kwargs['n_bins'])
-            }
-            for bin in sampled_residuals.keys():
+            # Pre-allocate 4D array directly: (n_bins, steps, n_boot, n_levels)
+            # Loop order must match original to preserve RNG sequence for reproducibility
+            n_bins = self.binner_kwargs['n_bins']
+            sampled_residuals = np.empty(
+                (n_bins, steps, n_boot, n_levels), order='C', dtype=float
+            )
+            for bin_idx in range(n_bins):
                 for i, level in enumerate(levels):
-                    sampled_residuals[bin][:, :, i] = rng.choice(
-                        a       = residuals_by_bin.get(level, residuals_by_bin['_unknown_level'])[bin],
+                    sampled_residuals[bin_idx, :, :, i] = rng.choice(
+                        a       = residuals_by_bin.get(level, residuals_by_bin['_unknown_level'])[bin_idx],
                         size    = (steps, n_boot),
                         replace = True
                     )
         else:
+            sampled_residuals = np.full(
+                shape      = (steps, n_levels, n_boot),
+                fill_value = np.nan,
+                order      = 'C',
+                dtype      = float
+            )
             for i, level in enumerate(levels):
-                sampled_residuals_grid[:, :, i] = rng.choice(
+                sampled_residuals[:, i, :] = rng.choice(
                     a       = residuals.get(level, residuals['_unknown_level']),
                     size    = (steps, n_boot),
                     replace = True
                 )
-            sampled_residuals = {'all': sampled_residuals_grid}
         
-        boot_columns = []
-        boot_predictions = np.full(
-                               shape      = (steps, n_levels, n_boot),
-                               fill_value = np.nan,
-                               order      = 'F',
-                               dtype      = float
-                           )
+        boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
         
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -2785,31 +2955,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 message="X does not have valid feature names", 
                 category=UserWarning
             )
-            for i in range(n_boot):
-
-                if use_binned_residuals:
-                    boot_sampled_residuals = {
-                        k: v[:, i, :]
-                        for k, v in sampled_residuals.items()
-                    }
-                else:
-                    boot_sampled_residuals = sampled_residuals['all'][:, i, :]
-
-                boot_columns.append(f"pred_boot_{i}")
-                boot_predictions[:, :, i] = self._recursive_predict(
-                    steps                = steps,
-                    levels               = levels,
-                    last_window          = last_window,
-                    exog_values_dict     = exog_values_dict,
-                    residuals            = boot_sampled_residuals,
-                    use_binned_residuals = use_binned_residuals,
-                )
+            boot_predictions = self._recursive_predict_bootstrapping(
+                steps                = steps,
+                levels               = levels,
+                last_window          = last_window,
+                n_boot               = n_boot,
+                sampled_residuals    = sampled_residuals,
+                use_binned_residuals = use_binned_residuals,
+                exog_values_dict     = exog_values_dict,
+            )
 
         for i, level in enumerate(levels):
 
-            if self.differentiation is not None and self.differentiator_[level] is not None:
+            if differentiators.get(level) is not None:
                 boot_predictions[:, i, :] = (
-                    self.differentiator_[level]
+                    differentiators[level]
                     .inverse_transform_next_window(boot_predictions[:, i, :])
                 )
             
@@ -2818,10 +2978,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                     self.transformer_series_['_unknown_level']
                                 )
             if transformer_level is not None:
-                boot_predictions[:, i, :] = np.apply_along_axis(
-                    func1d            = transform_numpy,
-                    axis              = 0,
-                    arr               = boot_predictions[:, i, :],
+                boot_predictions[:, i, :] = transform_numpy(
+                    array             = boot_predictions[:, i, :],
                     transformer       = transformer_level,
                     fit               = False,
                     inverse_transform = True
@@ -2833,17 +2991,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                columns = boot_columns
                            )
         boot_predictions.insert(0, 'level', np.tile(levels, steps))
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return boot_predictions
-    
+
     def _predict_interval_conformal(
         self,
         steps: int | str | pd.Timestamp,
         levels: str | list[str] | None = None,
-        last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         nominal_coverage: float = 0.95,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True
@@ -2862,13 +3018,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
-        last_window : pandas Series, pandas DataFrame, default None
+        last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
-            If `last_window = None`, the values stored in` self.last_window_` are
+            If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, default None
+        exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
         nominal_coverage : float, default 0.95
             Nominal coverage, also known as expected coverage, of the prediction
@@ -2904,7 +3060,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window,
             exog_values_dict,
             levels,
-            prediction_index
+            prediction_index,
+            differentiators
         ) = self._create_predict_inputs(
                 steps                   = steps,
                 levels                  = levels,
@@ -2967,9 +3124,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         for i, level in enumerate(levels):
 
-            if self.differentiation is not None and self.differentiator_[level] is not None:
+            if differentiators.get(level) is not None:
                 predictions[i, :, :] = (
-                    self.differentiator_[level]
+                    differentiators[level]
                     .inverse_transform_next_window(predictions[i, :, :])
                 )
             
@@ -2978,10 +3135,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                     self.transformer_series_['_unknown_level']
                                 )
             if transformer_level is not None:
-                predictions[i, :, :] = np.apply_along_axis(
-                    func1d            = transform_numpy,
-                    axis              = 0,
-                    arr               = predictions[i, :, :],
+                predictions[i, :, :] = transform_numpy(
+                    array             = predictions[i, :, :],
                     transformer       = transformer_level,
                     fit               = False,
                     inverse_transform = True
@@ -2996,6 +3151,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int,
@@ -3087,8 +3243,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         if method == "bootstrapping":
             
             if isinstance(interval, (list, tuple)):
@@ -3148,12 +3302,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             raise ValueError(
                 f"Invalid `method` '{method}'. Choose 'bootstrapping' or 'conformal'."
             )
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
-
+    @manage_warnings
     def predict_quantiles(
         self,
         steps: int,
@@ -3225,8 +3377,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         check_interval(quantiles=quantiles)
 
         predictions = self.predict_bootstrapping(
@@ -3246,12 +3396,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             predictions.iloc[:, 1:].quantile(q=quantiles, axis=1).transpose()
         )
         predictions = predictions[['level'] + quantiles_cols]
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
-
+    @manage_warnings
     def predict_dist(
         self,
         steps: int,
@@ -3329,8 +3477,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 "from scipy.stats, with methods `_pdf` and `fit`."
             )
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         predictions = self.predict_bootstrapping(
                           steps                   = steps,
                           levels                  = levels,
@@ -3355,8 +3501,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         predictions = predictions[['level'] + param_names]
 
-        set_skforecast_warnings(suppress_warnings, action='default')
-
         return predictions
 
     def set_params(
@@ -3365,7 +3509,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     ) -> None:
         """
         Set new values to the parameters of the scikit-learn model stored in the
-        forecaster.
+        forecaster. After calling this method, the forecaster is reset to an 
+        unfitted state. The `fit` method must be called before prediction.
         
         Parameters
         ----------
@@ -3380,6 +3525,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         self.estimator = clone(self.estimator)
         self.estimator.set_params(**params)
+        self.is_fitted = False
 
     def set_fit_kwargs(
         self, 
@@ -3434,6 +3580,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         self.window_size = max(
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]
@@ -3498,6 +3648,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             else:
                 self.differentiator.set_params(window_size=self.window_size)
 
+    @manage_warnings
     def set_in_sample_residuals(
         self,
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -3545,8 +3696,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         None
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         if not self.is_fitted:
             raise NotFittedError(
@@ -3620,8 +3769,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             store_in_sample_residuals = True,
             random_state              = random_state
         )
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
     def set_out_sample_residuals(
         self, 
@@ -3815,7 +3962,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         random_state: int = 123
     ) -> tuple[np.ndarray, dict[int, np.ndarray]]:
         """
-        Bin out sample residuals using the already fitted binner.
+        Bin out-of-sample residuals using the already fitted binner.
         `y_true` and `y_pred` are expected to be in the original scale of the
         time series. Residuals are calculated as `y_true` - `y_pred`, after 
         applying the necessary transformations and differentiations if the

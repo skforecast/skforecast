@@ -1,5 +1,6 @@
 # Unit test reshape_exog_long_to_dict
 # ==============================================================================
+import re
 import pytest
 import numpy as np
 import pandas as pd
@@ -17,7 +18,7 @@ def test_TypeError_when_data_is_not_dataframe():
     """
     Raise TypeError if data is not a pandas DataFrame.
     """
-    err_msg = "`data` must be a pandas DataFrame."
+    err_msg = re.escape("`data` must be a pandas DataFrame.")
     with pytest.raises(TypeError, match=err_msg):
         reshape_exog_long_to_dict(
             data="not_a_dataframe",
@@ -34,8 +35,7 @@ def test_ValueError_reshape_exog_long_to_dict_when_arguments_series_id_index_not
     Check that ValueError is raised when the input dataframe does not have MultiIndex and the
     arguments `series_id`, `index` and `values` are not provided
     """
-
-    err_msg = (
+    err_msg = re.escape(
         "Arguments `series_id`, and `index` must be "
         "specified when the input DataFrame does not have a MultiIndex. "
         "Please provide a value for each of these arguments."
@@ -49,7 +49,8 @@ def test_ValueError_when_series_id_not_in_data():
     Raise ValueError if series_id is not in data.
     """
     series_id = "series_id_not_in_data"
-    err_msg = f"Column '{series_id}' not found in `data`."
+
+    err_msg = re.escape(f"Column '{series_id}' not found in `data`.")
     with pytest.raises(ValueError, match=err_msg):
         reshape_exog_long_to_dict(
             data=exog_long,
@@ -66,7 +67,8 @@ def test_ValueError_when_index_not_in_data():
     Raise ValueError if index is not in data.
     """
     index = "series_id_not_in_data"
-    err_msg = f"Column '{index}' not found in `data`."
+    
+    err_msg = re.escape(f"Column '{index}' not found in `data`.")
     with pytest.raises(ValueError, match=err_msg):
         reshape_exog_long_to_dict(
             data=exog_long,
@@ -265,11 +267,11 @@ def test_MissingValuesWarning_when_exog_are_incomplete_and_dropna_False():
         expected[k]['exog_2'] = expected[k]['exog_2'].astype(object)
         expected[k]['exog_3'] = expected[k]['exog_3'].astype(float)
     
-    msg = (
+    warn_msg = re.escape(
         "Exogenous variables for series 'A' are incomplete. NaNs have been introduced "
         "after setting the frequency."
     )
-    with pytest.warns(MissingValuesWarning, match=msg):
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = reshape_exog_long_to_dict(
             data=data,
             series_id='series_id',
@@ -368,3 +370,433 @@ def test_reshape_exog_long_to_dict_output_when_npnan_are_added_in_integer_column
         assert exog_dict['series_2'].dtypes.astype(str).to_list() == ['float64', 'category', 'int32']
     else:
         assert exog_dict['series_2'].dtypes.astype(str).to_list() == ['float64', 'category', 'int64']
+
+
+@pytest.mark.parametrize(
+    "fill_value, expected_fill",
+    [(None, np.nan), (-999., -999.)],
+    ids=lambda x: f"fill_value: {x}",
+)
+def test_check_output_reshape_exog_long_to_dict_with_fill_value(fill_value, expected_fill):
+    """
+    Check output of reshape_exog_long_to_dict with fill_value parameter.
+    """
+    data = pd.DataFrame({
+        'series_id': ['A'] * 3 + ['B'] * 3,
+        'datetime': pd.to_datetime(['2020-01-01', '2020-01-02', '2020-01-04'] * 2),
+        'exog_1': [1.0, 2.0, 4.0, 10.0, 20.0, 40.0],
+        'exog_2': [0.1, 0.2, 0.4, 1.0, 2.0, 4.0]
+    })
+
+    warn_msg = re.escape(
+        "NaNs have been introduced"
+        if fill_value is None
+        else f"Missing values have been filled with {fill_value}"
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = reshape_exog_long_to_dict(
+            data=data,
+            series_id='series_id',
+            index='datetime',
+            freq='D',
+            fill_value=fill_value,
+            suppress_warnings=False,
+        )
+
+    expected_A = pd.DataFrame(
+        {
+            'exog_1': [1.0, 2.0, expected_fill, 4.0],
+            'exog_2': [0.1, 0.2, expected_fill, 0.4]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+    expected_B = pd.DataFrame(
+        {
+            'exog_1': [10.0, 20.0, expected_fill, 40.0],
+            'exog_2': [1.0, 2.0, expected_fill, 4.0]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+
+    pd.testing.assert_frame_equal(results['A'], expected_A)
+    pd.testing.assert_frame_equal(results['B'], expected_B)
+
+
+@pytest.mark.parametrize(
+    "fill_value, expected_fill",
+    [(None, np.nan), (0., 0.)],
+    ids=lambda x: f"fill_value: {x}",
+)
+def test_check_output_reshape_exog_long_to_dict_with_fill_value_when_multiindex(fill_value, expected_fill):
+    """
+    Check output of reshape_exog_long_to_dict with fill_value parameter when
+    input data is a MultiIndex DataFrame.
+    """
+    data = pd.DataFrame({
+        'series_id': ['A'] * 3 + ['B'] * 3,
+        'datetime': pd.to_datetime(['2020-01-01', '2020-01-02', '2020-01-04'] * 2),
+        'exog_1': [1.0, 2.0, 4.0, 10.0, 20.0, 40.0],
+        'exog_2': [0.1, 0.2, 0.4, 1.0, 2.0, 4.0]
+    })
+    data = data.set_index(['series_id', 'datetime'])
+
+    warn_msg = re.escape(
+        "NaNs have been introduced"
+        if fill_value is None
+        else f"Missing values have been filled with {fill_value}"
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = reshape_exog_long_to_dict(
+            data=data,
+            freq='D',
+            fill_value=fill_value,
+        )
+
+    expected_A = pd.DataFrame(
+        {
+            'exog_1': [1.0, 2.0, expected_fill, 4.0],
+            'exog_2': [0.1, 0.2, expected_fill, 0.4]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+    expected_B = pd.DataFrame(
+        {
+            'exog_1': [10.0, 20.0, expected_fill, 40.0],
+            'exog_2': [1.0, 2.0, expected_fill, 4.0]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+
+    pd.testing.assert_frame_equal(results['A'], expected_A)
+    pd.testing.assert_frame_equal(results['B'], expected_B)
+
+
+@pytest.mark.parametrize(
+    "fill_value",
+    [None, 0.],
+    ids=lambda x: f"fill_value: {x}",
+)
+def test_check_output_reshape_exog_long_to_dict_with_fill_value_string_and_categorical_columns(
+    fill_value,
+):
+    """
+    Check output of reshape_exog_long_to_dict with fill_value parameter when
+    exogenous variables include string and categorical columns. When fill_value
+    is not None, it is applied only to numeric columns and the warning message
+    includes information about non-numeric columns still containing NaN.
+    """
+    data = pd.DataFrame({
+        'series_id': ['A'] * 3 + ['B'] * 3,
+        'datetime': pd.to_datetime(['2020-01-01', '2020-01-02', '2020-01-04'] * 2),
+        'exog_num': [1.0, 2.0, 4.0, 10.0, 20.0, 40.0],
+        'exog_str': ['x', 'y', 'z', 'a', 'b', 'c'],
+        'exog_cat': pd.Categorical(['low', 'mid', 'high'] * 2),
+    })
+
+    if fill_value is not None:
+        warn_msg = re.escape(
+            "in numeric columns only. Non-numeric columns"
+        )
+        with pytest.warns(MissingValuesWarning, match=warn_msg):
+            results = reshape_exog_long_to_dict(
+                data=data,
+                series_id='series_id',
+                index='datetime',
+                freq='D',
+                fill_value=fill_value,
+                suppress_warnings=False,
+            )
+
+        expected_A = pd.DataFrame(
+            {
+                'exog_num': [1.0, 2.0, fill_value, 4.0],
+                'exog_str': ['x', 'y', np.nan, 'z'],
+                'exog_cat': pd.Categorical(
+                    ['low', 'mid', np.nan, 'high'],
+                    categories=['high', 'low', 'mid']
+                ),
+            },
+            index=pd.date_range('2020-01-01', periods=4, freq='D')
+        )
+        expected_B = pd.DataFrame(
+            {
+                'exog_num': [10.0, 20.0, fill_value, 40.0],
+                'exog_str': ['a', 'b', np.nan, 'c'],
+                'exog_cat': pd.Categorical(
+                    ['low', 'mid', np.nan, 'high'],
+                    categories=['high', 'low', 'mid']
+                ),
+            },
+            index=pd.date_range('2020-01-01', periods=4, freq='D')
+        )
+
+        pd.testing.assert_frame_equal(results['A'], expected_A)
+        pd.testing.assert_frame_equal(results['B'], expected_B)
+    else:
+        warn_msg = re.escape("NaNs have been introduced")
+        with pytest.warns(MissingValuesWarning, match=warn_msg):
+            results = reshape_exog_long_to_dict(
+                data=data,
+                series_id='series_id',
+                index='datetime',
+                freq='D',
+                fill_value=fill_value,
+                suppress_warnings=False,
+            )
+
+        expected_A = pd.DataFrame(
+            {
+                'exog_num': [1.0, 2.0, np.nan, 4.0],
+                'exog_str': ['x', 'y', np.nan, 'z'],
+                'exog_cat': pd.Categorical(
+                    ['low', 'mid', np.nan, 'high'],
+                    categories=['high', 'low', 'mid']
+                ),
+            },
+            index=pd.date_range('2020-01-01', periods=4, freq='D')
+        )
+        expected_B = pd.DataFrame(
+            {
+                'exog_num': [10.0, 20.0, np.nan, 40.0],
+                'exog_str': ['a', 'b', np.nan, 'c'],
+                'exog_cat': pd.Categorical(
+                    ['low', 'mid', np.nan, 'high'],
+                    categories=['high', 'low', 'mid']
+                ),
+            },
+            index=pd.date_range('2020-01-01', periods=4, freq='D')
+        )
+
+        pd.testing.assert_frame_equal(results['A'], expected_A)
+        pd.testing.assert_frame_equal(results['B'], expected_B)
+
+
+@pytest.mark.parametrize(
+    "fill_value",
+    [None, 0.],
+    ids=lambda x: f"fill_value: {x}",
+)
+def test_check_output_reshape_exog_long_to_dict_with_fill_value_string_and_categorical_columns_when_multiindex(
+    fill_value,
+):
+    """
+    Check output of reshape_exog_long_to_dict with fill_value parameter when
+    input data is a MultiIndex DataFrame with string and categorical columns.
+    When fill_value is not None, it is applied only to numeric columns and
+    the warning message includes information about non-numeric columns.
+    """
+    data = pd.DataFrame({
+        'series_id': ['A'] * 3 + ['B'] * 3,
+        'datetime': pd.to_datetime(['2020-01-01', '2020-01-02', '2020-01-04'] * 2),
+        'exog_num': [1.0, 2.0, 4.0, 10.0, 20.0, 40.0],
+        'exog_str': ['x', 'y', 'z', 'a', 'b', 'c'],
+        'exog_cat': pd.Categorical(['low', 'mid', 'high'] * 2),
+    })
+    data = data.set_index(['series_id', 'datetime'])
+
+    if fill_value is not None:
+        warn_msg = re.escape(
+            "in numeric columns only. Non-numeric columns"
+        )
+        with pytest.warns(MissingValuesWarning, match=warn_msg):
+            results = reshape_exog_long_to_dict(
+                data=data,
+                freq='D',
+                fill_value=fill_value,
+                suppress_warnings=False,
+            )
+
+        expected_A = pd.DataFrame(
+            {
+                'exog_num': [1.0, 2.0, fill_value, 4.0],
+                'exog_str': ['x', 'y', np.nan, 'z'],
+                'exog_cat': pd.Categorical(
+                    ['low', 'mid', np.nan, 'high'],
+                    categories=['high', 'low', 'mid']
+                ),
+            },
+            index=pd.date_range('2020-01-01', periods=4, freq='D')
+        )
+        expected_B = pd.DataFrame(
+            {
+                'exog_num': [10.0, 20.0, fill_value, 40.0],
+                'exog_str': ['a', 'b', np.nan, 'c'],
+                'exog_cat': pd.Categorical(
+                    ['low', 'mid', np.nan, 'high'],
+                    categories=['high', 'low', 'mid']
+                ),
+            },
+            index=pd.date_range('2020-01-01', periods=4, freq='D')
+        )
+
+        pd.testing.assert_frame_equal(results['A'], expected_A)
+        pd.testing.assert_frame_equal(results['B'], expected_B)
+    else:
+        warn_msg = re.escape("NaNs have been introduced")
+        with pytest.warns(MissingValuesWarning, match=warn_msg):
+            results = reshape_exog_long_to_dict(
+                data=data,
+                freq='D',
+                fill_value=fill_value,
+                suppress_warnings=False,
+            )
+
+        expected_A = pd.DataFrame(
+            {
+                'exog_num': [1.0, 2.0, np.nan, 4.0],
+                'exog_str': ['x', 'y', np.nan, 'z'],
+                'exog_cat': pd.Categorical(
+                    ['low', 'mid', np.nan, 'high'],
+                    categories=['high', 'low', 'mid']
+                ),
+            },
+            index=pd.date_range('2020-01-01', periods=4, freq='D')
+        )
+        expected_B = pd.DataFrame(
+            {
+                'exog_num': [10.0, 20.0, np.nan, 40.0],
+                'exog_str': ['a', 'b', np.nan, 'c'],
+                'exog_cat': pd.Categorical(
+                    ['low', 'mid', np.nan, 'high'],
+                    categories=['high', 'low', 'mid']
+                ),
+            },
+            index=pd.date_range('2020-01-01', periods=4, freq='D')
+        )
+
+        pd.testing.assert_frame_equal(results['A'], expected_A)
+        pd.testing.assert_frame_equal(results['B'], expected_B)
+
+
+def test_fill_value_does_not_fill_preexisting_nans():
+    """
+    Test that fill_value only fills NaN values introduced by asfreq (gaps),
+    not NaN values that were already present in the original data.
+    """
+    data = pd.DataFrame({
+        'series_id': ['A'] * 3 + ['B'] * 3,
+        'datetime': pd.to_datetime(['2020-01-01', '2020-01-02', '2020-01-04'] * 2),
+        'exog_1': [1.0, np.nan, 4.0, 10.0, 20.0, np.nan],  # Pre-existing NaNs
+        'exog_2': [0.1, 0.2, 0.4, 1.0, 2.0, 4.0]
+    })
+
+    warn_msg = re.escape("Missing values have been filled with -999.0")
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = reshape_exog_long_to_dict(
+            data=data,
+            series_id='series_id',
+            index='datetime',
+            freq='D',
+            fill_value=-999.0,
+            suppress_warnings=False,
+        )
+
+    # Pre-existing NaN at 2020-01-02 for A and 2020-01-04 for B should remain NaN
+    # Only gaps at 2020-01-03 should be filled with -999.0
+    expected_A = pd.DataFrame(
+        {
+            'exog_1': [1.0, np.nan, -999.0, 4.0],
+            'exog_2': [0.1, 0.2, -999.0, 0.4]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+    expected_B = pd.DataFrame(
+        {
+            'exog_1': [10.0, 20.0, -999.0, np.nan],
+            'exog_2': [1.0, 2.0, -999.0, 4.0]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+
+    pd.testing.assert_frame_equal(results['A'], expected_A)
+    pd.testing.assert_frame_equal(results['B'], expected_B)
+
+
+def test_fill_value_does_not_fill_preexisting_nans_when_multiindex():
+    """
+    Test that fill_value only fills NaN values introduced by asfreq (gaps),
+    not NaN values already present, when input data is a MultiIndex DataFrame.
+    """
+    data = pd.DataFrame({
+        'series_id': ['A'] * 3 + ['B'] * 3,
+        'datetime': pd.to_datetime(['2020-01-01', '2020-01-02', '2020-01-04'] * 2),
+        'exog_1': [1.0, np.nan, 4.0, 10.0, 20.0, np.nan],
+        'exog_2': [0.1, 0.2, 0.4, 1.0, 2.0, 4.0]
+    })
+    data = data.set_index(['series_id', 'datetime'])
+
+    warn_msg = re.escape("Missing values have been filled with -999.0")
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = reshape_exog_long_to_dict(
+            data=data,
+            freq='D',
+            fill_value=-999.0,
+            suppress_warnings=False,
+        )
+
+    expected_A = pd.DataFrame(
+        {
+            'exog_1': [1.0, np.nan, -999.0, 4.0],
+            'exog_2': [0.1, 0.2, -999.0, 0.4]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+    expected_B = pd.DataFrame(
+        {
+            'exog_1': [10.0, 20.0, -999.0, np.nan],
+            'exog_2': [1.0, 2.0, -999.0, 4.0]
+        },
+        index=pd.date_range('2020-01-01', periods=4, freq='D')
+    )
+
+    pd.testing.assert_frame_equal(results['A'], expected_A)
+    pd.testing.assert_frame_equal(results['B'], expected_B)
+
+
+def test_consolidate_dtypes_when_multiindex():
+    """
+    Test that consolidate_dtypes unifies dtypes across all series when input
+    is a MultiIndex DataFrame. If one series has gaps (int -> float due to NaN),
+    all series should have consistent float dtypes for those columns.
+    """
+    # series_1 has a gap (missing 2000-01-06), series_2 does not
+    np.random.seed(123)
+    exog_series_1 = pd.DataFrame({
+        'exog_1': np.random.normal(0, 1, 10),
+        'exog_2': np.random.choice(["A", "B", "C"], 10),
+        'exog_3': np.random.randint(0, 10, 10),
+        'series': 'series_1',
+    }, index=pd.date_range(start='1-1-2000', periods=10, freq='D'))
+    exog_series_2 = pd.DataFrame({
+        'exog_1': np.random.normal(0, 1, 10),
+        'exog_2': np.random.choice(["A", "B"], 10),
+        'exog_3': np.random.randint(0, 10, 10),
+        'series': 'series_2',
+    }, index=pd.date_range(start='1-1-2000', periods=10, freq='D'))
+
+    exog_long = (
+        pd.concat([exog_series_1, exog_series_2], axis=0)
+        .reset_index()
+        .rename(columns={"index": "datetime"})
+    )
+    # Remove one row from series_1 to create a gap
+    exog_long = exog_long.loc[
+        [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], :
+    ].copy()
+    exog_long["exog_2"] = exog_long["exog_2"].astype("category")
+    exog_long["series"] = exog_long["series"].astype("category")
+
+    # Set as MultiIndex
+    data = exog_long.set_index(["series", "datetime"])
+
+    exog_dict = reshape_exog_long_to_dict(
+        data=data,
+        freq="D",
+        consolidate_dtypes=True,
+        suppress_warnings=True,
+    )
+
+    pd.testing.assert_series_equal(
+        exog_dict['series_1'].dtypes,
+        exog_dict['series_2'].dtypes
+    )

@@ -1,8 +1,8 @@
 from .exceptions import (
     DataTypeWarning,
     DataTransformationWarning,
+    ExogenousInterpretationWarning,
     IgnoredArgumentWarning,
-    IndexWarning,
     InputTypeWarning,
     LongTrainingWarning,
     MissingExogWarning,

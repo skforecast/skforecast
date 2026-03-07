@@ -1,4 +1,4 @@
-# Unit test fit
+# Unit test PopulationDriftDetector fit
 # ==============================================================================
 import pandas as pd
 import numpy as np
@@ -10,8 +10,8 @@ from ....drift_detection import PopulationDriftDetector
 
 # fixtures
 THIS_DIR = Path(__file__).parent
-nannyml_fitted_stats = joblib.load(THIS_DIR/'fixture_nannyml_fitted_stats.joblib')
-data = joblib.load(THIS_DIR/'fixture_data_population_drift.joblib')
+nannyml_fitted_stats = joblib.load(THIS_DIR / 'fixture_nannyml_fitted_stats.joblib')
+data = joblib.load(THIS_DIR / 'fixture_data_population_drift.joblib')
 data['weather'] = data['weather'].astype('category')
 data_multiseries = pd.concat(
     [

@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import FunctionTransformer
 from skforecast.utils import transform_series
 
 
@@ -138,3 +139,75 @@ def test_transform_series_when_applied_to_serie_with_different_name_than_the_one
               )
     
     pd.testing.assert_series_equal(results, expected)
+
+
+def test_transform_series_ValueError_when_force_single_column_with_sparse_output():
+    """
+    Test that transform_series raises ValueError when force_single_column is True
+    and transformer expands columns. Also covers toarray() conversion from sparse
+    matrix to dense array.
+    """
+    input_series = pd.Series(["A"] * 5 + ["B"] * 5, name='exog')
+    transformer = OneHotEncoder(sparse_output=True)
+
+    err_msg = re.escape(
+        "`transformer_y` and `transformer_series` must return a single column. "
+        "The transformer generated 2 columns. "
+        "Transformers that expand target series into multiple feature "
+        "columns are not supported; use `window_features` or pass "
+        "those features through `exog` instead."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        transform_series(
+            series=input_series,
+            transformer=transformer,
+            fit=True,
+            inverse_transform=False,
+            force_single_column=True
+        )
+
+
+def test_transform_series_when_set_output_pandas_single_column():
+    """
+    Test transform_series when transformer with set_output('pandas') returns a
+    single-column DataFrame, verifying the squeeze() branch produces a Series.
+    """
+    input_series = pd.Series([1.0, 2.0, 3.0, 4.0, 5.0], name='y')
+    transformer = StandardScaler().set_output(transform='pandas')
+
+    results = transform_series(
+        series=input_series,
+        transformer=transformer,
+        fit=True,
+        inverse_transform=False
+    )
+
+    assert isinstance(results, pd.Series)
+    expected = pd.Series(
+        data=[-1.41421356, -0.70710678, 0., 0.70710678, 1.41421356],
+        name='y'
+    )
+    pd.testing.assert_series_equal(results, expected)
+
+
+def test_transform_series_when_transformer_expands_without_feature_names():
+    """
+    Test output column naming when transformer expands columns and
+    get_feature_names_out returns wrong number of names, verifying
+    fallback to 'transformed_i' names.
+    """
+    input_series = pd.Series([0.0, 1.0, 2.0, 3.0], name='y')
+    transformer = FunctionTransformer(func=lambda X: np.c_[X, X**2], validate=False)
+
+    results = transform_series(
+        series=input_series,
+        transformer=transformer,
+        fit=True,
+        inverse_transform=False
+    )
+
+    expected = pd.DataFrame(
+        {'transformed_0': [0.0, 1.0, 2.0, 3.0],
+         'transformed_1': [0.0, 1.0, 4.0, 9.0]}
+    )
+    pd.testing.assert_frame_equal(results, expected)

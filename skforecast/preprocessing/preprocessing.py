@@ -19,7 +19,7 @@ from sklearn.base import TransformerMixin
 from sklearn.exceptions import NotFittedError
 
 from .. import __version__
-from ..exceptions import MissingValuesWarning
+from ..exceptions import IgnoredArgumentWarning, MissingValuesWarning
 from ..metrics import calculate_coverage
 from ..utils import get_style_repr_html
 
@@ -441,6 +441,7 @@ def reshape_series_long_to_dict(
     series_id: str | None = None,
     index: str | None = None,
     values: str | None = None,
+    fill_value: float | None = None,
     suppress_warnings: bool = False
 ) -> dict[str, pd.Series]:
     """
@@ -467,6 +468,10 @@ def reshape_series_long_to_dict(
     values: str, default None
         Column name with the values. Not needed if the input data is a pandas
         DataFrame with MultiIndex.
+    fill_value: float, default None
+        Value to use for filling gaps created when setting the frequency with 
+        `asfreq` (note this does not fill NaNs that already were present). If 
+        None, gaps will contain NaN values.
     suppress_warnings: bool, default False
         If True, suppress warnings when a series is incomplete after setting the
         frequency.
@@ -483,12 +488,24 @@ def reshape_series_long_to_dict(
     
     if isinstance(data.index, pd.MultiIndex):
 
+        data = data.copy()
         first_col = data.columns[0]
         data.index = data.index.set_names([data.index.names[0], None])
-        series_dict = {
-            id: data.loc[id][first_col].rename(id).asfreq(freq)
-            for id in data.index.levels[0]
-        }
+        series_dict = {}
+        for k in data.index.levels[0]:
+            original_size = len(data.loc[k])
+            series_dict[k] = data.loc[k][first_col].rename(k).asfreq(freq, fill_value=fill_value)
+            if not suppress_warnings and len(series_dict[k]) != original_size:
+                fill_msg = (
+                    "NaNs have been introduced"
+                    if fill_value is None
+                    else f"Missing values have been filled with {fill_value}"
+                )
+                warnings.warn(
+                    f"Series '{k}' is incomplete. {fill_msg} after "
+                    f"setting the frequency.",
+                    MissingValuesWarning
+                )
 
     else:
 
@@ -506,11 +523,16 @@ def reshape_series_long_to_dict(
         original_sizes = data_grouped.size()
         series_dict = {}
         for k, v in data_grouped:
-            series_dict[k] = v.set_index(index)[values].asfreq(freq, fill_value=np.nan).rename(k)
+            series_dict[k] = v.set_index(index)[values].asfreq(freq, fill_value=fill_value).rename(k)
             series_dict[k].index.name = None
             if not suppress_warnings and len(series_dict[k]) != original_sizes[k]:
+                fill_msg = (
+                    "NaNs have been introduced"
+                    if fill_value is None
+                    else f"Missing values have been filled with {fill_value}"
+                )
                 warnings.warn(
-                    f"Series '{k}' is incomplete. NaNs have been introduced after "
+                    f"Series '{k}' is incomplete. {fill_msg} after "
                     f"setting the frequency.",
                     MissingValuesWarning
                 )
@@ -523,6 +545,7 @@ def reshape_exog_long_to_dict(
     freq: str,
     series_id: str | None = None,
     index: str | None = None,
+    fill_value: float | None = None,
     drop_all_nan_cols: bool = False,
     consolidate_dtypes: bool = True,
     suppress_warnings: bool = False
@@ -548,13 +571,20 @@ def reshape_exog_long_to_dict(
     index: str, default None
         Column name with the time index. Not needed if the input data is a pandas
         DataFrame with MultiIndex.
+    fill_value: float, default None
+        Value to use for filling gaps created when setting the frequency with 
+        `asfreq` (note this does not fill NaNs that already were present). If 
+        None, gaps will contain NaN values. Only applied to numeric columns;
+        non-numeric columns (e.g. string, categorical) will still contain NaN
+        in the gaps.
     drop_all_nan_cols: bool, default False
         If True, drop columns with all values as NaN. This is useful when
         there are series without some exogenous variables.
     consolidate_dtypes: bool, default True
-        Consolidate the data types of the exogenous variables if, after setting
-        the frequency, NaNs have been introduced and the data types have changed
-        to float.
+        Consolidate the data types of the exogenous variables across all series.
+        If, after setting the frequency, NaNs are introduced in any series and
+        cause a column's dtype to change to float, that column is also cast to
+        float in every other series so that all series share the same dtypes.
     suppress_warnings: bool, default False
         If True, suppress warnings when exog is incomplete after setting the
         frequency.
@@ -571,10 +601,50 @@ def reshape_exog_long_to_dict(
     
     if isinstance(data.index, pd.MultiIndex):
 
+        data = data.copy()
         data.index = data.index.set_names([data.index.names[0], None])
-        exog_dict = {
-            id: data.loc[id].asfreq(freq) for id in data.index.levels[0]
-        }
+        exog_dict = {}
+        cols_float_dtype = set()
+        nans_introduced = False
+        for k in data.index.levels[0]:
+            original_index = data.loc[k].index
+            original_size = len(data.loc[k])
+            exog_dict[k] = data.loc[k].asfreq(freq)
+            if len(exog_dict[k]) != original_size:
+                nans_introduced = True
+                non_numeric_cols = []
+                if fill_value is not None:
+                    numeric_cols = exog_dict[k].select_dtypes(include='number').columns
+                    non_numeric_cols = exog_dict[k].columns.difference(numeric_cols)
+                    new_rows_mask = ~exog_dict[k].index.isin(original_index)
+                    if len(numeric_cols) > 0:
+                        exog_dict[k].loc[new_rows_mask, numeric_cols] = (
+                            exog_dict[k].loc[new_rows_mask, numeric_cols].fillna(fill_value)
+                        )
+                if not suppress_warnings:
+                    if fill_value is None:
+                        fill_msg = "NaNs have been introduced"
+                    else:
+                        fill_msg = (
+                            f"Missing values have been filled with {fill_value}"
+                        )
+                        if len(non_numeric_cols) > 0:
+                            fill_msg += (
+                                f" in numeric columns only. Non-numeric columns "
+                                f"{list(non_numeric_cols)} still contain NaN"
+                            )
+                    warnings.warn(
+                        f"Exogenous variables for series '{k}' are incomplete. "
+                        f"{fill_msg} after setting the frequency.",
+                        MissingValuesWarning
+                    )
+                if consolidate_dtypes:
+                    cols_float_dtype.update(
+                        {
+                            col for col in exog_dict[k].columns
+                            if pd.api.types.is_float_dtype(exog_dict[k][col])
+                        }
+                    )
 
     else:
 
@@ -589,15 +659,19 @@ def reshape_exog_long_to_dict(
                 raise ValueError(f"Column '{col}' not found in `data`.")
 
         cols_float_dtype = {
-            col for col in data.columns 
-            if pd.api.types.is_float_dtype(data[col])
+            col for col in data.columns
+            if col not in (series_id, index)
+            and pd.api.types.is_float_dtype(data[col])
         }
 
         data_grouped = data.groupby(series_id, observed=True) 
         original_sizes = data_grouped.size()
         exog_dict = dict(tuple(data_grouped))
+        original_indices = {
+            k: set(v[index]) for k, v in exog_dict.items()
+        }
         exog_dict = {
-            k: v.set_index(index).asfreq(freq, fill_value=np.nan).drop(columns=series_id)
+            k: v.set_index(index).drop(columns=series_id).asfreq(freq)
             for k, v in exog_dict.items()
         }
 
@@ -605,27 +679,46 @@ def reshape_exog_long_to_dict(
             exog_dict[k].index.name = None
 
         nans_introduced = False
-        if not suppress_warnings or consolidate_dtypes:
-            for k, v in exog_dict.items():
-                if len(v) != original_sizes[k]:
-                    nans_introduced = True
-                    if not suppress_warnings:
-                        warnings.warn(
-                            f"Exogenous variables for series '{k}' are incomplete. "
-                            f"NaNs have been introduced after setting the frequency.",
-                            MissingValuesWarning
+        for k, v in exog_dict.items():
+            if len(v) != original_sizes[k]:
+                nans_introduced = True
+                non_numeric_cols = []
+                if fill_value is not None:
+                    numeric_cols = v.select_dtypes(include='number').columns
+                    non_numeric_cols = v.columns.difference(numeric_cols)
+                    new_rows_mask = ~v.index.isin(original_indices[k])
+                    if len(numeric_cols) > 0:
+                        exog_dict[k].loc[new_rows_mask, numeric_cols] = (
+                            v.loc[new_rows_mask, numeric_cols].fillna(fill_value)
                         )
-                    if consolidate_dtypes:
-                        cols_float_dtype.update(
-                            {
-                                col for col in v.columns 
-                                if pd.api.types.is_float_dtype(v[col])
-                            }
+                if not suppress_warnings:
+                    if fill_value is None:
+                        fill_msg = "NaNs have been introduced"
+                    else:
+                        fill_msg = (
+                            f"Missing values have been filled with {fill_value}"
                         )
+                        if len(non_numeric_cols) > 0:
+                            fill_msg += (
+                                f" in numeric columns only. Non-numeric columns "
+                                f"{list(non_numeric_cols)} still contain NaN"
+                            )
+                    warnings.warn(
+                        f"Exogenous variables for series '{k}' are incomplete. "
+                        f"{fill_msg} after setting the frequency.",
+                        MissingValuesWarning
+                    )
+                if consolidate_dtypes:
+                    cols_float_dtype.update(
+                        {
+                            col for col in v.columns 
+                            if pd.api.types.is_float_dtype(v[col])
+                        }
+                    )
 
-        if consolidate_dtypes and nans_introduced:
-            new_dtypes = {k: float for k in cols_float_dtype}
-            exog_dict = {k: v.astype(new_dtypes) for k, v in exog_dict.items()}
+    if consolidate_dtypes and nans_introduced:
+        new_dtypes = {col: float for col in cols_float_dtype}
+        exog_dict = {k: v.astype(new_dtypes) for k, v in exog_dict.items()}
 
     if drop_all_nan_cols:
         exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}
@@ -1618,12 +1711,23 @@ class RollingFeatures():
         array_ndim = X.ndim
         if array_ndim == 1:
             X = X[:, np.newaxis]
-            
+        
+        vectorizable_stats = {'mean', 'std', 'min', 'max', 'sum', 'median'}
+        has_vectorizable = bool(set(self.stats) & vectorizable_stats)
+        
         rolling_features = np.full(
             shape=(X.shape[1], self.n_stats), fill_value=np.nan, dtype=float
         )
+        
+        # Compute vectorized stats if any are requested
+        if has_vectorizable:
+            self._transform_vectorized(X, rolling_features)
+        
+        # Compute non-vectorizable stats
         for i in range(X.shape[1]):
             for j, stat in enumerate(self.stats):
+                if stat in vectorizable_stats:
+                    continue
                 X_window = X[-self.window_sizes[j]:, i]
                 X_window = X_window[~np.isnan(X_window)]
                 if len(X_window) > 0: 
@@ -1635,6 +1739,68 @@ class RollingFeatures():
             rolling_features = rolling_features.ravel()
         
         return rolling_features
+    
+    def _transform_vectorized(
+        self,
+        X: np.ndarray,
+        rolling_features: np.ndarray
+    ) -> np.ndarray:
+        """
+        Vectorized transform using NumPy axis operations for vectorizable stats.
+        Modifies rolling_features in place for the vectorizable statistics.
+        This method is specifically designed to speed up the computation of
+        statistics in `predict_bootstrap` method of forecasters.
+        
+        Parameters
+        ----------
+        X : numpy ndarray
+            Input array of shape (window_length, n_samples).
+        rolling_features : numpy ndarray
+            Output array of shape (n_samples, n_stats) to fill in.
+            
+        Returns
+        -------
+        None
+            Modifies rolling_features in place.
+            Some statistics do not follow the numpy behavior exactly:
+            - For 'std', if the window has only one non-NaN value, the result is 0.0
+              instead of NaN (to match _np_std_jit behavior).
+            - For 'sum', if the window has all NaN values, the result is NaN
+              instead of 0.0 (to match _np_sum_jit behavior).
+            
+        """
+        vectorizable_stats = {'mean', 'std', 'min', 'max', 'sum', 'median'}
+        for j, stat in enumerate(self.stats):
+            if stat not in vectorizable_stats:
+                continue
+            window = X[-self.window_sizes[j]:, :]
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', message='Mean of empty slice')
+                warnings.filterwarnings('ignore', message='Degrees of freedom <= 0 for slice')
+                warnings.filterwarnings('ignore', message='All-NaN slice encountered')
+                if stat == 'mean':
+                    rolling_features[:, j] = np.nanmean(window, axis=0)
+                elif stat == 'std':
+                    result = np.nanstd(window, axis=0, ddof=1)
+                    # Note: np.nanstd returns nan for single non-NaN values (ddof=1),
+                    # but it is replaced by 0.0 to match the behavior of the non-vectorized
+                    # _np_std_jit function
+                    n_valid = np.sum(~np.isnan(window), axis=0)
+                    result[n_valid == 1] = 0.0
+                    rolling_features[:, j] = result
+                elif stat == 'min':
+                    rolling_features[:, j] = np.nanmin(window, axis=0)
+                elif stat == 'max':
+                    rolling_features[:, j] = np.nanmax(window, axis=0)
+                elif stat == 'sum':
+                    result = np.nansum(window, axis=0, dtype=float)
+                    # Note: np.nansum returns 0 for all-NaN slices, but it is replaced by NaN
+                    # to match the behavior of the non-vectorized _np_sum_jit function
+                    all_nan_mask = np.all(np.isnan(window), axis=0)
+                    result[all_nan_mask] = np.nan
+                    rolling_features[:, j] = result
+                elif stat == 'median':
+                    rolling_features[:, j] = np.nanmedian(window, axis=0)
 
 
 class RollingFeaturesClassification():
@@ -2182,10 +2348,11 @@ class RollingFeaturesClassification():
 class QuantileBinner:
     """
     QuantileBinner class to bin data into quantile-based bins using `numpy.percentile`.
-    This class is similar to `KBinsDiscretizer` but faster for binning data into
-    quantile-based bins. Bin  intervals are defined following the convention:
-    bins[i-1] <= x < bins[i]. See more information in `numpy.percentile` and
-    `numpy.digitize`.
+    This class is similar to `KBinsDiscretizer` but optimized for performance using
+    `numpy.searchsorted` for fast bin assignment. Bin intervals are defined following 
+    the convention: bins[i-1] <= x < bins[i]. Values outside the range are clipped
+    to the first or last bin. See more information in `numpy.percentile` and
+    `numpy.searchsorted`.
     
     Parameters
     ----------
@@ -2220,9 +2387,12 @@ class QuantileBinner:
     random_state : int
         The random seed to use for generating a random subset of the data.
     n_bins_ : int
-        The number of bins learned during fitting.
+        The number of bins learned during fitting. This may be less than `n_bins` 
+        if there are duplicate bin edges due to repeated predicted values.
     bin_edges_ : numpy ndarray
         The edges of the bins learned during fitting.
+    internal_edges_ : numpy ndarray
+        The internal edges used for optimized bin assignment using `numpy.searchsorted`.
     intervals_ : dict
         A dictionary with the bin indices as keys and the corresponding bin
         intervals as values.
@@ -2246,14 +2416,15 @@ class QuantileBinner:
             random_state
         )
 
-        self.n_bins       = n_bins
-        self.method       = method
-        self.subsample    = subsample
-        self.dtype        = dtype
-        self.random_state = random_state
-        self.n_bins_      = None
-        self.bin_edges_   = None
-        self.intervals_   = None
+        self.n_bins          = n_bins
+        self.method          = method
+        self.subsample       = subsample
+        self.dtype           = dtype
+        self.random_state    = random_state
+        self.n_bins_         = None
+        self.bin_edges_      = None
+        self.internal_edges_ = None
+        self.intervals_      = None
 
     def _validate_params(
         self,
@@ -2323,13 +2494,33 @@ class QuantileBinner:
             rng = np.random.default_rng(self.random_state)
             X = X[rng.integers(0, len(X), self.subsample)]
 
-        self.bin_edges_ = np.percentile(
+        bin_edges = np.percentile(
             a      = X,
             q      = np.linspace(0, 100, self.n_bins + 1),
             method = self.method
         )
 
+        # Remove duplicate edges (can happen when data has many repeated values)
+        # to ensure bins are always numbered 0 to n_bins_-1
+        self.bin_edges_ = np.unique(bin_edges)
+        
+        # Ensure at least 1 bin when all values are identical
+        if len(self.bin_edges_) == 1:
+            # Create artificial edges around the single value
+            self.bin_edges_ = np.array([self.bin_edges_.item(), self.bin_edges_.item()])
+        
         self.n_bins_ = len(self.bin_edges_) - 1
+        
+        if self.n_bins_ != self.n_bins:
+            warnings.warn(
+                f"The number of bins has been reduced from {self.n_bins} to "
+                f"{self.n_bins_} due to duplicated edges caused by repeated predicted "
+                f"values.",
+                IgnoredArgumentWarning
+            )
+        
+        # Internal edges for optimized transform with searchsorted
+        self.internal_edges_ = self.bin_edges_[1:-1]
         self.intervals_ = {
             int(i): (float(self.bin_edges_[i]), float(self.bin_edges_[i + 1]))
             for i in range(self.n_bins_)
@@ -2357,9 +2548,10 @@ class QuantileBinner:
             raise NotFittedError(
                 "The model has not been fitted yet. Call 'fit' with training data first."
             )
-
-        bin_indices = np.digitize(X, bins=self.bin_edges_, right=False)
-        bin_indices = np.clip(bin_indices, 1, self.n_bins_).astype(self.dtype) - 1
+        
+        bin_indices = np.searchsorted(
+            self.internal_edges_, X, side='right'
+        ).astype(self.dtype)
 
         return bin_indices
 

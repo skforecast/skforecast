@@ -12,10 +12,10 @@ import sys
 import numpy as np
 import pandas as pd
 import inspect
-from copy import copy, deepcopy
+from copy import copy
+from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
-from sklearn.base import clone
 from joblib import Parallel, delayed, cpu_count
 
 from .. import __version__
@@ -43,21 +43,94 @@ from ..utils import (
     transform_dataframe,
     select_n_jobs_fit_forecaster,
     get_style_repr_html,
+    _build_predict_function,
+    manage_warnings,
     initialize_estimator
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
 
+def _fit_one_step_estimator(
+    forecaster: object,
+    estimator: object,
+    X_train: pd.DataFrame,
+    y_train: dict,
+    step: int
+) -> tuple:
+    """
+    Fit a single estimator for a given step of a direct forecaster.
+
+    Defined at module level (instead of as a nested closure) so that
+    `joblib.Parallel` can serialize it efficiently with `pickle` rather
+    than `cloudpickle`, avoiding unnecessary closure overhead.
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster instance (ForecasterDirect or ForecasterDirectMultiVariate).
+    estimator : object
+        Estimator to be fitted.
+    X_train : pandas DataFrame
+        Dataframe created with the `create_train_X_y` method, first return.
+    y_train : dict
+        Dict created with the `create_train_X_y` method, second return.
+    step : int
+        Step of the forecaster to be fitted.
+
+    Returns
+    -------
+    step : int
+        Step number.
+    estimator : object
+        Fitted estimator.
+    y_true_step : numpy ndarray, None
+        True values for the step (only if probabilistic mode is active).
+    y_pred_step : numpy ndarray, None
+        Predicted values for the step (only if probabilistic mode is active).
+
+    """
+
+    X_train_step, y_train_step = forecaster.filter_train_X_y_for_step(
+                                     step          = step,
+                                     X_train       = X_train,
+                                     y_train       = y_train,
+                                     remove_suffix = True
+                                 )
+    sample_weight = forecaster.create_sample_weights(X_train=X_train_step)
+    if sample_weight is not None:
+        estimator.fit(
+            X             = X_train_step,
+            y             = y_train_step,
+            sample_weight = sample_weight,
+            **forecaster.fit_kwargs
+        )
+    else:
+        estimator.fit(
+            X = X_train_step,
+            y = y_train_step,
+            **forecaster.fit_kwargs
+        )
+
+    # NOTE: This is done to save time during fit in functions such as backtesting()
+    y_true_step = None
+    y_pred_step = None
+    if forecaster._probabilistic_mode is not False:
+        y_true_step = y_train_step.to_numpy()
+        y_pred_step = estimator.predict(X_train_step)
+
+    return step, estimator, y_true_step, y_pred_step
+
+
 class ForecasterDirect(ForecasterBase):
     """
-    This class turns any estimator compatible with the scikit-learn API into a
+    This class turns any estimator compatible with the scikit-learn API into an
     autoregressive direct multi-step forecaster. A separate model is created for
     each forecast time step. See documentation for more details.
     
     Parameters
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     steps : int
         Maximum number of future steps the forecaster will predict when using
         method `predict()`. Since a different model is created for each step,
@@ -107,13 +180,13 @@ class ForecasterDirect(ForecasterBase):
         skforecast.utils.select_n_jobs_fit_forecaster.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : estimator or pipeline compatible with the Keras API
+    regressor : estimator or pipeline compatible with the scikit-learn API
         **Deprecated**, alias for `estimator`.
     
     Attributes
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
         An instance of this estimator is trained for each step. All of them 
         are stored in `self.estimators_`.
     estimators_ : dict
@@ -185,7 +258,7 @@ class ForecasterDirect(ForecasterBase):
     training_range_ : pandas Index
         First and last values of index of the data used during training.
     series_name_in_ : str
-        Names of the series provided by the user during training.
+        Name of the series provided by the user during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -220,7 +293,7 @@ class ForecasterDirect(ForecasterBase):
         the transformed scale. If `differentiation` is not `None`, residuals are
         stored after differentiation.
     in_sample_residuals_by_bin_ : dict
-        In sample residuals binned according to the predicted value each residual
+        In-sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
         `10_000 // self.binner.n_bins_` in the form `{bin: residuals}`. If 
         `transformer_y` is not `None`, residuals are stored in the transformed 
@@ -252,6 +325,22 @@ class ForecasterDirect(ForecasterBase):
     binner_kwargs : dict
         Additional arguments to pass to the `QuantileBinner`.
         **New in version 0.15.0**
+    filter_train_X_y_index_cache_ : dict
+        Cache storing column indices for each forecasting step to speed up the 
+        creation of training matrices during backtesting. The cache uses step 
+        numbers as keys and numpy arrays of column indices as values. This avoids 
+        repeated calculations when filtering `X_train` for specific steps. The 
+        cache is cleared during `fit()` and when `set_lags()` or 
+        `set_window_features()` are called.
+        **New in version 0.20.0**
+    filter_train_X_y_columns_cache_ : dict
+        Cache storing column names for each forecasting step to speed up the 
+        creation of training matrices during backtesting. The cache uses step 
+        numbers as keys and lists of column names as values. This avoids repeated 
+        string operations when removing step suffixes from column names. The cache 
+        is cleared during `fit()` and when `set_lags()` or `set_window_features()` 
+        are called.
+        **New in version 0.20.0**
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -324,6 +413,8 @@ class ForecasterDirect(ForecasterBase):
         self.out_sample_residuals_              = None
         self.in_sample_residuals_by_bin_        = None
         self.out_sample_residuals_by_bin_       = None
+        self.filter_train_X_y_index_cache_      = {}
+        self.filter_train_X_y_columns_cache_    = {}
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
@@ -348,6 +439,10 @@ class ForecasterDirect(ForecasterBase):
 
         self.estimators_ = {step: clone(self.estimator) for step in self.steps}
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         self.window_features, self.window_features_names, self.max_size_window_features = (
             initialize_window_features(window_features)
         )
@@ -588,10 +683,7 @@ class ForecasterDirect(ForecasterBase):
         Create the lagged values and their target variable from a time series.
         
         Note that the returned matrix `X_data` contains the lag 1 in the first 
-        column, the lag 2 in the in the second column and so on.
-
-        The returned matrices are views into the original `y` so care must be taken
-        when modifying them.
+        column, the lag 2 in the second column and so on.
 
         Parameters
         ----------
@@ -612,7 +704,7 @@ class ForecasterDirect(ForecasterBase):
 
         Notes
         -----
-        Returned matrices are views into the original `y` so care must be taken
+        Returned matrices may be views into the original `y` so care must be taken
         when modifying them.
 
         """
@@ -621,8 +713,13 @@ class ForecasterDirect(ForecasterBase):
 
         X_data = None
         if self.lags is not None:
-            lag_indices = [self.window_size - lag for lag in self.lags]
-            X_data = windows[:, lag_indices]
+            if self.lags_are_contiguous:
+                # Basic slice → view (no copy); reversed to put lag_1 first.
+                X_data = windows[:, self.window_size - self.max_lag:self.window_size][:, ::-1]
+            else:
+                # Non-contiguous lags require fancy indexing, which forces a copy.
+                lag_indices = [self.window_size - lag for lag in self.lags]
+                X_data = windows[:, lag_indices]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -762,11 +859,13 @@ class ForecasterDirect(ForecasterBase):
 
         fit_transformer = False if self.is_fitted else True
         y = transform_dataframe(
-                df                = y, 
-                transformer       = self.transformer_y,
-                fit               = fit_transformer,
-                inverse_transform = False,
+                df                  = y, 
+                transformer         = self.transformer_y,
+                fit                 = fit_transformer,
+                inverse_transform   = False,
+                force_single_column = True
             )
+        
         y_values, y_index = check_extract_values_and_index(data=y, data_label='`y`')
 
         if self.differentiation is not None:
@@ -1009,25 +1108,35 @@ class ForecasterDirect(ForecasterBase):
         if not self.exog_in_:
             X_train_step = X_train
         else:
-            n_lags = len(self.lags) if self.lags is not None else 0
-            n_window_features = (
-                len(self.X_train_window_features_names_out_) if self.window_features is not None else 0
-            )
-            idx_columns_autoreg = np.arange(n_lags + n_window_features)
-            n_exog = len(self.X_train_direct_exog_names_out_) / self.max_step
-            idx_columns_exog = (
-                np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
-            )
-            idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
+            # Optimization: Cache column indices to avoid repeated calculations
+            if step not in self.filter_train_X_y_index_cache_:
+                n_lags = len(self.lags) if self.lags is not None else 0
+                n_window_features = (
+                    len(self.X_train_window_features_names_out_) if self.window_features is not None else 0
+                )
+                idx_columns_autoreg = np.arange(n_lags + n_window_features)
+                n_exog = len(self.X_train_direct_exog_names_out_) / self.max_step
+                idx_columns_exog = (
+                    np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
+                )
+                idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
+                self.filter_train_X_y_index_cache_[step] = idx_columns
+            
+            idx_columns = self.filter_train_X_y_index_cache_[step]
             X_train_step = X_train.iloc[:, idx_columns]
 
         X_train_step.index = y_train_step.index
 
         if remove_suffix:
-            X_train_step.columns = [
-                col_name.replace(f"_step_{step}", "")
-                for col_name in X_train_step.columns
-            ]
+            # Optimization: Cache column names after suffix removal
+            if step not in self.filter_train_X_y_columns_cache_:
+                new_columns = [
+                    col_name.replace(f"_step_{step}", "")
+                    for col_name in X_train_step.columns
+                ]
+                self.filter_train_X_y_columns_cache_[step] = new_columns
+            
+            X_train_step.columns = self.filter_train_X_y_columns_cache_[step]
             y_train_step.name = y_train_step.name.replace(f"_step_{step}", "")
 
         return X_train_step, y_train_step
@@ -1129,13 +1238,15 @@ class ForecasterDirect(ForecasterBase):
 
         return sample_weight
 
+    @manage_warnings
     def fit(
         self,
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
         store_in_sample_residuals: bool = False,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> None:
         """
         Training Forecaster.
@@ -1161,6 +1272,10 @@ class ForecasterDirect(ForecasterBase):
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the training 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
@@ -1185,7 +1300,11 @@ class ForecasterDirect(ForecasterBase):
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
+        self.out_sample_residuals_              = None
+        self.out_sample_residuals_by_bin_       = None
         self.binner_intervals_                  = None
+        self.filter_train_X_y_index_cache_      = {}
+        self.filter_train_X_y_columns_cache_    = {}
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -1199,74 +1318,23 @@ class ForecasterDirect(ForecasterBase):
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
 
-        def fit_forecaster(estimator, X_train, y_train, step):
-            """
-            Auxiliary function to fit each of the forecaster's estimators in parallel.
-
-            Parameters
-            ----------
-            estimator : object
-                Estimator to be fitted.
-            X_train : pandas DataFrame
-                Dataframe created with the `create_train_X_y` method, first return.
-            y_train : dict
-                Dict created with the `create_train_X_y` method, second return.
-            step : int
-                Step of the forecaster to be fitted.
-            
-            Returns
-            -------
-            Tuple with the step, fitted estimator, true values and predicted 
-            values for the step.
-
-            """
-
-            X_train_step, y_train_step = self.filter_train_X_y_for_step(
-                                             step          = step,
-                                             X_train       = X_train,
-                                             y_train       = y_train,
-                                             remove_suffix = True
-                                         )
-            sample_weight = self.create_sample_weights(X_train=X_train_step)
-            if sample_weight is not None:
-                estimator.fit(
-                    X             = X_train_step,
-                    y             = y_train_step,
-                    sample_weight = sample_weight,
-                    **self.fit_kwargs
-                )
-            else:
-                estimator.fit(
-                    X = X_train_step,
-                    y = y_train_step,
-                    **self.fit_kwargs
-                )
-
-            # NOTE: This is done to save time during fit in functions such as backtesting()
-            y_true_step = None
-            y_pred_step = None
-            if self._probabilistic_mode is not False:
-                y_true_step = y_train_step.to_numpy()
-                y_pred_step = estimator.predict(X_train_step)
-
-            return step, estimator, y_true_step, y_pred_step
-
-        results_fit = (
-            Parallel(n_jobs=self.n_jobs)
-            (delayed(fit_forecaster)
-            (
-                estimator = copy(self.estimator),
-                X_train   = X_train,
-                y_train   = y_train,
-                step      = step
+        results_fit = Parallel(n_jobs=self.n_jobs)(
+            delayed(_fit_one_step_estimator)(
+                forecaster = self,
+                estimator  = copy(self.estimator),
+                X_train    = X_train,
+                y_train    = y_train,
+                step       = step
             )
-            for step in self.steps)
+            for step in self.steps
         )
 
         self.estimators_ = {step: estimator for step, estimator, *_ in results_fit}
 
         if self._probabilistic_mode is not False:
-            y_true, y_pred = zip(*[(y_true, y_pred) for *_, y_true, y_pred in results_fit])
+            y_true, y_pred = zip(
+                *[(y_true, y_pred) for *_, y_true, y_pred in results_fit]
+            )
             self._binning_in_sample_residuals(
                 y_true                    = np.concatenate(y_true),
                 y_pred                    = np.concatenate(y_pred),
@@ -1381,7 +1449,7 @@ class ForecasterDirect(ForecasterBase):
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         check_inputs: bool = True
-    ) -> tuple[list[np.ndarray], list[str], list[int], pd.Index]:
+    ) -> tuple[list[np.ndarray], list[str], list[int], pd.Index, object | None]:
         """
         Create the inputs needed for the prediction process.
         
@@ -1432,6 +1500,11 @@ class ForecasterDirect(ForecasterBase):
             Steps to predict.
         prediction_index : pandas Index
             Index of the predictions.
+        differentiator : TimeSeriesDifferentiator, None
+            A copy of the differentiator fitted with the last window values.
+            `None` if no differentiation is applied. This is used to reverse
+            the differentiation of predictions without mutating the forecaster's
+            internal state.
         
         """
 
@@ -1480,7 +1553,10 @@ class ForecasterDirect(ForecasterBase):
                                  inverse_transform = False
                              )
         if self.differentiation is not None:
-            last_window_values = self.differentiator.fit_transform(last_window_values)
+            differentiator = copy(self.differentiator)
+            last_window_values = differentiator.fit_transform(last_window_values)
+        else:
+            differentiator = None
 
         X_autoreg = []
         Xs_col_names = []
@@ -1527,16 +1603,22 @@ class ForecasterDirect(ForecasterBase):
             exog_values = exog_values[0]
             
             n_exog = exog.shape[1]
-            Xs = [
-                np.concatenate(
-                    [
-                        X_autoreg,
-                        exog_values[(step - 1) * n_exog : step * n_exog].reshape(1, -1),
-                    ],
-                    axis=1
-                )
-                for step in steps
-            ]
+            n_features_autoreg = X_autoreg.shape[1]
+            
+            # Optimization: Pre-allocate array and fill efficiently instead of
+            # repeated concatenations. This avoids creating len(steps) separate
+            # arrays and their concatenations, reducing memory allocations and
+            # improving cache locality.
+            Xs_array = np.empty((len(steps), n_features_autoreg + n_exog), dtype=float)
+            # Broadcast autoregressive features once to all rows
+            Xs_array[:, :n_features_autoreg] = X_autoreg
+            # Fill exog values for each step
+            for i, step in enumerate(steps):
+                Xs_array[i, n_features_autoreg:] = exog_values[(step - 1) * n_exog : step * n_exog]
+            
+            # Convert to list of row arrays for compatibility with existing code
+            Xs = [Xs_array[i:i + 1] for i in range(len(steps))]
+            
             # HACK: This is not the best way to do it. Can have any problem
             # if the exog_columns are not in the same order as the
             # self.window_features_names.
@@ -1554,14 +1636,16 @@ class ForecasterDirect(ForecasterBase):
             prediction_index.freq = last_window.index.freq
 
         # HACK: Why no use self.X_train_features_names_out_ as Xs_col_names?
-        return Xs, Xs_col_names, steps, prediction_index
+        return Xs, Xs_col_names, steps, prediction_index, differentiator
 
+    @manage_warnings
     def create_predict_X(
         self,
         steps: int | list[int] | None = None,
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        check_inputs: bool = True
+        check_inputs: bool = True,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Create the predictors needed to predict `steps` ahead.
@@ -1589,6 +1673,10 @@ class ForecasterDirect(ForecasterBase):
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -1602,7 +1690,8 @@ class ForecasterDirect(ForecasterBase):
             Xs,
             Xs_col_names,
             steps,
-            prediction_index
+            prediction_index,
+            _
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -1637,12 +1726,59 @@ class ForecasterDirect(ForecasterBase):
 
         return X_predict
 
+    def _direct_predict(
+        self,
+        steps: list[int],
+        Xs: list[np.ndarray]
+    ) -> np.ndarray:
+        """
+        Generate predictions for the specified steps using the fitted estimators.
+        
+        This method optimizes prediction for common estimator types:
+        - LinearModel: Uses direct dot product with coefficients
+        - LGBMRegressor: Uses booster_.predict for faster inference
+        - XGBRegressor: Uses get_booster().inplace_predict for faster inference
+        - Other estimators: Uses standard predict method
+        
+        Parameters
+        ----------
+        steps : list[int]
+            List of steps to predict. Each step corresponds to an estimator
+            in `self.estimators_`.
+        Xs : list[np.ndarray]
+            List of numpy arrays with the predictors for each step.
+            Each array has shape (1, n_features).
+
+        Returns
+        -------
+        predictions : numpy ndarray
+            Predicted values for each step. Shape: (len(steps),)
+        
+        """
+
+        estimators = [self.estimators_[step] for step in steps]
+        
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            predict_fns = [_build_predict_function(est) for est in estimators]
+            predictions = np.array([
+                fn(X).item() for fn, X in zip(predict_fns, Xs)
+            ])
+
+        return predictions
+
+    @manage_warnings
     def predict(
         self,
         steps: int | list[int] | None = None,
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        check_inputs: bool = True
+        check_inputs: bool = True,
+        suppress_warnings: bool = False
     ) -> pd.Series:
         """
         Predict n steps ahead.
@@ -1670,6 +1806,10 @@ class ForecasterDirect(ForecasterBase):
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -1682,7 +1822,8 @@ class ForecasterDirect(ForecasterBase):
             Xs,
             _,
             steps,
-            prediction_index
+            prediction_index,
+            differentiator
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -1690,20 +1831,10 @@ class ForecasterDirect(ForecasterBase):
                 check_inputs = check_inputs,
             )
 
-        estimators = [self.estimators_[step] for step in steps]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predictions = np.array([
-                estimator.predict(X).ravel().item()
-                for estimator, X in zip(estimators, Xs)
-            ])
+        predictions = self._direct_predict(steps=steps, Xs=Xs)
 
         if self.differentiation is not None:
-            predictions = self.differentiator.inverse_transform_next_window(predictions)
+            predictions = differentiator.inverse_transform_next_window(predictions)
 
         predictions = transform_numpy(
                           array             = predictions,
@@ -1720,6 +1851,7 @@ class ForecasterDirect(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_bootstrapping(
         self,
         steps: int | list[int] | None = None,
@@ -1728,7 +1860,8 @@ class ForecasterDirect(ForecasterBase):
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Generate multiple forecasting predictions using a bootstrapping process. 
@@ -1770,6 +1903,10 @@ class ForecasterDirect(ForecasterBase):
             If `False`, residuals are selected randomly.
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -1788,7 +1925,8 @@ class ForecasterDirect(ForecasterBase):
             Xs,
             _,
             steps,
-            prediction_index
+            prediction_index,
+            differentiator
         ) = self._create_predict_inputs(
                 steps                   = steps, 
                 last_window             = last_window, 
@@ -1806,17 +1944,7 @@ class ForecasterDirect(ForecasterBase):
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
         # NOTE: Predictors and residuals are transformed and differentiated
-        estimators = [self.estimators_[step] for step in steps]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predictions = np.array([
-                estimator.predict(X).ravel().item()
-                for estimator, X in zip(estimators, Xs)
-            ])
+        predictions = self._direct_predict(steps=steps, Xs=Xs)
         
         rng = np.random.default_rng(seed=random_state)
         if not use_binned_residuals:
@@ -1842,14 +1970,12 @@ class ForecasterDirect(ForecasterBase):
 
         if self.differentiation is not None:
             boot_predictions = (
-                self.differentiator.inverse_transform_next_window(boot_predictions)
+                differentiator.inverse_transform_next_window(boot_predictions)
             )
 
         if self.transformer_y:
-            boot_predictions = np.apply_along_axis(
-                                   func1d            = transform_numpy,
-                                   axis              = 0,
-                                   arr               = boot_predictions,
+            boot_predictions = transform_numpy(
+                                   array             = boot_predictions,
                                    transformer       = self.transformer_y,
                                    fit               = False,
                                    inverse_transform = True
@@ -1929,7 +2055,8 @@ class ForecasterDirect(ForecasterBase):
             Xs,
             _,
             steps,
-            prediction_index
+            prediction_index,
+            differentiator
         ) = self._create_predict_inputs(
                 steps                   = steps, 
                 last_window             = last_window, 
@@ -1946,18 +2073,8 @@ class ForecasterDirect(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        # NOTE: Predictors and residuals are transformed and differentiated  
-        estimators = [self.estimators_[step] for step in steps]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predictions = np.array([
-                estimator.predict(X).ravel().item()
-                for estimator, X in zip(estimators, Xs)
-            ])
+        # NOTE: Predictors and residuals are transformed and differentiated
+        predictions = self._direct_predict(steps=steps, Xs=Xs)
         
         if use_binned_residuals:
             correction_factor_by_bin = {
@@ -1975,15 +2092,11 @@ class ForecasterDirect(ForecasterBase):
         predictions = np.column_stack([predictions, lower_bound, upper_bound])
 
         if self.differentiation is not None:
-            predictions = (
-                self.differentiator.inverse_transform_next_window(predictions)
-            )
+            predictions = differentiator.inverse_transform_next_window(predictions)
         
         if self.transformer_y:
-            predictions = np.apply_along_axis(
-                              func1d            = transform_numpy,
-                              axis              = 0,
-                              arr               = predictions,
+            predictions = transform_numpy(
+                              array             = predictions,
                               transformer       = self.transformer_y,
                               fit               = False,
                               inverse_transform = True
@@ -1997,6 +2110,7 @@ class ForecasterDirect(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int | list[int] | None = None,
@@ -2007,7 +2121,8 @@ class ForecasterDirect(ForecasterBase):
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Predict n steps ahead and estimate prediction intervals using either 
@@ -2067,6 +2182,10 @@ class ForecasterDirect(ForecasterBase):
             If `False`, residuals are selected randomly.
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -2103,14 +2222,16 @@ class ForecasterDirect(ForecasterBase):
                                    n_boot                  = n_boot,
                                    random_state            = random_state,
                                    use_in_sample_residuals = use_in_sample_residuals,
-                                   use_binned_residuals    = use_binned_residuals
+                                   use_binned_residuals    = use_binned_residuals,
+                                   suppress_warnings       = suppress_warnings
                                )
     
             predictions = self.predict(
-                              steps        = steps,
-                              last_window  = last_window,
-                              exog         = exog,
-                              check_inputs = False
+                              steps             = steps,
+                              last_window       = last_window,
+                              exog              = exog,
+                              check_inputs      = False,
+                              suppress_warnings = suppress_warnings
                           )
     
             predictions_interval = boot_predictions.quantile(q=interval, axis=1).transpose()
@@ -2141,6 +2262,7 @@ class ForecasterDirect(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_quantiles(
         self,
         steps: int | list[int] | None = None,
@@ -2150,10 +2272,13 @@ class ForecasterDirect(ForecasterBase):
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
-        Bootstrapping based predicted quantiles.
+        Calculate the specified quantiles for each step. After generating 
+        multiple forecasting predictions through a bootstrapping process, each 
+        quantile is calculated for each step.
         
         Parameters
         ----------
@@ -2192,6 +2317,10 @@ class ForecasterDirect(ForecasterBase):
             If `False`, residuals are selected randomly.
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -2214,7 +2343,8 @@ class ForecasterDirect(ForecasterBase):
                           n_boot                  = n_boot,
                           random_state            = random_state,
                           use_in_sample_residuals = use_in_sample_residuals,
-                          use_binned_residuals    = use_binned_residuals
+                          use_binned_residuals    = use_binned_residuals,
+                          suppress_warnings       = suppress_warnings
                       )
 
         predictions = predictions.quantile(q=quantiles, axis=1).transpose()
@@ -2222,6 +2352,7 @@ class ForecasterDirect(ForecasterBase):
 
         return predictions
     
+    @manage_warnings
     def predict_dist(
         self,
         distribution: object,
@@ -2231,7 +2362,8 @@ class ForecasterDirect(ForecasterBase):
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Fit a given probability distribution for each step. After generating 
@@ -2275,6 +2407,10 @@ class ForecasterDirect(ForecasterBase):
             If `False`, residuals are selected randomly.
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -2301,7 +2437,8 @@ class ForecasterDirect(ForecasterBase):
                           n_boot                  = n_boot,
                           random_state            = random_state,
                           use_in_sample_residuals = use_in_sample_residuals,
-                          use_binned_residuals    = use_binned_residuals
+                          use_binned_residuals    = use_binned_residuals,
+                          suppress_warnings       = suppress_warnings
                       )       
 
         param_names = [
@@ -2325,7 +2462,9 @@ class ForecasterDirect(ForecasterBase):
         """
         Set new values to the parameters of the scikit-learn model stored in the
         forecaster. It is important to note that all models share the same 
-        configuration of parameters and hyperparameters.
+        configuration of parameters and hyperparameters. After calling this method, 
+        the forecaster is reset to an unfitted state. The `fit` method must be 
+        called before prediction.
         
         Parameters
         ----------
@@ -2344,6 +2483,7 @@ class ForecasterDirect(ForecasterBase):
             step: clone(self.estimator)
             for step in self.steps
         }
+        self.is_fitted = False
 
     def set_fit_kwargs(
         self, 
@@ -2398,6 +2538,10 @@ class ForecasterDirect(ForecasterBase):
             )
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         self.window_size = max(
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]
@@ -2405,6 +2549,9 @@ class ForecasterDirect(ForecasterBase):
         if self.differentiation is not None:
             self.window_size += self.differentiation
             self.differentiator.set_params(window_size=self.window_size)
+        
+        self.filter_train_X_y_index_cache_ = {}
+        self.filter_train_X_y_columns_cache_ = {}
 
     def set_window_features(
         self, 
@@ -2449,6 +2596,9 @@ class ForecasterDirect(ForecasterBase):
         if self.differentiation is not None:
             self.window_size += self.differentiation   
             self.differentiator.set_params(window_size=self.window_size)
+        
+        self.filter_train_X_y_index_cache_ = {}
+        self.filter_train_X_y_columns_cache_ = {}
 
     def set_in_sample_residuals(
         self,
@@ -2650,8 +2800,6 @@ class ForecasterDirect(ForecasterBase):
                     "`y_true` and `y_pred` must have the same index."
                 )
         
-        y_true = deepcopy(y_true)
-        y_pred = deepcopy(y_pred)
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.to_numpy()
         if not isinstance(y_true, np.ndarray):

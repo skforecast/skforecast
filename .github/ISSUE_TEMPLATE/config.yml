@@ -6,6 +6,9 @@ contact_links:
   - name: 💬 Discussions
     url: https://github.com/skforecast/skforecast/discussions
     about: If none of these options fit, your question or topic may be better suited to a discussion.
+  - name: 🖥️ Skforecast Studio
+    url: https://studio.skforecast.org/
+    about: "Interactive no-code application for building time series forecasting models with skforecast."
   - name: 🎧 Discord Community
     url: https://discord.gg/3V52qpNkuj
     about: "Join our Discord server to chat with the community and maintainers."

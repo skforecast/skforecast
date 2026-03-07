@@ -30,6 +30,7 @@ jobs:
       - name: Run tests and collect coverage
         env:
           KERAS_BACKEND: torch
+          # NUMBA_DISABLE_JIT: 1  # Disable Numba JIT to capture a better coverage report
         run: pytest --cov skforecast --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
 
       - name: Upload coverage to Codecov

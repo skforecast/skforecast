@@ -1,0 +1,256 @@
+# Unit test set_params method - Arima
+# ==============================================================================
+import re
+import pytest
+import numpy as np
+from sklearn.exceptions import NotFittedError
+from ..._arima import Arima
+
+
+def ar1_series(n=100, phi=0.7, sigma=1.0, seed=123):
+    """Helper function to generate AR(1) series for testing."""
+    rng = np.random.default_rng(seed)
+    e = rng.normal(0.0, sigma, size=n)
+    y = np.zeros(n, dtype=float)
+    y[0] = e[0]
+    for t in range(1, n):
+        y[t] = phi * y[t - 1] + e[t]
+    return y
+
+
+def test_set_params_raises_error_for_invalid_parameter():
+    """
+    Test that set_params raises ValueError for invalid parameter names.
+    """
+    model = Arima()
+    
+    msg = "Invalid parameter 'invalid_param'. Valid parameters are:"
+    with pytest.raises(ValueError, match=msg):
+        model.set_params(invalid_param=10)
+    
+    msg = "Invalid parameter 'max_depth'. Valid parameters are:"
+    with pytest.raises(ValueError, match=msg):
+        model.set_params(max_depth=20)
+
+
+def test_set_params_updates_valid_parameters():
+    """
+    Test that set_params correctly updates valid parameters.
+    """
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0), m=1, method="CSS-ML")
+    
+    assert model.order == (1, 0, 0)
+    assert model.m == 1
+    assert model.method == "CSS-ML"
+    
+    # Update single parameter
+    result = model.set_params(order=(2, 1, 1))
+    assert result is model  # Returns self for method chaining
+    assert model.order == (2, 1, 1)
+    
+    # Update multiple parameters
+    model.set_params(m=12, method="ML")
+    assert model.m == 12
+    assert model.method == "ML"
+
+
+def test_set_params_all_parameters():
+    """
+    Test that set_params can update all valid parameters.
+    """
+    model = Arima()
+    
+    new_params = {
+        'order': (2, 1, 2),
+        'seasonal_order': (1, 1, 1),
+        'm': 12,
+        'include_mean': False,
+        'transform_pars': False,
+        'method': 'ML',
+        'n_cond': 15,
+        'SSinit': 'Rossignol2011',
+        'optim_method': 'L-BFGS-B',
+        'optim_kwargs': {'maxiter': 200},
+        'kappa': 1e5
+    }
+    
+    model.set_params(**new_params)
+    
+    for key, value in new_params.items():
+        assert getattr(model, key) == value
+
+
+def test_set_params_resets_fitted_state():
+    """
+    Test that set_params resets all fitted attributes.
+    """
+    y = ar1_series(100, seed=42)
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
+    model.fit(y)
+    
+    # Check that model is fitted
+    assert hasattr(model, 'model_')
+    assert hasattr(model, 'coef_')
+    assert hasattr(model, 'y_train_')
+    assert model.is_memory_reduced is False
+    assert model.is_fitted is True
+    
+    # Change a parameter
+    model.set_params(order=(2, 0, 0))
+    
+    assert model.model_ is None
+    assert model.coef_ is None
+    assert model.y_train_ is None
+    assert model.is_memory_reduced is False
+    assert model.is_fitted is False
+
+
+def test_set_params_after_fit_requires_refit():
+    """
+    Test that after set_params, model needs to be refitted before prediction.
+    """
+    y = ar1_series(100, seed=42)
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
+    model.fit(y)
+    
+    # Predictions work after fitting
+    pred1 = model.predict(steps=5)
+    assert pred1.shape == (5,)
+    
+    # Change parameters
+    model.set_params(order=(2, 0, 0))
+    assert model.is_fitted is False
+    
+    # Predictions should fail without refitting
+    error_msg = re.escape(
+        "This Arima instance is not fitted yet. Call 'fit' with "
+        "appropriate arguments before using this estimator."
+    )
+    with pytest.raises(NotFittedError, match=error_msg):
+        model.predict(steps=5)
+    
+    # Refit and predictions should work again
+    model.fit(y)
+    pred2 = model.predict(steps=5)
+    assert pred2.shape == (5,)
+
+
+def test_set_params_returns_self():
+    """
+    Test that set_params returns self for method chaining.
+    """
+    model = Arima()
+    result = model.set_params(order=(1, 1, 1), seasonal_order=(0, 1, 1))
+    
+    assert result is model
+
+
+def test_set_params_method_chaining():
+    """
+    Test that set_params supports method chaining.
+    """
+    y = ar1_series(100, seed=42)
+    
+    model = (Arima(order=(0, 0, 0), seasonal_order=(0, 0, 0), m=1)
+             .set_params(order=(1, 0, 1))
+             .set_params(m=12)
+             .fit(y))
+    
+    assert model.order == (1, 0, 1)
+    assert model.m == 12
+    assert hasattr(model, 'model_')
+
+
+def test_set_params_preserves_unmodified_parameters():
+    """
+    Test that set_params only changes specified parameters.
+    """
+    model = Arima(
+        order=(1, 0, 1),
+        seasonal_order=(1, 0, 1),
+        m=12,
+        method="ML",
+        kappa=1e5
+    )
+    
+    # Only change one parameter
+    model.set_params(order=(2, 0, 2))
+    
+    # Other parameters should remain unchanged
+    assert model.order == (2, 0, 2)  # Changed
+    assert model.seasonal_order == (1, 0, 1)  # Unchanged
+    assert model.m == 12  # Unchanged
+    assert model.method == "ML"  # Unchanged
+    assert model.kappa == 1e5  # Unchanged
+
+
+def test_set_params_on_fitted_model_with_exog():
+    """
+    Test that set_params resets state even when model was fitted with exog.
+    """
+    np.random.seed(42)
+    y = ar1_series(80)
+    exog = np.random.randn(80, 2)
+    
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
+    model.fit(y, exog=exog)
+    
+    assert model.n_exog_features_in_ == 2
+    
+    # Change parameters
+    model.set_params(order=(2, 0, 0))
+    
+    # Exog-related attributes should also be reset
+    assert model.n_exog_features_in_ is None
+
+
+def test_set_params_empty_call():
+    """
+    Test that calling set_params with no arguments still resets fitted state.
+    """
+    y = ar1_series(100, seed=42)
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
+    model.fit(y)
+    
+    assert model.is_fitted is True
+    assert hasattr(model, 'model_')
+    
+    # Call with no parameters
+    model.set_params()
+    
+    # Should still reset fitted state
+    assert model.is_fitted is False
+    assert model.model_ is None
+
+
+def test_set_params_resets_memory_reduced_flag():
+    """
+    Test that set_params resets is_memory_reduced flag.
+    """
+    y = ar1_series(100, seed=42)
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0), m=1)
+    model.fit(y)
+    model.reduce_memory()
+    
+    assert model.is_memory_reduced is True
+    
+    model.set_params(order=(2, 0, 0))
+    
+    assert model.is_memory_reduced is False
+
+
+def test_set_params_to_auto_mode():
+    """
+    Test that set_params with order=None switches to auto mode and updates
+    estimator_name_ to AutoArima().
+    """
+    model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
+    
+    assert model.is_auto is False
+    assert model.estimator_name_ == "Arima(1,0,0)"
+    
+    # Set order to None to switch to auto mode
+    model.set_params(order=None)
+    
+    assert model.is_auto is True
+    assert model.estimator_name_ == "AutoArima()"

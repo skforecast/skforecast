@@ -4,11 +4,11 @@ import pytest
 from joblib import cpu_count
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
-from lightgbm import LGBMRegressor
+from lightgbm import LGBMRegressor, LGBMClassifier
 from skforecast.model_selection._utils import select_n_jobs_backtesting
-from skforecast.recursive import ForecasterRecursive
+from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.stats import Sarimax
@@ -28,6 +28,13 @@ from skforecast.recursive import ForecasterEquivalentDate
      (ForecasterRecursive(estimator=LGBMRegressor(n_jobs=1), lags=2), False, cpu_count() - 1),
      (ForecasterRecursive(estimator=LGBMRegressor(), lags=2), True, 1),
      (ForecasterRecursive(estimator=LGBMRegressor(), lags=2), False, 1),
+     (ForecasterRecursiveClassifier(estimator=LogisticRegression(), lags=2), True, 1),
+     (ForecasterRecursiveClassifier(estimator=LogisticRegression(), lags=2), 2, 1),
+     (ForecasterRecursiveClassifier(estimator=LogisticRegression(), lags=2), False, 1),
+     (ForecasterRecursiveClassifier(estimator=LGBMClassifier(n_jobs=1), lags=2), True, cpu_count() - 1),
+     (ForecasterRecursiveClassifier(estimator=LGBMClassifier(n_jobs=1), lags=2), False, cpu_count() - 1),
+     (ForecasterRecursiveClassifier(estimator=LGBMClassifier(), lags=2), True, 1),
+     (ForecasterRecursiveClassifier(estimator=LGBMClassifier(), lags=2), False, 1),
      (ForecasterDirect(estimator=LinearRegression(), steps=3, lags=2), True, 1),
      (ForecasterDirect(estimator=LinearRegression(), steps=3, lags=2), 2, 1),
      (ForecasterDirect(estimator=LinearRegression(), steps=3, lags=2), False, 1),

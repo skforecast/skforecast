@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 from typing import Any
-from copy import deepcopy
 import warnings
 import numpy as np
 import pandas as pd
@@ -352,7 +351,7 @@ class BaseFold():
                 f"`params` must be a dictionary. Got {type(params)}."
             )
 
-        current_params = deepcopy(vars(self))
+        current_params = dict(vars(self))
         unknown_params = set(params.keys()) - set(current_params.keys())
         if unknown_params:
             warnings.warn(
@@ -748,7 +747,7 @@ class TimeSeriesFold(BaseFold):
     the index, so they can be used to slice the data directly using iloc. For example,
     if the input series is `X = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]`, the 
     `initial_train_size = 3`, `window_size = 2`, `steps = 4`, and `gap = 1`,
-    the output of the first fold will: [0, [0, 3], [1, 3], [3, 8], [4, 8], True].
+    the output of the first fold will be: [0, [0, 3], [1, 3], [3, 8], [4, 8], True].
 
     The first element is the fold number, the first list `[0, 3]` indicates that 
     the training set goes from the first to the third observation. The second 
@@ -756,8 +755,8 @@ class TimeSeriesFold(BaseFold):
     training goes from the second to the third observation. The third list `[3, 8]` 
     indicates that the test set goes from the fourth to the eighth observation. 
     The fourth list `[4, 8]` indicates that the test set including the gap goes 
-    from the fifth to the eighth observation. The boolean `False` indicates that 
-    the forecaster should not be trained in this fold.
+    from the fifth to the eighth observation. The boolean `True` indicates that 
+    the forecaster will be trained in this fold.
 
     Following the python convention, the start index is inclusive and the end index is
     exclusive. This means that the last index is not included in the slice.
@@ -902,7 +901,7 @@ class TimeSeriesFold(BaseFold):
             training set.
             - [last_window_start, last_window_end]: list with the start and end positions
             of the last window seen by the forecaster during training. The last window
-            is used to generate the lags use as predictors. If `differentiation` is
+            is used to generate the lags used as predictors. If `differentiation` is
             included, the interval is extended as many observations as the
             differentiation order. If the argument `window_size` is `None`, this list is
             empty.
@@ -949,7 +948,7 @@ class TimeSeriesFold(BaseFold):
             except KeyError:
                 raise ValueError(
                     f"The length of `y` ({len(X)}), must be greater than or equal "
-                    f"to the window size ({self.window_size}). This is because  "
+                    f"to the window size ({self.window_size}). This is because "
                     f"the offset (forecaster.offset) is larger than the available "
                     f"data. Try to decrease the size of the offset (forecaster.offset), "
                     f"the number of `n_offsets` (forecaster.n_offsets) or increase the "
@@ -1188,7 +1187,7 @@ class TimeSeriesFold(BaseFold):
         n_removed_folds : int
             Number of folds removed.
         index_to_skip : list
-            Number of folds skipped.
+            Indexes of folds to skip.
 
         Returns
         -------

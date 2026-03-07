@@ -7,11 +7,11 @@
 
 <div style="clear: both;"></div>
 
-![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
 [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/)
 [![Conda](https://img.shields.io/conda/v/conda-forge/skforecast?logo=Anaconda)](https://anaconda.org/conda-forge/skforecast)
 [![codecov](https://codecov.io/gh/skforecast/skforecast/branch/master/graph/badge.svg)](https://codecov.io/gh/skforecast/skforecast)
-[![Build status](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)
+[![Build status](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml)
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/skforecast/skforecast/graphs/commit-activity)
 [![Downloads](https://static.pepy.tech/badge/skforecast)](https://pepy.tech/project/skforecast)
@@ -21,11 +21,13 @@
 [![paypal](https://img.shields.io/static/v1?style=social&amp;label=Donate&amp;message=%E2%9D%A4&amp;logo=Paypal&amp;color&amp;link=%3curl%3e)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
 [![buymeacoffee](https://img.shields.io/badge/-Buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/skforecast)
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/joaquinamatrodrigo?logo=github&label=Github%20sponsors&link=https%3A%2F%2Fgithub.com%2Fsponsors%2FJoaquinAmatRodrigo)
+[![Open Collective](https://img.shields.io/badge/Open_Collective-2A3F54?logo=opencollective&logoColor=white)](https://opencollective.com/skforecast)
 [![!linkedin](https://img.shields.io/static/v1?logo=linkedin&label=LinkedIn&message=news&color=lightblue)](https://www.linkedin.com/company/skforecast/)
 [![!discord](https://img.shields.io/static/v1?logo=discord&label=discord&message=chat&color=lightgreen)](https://discord.gg/3V52qpNkuj)
 [![Forecasting Python](https://img.shields.io/static/v1?logo=readme&logoColor=white&label=Blog&labelColor=%23333333&message=Forecasting%20Python&color=%23ffab40)](https://cienciadedatos.net/en/forecasting-python)
 [![NumFOCUS Affiliated](https://img.shields.io/badge/NumFOCUS-Affiliated%20Project-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)](https://numfocus.org/sponsored-projects/affiliated-projects)
 [![GC.OS Affiliated](https://img.shields.io/badge/GC.OS-Affiliated%20Project-orange.svg?style=flat&colorA=0eac92&colorB=2077b4)](https://gc-os-ai.github.io/)
+[![Skforecast Studio](https://img.shields.io/badge/Skforecast%20Studio-Launch%20App-f79939?logo=rocket)](https://studio.skforecast.org/)
 
 
 ## About The Project
@@ -43,6 +45,8 @@ Skforecast simplifies time series forecasting with machine learning by providing
 
 Whether you're building quick prototypes or deploying models in production, skforecast ensures a fast, reliable, and scalable experience.
 
+:computer: **Try [Skforecast Studio](https://studio.skforecast.org/)** — an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
+
 ### Get Involved
 
 We value your input! Here are a few ways you can participate:
@@ -51,7 +55,7 @@ We value your input! Here are a few ways you can participate:
 - **Contribute** to the project by [submitting code](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md), adding new features, or improving the documentation.
 - **Share your feedback** on LinkedIn to help spread the word about skforecast!
 
-Together, we can make time series forecasting accessible to everyone. Discover more in our contribution [contribution guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md)
+Together, we can make time series forecasting accessible to everyone. Discover more in our [contribution guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md)
 
 
 ## Installation & Dependencies
@@ -77,17 +81,19 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterDirect]               |✔️|||✔️|✔️|✔️|✔️|✔️|
 |[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
 |[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
-|[ForecasterRNN]                  |✔️|✔️||✔️|✔️||✔️||
+|[ForecasterRnn]                  |✔️|✔️||✔️|✔️||✔️||
 |[ForecasterStats]                |✔️||✔️||✔️|✔️|✔️||
 |[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
+|[ForecasterEquivalentDate]       |✔️||✔️||✔️||||
 
 [ForecasterRecursive]: ./user_guides/autoregressive-forecaster.ipynb
 [ForecasterDirect]: ./user_guides/direct-multi-step-forecasting.ipynb
 [ForecasterRecursiveMultiSeries]: ./user_guides/independent-multi-time-series-forecasting.ipynb
 [ForecasterDirectMultiVariate]: ./user_guides/dependent-multi-series-multivariate-forecasting.ipynb
-[ForecasterRNN]: ./user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
+[ForecasterRnn]: ./user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
 [ForecasterStats]: ./user_guides/forecasting-sarimax-arima.ipynb
 [ForecasterRecursiveClassifier]: ./user_guides/autoregressive-classification-forecasting.ipynb
+[ForecasterEquivalentDate]: ./user_guides/forecasting-baseline.ipynb
 
 
 ## Features
@@ -123,12 +129,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.19.1). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.21.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.19.1) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **BibTeX**:
@@ -136,12 +142,12 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.19.1) [Compu
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.19.1},
-  month   = {12},
-  year    = {2025},
+  version = {0.21.0},
+  month   = {2},
+  year    = {2026},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},
-  doi     = {10.5281/zenodo.8382788}
+  doi     = {10.5281/zenodo.8382787}
 }
 ```
 
@@ -228,7 +234,11 @@ Marcillo Vera, F., Rosado, R., Zambrano, P., Velastegui, J., Morales, G., Lagla,
 
 If you found **skforecast** useful, you can support us with a donation. Your contribution will help us **continue developing, maintaining, and improving** this project. Every contribution, no matter the size, makes a difference. **Thank you for your support!**
 
-<a href="https://www.buymeacoffee.com/skforecast" target="_blank" title="Buy me a coffee skforecast">
+<a href="https://opencollective.com/skforecast" target="_blank" rel="noopener noreferrer" title="Sponsor us on Open Collective">
+    <img style="margin-bottom: 1em; width: 240px;" src="./img/opencollective_button.png" alt="Sponsor on Open Collective">
+</a>
+<br>
+<a href="https://www.buymeacoffee.com/skforecast" target="_blank" rel="noopener noreferrer" title="Buy me a coffee skforecast">
     <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" alt="Buy me a coffee skforecast">
 </a>
 <br>
@@ -237,7 +247,7 @@ If you found **skforecast** useful, you can support us with a donation. Your con
 </a>
 <br>
 <a href="https://github.com/sponsors/JavierEscobarOrtiz" target="_blank" title="Become a GitHub Sponsor">
-    <img style="margin-bottom: 1em; ; width: 240px;" src="./img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
+    <img style="margin-bottom: 1em; width: 240px;" src="./img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
 </a>
 <br>
 

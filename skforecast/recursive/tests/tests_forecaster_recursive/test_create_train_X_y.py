@@ -8,6 +8,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import FunctionTransformer
 from skforecast.exceptions import MissingValuesWarning
 from skforecast.preprocessing import TimeSeriesDifferentiator
 from skforecast.preprocessing import RollingFeatures

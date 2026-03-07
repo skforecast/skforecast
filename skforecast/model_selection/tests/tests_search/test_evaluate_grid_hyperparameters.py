@@ -175,6 +175,71 @@ def test_grid_hyperparameters_results_warn_when_non_valid_params():
     pd.testing.assert_frame_equal(results, expected_results)
 
 
+def test_evaluate_grid_hyperparameters_warns_when_all_params_raise_exceptions():
+    """
+    Test that a RuntimeWarning is raised and an empty DataFrame is returned
+    when all parameter combinations in param_grid are invalid and raise
+    exceptions during evaluation.
+    """
+    # All l1_ratio values are invalid for ElasticNet (must be in [0.0, 1.0])
+    param_grid = [
+        {"alpha": 0.1, "l1_ratio": 10},
+        {"alpha": 0.5, "l1_ratio": 20},
+    ]
+    cv = TimeSeriesFold(steps=12, initial_train_size=30, refit=False)
+    forecaster = ForecasterRecursive(estimator=ElasticNet(), lags=5)
+
+    warn_msg = re.escape(
+        "No valid parameter combinations found. All combinations raised exceptions."
+    )
+    with pytest.warns(RuntimeWarning, match=warn_msg):
+        results = _evaluate_grid_hyperparameters(
+            forecaster    = forecaster,
+            y             = y,
+            param_grid    = param_grid,
+            cv            = cv,
+            metric        = "mean_squared_error",
+            return_best   = False,
+            n_jobs        = "auto",
+            verbose       = False,
+            show_progress = False,
+        )
+
+    assert results.empty
+    assert isinstance(results, pd.DataFrame)
+
+
+def test_evaluate_grid_hyperparameters_warns_when_all_params_raise_exceptions_OneStepAheadFold():
+    """
+    Test that a RuntimeWarning is raised and an empty DataFrame is returned
+    when all parameter combinations raise exceptions with OneStepAheadFold.
+    """
+    param_grid = [
+        {"alpha": 0.1, "l1_ratio": 10},
+        {"alpha": 0.5, "l1_ratio": 20},
+    ]
+    cv = OneStepAheadFold(initial_train_size=30)
+    forecaster = ForecasterRecursive(estimator=ElasticNet(), lags=5)
+
+    warn_msg = re.escape(
+        "No valid parameter combinations found. All combinations raised exceptions."
+    )
+    with pytest.warns(RuntimeWarning, match=warn_msg):
+        results = _evaluate_grid_hyperparameters(
+            forecaster    = forecaster,
+            y             = y,
+            param_grid    = param_grid,
+            cv            = cv,
+            metric        = "mean_squared_error",
+            return_best   = False,
+            verbose       = False,
+            show_progress = False,
+        )
+
+    assert results.empty
+    assert isinstance(results, pd.DataFrame)
+
+
 def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterRecursive with mocked

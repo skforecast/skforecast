@@ -19,8 +19,10 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 <span style="font-size: 1.3em;">Statistical Models</span>
 
-- [ARIMA and SARIMAX](../user_guides/forecasting-sarimax-arima.ipynb)
+- [Forecasting with statistical models](../user_guides/forecasting-statistical-models.ipynb)
+- [ARIMA, SARIMAX, AutoARIMA](../user_guides/forecasting-sarimax-arima.ipynb)
 - [ARAR](../user_guides/forecasting-arar.ipynb)
+- [ETS, AutoETS](../user_guides/forecasting-ets.ipynb)
 
 <span style="font-size: 1.3em;">Feature Engineering</span>
 
@@ -90,7 +92,6 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Cyclical features in time series](../faq/cyclical-features-time-series.ipynb)
 - [Time series aggregation](../faq/time-series-aggregation.ipynb)
 - [Benchmarking skforecast](../faq/skforecast-benchmark.ipynb)
-- [Benchmarking statistical models](../faq/benchmark-statistical-models.ipynb)
 - [Parallelization in skforecast](../faq/parallelization-skforecast.ipynb)
 - [Profiling skforecast](../faq/profiling-skforecast.ipynb)
 

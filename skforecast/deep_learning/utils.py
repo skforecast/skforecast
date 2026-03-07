@@ -36,8 +36,8 @@ except ImportError as e:
     import sys
     if sys.version_info >= (3, 13):
         raise ImportError(
-            "Python 3.13 is not supported by TensorFlow, which is the default "
-            "backend used by Keras. To use Keras with Python 3.13, the KERAS_BACKEND "
+            "Python 3.13+ is not supported by TensorFlow, which is the default "
+            "backend used by Keras. To use Keras with Python 3.13+, the KERAS_BACKEND "
             "environment variable needs to be set to 'torch', `os.environ['KERAS_BACKEND'] = 'torch'`."
             "Make sure you have PyTorch installed to use Keras with the torch backend. "
             "For installation instructions, visit https://pytorch.org/get-started/locally/"
@@ -287,7 +287,7 @@ def _create_and_compile_model_exog(
     else:
         n_exog = 0
 
-    lags, _, _ = initialize_lags('ForecasterRNN', lags)
+    lags, _, _ = initialize_lags('ForecasterRnn', lags)
     n_lags = len(lags)
 
     if not isinstance(steps, int):
@@ -527,7 +527,7 @@ def _create_and_compile_model_no_exog(
         )
     n_series = series.shape[1]
 
-    lags, _, _ = initialize_lags('ForecasterRNN', lags)
+    lags, _, _ = initialize_lags('ForecasterRnn', lags)
     n_lags = len(lags)
 
     if not isinstance(steps, int):

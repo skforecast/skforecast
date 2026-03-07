@@ -10,18 +10,128 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.21.0 <small>In development</small> { id="0.21.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Optimized internal prediction loops in `_recursive_predict` and `_recursive_predict_bootstrapping` for <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>. Changes include vectorized lag indexing for non-contiguous lags (~50% faster with 15-20 lags), pre-computation of loop-invariant values, and reduced redundant operations. These improvements result in faster `predict` methods calls, especially in scenarios with many lags and bootstrap iterations.
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Optimized and refactored Bayesian search functions (<code>bayesian_search_forecaster</code>, <code>bayesian_search_forecaster_multiseries</code>). Key improvements include: better default TPE sampler configuration (`multivariate=True`, `group=True`, `consider_endpoints=True`) for more effective hyperparameter optimization, caching of train/test splits in `OneStepAheadFold` to avoid redundant computation when the same lag configuration is evaluated multiple times, default `n_trials` increased from 10 to 20, and `kwargs_create_study`/`kwargs_study_optimize` defaults changed from `{}` to `None`. Additionally, the `return_best` refit summary message is now controlled by the `verbose` parameter across all search functions.
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> now return the full optuna `Study` object as the second element of the tuple instead of `best_trial`. The best trial is still accessible via `study.best_trial`. This enables access to all optimization trials, optuna visualizations, and study resumption.
+
++ <span class="badge text-bg-enhancement">Enhancement</span> <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> results DataFrame now includes a `trial_number` column, allowing users to correlate result rows with specific optuna trials via `study.trials[trial_number]`.
+
+
+**Added**
+
+
+**Changed**
+
++ Optimized internal prediction loops in `_recursive_predict` and `_recursive_predict_bootstrapping` for <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>. Changes include vectorized lag indexing for non-contiguous lags (~50% faster with 15-20 lags), pre-computation of loop-invariant values, and reduced redundant operations. These improvements result in faster `predict` methods calls, especially in scenarios with many lags and bootstrap iterations.
+
++ Optimized and refactored Bayesian search functions (`bayesian_search_forecaster`, `bayesian_search_forecaster_multiseries`). Key improvements include: better default TPE sampler configuration (`multivariate=True`, `group=True`, `consider_endpoints=True`) for more effective hyperparameter optimization, caching of train/test splits in `OneStepAheadFold` to avoid redundant computation when the same lag configuration is evaluated multiple times, default `n_trials` increased from 10 to 20, and `kwargs_create_study`/`kwargs_study_optimize` defaults changed from `{}` to `None`. Additionally, the `return_best` refit summary message is now controlled by the `verbose` parameter across all search functions.
+
++ <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> now return the full optuna `Study` object as the second element of the tuple instead of `best_trial`. The best trial is still accessible via `study.best_trial`.
+
++ <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> results DataFrame now includes a `trial_number` column, allowing users to correlate result rows with specific optuna trials via `study.trials[trial_number]`.
+
++ `kwargs_read_csv` has been renamed to `kwargs_read` in the `fetch_dataset` function. The new name reflects that the keyword arguments are passed to both `pd.read_csv` and `pd.read_parquet`, depending on the dataset file type.
+
+
+**Fixed**
+
++ Fixed an issue where using a `transformer_y` or `transformer_series` that expands the target into multiple columns (e.g., `OneHotEncoder`) produced a non-descriptive internal error. Now, a clear `ValueError` is raised explaining that transformers applied to the target series must return a single column. ([#1126](https://github.com/skforecast/skforecast/pull/1126))
+
++ Fixed an issue where `out_sample_residuals_` and `out_sample_residuals_by_bin_` were not reset during `fit()`, causing stale residuals from a previous model to silently persist after refitting. ([#1123](https://github.com/skforecast/skforecast/pull/1123))
+
+
+## 0.20.1 <small>Feb 11, 2026</small> { id="0.20.1" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-danger">Fix</span> Fixed an issue in backtesting functions where passing `interval` as a single float (e.g. `interval=0.8` for 80% coverage) was not handled correctly when `interval_method` is set to `'bootstrapping'`, causing an error during prediction interval calculation.
+
++ <span class="badge text-bg-danger">Fix</span> Fixed an issue in <code>[reshape_exog_long_to_dict]</code> where the `fill_value` parameter was applied to all columns, causing errors with categorical columns and silent data corruption in string columns. Now, `fill_value` is only applied to numeric columns, and non-numeric columns retain NaN in the gaps. A warning is issued to inform the user.
+
+
+**Added**
+
+
+**Changed**
+
+
+**Fixed**
+
++ Fixed an issue in backtesting functions where passing `interval` as a single float (e.g. `interval=0.8` for 80% coverage) was not handled correctly when `interval_method` is set to `'bootstrapping'`, causing an error during prediction interval calculation.
+
++ Fixed an issue in <code>[reshape_exog_long_to_dict]</code> where the `fill_value` parameter was applied to all columns, causing errors with categorical columns and silent data corruption in string columns. Now, `fill_value` is only applied to numeric columns, and non-numeric columns retain NaN in the gaps. A warning is issued to inform the user.
+
+
+## 0.20.0 <small>Feb 01, 2026</small> { id="0.20.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the **bootstrapped residuals calculation** in all recursive forecasters achieving **10x speedup in the interval prediction process**. This improvement significantly reduces the time required to generate prediction intervals, enhancing overall performance and user experience.
+
++ <span class="badge text-bg-feature">Feature</span> New skforecast <code>[Arima]</code> class in the <code>[stats]</code> module. Native and fast Python implementation of ARIMA model for time series forecasting that follows the scikit-learn interface. [User guide](../user_guides/forecasting-sarimax-arima.ipynb)
+
++ <span class="badge text-bg-feature">Feature</span> <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[Ets]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
+
++ <span class="badge text-bg-feature">Feature</span> Added parameter `max_out_of_range_proportion` to <code>[PopulationDriftDetector]</code> to set the maximum allowed proportion of out-of-range observations (for numeric features) before triggering drift detection. [User guide](../user_guides/drift-detection.ipynb)
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterSarimax]</code> has been removed, deprecated in version **0.19.0**. Use the new <code>[ForecasterStats]</code> class in the <code>[recursive]</code> module, which offers enhanced capabilities and flexibility for statistical time series forecasting.
+
+
+**Added**
+
++ Support for `Python 3.14`.
+
++ New skforecast <code>[Arima]</code> class in the <code>[stats]</code> module. Native and fast Python implementation of ARIMA model for time series forecasting that follows the scikit-learn interface. [User guide](../user_guides/forecasting-sarimax-arima.ipynb)
+
++ <code>[ForecasterStats]</code> now supports multiple estimators (<code>[Sarimax]</code>, <code>[Arima]</code>, <code>[Arar]</code>, <code>[Ets]</code>), enabling users to fit, predict, and compare several statistical models simultaneously in a unified workflow.
+
++ New argument `freeze_params` in the [backtesting_stats] function to allow freezing the parameters of the statistical models during backtesting. When set to `True`, the models will use the parameters obtained from the initial fit throughout the backtesting process, rather than re-estimating them at each step.
+
++ Introduced vectorized `_recursive_predict_bootstrapping` methods in <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code> that predict all bootstrap samples in a single batch per step instead of looping over bootstrap iterations. This achieves significant speedup in the interval prediction process.
+
++ Added <code>_transform_vectorized</code> method to <code>[RollingFeatures]</code> for faster computation of vectorizable statistics.
+  
++ Implemented caching in <code>[ForecasterDirect]</code> to avoid repeated computation of column indices and names during backtesting.
+  
++ Optimized array operations in <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterDirect]</code> to reduce memory allocations.
+
++ Added parameter `max_out_of_range_proportion` to <code>[PopulationDriftDetector]</code> to set the maximum allowed proportion of out-of-range observations (for numeric features) before triggering drift detection.
+
++ Introduced optimized prediction paths for linear models (using numpy dot product), LightGBM (using booster API), and XGBoost (using inplace_predict)
+
+
+**Changed**
+
++ [ForecasterSarimax] has been removed, deprecated in version 0.19.0. Use the new [ForecasterStats] class in the [recursive] module, which offers enhanced capabilities and flexibility for statistical time series forecasting.
+
++ Removed residual handling from `_recursive_predict` methods, separating bootstrap logic into dedicated methods.
+
++ `suppress_warnings_fit` parameter in <code>[backtesting_stats]</code> function has been replaced with `suppress_warnings` to control the display of skforecast warnings during the entire backtesting process.
+
+
+**Fixed**
+
++ Fixed an issue in <code>[QuantileBinner]</code> where duplicate bin edges caused by repeated values in the data led to non-consecutive bin indices. This caused errors in `predict_bootstrapping` when using binned residuals. The fix removes duplicate edges and ensures bins are always numbered consecutively from 0 to `n_bins_-1`. A warning is now issued when the number of bins is reduced.
+
+
 ## 0.19.1 <small>Dec 10, 2025</small> { id="0.19.1" }
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> Enabled thresholds based on standard deviations in the <code>[PopulationDriftDetector]</code> class. Now, users can specify thresholds using standard deviations from the mean, allowing for more flexible and statistically grounded drift detection. This is now the default behavior when thresholds are not explicitly provided.([#1080](https://github.com/skforecast/skforecast/issues/1080))
++ <span class="badge text-bg-feature">Feature</span> Enabled thresholds based on standard deviations in the <code>[PopulationDriftDetector]</code> class. Now, users can specify thresholds using standard deviations from the mean, allowing for more flexible and statistically grounded drift detection. This is now the default behavior when thresholds are not explicitly provided. ([#1080](https://github.com/skforecast/skforecast/issues/1080))
 
 + <span class="badge text-bg-danger">Fix</span> Fixed an issue that prevented using Forecasters created in past versions of the library after loading them with <code>[load_forecaster]</code>. The problem occurred with the introduction of the `estimator` parameter in version `0.19.0`, which replaced the previous `regressor` parameter. This fix ensures that Forecasters saved with versions prior to `0.19.0` can be loaded and used without any issues. ([#1079](https://github.com/skforecast/skforecast/issues/1079))
 
 
 **Added**
 
-+ Enabled thresholds based on standard deviations in the <code>[PopulationDriftDetector]</code> class. Now, users can specify thresholds using standard deviations from the mean, allowing for more flexible and statistically grounded drift detection. This is now the default behavior when thresholds are not explicitly provided.([#1080](https://github.com/skforecast/skforecast/issues/1080))
++ Enabled thresholds based on standard deviations in the <code>[PopulationDriftDetector]</code> class. Now, users can specify thresholds using standard deviations from the mean, allowing for more flexible and statistically grounded drift detection. This is now the default behavior when thresholds are not explicitly provided. ([#1080](https://github.com/skforecast/skforecast/issues/1080))
 
 
 **Changed**
@@ -1332,7 +1442,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- stats -->
 [stats]: ../api/stats.md
+[Arima]: ../api/stats.md#skforecast.stats._arima.Arima
 [Sarimax]: ../api/stats.md#skforecast.stats._sarimax.Sarimax
+[Ets]: ../api/stats.md#skforecast.stats._ets.Ets
 [Arar]: ../api/stats.md#skforecast.stats._arar.Arar
 
 <!-- model_selection -->
@@ -1348,9 +1460,10 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [random_search_forecaster_multiseries]: ../api/model_selection.md#skforecast.model_selection._search.random_search_forecaster_multiseries
 [bayesian_search_forecaster_multiseries]: ../api/model_selection.md#skforecast.model_selection._search.bayesian_search_forecaster_multiseries
 
-[backtesting_sarimax]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_sarimax
-[grid_search_sarimax]: ../api/model_selection.md#skforecast.model_selection._search.grid_search_sarimax
-[random_search_sarimax]: ../api/model_selection.md#skforecast.model_selection._search.random_search_sarimax
+[backtesting_stats]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_stats
+[grid_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.grid_search_stats
+[random_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.random_search_stats
+
 [BaseFold]: ../api/model_selection.md#skforecast.model_selection._split.BaseFold
 [TimeSeriesFold]: ../api/model_selection.md#skforecast.model_selection._split.TimeSeriesFold
 [OneStepAheadFold]: ../api/model_selection.md#skforecast.model_selection._split.OneStepAheadFold
@@ -1426,3 +1539,6 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [series_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
 [exog_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
 [ForecasterSarimax]: https://skforecast.org/0.19.0/api/forecastersarimax.html
+[backtesting_sarimax]: https://skforecast.org/0.19.0/api/model_selection.html#skforecast.model_selection._validation.backtesting_sarimax
+[grid_search_sarimax]: https://skforecast.org/0.19.0/api/model_selection.html#skforecast.model_selection._search.grid_search_sarimax
+[random_search_sarimax]: https://skforecast.org/0.19.0/api/model_selection.html#skforecast.model_selection._search.random_search_sarimax

@@ -144,6 +144,46 @@ def test_predict_output_when_with_transform_y_and_transform_exog():
     pd.testing.assert_series_equal(predictions, expected)
 
 
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "lags": 5},
+        {"estimator": LinearRegression(), "lags": 5,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3)},
+        {"estimator": LinearRegression(), "lags": 5,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "lags": 5,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_predict_does_not_modify_y_exog(forecaster_kwargs):
+    """
+    Test forecaster.predict does not modify y, exog, exog_predict or last_window.
+    """
+    y_local = y_categorical.copy()
+    exog_local = exog_categorical.copy()
+    exog_predict_local = exog_predict_categorical.copy()
+    last_window_local = y_local.iloc[-6:].copy()
+
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+    exog_predict_copy = exog_predict_local.copy()
+    last_window_copy = last_window_local.copy()
+
+    forecaster = ForecasterRecursive(**forecaster_kwargs)
+    forecaster.fit(y=y_local, exog=exog_local)
+    _ = forecaster.predict(steps=5, exog=exog_predict_local, last_window=last_window_local)
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
+    pd.testing.assert_series_equal(last_window_local, last_window_copy)
+    pd.testing.assert_series_equal(exog_predict_local, exog_predict_copy)
+
+
 def test_predict_output_when_and_weight_func():
     """
     Test predict output when using LinearRegression as estimator and custom_weights.
@@ -174,8 +214,8 @@ def test_predict_output_when_categorical_features_native_implementation_HistGrad
     Test predict output when using HistGradientBoostingRegressor and categorical variables.
     """
     df_exog = pd.DataFrame({'exog_1': exog_categorical,
-                            'exog_2': ['a', 'b', 'c', 'd', 'e']*10,
-                            'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J']*10)})
+                            'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+                            'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)})
     
     exog_predict = df_exog.copy()
     exog_predict.index = pd.RangeIndex(start=50, stop=100)
@@ -223,8 +263,8 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
     Test predict output when using LGBMRegressor and categorical variables.
     """
     df_exog = pd.DataFrame({'exog_1': exog_categorical,
-                            'exog_2': ['a', 'b', 'c', 'd', 'e']*10,
-                            'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J']*10)})
+                            'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+                            'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)})
     
     exog_predict = df_exog.copy()
     exog_predict.index = pd.RangeIndex(start=50, stop=100)
@@ -271,8 +311,8 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
     categorical_features='auto'.
     """
     df_exog = pd.DataFrame({'exog_1': exog_categorical,
-                            'exog_2': ['a', 'b', 'c', 'd', 'e']*10,
-                            'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J']*10)})
+                            'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+                            'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)})
     
     exog_predict = df_exog.copy()
     exog_predict.index = pd.RangeIndex(start=50, stop=100)

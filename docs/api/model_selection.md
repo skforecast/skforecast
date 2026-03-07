@@ -11,9 +11,6 @@
 ::: skforecast.model_selection._validation.backtesting_stats
 ::: skforecast.model_selection._search.grid_search_stats
 ::: skforecast.model_selection._search.random_search_stats
-::: skforecast.model_selection._validation.backtesting_sarimax
-::: skforecast.model_selection._search.grid_search_sarimax
-::: skforecast.model_selection._search.random_search_sarimax
 ::: skforecast.model_selection._split.BaseFold
 ::: skforecast.model_selection._split.TimeSeriesFold
 ::: skforecast.model_selection._split.OneStepAheadFold

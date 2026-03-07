@@ -10,22 +10,6 @@ from sklearn.preprocessing import OneHotEncoder
 from skforecast.utils import transform_numpy
 
 
-def test_transform_numpy_TypeError_when_array_is_not_numpy_ndarray():
-    """
-    Test TypeError is raised when `array` is not a numpy ndarray.
-    """
-    array = pd.Series(np.arange(10))
-
-    err_msg = re.escape(f"`array` argument must be a numpy ndarray. Got {type(array)}")
-    with pytest.raises(TypeError, match = err_msg):
-        transform_numpy(
-            array             = array,
-            transformer       = None,
-            fit               = True,
-            inverse_transform = False
-        )
-
-
 def test_transform_numpy_when_transformer_is_None():
     """
     Test the output of transform_numpy when transformer is None.
@@ -42,6 +26,22 @@ def test_transform_numpy_when_transformer_is_None():
     expected = input_array
     
     np.testing.assert_array_almost_equal(results, expected)
+
+
+def test_transform_numpy_TypeError_when_array_is_not_numpy_ndarray():
+    """
+    Test TypeError is raised when `array` is not a numpy ndarray.
+    """
+    array = pd.Series(np.arange(10))
+
+    err_msg = re.escape(f"`array` argument must be a numpy ndarray. Got {type(array)}")
+    with pytest.raises(TypeError, match = err_msg):
+        transform_numpy(
+            array             = array,
+            transformer       = StandardScaler(),
+            fit               = True,
+            inverse_transform = False
+        )
 
 
 def test_transform_numpy_ValueError_when_transformer_is_ColumnTransformer_and_inverse_transform_is_true():
@@ -67,7 +67,9 @@ def test_transform_numpy_ValueError_when_transformer_is_ColumnTransformer_and_in
                       verbose_feature_names_out = False
                   )
 
-    err_msg = re.escape("`inverse_transform` is not available when using ColumnTransformers.")
+    err_msg = re.escape(
+        "`inverse_transform` is not available when using ColumnTransformers."
+    )
     with pytest.raises(ValueError, match = err_msg):
         transform_numpy(
             array             = array,
@@ -212,3 +214,93 @@ def test_transform_numpy_when_transformer_set_output_is_pandas():
     )
     
     np.testing.assert_array_almost_equal(results, expected)
+
+
+def test_transform_numpy_inverse_transform_multiple_columns_equivalent_to_column_by_column():
+    """
+    Test that transform_numpy with inverse_transform=True on a 2D array with 
+    multiple columns produces the same result as applying inverse_transform 
+    column by column with a for loop.
+    """
+    
+    np.random.seed(123)
+    train_data = np.random.rand(100)
+    transformer = StandardScaler()
+    _ = transform_numpy(
+            array             = train_data,
+            transformer       = transformer,
+            fit               = True,
+            inverse_transform = False
+        )
+    
+    # Create 2D array with multiple columns
+    n_rows = 48
+    n_cols = 250
+    input_array = np.random.rand(n_rows, n_cols)
+    
+    # Method 1: Column by column with for loop
+    expected = np.empty_like(input_array, order='F')
+    for i in range(n_cols):
+        expected[:, i] = transformer.inverse_transform(
+            input_array[:, i].reshape(-1, 1)
+        ).ravel()
+    
+    # Method 2: Using transform_numpy
+    results = transform_numpy(
+                  array             = input_array,
+                  transformer       = transformer,
+                  fit               = False,
+                  inverse_transform = True
+              )
+    
+    np.testing.assert_array_almost_equal(results, expected)
+
+
+def test_transform_numpy_inverse_transform_preserves_shape():
+    """
+    Test that transform_numpy with inverse_transform=True preserves the 
+    original shape of the input array.
+    """
+    np.random.seed(456)
+    train_data = np.random.rand(100, 1)
+    transformer = StandardScaler()
+    transformer.fit(train_data)
+    
+    # Test various shapes
+    shapes_to_test = [(10, 1), (10, 3), (48, 100), (24, 250)]
+    
+    for shape in shapes_to_test:
+        input_array = np.random.rand(*shape)
+        results = transform_numpy(
+                      array             = input_array,
+                      transformer       = transformer,
+                      fit               = False,
+                      inverse_transform = True
+                  )
+        assert results.shape == shape, f"Shape mismatch: expected {shape}, got {results.shape}"
+
+
+def test_transform_numpy_ValueError_when_force_single_column_with_sparse_output():
+    """
+    Test that transform_numpy raises ValueError when force_single_column is True
+    and transformer expands columns. Also covers toarray() conversion from sparse
+    matrix to dense array.
+    """
+    input_array = np.array(['A'] * 5 + ['B'] * 5).reshape(-1, 1)
+    transformer = OneHotEncoder(sparse_output=True)
+
+    err_msg = re.escape(
+        "`transformer_y` and `transformer_series` must return a single column. "
+        "The transformer generated 2 columns. "
+        "Transformers that expand target series into multiple feature "
+        "columns are not supported; use `window_features` or pass "
+        "those features through `exog` instead."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        transform_numpy(
+            array=input_array,
+            transformer=transformer,
+            fit=True,
+            inverse_transform=False,
+            force_single_column=True
+        )

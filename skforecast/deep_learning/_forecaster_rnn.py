@@ -39,7 +39,7 @@ from ..utils import (
     input_to_frame,
     prepare_levels_multiseries,
     prepare_steps_direct,
-    set_skforecast_warnings,
+    manage_warnings,
     transform_dataframe,
     transform_numpy,
     transform_series,
@@ -47,15 +47,15 @@ from ..utils import (
     initialize_estimator
 )
 
-# TODO: Review in skforecast 0.20.0
+# TODO: Review in skforecast 0.21.0
 try:
     import keras
 except ImportError as e:
     import sys
     if sys.version_info >= (3, 13):
         raise ImportError(
-            "Python 3.13 is not supported by TensorFlow, which is the default "
-            "backend used by Keras. To use Keras with Python 3.13, the KERAS_BACKEND "
+            "Python 3.13+ is not supported by TensorFlow, which is the default "
+            "backend used by Keras. To use Keras with Python 3.13+, the KERAS_BACKEND "
             "environment variable needs to be set to 'torch', `os.environ['KERAS_BACKEND'] = 'torch'`."
             "Make sure you have PyTorch installed to use Keras with the torch backend. "
             "For installation instructions, visit https://pytorch.org/get-started/locally/"
@@ -78,7 +78,7 @@ class ForecasterRnn(ForecasterBase):
     Parameters
     ----------
     estimator : estimator or pipeline compatible with the Keras API
-        An instance of a estimator or pipeline compatible with the Keras API.
+        An instance of an estimator or pipeline compatible with the Keras API.
     levels : str, list
         Name of one or more time series to be predicted. This determine the series
         the forecaster will be handling. If `None`, all series used during training
@@ -102,9 +102,9 @@ class ForecasterRnn(ForecasterBase):
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
-    fit_kwargs : dict, default `None`
+    fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the estimator.
-    forecaster_id : str, int, default `None`
+    forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
     regressor : estimator or pipeline compatible with the Keras API
         **Deprecated**, alias for `estimator`.
@@ -112,7 +112,7 @@ class ForecasterRnn(ForecasterBase):
     Attributes
     ----------
     estimator : estimator or pipeline compatible with the Keras API
-        An instance of a estimator or pipeline compatible with the Keras API.
+        An instance of an estimator or pipeline compatible with the Keras API.
         An instance of this estimator is trained for each step. All of them
         are stored in `self.estimators_`.
     levels : str, list
@@ -244,7 +244,7 @@ class ForecasterRnn(ForecasterBase):
             feature_range=(0, 1)
         ),
         transformer_exog: object | None = MinMaxScaler(feature_range=(0, 1)),
-        fit_kwargs: dict[str, object] | None = {},
+        fit_kwargs: dict[str, object] | None = None,
         forecaster_id: str | int | None = None,
         regressor: object = None
     ) -> None:
@@ -267,8 +267,10 @@ class ForecasterRnn(ForecasterBase):
         self.X_train_dim_names_ = None
         self.y_train_dim_names_ = None
         self.history_ = None 
-        self.is_fitted = False
+        self.in_sample_residuals_ = None
+        self.out_sample_residuals_ = None
         self.creation_date = pd.Timestamp.today().strftime("%Y-%m-%d %H:%M:%S")
+        self.is_fitted = False
         self.fit_date = None
         self.keras_backend_ = None
         self.skforecast_version = __version__
@@ -280,9 +282,7 @@ class ForecasterRnn(ForecasterBase):
         self.source_code_weight_func = None  # Ignored in this forecaster
         self.dropna_from_series = False  # Ignored in this forecaster
         self.encoding = None  # Ignored in this forecaster
-        self.in_sample_residuals_ = None  # Ignored in this forecaster
         self.in_sample_residuals_by_bin_ = None  # Ignored in this forecaster
-        self.out_sample_residuals_ = None  # Ignored in this forecaster
         self.out_sample_residuals_by_bin_ = None  # Ignored in this forecaster
         self.differentiation = None  # Ignored in this forecaster
         self.differentiation_max = None  # Ignored in this forecaster
@@ -295,6 +295,10 @@ class ForecasterRnn(ForecasterBase):
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(
             type(self).__name__, lags
+        )
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
         )
         n_lags_estimator = layer_init.output.shape[1]
         if len(self.lags) != n_lags_estimator:
@@ -334,6 +338,9 @@ class ForecasterRnn(ForecasterBase):
                 f"levels expected by the estimator architecture ({self.n_levels_out})."
             )
 
+        if fit_kwargs is None:
+            fit_kwargs = {}
+
         self.series_val = None
         self.exog_val = None
         if "series_val" in fit_kwargs:
@@ -367,7 +374,7 @@ class ForecasterRnn(ForecasterBase):
         
         self.__skforecast_tags__ = {
             "library": "skforecast",
-            "forecaster_name": "ForecasterRNN",
+            "forecaster_name": "ForecasterRnn",
             "forecaster_task": "regression",
             "forecasting_scope": "global",  # single-series | global
             "forecasting_strategy": "deep_learning",  # recursive | direct | deep_learning
@@ -577,23 +584,26 @@ class ForecasterRnn(ForecasterBase):
 
         n_rows = len(y) - self.window_size - self.max_step + 1  # rows of y_data
 
-        X_data = np.full(
-            shape=(n_rows, (self.window_size)), fill_value=np.nan, order="F", dtype=float
+        # Use sliding_window_view for vectorized lag creation (more efficient than loops)
+        # Create a sliding window view of the entire relevant portion of y
+        window_view = np.lib.stride_tricks.sliding_window_view(
+            y[: len(y) - self.max_step], window_shape=self.window_size
         )
-        for i, lag in enumerate(range(self.window_size - 1, -1, -1)):
-            X_data[:, i] = y[self.window_size - lag - 1 : -(lag + self.max_step)]
+        # Select only the rows we need and the specific lag columns.
+        # RNN keeps chronological order (oldest lag first), so no reversal.
+        if self.lags_are_contiguous:
+            # Basic slice → view (no copy).
+            X_data = window_view[:n_rows, :len(self.lags)]
+        else:
+            # Non-contiguous lags require fancy indexing, which forces a copy.
+            X_data = window_view[:n_rows, self.lags - 1]
 
-        # Get lags index
-        X_data = X_data[:, self.lags - 1]
-
-        y_data = np.full(
-            shape=(n_rows, self.max_step), fill_value=np.nan, order="F", dtype=float
+        # Use sliding_window_view for vectorized step creation
+        y_view = np.lib.stride_tricks.sliding_window_view(
+            y[self.window_size:], window_shape=self.max_step
         )
-        for step in range(self.max_step):
-            y_data[:, step] = y[self.window_size + step : self.window_size + step + n_rows]
-
-        # Get steps index
-        y_data = y_data[:, self.steps - 1]
+        # Select only the rows and steps we need
+        y_data = y_view[:n_rows, self.steps - 1]
 
         return X_data, y_data
 
@@ -703,35 +713,34 @@ class ForecasterRnn(ForecasterBase):
                                            transformer_series = self.transformer_series
                                        )
 
-        # Step 1: Create lags for all columns
         X_train = []
         y_train = []
+        
+        # Cache to store y_steps for series that are also levels
+        # This avoids calling _create_lags twice for the same series
+        levels_set = set(self.levels)
+        lags_cache = {}
 
-        # TODO: Add method argument to calculate lags and/or steps
         for serie in series_names_in_:
             x = series[serie]
-            check_y(y=x)
+            check_y(y=x, series_id=f"series '{serie}'")
             x = transform_series(
                 series=x,
                 transformer=self.transformer_series_[serie],
                 fit=fit_transformer,
                 inverse_transform=False,
+                force_single_column=True
             )
-            X, _ = self._create_lags(x)
+            X, y_steps = self._create_lags(x)
             X_train.append(X)
+            
+            # Cache y_steps if this series is also a level (to avoid recomputation)
+            if serie in levels_set:
+                lags_cache[serie] = y_steps
 
+        # Get y_train from cache (no recomputation needed)
         for level in self.levels:
-            y = series[level]
-            check_y(y=y)
-            y = transform_series(
-                series=y,
-                transformer=self.transformer_series_[level],
-                fit=fit_transformer,
-                inverse_transform=False,
-            )
-
-            _, y = self._create_lags(y)
-            y_train.append(y)
+            y_train.append(lags_cache[level])
 
         X_train = np.stack(X_train, axis=2)
         y_train = np.stack(y_train, axis=2)
@@ -859,6 +868,7 @@ class ForecasterRnn(ForecasterBase):
             exog_dtypes_out_
         )
     
+    @manage_warnings
     def create_train_X_y(
         self,
         series: pd.DataFrame,
@@ -896,8 +906,6 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         output = self._create_train_X_y(series=series, exog=exog)
 
         X_train = output[0]
@@ -905,10 +913,9 @@ class ForecasterRnn(ForecasterBase):
         y_train = output[2]
         dimension_names = output[3]
         
-        set_skforecast_warnings(suppress_warnings, action='default')
-
         return X_train, exog_train, y_train, dimension_names
 
+    @manage_warnings
     def fit(
         self,
         series: pd.DataFrame,
@@ -951,8 +958,6 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action="ignore")
-
         # Reset values in case the forecaster has already been fitted.
         self.last_window_ = None
         self.index_type_ = None
@@ -967,6 +972,7 @@ class ForecasterRnn(ForecasterBase):
         self.y_train_dim_names_ = None
         self.exog_train_dim_names_ = None
         self.in_sample_residuals_ = None
+        self.out_sample_residuals_ = None
         self.is_fitted = False
         self.fit_date = None
         self.keras_backend_ = keras.backend.backend()
@@ -1094,8 +1100,6 @@ class ForecasterRnn(ForecasterBase):
         if store_last_window:
             self.last_window_ = series.iloc[-self.max_lag :, :].copy()
 
-        set_skforecast_warnings(suppress_warnings, action="default")
-
     def _create_predict_inputs(
         self,
         steps: int | list[int] | None = None,
@@ -1211,18 +1215,16 @@ class ForecasterRnn(ForecasterBase):
         ].copy()
 
         last_window_values = last_window.to_numpy()
-        last_window_matrix = np.full(
-            shape=last_window.shape, fill_value=np.nan, order='F', dtype=float
+        last_window_matrix = np.empty(
+            shape=last_window.shape, order='F', dtype=float
         )
         for idx_series, series in enumerate(self.series_names_in_):
-            last_window_series = last_window_values[:, idx_series]
-            last_window_series = transform_numpy(
-                array=last_window_series,
+            last_window_matrix[:, idx_series] = transform_numpy(
+                array=last_window_values[:, idx_series],
                 transformer=self.transformer_series_[series],
                 fit=False,
                 inverse_transform=False,
             )
-            last_window_matrix[:, idx_series] = last_window_series
 
         X = [np.reshape(last_window_matrix, (1, self.max_lag, last_window.shape[1]))]
         X_predict_dimension_names = {
@@ -1281,6 +1283,7 @@ class ForecasterRnn(ForecasterBase):
 
         return X, X_predict_dimension_names, steps, levels, prediction_index
 
+    @manage_warnings
     def create_predict_X(
         self,
         steps: int | list[int] | None = None,
@@ -1334,8 +1337,6 @@ class ForecasterRnn(ForecasterBase):
         
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         (
             X,
             X_predict_dimension_names,
@@ -1380,10 +1381,9 @@ class ForecasterRnn(ForecasterBase):
                 DataTransformationWarning
             )
         
-        set_skforecast_warnings(suppress_warnings, action='default')
-
         return X_predict, exog_predict
 
+    @manage_warnings
     def predict(
         self,
         steps: int | list[int] | None = None,
@@ -1411,7 +1411,7 @@ class ForecasterRnn(ForecasterBase):
             Name(s) of the time series to be predicted. It must be included
             in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
-        last_window : pandas DataFrame, default `None`
+        last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the
             first iteration of the prediction (t + 1).
             If `last_window = None`, the values stored in `self.last_window_` are
@@ -1434,8 +1434,6 @@ class ForecasterRnn(ForecasterBase):
             Predicted values.
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action="ignore")
 
         (
             X,
@@ -1476,10 +1474,8 @@ class ForecasterRnn(ForecasterBase):
         )
         predictions = predictions[predictions['level'].isin(levels)]
 
-        set_skforecast_warnings(suppress_warnings, action="default")
-
         return predictions
-    
+
     def _predict_interval_conformal(
         self,
         steps: int | list[int] | None = None,
@@ -1596,10 +1592,8 @@ class ForecasterRnn(ForecasterBase):
             if level in levels:
                 transformer_level = self.transformer_series_[level]
                 if transformer_level is not None:
-                    predictions[i, :, :] = np.apply_along_axis(
-                        func1d            = transform_numpy,
-                        axis              = 0,
-                        arr               = predictions[i, :, :],
+                    predictions[i, :, :] = transform_numpy(
+                        array             = predictions[i, :, :],
                         transformer       = transformer_level,
                         fit               = False,
                         inverse_transform = True
@@ -1615,6 +1609,7 @@ class ForecasterRnn(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int | list[int] | None = None,
@@ -1701,8 +1696,6 @@ class ForecasterRnn(ForecasterBase):
     
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         if method == "conformal":
 
             if isinstance(interval, (list, tuple)):
@@ -1725,8 +1718,6 @@ class ForecasterRnn(ForecasterBase):
                 f"Invalid `method` '{method}'. Only 'conformal' is available."
             )
         
-        set_skforecast_warnings(suppress_warnings, action='default')
-
         return predictions
 
     def plot_history(
@@ -1741,7 +1732,7 @@ class ForecasterRnn(ForecasterBase):
 
         Parameters
         ----------
-        ax : matplotlib.axes.Axes, default `None`
+        ax : matplotlib.axes.Axes, default None
             Pre-existing ax for the plot. Otherwise, call matplotlib.pyplot.subplots()
             internally.
         exclude_first_iteration : bool, default `False`
@@ -1812,7 +1803,9 @@ class ForecasterRnn(ForecasterBase):
         """
         Set new values to the parameters of the scikit-learn model stored in the
         forecaster. It is important to note that all models share the same
-        configuration of parameters and hyperparameters.
+        configuration of parameters and hyperparameters. After calling this method, 
+        the forecaster is reset to an unfitted state. The `fit` method must be 
+        called before prediction.
 
         Parameters
         ----------
@@ -1828,6 +1821,7 @@ class ForecasterRnn(ForecasterBase):
         self.estimator = clone(self.estimator)
         self.estimator.reset_states()
         self.estimator.compile(**params)
+        self.is_fitted = False
 
     def set_fit_kwargs(self, fit_kwargs: dict) -> None:
         """
@@ -1888,6 +1882,7 @@ class ForecasterRnn(ForecasterBase):
 
         pass
 
+    @manage_warnings
     def set_in_sample_residuals(
         self,
         series: pd.DataFrame,
@@ -1929,8 +1924,6 @@ class ForecasterRnn(ForecasterBase):
         None
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         if not self.is_fitted:
             raise NotFittedError(
@@ -1995,8 +1988,6 @@ class ForecasterRnn(ForecasterBase):
                     rng.integers(low=0, high=len(residuals_level), size=10_000)
                 ]
             self.in_sample_residuals_[level] = residuals_level
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
     def set_out_sample_residuals(
         self,
@@ -2101,8 +2092,8 @@ class ForecasterRnn(ForecasterBase):
         rng = np.random.default_rng(seed=random_state)
         for level in series_to_update:
 
-            y_true_level = deepcopy(y_true[level])
-            y_pred_level = deepcopy(y_pred[level])
+            y_true_level = y_true[level]
+            y_pred_level = y_pred[level]
             if not isinstance(y_true_level, np.ndarray):
                 y_true_level = y_true_level.to_numpy()
             if not isinstance(y_pred_level, np.ndarray):
