@@ -127,7 +127,13 @@ class StateSpaceArrays:
     innovation_covariance : np.ndarray
         Innovation covariance R @ R'.
     observation_variance : float
-        Observation noise variance.
+        Observation noise variance (h). Always 0.0 for ARIMA models — the
+        standard ARIMA state-space form places all noise in the state
+        equation, so there is no separate measurement noise. The field is
+        retained as a forward-compatibility placeholder for structural
+        time-series models that add a measurement-error term. Because it is
+        always zero, ``kalman_forecast_core`` adds a harmless ``+ h`` to
+        its forecast-variance computation.
     predicted_covariance : np.ndarray
         Predicted state covariance.
     """
@@ -394,61 +400,10 @@ def diff(x: np.ndarray, lag: int = 1, differences: int = 1) -> np.ndarray:
             result = result[lag:, :] - result[:-lag, :]
     return result
 
-def _validate_pdq(p: int, d: int, q: int) -> Tuple[int, int, int]:
-    """
-    Create PDQ tuple with validation.
-
-    Parameters
-    ----------
-    p : int
-        AR order.
-    d : int
-        Differencing order.
-    q : int
-        MA order.
-
-    Returns
-    -------
-    tuple
-        (p, d, q) tuple.
-
-    Raises
-    ------
-    ValueError
-        If any parameter is negative.
-    """
-    if p < 0 or d < 0 or q < 0:
-        raise ValueError(f"All PDQ parameters must be non-negative. Got: p={p}, d={d}, q={q}")
-    return (p, d, q)
-
 
 # =============================================================================
 # Section 2: Polynomial Utilities
 # =============================================================================
-
-@njit(cache=True)
-def time_series_convolution(a: np.ndarray, b: np.ndarray) -> np.ndarray:  # pragma: no cover
-    """
-    Polynomial multiplication via discrete convolution.
-
-    Given polynomials a(z) = a₀ + a₁z + ... and b(z) = b₀ + b₁z + ...,
-    returns c(z) = a(z)·b(z) where cₖ = Σᵢ aᵢ·bₖ₋ᵢ.
-
-    This is the standard Cauchy product of two coefficient sequences.
-
-    Parameters
-    ----------
-    a : np.ndarray
-        Coefficients of the first polynomial.
-    b : np.ndarray
-        Coefficients of the second polynomial.
-
-    Returns
-    -------
-    np.ndarray
-        Product polynomial coefficients, length len(a) + len(b) - 1.
-    """
-    return np.convolve(a, b)
 
 def _companion_matrix_roots(poly_ascending: np.ndarray) -> np.ndarray:
     """
@@ -1127,59 +1082,6 @@ def compute_q0_covariance_matrix(
 # Harvey (1989); Durbin & Koopman (2012)
 # =============================================================================
 
-@njit(cache=True, fastmath=True)
-def kalman_update(
-    y_obs: float,
-    anew: np.ndarray,
-    Z: np.ndarray,
-    Pnew: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray, float, float, float, float]:  # pragma: no cover
-    """
-    Perform the Kalman filter update step.
-
-    Parameters
-    ----------
-    y_obs : float
-        Observed value at current time.
-    anew : np.ndarray
-        Predicted state vector.
-    Z : np.ndarray
-        Observation vector.
-    Pnew : np.ndarray
-        Predicted state covariance.
-
-    Returns
-    -------
-    a : np.ndarray
-        Updated state vector.
-    P : np.ndarray
-        Updated state covariance.
-    innovation : float
-        Innovation (prediction error): v_t = y_t - Z'a_t.
-    F : float
-        Innovation variance: F_t = Z'PZ.
-    ssq_contrib : float
-        Contribution to sum of squares (innovation^2 / F).
-    sumlog_contrib : float
-        Contribution to log-determinant (log(F)).
-    """
-    innovation = y_obs - np.dot(Z, anew)
-    M = Pnew @ Z
-    F = np.dot(Z, M)
-
-    if F < 1e4:  # _DIFFUSE_INNOVATION_VARIANCE_THRESHOLD
-        ssq_contrib = innovation ** 2 / F
-        sumlog_contrib = np.log(F)
-    else:
-        ssq_contrib = 0.0
-        sumlog_contrib = 0.0
-
-    a = anew + M * (innovation / F)
-    P = Pnew - np.outer(M, M) / F
-
-    return a, P, innovation, F, ssq_contrib, sumlog_contrib
-
-
 @njit(cache=True)
 def _arima_kalman_core(
     y: np.ndarray,
@@ -1370,98 +1272,6 @@ def _arima_kalman_core(
     return stats, std_residuals, a, P
 
 
-@njit(cache=True)
-def compute_arima_likelihood_core(
-    y: np.ndarray,
-    T: np.ndarray,
-    V: np.ndarray,
-    Z: np.ndarray,
-    a_init: np.ndarray,
-    P_init: np.ndarray,
-    Pn_init: np.ndarray,
-    update_start: int,
-    give_resid: bool
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:  # pragma: no cover
-    """
-    Core Kalman filter likelihood computation (Numba-compatible).
-
-    Parameters
-    ----------
-    y : np.ndarray
-        Observed time series.
-    T : np.ndarray
-        State transition matrix.
-    V : np.ndarray
-        Innovation covariance matrix (R @ R').
-    Z : np.ndarray
-        Observation vector.
-    a_init : np.ndarray
-        Initial state vector.
-    P_init : np.ndarray
-        Initial state covariance.
-    Pn_init : np.ndarray
-        Prior state covariance.
-    update_start : int
-        Time index to begin updating likelihood.
-    give_resid : bool
-        Whether to compute residuals.
-
-    Returns
-    -------
-    stats : np.ndarray
-        Array [ssq, sumlog, nu] - sum of squares, log-determinant sum, count.
-    residuals : np.ndarray
-        Standardized residuals (if give_resid=True, else empty).
-    a_final : np.ndarray
-        Final filtered state vector.
-    P_final : np.ndarray
-        Final filtered state covariance.
-    """
-    n = len(y)
-
-    ssq = 0.0
-    sumlog = 0.0
-    n_valid = 0
-
-    a = a_init
-    P = P_init
-    Pnew = Pn_init
-
-    if give_resid:
-        std_residuals = np.zeros(n)
-    else:
-        std_residuals = np.empty(0)
-
-    for t in range(n):
-        anew = T @ a
-
-        if not np.isnan(y[t]):
-            a_upd, P_upd, innovation, F, ssq_c, sumlog_c = kalman_update(
-                y[t], anew, Z, Pnew
-            )
-            a = a_upd
-            P = P_upd
-
-            if F < 1e4:  # _DIFFUSE_INNOVATION_VARIANCE_THRESHOLD
-                n_valid += 1
-                ssq += ssq_c
-                sumlog += sumlog_c
-
-            if give_resid:
-                std_residuals[t] = innovation / np.sqrt(F) if F > 0 else np.nan
-        else:
-            a = anew
-            if give_resid:
-                std_residuals[t] = np.nan
-
-        if t > update_start:
-            Pnew = T @ P @ T.T + V
-            P = Pnew
-
-    stats = np.array([ssq, sumlog, float(n_valid)])
-    return stats, std_residuals, a, P
-
-
 # =============================================================================
 # Section 6: State-Space Construction
 # Durbin & Koopman (2012), *Time Series Analysis by State Space Methods*,
@@ -1625,10 +1435,28 @@ def _update_state_space(
     if p > 0:
         ss.transition_matrix[:p, 0] = phi
 
-    # ML optimization uses the companion Kalman core directly from
-    # (phi, theta, Delta) and does not consume innovation_covariance.
-    # Skip rebuilding V here to avoid repeated O(rd^2) allocations.
-    # A fully consistent state-space object is rebuilt at the optimum.
+    # V matrix (innovation_covariance = R @ R') is intentionally NOT rebuilt here.
+    #
+    # Safety rationale:
+    #   - During the ML optimization loop, the likelihood is evaluated via
+    #     compute_arima_likelihood() → _arima_kalman_core() (a @njit function).
+    #     That function receives (phi, theta, delta) directly as arguments and
+    #     inlines V = R @ R' on-the-fly inside the covariance-prediction step
+    #     ("Step 3: Add V = R @ R'"). It never reads ss.innovation_covariance.
+    #   - kalman_forecast() / kalman_forecast_core() DO read
+    #     ss.innovation_covariance, but those functions are never called on the
+    #     intermediate ss_holder[0] that is mutated here — only on the fully
+    #     rebuilt ss_final created at the end of _fit_ml after optimization.
+    #
+    # Skipping the V rebuild avoids repeated O(r·d²) matrix outer-product
+    # allocations across the hundreds of objective evaluations during
+    # numerical optimization.
+    #
+    # INVARIANT: This shortcut is valid only because _fit_ml always calls
+    # initialize_arima_state(phi_final, ...) after the optimizer converges,
+    # producing a fully consistent StateSpaceArrays (with correct V) before
+    # any call to kalman_forecast(). Do NOT pass ss_holder[0] to
+    # kalman_forecast() without first rebuilding innovation_covariance.
 
     # Recompute stationary initial covariance P₀ via Lyapunov equation
     if r > 1:
@@ -2009,7 +1837,7 @@ def _initialize_regressor_params(
     exog: np.ndarray,
     mask: np.ndarray,
     narma: int,
-    ncxreg: int,
+    n_exog: int,
     order_d: int,
     seasonal_d: int,
     m: int,
@@ -2031,12 +1859,12 @@ def _initialize_regressor_params(
     x : np.ndarray
         Target variable (may contain NaN).
     exog : np.ndarray
-        Regressor matrix (n × ncxreg).
+        Regressor matrix (n × n_exog).
     mask : np.ndarray
         Boolean mask for free parameters.
     narma : int
         Number of ARMA parameters.
-    ncxreg : int
+    n_exog : int
         Number of exogenous regressors.
     order_d : int
         Non-seasonal differencing order d.
@@ -2066,7 +1894,7 @@ def _initialize_regressor_params(
     x, exog = _ensure_float64_pair(x, exog)
 
     # Decide whether to apply SVD rotation for conditioning
-    use_orig_exog = (ncxreg == 1) or np.any(~mask[narma:narma + ncxreg])
+    use_orig_exog = (n_exog == 1) or np.any(~mask[narma:narma + n_exog])
     svd_rotation = None
 
     if not use_orig_exog:
@@ -2102,7 +1930,7 @@ def _initialize_regressor_params(
             warnings.warn(f"Fitting OLS to difference data failed: {e}")
 
     # Fallback: OLS on undifferenced data
-    if ols_rank == 0 and ncxreg > 0:
+    if ols_rank == 0 and n_exog > 0:
         x, exog = _ensure_float64_pair(x, exog)
         valid = ~np.isnan(x) & np.all(np.isfinite(exog), axis=1)
         if np.sum(valid) > exog.shape[1]:
@@ -2125,11 +1953,11 @@ def _initialize_regressor_params(
             XtX_inv = np.linalg.inv(X_valid.T @ X_valid)
             ses = np.sqrt(np.diag(XtX_inv) * mse)
         except np.linalg.LinAlgError:
-            ses = np.ones(ncxreg)
+            ses = np.ones(n_exog)
         param_scale = np.concatenate([scale_arma, _REGRESSOR_SCALE_FACTOR * ses])
     else:
-        init_params = np.concatenate([init_arma, np.zeros(ncxreg)])
-        param_scale = np.concatenate([scale_arma, np.ones(ncxreg)])
+        init_params = np.concatenate([init_arma, np.zeros(n_exog)])
+        param_scale = np.concatenate([scale_arma, np.ones(n_exog)])
 
     return init_params, param_scale, n_used, use_orig_exog, svd_rotation
 
@@ -2137,7 +1965,7 @@ def _build_coefficient_dataframe(
     order_spec: SARIMAOrder,
     coef: np.ndarray,
     cn: List[str],
-    ncxreg: int
+    n_exog: int
 ) -> pd.DataFrame:
     """
     Construct a DataFrame representing model coefficients.
@@ -2150,7 +1978,7 @@ def _build_coefficient_dataframe(
         Coefficient values.
     cn : list
         Exogenous regressor names.
-    ncxreg : int
+    n_exog : int
         Number of exogenous regressors.
 
     Returns
@@ -2168,7 +1996,7 @@ def _build_coefficient_dataframe(
         names.extend([f"sar{i+1}" for i in range(order_spec.P)])
     if order_spec.Q > 0:
         names.extend([f"sma{i+1}" for i in range(order_spec.Q)])
-    if ncxreg > 0:
+    if n_exog > 0:
         names.extend(cn)
 
     return pd.DataFrame([coef], columns=names)
@@ -2248,27 +2076,6 @@ def optim_hessian(func, x, eps=None):
         x_pert[i] = x[i]  # restore i
 
     return H
-
-def _numerical_gradient_factory(func, eps=_HESSIAN_STEP_SIZE):
-    """
-    Create a numerical gradient function with specified step size.
-
-    Parameters
-    ----------
-    func : callable
-        Objective function f(x) -> scalar.
-    eps : float
-        Step size for finite differences. Default 1e-2 works well for ARIMA
-        parameters in transformed space.
-
-    Returns
-    -------
-    grad_func : callable
-        Gradient function that returns numerical gradient at point x.
-    """
-    def grad_func(x):
-        return opt.approx_fprime(x, func, eps)
-    return grad_func
 
 
 # =============================================================================
@@ -2532,7 +2339,7 @@ def _fit_css(config: _ArimaConfig) -> _FitResult:
             )
         except Exception:
             return _OBJECTIVE_PENALTY
-        adjusted = c.x - c.exog_matrix @ _par[c.n_arma_params:c.n_arma_params + c.n_exog] if c.n_exog > 0 else c.x
+        adjusted = (c.x - c.exog_matrix @ _par[c.n_arma_params:c.n_arma_params + c.n_exog]) if c.n_exog > 0 else c.x
         try:
             sigma2, _ = compute_css_residuals(
                 adjusted, phi_exp, theta_exp, c.n_conditioning_obs,
@@ -2568,7 +2375,7 @@ def _fit_css(config: _ArimaConfig) -> _FitResult:
     )
     state_space = initialize_arima_state(phi_final, theta_final, c.Delta, kappa=c.kappa)
 
-    adjusted_series = c.x - c.exog_matrix @ params[c.n_arma_params:c.n_arma_params + c.n_exog] if c.n_exog > 0 else c.x
+    adjusted_series = (c.x - c.exog_matrix @ params[c.n_arma_params:c.n_arma_params + c.n_exog]) if c.n_exog > 0 else c.x
     compute_arima_likelihood(adjusted_series, state_space, update_start=0, give_resid=True)
     sigma2, resid = compute_css_residuals(
         adjusted_series, phi_final, theta_final, c.n_conditioning_obs,
@@ -2642,7 +2449,7 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
             ss_holder[0] = _update_state_space(ss_holder[0], phi_exp, theta_exp)
         except Exception:
             return _OBJECTIVE_PENALTY
-        adjusted = c.x - c.exog_matrix @ _par[c.n_arma_params:c.n_arma_params + c.n_exog] if c.n_exog > 0 else c.x
+        adjusted = (c.x - c.exog_matrix @ _par[c.n_arma_params:c.n_arma_params + c.n_exog]) if c.n_exog > 0 else c.x
         try:
             kf = compute_arima_likelihood(adjusted, ss_holder[0], update_start=0, give_resid=False)
         except Exception:
@@ -2757,9 +2564,15 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
         params, c.order_spec.p, c.order_spec.q, c.order_spec.P,
         c.order_spec.Q, c.order_spec.s, False
     )
+    # Build a fully consistent state-space at the optimum. Unlike the
+    # intermediate ss_holder[0] used during the optimization loop (which
+    # skips rebuilding innovation_covariance to save allocations — see
+    # _update_state_space and OPT-1 in the deep-analysis document), this
+    # object has correct innovation_covariance and can safely be passed to
+    # kalman_forecast() for predictions.
     ss_final = initialize_arima_state(phi_final, theta_final, c.Delta, kappa=c.kappa)
 
-    adjusted_series = c.x - c.exog_matrix @ params[c.n_arma_params:c.n_arma_params + c.n_exog] if c.n_exog > 0 else c.x
+    adjusted_series = (c.x - c.exog_matrix @ params[c.n_arma_params:c.n_arma_params + c.n_exog]) if c.n_exog > 0 else c.x
     kf_final = compute_arima_likelihood(adjusted_series, ss_final, update_start=0, give_resid=True)
     sigma2 = kf_final['ssq'] / c.n_used
     resid = kf_final['resid']
@@ -2803,7 +2616,7 @@ def _fit_css_ml(config: _ArimaConfig) -> _FitResult:
             )
         except Exception:
             return _OBJECTIVE_PENALTY
-        adjusted = c.x - c.exog_matrix @ _par[c.n_arma_params:c.n_arma_params + c.n_exog] if c.n_exog > 0 else c.x
+        adjusted = (c.x - c.exog_matrix @ _par[c.n_arma_params:c.n_arma_params + c.n_exog]) if c.n_exog > 0 else c.x
         try:
             sigma2, _ = compute_css_residuals(
                 adjusted, phi_exp, theta_exp, c.n_conditioning_obs,
@@ -3054,6 +2867,13 @@ def predict_arima(
         - 'residuals': Model residuals
         - 'method': Model description
     """
+    if model.get('method') == 'Error model':
+        raise ValueError(
+            "Cannot generate forecasts from an error model: the original fit "
+            "failed. Check that the series has sufficient observations and that "
+            "the ARIMA order is identifiable."
+        )
+
     order_spec = model['order_spec']
     coef_df = model['coef']
     coefs = coef_df.values.flatten()
@@ -3078,11 +2898,11 @@ def predict_arima(
     # Handle exog
     if model['exog'] is not None:
         if isinstance(model['exog'], pd.DataFrame):
-            ncxreg = model['exog'].shape[1]
+            n_exog = model['exog'].shape[1]
         else:
-            ncxreg = model['exog'].shape[1] if model['exog'].ndim > 1 else 1
+            n_exog = model['exog'].shape[1] if model['exog'].ndim > 1 else 1
     else:
-        ncxreg = 0
+        n_exog = 0
 
     if new_exog is not None:
         if isinstance(new_exog, pd.DataFrame):
@@ -3098,19 +2918,19 @@ def predict_arima(
         if has_intercept and coef_names[narma] == "intercept":
             intercept_col = np.ones((n_ahead, 1))
             if new_exog is None:
-                usexreg = intercept_col
+                forecast_exog = intercept_col
             else:
-                usexreg = np.column_stack([intercept_col, new_exog])
+                forecast_exog = np.column_stack([intercept_col, new_exog])
             reg_coef_inds = slice(narma, ncoefs)
         else:
-            usexreg = new_exog
+            forecast_exog = new_exog
             reg_coef_inds = slice(narma, ncoefs)
 
-        if usexreg is not None:
+        if forecast_exog is not None:
             if narma == 0:
-                xm = usexreg @ coefs
+                xm = forecast_exog @ coefs
             else:
-                xm = usexreg @ coefs[reg_coef_inds]
+                xm = forecast_exog @ coefs[reg_coef_inds]
 
     # Kalman forecast
     forecast_result = kalman_forecast(n_ahead, model['state_space'], update=False)

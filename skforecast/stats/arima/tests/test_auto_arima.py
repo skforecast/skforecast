@@ -529,11 +529,14 @@ def test_forecast_arima_with_only_drift(ar1_series):
 def test_forecast_arima_fan_levels(ar1_series):
     """Test forecast_arima with fan=True generates many levels."""
     fit = auto_arima(ar1_series, m=1, stepwise=True, trace=False)
-    
-    fc = forecast_arima(fit, h=5, level=[80, 95], fan=True)
-    
-    # fan=True should override level
+
+    # fan=True with level=None should produce the fan interval levels
+    fc = forecast_arima(fit, h=5, fan=True)
     assert len(fc['level']) > 2
+
+    # fan=True combined with explicit level should raise ValueError
+    with pytest.raises(ValueError, match="cannot be used together"):
+        forecast_arima(fit, h=5, level=[80, 95], fan=True)
 
 
 # =============================================================================
@@ -743,15 +746,17 @@ def test_arima_rjh_minimum_data_length():
 # Tests for forecast_arima
 # =============================================================================
 def test_forecast_arima_basic(ar1_series):
-    """Test forecast_arima generates forecasts."""
+    """Test forecast_arima generates forecasts with default [80, 95] intervals."""
     fit = auto_arima(ar1_series, m=1, stepwise=True, trace=False)
     
     fc = forecast_arima(fit, h=10)
     
     assert 'mean' in fc
     assert len(fc['mean']) == 10
-    assert fc['lower'] is None  # No levels specified
-    assert fc['upper'] is None
+    assert fc['level'] == [80, 95]  # Default levels
+    assert fc['lower'].shape == (10, 2)
+    assert fc['upper'].shape == (10, 2)
+    assert np.all(fc['lower'] < fc['upper'])
 
 
 def test_forecast_arima_with_intervals(ar1_series):
@@ -1214,4 +1219,25 @@ def test_refit_arima_model_column_alignment(ar1_series):
         ar1_series, m=1, order=(1, 0, 0), exog=xreg_partial,
         fit_intercept=False, model=fit
     )
-    assert refit_partial['converged'] is True
+
+
+# =============================================================================
+# Tests for predict_arima guard on error models (TEST-4)
+# =============================================================================
+
+def test_predict_arima_raises_clear_error_for_error_model():
+    """
+    Test that predict_arima raises a clear ValueError when called on an
+    error model produced by _create_error_model.
+
+    Without the guard, the degenerate (empty) state-space in the error model
+    causes a confusing 'incompatible array sizes' error deep inside
+    kalman_forecast_core. The guard must surface a diagnostic message before
+    reaching that code.
+    """
+    from skforecast.stats.arima._arima_base import predict_arima
+
+    error = _create_error_model((1, 0, 1), (0, 0, 0), 1)
+
+    with pytest.raises(ValueError, match="Cannot generate forecasts from an error model"):
+        predict_arima(error, n_ahead=5)

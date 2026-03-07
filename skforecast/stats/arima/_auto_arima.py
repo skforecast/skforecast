@@ -1709,16 +1709,23 @@ def forecast_arima(
 
     if level is not None:
         if fan:
-            levels = np.arange(51, 100, 3).tolist()
-        else:
-            levels = list(level)
+            raise ValueError(
+                "`level` and `fan=True` cannot be used together. "
+                "When `fan=True`, levels are automatically set to "
+                "`np.arange(51, 100, 3)`. Either set `fan=False` to use a "
+                "custom `level`, or set `level=None` to use fan intervals."
+            )
+        levels = list(level)
+        if levels:  # skip validation for empty list (no intervals requested)
             if min(levels) > 0 and max(levels) < 1:
                 levels = [l * 100 for l in levels]
             if min(levels) < 0 or max(levels) > 99.99:
                 raise ValueError("Confidence level out of range")
         levels = sorted(levels)
+    elif fan:
+        levels = np.arange(51, 100, 3).tolist()
     else:
-        levels = []
+        levels = [80, 95]
 
     n = len(model.get('y', model.get('x', [])))
     model_exog = model.get('exog')
@@ -1781,106 +1788,3 @@ def forecast_arima(
         'lambda': lambda_bc,
         'biasadj': biasadj
     }
-
-
-if __name__ == "__main__":
-    print("Testing auto_arima.py...")
-    print("=" * 60)
-
-    print("\n1. Testing analyze_series...")
-    x_test = np.array([np.nan, np.nan, 1.0, 2.0, np.nan, 3.0, 4.0, np.nan])
-    first, length, trimmed = analyze_series(x_test)
-    print(f"   First non-missing: {first}, Series length: {length}")
-    print(f"   Trimmed: {trimmed}")
-
-    print("\n2. Testing is_constant...")
-    print(f"   [1,1,1] is constant: {is_constant(np.array([1.0, 1.0, 1.0]))}")
-    print(f"   [1,2,3] is constant: {is_constant(np.array([1.0, 2.0, 3.0]))}")
-
-    print("\n3. Testing ndiffs...")
-    np.random.seed(42)
-    y_stationary = np.random.randn(100)
-    y_nonstationary = np.cumsum(np.random.randn(100))
-    print(f"   Stationary series: ndiffs = {ndiffs(y_stationary)}")
-    print(f"   Non-stationary series: ndiffs = {ndiffs(y_nonstationary)}")
-
-    print("\n4. Testing nsdiffs...")
-    t = np.arange(120)
-    y_seasonal = np.sin(2 * np.pi * t / 12) + np.random.randn(120) * 0.3
-    print(f"   Seasonal series (m=12): nsdiffs = {nsdiffs(y_seasonal, period=12)}")
-
-    print("\n5. Testing fit_custom_arima...")
-    np.random.seed(123)
-    y_ar = np.zeros(200)
-    for t in range(1, 200):
-        y_ar[t] = 0.7 * y_ar[t-1] + np.random.randn()
-
-    fit = fit_custom_arima(y_ar, m=1, order=(1, 0, 0), constant=True, ic="aic", trace=True)
-    print(f"   AIC: {fit['aic']:.4f}, IC: {fit['ic']:.4f}")
-
-    print("\n6. Testing auto_arima (stepwise)...")
-    np.random.seed(456)
-    y_test = np.zeros(150)
-    for t in range(1, 150):
-        y_test[t] = 0.6 * y_test[t-1] + np.random.randn()
-
-    best = auto_arima(y_test, m=1, stepwise=True, trace=False)
-    print(f"   Best model: {best['method']}")
-    print(f"   Coefficients:\n{best['coef']}")
-    print(f"   AICc: {best.get('aicc', 'N/A')}")
-
-    print("\n7. Testing auto_arima on non-stationary data...")
-    np.random.seed(789)
-    y_rw = np.cumsum(np.random.randn(100))
-
-    best_rw = auto_arima(y_rw, m=1, stepwise=True, trace=False)
-    print(f"   Best model: {best_rw['method']}")
-    print(f"   Differencing: d={best_rw['order_spec'].d}")
-
-    print("\n8. Testing auto_arima on seasonal data...")
-    np.random.seed(321)
-    t = np.arange(120)
-    y_seas = 10 + 0.05 * t + 3 * np.sin(2 * np.pi * t / 12) + np.random.randn(120) * 0.5
-
-    best_seas = auto_arima(y_seas, m=12, stepwise=True, trace=False, max_P=1, max_Q=1)
-    print(f"   Best model: {best_seas['method']}")
-    print(f"   Seasonal: D={best_seas['order_spec'].D}")
-
-    print("\n9. Testing time_index...")
-    ti = time_index(10, 4, start=1.0)
-    print(f"   time_index(10, 4): {ti[:5]}...")
-
-    print("\n10. Testing prepend_drift...")
-    drift_vec = np.arange(1, 6)
-    exog_test = pd.DataFrame({'x1': [1, 2, 3, 4, 5], 'x2': [5, 4, 3, 2, 1]})
-    result = prepend_drift(exog_test, drift_vec)
-    print(f"   Columns: {list(result.columns)}")
-    print(f"   Drift column: {result['drift'].values}")
-
-    print("\n11. Testing box_cox...")
-    y_pos = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])
-    y_bc, lam = box_cox(y_pos, m=1, lambda_bc=0.5)
-    print(f"   Lambda: {lam}")
-    print(f"   Transformed (first 5): {y_bc[:5]}")
-
-    print("\n12. Testing inv_box_cox...")
-    y_back = inv_box_cox(y_bc, lam)
-    print(f"   Back-transformed (first 5): {y_back[:5]}")
-    print(f"   Max error: {np.max(np.abs(y_back - y_pos)):.2e}")
-
-    print("\n13. Testing arima_rjh (basic)...")
-    np.random.seed(999)
-    y_drift = np.cumsum(np.random.randn(100)) + np.arange(100) * 0.1
-    fit_rjh = arima_rjh(y_drift, m=1, order=(1, 1, 0), include_drift=True)
-    print(f"   Coefficients:\n{fit_rjh['coef']}")
-    print(f"   Has drift: {'drift' in fit_rjh.get('exog', pd.DataFrame()).columns}")
-
-    print("\n14. Testing arima_rjh with Box-Cox...")
-    np.random.seed(888)
-    y_exp = np.exp(np.cumsum(np.random.randn(80) * 0.1) + 2)
-    fit_bc = arima_rjh(y_exp, m=1, order=(1, 0, 0), lambda_bc=0.0)
-    print(f"   Lambda used: {fit_bc.get('lambda')}")
-    print(f"   AIC: {fit_bc.get('aic', 'N/A'):.4f}")
-
-    print("\n" + "=" * 60)
-    print("All tests completed!")

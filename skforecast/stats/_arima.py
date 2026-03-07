@@ -652,7 +652,8 @@ class Arima(BaseEstimator, RegressorMixin):
             predictions = forecast_arima(
                 model   = self.model_,
                 h       = steps,
-                exog    = exog
+                exog    = exog,
+                level   = []
             )['mean']
         else:
             predictions = predict_arima(

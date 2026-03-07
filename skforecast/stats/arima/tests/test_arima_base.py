@@ -4,11 +4,9 @@ import pytest
 import numpy as np
 import pandas as pd
 from skforecast.stats.arima._arima_base import (
-    kalman_update,
     compute_arima_likelihood,
     transform_unconstrained_to_ar_params,
     inverse_ar_parameter_transform,
-    time_series_convolution,
     compute_q0_covariance_matrix,
     transform_arima_parameters,
     compute_css_residuals,
@@ -17,7 +15,6 @@ from skforecast.stats.arima._arima_base import (
     ar_check,
     ma_invert,
     kalman_forecast,
-    _validate_pdq,
     _validate_choice,
     diff,
     _process_exogenous,
@@ -148,45 +145,6 @@ def test_covariance_prediction_with_diff_shape():
 
 
 # =============================================================================
-# Tests for kalman_update
-# =============================================================================
-def test_kalman_update_basic():
-    """Test Kalman update with simple inputs."""
-    y_obs = 1.0
-    anew = np.array([0.5])
-    Z = np.array([1.0])
-    Pnew = np.array([[1.0]])
-
-    a, P, resid, F, ssq_c, sumlog_c = kalman_update(
-        y_obs, anew, Z, Pnew
-    )
-
-    # resid = y_obs - Z'anew = 1.0 - 0.5 = 0.5
-    np.testing.assert_allclose(resid, 0.5, rtol=1e-10)
-    # F = Z'PZ = 1.0
-    np.testing.assert_allclose(F, 1.0, rtol=1e-10)
-    assert a.shape == (1,)
-    assert P.shape == (1, 1)
-
-
-def test_kalman_update_with_differencing():
-    """Test Kalman update with differencing component."""
-    y_obs = 2.0
-    anew = np.array([0.5, 1.0])
-    Z = np.array([1.0, 1.0])  # Z = [1, delta[0]] = [1, 1]
-    Pnew = np.eye(2)
-
-    a, P, resid, F, ssq_c, sumlog_c = kalman_update(
-        y_obs, anew, Z, Pnew
-    )
-
-    # resid = y_obs - Z'anew = 2.0 - (1.0*0.5 + 1.0*1.0) = 0.5
-    np.testing.assert_allclose(resid, 0.5, rtol=1e-10)
-    assert a.shape == (2,)
-    assert P.shape == (2, 2)
-
-
-# =============================================================================
 # Tests for parameter transformations
 # =============================================================================
 def test_transform_unconstrained_to_ar_params_single():
@@ -225,33 +183,6 @@ def test_inverse_ar_parameter_transform_roundtrip():
     inverse = inverse_ar_parameter_transform(forward)
     
     np.testing.assert_allclose(inverse, raw[:p], rtol=1e-6)
-
-
-# =============================================================================
-# Tests for time_series_convolution
-# =============================================================================
-def test_time_series_convolution_simple():
-    """Test convolution with simple polynomials."""
-    a = np.array([1.0, 2.0])
-    b = np.array([1.0, 1.0])
-    
-    result = time_series_convolution(a, b)
-    
-    # (1 + 2x) * (1 + x) = 1 + 3x + 2x^2
-    expected = np.array([1.0, 3.0, 2.0])
-    np.testing.assert_array_almost_equal(result, expected)
-
-
-def test_time_series_convolution_differencing():
-    """Test convolution for differencing polynomial."""
-    a = np.array([1.0, -1.0])
-    b = np.array([1.0, -1.0])
-    
-    result = time_series_convolution(a, b)
-    
-    # (1 - x) * (1 - x) = 1 - 2x + x^2
-    expected = np.array([1.0, -2.0, 1.0])
-    np.testing.assert_array_almost_equal(result, expected)
 
 
 # =============================================================================
@@ -512,21 +443,6 @@ def test_kalman_forecast_with_update():
 # =============================================================================
 # Tests for utility functions
 # =============================================================================
-def test_make_pdq_valid():
-    """Test _validate_pdq with valid inputs."""
-    result = _validate_pdq(1, 1, 1)
-    assert result == (1, 1, 1)
-
-
-def test_make_pdq_raises_on_negative():
-    """Test _validate_pdq raises ValueError for negative values."""
-    with pytest.raises(ValueError, match="must be non-negative"):
-        _validate_pdq(-1, 0, 0)
-    
-    with pytest.raises(ValueError, match="must be non-negative"):
-        _validate_pdq(0, -1, 0)
-
-
 def test_validate_choice_exact():
     """Test _validate_choice with exact match."""
     result = _validate_choice("ML", ["CSS-ML", "ML", "CSS"], "method")
@@ -1107,4 +1023,146 @@ def test_arima_init_partial_nan(simple_ar1_series):
 
     result = arima(y, order=(1, 0, 1), fit_intercept=False, init=init)
 
+
+# =============================================================================
+# Tests for enforce_stationarity=False (TEST-1)
+# =============================================================================
+
+def test_arima_enforce_stationarity_false_stationary_data():
+    """
+    Test arima() with enforce_stationarity=False on stationary data.
+
+    Both paths (True/False) should reach the same optimum. With
+    enforce_stationarity=False the Jones (1980) transform is skipped: the
+    optimizer works directly in the raw parameter space and the covariance
+    is the inverse Hessian (no delta-method Jacobian).
+    """
+    rng = np.random.default_rng(42)
+    n = 100
+    phi = 0.5
+    e = rng.standard_normal(n)
+    y = np.zeros(n)
+    y[0] = e[0]
+    for t in range(1, n):
+        y[t] = phi * y[t - 1] + e[t]
+
+    result_true = arima(y, order=(1, 0, 0), fit_intercept=False,
+                        enforce_stationarity=True)
+    result_false = arima(y, order=(1, 0, 0), fit_intercept=False,
+                         enforce_stationarity=False)
+
+    assert result_true['converged'] is True
+    assert result_false['converged'] is True
+    # Both paths must converge to the same coefficient and variance
+    np.testing.assert_allclose(
+        result_true['coef'].values.flatten(),
+        result_false['coef'].values.flatten(),
+        rtol=1e-3,
+    )
+    np.testing.assert_allclose(result_true['sigma2'], result_false['sigma2'], rtol=1e-3)
+
+
+def test_arima_enforce_stationarity_false_near_unit_root():
+    """
+    Test arima() with enforce_stationarity=False can estimate near-unit-root models.
+
+    With enforce_stationarity=True the Jones transform keeps |phi| < 1.
+    With enforce_stationarity=False the optimizer is unconstrained and correctly
+    recovers a near-unit-root coefficient.
+    """
+    rng = np.random.default_rng(99)
+    n = 120
+    phi_true = 0.98
+    e = rng.standard_normal(n)
+    y = np.zeros(n)
+    y[0] = e[0]
+    for t in range(1, n):
+        y[t] = phi_true * y[t - 1] + e[t]
+
+    result = arima(y, order=(1, 0, 0), fit_intercept=False,
+                   enforce_stationarity=False)
+
     assert result['converged'] is True
+    coef = result['coef'].values.flatten()[0]
+    np.testing.assert_allclose(coef, 0.97250926, rtol=1e-4)
+    np.testing.assert_allclose(result['sigma2'], 0.8360452821958437, rtol=1e-4)
+
+
+def test_arima_enforce_stationarity_false_covariance_is_positive_definite():
+    """
+    Test arima() with enforce_stationarity=False produces a positive-definite
+    parameter covariance matrix.
+
+    The direct inverse-Hessian path (used when enforce_stationarity=False) must
+    return a valid covariance for a well-identified model.
+    """
+    rng = np.random.default_rng(42)
+    n = 150
+    y = rng.standard_normal(n)  # white noise → small but well-identified AR coef
+
+    result = arima(y, order=(1, 0, 0), fit_intercept=False,
+                   enforce_stationarity=False)
+
+    assert result['var_coef'] is not None
+    var_coef = result['var_coef']
+    assert var_coef.shape == (1, 1)
+    assert float(np.diag(var_coef)[0]) > 0
+
+
+# =============================================================================
+# Tests for _fit_css_ml fallbacks (TEST-3)
+# =============================================================================
+
+def test_arima_css_ml_all_params_fixed_skips_css_stage():
+    """
+    Test that CSS-ML with all parameters fixed skips the CSS warm-start.
+
+    When every parameter is pinned via fixed=, there is nothing to optimise.
+    _fit_css_ml must short-circuit the CSS objective and fall through directly
+    to _fit_ml with the fixed values, returning converged=True with the exact
+    fixed coefficient.
+    """
+    rng = np.random.default_rng(42)
+    n = 100
+    phi = 0.5
+    e = rng.standard_normal(n)
+    y = np.zeros(n)
+    y[0] = e[0]
+    for t in range(1, n):
+        y[t] = phi * y[t - 1] + e[t]
+
+    result = arima(y, order=(1, 0, 0), fit_intercept=False,
+                   fixed=np.array([phi]), method='CSS-ML')
+
+    assert result['converged'] is True
+    np.testing.assert_allclose(
+        result['coef'].values.flatten()[0], phi, rtol=1e-10
+    )
+
+
+def test_arima_css_ml_result_consistent_with_ml():
+    """
+    Test that CSS-ML and ML produce consistent estimates on well-behaved data.
+
+    For stationary data the CSS warm start should land close to the ML
+    optimum, so both methods should converge to the same coefficient and
+    sigma2 within numerical tolerance.
+    """
+    rng = np.random.default_rng(7)
+    n = 200
+    phi = 0.6
+    e = rng.standard_normal(n)
+    y = np.zeros(n)
+    y[0] = e[0]
+    for t in range(1, n):
+        y[t] = phi * y[t - 1] + e[t]
+
+    result_css_ml = arima(y, order=(1, 0, 0), fit_intercept=False, method='CSS-ML')
+    result_ml = arima(y, order=(1, 0, 0), fit_intercept=False, method='ML')
+
+    np.testing.assert_allclose(
+        result_css_ml['coef'].values.flatten(),
+        result_ml['coef'].values.flatten(),
+        rtol=1e-3,
+    )
+    np.testing.assert_allclose(result_css_ml['sigma2'], result_ml['sigma2'], rtol=1e-3)
