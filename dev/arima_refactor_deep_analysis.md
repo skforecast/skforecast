@@ -1,8 +1,6 @@
-# Deep Analysis: ARIMA Refactor (`feature__ai_enhancements` vs `master`)
+# Deep Analysis: ARIMA Refactor
 
 ## 1. Bugs
-
-
 
 ### BUG-1: Kalman filter `update_start` off-by-one (MEDIUM)
 
