@@ -384,3 +384,53 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False():
     assert forecaster.in_sample_residuals_ is None
     assert forecaster.in_sample_residuals_by_bin_ is None
     assert forecaster.binner_intervals_ is None
+
+
+def test_fit_resets_in_sample_residuals_on_refit():
+    """
+    Test that in_sample_residuals_ and in_sample_residuals_by_bin_ are reset to
+    None when the forecaster is refitted after having stored residuals on the
+    previous fit.
+    """
+    forecaster = ForecasterEquivalentDate(
+                     offset        = 2,
+                     n_offsets     = 2,
+                     agg_func      = np.mean,
+                     forecaster_id = None
+                 )
+    # First fit: store residuals
+    forecaster.fit(y=pd.Series(np.arange(20, dtype=float)), store_in_sample_residuals=True)
+    assert forecaster.in_sample_residuals_ is not None
+    assert forecaster.in_sample_residuals_by_bin_ is not None
+
+    # Refit without storing residuals: stale residuals must be cleared
+    forecaster.fit(y=pd.Series(np.arange(20, dtype=float)), store_in_sample_residuals=False)
+    assert forecaster.in_sample_residuals_ is None
+    assert forecaster.in_sample_residuals_by_bin_ is None
+
+
+def test_fit_resets_out_sample_residuals_on_refit():
+    """
+    Test that out_sample_residuals_ and out_sample_residuals_by_bin_ are reset
+    to None when the forecaster is refitted after having stored out-of-sample
+    residuals via set_out_sample_residuals().
+    """
+    forecaster = ForecasterEquivalentDate(
+                     offset        = 2,
+                     n_offsets     = 2,
+                     agg_func      = np.mean,
+                     forecaster_id = None
+                 )
+    y_train = pd.Series(np.arange(20, dtype=float))
+    forecaster.fit(y=y_train, store_in_sample_residuals=True)
+
+    y_true = np.array([10.0, 11.0, 12.0])
+    y_pred = np.array([9.5, 10.5, 11.5])
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+    assert forecaster.out_sample_residuals_ is not None
+    assert forecaster.out_sample_residuals_by_bin_ is not None
+
+    # Refit: stale out-of-sample residuals must be cleared
+    forecaster.fit(y=y_train)
+    assert forecaster.out_sample_residuals_ is None
+    assert forecaster.out_sample_residuals_by_bin_ is None
