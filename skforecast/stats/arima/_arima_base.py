@@ -1025,7 +1025,11 @@ def _compute_q0_njit(
 # doubling. The Kronecker method has higher precision for large matrices,
 # which keeps BFGS finite-difference gradients accurate and avoids
 # unnecessary optimizer iterations in seasonal ARIMA models.
-_LYAPUNOV_SCIPY_THRESHOLD = 6
+# Threshold set high (≥ max seasonal period in practice) because Smith
+# doubling converges reliably when enforce_stationarity=True guarantees
+# spectral radius < 1, and the njit path is orders of magnitude faster
+# for large state dimensions (e.g. r=26 for hourly m=24 models).
+_LYAPUNOV_SCIPY_THRESHOLD = 50
 
 
 def compute_q0_covariance_matrix(
