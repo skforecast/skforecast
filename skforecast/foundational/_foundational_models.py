@@ -6,72 +6,69 @@
 # coding=utf-8
 
 from __future__ import annotations
-
 from dataclasses import dataclass
-import inspect
 from typing import Any
-
 import numpy as np
 import pandas as pd
-
-from importlib.metadata import PackageNotFoundError, version
-
 from ..utils import check_y, expand_index
 
 
 @dataclass(frozen=True)
 class ModelCapabilities:
     """
-    Capabilities exposed by a foundational model adapter.
+    Immutable descriptor of a foundational model adapter's architectural
+    capabilities.
+
+    These fields describe what the underlying model architecture supports
+    regardless of how a particular adapter instance is configured.
+    Instance-level settings such as ``context_length`` are exposed as
+    regular attributes on the adapter itself.
+
+    Attributes
+    ----------
+    supports_exog : bool
+        Whether the adapter accepts exogenous variables (past and/or future
+        covariates).
+    supports_multivariate : bool
+        Whether the adapter can handle multivariate (multiple-series) input.
+    supports_probabilistic : bool
+        Whether the adapter can produce probabilistic forecasts (prediction
+        intervals or quantiles).
     """
 
     supports_exog: bool
     supports_multivariate: bool
     supports_probabilistic: bool
-    context_length: int | None
-    min_history: int | None
 
 
-class BaseAdapter:
+class Chronos2Adapter:
     """
-    Base adapter interface for foundational time-series models.
-    """
+    Adapter for Amazon Chronos-2 foundational models.
 
-    capabilities: ModelCapabilities
-
-    def __init__(self, model_id: str, **kwargs: Any) -> None:
-        self.model_id = model_id
-        self._is_fitted = False
-
-    @property
-    def is_fitted(self) -> bool:
-        return self._is_fitted
-
-    def fit(
-        self, data: pd.Series | pd.DataFrame, exog: pd.Series | pd.DataFrame | None = None
-    ) -> None:
-        raise NotImplementedError
-
-    def forecast(
-        self,
-        h: int,
-        exog: pd.Series | pd.DataFrame | None = None,
-        quantiles: list[float] | tuple[float] | None = None,
-    ) -> pd.Series | pd.DataFrame:
-        raise NotImplementedError
-
-
-class ChronosAdapter(BaseAdapter):
-    """
-    Adapter for Amazon Chronos models.
+    Parameters
+    ----------
+    model_id : str
+        HuggingFace model ID, e.g. ``"autogluon/chronos-2-small"``.
+    context_length : int, optional
+        Maximum number of historical observations to use as context. If None,
+        the full history stored at fit time is used.
+    pipeline : BaseChronosPipeline, optional
+        Pre-loaded pipeline instance. If None, the pipeline is loaded lazily on
+        the first call to ``predict``.
+    device_map : str, optional
+        Device map string forwarded to ``BaseChronosPipeline.from_pretrained``
+        (e.g. ``"cuda"``, ``"cpu"``).
+    torch_dtype : optional
+        Torch dtype forwarded to ``BaseChronosPipeline.from_pretrained``.
+    predict_kwargs : dict, optional
+        Additional keyword arguments forwarded to the pipeline's
+        ``predict_quantiles`` method.
     """
 
     capabilities = ModelCapabilities(
-        supports_exog=False,
+        supports_exog=True,
         supports_multivariate=False,
         supports_probabilistic=True,
-        context_length=None,
-        min_history=None,
     )
 
     def __init__(
@@ -80,254 +77,380 @@ class ChronosAdapter(BaseAdapter):
         *,
         pipeline: Any | None = None,
         context_length: int | None = None,
-        num_samples: int = 20,
         predict_kwargs: dict[str, Any] | None = None,
         device_map: str | None = None,
         torch_dtype: Any | None = None,
     ) -> None:
-        super().__init__(model_id=model_id)
+        """
+        Initialise the adapter.
+
+        Parameters
+        ----------
+        model_id : str
+            HuggingFace model ID, e.g. ``"autogluon/chronos-2-small"``.
+        pipeline : BaseChronosPipeline, optional
+            Pre-loaded pipeline instance. If ``None``, the pipeline is
+            loaded lazily on the first call to ``predict``.
+        context_length : int, optional
+            Maximum number of historical observations to retain as context.
+            At ``fit`` time only the last ``context_length`` observations
+            of ``y`` (and ``exog``) are stored. At ``predict`` time any
+            ``last_window`` longer than ``context_length`` is trimmed to
+            this length before inference. If ``None``, no trimming is
+            applied.
+        predict_kwargs : dict, optional
+            Additional keyword arguments forwarded verbatim to the
+            pipeline's ``predict_quantiles`` method.
+        device_map : str, optional
+            Device map string forwarded to
+            ``BaseChronosPipeline.from_pretrained`` (e.g. ``"cuda"``,
+            ``"cpu"``, ``"auto"``).
+        torch_dtype : optional
+            Torch dtype forwarded to ``BaseChronosPipeline.from_pretrained``
+            (e.g. ``torch.bfloat16``).
+        """
+        self.model_id = model_id
         self._pipeline = pipeline
         self._history: pd.Series | None = None
+        self._history_exog: pd.DataFrame | pd.Series | None = None
         self.context_length = context_length
-        self.num_samples = num_samples
         self.predict_kwargs = predict_kwargs or {}
         self.device_map = device_map
         self.torch_dtype = torch_dtype
-
-        reserved_keys = {"context", "prediction_length"}
-        if reserved_keys.intersection(self.predict_kwargs):
-            raise ValueError(
-                "`predict_kwargs` cannot contain `context` or `prediction_length`."
-            )
+        self._is_fitted = False
 
     def _load_pipeline(self) -> None:
+        """
+        Load the Chronos-2 pipeline into ``self._pipeline`` if not already set.
+
+        The pipeline is imported lazily from ``chronos`` and instantiated via
+        ``BaseChronosPipeline.from_pretrained``, which auto-dispatches to the
+        correct pipeline class based on the model config. Optional
+        ``device_map`` and ``torch_dtype`` stored at initialisation are
+        forwarded to the constructor. This method is a no-op when
+        ``self._pipeline`` is already populated.
+
+        Raises
+        ------
+        ImportError
+            If ``chronos-forecasting`` >=2.0 is not installed.
+        """
         if self._pipeline is not None:
             return
-
         try:
-            from chronos import ChronosPipeline, ChronosConfig
+            from chronos import BaseChronosPipeline
         except ImportError as exc:
-            msg = (
-                "Chronos is required for this model but is not installed. "
-                "Install it with `pip install chronos-forecasting` (module name "
-                "`chronos`), or pass a preloaded `pipeline=` when creating "
-                "`FoundationalModels`."
-            )
-            raise ImportError(msg) from exc
-
-        if _is_chronos_2_model(self.model_id):
-            if not _chronos_supports_config_field(ChronosConfig, "input_patch_size"):
-                raise TypeError(
-                    "The installed `chronos-forecasting` does not support Chronos-2 "
-                    "configs (`input_patch_size` missing). Upgrade with "
-                    "`pip install -U chronos-forecasting transformers`, or use a "
-                    "Chronos T5 checkpoint (e.g. `amazon/chronos-t5-small`)."
-                )
-
-        load_kwargs: dict[str, Any] = {}
+            raise ImportError(
+                "chronos-forecasting >=2.0 is required. "
+                "Install it with `pip install chronos-forecasting`."
+            ) from exc
+        kwargs: dict[str, Any] = {}
         if self.device_map is not None:
-            load_kwargs["device_map"] = self.device_map
+            kwargs["device_map"] = self.device_map
         if self.torch_dtype is not None:
-            load_kwargs["torch_dtype"] = self.torch_dtype
+            kwargs["torch_dtype"] = self.torch_dtype
+        self._pipeline = BaseChronosPipeline.from_pretrained(self.model_id, **kwargs)
 
-        try:
-            self._pipeline = ChronosPipeline.from_pretrained(
-                self.model_id, **load_kwargs
+    def _build_chronos_input(
+        self,
+        target: np.ndarray,
+        past_exog: pd.DataFrame | pd.Series | None = None,
+        future_exog: pd.DataFrame | pd.Series | None = None,
+    ) -> dict[str, Any]:
+        """
+        Build the input dict consumed by the pipeline's ``predict_quantiles`` method.
+
+        Parameters
+        ----------
+        target : np.ndarray
+            1-D array of observed time series values used as context. Must be
+            castable to ``float64``.
+        past_exog : pd.DataFrame or pd.Series, optional
+            Historical exogenous variables whose index is aligned to
+            ``target``. Each column (or the single Series, referenced by
+            its name) becomes an entry in the returned
+            ``"past_covariates"`` dict. Values are cast to ``float64``.
+        future_exog : pd.DataFrame or pd.Series, optional
+            Future-known exogenous variables covering the forecast horizon.
+            Must have exactly ``prediction_length`` rows. Each column
+            becomes an entry in the returned ``"future_covariates"`` dict.
+            Values are cast to ``float64``.
+
+        Returns
+        -------
+        dict
+            Dictionary with mandatory key ``"target"`` (1-D ``float64``
+            ``np.ndarray``) and optional keys ``"past_covariates"`` and
+            ``"future_covariates"``, each mapping column names to 1-D
+            ``float64`` arrays.
+        """
+        input_dict: dict[str, Any] = {"target": np.asarray(target, dtype=float)}
+        if past_exog is not None:
+            df = (
+                past_exog
+                if isinstance(past_exog, pd.DataFrame)
+                else past_exog.to_frame()
             )
-        except TypeError as exc:
-            chronos_version = _get_package_version("chronos-forecasting")
-            transformers_version = _get_package_version("transformers")
-            msg = (
-                "Chronos model config is incompatible with the installed "
-                "`chronos-forecasting` package "
-                f"(chronos-forecasting={chronos_version}, "
-                f"transformers={transformers_version}). Try upgrading with "
-                "`pip install -U chronos-forecasting transformers`, or use a "
-                "Chronos model compatible with your installed versions."
+            input_dict["past_covariates"] = {
+                col: np.asarray(df[col], dtype=float) for col in df.columns
+            }
+        if future_exog is not None:
+            df = (
+                future_exog
+                if isinstance(future_exog, pd.DataFrame)
+                else future_exog.to_frame()
             )
-            raise TypeError(msg) from exc
+            input_dict["future_covariates"] = {
+                col: np.asarray(df[col], dtype=float) for col in df.columns
+            }
+        return input_dict
 
-    def _coerce_series(self, data: pd.Series | pd.DataFrame) -> pd.Series:
-        if isinstance(data, pd.DataFrame):
-            if data.shape[1] != 1:
-                raise ValueError("Chronos only supports univariate series for now.")
-            series = data.iloc[:, 0]
-            if series.name is None:
-                series = series.rename(data.columns[0])
-        else:
-            series = data
+    def fit(
+        self,
+        y: pd.Series,
+        exog: pd.DataFrame | pd.Series | None = None,
+    ) -> Chronos2Adapter:
+        """
+        Store the training series and optional historical exogenous variables.
+        No model training occurs — Chronos-2 is a zero-shot inference model.
 
-        check_y(series, series_id="`data`")
-        return series
+        Parameters
+        ----------
+        y : pd.Series
+            Training time series.
+        exog : pd.DataFrame or pd.Series, optional
+            Historical exogenous variables aligned to ``y``. Passed as
+            ``past_covariates`` in the Chronos-2 input.
 
-    def _prepare_context(self) -> np.ndarray:
-        if self._history is None:
-            raise ValueError("Call `fit` before `forecast`.")
-
-        values = self._history.to_numpy(dtype=float)
+        Returns
+        -------
+        self : Chronos2Adapter
+        """
+        check_y(y, series_id="`y`")
         if self.context_length is not None:
-            values = values[-self.context_length :]
-
-        return values
-
-    def _to_pipeline_input(self, context: np.ndarray) -> Any:
-        try:
-            import torch
-        except ImportError:
-            return context
-        return torch.as_tensor(context, dtype=torch.float32)
-
-    def _predict_samples(self, context: np.ndarray, h: int) -> np.ndarray:
-        predict_params = inspect.signature(self._pipeline.predict).parameters
-        pipeline_input = self._to_pipeline_input(context)
-        if "context" in predict_params:
-            return self._pipeline.predict(
-                context=pipeline_input,
-                prediction_length=h,
-                num_samples=self.num_samples,
-                **self.predict_kwargs,
+            self._history = y.iloc[-self.context_length :].copy()
+            self._history_exog = (
+                exog.iloc[-self.context_length :].copy() if exog is not None else None
             )
-        if "inputs" in predict_params:
-            return self._pipeline.predict(
-                inputs=pipeline_input,
-                prediction_length=h,
-                num_samples=self.num_samples,
-                **self.predict_kwargs,
+        else:
+            self._history = y.copy()
+            self._history_exog = exog.copy() if exog is not None else None
+        self._is_fitted = True
+        return self
+
+    def predict(
+        self,
+        steps: int,
+        exog: pd.DataFrame | pd.Series | None = None,
+        quantiles: list[float] | tuple[float] | None = None,
+        last_window: pd.Series | None = None,
+        last_window_exog: pd.DataFrame | pd.Series | None = None,
+    ) -> pd.Series | pd.DataFrame:
+        """
+        Generate predictions using the Chronos-2 pipeline.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        exog : pd.DataFrame or pd.Series, optional
+            Future known exogenous variables for the forecast horizon. Passed as
+            ``future_covariates`` in the Chronos-2 input. Must have exactly
+            ``steps`` rows. Column names are independent of those passed to
+            ``fit`` — Chronos-2 treats past and future covariates separately.
+        quantiles : list of float, optional
+            Quantile levels to return, e.g. ``[0.1, 0.5, 0.9]``. If None,
+            returns a point forecast (median, i.e. the 0.5 quantile).
+        last_window : pd.Series, optional
+            Override the stored history with this window. Used by backtesting
+            to pass the appropriate context window per fold.
+        last_window_exog : pd.DataFrame or pd.Series, optional
+            Historical exog corresponding to ``last_window``.
+
+        Returns
+        -------
+        pd.Series
+            Point forecast when ``quantiles`` is None.
+        pd.DataFrame
+            Quantile forecasts with columns ``q_0.1``, ``q_0.5``, etc. when
+            ``quantiles`` is provided.
+        """
+        if not self._is_fitted and last_window is None:
+            raise ValueError(
+                "Call `fit` before `predict`, or pass `last_window`."
             )
-        return self._pipeline.predict(
-            pipeline_input,
-            prediction_length=h,
-            num_samples=self.num_samples,
+        if not isinstance(steps, (int, np.integer)) or steps < 1:
+            raise ValueError("`steps` must be a positive integer.")
+
+        self._load_pipeline()
+
+        history = last_window if last_window is not None else self._history
+        past_exog = (
+            last_window_exog if last_window is not None else self._history_exog
+        )
+
+        # When last_window is provided (backtesting), still trim to context_length.
+        # When _history is used directly it was already trimmed at fit time.
+        if last_window is not None and self.context_length is not None:
+            history = history.iloc[-self.context_length :]
+            if past_exog is not None:
+                past_exog = past_exog.iloc[-self.context_length :]
+
+        quantile_levels = list(quantiles) if quantiles is not None else [0.1, 0.5, 0.9]
+
+        if quantiles is not None:
+            for q in quantile_levels:
+                if not 0.0 <= q <= 1.0:
+                    raise ValueError(
+                        f"All quantiles must be between 0 and 1. Got {q}."
+                    )
+
+        input_dict = self._build_chronos_input(
+            target=history.to_numpy(),
+            past_exog=past_exog,
+            future_exog=exog,
+        )
+
+        quantile_preds, _ = self._pipeline.predict_quantiles(
+            inputs=[input_dict],
+            prediction_length=steps,
+            quantile_levels=quantile_levels,
             **self.predict_kwargs,
         )
 
-    def _as_numpy(self, values: Any) -> np.ndarray:
-        if isinstance(values, np.ndarray):
-            return values
-        if hasattr(values, "detach"):
-            return values.detach().cpu().numpy()
-        return np.asarray(values)
+        # quantile_preds[0] shape: (n_vars, steps, n_q).
+        # Univariate: n_vars == 1 — squeeze to (steps, n_q).
+        q_arr = quantile_preds[0].squeeze(0)
+        if hasattr(q_arr, "detach"):
+            q_arr = q_arr.detach().cpu().numpy()
 
-    def _forecast_index(self, steps: int) -> pd.Index:
-        if self._history is None:
-            raise ValueError("Call `fit` before `forecast`.")
-
-        index = self._history.index
-        if isinstance(index, pd.DatetimeIndex) and index.freq is None:
-            inferred = pd.infer_freq(index)
-            if inferred is None:
-                raise ValueError(
-                    "DatetimeIndex must have a frequency or an inferrable frequency."
-                )
-            index = pd.DatetimeIndex(index, freq=inferred)
-
-        return expand_index(index=index, steps=steps)
-
-    def fit(
-        self, data: pd.Series | pd.DataFrame, exog: pd.Series | pd.DataFrame | None = None
-    ) -> None:
-        if exog is not None:
-            raise ValueError("Chronos models do not support `exog`.")
-
-        series = self._coerce_series(data)
-        self._history = series.copy()
-        self._is_fitted = True
-
-    def forecast(
-        self,
-        h: int,
-        exog: pd.Series | pd.DataFrame | None = None,
-        quantiles: list[float] | tuple[float] | None = None,
-    ) -> pd.Series | pd.DataFrame:
-        if not isinstance(h, (int, np.integer)) or h < 1:
-            raise ValueError("`h` must be a positive integer.")
-        if exog is not None:
-            raise ValueError("Chronos models do not support `exog`.")
-
-        self._load_pipeline()
-        context = self._prepare_context()
-
-        raw_forecast = self._predict_samples(context=context, h=h)
-        samples = self._as_numpy(raw_forecast)
-        if samples.ndim == 3:
-            samples = samples[0]
-        if samples.ndim != 2:
-            raise ValueError(
-                "Unexpected Chronos output shape. Expected (n_samples, horizon)."
-            )
-
-        forecast_index = self._forecast_index(steps=h)
-        series_name = (
-            self._history.name if self._history is not None else "y"
-        )
+        forecast_index = expand_index(history.index, steps=steps)
 
         if quantiles is None:
-            point_forecast = np.median(samples, axis=0)
-            return pd.Series(point_forecast, index=forecast_index, name=series_name)
+            median_idx = quantile_levels.index(0.5)
+            return pd.Series(
+                q_arr[:, median_idx],
+                index=forecast_index,
+                name=history.name,
+            )
 
-        for q in quantiles:
-            if q < 0 or q > 1:
-                raise ValueError("All quantiles must be between 0 and 1.")
-
-        quantiles = list(quantiles)
-        quantile_values = np.quantile(samples, quantiles, axis=0).T
-        columns = [f"q_{q}" for q in quantiles]
-        return pd.DataFrame(quantile_values, index=forecast_index, columns=columns)
-
-
-def _get_package_version(package_name: str) -> str:
-    try:
-        return version(package_name)
-    except PackageNotFoundError:
-        return "not-installed"
-
-
-def _chronos_supports_config_field(config_cls: type, field_name: str) -> bool:
-    try:
-        params = inspect.signature(config_cls).parameters
-    except (TypeError, ValueError):
-        return False
-    return field_name in params
-
-
-def _is_chronos_2_model(model_id: str) -> bool:
-    short_name = model_id.split("/", 1)[-1]
-    return short_name.startswith("chronos-2")
-
-
-def _resolve_adapter(model_id: str) -> type[BaseAdapter]:
-    if model_id.split("/", 1)[-1].startswith("chronos"):
-        return ChronosAdapter
-    raise ValueError(
-        "Unsupported model. Only Chronos models are supported for now."
-    )
+        columns = [f"q_{q}" for q in quantile_levels]
+        return pd.DataFrame(q_arr, index=forecast_index, columns=columns)
 
 
 class FoundationalModels:
     """
-    General interface for foundational time-series models.
+    Lightweight user-facing interface for foundational time-series models.
+
+    Currently supports Amazon Chronos-2 only. For full skforecast
+    ecosystem integration (backtesting, model selection, etc.) use
+    ``ForecasterFoundational`` instead.
+
+    Parameters
+    ----------
+    model : str
+        HuggingFace model ID, e.g. ``"autogluon/chronos-2-small"``.
+    **kwargs :
+        Additional keyword arguments forwarded to ``Chronos2Adapter``
+        (``context_length``, ``pipeline``, ``device_map``, ``torch_dtype``,
+        ``predict_kwargs``).
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from skforecast.foundational import FoundationalModels
+    >>> y = pd.Series(range(50), index=pd.date_range("2020", periods=50, freq="ME"))
+    >>> m = FoundationalModels("autogluon/chronos-2-small")
+    >>> m.fit(y)  # doctest: +SKIP
+    >>> pred = m.predict(steps=12)  # doctest: +SKIP
     """
 
     def __init__(self, model: str, **kwargs: Any) -> None:
-        adapter_cls = _resolve_adapter(model_id=model)
-        self.adapter = adapter_cls(model_id=model, **kwargs)
+        """
+        Initialise the FoundationalModels interface.
+
+        Parameters
+        ----------
+        model : str
+            HuggingFace model ID, e.g. ``"autogluon/chronos-2-small"``.
+        **kwargs :
+            Additional keyword arguments forwarded to ``Chronos2Adapter``:
+            ``context_length``, ``pipeline``, ``device_map``,
+            ``torch_dtype``, ``predict_kwargs``.
+        """
+        self.adapter = Chronos2Adapter(model_id=model, **kwargs)
 
     @property
     def is_fitted(self) -> bool:
-        return self.adapter.is_fitted
+        """
+        Whether the model has been fitted.
+
+        Returns
+        -------
+        bool
+            ``True`` after ``fit`` has been called at least once,
+            ``False`` otherwise.
+        """
+        return self.adapter._is_fitted
 
     def fit(
         self,
-        data: pd.Series | pd.DataFrame,
-        exog: pd.Series | pd.DataFrame | None = None,
+        y: pd.Series,
+        exog: pd.DataFrame | pd.Series | None = None,
     ) -> FoundationalModels:
-        self.adapter.fit(data=data, exog=exog)
+        """
+        Fit the model by storing the training series and optional exog.
+
+        Parameters
+        ----------
+        y : pd.Series
+            Training time series.
+        exog : pd.DataFrame or pd.Series, optional
+            Historical exogenous variables aligned to ``y``.
+
+        Returns
+        -------
+        self : FoundationalModels
+        """
+        self.adapter.fit(y=y, exog=exog)
         return self
 
-    def forecast(
+    def predict(
         self,
-        h: int,
-        exog: pd.Series | pd.DataFrame | None = None,
+        steps: int,
+        exog: pd.DataFrame | pd.Series | None = None,
         quantiles: list[float] | tuple[float] | None = None,
+        last_window: pd.Series | None = None,
+        last_window_exog: pd.DataFrame | pd.Series | None = None,
     ) -> pd.Series | pd.DataFrame:
-        return self.adapter.forecast(h=h, exog=exog, quantiles=quantiles)
+        """
+        Generate predictions.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        exog : pd.DataFrame or pd.Series, optional
+            Future known exogenous variables for the forecast horizon.
+        quantiles : list of float, optional
+            Quantile levels to return, e.g. ``[0.1, 0.5, 0.9]``. If None,
+            returns a point forecast (median).
+        last_window : pd.Series, optional
+            Override the stored history with this window.
+        last_window_exog : pd.DataFrame or pd.Series, optional
+            Historical exog corresponding to ``last_window``.
+
+        Returns
+        -------
+        pd.Series
+            Point forecast when ``quantiles`` is None.
+        pd.DataFrame
+            Quantile forecasts when ``quantiles`` is provided.
+        """
+        return self.adapter.predict(
+            steps=steps,
+            exog=exog,
+            quantiles=quantiles,
+            last_window=last_window,
+            last_window_exog=last_window_exog,
+        )
