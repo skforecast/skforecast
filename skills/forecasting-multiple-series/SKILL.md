@@ -25,17 +25,12 @@ ForecasterRecursiveMultiSeries accepts three input formats:
    # 2020-01-02     1.2       2.3       3.4
    ```
 
-2. **Long DataFrame** — stacked format with a `series_id` column:
-   ```python
-   #            series_id  value
-   # 2020-01-01  series_1    1.0
-   # 2020-01-01  series_2    2.5
-   ```
-
-3. **Dictionary** — `{series_id: pd.Series}`:
+2. **Dictionary** — `{series_id: pd.Series}`:
    ```python
    {'series_1': pd.Series([1.0, 1.2, ...]), 'series_2': pd.Series([2.5, 2.3, ...])}
    ```
+
+> **Note:** Long-format DataFrames are not directly accepted. Use `reshape_series_long_to_dict()` to convert long format to a dictionary first (see Data Reshaping Utilities below).
 
 ## Complete Workflow
 
@@ -55,7 +50,10 @@ forecaster = ForecasterRecursiveMultiSeries(
     lags=24,
     encoding='ordinal',       # 'ordinal', 'ordinal_category', 'onehot', or None
     transformer_series=None,  # Apply same transformer to all series
-    # Or per-series: {'series_1': StandardScaler(), 'series_2': MinMaxScaler()}
+    # Per-series options (dict):
+    # transformer_series={'series_1': StandardScaler(), 'series_2': MinMaxScaler()},
+    # weight_func={'series_1': custom_weights_fn, '_default': None},
+    # differentiation={'series_1': 1, 'series_2': None},
     differentiation=None,
     dropna_from_series=False, # Set True if individual series may have NaN
 )
@@ -100,11 +98,13 @@ predictions = forecaster.predict(steps=10, exog=exog_test)
 from skforecast.direct import ForecasterDirectMultiVariate
 
 # Predicts ONE target series using lags from ALL series as features
+# Note: transformer_series defaults to StandardScaler() (unlike other forecasters)
 forecaster = ForecasterDirectMultiVariate(
     level='target_series',    # Name of the series to predict
     steps=10,
     estimator=LGBMRegressor(n_estimators=100, random_state=123),
     lags=24,                  # Or dict: {'series_a': 12, 'series_b': 24}
+    transformer_series=StandardScaler(),  # Default — set None to disable scaling
 )
 forecaster.fit(series=series_df)
 predictions = forecaster.predict()
@@ -123,13 +123,15 @@ from skforecast.preprocessing import (
 # Wide → Long
 series_long = reshape_series_wide_to_long(series_wide)
 
-# Long → Dict
-series_dict = reshape_series_long_to_dict(series_long)
+# Long → Dict (freq is required)
+series_dict = reshape_series_long_to_dict(series_long, freq='D')
+exog_dict = reshape_exog_long_to_dict(exog_long, freq='D')
 ```
 
 ## Common Mistakes
 
 1. **Mismatched series lengths**: ForecasterRecursiveMultiSeries handles different-length series if `dropna_from_series=True`.
 2. **Wrong encoding for categorical regressor**: Use `encoding='ordinal_category'` with regressors that natively handle categoricals (LightGBM, CatBoost).
-3. **Exog format mismatch**: Exog format (wide/long/dict) must match the series format.
+3. **Exog format mismatch**: Exog format (wide/dict) must match the series format.
 4. **Forgetting `levels` parameter**: By default `predict()` forecasts all series. Use `levels` to limit predictions.
+5. **Unexpected scaling in ForecasterDirectMultiVariate**: `transformer_series` defaults to `StandardScaler()`, unlike other forecasters that default to `None`. Set `transformer_series=None` explicitly if you don't want automatic scaling.

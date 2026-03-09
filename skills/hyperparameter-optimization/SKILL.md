@@ -9,63 +9,36 @@ description: >
 
 # Hyperparameter Optimization
 
+## References
+
+See [references/search-parameters.md](references/search-parameters.md) for
+the complete parameter comparison across all 9 search functions, function
+routing by forecaster type, and `lags_grid` / `search_space` / `param_grid`
+usage details.
+
 ## When to Use
 
 Use hyperparameter search after establishing a baseline forecaster to improve prediction accuracy. Skforecast supports three strategies:
 
 | Strategy | When to Use | Speed |
 |----------|-------------|-------|
-| **Grid Search** | Small parameter space, exhaustive exploration | Slowest |
+| **Bayesian Search** | **Recommended default.** Smart exploration via Optuna | Fastest to converge |
 | **Random Search** | Large parameter space, limited compute budget | Medium |
-| **Bayesian Search** | Best results, smart exploration via Optuna | Fastest to converge |
+| **Grid Search** | Small parameter space, exhaustive exploration | Slowest |
 
-## Grid Search
+## Bayesian Search (Recommended)
+
+Always prefer Bayesian search as the default strategy. It uses Optuna to intelligently explore the search space.
 
 ```python
 from skforecast.recursive import ForecasterRecursive
-from skforecast.model_selection import grid_search_forecaster, TimeSeriesFold
+from skforecast.model_selection import bayesian_search_forecaster, TimeSeriesFold
 from lightgbm import LGBMRegressor
 
 forecaster = ForecasterRecursive(
     estimator=LGBMRegressor(random_state=123),
     lags=24,
 )
-
-cv = TimeSeriesFold(
-    steps=12,
-    initial_train_size=len(data) - 100,
-    refit=False,
-)
-
-# Different lag configurations to try
-lags_grid = [3, 10, 24, [1, 2, 3, 23, 24]]
-
-# Estimator hyperparameters
-param_grid = {
-    'n_estimators': [50, 100, 200],
-    'max_depth': [5, 10, 15],
-    'learning_rate': [0.01, 0.1],
-}
-
-results = grid_search_forecaster(
-    forecaster=forecaster,
-    y=data['target'],
-    exog=exog,
-    cv=cv,
-    lags_grid=lags_grid,
-    param_grid=param_grid,
-    metric='mean_absolute_error',
-    return_best=True,        # Automatically updates forecaster with best params
-    n_jobs='auto',
-    show_progress=True,
-)
-# results is a DataFrame sorted by metric (best first)
-```
-
-## Bayesian Search (Recommended)
-
-```python
-from skforecast.model_selection import bayesian_search_forecaster, TimeSeriesFold
 
 cv = TimeSeriesFold(
     steps=12,
@@ -83,6 +56,7 @@ def search_space(trial):
         'reg_alpha': trial.suggest_float('reg_alpha', 1e-8, 10.0, log=True),
     }
 
+# n_trials=20 is the default. Increase for better results (50-200 recommended).
 results, best_trial = bayesian_search_forecaster(
     forecaster=forecaster,
     y=data['target'],
@@ -90,12 +64,69 @@ results, best_trial = bayesian_search_forecaster(
     cv=cv,
     search_space=search_space,
     metric='mean_absolute_error',
-    n_trials=50,
+    n_trials=20,
     random_state=123,
-    return_best=True,
+    return_best=True,        # Automatically updates forecaster with best params
     n_jobs='auto',
     show_progress=True,
     output_file='search_results.csv',  # Save results incrementally
+)
+# results is a DataFrame sorted by metric (best first)
+```
+
+## Grid Search
+
+```python
+from skforecast.model_selection import grid_search_forecaster
+
+# Different lag configurations to try
+lags_grid = [3, 10, 24, [1, 2, 3, 23, 24]]
+
+param_grid = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [5, 10, 15],
+    'learning_rate': [0.01, 0.1],
+}
+
+results = grid_search_forecaster(
+    forecaster=forecaster,
+    y=data['target'],
+    exog=exog,
+    cv=cv,
+    lags_grid=lags_grid,
+    param_grid=param_grid,
+    metric='mean_absolute_error',
+    return_best=True,
+    n_jobs='auto',
+    show_progress=True,
+)
+```
+
+## Random Search
+
+```python
+from skforecast.model_selection import random_search_forecaster
+
+# Note: uses param_distributions (not param_grid) and n_iter
+param_distributions = {
+    'n_estimators': [50, 100, 200, 500],
+    'max_depth': [3, 5, 10, 15],
+    'learning_rate': [0.01, 0.05, 0.1, 0.3],
+}
+
+results = random_search_forecaster(
+    forecaster=forecaster,
+    y=data['target'],
+    exog=exog,
+    cv=cv,
+    lags_grid=lags_grid,
+    param_distributions=param_distributions,
+    n_iter=10,               # Number of random parameter combinations to try
+    random_state=123,
+    metric='mean_absolute_error',
+    return_best=True,
+    n_jobs='auto',
+    show_progress=True,
 )
 ```
 
@@ -124,7 +155,9 @@ results, best_trial = bayesian_search_forecaster_multiseries(
     cv=cv,
     search_space=search_space,
     metric='mean_absolute_error',
-    n_trials=50,
+    aggregate_metric=['weighted_average', 'average', 'pooling'],  # Default
+    levels=None,             # None = evaluate all series; or list of series names
+    n_trials=20,
     return_best=True,
     n_jobs='auto',
     show_progress=True,

@@ -9,6 +9,12 @@ description: >
 
 # Choosing a Forecaster
 
+## When to Use This Skill
+
+Use this skill when the user needs help choosing a forecaster, comparing forecaster types (recursive vs direct, single vs multi-series), or understanding which skforecast class fits their problem.
+
+## Overview
+
 Skforecast is a **machine learning-first** library. The ML forecasters are the primary tools; statistical models (`ForecasterStats`) and naive baselines (`ForecasterEquivalentDate`) serve as comparison benchmarks.
 
 ## Step 1 — How Many Series?
@@ -131,7 +137,11 @@ How many series?
 | Class probabilities | — | — | — | — | — | — | — | ✓ |
 | Feature importances | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
 
+> **Legend:** ✓ = supported, — = not supported/not applicable.
+
 ## Quick Start Recommendations
+
+Once you have chosen a forecaster, follow these steps to get started:
 
 1. **Define your problem**: 1 series → `ForecasterRecursive`; multiple series → `ForecasterRecursiveMultiSeries`
 2. **Choose an estimator**: LightGBM (`LGBMRegressor`) is the best starting point — fast, handles categoricals, good defaults

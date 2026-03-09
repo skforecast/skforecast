@@ -47,7 +47,8 @@ skforecast/
 ├── drift_detection/         # RangeDriftDetector, PopulationDriftDetector
 ├── utils/                   # Shared validation and transformation functions
 ├── exceptions/              # Custom warnings and exceptions
-├── plot/                    # Plotting utilities for forecasts and diagnostics
+├── plot/                    # plot_residuals, plot_prediction_intervals, plot_prediction_distribution,
+│                            # plot_multivariate_time_series_corr, set_dark_theme, backtesting_gif_creator
 └── experimental/            # Experimental features (API may change)
 ```
 
@@ -326,7 +327,7 @@ predictions = forecaster.predict(steps=10)
 forecaster = ForecasterStats(estimator=Arima(order=None, seasonal=True, m=12))
 
 # ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None, Z=Auto)
-forecaster = ForecasterStats(estimator=Ets(model='AAA', m=12))
+forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 ```
 
 ## Feature Selection
@@ -441,6 +442,19 @@ from skforecast.stats import Arima, Ets, Sarimax, Arar
 # Drift Detection
 from skforecast.drift_detection import RangeDriftDetector
 from skforecast.drift_detection import PopulationDriftDetector
+
+# Plotting
+from skforecast.plot import plot_residuals
+from skforecast.plot import plot_multivariate_time_series_corr
+from skforecast.plot import plot_prediction_distribution
+from skforecast.plot import plot_prediction_intervals
+from skforecast.plot import calculate_lag_autocorrelation
+from skforecast.plot import backtesting_gif_creator
+from skforecast.plot import set_dark_theme
+
+# Exceptions and Warnings
+from skforecast.exceptions import set_warnings_style
+from skforecast.exceptions import warn_skforecast_categories
 ```
 
 ## Available Datasets

@@ -71,6 +71,7 @@ metric, predictions_bt = backtesting_forecaster(
 print(f"MAE: {metric}")
 
 # 7. Prediction intervals
+# Default interval is [5, 95] (90%). Here [10, 90] creates an 80% interval.
 forecaster.fit(y=y_train, store_in_sample_residuals=True)
 predictions_interval = forecaster.predict_interval(
     steps=10,
@@ -113,4 +114,4 @@ predictions = forecaster.predict(exog=exog_test)
 2. **NaN in data**: Forecasters reject NaN by default. Impute missing values first.
 3. **Exog not covering forecast horizon**: The exogenous DataFrame for `predict()` must have rows for every future step.
 4. **Random train/test split**: Time series must be split chronologically, never shuffled.
-5. **Forgetting `store_in_sample_residuals=True`**: Required before calling `predict_interval()` with `method='bootstrapping'`.
+5. **Forgetting `store_in_sample_residuals=True`**: Required before calling `predict_interval()` with `method='bootstrapping'` on a standalone forecaster. During backtesting, residuals are computed automatically.

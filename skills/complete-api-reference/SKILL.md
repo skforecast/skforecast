@@ -10,10 +10,22 @@ description: >
 
 # Complete API Reference
 
+## When to Use This Skill
+
+Use this when you need exact parameter names, types, defaults, or method signatures for any skforecast class or function.
+
+## Overview
+
 This skill contains the full constructor and method signatures for all
 public skforecast classes and functions. See
 [references/method-signatures.md](references/method-signatures.md) for
-the complete reference.
+the complete reference, including:
+
+- All forecaster constructors
+- `fit()`, `predict()`, `predict_interval()`, `predict_quantiles()`, `predict_dist()` signatures
+- `set_params()`, `set_lags()`, `set_out_sample_residuals()` signatures
+- Method availability matrix (which forecaster supports which method)
+- Backtesting, search, cross-validation, feature selection, and drift detection signatures
 
 ## Quick Index
 

@@ -24,6 +24,8 @@ import argparse
 import re
 import sys
 import textwrap
+import urllib.request
+import urllib.error
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -247,6 +249,99 @@ def validate_imports_consistency() -> list[str]:
     return errors
 
 
+def validate_llms_txt_urls(
+    ignore_patterns: list[str] | None = None,
+) -> list[str]:
+    """Check that all URLs in llms.txt (root) are reachable.
+
+    Extracts markdown links ``[text](url)`` and plain URLs, then sends
+    HTTP HEAD requests. Reports unreachable, redirected, or error URLs.
+
+    Parameters
+    ----------
+    ignore_patterns : list[str] or None
+        Substrings to match against URLs. Any URL containing one of these
+        substrings is skipped (useful for URLs pending deployment).
+    """
+    errors: list[str] = []
+    llms_path = ROOT / 'llms.txt'
+    if not llms_path.exists():
+        errors.append('  llms.txt not found at repository root')
+        return errors
+
+    text = llms_path.read_text(encoding='utf-8')
+
+    # Extract URLs from markdown links [text](url) and bare https:// URLs
+    urls: list[str] = re.findall(r'\(\s*(https?://[^)\s]+)\s*\)', text)
+    bare = re.findall(r'(?<!\()\b(https?://[^\s)>]+)', text)
+    seen: set[str] = set()
+    all_urls: list[str] = []
+    for u in urls + bare:
+        u = u.rstrip('.,;:')
+        if u not in seen:
+            seen.add(u)
+            all_urls.append(u)
+
+    if not all_urls:
+        errors.append('  llms.txt: no URLs found')
+        return errors
+
+    # Filter out ignored URLs
+    if ignore_patterns:
+        filtered: list[str] = []
+        skipped: list[str] = []
+        for u in all_urls:
+            if any(pat in u for pat in ignore_patterns):
+                skipped.append(u)
+            else:
+                filtered.append(u)
+        if skipped:
+            print(f'  Skipping {len(skipped)} URL(s) matching --ignore-urls:')
+            for s in skipped:
+                print(f'    {s}')
+        all_urls = filtered
+
+    if not all_urls:
+        print('  All URLs were ignored, nothing to check.')
+        return errors
+
+    print(f'  Checking {len(all_urls)} URLs in llms.txt ...')
+
+    ok_count = 0
+    for url in all_urls:
+        try:
+            req = urllib.request.Request(url, method='HEAD')
+            req.add_header('User-Agent', 'skforecast-link-checker/1.0')
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                code = resp.getcode()
+                if code and code >= 400:
+                    errors.append(f'  llms.txt: HTTP {code} — {url}')
+                else:
+                    ok_count += 1
+        except urllib.error.HTTPError as exc:
+            # Some servers reject HEAD; retry with GET
+            try:
+                req_get = urllib.request.Request(url, method='GET')
+                req_get.add_header('User-Agent', 'skforecast-link-checker/1.0')
+                with urllib.request.urlopen(req_get, timeout=15) as resp:
+                    code = resp.getcode()
+                    if code and code >= 400:
+                        errors.append(f'  llms.txt: HTTP {code} — {url}')
+                    else:
+                        ok_count += 1
+            except Exception:
+                errors.append(f'  llms.txt: HTTP {exc.code} — {url}')
+        except urllib.error.URLError as exc:
+            errors.append(f'  llms.txt: Connection error ({exc.reason}) — {url}')
+        except Exception as exc:
+            errors.append(f'  llms.txt: {exc} — {url}')
+
+    if not errors:
+        print(f'  All {ok_count} URLs are reachable.')
+
+    return errors
+
+
 # ---------------------------------------------------------------------------
 # Builders
 # ---------------------------------------------------------------------------
@@ -290,8 +385,6 @@ def build_llms_full(llms_base_txt: str) -> str:
 def build_ide_content(header: str, llms_base_txt: str) -> str:
     """Build IDE context file = notice + header + llms-base.txt."""
     return AUTOGEN_NOTICE_IDE + header.rstrip("\n") + "\n\n" + llms_base_txt.rstrip("\n") + "\n"
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -385,9 +478,30 @@ def main() -> None:
         action="store_true",
         help="Check mode: fail if generated files are stale (for CI).",
     )
+    parser.add_argument(
+        "--check-urls",
+        action="store_true",
+        help="Validate all URLs in llms.txt are reachable (requires network).",
+    )
+    parser.add_argument(
+        "--ignore-urls",
+        nargs="*",
+        default=None,
+        metavar="SUBSTR",
+        help="Skip URLs containing these substrings (e.g. llms-full.txt).",
+    )
     args = parser.parse_args()
 
     ok = generate(check_only=args.check)
+
+    if args.check_urls:
+        url_errors = validate_llms_txt_urls(ignore_patterns=args.ignore_urls)
+        if url_errors:
+            print('\nURL validation errors in llms.txt:')
+            for e in url_errors:
+                print(e)
+            ok = False
+
     sys.exit(0 if ok else 1)
 
 

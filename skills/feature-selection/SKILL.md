@@ -19,6 +19,8 @@ Use feature selection when:
 
 ## Single Series
 
+`select_features` works with `ForecasterRecursive` and `ForecasterDirect`.
+
 ```python
 from sklearn.feature_selection import RFECV
 from sklearn.ensemble import RandomForestRegressor
@@ -52,15 +54,20 @@ selected_lags, selected_window_features, selected_exog = select_features(
     verbose=True,
 )
 
-# Apply selected features to forecaster
-forecaster = ForecasterRecursive(
-    estimator=RandomForestRegressor(n_estimators=100, random_state=123),
-    lags=selected_lags,
-    window_features=rolling,  # Will only use selected window features
-)
+# Apply selected lags to the same forecaster (simplest approach)
+forecaster.set_lags(selected_lags)
+
+# selected_window_features is a list of names (strings), not the RollingFeatures
+# object. Use the names to verify which window features were selected.
+print(f'Selected window features: {selected_window_features}')
+print(f'Selected exog variables: {selected_exog}')
 ```
 
 ## Multi-Series
+
+`select_features_multiseries` works with `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate`.
+
+> **Note:** When used with `ForecasterDirectMultiVariate`, `selected_lags` is returned as a `dict` (one entry per series) instead of a `list`.
 
 ```python
 from skforecast.recursive import ForecasterRecursiveMultiSeries
@@ -137,5 +144,6 @@ selected_lags, selected_wf, selected_exog = select_features(
 
 1. **Using the wrong selector**: RFECV works best for recursive feature elimination. For faster selection, use `SelectFromModel`.
 2. **Too small subsample**: If `subsample` is too small, selection may be unreliable. Use at least 0.3.
-3. **Not updating forecaster**: After selection, create a new forecaster with the selected lags — the original is not modified.
+3. **Not updating forecaster**: After selection, update the forecaster with `forecaster.set_lags(selected_lags)` — the original is not modified in place by `select_features`.
 4. **Running on full dataset**: Always run on training data only (`y_train`, `exog_train`).
+5. **Confusing `selected_window_features` with `RollingFeatures`**: The returned `selected_window_features` is a list of **feature name strings** (e.g. `['mean_7', 'std_14']`), not the `RollingFeatures` object itself. Use these names to verify which window features were kept, but pass the original `RollingFeatures` instance to the forecaster.

@@ -9,6 +9,12 @@ description: >
 
 # Prediction Intervals
 
+## References
+
+See [references/interval-compatibility.md](references/interval-compatibility.md) for
+the complete compatibility matrix: which forecaster supports which method,
+parameter differences, binned residuals support, and common error patterns.
+
 ## When to Use
 
 Use prediction intervals to quantify forecast uncertainty. Skforecast offers three methods:
@@ -35,9 +41,9 @@ forecaster.fit(y=y_train, store_in_sample_residuals=True)
 
 predictions = forecaster.predict_interval(
     steps=10,
-    interval=[10, 90],              # Percentiles → 80% interval
+    interval=[10, 90],              # Percentiles → 80% interval (default is [5, 95] = 90%)
     method='bootstrapping',
-    n_boot=500,                      # Number of bootstrap samples
+    n_boot=250,                      # Number of bootstrap samples (default)
     use_in_sample_residuals=True,    # Use training residuals
     use_binned_residuals=True,       # Better calibration: residuals binned by prediction level
     random_state=123,
@@ -159,5 +165,5 @@ print(f"Coverage: {coverage:.2%}")  # Should be close to 0.80 for [10, 90] inter
 
 1. **Forgetting `store_in_sample_residuals=True`**: Required in `fit()` before using `predict_interval(method='bootstrapping')`.
 2. **Wrong default method for multi-series**: `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate` default to `method='conformal'`, not `'bootstrapping'`.
-3. **Using `alpha` with ML forecasters**: Only `ForecasterStats` supports the `alpha` parameter. ML forecasters use `interval=[lo, hi]`.
+3. **Mixing `alpha` and `interval`**: `ForecasterStats` supports both `alpha` (e.g., `alpha=0.05` for 95% interval) and `interval=[lo, hi]`. ML forecasters only support `interval`.
 4. **Not evaluating coverage**: Always check if actual coverage matches nominal interval width.

@@ -51,7 +51,8 @@ skforecast/
 ├── drift_detection/         # RangeDriftDetector, PopulationDriftDetector
 ├── utils/                   # Shared validation and transformation functions
 ├── exceptions/              # Custom warnings and exceptions
-├── plot/                    # Plotting utilities for forecasts and diagnostics
+├── plot/                    # plot_residuals, plot_prediction_intervals, plot_prediction_distribution,
+│                            # plot_multivariate_time_series_corr, set_dark_theme, backtesting_gif_creator
 └── experimental/            # Experimental features (API may change)
 ```
 
@@ -330,7 +331,7 @@ predictions = forecaster.predict(steps=10)
 forecaster = ForecasterStats(estimator=Arima(order=None, seasonal=True, m=12))
 
 # ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None, Z=Auto)
-forecaster = ForecasterStats(estimator=Ets(model='AAA', m=12))
+forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 ```
 
 ## Feature Selection
@@ -445,6 +446,19 @@ from skforecast.stats import Arima, Ets, Sarimax, Arar
 # Drift Detection
 from skforecast.drift_detection import RangeDriftDetector
 from skforecast.drift_detection import PopulationDriftDetector
+
+# Plotting
+from skforecast.plot import plot_residuals
+from skforecast.plot import plot_multivariate_time_series_corr
+from skforecast.plot import plot_prediction_distribution
+from skforecast.plot import plot_prediction_intervals
+from skforecast.plot import calculate_lag_autocorrelation
+from skforecast.plot import backtesting_gif_creator
+from skforecast.plot import set_dark_theme
+
+# Exceptions and Warnings
+from skforecast.exceptions import set_warnings_style
+from skforecast.exceptions import warn_skforecast_categories
 ```
 
 ## Available Datasets
@@ -555,6 +569,7 @@ metric, predictions_bt = backtesting_forecaster(
 print(f"MAE: {metric}")
 
 # 7. Prediction intervals
+# Default interval is [5, 95] (90%). Here [10, 90] creates an 80% interval.
 forecaster.fit(y=y_train, store_in_sample_residuals=True)
 predictions_interval = forecaster.predict_interval(
     steps=10,
@@ -597,7 +612,7 @@ predictions = forecaster.predict(exog=exog_test)
 2. **NaN in data**: Forecasters reject NaN by default. Impute missing values first.
 3. **Exog not covering forecast horizon**: The exogenous DataFrame for `predict()` must have rows for every future step.
 4. **Random train/test split**: Time series must be split chronologically, never shuffled.
-5. **Forgetting `store_in_sample_residuals=True`**: Required before calling `predict_interval()` with `method='bootstrapping'`.
+5. **Forgetting `store_in_sample_residuals=True`**: Required before calling `predict_interval()` with `method='bootstrapping'` on a standalone forecaster. During backtesting, residuals are computed automatically.
 
 ================================================================================
 # SKILL: forecasting-multiple-series
@@ -621,17 +636,12 @@ ForecasterRecursiveMultiSeries accepts three input formats:
    # 2020-01-02     1.2       2.3       3.4
    ```
 
-2. **Long DataFrame** — stacked format with a `series_id` column:
-   ```python
-   #            series_id  value
-   # 2020-01-01  series_1    1.0
-   # 2020-01-01  series_2    2.5
-   ```
-
-3. **Dictionary** — `{series_id: pd.Series}`:
+2. **Dictionary** — `{series_id: pd.Series}`:
    ```python
    {'series_1': pd.Series([1.0, 1.2, ...]), 'series_2': pd.Series([2.5, 2.3, ...])}
    ```
+
+> **Note:** Long-format DataFrames are not directly accepted. Use `reshape_series_long_to_dict()` to convert long format to a dictionary first (see Data Reshaping Utilities below).
 
 ## Complete Workflow
 
@@ -651,7 +661,10 @@ forecaster = ForecasterRecursiveMultiSeries(
     lags=24,
     encoding='ordinal',       # 'ordinal', 'ordinal_category', 'onehot', or None
     transformer_series=None,  # Apply same transformer to all series
-    # Or per-series: {'series_1': StandardScaler(), 'series_2': MinMaxScaler()}
+    # Per-series options (dict):
+    # transformer_series={'series_1': StandardScaler(), 'series_2': MinMaxScaler()},
+    # weight_func={'series_1': custom_weights_fn, '_default': None},
+    # differentiation={'series_1': 1, 'series_2': None},
     differentiation=None,
     dropna_from_series=False, # Set True if individual series may have NaN
 )
@@ -696,11 +709,13 @@ predictions = forecaster.predict(steps=10, exog=exog_test)
 from skforecast.direct import ForecasterDirectMultiVariate
 
 # Predicts ONE target series using lags from ALL series as features
+# Note: transformer_series defaults to StandardScaler() (unlike other forecasters)
 forecaster = ForecasterDirectMultiVariate(
     level='target_series',    # Name of the series to predict
     steps=10,
     estimator=LGBMRegressor(n_estimators=100, random_state=123),
     lags=24,                  # Or dict: {'series_a': 12, 'series_b': 24}
+    transformer_series=StandardScaler(),  # Default — set None to disable scaling
 )
 forecaster.fit(series=series_df)
 predictions = forecaster.predict()
@@ -719,22 +734,31 @@ from skforecast.preprocessing import (
 # Wide → Long
 series_long = reshape_series_wide_to_long(series_wide)
 
-# Long → Dict
-series_dict = reshape_series_long_to_dict(series_long)
+# Long → Dict (freq is required)
+series_dict = reshape_series_long_to_dict(series_long, freq='D')
+exog_dict = reshape_exog_long_to_dict(exog_long, freq='D')
 ```
 
 ## Common Mistakes
 
 1. **Mismatched series lengths**: ForecasterRecursiveMultiSeries handles different-length series if `dropna_from_series=True`.
 2. **Wrong encoding for categorical regressor**: Use `encoding='ordinal_category'` with regressors that natively handle categoricals (LightGBM, CatBoost).
-3. **Exog format mismatch**: Exog format (wide/long/dict) must match the series format.
+3. **Exog format mismatch**: Exog format (wide/dict) must match the series format.
 4. **Forgetting `levels` parameter**: By default `predict()` forecasts all series. Use `levels` to limit predictions.
+5. **Unexpected scaling in ForecasterDirectMultiVariate**: `transformer_series` defaults to `StandardScaler()`, unlike other forecasters that default to `None`. Set `transformer_series=None` explicitly if you don't want automatic scaling.
 
 ================================================================================
 # SKILL: statistical-models
 ================================================================================
 
 # Statistical Models (ARIMA, ETS, SARIMAX, ARAR)
+
+## References
+
+See [references/model-parameters.md](references/model-parameters.md) for
+complete constructor signatures of all statistical models (Arima, Sarimax,
+Ets, Arar), the Ets model string format, Auto-ARIMA parameters, seasonal_order
+differences between Arima and Sarimax, and grid search param_grid examples.
 
 ## When to Use
 
@@ -776,10 +800,11 @@ forecaster = ForecasterStats(estimator=arima_model)
 forecaster.fit(y=data['target'])
 predictions = forecaster.predict(steps=12)
 
-# 3. Prediction intervals (built-in, no bootstrapping needed)
+# 3. Prediction intervals (all stat models support this natively,
+#    no bootstrapping needed). Accepts both `interval` and `alpha`.
 predictions_interval = forecaster.predict_interval(
     steps=12,
-    interval=[10, 90],
+    interval=[10, 90],  # or use alpha=0.2 for 80% interval
 )
 ```
 
@@ -792,8 +817,8 @@ forecaster = ForecasterStats(estimator=auto_arima)
 forecaster.fit(y=data['target'])
 
 # Check selected order
-print(forecaster.estimator.order)
-print(forecaster.estimator.seasonal_order)
+print(forecaster.estimator.best_params_['order'])
+print(forecaster.estimator.best_params_['seasonal_order'])
 
 predictions = forecaster.predict(steps=12)
 ```
@@ -808,6 +833,21 @@ from skforecast.stats import Ets
 ets_model = Ets(model='AAA', m=12)
 forecaster = ForecasterStats(estimator=ets_model)
 forecaster.fit(y=data['target'])
+predictions = forecaster.predict(steps=12)
+```
+
+## Auto-ETS (Automatic Model Selection)
+
+```python
+# Use model='ZZZ' (or model=None) to let ETS automatically select
+# the best Error, Trend, and Seasonal components
+auto_ets = Ets(model='ZZZ', m=12)
+forecaster = ForecasterStats(estimator=auto_ets)
+forecaster.fit(y=data['target'])
+
+# Check the selected model configuration
+print(forecaster.estimator.best_params_)
+
 predictions = forecaster.predict(steps=12)
 ```
 
@@ -852,8 +892,10 @@ metric, predictions_bt = backtesting_stats(
     y=data['target'],
     cv=cv,
     metric='mean_absolute_error',
-    freeze_params=True,  # If True, only first fold fits; faster but less accurate
+    freeze_params=True,  # Params from first fit reused in refits (avoids re-running auto selection)
 )
+# If freeze_params=False, auto selection runs independently each fold and output
+# includes an extra 'estimator_params' column with the parameters selected per fold.
 ```
 
 ## Multiple Models Simultaneously
@@ -879,6 +921,258 @@ predictions = forecaster.predict(steps=12)
 2. **Forgetting `m` parameter**: ARIMA and ETS seasonal models require `m` (seasonal period).
 3. **Not using `backtesting_stats`**: Use `backtesting_stats()` for statistical models, NOT `backtesting_forecaster()`.
 4. **Using grid_search_forecaster for stats**: Use `grid_search_stats()` or `random_search_stats()` instead.
+5. **Passing `seasonal_order=(1,1,1,12)` to `Arima`**: `Arima` uses a 3-tuple `seasonal_order=(P,D,Q)` plus a separate `m=12` parameter. The 4-tuple `(P,D,Q,s)` format is only for `Sarimax`.
+
+---
+### Reference: model-parameters
+
+# Statistical Models — Parameter Reference
+
+## Constructor Comparison
+
+| Parameter | `Arima` | `Sarimax` | `Ets` | `Arar` |
+|-----------|:-------:|:---------:|:-----:|:------:|
+| `order` | ✓ `(1,0,0)` | ✓ `(1,0,0)` | — | — |
+| `seasonal_order` | ✓ `(0,0,0)` 3-tuple | ✓ `(0,0,0,0)` **4-tuple** | — | — |
+| `m` | ✓ `1` | — (in seasonal_order) | ✓ `1` | — |
+| `model` | — | — | ✓ `'ZZZ'` | — |
+| Auto-selection | `order=None` | — | `model='ZZZ'` or `None` | — |
+
+> **Critical difference:** `Arima` uses 3-tuple `seasonal_order=(P,D,Q)` + separate `m`.
+> `Sarimax` uses 4-tuple `seasonal_order=(P,D,Q,s)` with season period embedded.
+
+## Arima
+
+```python
+Arima(
+    # --- Manual ARIMA (set order explicitly) ---
+    order=(1, 0, 0),                  # tuple(p, d, q) | None → auto ARIMA
+    seasonal_order=(0, 0, 0),         # tuple(P, D, Q) — 3 elements, NOT 4
+    m=1,                              # int, seasonal period (1 = no seasonality)
+    include_mean=True,                # bool
+    transform_pars=True,              # bool
+    method='CSS-ML',                  # str, fitting method
+    n_cond=None,                      # int | None
+    SSinit='Gardner1980',             # str
+    optim_method='BFGS',              # str
+    optim_kwargs=None,                # dict | None
+    kappa=1e6,                        # float
+
+    # --- Auto ARIMA (only used when order=None) ---
+    max_p=5,                          # int
+    max_q=5,                          # int
+    max_P=2,                          # int
+    max_Q=2,                          # int
+    max_order=5,                      # int
+    max_d=2,                          # int
+    max_D=1,                          # int
+    start_p=2,                        # int
+    start_q=2,                        # int
+    start_P=1,                        # int
+    start_Q=1,                        # int
+    stationary=False,                 # bool
+    seasonal=True,                    # bool
+    ic='aicc',                        # 'aic' | 'aicc' | 'bic'
+    stepwise=True,                    # bool
+    nmodels=94,                       # int
+    trace=False,                      # bool
+    approximation=None,               # bool | None
+    truncate=None,                    # int | None
+    test='kpss',                      # str
+    test_kwargs=None,                 # dict | None
+    seasonal_test='seas',             # str
+    seasonal_test_kwargs=None,        # dict | None
+    allowdrift=True,                  # bool
+    allowmean=True,                   # bool
+
+    # --- Box-Cox transformation ---
+    lambda_bc=None,                   # float | str | None
+    biasadj=False,                    # bool
+)
+```
+
+### Arima usage modes
+
+| Mode | How to activate | Description |
+|------|----------------|-------------|
+| **Manual** | `order=(p,d,q)` | User specifies exact order |
+| **Auto** | `order=None` | Automatic order selection via stepwise algorithm |
+
+After fitting (auto mode), selected order available in:
+- `forecaster.estimator.best_params_['order']`
+- `forecaster.estimator.best_params_['seasonal_order']`
+
+## Sarimax
+
+```python
+Sarimax(
+    order=(1, 0, 0),                  # tuple(p, d, q)
+    seasonal_order=(0, 0, 0, 0),      # tuple(P, D, Q, s) — 4 elements
+    trend=None,                       # str | None
+    measurement_error=False,          # bool
+    time_varying_regression=False,    # bool
+    mle_regression=True,              # bool
+    simple_differencing=False,        # bool
+    enforce_stationarity=True,        # bool
+    enforce_invertibility=True,       # bool
+    hamilton_representation=False,    # bool
+    concentrate_scale=False,          # bool
+    trend_offset=1,                   # int
+    use_exact_diffuse=False,          # bool
+    dates=None,
+    freq=None,
+    missing='none',                   # str
+    validate_specification=True,      # bool
+    method='lbfgs',                   # str, fitting method
+    maxiter=50,                       # int
+    start_params=None,                # np.ndarray | None
+    disp=False,                       # bool
+    sm_init_kwargs={},                # dict, extra kwargs for statsmodels init
+    sm_fit_kwargs={},                 # dict, extra kwargs for statsmodels fit
+    sm_predict_kwargs={},             # dict, extra kwargs for statsmodels predict
+)
+```
+
+> **Note:** `Sarimax` is the only model that supports exogenous variables natively.
+
+## Ets
+
+```python
+Ets(
+    m=1,                              # int, seasonal period (1 = no seasonality)
+    model='ZZZ',                      # str | None, model specification string
+    damped=None,                      # bool | None
+    alpha=None,                       # float | None, smoothing level
+    beta=None,                        # float | None, smoothing trend
+    gamma=None,                       # float | None, smoothing seasonal
+    phi=None,                         # float | None, damping parameter
+    lambda_param=None,                # float | None, Box-Cox lambda
+    lambda_auto=False,                # bool
+    bias_adjust=True,                 # bool
+    bounds='both',                    # str
+    seasonal=True,                    # bool
+    trend=None,                       # bool | None
+    ic='aicc',                        # 'aic' | 'aicc' | 'bic'
+    allow_multiplicative=True,        # bool
+    allow_multiplicative_trend=False, # bool
+)
+```
+
+### Ets model string format
+
+The `model` parameter is a 3-character string: `Error`, `Trend`, `Seasonal`.
+
+| Character | Meaning | Position |
+|-----------|---------|----------|
+| `A` | Additive | Any |
+| `M` | Multiplicative | Any |
+| `N` | None (not present) | Trend or Seasonal |
+| `Z` | Auto-select | Any |
+
+| Example | Error | Trend | Seasonal | Description |
+|---------|-------|-------|----------|-------------|
+| `'AAN'` | Additive | Additive | None | Simple exponential smoothing with trend |
+| `'AAA'` | Additive | Additive | Additive | Holt-Winters additive |
+| `'MAM'` | Multiplicative | Additive | Multiplicative | Holt-Winters multiplicative seasonal |
+| `'ANA'` | Additive | None | Additive | Seasonal without trend |
+| `'ZZZ'` | Auto | Auto | Auto | Auto-ETS (selects best) |
+
+After fitting (auto mode), selected configuration available in:
+- `forecaster.estimator.best_params_`
+
+## Arar
+
+```python
+Arar(
+    max_ar_depth=None,                # int | None
+    max_lag=None,                     # int | None
+    safe=True,                        # bool
+)
+```
+
+> `Arar` is the simplest model — no configuration of order or seasonality needed.
+> The algorithm automatically determines the best AR structure via memory shortening.
+
+## ForecasterStats Constructor
+
+```python
+ForecasterStats(
+    estimator=None,           # Arima | Sarimax | Ets | Arar | list of these
+    transformer_y=None,       # sklearn transformer for target variable
+    transformer_exog=None,    # sklearn transformer | ColumnTransformer for exog
+    forecaster_id=None,       # str | int, optional identifier
+)
+```
+
+### Multiple models simultaneously
+
+```python
+# Pass a list to fit multiple models at once
+models = [
+    Arima(order=(1, 1, 1), seasonal_order=(1, 1, 1), m=12),
+    Ets(model='AAA', m=12),
+    Arar(),
+]
+forecaster = ForecasterStats(estimator=models)
+forecaster.fit(y=data)
+
+# predict() returns DataFrame with one column per model
+predictions = forecaster.predict(steps=12)
+```
+
+## Grid Search param_grid Examples
+
+```python
+# Arima manual orders
+param_grid = {
+    'order': [(1, 0, 0), (1, 1, 0), (1, 1, 1), (2, 1, 1)],
+    'seasonal_order': [(0, 0, 0), (1, 1, 1)],
+    'm': [12],
+}
+
+# Ets models
+param_grid = {
+    'model': ['AAA', 'ANA', 'MAM', 'MNM', 'ZZZ'],
+    'm': [12],
+}
+
+# Sarimax
+param_grid = {
+    'order': [(1, 1, 1), (2, 1, 1)],
+    'seasonal_order': [(0, 0, 0, 12), (1, 1, 1, 12)],
+}
+```
+
+## Backtesting with freeze_params
+
+```python
+backtesting_stats(
+    forecaster=forecaster,
+    y=data,
+    cv=cv,
+    metric='mean_absolute_error',
+    freeze_params=True,     # Default. Reuse params from first fit in all folds.
+    # freeze_params=False,  # Re-run auto selection each fold (slow but more realistic).
+    #                       # Output includes extra 'estimator_params' column.
+)
+```
+
+## Exogenous Variables Support
+
+| Model | Exog in fit/predict | Notes |
+|-------|:--:|------|
+| `Arima` | — | No exog support |
+| `Sarimax` | ✓ | Full exog support via statsmodels SARIMAX |
+| `Ets` | — | No exog support |
+| `Arar` | — | No exog support |
+
+For `Sarimax` with exog, pass `exog` to both `fit()` and `predict()`:
+
+```python
+forecaster = ForecasterStats(estimator=Sarimax(order=(1,1,1), seasonal_order=(1,1,1,12)))
+forecaster.fit(y=y_train, exog=exog_train)
+predictions = forecaster.predict(steps=12, exog=exog_test)
+```
 
 ================================================================================
 # SKILL: hyperparameter-optimization
@@ -886,63 +1180,36 @@ predictions = forecaster.predict(steps=12)
 
 # Hyperparameter Optimization
 
+## References
+
+See [references/search-parameters.md](references/search-parameters.md) for
+the complete parameter comparison across all 9 search functions, function
+routing by forecaster type, and `lags_grid` / `search_space` / `param_grid`
+usage details.
+
 ## When to Use
 
 Use hyperparameter search after establishing a baseline forecaster to improve prediction accuracy. Skforecast supports three strategies:
 
 | Strategy | When to Use | Speed |
 |----------|-------------|-------|
-| **Grid Search** | Small parameter space, exhaustive exploration | Slowest |
+| **Bayesian Search** | **Recommended default.** Smart exploration via Optuna | Fastest to converge |
 | **Random Search** | Large parameter space, limited compute budget | Medium |
-| **Bayesian Search** | Best results, smart exploration via Optuna | Fastest to converge |
+| **Grid Search** | Small parameter space, exhaustive exploration | Slowest |
 
-## Grid Search
+## Bayesian Search (Recommended)
+
+Always prefer Bayesian search as the default strategy. It uses Optuna to intelligently explore the search space.
 
 ```python
 from skforecast.recursive import ForecasterRecursive
-from skforecast.model_selection import grid_search_forecaster, TimeSeriesFold
+from skforecast.model_selection import bayesian_search_forecaster, TimeSeriesFold
 from lightgbm import LGBMRegressor
 
 forecaster = ForecasterRecursive(
     estimator=LGBMRegressor(random_state=123),
     lags=24,
 )
-
-cv = TimeSeriesFold(
-    steps=12,
-    initial_train_size=len(data) - 100,
-    refit=False,
-)
-
-# Different lag configurations to try
-lags_grid = [3, 10, 24, [1, 2, 3, 23, 24]]
-
-# Estimator hyperparameters
-param_grid = {
-    'n_estimators': [50, 100, 200],
-    'max_depth': [5, 10, 15],
-    'learning_rate': [0.01, 0.1],
-}
-
-results = grid_search_forecaster(
-    forecaster=forecaster,
-    y=data['target'],
-    exog=exog,
-    cv=cv,
-    lags_grid=lags_grid,
-    param_grid=param_grid,
-    metric='mean_absolute_error',
-    return_best=True,        # Automatically updates forecaster with best params
-    n_jobs='auto',
-    show_progress=True,
-)
-# results is a DataFrame sorted by metric (best first)
-```
-
-## Bayesian Search (Recommended)
-
-```python
-from skforecast.model_selection import bayesian_search_forecaster, TimeSeriesFold
 
 cv = TimeSeriesFold(
     steps=12,
@@ -960,6 +1227,7 @@ def search_space(trial):
         'reg_alpha': trial.suggest_float('reg_alpha', 1e-8, 10.0, log=True),
     }
 
+# n_trials=20 is the default. Increase for better results (50-200 recommended).
 results, best_trial = bayesian_search_forecaster(
     forecaster=forecaster,
     y=data['target'],
@@ -967,12 +1235,69 @@ results, best_trial = bayesian_search_forecaster(
     cv=cv,
     search_space=search_space,
     metric='mean_absolute_error',
-    n_trials=50,
+    n_trials=20,
     random_state=123,
-    return_best=True,
+    return_best=True,        # Automatically updates forecaster with best params
     n_jobs='auto',
     show_progress=True,
     output_file='search_results.csv',  # Save results incrementally
+)
+# results is a DataFrame sorted by metric (best first)
+```
+
+## Grid Search
+
+```python
+from skforecast.model_selection import grid_search_forecaster
+
+# Different lag configurations to try
+lags_grid = [3, 10, 24, [1, 2, 3, 23, 24]]
+
+param_grid = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [5, 10, 15],
+    'learning_rate': [0.01, 0.1],
+}
+
+results = grid_search_forecaster(
+    forecaster=forecaster,
+    y=data['target'],
+    exog=exog,
+    cv=cv,
+    lags_grid=lags_grid,
+    param_grid=param_grid,
+    metric='mean_absolute_error',
+    return_best=True,
+    n_jobs='auto',
+    show_progress=True,
+)
+```
+
+## Random Search
+
+```python
+from skforecast.model_selection import random_search_forecaster
+
+# Note: uses param_distributions (not param_grid) and n_iter
+param_distributions = {
+    'n_estimators': [50, 100, 200, 500],
+    'max_depth': [3, 5, 10, 15],
+    'learning_rate': [0.01, 0.05, 0.1, 0.3],
+}
+
+results = random_search_forecaster(
+    forecaster=forecaster,
+    y=data['target'],
+    exog=exog,
+    cv=cv,
+    lags_grid=lags_grid,
+    param_distributions=param_distributions,
+    n_iter=10,               # Number of random parameter combinations to try
+    random_state=123,
+    metric='mean_absolute_error',
+    return_best=True,
+    n_jobs='auto',
+    show_progress=True,
 )
 ```
 
@@ -1001,7 +1326,9 @@ results, best_trial = bayesian_search_forecaster_multiseries(
     cv=cv,
     search_space=search_space,
     metric='mean_absolute_error',
-    n_trials=50,
+    aggregate_metric=['weighted_average', 'average', 'pooling'],  # Default
+    levels=None,             # None = evaluate all series; or list of series names
+    n_trials=20,
     return_best=True,
     n_jobs='auto',
     show_progress=True,
@@ -1061,11 +1388,216 @@ results, best_trial = bayesian_search_forecaster(
 3. **Using TimeSeriesFold for initial tuning**: Use `OneStepAheadFold` first for fast screening, then validate the top candidates with `TimeSeriesFold`.
 4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()` — this is often the most impactful parameter.
 
+---
+### Reference: search-parameters
+
+# Hyperparameter Search — Parameter Reference
+
+## Function Routing
+
+| Forecaster | Grid Search | Random Search | Bayesian Search |
+|------------|-------------|---------------|-----------------|
+| ForecasterRecursive | `grid_search_forecaster` | `random_search_forecaster` | `bayesian_search_forecaster` |
+| ForecasterDirect | `grid_search_forecaster` | `random_search_forecaster` | `bayesian_search_forecaster` |
+| ForecasterRecursiveMultiSeries | `grid_search_forecaster_multiseries` | `random_search_forecaster_multiseries` | `bayesian_search_forecaster_multiseries` |
+| ForecasterDirectMultiVariate | `grid_search_forecaster_multiseries` | `random_search_forecaster_multiseries` | `bayesian_search_forecaster_multiseries` |
+| ForecasterRnn | `grid_search_forecaster_multiseries` | `random_search_forecaster_multiseries` | `bayesian_search_forecaster_multiseries` |
+| ForecasterStats | `grid_search_stats` | `random_search_stats` | N/A |
+| ForecasterEquivalentDate | N/A | N/A | N/A |
+| ForecasterRecursiveClassifier | `grid_search_forecaster` | `random_search_forecaster` | `bayesian_search_forecaster` |
+
+## Parameter Comparison Across Search Functions
+
+### Single-Series Functions
+
+| Parameter | `grid_search_forecaster` | `random_search_forecaster` | `bayesian_search_forecaster` |
+|-----------|:-:|:-:|:-:|
+| `forecaster` | ✓ | ✓ | ✓ |
+| `y` | ✓ | ✓ | ✓ |
+| `cv` | TimeSeriesFold \| OneStepAheadFold | TimeSeriesFold \| OneStepAheadFold | TimeSeriesFold \| OneStepAheadFold |
+| `param_grid` | ✓ | — | — |
+| `param_distributions` | — | ✓ | — |
+| `search_space` | — | — | ✓ (Callable) |
+| `metric` | ✓ | ✓ | ✓ |
+| `exog` | ✓ | ✓ | ✓ |
+| `lags_grid` | ✓ | ✓ | — (included in `search_space`) |
+| `n_iter` | — | ✓ (default: 10) | — |
+| `n_trials` | — | — | ✓ (default: 20) |
+| `random_state` | — | ✓ (default: 123) | ✓ (default: 123) |
+| `return_best` | ✓ (default: True) | ✓ (default: True) | ✓ (default: True) |
+| `n_jobs` | ✓ (default: 'auto') | ✓ (default: 'auto') | ✓ (default: 'auto') |
+| `verbose` | ✓ | ✓ | ✓ |
+| `show_progress` | ✓ | ✓ | ✓ |
+| `suppress_warnings` | ✓ | ✓ | ✓ |
+| `output_file` | ✓ | ✓ | ✓ |
+| `kwargs_create_study` | — | — | ✓ (default: None) |
+| `kwargs_study_optimize` | — | — | ✓ (default: None) |
+| **Returns** | `pd.DataFrame` | `pd.DataFrame` | `tuple[pd.DataFrame, object]` |
+
+### Multi-Series Functions (additional parameters)
+
+These functions have all the parameters above plus:
+
+| Parameter | grid | random | bayesian |
+|-----------|:----:|:------:|:--------:|
+| `series` (replaces `y`) | ✓ | ✓ | ✓ |
+| `aggregate_metric` | ✓ | ✓ | ✓ |
+| `levels` | ✓ | ✓ | ✓ |
+
+Default `aggregate_metric = ['weighted_average', 'average', 'pooling']`
+
+### Stats Functions (limited parameters)
+
+| Parameter | `grid_search_stats` | `random_search_stats` |
+|-----------|:---:|:---:|
+| `forecaster` | ✓ | ✓ |
+| `y` | ✓ | ✓ |
+| `cv` | **TimeSeriesFold only** | **TimeSeriesFold only** |
+| `param_grid` / `param_distributions` | ✓ | ✓ |
+| `metric` | ✓ | ✓ |
+| `exog` | ✓ | ✓ |
+| `lags_grid` | — | — |
+| `n_iter` | — | ✓ (default: 10) |
+| `random_state` | — | ✓ (default: 123) |
+| `return_best` | ✓ | ✓ |
+| `n_jobs` | ✓ | ✓ |
+| **Returns** | `pd.DataFrame` | `pd.DataFrame` |
+
+> **Note:** Stats search does NOT support `OneStepAheadFold`, `lags_grid`,
+> or Bayesian search.
+
+## How `lags_grid` Works
+
+For grid and random search, `lags_grid` is a list of lag configurations to try:
+
+```python
+# List format — each element is a configuration
+lags_grid = [3, 10, 24, [1, 2, 3, 23, 24]]
+# Tries: lags=3, lags=10, lags=24, lags=[1,2,3,23,24]
+
+# Dict format — keys become labels in the results
+lags_grid = {
+    'short': 3,
+    'medium': 12,
+    'long': 24,
+    'custom': [1, 2, 3, 23, 24],
+}
+```
+
+For Bayesian search, lags are included in the `search_space` function:
+
+```python
+def search_space(trial):
+    return {
+        'lags': trial.suggest_categorical('lags', [3, 12, 24, [1, 2, 3, 23, 24]]),
+        'n_estimators': trial.suggest_int('n_estimators', 50, 500),
+    }
+```
+
+## How `param_grid` vs `param_distributions` vs `search_space` Work
+
+### Grid Search: `param_grid`
+
+All combinations are evaluated (Cartesian product):
+
+```python
+param_grid = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [5, 10],
+}
+# Evaluates: 3 × 2 = 6 combinations
+```
+
+### Random Search: `param_distributions`
+
+Random sample of `n_iter` combinations:
+
+```python
+param_distributions = {
+    'n_estimators': [50, 100, 200, 500],
+    'max_depth': [3, 5, 10, 15],
+    'learning_rate': [0.01, 0.05, 0.1, 0.3],
+}
+# Evaluates n_iter=10 random combinations (default)
+```
+
+### Bayesian Search: `search_space`
+
+Optuna trial function with suggest methods:
+
+```python
+def search_space(trial):
+    return {
+        'lags': trial.suggest_categorical('lags', [12, 24]),
+        'n_estimators': trial.suggest_int('n_estimators', 50, 500),
+        'max_depth': trial.suggest_int('max_depth', 3, 15),
+        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True),
+        'reg_alpha': trial.suggest_float('reg_alpha', 1e-8, 10.0, log=True),
+    }
+# Optuna methods: suggest_int, suggest_float, suggest_categorical
+# Evaluates n_trials=20 trials (default), guided by TPE sampler
+```
+
+## Stats Model param_grid
+
+Parameters in `param_grid` for stats models are passed to the model constructor:
+
+```python
+# Arima
+param_grid = {
+    'order': [(1, 0, 0), (1, 1, 0), (1, 1, 1), (2, 1, 1)],
+    'seasonal_order': [(0, 0, 0), (1, 1, 1)],
+    'm': [12],
+}
+
+# Ets
+param_grid = {
+    'model': ['AAA', 'ANA', 'MAM', 'ZZZ'],
+    'm': [12],
+}
+```
+
+## Optuna kwargs
+
+```python
+# Advanced: customize Optuna study
+results, best_trial = bayesian_search_forecaster(
+    ...,
+    kwargs_create_study={
+        'sampler': optuna.samplers.TPESampler(seed=123),
+        'direction': 'minimize',
+    },
+    kwargs_study_optimize={
+        'timeout': 600,  # seconds
+        'gc_after_trial': True,
+    },
+)
+```
+
+## Return Values
+
+| Function | Returns | Best trial object |
+|----------|---------|:-:|
+| `grid_search_*` | `pd.DataFrame` sorted by metric | — |
+| `random_search_*` | `pd.DataFrame` sorted by metric | — |
+| `bayesian_search_*` | `tuple[pd.DataFrame, optuna.FrozenTrial]` | ✓ |
+| `*_stats` | `pd.DataFrame` sorted by metric | — |
+
+When `return_best=True`, the forecaster is automatically updated with the
+best parameters found. The results DataFrame always has rows sorted by
+metric (best first).
+
 ================================================================================
 # SKILL: prediction-intervals
 ================================================================================
 
 # Prediction Intervals
+
+## References
+
+See [references/interval-compatibility.md](references/interval-compatibility.md) for
+the complete compatibility matrix: which forecaster supports which method,
+parameter differences, binned residuals support, and common error patterns.
 
 ## When to Use
 
@@ -1073,7 +1605,7 @@ Use prediction intervals to quantify forecast uncertainty. Skforecast offers thr
 
 | Method | Forecasters | Description |
 |--------|-------------|-------------|
-| **Bootstrapping** | Recursive, Direct, EquivalentDate | Resample from training residuals |
+| **Bootstrapping** | Recursive, Direct | Resample from training residuals |
 | **Conformal** | All ML forecasters | Distribution-free intervals via conformal prediction |
 | **Built-in** | ForecasterStats (ARIMA, ETS) | Parametric intervals from the statistical model |
 
@@ -1093,9 +1625,9 @@ forecaster.fit(y=y_train, store_in_sample_residuals=True)
 
 predictions = forecaster.predict_interval(
     steps=10,
-    interval=[10, 90],              # Percentiles → 80% interval
+    interval=[10, 90],              # Percentiles → 80% interval (default is [5, 95] = 90%)
     method='bootstrapping',
-    n_boot=500,                      # Number of bootstrap samples
+    n_boot=250,                      # Number of bootstrap samples (default)
     use_in_sample_residuals=True,    # Use training residuals
     use_binned_residuals=True,       # Better calibration: residuals binned by prediction level
     random_state=123,
@@ -1217,8 +1749,196 @@ print(f"Coverage: {coverage:.2%}")  # Should be close to 0.80 for [10, 90] inter
 
 1. **Forgetting `store_in_sample_residuals=True`**: Required in `fit()` before using `predict_interval(method='bootstrapping')`.
 2. **Wrong default method for multi-series**: `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate` default to `method='conformal'`, not `'bootstrapping'`.
-3. **Using `alpha` with ML forecasters**: Only `ForecasterStats` supports the `alpha` parameter. ML forecasters use `interval=[lo, hi]`.
+3. **Mixing `alpha` and `interval`**: `ForecasterStats` supports both `alpha` (e.g., `alpha=0.05` for 95% interval) and `interval=[lo, hi]`. ML forecasters only support `interval`.
 4. **Not evaluating coverage**: Always check if actual coverage matches nominal interval width.
+
+---
+### Reference: interval-compatibility
+
+# Prediction Intervals — Compatibility Reference
+
+## Method Compatibility by Forecaster
+
+| Forecaster | `'bootstrapping'` | `'conformal'` | Built-in (parametric) | Default method |
+|------------|:------------------:|:-------------:|:---------------------:|:--------------|
+| `ForecasterRecursive` | ✓ | ✓ | — | `'bootstrapping'` |
+| `ForecasterDirect` | ✓ | ✓ | — | `'bootstrapping'` |
+| `ForecasterRecursiveMultiSeries` | ✓ | ✓ | — | `'conformal'` |
+| `ForecasterDirectMultiVariate` | ✓ | ✓ | — | `'conformal'` |
+| `ForecasterEquivalentDate` | — | ✓ | — | `'conformal'` |
+| `ForecasterRnn` | — | ✓ | — | `'conformal'` |
+| `ForecasterStats` | — | — | ✓ | N/A (uses `alpha` or `interval`) |
+| `ForecasterRecursiveClassifier` | — | — | — | N/A (use `predict_proba()`) |
+
+## Parameter Differences by Forecaster
+
+### ML Forecasters (Recursive, Direct, RecursiveMultiSeries, DirectMultiVariate)
+
+```python
+forecaster.predict_interval(
+    steps,
+    method='bootstrapping',          # or 'conformal'
+    interval=[5, 95],                # percentiles → 90% interval
+    n_boot=250,                      # only used with method='bootstrapping'
+    use_in_sample_residuals=True,
+    use_binned_residuals=True,
+    random_state=123,
+)
+```
+
+### ForecasterStats (different interface)
+
+```python
+forecaster.predict_interval(
+    steps,
+    alpha=0.05,                      # significance level → 95% interval
+    interval=None,                   # list[float] | None — alternative to alpha
+)
+# NOTE: No `method`, `n_boot`, `use_in_sample_residuals`, `use_binned_residuals`,
+#       or `random_state` parameters.
+# Use EITHER `alpha` OR `interval`, not both.
+```
+
+### ForecasterEquivalentDate (conformal only)
+
+```python
+forecaster.predict_interval(
+    steps,
+    method='conformal',              # only valid value
+    interval=[5, 95],
+    use_in_sample_residuals=True,
+    use_binned_residuals=True,
+    random_state=None,               # Any, accepted but ignored
+    exog=None,                       # Any, accepted but ignored
+    n_boot=None,                     # Any, accepted but ignored
+)
+# NOTE: `random_state`, `exog`, and `n_boot` exist for API compatibility but are ignored.
+```
+
+### ForecasterRnn (conformal only)
+
+```python
+forecaster.predict_interval(
+    steps=None,
+    levels=None,
+    method='conformal',              # only valid value
+    interval=[5, 95],
+    use_in_sample_residuals=True,
+    n_boot=None,                     # Any, accepted but ignored
+    use_binned_residuals=None,       # Any, accepted but ignored
+    random_state=None,               # Any, accepted but ignored
+)
+# NOTE: `n_boot`, `use_binned_residuals`, and `random_state` exist for API
+#       compatibility but are ignored.
+```
+
+## Backtesting with Intervals
+
+| Backtesting function | `interval_method` default | Supports `n_boot` | Supports `alpha` |
+|---------------------|:------------------------:|:-----------------:|:----------------:|
+| `backtesting_forecaster` | `'bootstrapping'` | ✓ | — |
+| `backtesting_forecaster_multiseries` | `'conformal'` | ✓ | — |
+| `backtesting_stats` | N/A | — | ✓ |
+
+## Prerequisites for Bootstrapping
+
+Bootstrapping requires stored residuals. Two approaches:
+
+### In-sample residuals (simpler)
+
+```python
+forecaster.fit(y=y_train, store_in_sample_residuals=True)
+forecaster.predict_interval(
+    steps=10,
+    method='bootstrapping',
+    use_in_sample_residuals=True,
+)
+```
+
+### Out-of-sample residuals (better calibration)
+
+```python
+# Step 1: Get predictions via backtesting
+metric, preds = backtesting_forecaster(forecaster=forecaster, y=data, cv=cv, metric='mae')
+
+# Step 2: Store residuals
+forecaster.set_out_sample_residuals(
+    y_true=data.loc[preds.index],
+    y_pred=preds['pred'],
+)
+
+# Step 3: Use out-of-sample residuals
+forecaster.predict_interval(
+    steps=10,
+    method='bootstrapping',
+    use_in_sample_residuals=False,  # Use out-of-sample
+)
+```
+
+## Binned Residuals
+
+When `use_binned_residuals=True`, residuals are selected based on the predicted
+value level (using KBinsDiscretizer). This produces better-calibrated intervals
+because residual variance often depends on the prediction magnitude.
+
+| Forecaster | Supports `use_binned_residuals` |
+|------------|:-------------------------------:|
+| ForecasterRecursive | ✓ |
+| ForecasterDirect | ✓ |
+| ForecasterRecursiveMultiSeries | ✓ |
+| ForecasterDirectMultiVariate | ✓ |
+| ForecasterEquivalentDate | ✓ |
+| ForecasterRnn | — |
+| ForecasterStats | — |
+
+## Probabilistic Prediction Methods Beyond Intervals
+
+| Method | Available in | Description |
+|--------|-------------|-------------|
+| `predict_interval()` | All except Classifier | Lower/upper bounds at given percentiles |
+| `predict_quantiles()` | Recursive, Direct, RecursiveMultiSeries, DirectMultiVariate | Arbitrary quantile predictions |
+| `predict_dist()` | Recursive, Direct, RecursiveMultiSeries, DirectMultiVariate | Fit a scipy distribution to bootstrapped predictions |
+| `predict_proba()` | RecursiveClassifier only | Class probabilities |
+
+### predict_quantiles signature
+
+```python
+forecaster.predict_quantiles(
+    steps,
+    quantiles=[0.05, 0.5, 0.95],    # any list of quantiles between 0 and 1
+    n_boot=250,
+    use_in_sample_residuals=True,
+    use_binned_residuals=True,
+    random_state=123,
+)
+# Returns DataFrame with one column per quantile: q_0.05, q_0.5, q_0.95
+```
+
+### predict_dist signature
+
+```python
+from scipy.stats import norm
+
+forecaster.predict_dist(
+    steps,
+    distribution=norm,               # any scipy.stats distribution
+    n_boot=250,
+    use_in_sample_residuals=True,
+    use_binned_residuals=True,
+    random_state=123,
+)
+# Returns DataFrame with fitted distribution parameters (loc, scale, etc.)
+```
+
+## Common Error Patterns
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "No in-sample residuals stored" | `store_in_sample_residuals=False` in `fit()` | Set `store_in_sample_residuals=True` |
+| `method='bootstrapping'` on ForecasterRnn | Bootstrapping not supported | Use `method='conformal'` |
+| `method='bootstrapping'` on ForecasterEquivalentDate | Bootstrapping not supported | Use `method='conformal'` |
+| Using `alpha` on ML forecasters | Only `ForecasterStats` accepts `alpha` | Use `interval=[lo, hi]` instead |
+| Using `method` on ForecasterStats | Stats models use built-in parametric intervals | Remove `method`, use `alpha` or `interval` |
 
 ================================================================================
 # SKILL: feature-engineering
@@ -1226,15 +1946,123 @@ print(f"Coverage: {coverage:.2%}")  # Should be close to 0.80 for [10, 90] inter
 
 # Feature Engineering
 
+## References
+
+See [references/rolling-stats-reference.md](references/rolling-stats-reference.md) for
+the complete `RollingFeatures` constructor, all 9 available statistics,
+feature name generation formula, window behavior, and `kwargs_stats` usage.
+
+## When to Use This Skill
+
+Use this skill when the user wants to create features to improve forecasting
+accuracy: calendar/datetime features, rolling statistics, cyclical encoding,
+sunlight features, differencing, or data scaling.
+
 ## Overview
 
-Skforecast provides three built-in feature engineering tools:
+| Tool | Package | Purpose |
+|------|---------|---------|
+| `DatetimeFeatures` | feature_engine | Extract calendar features from datetime index |
+| `CyclicalFeatures` | feature_engine | Encode cyclical features with sin/cos |
+| `RollingFeatures` | skforecast | Rolling window statistics (mean, std, min, max, etc.) |
+| `differentiation` param | skforecast | Make non-stationary series stationary |
+| `astral` | astral | Sunrise, sunset, daylight hours |
 
-| Tool | Purpose |
-|------|---------|
-| `RollingFeatures` | Rolling window statistics (mean, std, min, max, etc.) |
-| `TimeSeriesDifferentiator` | Make non-stationary series stationary |
-| `DateTimeFeatureTransformer` | Extract calendar features from datetime index |
+## Calendar Features with feature_engine
+
+### Manual extraction (pandas)
+
+```python
+import pandas as pd
+
+# Data must have a DatetimeIndex with frequency set
+data = data.asfreq('h')
+
+data['year'] = data.index.year
+data['month'] = data.index.month
+data['day_of_week'] = data.index.dayofweek
+data['hour'] = data.index.hour
+```
+
+### Automated extraction (DatetimeFeatures)
+
+```python
+from feature_engine.datetime import DatetimeFeatures
+
+features_to_extract = ['month', 'week', 'day_of_week', 'hour']
+calendar_transformer = DatetimeFeatures(
+    variables           = 'index',
+    features_to_extract = features_to_extract,
+    drop_original       = True,
+)
+
+calendar_features = calendar_transformer.fit_transform(data)
+```
+
+> `DatetimeFeatures` is sklearn-compatible and can be passed directly as
+> `transformer_exog` in skforecast forecasters.
+
+## Cyclical Encoding
+
+Cyclical features (hour, day_of_week, month) should NOT be treated as linear
+integers — hour 23 is only 1 hour from hour 0. Use sin/cos encoding to
+preserve the cyclical relationship.
+
+```python
+from feature_engine.datetime import DatetimeFeatures
+from feature_engine.creation import CyclicalFeatures
+
+# Step 1: Extract calendar features
+features_to_extract = ['month', 'week', 'day_of_week', 'hour']
+calendar_transformer = DatetimeFeatures(
+    variables           = 'index',
+    features_to_extract = features_to_extract,
+    drop_original       = True,
+)
+calendar_features = calendar_transformer.fit_transform(data)
+
+# Step 2: Encode as cyclical (sin/cos)
+features_to_encode = ['month', 'week', 'day_of_week', 'hour']
+max_values = {
+    'month': 12,
+    'week': 52,
+    'day_of_week': 7,
+    'hour': 24,
+}
+cyclical_encoder = CyclicalFeatures(
+    variables     = features_to_encode,
+    max_values    = max_values,
+    drop_original = True,
+)
+exog_calendar = cyclical_encoder.fit_transform(calendar_features)
+# Produces columns: month_sin, month_cos, week_sin, week_cos, ...
+```
+
+## Sunlight Features
+
+Sunrise/sunset times can be powerful features for energy, transport, or
+activity-related series.
+
+```python
+from astral.sun import sun
+from astral import LocationInfo
+
+location = LocationInfo('Washington, D.C.', 'USA')
+sunrise_hour = [sun(location.observer, date=date)['sunrise'] for date in data.index]
+sunset_hour = [sun(location.observer, date=date)['sunset'] for date in data.index]
+
+# Round to the nearest hour
+sunrise_hour = pd.Series(sunrise_hour, index=data.index).dt.round('h').dt.hour
+sunset_hour = pd.Series(sunset_hour, index=data.index).dt.round('h').dt.hour
+
+sun_light_features = pd.DataFrame({
+    'sunrise_hour': sunrise_hour,
+    'sunset_hour': sunset_hour,
+})
+sun_light_features['daylight_hours'] = (
+    sun_light_features['sunset_hour'] - sun_light_features['sunrise_hour']
+)
+```
 
 ## Rolling Features (Window Statistics)
 
@@ -1279,62 +2107,18 @@ rolling = RollingFeatures(
 )
 ```
 
-Custom names:
-```python
-rolling = RollingFeatures(
-    stats=['mean', 'std'],
-    window_sizes=7,
-    features_names=['rolling_mean_7', 'rolling_std_7'],
-)
-```
-
 ## Differencing (Non-Stationary Series)
 
 ```python
-# Option 1: Built-in — forecaster handles differencing and inverse transform
+# Built-in — forecaster handles differencing and inverse transform automatically
 forecaster = ForecasterRecursive(
     estimator=LGBMRegressor(),
     lags=24,
     differentiation=1,  # First-order differencing (removes linear trend)
-    # differentiation=2,  # Second-order differencing (removes quadratic trend)
+    # differentiation=2,  # Second-order (removes quadratic trend)
 )
 forecaster.fit(y=y_train)
 predictions = forecaster.predict(steps=10)  # Auto inverse-transformed
-
-# Option 2: Manual — for inspection or custom use
-from skforecast.preprocessing import TimeSeriesDifferentiator
-
-differentiator = TimeSeriesDifferentiator(order=1)
-y_diff = differentiator.fit_transform(y_train.to_numpy())
-# ... use y_diff for analysis ...
-y_original = differentiator.inverse_transform(y_diff)
-```
-
-## Calendar / DateTime Features
-
-```python
-from skforecast.preprocessing import DateTimeFeatureTransformer
-
-# Extract calendar features from DatetimeIndex
-transformer = DateTimeFeatureTransformer(
-    features=['year', 'month', 'week', 'day_of_week', 'hour'],
-    encoding='cyclical',  # 'cyclical' (sin/cos), 'onehot', or None (raw integers)
-)
-
-# Transform data — input must have DatetimeIndex
-exog_calendar = transformer.fit_transform(data)
-
-# Use as exogenous variable
-forecaster.fit(y=y_train, exog=exog_calendar.loc[y_train.index])
-predictions = forecaster.predict(steps=10, exog=exog_calendar.loc[forecast_index])
-```
-
-### Standalone function alternative
-
-```python
-from skforecast.preprocessing import create_datetime_features
-
-exog_calendar = create_datetime_features(data.index)
 ```
 
 ## Data Transformers (Scaling)
@@ -1346,8 +2130,8 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 forecaster = ForecasterRecursive(
     estimator=LGBMRegressor(),
     lags=24,
-    transformer_y=StandardScaler(),       # Applied to y
-    transformer_exog=StandardScaler(),    # Applied to exogenous variables
+    transformer_y=StandardScaler(),
+    transformer_exog=StandardScaler(),
 )
 
 # For multi-series, different transformers per series
@@ -1363,32 +2147,243 @@ forecaster = ForecasterRecursiveMultiSeries(
 )
 ```
 
-## Combining Features
+## Combining Features — Full Example
 
 ```python
-# Best practice: combine lags + rolling features + calendar + exog
-rolling = RollingFeatures(stats=['mean', 'std'], window_sizes=[7, 14])
-calendar = DateTimeFeatureTransformer(features=['month', 'day_of_week', 'hour'])
+import pandas as pd
+from feature_engine.datetime import DatetimeFeatures
+from feature_engine.creation import CyclicalFeatures
+from skforecast.preprocessing import RollingFeatures
+from skforecast.recursive import ForecasterRecursive
+from sklearn.preprocessing import StandardScaler
+from lightgbm import LGBMRegressor
 
-exog_calendar = calendar.fit_transform(data)
-exog_combined = pd.concat([exog_external, exog_calendar], axis=1)
+# 1. Calendar features with cyclical encoding
+calendar_transformer = DatetimeFeatures(
+    variables='index',
+    features_to_extract=['month', 'day_of_week', 'hour'],
+    drop_original=True,
+)
+cyclical_encoder = CyclicalFeatures(
+    variables=['month', 'day_of_week', 'hour'],
+    max_values={'month': 12, 'day_of_week': 7, 'hour': 24},
+    drop_original=True,
+)
+exog_calendar = cyclical_encoder.fit_transform(
+    calendar_transformer.fit_transform(data)
+)
+
+# 2. Combine with other exogenous variables
+exog = pd.concat([exog_external, exog_calendar], axis=1)
+
+# 3. Rolling features + lags + differencing
+rolling = RollingFeatures(stats=['mean', 'std'], window_sizes=[7, 14])
 
 forecaster = ForecasterRecursive(
     estimator=LGBMRegressor(),
-    lags=[1, 2, 3, 7, 14, 24],   # Custom lag selection
+    lags=[1, 2, 3, 7, 14, 24],
     window_features=rolling,
     transformer_y=StandardScaler(),
     differentiation=1,
 )
-forecaster.fit(y=y_train, exog=exog_combined.loc[y_train.index])
+forecaster.fit(y=y_train, exog=exog.loc[y_train.index])
+predictions = forecaster.predict(steps=10, exog=exog.loc[forecast_index])
 ```
 
 ## Common Mistakes
 
-1. **Rolling window size larger than lags**: Window sizes must be supported by the minimum lag configuration.
-2. **Forgetting frequency on index**: `DateTimeFeatureTransformer` requires `DatetimeIndex` with frequency set.
-3. **Not covering forecast horizon with exog**: Calendar features for `predict()` must include future dates.
+1. **Not encoding cyclical features**: Using raw integers for hour/month/day_of_week loses the cyclical relationship (hour 23 appears far from hour 0). Always use sin/cos encoding.
+2. **Forgetting frequency on index**: Calendar transformers require `DatetimeIndex` with frequency set (`data.asfreq('h')`).
+3. **Not covering forecast horizon with exog**: Calendar features for `predict()` must include future dates covering the entire forecast horizon.
 4. **Over-engineering features**: Start with lags only, then add rolling features and calendar features incrementally. Validate each addition with backtesting.
+
+---
+### Reference: rolling-stats-reference
+
+# Rolling Features — Statistics Reference
+
+## RollingFeatures Constructor
+
+```python
+from skforecast.preprocessing import RollingFeatures
+
+rolling = RollingFeatures(
+    stats,                           # str | list[str] (required)
+    window_sizes,                    # int | list[int] (required)
+    min_periods=None,                # int | list[int] | None — defaults to window_sizes
+    features_names=None,             # list[str] | None — auto-generated if None
+    fillna=None,                     # str | float | None — fill NaN in transform_batch
+    kwargs_stats=                    # dict | None — extra args per statistic
+        {'ewm': {'alpha': 0.3}},     # default
+)
+```
+
+## Available Statistics
+
+| Statistic | String | Description | Requires `kwargs_stats` |
+|-----------|--------|-------------|:-:|
+| Mean | `'mean'` | Arithmetic mean of the window | — |
+| Std deviation | `'std'` | Standard deviation of the window | — |
+| Minimum | `'min'` | Minimum value in the window | — |
+| Maximum | `'max'` | Maximum value in the window | — |
+| Sum | `'sum'` | Sum of values in the window | — |
+| Median | `'median'` | Median value in the window | — |
+| Min/Max ratio | `'ratio_min_max'` | `min / max` of the window | — |
+| Coef. variation | `'coef_variation'` | `std / mean` of the window | — |
+| Exp. weighted mean | `'ewm'` | Exponentially weighted mean | ✓ `{'ewm': {'alpha': ...}}` |
+
+## Feature Name Generation
+
+Default names follow the pattern: `roll_{stat}_{window_size}`
+
+| Stats | Window | Generated name |
+|-------|--------|---------------|
+| `'mean'` | `7` | `roll_mean_7` |
+| `'std'` | `14` | `roll_std_14` |
+| `'ewm'` | `7` (alpha=0.3) | `roll_ewm_7_alpha_0.3` |
+
+Override with custom names:
+
+```python
+rolling = RollingFeatures(
+    stats=['mean', 'std'],
+    window_sizes=[7, 14],
+    features_names=['weekly_avg', 'biweekly_std'],
+)
+```
+
+## Window Behavior
+
+Rolling windows use `closed='left'` and `center=False` to avoid data leakage.
+The last point in the window is **excluded** from calculations:
+
+```
+Window size = 3, calculating for time t:
+Uses values: [t-3, t-2, t-1]  (NOT t itself)
+```
+
+## Configuration Patterns
+
+### Same window for all stats
+
+```python
+rolling = RollingFeatures(
+    stats=['mean', 'std', 'min', 'max'],
+    window_sizes=7,                   # int → applied to all 4 stats
+)
+# Features: roll_mean_7, roll_std_7, roll_min_7, roll_max_7
+```
+
+### Different windows per stat
+
+```python
+rolling = RollingFeatures(
+    stats=['mean', 'std', 'min', 'max'],
+    window_sizes=[7, 7, 14, 14],      # list → must match length of stats
+)
+# Features: roll_mean_7, roll_std_7, roll_min_14, roll_max_14
+```
+
+### Repeated stats with different windows
+
+```python
+rolling = RollingFeatures(
+    stats=['mean', 'mean', 'std', 'std'],
+    window_sizes=[7, 30, 7, 30],
+)
+# Features: roll_mean_7, roll_mean_30, roll_std_7, roll_std_30
+```
+
+### Multiple RollingFeatures objects
+
+```python
+rolling_short = RollingFeatures(stats=['mean', 'std'], window_sizes=7)
+rolling_long = RollingFeatures(stats=['mean', 'std'], window_sizes=30)
+
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+    window_features=[rolling_short, rolling_long],  # list of RollingFeatures
+)
+```
+
+### Exponentially weighted mean
+
+```python
+rolling = RollingFeatures(
+    stats=['ewm'],
+    window_sizes=7,
+    kwargs_stats={'ewm': {'alpha': 0.3}},
+)
+# Feature: roll_ewm_7_alpha_0.3
+
+# Multiple ewm with different alphas (use separate objects)
+ewm_fast = RollingFeatures(stats=['ewm'], window_sizes=7, kwargs_stats={'ewm': {'alpha': 0.5}})
+ewm_slow = RollingFeatures(stats=['ewm'], window_sizes=7, kwargs_stats={'ewm': {'alpha': 0.1}})
+
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+    window_features=[ewm_fast, ewm_slow],
+)
+```
+
+## min_periods Parameter
+
+Controls the minimum number of observations required to compute a statistic.
+
+```python
+# Default: min_periods = window_sizes (requires full window)
+rolling = RollingFeatures(stats=['mean'], window_sizes=7)
+# Equivalent to: min_periods=7 → first 6 values are NaN
+
+# Allow partial windows
+rolling = RollingFeatures(stats=['mean'], window_sizes=7, min_periods=1)
+# min_periods=1 → computes mean even with 1 observation
+```
+
+## fillna Parameter
+
+Used only in `transform_batch()` method (not in recursive prediction):
+
+| Value | Behavior |
+|-------|----------|
+| `None` | No filling (NaN remains) |
+| `'mean'` | Fill with mean of the feature |
+| `'median'` | Fill with median of the feature |
+| `'ffill'` | Forward fill |
+| `'bfill'` | Backward fill |
+| `float` | Fill with specific value (e.g., `0.0`) |
+
+## Forecaster Compatibility
+
+| Forecaster | `window_features` supported |
+|------------|:--:|
+| ForecasterRecursive | ✓ |
+| ForecasterDirect | ✓ |
+| ForecasterRecursiveMultiSeries | ✓ |
+| ForecasterDirectMultiVariate | ✓ |
+| ForecasterRecursiveClassifier | ✓ |
+| ForecasterRnn | — |
+| ForecasterStats | — |
+| ForecasterEquivalentDate | — |
+
+## Feature Selection Interaction
+
+When using `select_features()`, the returned `selected_window_features` is a
+**list of feature name strings** (e.g., `['roll_mean_7', 'roll_std_14']`),
+NOT the `RollingFeatures` object. The original `RollingFeatures` instance
+should still be passed to the forecaster.
+
+```python
+selected_lags, selected_wf, selected_exog = select_features(
+    forecaster=forecaster,
+    selector=RFECV(...),
+    y=y_train,
+)
+# selected_wf = ['roll_mean_7', 'roll_std_14']  ← names, not objects
+# The forecaster still uses the original RollingFeatures object
+```
 
 ================================================================================
 # SKILL: feature-selection
@@ -1404,6 +2399,8 @@ Use feature selection when:
 - You need to speed up training by removing irrelevant features
 
 ## Single Series
+
+`select_features` works with `ForecasterRecursive` and `ForecasterDirect`.
 
 ```python
 from sklearn.feature_selection import RFECV
@@ -1438,15 +2435,20 @@ selected_lags, selected_window_features, selected_exog = select_features(
     verbose=True,
 )
 
-# Apply selected features to forecaster
-forecaster = ForecasterRecursive(
-    estimator=RandomForestRegressor(n_estimators=100, random_state=123),
-    lags=selected_lags,
-    window_features=rolling,  # Will only use selected window features
-)
+# Apply selected lags to the same forecaster (simplest approach)
+forecaster.set_lags(selected_lags)
+
+# selected_window_features is a list of names (strings), not the RollingFeatures
+# object. Use the names to verify which window features were selected.
+print(f'Selected window features: {selected_window_features}')
+print(f'Selected exog variables: {selected_exog}')
 ```
 
 ## Multi-Series
+
+`select_features_multiseries` works with `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate`.
+
+> **Note:** When used with `ForecasterDirectMultiVariate`, `selected_lags` is returned as a `dict` (one entry per series) instead of a `list`.
 
 ```python
 from skforecast.recursive import ForecasterRecursiveMultiSeries
@@ -1523,8 +2525,9 @@ selected_lags, selected_wf, selected_exog = select_features(
 
 1. **Using the wrong selector**: RFECV works best for recursive feature elimination. For faster selection, use `SelectFromModel`.
 2. **Too small subsample**: If `subsample` is too small, selection may be unreliable. Use at least 0.3.
-3. **Not updating forecaster**: After selection, create a new forecaster with the selected lags — the original is not modified.
+3. **Not updating forecaster**: After selection, update the forecaster with `forecaster.set_lags(selected_lags)` — the original is not modified in place by `select_features`.
 4. **Running on full dataset**: Always run on training data only (`y_train`, `exog_train`).
+5. **Confusing `selected_window_features` with `RollingFeatures`**: The returned `selected_window_features` is a list of **feature name strings** (e.g. `['mean_7', 'std_14']`), not the `RollingFeatures` object itself. Use these names to verify which window features were kept, but pass the original `RollingFeatures` instance to the forecaster.
 
 ================================================================================
 # SKILL: drift-detection
@@ -1544,6 +2547,9 @@ Use drift detection to monitor whether new data falls outside the patterns seen 
 ## RangeDriftDetector
 
 Checks whether new observations fall within the ranges seen during training. Lightweight and suitable for real-time scoring.
+
+> `fit()` accepts `series` and `exog` as a pandas Series, DataFrame, or dict
+> (useful for multi-series pipelines with `ForecasterRecursiveMultiSeries`).
 
 ```python
 from skforecast.drift_detection import RangeDriftDetector
@@ -1574,6 +2580,9 @@ if flag_drift:
 ## PopulationDriftDetector
 
 Uses statistical tests to detect distribution shifts between reference (training) and new data.
+
+> `fit(X)` and `predict(X)` expect a pandas DataFrame. For multi-series data,
+> use a MultiIndex DataFrame with `(series_id, date)` index.
 
 ```python
 from skforecast.drift_detection import PopulationDriftDetector
@@ -1664,6 +2673,13 @@ def predict_with_monitoring(new_window, new_exog):
 
 # Deep Learning Forecasting (RNN/LSTM)
 
+## References
+
+See [references/architecture-options.md](references/architecture-options.md) for
+the complete `create_and_compile_model` signature, recurrent layer types,
+output shape rules, exog architecture, custom Keras model requirements,
+and `fit_kwargs` options.
+
 ## When to Use
 
 Use `ForecasterRnn` when:
@@ -1752,6 +2768,54 @@ model = create_and_compile_model(
     dense_units=[32],
     compile_kwargs={'optimizer': 'adam', 'loss': 'mse'},
 )
+
+# Advanced: customize layer kwargs
+model = create_and_compile_model(
+    series=series,
+    lags=48,
+    steps=24,
+    levels=series.columns.tolist(),
+    recurrent_layer='LSTM',
+    recurrent_units=[128, 64],
+    recurrent_layers_kwargs={'activation': 'tanh'},   # default
+    dense_units=[64],
+    dense_layers_kwargs={'activation': 'relu'},        # default
+    output_dense_layer_kwargs={'activation': 'linear'}, # default
+    compile_kwargs={'optimizer': 'adam', 'loss': 'mse'},
+    model_name='my_lstm_model',
+)
+```
+
+## With Exogenous Variables
+
+When using exogenous variables, pass `exog` to `create_and_compile_model` so it
+builds the correct architecture (uses `TimeDistributed` layers internally).
+
+```python
+# exog must be a DataFrame covering the training period
+exog = pd.DataFrame({'temperature': [...], 'holiday': [...]}, index=series.index)
+
+model = create_and_compile_model(
+    series=series,
+    lags=48,
+    steps=24,
+    levels=series.columns.tolist(),
+    exog=exog,                        # Passes exog info to build architecture
+    recurrent_layer='LSTM',
+    recurrent_units=[64, 32],
+    dense_units=[32],
+    compile_kwargs={'optimizer': 'adam', 'loss': 'mse'},
+)
+
+forecaster = ForecasterRnn(
+    levels=series.columns.tolist(),
+    lags=48,
+    estimator=model,
+    fit_kwargs={'epochs': 50, 'batch_size': 32, 'verbose': 0},
+)
+
+forecaster.fit(series=series, exog=exog)
+predictions = forecaster.predict(steps=24, exog=exog_test)  # exog_test covers forecast horizon
 ```
 
 ## Custom Keras Model
@@ -1759,12 +2823,13 @@ model = create_and_compile_model(
 ```python
 import keras
 
-# Build your own model for full control
+# Build your own model for full control (single level, no exog)
+# Output units = steps * n_levels. For 1 level: steps. For N levels: steps * N + Reshape.
 inputs = keras.layers.Input(shape=(48, 1))  # (lags, n_features)
 x = keras.layers.LSTM(64, return_sequences=True)(inputs)
 x = keras.layers.LSTM(32)(x)
 x = keras.layers.Dense(32, activation='relu')(x)
-outputs = keras.layers.Dense(24)(x)  # steps
+outputs = keras.layers.Dense(24)(x)  # steps * n_levels (here 24 * 1)
 
 model = keras.Model(inputs=inputs, outputs=outputs)
 model.compile(optimizer='adam', loss='mse')
@@ -1777,6 +2842,9 @@ forecaster = ForecasterRnn(
     fit_kwargs={'epochs': 100, 'batch_size': 32},
 )
 ```
+
+> **Multi-series custom model**: For N levels, the output layer should be
+> `Dense(steps * n_levels)` followed by `Reshape((steps, n_levels))`.
 
 ## Prediction Intervals
 
@@ -1819,12 +2887,261 @@ metric, predictions = backtesting_forecaster_multiseries(
 4. **Refit=True in backtesting**: Retraining RNNs at every fold is very slow — use `refit=False` or `refit=5`.
 5. **No GPU**: Training is slow on CPU. Use GPU if available.
 6. **Using `predict_interval(method='bootstrapping')`**: ForecasterRnn only supports `method='conformal'`.
+7. **Forgetting `exog` in `create_and_compile_model`**: If you use exog in `fit()`/`predict()`, you must also pass `exog` when building the model so the architecture accounts for the extra input features.
+
+---
+### Reference: architecture-options
+
+# Deep Learning — Architecture Options Reference
+
+## create_and_compile_model Signature
+
+```python
+from skforecast.deep_learning import create_and_compile_model
+
+model = create_and_compile_model(
+    series,                          # pd.DataFrame (required), input time series
+    lags,                            # int | list[int] | np.ndarray | range (required)
+    steps,                           # int (required), forecast horizon
+    levels=None,                     # str | list[str] | None, output series (None = all)
+    exog=None,                       # pd.Series | pd.DataFrame | None
+    recurrent_layer='LSTM',          # 'LSTM' | 'GRU' | 'RNN'
+    recurrent_units=100,             # int | list[int], units per recurrent layer
+    recurrent_layers_kwargs={'activation': 'tanh'},   # dict | list[dict] | None
+    dense_units=64,                  # int | list[int] | None
+    dense_layers_kwargs={'activation': 'relu'},       # dict | list[dict] | None
+    output_dense_layer_kwargs={'activation': 'linear'},  # dict | None
+    compile_kwargs={'optimizer': Adam(), 'loss': MeanSquaredError()},  # dict
+    model_name=None,                 # str | None
+)
+```
+
+## Recurrent Layer Types
+
+| Layer | Class | Speed | Memory | Best for |
+|-------|-------|-------|--------|----------|
+| `'LSTM'` | Long Short-Term Memory | Slowest | Highest | Long-range dependencies, default choice |
+| `'GRU'` | Gated Recurrent Unit | Medium | Medium | Faster training, comparable performance |
+| `'RNN'` | Simple RNN | Fastest | Lowest | Short sequences only, rarely used |
+
+## Architecture Building Blocks
+
+### Single recurrent layer
+
+```python
+model = create_and_compile_model(
+    series=series, lags=48, steps=24, levels='target',
+    recurrent_layer='LSTM',
+    recurrent_units=64,           # single int → 1 recurrent layer
+    dense_units=32,               # single int → 1 dense layer
+)
+# Architecture: Input → LSTM(64) → Dense(32) → Dense(24)
+```
+
+### Stacked recurrent layers
+
+```python
+model = create_and_compile_model(
+    series=series, lags=48, steps=24, levels='target',
+    recurrent_layer='LSTM',
+    recurrent_units=[128, 64, 32],  # list → 3 stacked LSTM layers
+    dense_units=[64, 32],            # list → 2 dense layers
+)
+# Architecture: Input → LSTM(128) → LSTM(64) → LSTM(32) → Dense(64) → Dense(32) → Dense(24)
+```
+
+### No dense layers
+
+```python
+model = create_and_compile_model(
+    series=series, lags=48, steps=24, levels='target',
+    recurrent_layer='GRU',
+    recurrent_units=64,
+    dense_units=None,               # None → no intermediate dense layers
+)
+# Architecture: Input → GRU(64) → Dense(24)  (output layer only)
+```
+
+## Output Layer Shape
+
+The output layer is automatically sized based on `steps` and `levels`:
+
+| Configuration | Output Dense units | Output shape |
+|---------------|-------------------|--------------|
+| 1 level, N steps | `steps` | `(batch, steps)` |
+| M levels, N steps | `steps × M` + Reshape | `(batch, steps, M)` |
+
+```python
+# Single level
+model = create_and_compile_model(
+    series=series, lags=48, steps=24,
+    levels='target',                 # 1 level → output: Dense(24)
+)
+
+# Multiple levels
+model = create_and_compile_model(
+    series=series, lags=48, steps=24,
+    levels=['series_1', 'series_2', 'series_3'],  # 3 levels → output: Dense(72) + Reshape(24,3)
+)
+```
+
+## Exogenous Variables Architecture
+
+When `exog` is provided, the model creates a separate input branch with
+`TimeDistributed` layers:
+
+```python
+# Without exog: single input branch
+model = create_and_compile_model(
+    series=series, lags=48, steps=24, levels='target',
+)
+# Input shape: (batch, 48, n_series)
+
+# With exog: two input branches merged
+model = create_and_compile_model(
+    series=series, lags=48, steps=24, levels='target',
+    exog=exog_df,                    # Must be provided at model creation
+)
+# Input shapes: series_input (batch, 48, n_series) + exog_input (batch, 48, n_exog)
+```
+
+> **Critical:** If you plan to use exog in `fit()` and `predict()`, you MUST
+> pass `exog` to `create_and_compile_model()` so the architecture includes
+> the exogenous input branch.
+
+## Layer Kwargs Customization
+
+### Same kwargs for all layers
+
+```python
+model = create_and_compile_model(
+    ...,
+    recurrent_units=[128, 64],
+    recurrent_layers_kwargs={'activation': 'tanh', 'dropout': 0.2},  # applied to both
+    dense_units=[64, 32],
+    dense_layers_kwargs={'activation': 'relu'},  # applied to both
+)
+```
+
+### Different kwargs per layer
+
+```python
+model = create_and_compile_model(
+    ...,
+    recurrent_units=[128, 64],
+    recurrent_layers_kwargs=[
+        {'activation': 'tanh', 'dropout': 0.3},  # first LSTM
+        {'activation': 'tanh', 'dropout': 0.1},  # second LSTM
+    ],
+    dense_units=[64, 32],
+    dense_layers_kwargs=[
+        {'activation': 'relu'},
+        {'activation': 'relu'},
+    ],
+)
+```
+
+## ForecasterRnn Constructor
+
+```python
+ForecasterRnn(
+    levels,                          # str | list[str] (required)
+    lags,                            # int | list[int] | np.ndarray | range (required)
+    estimator=None,                  # Keras model (from create_and_compile_model or custom)
+    transformer_series=MinMaxScaler(feature_range=(0, 1)),  # default: MinMaxScaler
+    transformer_exog=MinMaxScaler(feature_range=(0, 1)),    # default: MinMaxScaler
+    fit_kwargs=None,                 # dict, kwargs for model.fit()
+    forecaster_id=None,              # str | int
+)
+```
+
+### fit_kwargs
+
+```python
+forecaster = ForecasterRnn(
+    levels=series.columns.tolist(),
+    lags=48,
+    estimator=model,
+    fit_kwargs={
+        'epochs': 50,                # number of training epochs
+        'batch_size': 32,            # training batch size
+        'verbose': 0,                # 0=silent, 1=progress bar, 2=one line per epoch
+        'validation_split': 0.1,     # fraction for validation
+        'callbacks': [EarlyStopping(patience=5)],  # Keras callbacks
+    },
+)
+```
+
+## Custom Keras Model Requirements
+
+When building a custom model instead of using `create_and_compile_model`:
+
+### Single level (no exog)
+
+```python
+import keras
+
+inputs = keras.layers.Input(shape=(lags, n_series))  # (lags, number of input series)
+x = keras.layers.LSTM(64, return_sequences=True)(inputs)
+x = keras.layers.LSTM(32)(x)
+x = keras.layers.Dense(32, activation='relu')(x)
+outputs = keras.layers.Dense(steps)(x)               # units = steps
+
+model = keras.Model(inputs=inputs, outputs=outputs)
+model.compile(optimizer='adam', loss='mse')
+```
+
+### Multiple levels (no exog)
+
+```python
+inputs = keras.layers.Input(shape=(lags, n_series))
+x = keras.layers.LSTM(64, return_sequences=True)(inputs)
+x = keras.layers.LSTM(32)(x)
+x = keras.layers.Dense(64, activation='relu')(x)
+x = keras.layers.Dense(steps * n_levels)(x)           # units = steps × n_levels
+outputs = keras.layers.Reshape((steps, n_levels))(x)   # reshape required
+
+model = keras.Model(inputs=inputs, outputs=outputs)
+model.compile(optimizer='adam', loss='mse')
+```
+
+### Input shape reference
+
+| Scenario | Input shape | Output shape |
+|----------|-------------|-------------|
+| 1 level, no exog | `(lags, 1)` | `(steps,)` |
+| M levels, no exog | `(lags, M)` | `(steps, M)` after Reshape |
+| 1 level, K exog features | Two inputs: `(lags, 1)` + `(lags, K)` | `(steps,)` |
+| M levels, K exog features | Two inputs: `(lags, M)` + `(lags, K)` | `(steps, M)` after Reshape |
+
+## Prediction Intervals
+
+ForecasterRnn only supports conformal prediction:
+
+```python
+forecaster.fit(series=series, store_in_sample_residuals=True)
+
+predictions = forecaster.predict_interval(
+    steps=24,
+    method='conformal',           # only valid method
+    interval=[10, 90],
+    use_in_sample_residuals=True,
+)
+# NOTE: 'bootstrapping' is NOT supported for ForecasterRnn
+# NOTE: predict_quantiles() and predict_dist() are NOT available
+```
 
 ================================================================================
 # SKILL: choosing-a-forecaster
 ================================================================================
 
 # Choosing a Forecaster
+
+## When to Use This Skill
+
+Use this skill when the user needs help choosing a forecaster, comparing forecaster types (recursive vs direct, single vs multi-series), or understanding which skforecast class fits their problem.
+
+## Overview
 
 Skforecast is a **machine learning-first** library. The ML forecasters are the primary tools; statistical models (`ForecasterStats`) and naive baselines (`ForecasterEquivalentDate`) serve as comparison benchmarks.
 
@@ -1948,7 +3265,11 @@ How many series?
 | Class probabilities | — | — | — | — | — | — | — | ✓ |
 | Feature importances | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
 
+> **Legend:** ✓ = supported, — = not supported/not applicable.
+
 ## Quick Start Recommendations
+
+Once you have chosen a forecaster, follow these steps to get started:
 
 1. **Define your problem**: 1 series → `ForecasterRecursive`; multiple series → `ForecasterRecursiveMultiSeries`
 2. **Choose an estimator**: LightGBM (`LGBMRegressor`) is the best starting point — fast, handles categoricals, good defaults
@@ -1975,7 +3296,7 @@ The most frequent LLM error. Old import paths no longer exist.
 | `from skforecast.ForecasterAutoregMultiSeries import ForecasterAutoregMultiSeries` | `from skforecast.recursive import ForecasterRecursiveMultiSeries` |
 | `from skforecast.ForecasterAutoregDirect import ForecasterAutoregDirect` | `from skforecast.direct import ForecasterDirect` |
 | `from skforecast.ForecasterAutoregMultiVariate import ForecasterAutoregMultiVariate` | `from skforecast.direct import ForecasterDirectMultiVariate` |
-| `from skforecast.model_selection import backtesting_forecaster_multiseries` (wrong module path) | `from skforecast.model_selection import backtesting_forecaster_multiseries` |
+| `from skforecast.model_selection_multiseries import backtesting_forecaster_multiseries` | `from skforecast.model_selection import backtesting_forecaster_multiseries` |
 
 ## Wrong Class/Function Names
 
@@ -1984,6 +3305,7 @@ The most frequent LLM error. Old import paths no longer exist.
 | `ForecasterAutoreg` | `ForecasterRecursive` |
 | `ForecasterAutoregMultiSeries` | `ForecasterRecursiveMultiSeries` |
 | `ForecasterAutoregDirect` | `ForecasterDirect` |
+| `ForecasterAutoregMultiVariate` | `ForecasterDirectMultiVariate` |
 | `ForecasterSarimax` | `ForecasterStats(estimator=Sarimax(...))` |
 
 ## Data Issues
@@ -2002,7 +3324,7 @@ data = data.asfreq('QS')      # Quarterly start
 
 ```python
 # Fix: handle missing values before fitting
-data = data.fillna(method='ffill')       # Forward fill
+data = data.ffill()                      # Forward fill
 data = data.interpolate(method='linear') # Linear interpolation
 ```
 
@@ -2108,10 +3430,22 @@ ets_model = Ets(model='AAA', m=12)
 
 # Complete API Reference
 
+## When to Use This Skill
+
+Use this when you need exact parameter names, types, defaults, or method signatures for any skforecast class or function.
+
+## Overview
+
 This skill contains the full constructor and method signatures for all
 public skforecast classes and functions. See
 [references/method-signatures.md](references/method-signatures.md) for
-the complete reference.
+the complete reference, including:
+
+- All forecaster constructors
+- `fit()`, `predict()`, `predict_interval()`, `predict_quantiles()`, `predict_dist()` signatures
+- `set_params()`, `set_lags()`, `set_out_sample_residuals()` signatures
+- Method availability matrix (which forecaster supports which method)
+- Backtesting, search, cross-validation, feature selection, and drift detection signatures
 
 ## Quick Index
 
@@ -2507,6 +3841,9 @@ forecaster.predict_interval(
     interval=[5, 95],                   # float | list[float] | tuple[float]
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
+    random_state=None,                  # Any, ignored (API compatibility)
+    exog=None,                          # Any, ignored (API compatibility)
+    n_boot=None,                        # Any, ignored (API compatibility)
     suppress_warnings=False             # bool
 ) -> pd.DataFrame
 
@@ -2519,7 +3856,10 @@ forecaster.predict_interval(
     method='conformal',                 # only 'conformal' supported
     interval=[5, 95],                   # float | list[float] | tuple[float]
     use_in_sample_residuals=True,       # bool
-    suppress_warnings=False             # bool
+    suppress_warnings=False,            # bool
+    n_boot=None,                        # Any, ignored (API compatibility)
+    use_binned_residuals=None,          # Any, ignored (API compatibility)
+    random_state=None,                  # Any, ignored (API compatibility)
 ) -> pd.DataFrame
 
 # ForecasterRecursiveClassifier: No predict_interval(). Use predict_proba() instead.
@@ -2743,6 +4083,190 @@ random_search_stats(
     output_file=None         # str | None
 ) -> pd.DataFrame
 ```
+
+## Forecaster Methods: predict_quantiles()
+
+```python
+# ForecasterRecursive
+forecaster.predict_quantiles(
+    steps,                              # int | str | pd.Timestamp (required)
+    last_window=None,                   # pd.Series | pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    quantiles=[0.05, 0.5, 0.95],       # list[float] | tuple[float]
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterRecursiveMultiSeries
+forecaster.predict_quantiles(
+    steps,                              # int (required)
+    levels=None,                        # str | list[str] | None
+    last_window=None,                   # pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | dict | None
+    quantiles=[0.05, 0.5, 0.95],       # list[float] | tuple[float]
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterDirect
+forecaster.predict_quantiles(
+    steps=None,                         # int | list[int] | None
+    last_window=None,                   # pd.Series | pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    quantiles=[0.05, 0.5, 0.95],       # list[float] | tuple[float]
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterDirectMultiVariate
+forecaster.predict_quantiles(
+    steps=None,                         # int | list[int] | None
+    last_window=None,                   # pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    quantiles=[0.05, 0.5, 0.95],       # list[float] | tuple[float]
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False,            # bool
+    levels=None,                        # Any, ignored (API compatibility)
+) -> pd.DataFrame
+
+# NOT available in: ForecasterRecursiveClassifier, ForecasterStats,
+#                    ForecasterEquivalentDate, ForecasterRnn
+```
+
+## Forecaster Methods: predict_dist()
+
+```python
+# ForecasterRecursive
+forecaster.predict_dist(
+    steps,                              # int | str | pd.Timestamp (required)
+    distribution,                       # scipy.stats distribution object (required)
+    last_window=None,                   # pd.Series | pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterRecursiveMultiSeries
+forecaster.predict_dist(
+    steps,                              # int (required)
+    distribution,                       # scipy.stats distribution object (required)
+    levels=None,                        # str | list[str] | None
+    last_window=None,                   # pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | dict | None
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterDirect
+forecaster.predict_dist(
+    distribution,                       # scipy.stats distribution object (required)
+    steps=None,                         # int | list[int] | None
+    last_window=None,                   # pd.Series | pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterDirectMultiVariate
+forecaster.predict_dist(
+    distribution,                       # scipy.stats distribution object (required)
+    steps=None,                         # int | list[int] | None
+    last_window=None,                   # pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False,            # bool
+    levels=None,                        # Any, ignored (API compatibility)
+) -> pd.DataFrame
+
+# NOT available in: ForecasterRecursiveClassifier, ForecasterStats,
+#                    ForecasterEquivalentDate, ForecasterRnn
+```
+
+## Forecaster Methods: set_out_sample_residuals()
+
+```python
+# ForecasterRecursive, ForecasterDirect
+forecaster.set_out_sample_residuals(
+    y_true,                  # np.ndarray | pd.Series (required)
+    y_pred,                  # np.ndarray | pd.Series (required)
+    append=False,            # bool, append to existing residuals
+    random_state=123         # int
+) -> None
+
+# ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRnn
+forecaster.set_out_sample_residuals(
+    y_true,                  # dict[str, np.ndarray | pd.Series] (required)
+    y_pred,                  # dict[str, np.ndarray | pd.Series] (required)
+    append=False,            # bool
+    random_state=123         # int
+) -> None
+
+# ForecasterEquivalentDate (same as single series)
+forecaster.set_out_sample_residuals(
+    y_true,                  # np.ndarray | pd.Series (required)
+    y_pred,                  # np.ndarray | pd.Series (required)
+    append=False,            # bool
+    random_state=123         # int
+) -> None
+
+# NOT available in: ForecasterRecursiveClassifier, ForecasterStats
+```
+
+## Forecaster Methods: set_params() and set_lags()
+
+```python
+# set_params — available in all forecasters except ForecasterEquivalentDate
+forecaster.set_params(
+    params                   # dict[str, object] (required)
+) -> None
+# ForecasterStats also accepts dict[str, dict] for multiple models
+
+# set_lags — available in all forecasters except ForecasterStats and ForecasterEquivalentDate
+forecaster.set_lags(
+    lags=None                # int | list[int] | np.ndarray | range | None
+) -> None
+# ForecasterDirectMultiVariate also accepts dict[str, int | list]
+# ForecasterRnn: set_lags() exists but is a no-op for API consistency
+```
+
+## Method Availability Matrix
+
+| Method | Recursive | Direct | RecursiveMultiSeries | DirectMultiVariate | Rnn | Stats | EquivalentDate | Classifier |
+|--------|:---------:|:------:|:-------------------:|:-----------------:|:---:|:-----:|:--------------:|:----------:|
+| `predict()` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `predict_interval()` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — |
+| `predict_quantiles()` | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
+| `predict_dist()` | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
+| `predict_proba()` | — | — | — | — | — | — | — | ✓ |
+| `set_params()` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| `set_lags()` | ✓ | ✓ | ✓ | ✓ | ✓* | — | — | ✓ |
+| `set_out_sample_residuals()` | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
+
+> ✓ = supported, — = not available, ✓* = exists but is a no-op
 
 ## Cross-Validation Classes
 

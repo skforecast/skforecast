@@ -42,7 +42,7 @@ nav:
       - Exogenous variables: user_guides/exogenous-variables.ipynb
       - Window and custom features: user_guides/window-features-and-custom-features.ipynb
       - Categorical features: user_guides/categorical-features.ipynb
-      - Calendars features: user_guides/calendar-features.ipynb
+      - Calendar features: user_guides/calendar-features.ipynb
       - Data transformation: user_guides/sklearn-transformers-and-pipeline.ipynb
       - Differentiation: user_guides/time-series-differentiation.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
@@ -136,6 +136,7 @@ nav:
 
   - More: 
     - About skforecast: more/about-skforecast.md
+    - AI-assisted forecasting: more/ai-assisted-forecasting.md
     - Consulting & Professional services: more/consulting.md
     - Funding: more/funding.md
 

@@ -349,6 +349,9 @@ forecaster.predict_interval(
     interval=[5, 95],                   # float | list[float] | tuple[float]
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
+    random_state=None,                  # Any, ignored (API compatibility)
+    exog=None,                          # Any, ignored (API compatibility)
+    n_boot=None,                        # Any, ignored (API compatibility)
     suppress_warnings=False             # bool
 ) -> pd.DataFrame
 
@@ -361,7 +364,10 @@ forecaster.predict_interval(
     method='conformal',                 # only 'conformal' supported
     interval=[5, 95],                   # float | list[float] | tuple[float]
     use_in_sample_residuals=True,       # bool
-    suppress_warnings=False             # bool
+    suppress_warnings=False,            # bool
+    n_boot=None,                        # Any, ignored (API compatibility)
+    use_binned_residuals=None,          # Any, ignored (API compatibility)
+    random_state=None,                  # Any, ignored (API compatibility)
 ) -> pd.DataFrame
 
 # ForecasterRecursiveClassifier: No predict_interval(). Use predict_proba() instead.
@@ -585,6 +591,190 @@ random_search_stats(
     output_file=None         # str | None
 ) -> pd.DataFrame
 ```
+
+## Forecaster Methods: predict_quantiles()
+
+```python
+# ForecasterRecursive
+forecaster.predict_quantiles(
+    steps,                              # int | str | pd.Timestamp (required)
+    last_window=None,                   # pd.Series | pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    quantiles=[0.05, 0.5, 0.95],       # list[float] | tuple[float]
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterRecursiveMultiSeries
+forecaster.predict_quantiles(
+    steps,                              # int (required)
+    levels=None,                        # str | list[str] | None
+    last_window=None,                   # pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | dict | None
+    quantiles=[0.05, 0.5, 0.95],       # list[float] | tuple[float]
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterDirect
+forecaster.predict_quantiles(
+    steps=None,                         # int | list[int] | None
+    last_window=None,                   # pd.Series | pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    quantiles=[0.05, 0.5, 0.95],       # list[float] | tuple[float]
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterDirectMultiVariate
+forecaster.predict_quantiles(
+    steps=None,                         # int | list[int] | None
+    last_window=None,                   # pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    quantiles=[0.05, 0.5, 0.95],       # list[float] | tuple[float]
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False,            # bool
+    levels=None,                        # Any, ignored (API compatibility)
+) -> pd.DataFrame
+
+# NOT available in: ForecasterRecursiveClassifier, ForecasterStats,
+#                    ForecasterEquivalentDate, ForecasterRnn
+```
+
+## Forecaster Methods: predict_dist()
+
+```python
+# ForecasterRecursive
+forecaster.predict_dist(
+    steps,                              # int | str | pd.Timestamp (required)
+    distribution,                       # scipy.stats distribution object (required)
+    last_window=None,                   # pd.Series | pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterRecursiveMultiSeries
+forecaster.predict_dist(
+    steps,                              # int (required)
+    distribution,                       # scipy.stats distribution object (required)
+    levels=None,                        # str | list[str] | None
+    last_window=None,                   # pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | dict | None
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterDirect
+forecaster.predict_dist(
+    distribution,                       # scipy.stats distribution object (required)
+    steps=None,                         # int | list[int] | None
+    last_window=None,                   # pd.Series | pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterDirectMultiVariate
+forecaster.predict_dist(
+    distribution,                       # scipy.stats distribution object (required)
+    steps=None,                         # int | list[int] | None
+    last_window=None,                   # pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False,            # bool
+    levels=None,                        # Any, ignored (API compatibility)
+) -> pd.DataFrame
+
+# NOT available in: ForecasterRecursiveClassifier, ForecasterStats,
+#                    ForecasterEquivalentDate, ForecasterRnn
+```
+
+## Forecaster Methods: set_out_sample_residuals()
+
+```python
+# ForecasterRecursive, ForecasterDirect
+forecaster.set_out_sample_residuals(
+    y_true,                  # np.ndarray | pd.Series (required)
+    y_pred,                  # np.ndarray | pd.Series (required)
+    append=False,            # bool, append to existing residuals
+    random_state=123         # int
+) -> None
+
+# ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRnn
+forecaster.set_out_sample_residuals(
+    y_true,                  # dict[str, np.ndarray | pd.Series] (required)
+    y_pred,                  # dict[str, np.ndarray | pd.Series] (required)
+    append=False,            # bool
+    random_state=123         # int
+) -> None
+
+# ForecasterEquivalentDate (same as single series)
+forecaster.set_out_sample_residuals(
+    y_true,                  # np.ndarray | pd.Series (required)
+    y_pred,                  # np.ndarray | pd.Series (required)
+    append=False,            # bool
+    random_state=123         # int
+) -> None
+
+# NOT available in: ForecasterRecursiveClassifier, ForecasterStats
+```
+
+## Forecaster Methods: set_params() and set_lags()
+
+```python
+# set_params — available in all forecasters except ForecasterEquivalentDate
+forecaster.set_params(
+    params                   # dict[str, object] (required)
+) -> None
+# ForecasterStats also accepts dict[str, dict] for multiple models
+
+# set_lags — available in all forecasters except ForecasterStats and ForecasterEquivalentDate
+forecaster.set_lags(
+    lags=None                # int | list[int] | np.ndarray | range | None
+) -> None
+# ForecasterDirectMultiVariate also accepts dict[str, int | list]
+# ForecasterRnn: set_lags() exists but is a no-op for API consistency
+```
+
+## Method Availability Matrix
+
+| Method | Recursive | Direct | RecursiveMultiSeries | DirectMultiVariate | Rnn | Stats | EquivalentDate | Classifier |
+|--------|:---------:|:------:|:-------------------:|:-----------------:|:---:|:-----:|:--------------:|:----------:|
+| `predict()` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `predict_interval()` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — |
+| `predict_quantiles()` | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
+| `predict_dist()` | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
+| `predict_proba()` | — | — | — | — | — | — | — | ✓ |
+| `set_params()` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| `set_lags()` | ✓ | ✓ | ✓ | ✓ | ✓* | — | — | ✓ |
+| `set_out_sample_residuals()` | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
+
+> ✓ = supported, — = not available, ✓* = exists but is a no-op
 
 ## Cross-Validation Classes
 

@@ -28,6 +28,7 @@ The most frequent LLM error. Old import paths no longer exist.
 | `ForecasterAutoreg` | `ForecasterRecursive` |
 | `ForecasterAutoregMultiSeries` | `ForecasterRecursiveMultiSeries` |
 | `ForecasterAutoregDirect` | `ForecasterDirect` |
+| `ForecasterAutoregMultiVariate` | `ForecasterDirectMultiVariate` |
 | `ForecasterSarimax` | `ForecasterStats(estimator=Sarimax(...))` |
 
 ## Data Issues
@@ -46,7 +47,7 @@ data = data.asfreq('QS')      # Quarterly start
 
 ```python
 # Fix: handle missing values before fitting
-data = data.fillna(method='ffill')       # Forward fill
+data = data.ffill()                      # Forward fill
 data = data.interpolate(method='linear') # Linear interpolation
 ```
 

@@ -9,6 +9,13 @@ description: >
 
 # Statistical Models (ARIMA, ETS, SARIMAX, ARAR)
 
+## References
+
+See [references/model-parameters.md](references/model-parameters.md) for
+complete constructor signatures of all statistical models (Arima, Sarimax,
+Ets, Arar), the Ets model string format, Auto-ARIMA parameters, seasonal_order
+differences between Arima and Sarimax, and grid search param_grid examples.
+
 ## When to Use
 
 Use statistical models when:
@@ -49,10 +56,11 @@ forecaster = ForecasterStats(estimator=arima_model)
 forecaster.fit(y=data['target'])
 predictions = forecaster.predict(steps=12)
 
-# 3. Prediction intervals (built-in, no bootstrapping needed)
+# 3. Prediction intervals (all stat models support this natively,
+#    no bootstrapping needed). Accepts both `interval` and `alpha`.
 predictions_interval = forecaster.predict_interval(
     steps=12,
-    interval=[10, 90],
+    interval=[10, 90],  # or use alpha=0.2 for 80% interval
 )
 ```
 
@@ -81,6 +89,21 @@ from skforecast.stats import Ets
 ets_model = Ets(model='AAA', m=12)
 forecaster = ForecasterStats(estimator=ets_model)
 forecaster.fit(y=data['target'])
+predictions = forecaster.predict(steps=12)
+```
+
+## Auto-ETS (Automatic Model Selection)
+
+```python
+# Use model='ZZZ' (or model=None) to let ETS automatically select
+# the best Error, Trend, and Seasonal components
+auto_ets = Ets(model='ZZZ', m=12)
+forecaster = ForecasterStats(estimator=auto_ets)
+forecaster.fit(y=data['target'])
+
+# Check the selected model configuration
+print(forecaster.estimator.best_params_)
+
 predictions = forecaster.predict(steps=12)
 ```
 
@@ -125,8 +148,10 @@ metric, predictions_bt = backtesting_stats(
     y=data['target'],
     cv=cv,
     metric='mean_absolute_error',
-    freeze_params=True,  # If True, only first fold fits; faster but less accurate
+    freeze_params=True,  # Params from first fit reused in refits (avoids re-running auto selection)
 )
+# If freeze_params=False, auto selection runs independently each fold and output
+# includes an extra 'estimator_params' column with the parameters selected per fold.
 ```
 
 ## Multiple Models Simultaneously
@@ -152,3 +177,4 @@ predictions = forecaster.predict(steps=12)
 2. **Forgetting `m` parameter**: ARIMA and ETS seasonal models require `m` (seasonal period).
 3. **Not using `backtesting_stats`**: Use `backtesting_stats()` for statistical models, NOT `backtesting_forecaster()`.
 4. **Using grid_search_forecaster for stats**: Use `grid_search_stats()` or `random_search_stats()` instead.
+5. **Passing `seasonal_order=(1,1,1,12)` to `Arima`**: `Arima` uses a 3-tuple `seasonal_order=(P,D,Q)` plus a separate `m=12` parameter. The 4-tuple `(P,D,Q,s)` format is only for `Sarimax`.

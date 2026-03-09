@@ -22,12 +22,15 @@ Use drift detection to monitor whether new data falls outside the patterns seen 
 
 Checks whether new observations fall within the ranges seen during training. Lightweight and suitable for real-time scoring.
 
+> `fit()` accepts `series` and `exog` as a pandas Series, DataFrame, or dict
+> (useful for multi-series pipelines with `ForecasterRecursiveMultiSeries`).
+
 ```python
 from skforecast.drift_detection import RangeDriftDetector
 from skforecast.recursive import ForecasterRecursive
 
 # 1. Train the forecaster
-forecaster = ForecasterRecursive(estimator=regressor, lags=24)
+forecaster = ForecasterRecursive(estimator=estimator, lags=24)
 forecaster.fit(y=y_train, exog=exog_train)
 
 # 2. Fit the drift detector on training data
@@ -51,6 +54,9 @@ if flag_drift:
 ## PopulationDriftDetector
 
 Uses statistical tests to detect distribution shifts between reference (training) and new data.
+
+> `fit(X)` and `predict(X)` expect a pandas DataFrame. For multi-series data,
+> use a MultiIndex DataFrame with `(series_id, date)` index.
 
 ```python
 from skforecast.drift_detection import PopulationDriftDetector
@@ -112,7 +118,7 @@ from skforecast.recursive import ForecasterRecursive
 from skforecast.drift_detection import RangeDriftDetector
 
 # Train
-forecaster = ForecasterRecursive(estimator=regressor, lags=24)
+forecaster = ForecasterRecursive(estimator=estimator, lags=24)
 forecaster.fit(y=y_train, exog=exog_train)
 
 # Set up monitoring
