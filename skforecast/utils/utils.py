@@ -1016,6 +1016,12 @@ def check_predict_input(
                 f"Expected frequency of type {index_freq_} for `last_window`. "
                 f"Got {last_window_index.freq}."
             )
+    else:
+        if not last_window_index.step == index_freq_:
+            raise TypeError(
+                f"Expected step of type {index_freq_} for `last_window`. "
+                f"Got {last_window_index.step}."
+            )
 
     # Checks exog
     if exog is not None:

@@ -561,7 +561,7 @@ def test_check_predict_input_MissingValuesWarning_when_last_window_has_missing_v
             is_fitted        = True,
             exog_in_         = False,
             index_type_      = pd.RangeIndex,
-            index_freq_      = None,
+            index_freq_      = 1,
             window_size      = 5,
             last_window      = pd.Series([1, 2, 3, 4, 5, np.nan]),
             last_window_exog = None,
@@ -629,6 +629,42 @@ def test_check_predict_input_TypeError_when_last_window_index_frequency_is_not_i
             is_fitted        = True,
             exog_in_         = False,
             index_type_      = pd.DatetimeIndex,
+            index_freq_      = index_freq_,
+            window_size      = 5,
+            last_window      = last_window,
+            last_window_exog = None,
+            exog             = None,
+            exog_names_in_   = None,
+            interval         = None,
+            alpha            = None,
+            max_step         = None,
+            levels           = None,
+            series_names_in_ = None
+        )
+
+
+def test_check_predict_input_TypeError_when_last_window_RangeIndex_step_is_not_index_freq():
+    """
+    Test TypeError is raised when `last_window` has a RangeIndex with a step
+    that does not match `index_freq_`.
+    """
+    index_freq_ = 1
+    last_window = pd.Series(np.arange(10), index=pd.RangeIndex(start=0, stop=20, step=2))
+    _, last_window_index = check_extract_values_and_index(
+        data=last_window, data_label='`last_window`', ignore_freq=False, return_values=False
+    )
+
+    err_msg = re.escape(
+        f"Expected step of type {index_freq_} for `last_window`. "
+        f"Got {last_window_index.step}."
+    )
+    with pytest.raises(TypeError, match=err_msg):
+        check_predict_input(
+            forecaster_name  = 'ForecasterRecursive',
+            steps            = 10,
+            is_fitted        = True,
+            exog_in_         = False,
+            index_type_      = pd.RangeIndex,
             index_freq_      = index_freq_,
             window_size      = 5,
             last_window      = last_window,
@@ -1151,7 +1187,7 @@ def test_check_predict_input_ValueError_when_exog_index_does_not_follow_last_win
             is_fitted        = True,
             exog_in_         = True,
             index_type_      = pd.RangeIndex,
-            index_freq_      = freq,
+            index_freq_      = 1,
             window_size      = 5,
             last_window      = lw_datetime,
             last_window_exog = None,
@@ -1181,7 +1217,7 @@ def test_check_predict_input_ValueError_when_ForecasterStats_last_window_exog_is
             is_fitted        = True,
             exog_in_         = False,
             index_type_      = pd.RangeIndex,
-            index_freq_      = None,
+            index_freq_      = 1,
             window_size      = 3,
             last_window      = pd.Series(np.arange(5)),
             last_window_exog = pd.Series(np.arange(5)),
@@ -1210,7 +1246,7 @@ def test_check_predict_input_TypeError_when_ForecasterStats_last_window_exog_is_
             is_fitted        = True,
             exog_in_         = True,
             index_type_      = pd.RangeIndex,
-            index_freq_      = None,
+            index_freq_      = 1,
             window_size      = 3,
             last_window      = pd.Series(np.arange(5)),
             last_window_exog = last_window_exog,
@@ -1240,7 +1276,7 @@ def test_check_predict_input_ValueError_when_ForecasterStats_length_last_window_
             is_fitted        = True,
             exog_in_         = True,
             index_type_      = pd.RangeIndex,
-            index_freq_      = None,
+            index_freq_      = 1,
             window_size      = window_size,
             last_window      = pd.Series(np.arange(10)),
             last_window_exog = pd.Series(np.arange(5)),
@@ -1268,7 +1304,7 @@ def test_check_predict_input_MissingValuesWarning_when_ForecasterStats_last_wind
             is_fitted        = True,
             exog_in_         = True,
             index_type_      = pd.RangeIndex,
-            index_freq_      = None,
+            index_freq_      = 1,
             window_size      = 5,
             last_window      = pd.Series(np.arange(10)),
             last_window_exog = pd.Series([1, 2, 3, 4, 5, np.nan], name='exog1'),
