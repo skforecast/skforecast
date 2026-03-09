@@ -643,6 +643,42 @@ def test_check_predict_input_TypeError_when_last_window_index_frequency_is_not_i
         )
 
 
+def test_check_predict_input_TypeError_when_last_window_RangeIndex_step_is_not_index_freq():
+    """
+    Test TypeError is raised when `last_window` has a RangeIndex with a step
+    that does not match `index_freq_`.
+    """
+    index_freq_ = 1
+    last_window = pd.Series(np.arange(10), index=pd.RangeIndex(start=0, stop=20, step=2))
+    _, last_window_index = check_extract_values_and_index(
+        data=last_window, data_label='`last_window`', ignore_freq=False, return_values=False
+    )
+
+    err_msg = re.escape(
+        f"Expected step of type {index_freq_} for `last_window`. "
+        f"Got {last_window_index.step}."
+    )
+    with pytest.raises(TypeError, match=err_msg):
+        check_predict_input(
+            forecaster_name  = 'ForecasterRecursive',
+            steps            = 10,
+            is_fitted        = True,
+            exog_in_         = False,
+            index_type_      = pd.RangeIndex,
+            index_freq_      = index_freq_,
+            window_size      = 5,
+            last_window      = last_window,
+            last_window_exog = None,
+            exog             = None,
+            exog_names_in_   = None,
+            interval         = None,
+            alpha            = None,
+            max_step         = None,
+            levels           = None,
+            series_names_in_ = None
+        )
+
+
 def test_check_predict_input_TypeError_when_exog_is_not_pandas_series_or_dataframe_multiseries():
     """
     """
