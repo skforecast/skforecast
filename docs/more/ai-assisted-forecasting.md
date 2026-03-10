@@ -1,6 +1,6 @@
 # Using AI assistants with skforecast
 
-Skforecast provides machine-readable context files so that AI coding assistants — ChatGPT, Claude, Gemini, GitHub Copilot, Cursor, and others — can generate **accurate, up-to-date code** for time series forecasting.
+Skforecast provides machine-readable context files so that AI coding assistants (ChatGPT, Claude, Gemini, GitHub Copilot, Cursor, and others) can generate **accurate, up-to-date code** for time series forecasting.
 
 
 ## Quick start: paste a URL into any LLM
@@ -11,7 +11,7 @@ Copy the following URL and paste it into any AI chat:
 https://skforecast.org/latest/llms-full.txt
 ```
 
-This single file (~2 500 lines) contains the complete API reference, all forecaster signatures, workflow examples, and best practices. It gives any LLM enough context to help you with skforecast without hallucinating deprecated methods or wrong parameter names.
+This single file contains the complete API reference, all forecaster signatures, workflow examples, and best practices. It gives any LLM enough context to help you with skforecast without hallucinating deprecated methods or wrong parameter names.
 
 **Example prompt:**
 
@@ -20,7 +20,7 @@ This single file (~2 500 lines) contains the complete API reference, all forecas
 
 ## IDE integration (automatic)
 
-If you clone or open the skforecast repository in an AI-enabled IDE, the context is loaded **automatically** — no manual setup required:
+If you clone or open the skforecast repository in an AI-enabled IDE, the context is loaded **automatically**, no manual setup required:
 
 | IDE / Tool | File loaded | How |
 |------------|-------------|-----|
@@ -36,11 +36,14 @@ These files contain the same core content: project structure, all forecasters, c
 
 The AI context covers:
 
-- **All 8 forecaster types** — constructors, `fit()`, `predict()`, `predict_interval()`, `predict_quantiles()`, `predict_dist()`, and their parameter differences.
-- **Model selection** — `backtesting_forecaster`, `grid_search_forecaster`, `bayesian_search_forecaster`, `TimeSeriesFold`, `OneStepAheadFold`, and their multi-series variants.
-- **Preprocessing** — `RollingFeatures`, `TimeSeriesDifferentiator`, `DateTimeFeatureTransformer`, `QuantileBinner`.
+- **Choice of forecaster** — when to use `ForecasterRecursive` vs `ForecasterRecursiveMultiSeries` vs `ForecasterRnn`, etc.
+- **All 8 forecaster types** — constructors, `fit()`, and `predict()` methods including parameters and defaults.
+- **Model selection** — `backtesting_forecaster`, `bayesian_search_forecaster` and other hyperparameter optimization methods, `TimeSeriesFold`, `OneStepAheadFold`, and their multi-series variants.
 - **Statistical models** — `Arima`, `Sarimax`, `Ets`, `Arar` wrapped by `ForecasterStats`.
 - **Deep learning** — `ForecasterRnn` with `create_and_compile_model`, LSTM/GRU architectures.
+- **Feature engineering** — `RollingFeatures`, custom features, and exogenous variables.
+- **Feature selection** — `RFECV`, `SelectFromModel` for lags, window features, and exogenous variables.
+- **Drift detection** — `RangeDriftDetector` and `PopulationDriftDetector` for production monitoring.
 - **12 specialized workflow skills** — step-by-step guides for common tasks, loaded on-demand by advanced AI agents.
 
 

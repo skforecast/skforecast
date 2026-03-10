@@ -136,6 +136,11 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 Explore our extensive list of examples and tutorials (English and Spanish) to get you started with skforecast. You can find them [here](https://skforecast.org/latest/examples/examples_english.html).
 
 
+## AI-assisted forecasting
+
+Skforecast includes machine-readable context files so AI assistants (ChatGPT, Claude, Copilot, and others) can generate accurate code. Paste `https://skforecast.org/latest/llms-full.txt` into any LLM, or let your IDE pick up context automatically. Learn more in [AI-assisted forecasting](https://skforecast.org/latest/more/ai-assisted-forecasting.html).
+
+
 # How to contribute
 
 Primarily, skforecast development consists of adding and creating new *Forecasters*, new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:
