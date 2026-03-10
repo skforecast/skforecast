@@ -3134,6 +3134,26 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     self.differentiator_[level]
                     .inverse_transform_next_window(predictions[i, :, :])
                 )
+                
+                # Since the inverse transform is a cumsum, the prediction interval needs to be 
+                # scaled according to the differentiation order. For d=1, the variance grows 
+                # linearly with h, so the interval grows with sqrt(h). For d > 1, we use the 
+                # square root of the accumulated variances of the MA(inf) representation.
+                import scipy.special
+                d = self.differentiator_[level].order
+                steps_array = np.arange(1, steps + 1)
+                
+                # The scaling factor is exactly the square root of the accumulated variances 
+                # of the MA(infinity) representation of the (1-B)^{-d} filter
+                scaling_factor = np.sqrt(
+                    np.cumsum(scipy.special.comb(steps_array + d - 2, d - 1)**2)
+                )
+                
+                # Adjust the lower and upper bounds respectively (indices 1 and 2 in the 3rd dimension)
+                # predictions shape is (n_levels, steps, 3) where 3 is (pred, lower, upper)
+                c_factor_scaled = correction_factor[:, i] * scaling_factor
+                predictions[i, :, 1] = predictions[i, :, 0] - c_factor_scaled
+                predictions[i, :, 2] = predictions[i, :, 0] + c_factor_scaled
             
             transformer_level = self.transformer_series_.get(
                                     level,

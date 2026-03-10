@@ -1939,15 +1939,29 @@ class ForecasterRecursive(ForecasterBase):
             correction_factor = replace_func(predictions_bin)
         else:
             correction_factor = np.quantile(np.abs(residuals), nominal_coverage)
-            
-        lower_bound = predictions - correction_factor
-        upper_bound = predictions + correction_factor
-        predictions = np.column_stack([predictions, lower_bound, upper_bound])
 
         if self.differentiation is not None:
             predictions = (
                 self.differentiator.inverse_transform_next_window(predictions)
             )
+            
+            # Since the inverse transform is a cumsum, the prediction interval needs to be 
+            # scaled according to the differentiation order. For d=1, the variance grows 
+            # linearly with h, so the interval grows with sqrt(h). For d > 1, we use the 
+            # square root of the accumulated variances of the MA(inf) representation.
+            import scipy.special
+            d = self.differentiation
+            steps_array = np.arange(1, len(predictions) + 1)
+            # The scaling factor is exactly the square root of the accumulated variances 
+            # of the MA(infinity) representation of the (1-B)^{-d} filter
+            scaling_factor = np.sqrt(
+                np.cumsum(scipy.special.comb(steps_array + d - 2, d - 1)**2)
+            )
+            correction_factor = correction_factor * scaling_factor
+
+        lower_bound = predictions - correction_factor
+        upper_bound = predictions + correction_factor
+        predictions = np.column_stack([predictions, lower_bound, upper_bound])
         
         if self.transformer_y:
             predictions = transform_numpy(
