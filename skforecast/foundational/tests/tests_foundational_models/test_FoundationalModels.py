@@ -4,9 +4,9 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.foundational._foundational_models import (
+from skforecast.foundational._foundational_model import (
     Chronos2Adapter,
-    FoundationalModels,
+    FoundationalModel,
 )
 
 
@@ -75,7 +75,7 @@ def test_FoundationalModels_init_creates_Chronos2Adapter():
     """
     Test that FoundationalModels creates an internal Chronos2Adapter on init.
     """
-    m = FoundationalModels("autogluon/chronos-2-small")
+    m = FoundationalModel("autogluon/chronos-2-small")
     assert isinstance(m.adapter, Chronos2Adapter)
 
 
@@ -84,7 +84,7 @@ def test_FoundationalModels_init_model_id_stored_in_adapter():
     Test that the model_id string is forwarded to the adapter.
     """
     model_id = "autogluon/chronos-2-small"
-    m = FoundationalModels(model_id)
+    m = FoundationalModel(model_id)
     assert m.adapter.model_id == model_id
 
 
@@ -92,7 +92,7 @@ def test_FoundationalModels_init_kwargs_forwarded_to_adapter():
     """
     Test that keyword arguments (context_length, device_map) are forwarded to the adapter.
     """
-    m = FoundationalModels(
+    m = FoundationalModel(
         "autogluon/chronos-2-small", context_length=128, device_map="cpu"
     )
     assert m.adapter.context_length == 128
@@ -105,7 +105,7 @@ def test_FoundationalModels_is_fitted_is_false_before_fit():
     """
     Test that is_fitted is False before calling fit.
     """
-    m = FoundationalModels("autogluon/chronos-2-small")
+    m = FoundationalModel("autogluon/chronos-2-small")
     assert m.is_fitted is False
 
 
@@ -113,7 +113,7 @@ def test_FoundationalModels_is_fitted_is_true_after_fit():
     """
     Test that is_fitted is True after fit has been called.
     """
-    m = FoundationalModels("autogluon/chronos-2-small")
+    m = FoundationalModel("autogluon/chronos-2-small")
     m.fit(series=y)
     assert m.is_fitted is True
 
@@ -124,7 +124,7 @@ def test_FoundationalModels_fit_returns_self():
     """
     Test that fit returns the FoundationalModels instance.
     """
-    m = FoundationalModels("autogluon/chronos-2-small")
+    m = FoundationalModel("autogluon/chronos-2-small")
     result = m.fit(series=y)
     assert result is m
 
@@ -133,7 +133,7 @@ def test_FoundationalModels_fit_delegates_to_adapter():
     """
     Test that fit stores history in the underlying adapter.
     """
-    m = FoundationalModels("autogluon/chronos-2-small")
+    m = FoundationalModel("autogluon/chronos-2-small")
     m.fit(series=y)
     assert m.adapter._history is not None
     assert len(m.adapter._history) == len(y)
@@ -143,7 +143,7 @@ def test_FoundationalModels_fit_raises_TypeError_when_series_is_invalid_type():
     """
     Test that fit raises TypeError when y is not a pd.Series, pd.DataFrame, or dict.
     """
-    m = FoundationalModels("autogluon/chronos-2-small")
+    m = FoundationalModel("autogluon/chronos-2-small")
     err_msg = re.escape(
         "`series` must be a pd.Series, a wide pd.DataFrame, or a "
         f"dict[str, pd.Series]. Got {type([1, 2, 3])}."
@@ -156,7 +156,7 @@ def test_FoundationalModels_fit_raises_ValueError_when_series_has_nan():
     """
     Test that fit raises ValueError when y contains NaN values (via check_y).
     """
-    m = FoundationalModels("autogluon/chronos-2-small")
+    m = FoundationalModel("autogluon/chronos-2-small")
     y_nan = y.copy()
     y_nan.iloc[3] = np.nan
     err_msg = re.escape("`series` has missing values.")
@@ -170,7 +170,7 @@ def test_FoundationalModels_predict_returns_series_for_point_forecast():
     """
     Test that predict returns a pandas Series when quantiles=None.
     """
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=y)
     result = m.predict(steps=5)
     assert isinstance(result, pd.Series)
@@ -180,7 +180,7 @@ def test_FoundationalModels_predict_series_has_correct_length():
     """
     Test that the point forecast Series has exactly `steps` observations.
     """
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=y)
     result = m.predict(steps=12)
     assert len(result) == 12
@@ -191,7 +191,7 @@ def test_FoundationalModels_predict_returns_dataframe_for_quantiles():
     Test that predict returns a pandas DataFrame when quantiles are requested.
     """
     quantiles = [0.1, 0.5, 0.9]
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=y)
     result = m.predict(steps=5, quantiles=quantiles)
     assert isinstance(result, pd.DataFrame)
@@ -203,7 +203,7 @@ def test_FoundationalModels_predict_uses_last_window():
     Test that predict respects last_window: the forecast index must follow
     from last_window's index.
     """
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=y)
 
     last_window = pd.Series(
@@ -222,7 +222,7 @@ def test_FoundationalModels_predict_passes_future_exog_to_pipeline():
     Test that future exog passed to predict is forwarded as future_covariates.
     """
     pipeline = FakePipeline()
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=pipeline)
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=pipeline)
     m.fit(series=y)
 
     future = pd.DataFrame(
@@ -242,7 +242,7 @@ def test_FoundationalModels_predict_point_forecast_exact_values():
     quantile level as a constant, so the median (0.5) is expected.
     The forecast index must immediately follow the last training date.
     """
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=data)
     result = m.predict(steps=12)
     expected_index = pd.date_range("1961-01-01", periods=12, freq="MS")
@@ -259,7 +259,7 @@ def test_FoundationalModels_predict_quantile_forecast_exact_values():
     The forecast index must immediately follow the last training date.
     """
     quantiles = [0.1, 0.5, 0.9]
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=data)
     result = m.predict(steps=12, quantiles=quantiles)
     expected_index = pd.date_range("1961-01-01", periods=12, freq="MS")
@@ -285,7 +285,7 @@ def test_FoundationalModels_init_cross_learning_forwarded_to_adapter():
     """
     Test that cross_learning=True is forwarded to the underlying adapter.
     """
-    m = FoundationalModels("autogluon/chronos-2-small", cross_learning=True)
+    m = FoundationalModel("autogluon/chronos-2-small", cross_learning=True)
     assert m.adapter.cross_learning is True
 
 
@@ -293,7 +293,7 @@ def test_FoundationalModels_init_cross_learning_default_is_false():
     """
     Test that cross_learning defaults to False when not specified.
     """
-    m = FoundationalModels("autogluon/chronos-2-small")
+    m = FoundationalModel("autogluon/chronos-2-small")
     assert m.adapter.cross_learning is False
 
 
@@ -303,7 +303,7 @@ def test_FoundationalModels_fit_multiseries_wide_dataframe_sets_is_multiseries()
     """
     Test that fit on a wide DataFrame delegates correctly and sets _is_multiseries.
     """
-    m = FoundationalModels("autogluon/chronos-2-small")
+    m = FoundationalModel("autogluon/chronos-2-small")
     m.fit(series=_y_wide_ms)
     assert m.adapter._is_multiseries is True
     assert m.is_fitted is True
@@ -313,7 +313,7 @@ def test_FoundationalModels_fit_multiseries_dict_sets_is_multiseries():
     """
     Test that fit on a dict of Series delegates correctly and sets _is_multiseries.
     """
-    m = FoundationalModels("autogluon/chronos-2-small")
+    m = FoundationalModel("autogluon/chronos-2-small")
     m.fit(series=_y_dict_ms)
     assert m.adapter._is_multiseries is True
 
@@ -322,7 +322,7 @@ def test_FoundationalModels_fit_multiseries_returns_self():
     """
     Test that fit in multi-series mode returns the FoundationalModels instance.
     """
-    m = FoundationalModels("autogluon/chronos-2-small")
+    m = FoundationalModel("autogluon/chronos-2-small")
     result = m.fit(series=_y_dict_ms)
     assert result is m
 
@@ -331,7 +331,7 @@ def test_FoundationalModels_fit_multiseries_stores_history_dict():
     """
     Test that fit stores a dict in the adapter's _history for multi-series input.
     """
-    m = FoundationalModels("autogluon/chronos-2-small")
+    m = FoundationalModel("autogluon/chronos-2-small")
     m.fit(series=_y_dict_ms)
     assert isinstance(m.adapter._history, dict)
     assert list(m.adapter._history.keys()) == ["s1", "s2"]
@@ -344,7 +344,7 @@ def test_FoundationalModels_predict_multiseries_point_returns_long_dataframe():
     Test that predict returns a long pd.DataFrame with columns ["level", "pred"]
     for a multi-series point forecast.
     """
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=_y_dict_ms)
     result = m.predict(steps=6)
     assert isinstance(result, pd.DataFrame)
@@ -355,7 +355,7 @@ def test_FoundationalModels_predict_multiseries_point_correct_length():
     """
     Test that the point forecast long DataFrame has exactly steps * n_series rows.
     """
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=_y_wide_ms)
     result = m.predict(steps=10)
     assert len(result) == 10 * 2  # steps * n_series
@@ -366,7 +366,7 @@ def test_FoundationalModels_predict_multiseries_quantile_returns_long_dataframe(
     Test that predict returns a long pd.DataFrame for a multi-series quantile
     forecast, with columns ["level", "q_0.1", "q_0.5", "q_0.9"].
     """
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=_y_dict_ms)
     result = m.predict(steps=5, quantiles=[0.1, 0.5, 0.9])
     assert isinstance(result, pd.DataFrame)
@@ -379,7 +379,7 @@ def test_FoundationalModels_predict_multiseries_cross_learning_forwarded_to_pipe
     Test that cross_learning is forwarded all the way to predict_quantiles.
     """
     pipeline = FakePipeline()
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=pipeline, cross_learning=True)
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=pipeline, cross_learning=True)
     m.fit(series=_y_dict_ms)
     m.predict(steps=3)
     assert pipeline.last_kwargs.get("cross_learning") is True
@@ -390,7 +390,7 @@ def test_FoundationalModels_predict_multiseries_last_window_wide_dataframe():
     Test that a wide DataFrame passed as last_window is used in multi-series mode.
     The forecast index must follow from last_window's index.
     """
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=_y_dict_ms)
     new_idx = pd.date_range("2025-01-01", periods=10, freq="ME")
     lw = pd.DataFrame(
@@ -408,7 +408,7 @@ def test_FoundationalModels_predict_multiseries_last_window_dict():
     Test that a dict[str, pd.Series] passed as last_window is handled correctly.
     Output must be a long DataFrame with columns ["level", "pred"].
     """
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=_y_dict_ms)
     new_idx = pd.date_range("2025-06-01", periods=8, freq="ME")
     lw_dict = {
@@ -425,7 +425,7 @@ def test_FoundationalModels_predict_multiseries_exact_point_values():
     Test that point forecast values equal 0.5 for all steps and series
     (FakePipeline returns the quantile level as the value; median = 0.5).
     """
-    m = FoundationalModels("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=_y_dict_ms)
     result = m.predict(steps=5)
     for name in ["s1", "s2"]:

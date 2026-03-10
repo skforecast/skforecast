@@ -1,7 +1,7 @@
-# Plan: ForecasterFoundational + FoundationalModels Rewrite
+# Plan: ForecasterFoundational + FoundationalModel Rewrite
 
 > **Status**: Design complete — ready for implementation.  
-> **Scope**: Chronos-2 only. No Chronos T5 / Chronos-Bolt support.  
+> **Scope**: Chronos-2 only. No Chronos T5 / Chronos-Bolt support. Multi-series (batch) inference supported.  
 > **Branch**: `feature_refactor_arima`
 
 ---
@@ -108,15 +108,15 @@ Use `predict_quantiles()` with `quantile_levels=[0.5]` and take median, or use `
 
 | Method | Parameter | Maps to |
 |--------|-----------|---------|
-| `fit(y, exog=...)` | historical exog aligned to `y` index | `past_covariates` in Chronos-2 input |
+| `fit(series, exog=...)` | historical exog aligned to `series` index | `past_covariates` in Chronos-2 input |
 | `predict(steps, exog=...)` | future-known exog for `steps` horizon | `future_covariates` in Chronos-2 input |
 
 - Column names must be consistent between fit-time and predict-time exog.
 - If exog provided at fit must also be provided at predict (and vice versa).
 
-### `FoundationalModels` visibility
+### `FoundationalModel` visibility
 
-- **User-facing** (lightweight standalone API): `FoundationalModels("amazon/chronos-2-base").fit(y).predict(steps=12)`.
+- **User-facing** (lightweight standalone API): `FoundationalModel("amazon/chronos-2-base").fit(y).predict(steps=12)`.
 - **Internal**: `ForecasterFoundational` wraps it for full skforecast ecosystem compatibility.
 - Both exported from `skforecast.foundational`.
 
@@ -139,7 +139,7 @@ Use `predict_quantiles()` with `quantile_levels=[0.5]` and take median, or use `
 - `_get_package_version()` function
 - `inspect` import
 - `importlib.metadata` imports
-- `BaseAdapter` class (optional — keep if `FoundationalModels` may support other models later; remove if keeping minimal)
+- `BaseAdapter` class (optional — keep if `FoundationalModel` may support other models later; remove if keeping minimal)
 
 **Add:**
 
@@ -155,7 +155,7 @@ class Chronos2Adapter:
     context_length : int, optional
         Maximum number of historical observations to use as context.
         If None, the full history stored at fit time is used.
-    pipeline : Chronos2Pipeline, optional
+    pipeline : BaseChronosPipeline, optional
         Pre-loaded pipeline. If None, loaded lazily on first predict call.
     device_map : str, optional
         Device map string passed to `from_pretrained` (e.g. "cuda", "cpu").
@@ -163,33 +163,34 @@ class Chronos2Adapter:
         Torch dtype passed to `from_pretrained`.
     predict_kwargs : dict, optional
         Additional kwargs forwarded to `predict_quantiles()`.
+    cross_learning : bool, default False
+        If True, share information across all series in the batch when
+        predicting in multi-series mode. Ignored in single-series mode.
     """
 
-    capabilities = ModelCapabilities(
-        supports_exog=True,
-        supports_multivariate=False,
-        supports_probabilistic=True,
-        context_length=None,    # set from model config after loading
-        min_history=1,
-    )
-
     def __init__(self, model_id, *, pipeline=None, context_length=None,
-                 predict_kwargs=None, device_map=None, torch_dtype=None):
+                 predict_kwargs=None, device_map=None, torch_dtype=None,
+                 cross_learning=False):
         self.model_id = model_id
         self._pipeline = pipeline
-        self._history: pd.Series | None = None
-        self._history_exog: pd.DataFrame | None = None
+        self._history: pd.Series | dict[str, pd.Series] | None = None
+        self._history_exog: (
+            pd.DataFrame | pd.Series
+            | dict[str, pd.DataFrame | pd.Series | None] | None
+        ) = None
         self.context_length = context_length
         self.predict_kwargs = predict_kwargs or {}
         self.device_map = device_map
         self.torch_dtype = torch_dtype
+        self.cross_learning = cross_learning
         self._is_fitted = False
+        self._is_multiseries = False  # set True in fit() for DataFrame/dict input
 
     def _load_pipeline(self):
         if self._pipeline is not None:
             return
         try:
-            from chronos.chronos2.pipeline import Chronos2Pipeline
+            from chronos import BaseChronosPipeline  # auto-dispatches to Chronos2Pipeline
         except ImportError as exc:
             raise ImportError(
                 "chronos-forecasting >=2.0 is required. "
@@ -200,107 +201,213 @@ class Chronos2Adapter:
             kwargs["device_map"] = self.device_map
         if self.torch_dtype is not None:
             kwargs["torch_dtype"] = self.torch_dtype
-        self._pipeline = Chronos2Pipeline.from_pretrained(self.model_id, **kwargs)
+        self._pipeline = BaseChronosPipeline.from_pretrained(self.model_id, **kwargs)
+
+    @staticmethod
+    def _to_covariate_array(col_data):
+        """
+        Cast numeric/bool columns to float64; leave string/categorical as-is.
+        Handles pandas nullable extension dtypes correctly (avoids dtype=object
+        with pd.NA sentinels that np.asarray() would produce).
+        """
+        if isinstance(col_data, pd.Series):
+            if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
+                return col_data.astype(np.float64).to_numpy()
+            return col_data.to_numpy()
+        arr = np.asarray(col_data)
+        if (np.issubdtype(arr.dtype, np.integer)
+                or np.issubdtype(arr.dtype, np.floating)
+                or arr.dtype.kind == "b"):
+            return arr.astype(np.float64)
+        return arr
+
+    @staticmethod
+    def _normalize_exog_to_dict(exog, series_names):
+        """
+        Normalise exog to a per-series dict keyed by series name.
+
+        - None  → all series mapped to None.
+        - pd.Series / pd.DataFrame → broadcast identically to every series.
+        - dict  → values kept per-series; missing keys mapped to None.
+        """
+        if exog is None:
+            return {name: None for name in series_names}
+        if isinstance(exog, dict):
+            return {name: exog.get(name, None) for name in series_names}
+        return {name: exog for name in series_names}  # broadcast to all series
 
     def _build_chronos_input(self, target, past_exog=None, future_exog=None):
-        """Build the dict consumed by Chronos2Pipeline.predict_quantiles()."""
+        """
+        Build the input dict consumed by the pipeline's predict_quantiles().
+        Numeric/bool covariates are cast to float64 via _to_covariate_array;
+        string/categorical covariates are passed as-is (Chronos-2 handles them natively).
+        """
         input_dict = {"target": np.asarray(target, dtype=float)}
         if past_exog is not None:
             df = past_exog if isinstance(past_exog, pd.DataFrame) else past_exog.to_frame()
             input_dict["past_covariates"] = {
-                col: np.asarray(df[col], dtype=float) for col in df.columns
+                col: Chronos2Adapter._to_covariate_array(df[col]) for col in df.columns
             }
         if future_exog is not None:
             df = future_exog if isinstance(future_exog, pd.DataFrame) else future_exog.to_frame()
             input_dict["future_covariates"] = {
-                col: np.asarray(df[col], dtype=float) for col in df.columns
+                col: Chronos2Adapter._to_covariate_array(df[col]) for col in df.columns
             }
         return input_dict
 
-    def fit(self, y, exog=None):
-        check_y(y, series_id="`y`")
-        self._history = y.copy()
-        self._history_exog = exog.copy() if exog is not None else None
+    def fit(self, series, exog=None):
+        """
+        Store history. No model training — Chronos-2 is zero-shot.
+
+        Supports:
+        - pd.Series              → single-series mode
+        - pd.DataFrame (wide)    → multi-series mode (each column = one series)
+        - dict[str, pd.Series]   → multi-series mode (keys = series names)
+        """
+        if isinstance(series, pd.Series):
+            check_y(series, series_id="`series`")
+            self._is_multiseries = False
+            if self.context_length is not None:
+                self._history = series.iloc[-self.context_length:].copy()
+                self._history_exog = (
+                    exog.iloc[-self.context_length:].copy() if exog is not None else None
+                )
+            else:
+                self._history = series.copy()
+                self._history_exog = exog.copy() if exog is not None else None
+        elif isinstance(series, (pd.DataFrame, dict)):
+            series_dict = (
+                {col: series[col].copy() for col in series.columns}
+                if isinstance(series, pd.DataFrame)
+                else {k: v.copy() for k, v in series.items()}
+            )
+            if not series_dict:
+                raise ValueError("`series` must contain at least one series.")
+            for name, s in series_dict.items():
+                check_y(s, series_id=f"'{name}'")
+                series_dict[name].name = name
+            series_names = list(series_dict.keys())
+            exog_dict = self._normalize_exog_to_dict(exog, series_names)
+            if self.context_length is not None:
+                self._history = {
+                    name: s.iloc[-self.context_length:].copy()
+                    for name, s in series_dict.items()
+                }
+                self._history_exog = {
+                    name: (e.iloc[-self.context_length:].copy() if e is not None else None)
+                    for name, e in exog_dict.items()
+                }
+            else:
+                self._history = series_dict
+                self._history_exog = exog_dict
+            self._is_multiseries = True
+        else:
+            raise TypeError(
+                "`series` must be a pd.Series, wide pd.DataFrame, or dict[str, pd.Series]. "
+                f"Got {type(series)}."
+            )
         self._is_fitted = True
         return self
+
+    def _predict_multiseries(self, steps, exog, quantile_levels, quantiles,
+                             last_window, last_window_exog):
+        """
+        Internal multi-series prediction: a single batched pipeline call for all series.
+
+        Returns a long-format DataFrame:
+        - Point forecast: columns ["level", "pred"]
+        - Quantile forecast: columns ["level", "q_0.1", "q_0.5", …]
+        The index repeats each forecast timestamp once per series
+        (n_steps × n_series rows total); "level" identifies the series.
+        """
+        # … builds per-series input list, calls predict_quantiles once,
+        # decodes quantile tensors, assembles long-format DataFrame …
 
     def predict(self, steps, exog=None, quantiles=None,
                 last_window=None, last_window_exog=None):
         if not self._is_fitted and last_window is None:
             raise ValueError("Call `fit` before `predict`, or pass `last_window`.")
+        if not isinstance(steps, (int, np.integer)) or steps < 1:
+            raise ValueError("`steps` must be a positive integer.")
+        quantile_levels = list(quantiles) if quantiles is not None else [0.1, 0.5, 0.9]
         self._load_pipeline()
 
+        # Dispatch to multi-series path when history or last_window is multi-series
+        if self._is_multiseries or isinstance(last_window, (pd.DataFrame, dict)):
+            return self._predict_multiseries(
+                steps, exog, quantile_levels, quantiles, last_window, last_window_exog
+            )
+
+        # --- single-series path ---
         history = last_window if last_window is not None else self._history
         past_exog = last_window_exog if last_window is not None else self._history_exog
-
-        # Trim to context_length
-        if self.context_length is not None:
+        # Trim to context_length only when last_window is provided
+        # (_history was already trimmed at fit time)
+        if last_window is not None and self.context_length is not None:
             history = history.iloc[-self.context_length:]
             if past_exog is not None:
                 past_exog = past_exog.iloc[-self.context_length:]
 
-        quantile_levels = quantiles if quantiles is not None else [0.1, 0.5, 0.9]
         input_dict = self._build_chronos_input(
-            target=history.to_numpy(),
-            past_exog=past_exog,
-            future_exog=exog,
+            target=history.to_numpy(), past_exog=past_exog, future_exog=exog
         )
-
-        quantile_preds, mean_preds = self._pipeline.predict_quantiles(
+        quantile_preds, _ = self._pipeline.predict_quantiles(
             inputs=[input_dict],
             prediction_length=steps,
             quantile_levels=quantile_levels,
             **self.predict_kwargs,
         )
-
-        # quantile_preds[0] shape: (1, steps, n_q) — squeeze first dim for univariate
-        q_arr = quantile_preds[0].squeeze(0)          # (steps, n_q)
+        # quantile_preds[0] shape: (n_vars, steps, n_q); n_vars==1 for univariate
+        q_arr = quantile_preds[0].squeeze(0)  # (steps, n_q)
         if hasattr(q_arr, "detach"):
             q_arr = q_arr.detach().cpu().numpy()
 
         forecast_index = expand_index(history.index, steps=steps)
-
         if quantiles is None:
-            # Point forecast: median = quantile at 0.5
             median_idx = quantile_levels.index(0.5)
             return pd.Series(q_arr[:, median_idx], index=forecast_index, name=history.name)
-
         columns = [f"q_{q}" for q in quantile_levels]
         return pd.DataFrame(q_arr, index=forecast_index, columns=columns)
 ```
 
-**Update `FoundationalModels`:**
+**`FoundationalModel` class** (already implemented — no changes needed):
 
 ```python
-class FoundationalModels:
+class FoundationalModel:
     """
     Lightweight user-facing interface for foundational time-series models.
     Currently supports Chronos-2 checkpoints only.
-    
+
     Parameters
     ----------
     model : str
-        HuggingFace model ID, e.g. "amazon/chronos-2-base".
+        HuggingFace model ID, e.g. "autogluon/chronos-2-small".
+    cross_learning : bool, default False
+        If True, share information across all series in the batch when
+        predicting in multi-series mode. Ignored in single-series mode.
     **kwargs :
-        Forwarded to the underlying adapter (Chronos2Adapter).
+        Forwarded to the underlying adapter (Chronos2Adapter):
+        context_length, pipeline, device_map, torch_dtype, predict_kwargs.
     """
 
-    def __init__(self, model: str, **kwargs) -> None:
-        self.adapter = Chronos2Adapter(model_id=model, **kwargs)
+    def __init__(self, model: str, *, cross_learning: bool = False, **kwargs) -> None:
+        self.adapter = Chronos2Adapter(model_id=model, cross_learning=cross_learning, **kwargs)
 
     @property
     def is_fitted(self) -> bool:
         return self.adapter._is_fitted
 
-    def fit(self, y, exog=None) -> FoundationalModels:
-        self.adapter.fit(y=y, exog=exog)
+    def fit(self, series, exog=None) -> FoundationalModel:
+        self.adapter.fit(series=series, exog=exog)
         return self
 
-    def predict(self, steps, exog=None, quantiles=None) -> pd.Series | pd.DataFrame:
-        return self.adapter.predict(steps=steps, exog=exog, quantiles=quantiles)
+    def predict(self, steps, exog=None, quantiles=None,
+                last_window=None, last_window_exog=None) -> pd.Series | pd.DataFrame:
+        return self.adapter.predict(
+            steps=steps, exog=exog, quantiles=quantiles,
+            last_window=last_window, last_window_exog=last_window_exog,
+        )
 ```
-
-**Rename `forecast()` → `predict()`, `data` → `y`, `h` → `steps` everywhere.**
 
 ---
 
@@ -311,19 +418,16 @@ Full skforecast-compatible forecaster. Structural reference: `ForecasterStats` i
 ```python
 class ForecasterFoundational:
     """
-    Forecaster wrapping a foundational model adapter for full skforecast ecosystem
+    Forecaster wrapping a FoundationalModel for full skforecast ecosystem
     compatibility (backtesting, model_selection, etc.).
 
     Parameters
     ----------
-    model : str or FoundationalModels
-        HuggingFace model ID string (e.g. "amazon/chronos-2-base") or a
-        pre-configured FoundationalModels instance.
-    context_length : int, optional
-        Number of historical observations to pass as context. Also used as
-        `window_size` so backtesting slices the right window.
-    **kwargs :
-        Forwarded to Chronos2Adapter if `model` is a string.
+    estimator : FoundationalModel
+        A configured `FoundationalModel` instance (e.g.
+        ``FoundationalModel("autogluon/chronos-2-small", context_length=512)``).
+    forecaster_id : str, optional
+        User-supplied label for the forecaster instance.
     """
 ```
 
@@ -331,13 +435,14 @@ class ForecasterFoundational:
 
 ```python
 # Set at init
-self.model_id: str
-self.context_length: int | None
-self.adapter: Chronos2Adapter
+self.estimator: FoundationalModel  # the FoundationalModel instance passed in
 self.creation_date: str            # datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 self.skforecast_version: str       # skforecast.__version__
 self.python_version: str           # sys.version.split(" ")[0]
 self.forecaster_id: str | None     # user-supplied optional label
+
+# Derived from estimator at init
+self.window_size: int              # = estimator.adapter.context_length or 1
 
 # Set after fit
 self.is_fitted: bool = False
@@ -346,7 +451,6 @@ self.training_range_: pd.Index | None = None   # [first_date, last_date]
 self.last_window_: None = None                 # intentionally None — never stored
 self.index_type_: type | None = None
 self.index_freq_: str | pd.offsets.DateOffset | None = None
-self.window_size: int                          # = context_length (or sentinel 1)
 
 # skforecast tags
 self.__skforecast_tags__ = {
@@ -366,14 +470,14 @@ self.__skforecast_tags__ = {
 #### Methods
 
 ```python
-def fit(self, y: pd.Series, exog: pd.DataFrame | pd.Series | None = None) -> ForecasterFoundational:
+def fit(self, series: pd.Series, exog: pd.DataFrame | pd.Series | None = None) -> ForecasterFoundational:
     """
     Fit the forecaster. Only stores index metadata; no training — the adapter
     stores the history for context-window purposes.
     """
-    # validate y, exog
+    # validate series, exog
     # store: training_range_, index_type_, index_freq_, is_fitted, fitted_date
-    # call self.adapter.fit(y, exog)
+    # call self.estimator.fit(series, exog)
     return self
 
 def predict(
@@ -573,18 +677,23 @@ from ._validation import backtesting_foundational
 ### Phase 1 — Rewrite `_foundational_models.py`
 
 **Tasks:**
-- [ ] Remove: `ChronosAdapter`, `BaseAdapter`, `_is_chronos_2_model`, `_chronos_supports_config_field`, `_get_package_version`, `inspect` import, `importlib.metadata` imports.
-- [ ] Add: `Chronos2Adapter` with `capabilities`, `_load_pipeline()`, `_build_chronos_input()`, `fit()`, `predict()`.
-- [ ] Update `FoundationalModels`: rename `forecast()` → `predict()`, `data` → `y`, `h` → `steps`; `fit()` returns `self`.
-- [ ] Keep `ModelCapabilities` dataclass (used by `Chronos2Adapter`).
-- [ ] Ensure `FoundationalModels.predict()` passes `last_window` and `last_window_exog` through to adapter.
+- [x] Remove: `ChronosAdapter`, `BaseAdapter`, `_is_chronos_2_model`, `_chronos_supports_config_field`, `_get_package_version`, `inspect` import, `importlib.metadata` imports.
+- [x] Remove `ModelCapabilities` dataclass (deleted — no longer used).
+- [x] Add: `Chronos2Adapter` with `_load_pipeline()`, `_to_covariate_array()`, `_normalize_exog_to_dict()`, `_build_chronos_input()`, `_predict_multiseries()`, `fit()`, `predict()`.
+- [x] `_load_pipeline()` uses `BaseChronosPipeline.from_pretrained()` (auto-dispatches to correct pipeline class).
+- [x] `_to_covariate_array()`: numeric/bool → float64, string/categorical → as-is (Chronos-2 native).
+- [x] Multi-series support: `fit(series)` accepts `pd.DataFrame` and `dict[str, pd.Series]`; `predict()` dispatches to `_predict_multiseries()` for batch inference.
+- [x] `cross_learning` parameter added to both `Chronos2Adapter` and `FoundationalModel`.
+- [x] Rename `FoundationalModels` → `FoundationalModel`.
+- [x] `FoundationalModel` parameter renamed `model_id` → `model`.
+- [x] `FoundationalModel.predict()` passes `last_window` and `last_window_exog` through to adapter.
 
 **Validation:**
 ```python
-from skforecast.foundational import FoundationalModels
+from skforecast.foundational import FoundationalModel
 import pandas as pd
 
-m = FoundationalModels("amazon/chronos-2-base")
+m = FoundationalModel("autogluon/chronos-2-small")
 y = pd.Series(range(50), index=pd.date_range("2020", periods=50, freq="ME"))
 m.fit(y)
 pred = m.predict(steps=12)
@@ -597,9 +706,9 @@ assert len(pred) == 12
 
 **Tasks:**
 - [ ] Create file with `ForecasterFoundational` class.
-- [ ] `__init__`: all null attrs + `__skforecast_tags__`.
-- [ ] `fit()`: validate + store metadata only + call `adapter.fit()`.
-- [ ] `predict()`: delegate to `adapter.predict()`.
+- [ ] `__init__(estimator: FoundationalModel, forecaster_id=None)`: store estimator + metadata attrs + `__skforecast_tags__`; derive `window_size` from `estimator.adapter.context_length`.
+- [ ] `fit()`: validate + store index metadata + call `estimator.fit(series, exog)`.
+- [ ] `predict()`: delegate to `estimator.predict()`.
 - [ ] `predict_interval()`: delegate; format output columns.
 - [ ] `predict_quantiles()`: delegate.
 - [ ] `__repr__` / `__repr_html__`: follow `ForecasterStats` pattern.
@@ -711,7 +820,7 @@ def backtesting_stats(forecaster, y, cv, metric, exog=None, ...):
 
 ```
 skforecast.foundational
-  ├── FoundationalModels     ← _foundational_models.py (REWRITE)
+  ├── FoundationalModel      ← _foundational_models.py (DONE)
   └── ForecasterFoundational ← _forecaster_foundational.py (NEW)
 
 skforecast.model_selection
@@ -725,6 +834,6 @@ skforecast.model_selection
 
 - Chronos T5 / Chronos-Bolt support (removed by user request)
 - Fine-tuning / `pipeline.fit()` support
-- Multi-variate series support
+- Multi-variate (channel) series support — note: multi-series **batch** inference (multiple independent series in one call) **is** implemented via `Chronos2Adapter._predict_multiseries()`
 - `grid_search_foundational` / `bayesian_search_foundational` (future work)
 - `ForecasterFoundational` integration with `grid_search_forecaster` (not applicable — no hyperparameters to tune in standard usage)

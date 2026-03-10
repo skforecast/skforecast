@@ -4,7 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.foundational._foundational_models import Chronos2Adapter
+from skforecast.foundational._foundational_model import Chronos2Adapter
 
 
 # Fixtures

@@ -1,2 +1,2 @@
-from ._foundational_models import FoundationalModels
+from ._foundational_model import FoundationalModel
 

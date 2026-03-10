@@ -6,39 +6,10 @@
 # coding=utf-8
 
 from __future__ import annotations
-from dataclasses import dataclass
 from typing import Any
 import numpy as np
 import pandas as pd
 from ..utils import check_y, expand_index
-
-
-@dataclass(frozen=True)
-class ModelCapabilities:
-    """
-    Immutable descriptor of a foundational model adapter's architectural
-    capabilities.
-
-    These fields describe what the underlying model architecture supports
-    regardless of how a particular adapter instance is configured.
-    Instance-level settings such as ``context_length`` are exposed as
-    regular attributes on the adapter itself.
-
-    Attributes
-    ----------
-    supports_exog : bool
-        Whether the adapter accepts exogenous variables (past and/or future
-        covariates).
-    supports_multivariate : bool
-        Whether the adapter can handle multivariate (multiple-series) input.
-    supports_probabilistic : bool
-        Whether the adapter can produce probabilistic forecasts (prediction
-        intervals or quantiles).
-    """
-
-    supports_exog: bool
-    supports_multivariate: bool
-    supports_probabilistic: bool
 
 
 class Chronos2Adapter:
@@ -48,28 +19,22 @@ class Chronos2Adapter:
     Parameters
     ----------
     model_id : str
-        HuggingFace model ID, e.g. ``"autogluon/chronos-2-small"``.
+        HuggingFace model ID, e.g. "autogluon/chronos-2-small".
     context_length : int, optional
         Maximum number of historical observations to use as context. If None,
         the full history stored at fit time is used.
     pipeline : BaseChronosPipeline, optional
         Pre-loaded pipeline instance. If None, the pipeline is loaded lazily on
-        the first call to ``predict``.
+        the first call to `predict`.
     device_map : str, optional
-        Device map string forwarded to ``BaseChronosPipeline.from_pretrained``
-        (e.g. ``"cuda"``, ``"cpu"``).
+        Device map string forwarded to `BaseChronosPipeline.from_pretrained`
+        (e.g. "cuda", "cpu").
     torch_dtype : optional
-        Torch dtype forwarded to ``BaseChronosPipeline.from_pretrained``.
+        Torch dtype forwarded to `BaseChronosPipeline.from_pretrained`.
     predict_kwargs : dict, optional
         Additional keyword arguments forwarded to the pipeline's
-        ``predict_quantiles`` method.
+        `predict_quantiles` method.
     """
-
-    capabilities = ModelCapabilities(
-        supports_exog=True,
-        supports_multivariate=True,
-        supports_probabilistic=True,
-    )
 
     def __init__(
         self,
@@ -88,31 +53,31 @@ class Chronos2Adapter:
         Parameters
         ----------
         model_id : str
-            HuggingFace model ID, e.g. ``"autogluon/chronos-2-small"``.
+            HuggingFace model ID, e.g. "autogluon/chronos-2-small".
         pipeline : BaseChronosPipeline, optional
-            Pre-loaded pipeline instance. If ``None``, the pipeline is
-            loaded lazily on the first call to ``predict``.
+            Pre-loaded pipeline instance. If `None`, the pipeline is
+            loaded lazily on the first call to `predict`.
         context_length : int, optional
             Maximum number of historical observations to retain as context.
-            At ``fit`` time only the last ``context_length`` observations
-            of ``series`` (and ``exog``) are stored. At ``predict`` time any
-            ``last_window`` longer than ``context_length`` is trimmed to
-            this length before inference. If ``None``, no trimming is
+            At `fit` time only the last `context_length` observations
+            of `series` (and `exog`) are stored. At `predict` time any
+            `last_window` longer than `context_length` is trimmed to
+            this length before inference. If `None`, no trimming is
             applied.
         predict_kwargs : dict, optional
             Additional keyword arguments forwarded verbatim to the
-            pipeline's ``predict_quantiles`` method.
+            pipeline's `predict_quantiles` method.
         device_map : str, optional
             Device map string forwarded to
-            ``BaseChronosPipeline.from_pretrained`` (e.g. ``"cuda"``,
-            ``"cpu"``, ``"auto"``).
+            `BaseChronosPipeline.from_pretrained` (e.g. "cuda",
+            "cpu", "auto").
         torch_dtype : optional
-            Torch dtype forwarded to ``BaseChronosPipeline.from_pretrained``
-            (e.g. ``torch.bfloat16``).
+            Torch dtype forwarded to `BaseChronosPipeline.from_pretrained`
+            (e.g. `torch.bfloat16`).
         cross_learning : bool, default False
-            If ``True``, Chronos-2 shares information across all series in
+            If `True`, Chronos-2 shares information across all series in
             the batch when predicting in multi-series mode. Forwarded
-            directly to ``predict_quantiles``. Ignored in single-series mode.
+            directly to `predict_quantiles`. Ignored in single-series mode.
         """
         self.model_id = model_id
         self._pipeline = pipeline
@@ -133,19 +98,19 @@ class Chronos2Adapter:
 
     def _load_pipeline(self) -> None:
         """
-        Load the Chronos-2 pipeline into ``self._pipeline`` if not already set.
+        Load the Chronos-2 pipeline into `self._pipeline` if not already set.
 
-        The pipeline is imported lazily from ``chronos`` and instantiated via
-        ``BaseChronosPipeline.from_pretrained``, which auto-dispatches to the
+        The pipeline is imported lazily from `chronos` and instantiated via
+        `BaseChronosPipeline.from_pretrained`, which auto-dispatches to the
         correct pipeline class based on the model config. Optional
-        ``device_map`` and ``torch_dtype`` stored at initialisation are
+        `device_map` and `torch_dtype` stored at initialisation are
         forwarded to the constructor. This method is a no-op when
-        ``self._pipeline`` is already populated.
+        `self._pipeline` is already populated.
 
         Raises
         ------
         ImportError
-            If ``chronos-forecasting`` >=2.0 is not installed.
+            If `chronos-forecasting` >=2.0 is not installed.
         """
         if self._pipeline is not None:
             return
@@ -169,7 +134,7 @@ class Chronos2Adapter:
         Convert a covariate column to a numpy array.
 
         Numeric columns (int, float) and boolean columns are cast to
-        ``float64``. All other dtypes (object, string, Categorical) are left
+        `float64`. All other dtypes (object, string, Categorical) are left
         as-is so that Chronos-2 can handle them as categorical covariates
         natively.
 
@@ -181,8 +146,8 @@ class Chronos2Adapter:
         Returns
         -------
         np.ndarray
-            A 1-D numpy array. Numeric/bool → ``float64``. Others → original
-            dtype (typically ``object`` for string and categorical data).
+            A 1-D numpy array. Numeric/bool → `float64`. Others → original
+            dtype (typically `object` for string and categorical data).
         """
         # Handle pandas Series first to correctly process nullable extension
         # dtypes (pd.Int64Dtype, pd.Float64Dtype, pd.BooleanDtype): np.asarray()
@@ -205,34 +170,34 @@ class Chronos2Adapter:
         future_exog: pd.DataFrame | pd.Series | None = None,
     ) -> dict[str, Any]:
         """
-        Build the input dict consumed by the pipeline's ``predict_quantiles`` method.
+        Build the input dict consumed by the pipeline's `predict_quantiles` method.
 
         Parameters
         ----------
         target : np.ndarray
             1-D array of observed time series values used as context. Must be
-            castable to ``float64``.
+            castable to `float64`.
         past_exog : pd.DataFrame or pd.Series, optional
             Historical exogenous variables whose index is aligned to
-            ``target``. Each column (or the single Series, referenced by
+            `target`. Each column (or the single Series, referenced by
             its name) becomes an entry in the returned
-            ``"past_covariates"`` dict. Numeric and boolean columns are
-            cast to ``float64``; string and categorical columns are passed
+            "past_covariates" dict. Numeric and boolean columns are
+            cast to `float64`; string and categorical columns are passed
             as-is and handled natively by Chronos-2.
         future_exog : pd.DataFrame or pd.Series, optional
             Future-known exogenous variables covering the forecast horizon.
-            Must have exactly ``prediction_length`` rows. Each column
-            becomes an entry in the returned ``"future_covariates"`` dict.
-            Numeric and boolean columns are cast to ``float64``; string and
+            Must have exactly `prediction_length` rows. Each column
+            becomes an entry in the returned "future_covariates" dict.
+            Numeric and boolean columns are cast to `float64`; string and
             categorical columns are passed as-is.
 
         Returns
         -------
         dict
-            Dictionary with mandatory key ``"target"`` (1-D ``float64``
-            ``np.ndarray``) and optional keys ``"past_covariates"`` and
-            ``"future_covariates"``, each mapping column names to 1-D
-            arrays (``float64`` for numeric/bool columns, ``object`` dtype
+            Dictionary with mandatory key "target" (1-D `float64`
+            `np.ndarray`) and optional keys "past_covariates" and
+            "future_covariates", each mapping column names to 1-D
+            arrays (`float64` for numeric/bool columns, `object` dtype
             for string/categorical columns).
         """
         input_dict: dict[str, Any] = {"target": np.asarray(target, dtype=float)}
@@ -274,18 +239,18 @@ class Chronos2Adapter:
         exog : pd.Series, pd.DataFrame, dict, or None
             Exogenous variables to normalise.
 
-            - ``None`` → all series mapped to ``None``.
-            - ``pd.Series`` or ``pd.DataFrame`` → broadcast identically to
+            - `None` → all series mapped to `None`.
+            - `pd.Series` or `pd.DataFrame` → broadcast identically to
               every series.
-            - ``dict`` → values are kept per-series; series whose keys are
-              absent are mapped to ``None``.
+            - `dict` → values are kept per-series; series whose keys are
+              absent are mapped to `None`.
         series_names : list of str
             Ordered list of series identifiers that define the output keys.
 
         Returns
         -------
         dict[str, pd.DataFrame | pd.Series | None]
-            Per-series exog dict with exactly the keys in ``series_names``.
+            Per-series exog dict with exactly the keys in `series_names`.
         """
         if exog is None:
             return {name: None for name in series_names}
@@ -313,17 +278,17 @@ class Chronos2Adapter:
         series : pd.Series, pd.DataFrame, or dict of pd.Series
             Training time series.
 
-            - ``pd.Series`` — single-series mode.
-            - Wide ``pd.DataFrame`` (each column = one series) — multi-series
+            - `pd.Series` — single-series mode.
+            - Wide `pd.DataFrame` (each column = one series) — multi-series
               mode.
-            - ``dict[str, pd.Series]`` — multi-series mode; keys become the
+            - `dict[str, pd.Series]` — multi-series mode; keys become the
               series names.
         exog : pd.Series, pd.DataFrame, dict, or None
-            Historical exogenous variables. Passed as ``past_covariates`` in
+            Historical exogenous variables. Passed as `past_covariates` in
             the Chronos-2 input.
 
-            - ``pd.Series`` or ``pd.DataFrame`` — broadcast to all series.
-            - ``dict[str, pd.DataFrame | pd.Series | None]`` — per-series
+            - `pd.Series` or `pd.DataFrame` — broadcast to all series.
+            - `dict[str, pd.DataFrame | pd.Series | None]` — per-series
               covariates; series absent from the dict receive no past
               covariates.
 
@@ -426,24 +391,24 @@ class Chronos2Adapter:
             Future covariates for the forecast horizon. Broadcast or
             per-series dict; see :meth:`_normalize_exog_to_dict`.
         quantile_levels : list of float
-            Quantile levels passed verbatim to ``predict_quantiles``.
+            Quantile levels passed verbatim to `predict_quantiles`.
         quantiles : list of float or None
-            Original ``quantiles`` argument from :meth:`predict`; used to
+            Original `quantiles` argument from :meth:`predict`; used to
             choose between point and quantile output format.
         last_window : pd.DataFrame, dict, or None
             Override stored history. Wide DataFrame (column per series) or
-            ``dict[str, pd.Series]``.
+            `dict[str, pd.Series]`.
         last_window_exog : pd.Series, pd.DataFrame, dict, or None
-            Past covariates corresponding to ``last_window``.
+            Past covariates corresponding to `last_window`.
 
         Returns
         -------
         pd.DataFrame
             Long-format DataFrame. For point forecasts, columns are
-            ``["level", "pred"]``. For quantile forecasts, columns are
-            ``["level", "q_0.1", "q_0.5", ...]``. The index repeats the
-            forecast timestamps once per series (``n_steps × n_series``
-            rows total); the ``level`` column identifies the series.
+            `["level", "pred"]`. For quantile forecasts, columns are
+            `["level", "q_0.1", "q_0.5", ...]`. The index repeats the
+            forecast timestamps once per series (`n_steps × n_series`
+            rows total); the `level` column identifies the series.
         """
         # --- resolve history dict ---
         if last_window is not None:
@@ -571,39 +536,39 @@ class Chronos2Adapter:
             Number of steps ahead to forecast.
         exog : pd.Series, pd.DataFrame, dict, or None
             Future known exogenous variables for the forecast horizon. Passed
-            as ``future_covariates`` in the Chronos-2 input. Must cover
-            exactly ``steps`` steps for each series.
+            as `future_covariates` in the Chronos-2 input. Must cover
+            exactly `steps` steps for each series.
 
-            - ``pd.Series`` or ``pd.DataFrame`` — used as-is (single-series)
+            - `pd.Series` or `pd.DataFrame` — used as-is (single-series)
               or broadcast to every series (multi-series).
-            - ``dict[str, pd.DataFrame | pd.Series | None]`` — per-series
+            - `dict[str, pd.DataFrame | pd.Series | None]` — per-series
               future covariates (multi-series only).
         quantiles : list of float, optional
-            Quantile levels to return, e.g. ``[0.1, 0.5, 0.9]``. If None,
+            Quantile levels to return, e.g. `[0.1, 0.5, 0.9]`. If None,
             returns a point forecast (median, i.e. the 0.5 quantile).
         last_window : pd.Series, pd.DataFrame, dict, or None
             Override the stored history with this window. Used by backtesting
             to pass the appropriate context window per fold.
 
-            - ``pd.Series`` — single-series mode.
-            - Wide ``pd.DataFrame`` or ``dict[str, pd.Series]`` —
+            - `pd.Series` — single-series mode.
+            - Wide `pd.DataFrame` or `dict[str, pd.Series]` —
               multi-series mode.
         last_window_exog : pd.Series, pd.DataFrame, dict, or None
-            Historical exog corresponding to ``last_window``. Same
-            broadcast-vs-dict semantics as ``exog``.
+            Historical exog corresponding to `last_window`. Same
+            broadcast-vs-dict semantics as `exog`.
 
         Returns
         -------
         pd.Series
-            Point forecast when ``quantiles`` is None and input is a single
+            Point forecast when `quantiles` is None and input is a single
             series.
         pd.DataFrame
-            Single-series with quantiles: columns are ``q_0.1``, ``q_0.5``,
+            Single-series with quantiles: columns are `q_0.1`, `q_0.5`,
             etc. Multi-series point forecast: long format with columns
-            ``["level", "pred"]``. Multi-series quantile forecast: long
-            format with columns ``["level", "q_0.1", "q_0.5", …]``. In both
+            `["level", "pred"]`. Multi-series quantile forecast: long
+            format with columns `["level", "q_0.1", "q_0.5", …]`. In both
             multi-series cases the index repeats each forecast timestamp once
-            per series (``n_steps × n_series`` rows total).
+            per series (`n_steps × n_series` rows total).
         """
         if not self._is_fitted and last_window is None:
             raise ValueError(
@@ -679,22 +644,22 @@ class Chronos2Adapter:
         return pd.DataFrame(q_arr, index=forecast_index, columns=columns)
 
 
-class FoundationalModels:
+class FoundationalModel:
     """
     Lightweight user-facing interface for foundational time-series models.
 
     Currently supports Amazon Chronos-2 only. For full skforecast
     ecosystem integration (backtesting, model selection, etc.) use
-    ``ForecasterFoundational`` instead.
+    `ForecasterFoundational` instead.
 
     Parameters
     ----------
     model : str
-        HuggingFace model ID, e.g. ``"autogluon/chronos-2-small"``.
+        HuggingFace model ID, e.g. "autogluon/chronos-2-small".
     **kwargs :
-        Additional keyword arguments forwarded to ``Chronos2Adapter``
-        (``context_length``, ``pipeline``, ``device_map``, ``torch_dtype``,
-        ``predict_kwargs``).
+        Additional keyword arguments forwarded to `Chronos2Adapter`
+        (`context_length`, `pipeline`, `device_map`, `torch_dtype`,
+        `predict_kwargs`).
 
     """
 
@@ -711,15 +676,15 @@ class FoundationalModels:
         Parameters
         ----------
         model : str
-            HuggingFace model ID, e.g. ``"autogluon/chronos-2-small"``.
+            HuggingFace model ID, e.g. "autogluon/chronos-2-small".
         cross_learning : bool, default False
-            If ``True``, Chronos-2 shares information across all series in
+            If `True`, Chronos-2 shares information across all series in
             the batch when predicting in multi-series mode. Ignored in
             single-series mode.
         **kwargs :
-            Additional keyword arguments forwarded to ``Chronos2Adapter``:
-            ``context_length``, ``pipeline``, ``device_map``,
-            ``torch_dtype``, ``predict_kwargs``.
+            Additional keyword arguments forwarded to `Chronos2Adapter`:
+            `context_length`, `pipeline`, `device_map`,
+            `torch_dtype`, `predict_kwargs`.
         """
         self.adapter = Chronos2Adapter(
             model_id=model, cross_learning=cross_learning, **kwargs
@@ -733,8 +698,8 @@ class FoundationalModels:
         Returns
         -------
         bool
-            ``True`` after ``fit`` has been called at least once,
-            ``False`` otherwise.
+            `True` after `fit` has been called at least once,
+            `False` otherwise.
         """
         return self.adapter._is_fitted
 
@@ -747,7 +712,7 @@ class FoundationalModels:
             | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
-    ) -> FoundationalModels:
+    ) -> FoundationalModel:
         """
         Fit the model by storing the training series and optional exog.
 
@@ -756,16 +721,16 @@ class FoundationalModels:
         series : pd.Series, pd.DataFrame, or dict of pd.Series
             Training time series.
 
-            - ``pd.Series`` — single-series mode.
-            - Wide ``pd.DataFrame`` (each column = one series) — multi-series
+            - `pd.Series` — single-series mode.
+            - Wide `pd.DataFrame` (each column = one series) — multi-series
               mode.
-            - ``dict[str, pd.Series]`` — multi-series mode; keys are series
+            - `dict[str, pd.Series]` — multi-series mode; keys are series
               names.
         exog : pd.Series, pd.DataFrame, dict, or None
-            Historical exogenous variables aligned to ``series``.
+            Historical exogenous variables aligned to `series`.
 
-            - ``pd.Series`` or ``pd.DataFrame`` — broadcast to all series.
-            - ``dict[str, pd.DataFrame | pd.Series | None]`` — per-series.
+            - `pd.Series` or `pd.DataFrame` — broadcast to all series.
+            - `dict[str, pd.DataFrame | pd.Series | None]` — per-series.
 
         Returns
         -------
@@ -801,30 +766,30 @@ class FoundationalModels:
             Number of steps ahead to forecast.
         exog : pd.Series, pd.DataFrame, dict, or None
             Future known exogenous variables for the forecast horizon.
-            Broadcast or per-series dict; see ``Chronos2Adapter.predict``.
+            Broadcast or per-series dict; see `Chronos2Adapter.predict`.
         quantiles : list of float, optional
-            Quantile levels to return, e.g. ``[0.1, 0.5, 0.9]``. If None,
+            Quantile levels to return, e.g. `[0.1, 0.5, 0.9]`. If None,
             returns a point forecast (median).
         last_window : pd.Series, pd.DataFrame, dict, or None
             Override the stored history with this window.
 
-            - ``pd.Series`` — single-series override.
-            - Wide ``pd.DataFrame`` or ``dict[str, pd.Series]`` —
+            - `pd.Series` — single-series override.
+            - Wide `pd.DataFrame` or `dict[str, pd.Series]` —
               multi-series override.
         last_window_exog : pd.Series, pd.DataFrame, dict, or None
-            Historical exog corresponding to ``last_window``.
+            Historical exog corresponding to `last_window`.
 
         Returns
         -------
         pd.Series
             Point forecast (single-series, no quantiles).
         pd.DataFrame
-            Single-series with quantiles: columns are ``q_0.1``, ``q_0.5``,
+            Single-series with quantiles: columns are `q_0.1`, `q_0.5`,
             etc. Multi-series point forecast: long format with columns
-            ``["level", "pred"]``. Multi-series quantile forecast: long
-            format with columns ``["level", "q_0.1", "q_0.5", …]``. In both
+            `["level", "pred"]`. Multi-series quantile forecast: long
+            format with columns `["level", "q_0.1", "q_0.5", …]`. In both
             multi-series cases the index repeats each forecast timestamp once
-            per series (``n_steps × n_series`` rows total).
+            per series (`n_steps x n_series` rows total).
         """
         return self.adapter.predict(
             steps=steps,
