@@ -647,7 +647,11 @@ def check_exog_dtypes(
         has_invalid_dtype = False
         for dtype in unique_dtypes:
             if isinstance(dtype, pd.CategoricalDtype):
-                if not np.issubdtype(dtype.categories.dtype, np.integer):
+                try:
+                    is_integer = np.issubdtype(dtype.categories.dtype, np.integer)
+                except TypeError:
+                    is_integer = False
+                if not is_integer:
                     raise TypeError(
                         "Categorical dtypes in exog must contain only integer values. "
                         "See skforecast docs for more info about how to include "
@@ -677,7 +681,11 @@ def check_exog_dtypes(
             )
 
         if isinstance(exog.dtype, pd.CategoricalDtype):
-            if not np.issubdtype(exog.cat.categories.dtype, np.integer):
+            try:
+                is_integer = np.issubdtype(exog.cat.categories.dtype, np.integer)
+            except TypeError:
+                is_integer = False
+            if not is_integer:
                 raise TypeError(
                     "Categorical dtypes in exog must contain only integer values. "
                     "See skforecast docs for more info about how to include "

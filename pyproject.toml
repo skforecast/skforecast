@@ -52,7 +52,7 @@ keywords = [
 ]
 dependencies = [
     "numpy>=1.26",
-    "pandas>=2.1, <3.0",
+    "pandas>=2.1",
     "tqdm>=4.66",
     "scikit-learn>=1.4",
     "scipy>=1.12",
