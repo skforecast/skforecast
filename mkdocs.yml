@@ -18,6 +18,7 @@ nav:
     - Forecaster Parameters: quick-start/forecaster-parameters.md
     - Forecaster Attributes: quick-start/forecaster-attributes.ipynb
     - How to install: quick-start/how-to-install.md
+    - AI-assisted forecasting: quick-start/ai-assisted-forecasting.md
 
   - User Guides:
     - Table of contents: user_guides/table-of-contents.md
@@ -136,7 +137,6 @@ nav:
 
   - More: 
     - About skforecast: more/about-skforecast.md
-    - AI-assisted forecasting: more/ai-assisted-forecasting.md
     - Consulting & Professional services: more/consulting.md
     - Funding: more/funding.md
 
