@@ -619,7 +619,7 @@ def check_exog_dtypes(
     Raise Exception if `exog` has categorical columns with non integer values.
     This is needed when using machine learning estimators that allow categorical
     features.
-    Issue a Warning if `exog` has columns that are not `init`, `float`, or `category`.
+    Issue a Warning if `exog` has columns that are not `int`, `float`, or `category`.
     
     Parameters
     ----------
