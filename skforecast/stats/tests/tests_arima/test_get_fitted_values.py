@@ -91,7 +91,7 @@ def test_get_fitted_values_exact_values():
     fitted = model.get_fitted_values()
 
     expected_first5 = np.array(
-        [-0.00644244, -0.12208227, -0.62870318,  0.08247367,  0.71571091]
+        [-0.15533905,  0.17204575, -0.63307972,  0.07744067,  0.71009339]
     )
     np.testing.assert_array_almost_equal(fitted[:5], expected_first5, decimal=5)
 
@@ -135,7 +135,7 @@ def test_get_fitted_values_with_exog():
     fitted = model.get_fitted_values()
 
     expected_first5 = np.array(
-        [-0.00972594, -0.11826033, -0.62320211,  0.07640692,  0.71323083]
+        [-0.15522718,  0.17195077, -0.6331881 ,  0.07757076,  0.71015509]
     )
     assert fitted.shape == (100,)
     np.testing.assert_array_almost_equal(fitted[:5], expected_first5, decimal=5)

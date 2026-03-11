@@ -1125,14 +1125,14 @@ def _arima_kalman_core(
     update_start : int
         Time index to begin updating covariance.
     give_resid : bool
-        Whether to compute standardized residuals.
+        Whether to compute raw innovations (prediction errors).
 
     Returns
     -------
     stats : np.ndarray
         [ssq, sumlog, nu] — sum of squares, log-determinant sum, count.
     residuals : np.ndarray
-        Standardized residuals (if give_resid=True, else empty).
+        Raw innovations v_t = y_t - Z'*a_{t|t-1} (if give_resid=True, else empty).
     a_final : np.ndarray
         Final filtered state vector.
     P_final : np.ndarray
@@ -1213,14 +1213,14 @@ def _arima_kalman_core(
                     P[i, j] = Pnew[i, j] - M[i] * M[j] * inv_F
 
             if give_resid:
-                std_residuals[t] = innovation / np.sqrt(F) if F > 0 else np.nan
+                std_residuals[t] = innovation
         else:
             for i in range(rd):
                 a[i] = anew[i]
             if give_resid:
                 std_residuals[t] = np.nan
 
-        if t > update_start:
+        if t >= update_start:
             # --- Covariance prediction: Pnew = T @ P @ T' + V ---
             # Step 1: mm = T @ P (companion structure)
             for j in range(rd):
@@ -1267,10 +1267,10 @@ def _arima_kalman_core(
                     vj = 1.0 if j == 0 else theta[j - 1]
                     Pnew[i, j] += vi * vj
 
-            # P = Pnew
-            for i in range(rd):
-                for j in range(rd):
-                    P[i, j] = Pnew[i, j]
+            # NOTE: do NOT overwrite P with Pnew here. P holds the filtered covariance
+            # P_{t|t}; Pnew holds the predicted covariance P_{t+1|t} for the next
+            # iteration. The returned P is P_{n-1|n-1} (filtered at last observation),
+            # which is the correct starting covariance for kalman_forecast_core.
 
     stats = np.array([ssq, sumlog, float(n_valid)])
     return stats, std_residuals, a, P
@@ -1301,9 +1301,10 @@ def initialize_arima_state(
     where:
       T = companion matrix with [φ₁,...,φᵣ] in first column, identity
           subdiagonal (zero-padded if p < r)
-      Z = [1, θ₁, θ₂, ..., θᵣ₋₁]   (zero-padded if q < r-1)
-      R = [1, 0, ..., 0]'             (first unit vector)
-      V = R·R' = e₁·e₁'              (innovation covariance)
+      Z = [1, 0, ..., 0, Δ₁, ..., Δ_d]   (ARMA block has only leading 1;
+                                            differencing states are appended)
+      R = [1, θ₁, ..., θᵣ₋₁, 0, ..., 0]' (MA coefficients in first r entries)
+      V = R·R'                             (innovation covariance)
 
     Differencing states are appended for the integrated (I) component,
     with diffuse prior variance κ on their diagonal entries in P₀.
@@ -1339,7 +1340,8 @@ def initialize_arima_state(
     state_dim = r + d
 
     # --- Observation vector Z ---
-    # Z = [1, θ₁, ..., θᵣ₋₁, Δ₁, ..., Δ_d]
+    # Z = [1, 0, ..., 0, Δ₁, ..., Δ_d]
+    # (MA coefficients go into R, not Z; differencing states are appended)
     Z = np.zeros(state_dim)
     Z[0] = 1.0
     Z[r:state_dim] = Delta
@@ -1503,7 +1505,7 @@ def compute_arima_likelihood(
     update_start : int
         Time index at which to begin updating likelihood.
     give_resid : bool
-        If True, also return standardized residuals.
+        If True, also return raw innovations (prediction errors).
 
     Returns
     -------
@@ -1512,7 +1514,7 @@ def compute_arima_likelihood(
         - 'ssq': Sum of squared innovations.
         - 'sumlog': Accumulated log-determinants.
         - 'nu': Number of innovations.
-        - 'resid': Standardized residuals (only if give_resid=True).
+        - 'resid': Raw innovations v_t = y_t - Z'*a_{t|t-1} (only if give_resid=True).
         - 'a': Final filtered state vector.
         - 'P': Final filtered state covariance.
     """
@@ -2380,11 +2382,14 @@ def _fit_css(config: _ArimaConfig) -> _FitResult:
     state_space = initialize_arima_state(phi_final, theta_final, c.Delta, kappa=c.kappa)
 
     adjusted_series = (c.x - c.exog_matrix @ params[c.n_arma_params:c.n_arma_params + c.n_exog]) if c.n_exog > 0 else c.x
-    compute_arima_likelihood(adjusted_series, state_space, update_start=0, give_resid=True)
-    sigma2, resid = compute_css_residuals(
+    kf_css = compute_arima_likelihood(adjusted_series, state_space, update_start=0, give_resid=True)
+    state_space.filtered_state = kf_css['a']
+    state_space.filtered_covariance = kf_css['P']
+    sigma2, _ = compute_css_residuals(
         adjusted_series, phi_final, theta_final, c.n_conditioning_obs,
         c.order_spec.d, c.order_spec.s, c.order_spec.D
     )
+    resid = kf_css['resid']
 
     # Variance-covariance from inverse observed information
     if all_params_fixed:
@@ -2724,7 +2729,7 @@ def _build_arima_result(config: _ArimaConfig, fit: _FitResult) -> ArimaResult:
         y=c.y,
         fitted_values=fitted_vals,
         coefficients=coef_df,
-        sigma2=float(np.sum(fit.resid**2) / c.n_used),
+        sigma2=float(fit.sigma2),
         param_covariance=param_covariance,
         param_mask=c.free_param_mask,
         loglik=loglik,
