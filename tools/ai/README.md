@@ -12,6 +12,7 @@ VS Code + GitHub Copilot recognises several file conventions. Each serves a diff
 | **instructions** | `.github/instructions/*.instructions.md` | Targeted coding conventions that activate **only when the open file matches** an `applyTo` glob in the YAML frontmatter (e.g. docstring rules for `*.py`, testing rules for `tests/`). | Keep the global context lean by extracting domain-specific rules into separate files that load only when relevant, avoiding prompt bloat while ensuring precision in specialized tasks. |
 | **prompts** | `.github/prompts/*.prompt.md` | Reusable prompt templates the developer runs **on demand** from the Copilot Chat prompt picker. Used for review checklists and guided workflows. | Standardize repetitive developer workflows (reviews, audits, migrations) into shareable, version-controlled templates that any team member can invoke identically. |
 | **skills** | `skills/*/SKILL.md` | Self-contained workflow guides that the AI agent **discovers automatically** when the user's question matches the skill description. Each skill covers one topic end-to-end. | Encode deep domain knowledge (decision trees, pitfalls, end-to-end examples) in modular documents the agent retrieves on demand, enabling expert-level guidance without overloading the base context. |
+| **agents** | `.github/agents/*.agent.md` | Custom agent modes that appear in the Copilot Chat **agent picker**. Each defines a specialized AI persona with its own system prompt, allowed tools, and constraints. | Create purpose-built agent configurations for recurring workflows (e.g. a "reviewer" agent that only reads files and runs tests, or a "docs" agent restricted to documentation folders) so developers get a tailored experience without manual prompt engineering. |
 | **AGENTS.md** | `AGENTS.md` (repo root) | Equivalent to `copilot-instructions.md` but for IDEs that follow the AGENTS.md convention (Claude Code, Codex CLI, Aider). Same content, different standard. | Ensure consistent AI behaviour across different IDEs and tools by providing the same project context through each tool's native convention. |
 
 ## How VS Code / GitHub Copilot uses these files
@@ -60,6 +61,14 @@ Files in `skills/*/SKILL.md` are **specialized workflow guides** that AI agents 
 - **Scope**: single conversation
 - **Content**: end-to-end workflows with decision trees, code examples, and pitfalls
 
+### .agent.md files (custom agent modes)
+
+Files in `.github/agents/` define **custom agent modes** that appear in the Copilot Chat agent picker (the model/mode dropdown). Each `.agent.md` file creates a specialized AI persona with its own system prompt and, optionally, restricted tools or scoped instructions.
+
+- **When**: only when the user selects the agent mode from the picker
+- **Scope**: entire conversation while that mode is active
+- **Content**: a YAML frontmatter (`name`, `description`, `tools`) plus a system-level prompt body that shapes the agent's behaviour
+
 ### AGENTS.md (other IDEs)
 
 `AGENTS.md` at the repo root serves the same purpose as `copilot-instructions.md` but for IDEs that follow the AGENTS.md convention (Claude Code, Codex CLI, Aider, and others). It contains identical content.
@@ -79,6 +88,9 @@ Loaded when file pattern matches:
 
 Loaded on demand by AI agent:
   └─ skills/*/SKILL.md                       (topic-specific workflows)
+
+Loaded when user selects agent mode:
+  └─ .github/agents/*.agent.md               (custom agent personas)
 
 Loaded when user explicitly invokes:
   └─ .github/prompts/review-*.prompt.md      (review checklists)
