@@ -308,6 +308,7 @@ def validate_llms_txt_urls(
     print(f'  Checking {len(all_urls)} URLs in llms.txt ...')
 
     ok_count = 0
+    redirects: list[str] = []
     for url in all_urls:
         try:
             req = urllib.request.Request(url, method='HEAD')
@@ -317,6 +318,10 @@ def validate_llms_txt_urls(
                 if code and code >= 400:
                     errors.append(f'  llms.txt: HTTP {code} — {url}')
                 else:
+                    if resp.url != url:
+                        redirects.append(
+                            f'  llms.txt: redirected {url} -> {resp.url}'
+                        )
                     ok_count += 1
         except urllib.error.HTTPError as exc:
             # Some servers reject HEAD; retry with GET
@@ -328,6 +333,10 @@ def validate_llms_txt_urls(
                     if code and code >= 400:
                         errors.append(f'  llms.txt: HTTP {code} — {url}')
                     else:
+                        if resp.url != url:
+                            redirects.append(
+                                f'  llms.txt: redirected {url} -> {resp.url}'
+                            )
                         ok_count += 1
             except Exception:
                 errors.append(f'  llms.txt: HTTP {exc.code} — {url}')
@@ -335,6 +344,12 @@ def validate_llms_txt_urls(
             errors.append(f'  llms.txt: Connection error ({exc.reason}) — {url}')
         except Exception as exc:
             errors.append(f'  llms.txt: {exc} — {url}')
+
+    if redirects:
+        print(f'  {len(redirects)} URL(s) redirected:')
+        for r in redirects:
+            print(r)
+        errors.extend(redirects)
 
     if not errors:
         print(f'  All {ok_count} URLs are reachable.')

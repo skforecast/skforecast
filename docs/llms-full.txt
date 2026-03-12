@@ -1638,12 +1638,14 @@ predictions = forecaster.predict_interval(
 ## Conformal Prediction
 
 ```python
-# No store_in_sample_residuals needed — uses backtesting residuals automatically
+# IMPORTANT: store_in_sample_residuals=True is also required for conformal
+forecaster.fit(y=y_train, store_in_sample_residuals=True)
+
 predictions = forecaster.predict_interval(
     steps=10,
     interval=[10, 90],
     method='conformal',
-    use_in_sample_residuals=True,
+    use_in_sample_residuals=True,    # Uses in_sample_residuals_ stored during fit
     use_binned_residuals=True,
 )
 ```
@@ -2556,7 +2558,7 @@ from skforecast.drift_detection import RangeDriftDetector
 from skforecast.recursive import ForecasterRecursive
 
 # 1. Train the forecaster
-forecaster = ForecasterRecursive(estimator=regressor, lags=24)
+forecaster = ForecasterRecursive(estimator=estimator, lags=24)
 forecaster.fit(y=y_train, exog=exog_train)
 
 # 2. Fit the drift detector on training data
@@ -2644,7 +2646,7 @@ from skforecast.recursive import ForecasterRecursive
 from skforecast.drift_detection import RangeDriftDetector
 
 # Train
-forecaster = ForecasterRecursive(estimator=regressor, lags=24)
+forecaster = ForecasterRecursive(estimator=estimator, lags=24)
 forecaster.fit(y=y_train, exog=exog_train)
 
 # Set up monitoring
