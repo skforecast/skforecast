@@ -7,13 +7,14 @@
 
 from __future__ import annotations
 from copy import copy, deepcopy
+from functools import wraps
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
 import inspect
+from packaging.requirements import Requirement
 from pathlib import Path
 import platform
 import sys
-from functools import wraps
 from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
@@ -2205,15 +2206,22 @@ def _find_optional_dependency(
     -------
     extra: str
         Name of the extra extension where the optional dependency is needed.
-    package_version: srt
+    package_version: str
         Name and versions of the dependency.
 
     """
 
     for extra, packages in optional_dependencies.items():
-        package_version = [package for package in packages if package_name in package]
+        package_version = [
+            package for package in packages
+            if Requirement(package).name == package_name
+        ]
         if package_version:
             return extra, package_version[0]
+
+    raise ValueError(
+        f"'{package_name}' is not listed in optional_dependencies."
+    )
 
 
 def check_optional_dependency(
@@ -2242,7 +2250,7 @@ def check_optional_dependency(
                 f"skforecast installation. Please run: `pip install \"{package_version}\"` to install it."
                 f"\n\nAlternately, you can install it by running `pip install skforecast[{extra}]`"
             )
-        except Exception:
+        except ValueError:
             msg = f"\n'{package_name}' is needed but not installed. Please install it."
         
         raise ImportError(msg)
@@ -3306,7 +3314,10 @@ def deepcopy_forecaster(
     # 1. Replace fitted estimator with unfitted clone (same hyperparameters)
     if hasattr(forecaster, 'estimator') and forecaster.estimator is not None:
         saved['estimator'] = forecaster.estimator
-        forecaster.estimator = clone(forecaster.estimator)
+        if type(forecaster).__name__ == 'ForecasterRnn':
+            forecaster.estimator = deepcopy(forecaster.estimator)
+        else:
+            forecaster.estimator = clone(forecaster.estimator)
 
     # 2. Replace fitted estimators collection
     if hasattr(forecaster, 'estimators_') and forecaster.estimators_ is not None:

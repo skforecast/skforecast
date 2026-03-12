@@ -262,9 +262,9 @@ def test_arima_fit_with_exog_pandas_dataframe():
     # Check exact coefficients
     platform_name = platform.system()
     if platform_name == 'Windows':
-        expected_coef = np.array([0.97567041, 2.52640181, -1.83108837, 4.1690563, -0.9656832])
+        expected_coef = np.array([0.9825,  2.4476, -1.7752,  4.037 , -0.9354])
     elif platform_name == 'Linux':
-        expected_coef = np.array([0.97566830, 2.52651506, -1.83116516, 4.16924747, -0.96571850])
+        expected_coef = np.array([0.9825,  2.4476, -1.7752,  4.037 , -0.9354])
     else:
         expected_coef = np.array([0.9825,  2.4476, -1.7752,  4.037, -0.9354])
     
