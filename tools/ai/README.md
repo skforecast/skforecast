@@ -15,6 +15,24 @@ VS Code + GitHub Copilot recognises several file conventions. Each serves a diff
 | **agents** | `.github/agents/*.agent.md` | Custom agent modes that appear in the Copilot Chat **agent picker**. Each defines a specialized AI persona with its own system prompt, allowed tools, and constraints. | Create purpose-built agent configurations for recurring workflows (e.g. a "reviewer" agent that only reads files and runs tests, or a "docs" agent restricted to documentation folders) so developers get a tailored experience without manual prompt engineering. |
 | **AGENTS.md** | `AGENTS.md` (repo root) | Equivalent to `copilot-instructions.md` but for IDEs that follow the AGENTS.md convention (Claude Code, Codex CLI, Aider). Same content, different standard. | Ensure consistent AI behaviour across different IDEs and tools by providing the same project context through each tool's native convention. |
 
+### Analogy: cooking a dish
+
+Imagine you hire a chef (the AI) to work in your kitchen (the repo).
+
+- **copilot-instructions.md** is the **house rules** posted on the kitchen wall: "we only use olive oil, knives go in this drawer, clean as you go." The chef reads them once and follows them in every dish, every day.
+- **instructions** are **station cards** taped next to each workstation: "at the grill, sear 2 min per side" or "at the pastry station, always sift flour." The chef only reads the card for the station she's working at right now.
+- **prompts** are **recipe cards** in a drawer. The chef never opens the drawer on her own — you hand her a specific card when you say "follow this exact recipe for the soufflé." She executes it step by step, once.
+- **skills** are **cooking reference books** on the shelf (one for sauces, one for bread, one for plating). The chef pulls one down when you ask something like "how do I make a béchamel?" — she knows which book to grab by the topic.
+- **agents** are **specialist hats**. When you say "today you're the pastry chef," the chef puts on that hat and only works with desserts, pastry tools, and pastry rules. Switch to "grill master" and her focus, tools, and constraints change entirely.
+
+| Kitchen analogy | AI file type | Loaded when |
+|-----------------|-------------|-------------|
+| House rules on the wall | `copilot-instructions.md` | Always |
+| Station card at the grill | `.instructions.md` | Editing a matching file |
+| Recipe card you hand over | `.prompt.md` | You explicitly invoke it |
+| Reference book on the shelf | `skills/*/SKILL.md` | AI decides it's relevant |
+| Specialist hat | `.agent.md` | You select the agent mode |
+
 ## How VS Code / GitHub Copilot uses these files
 
 When you open the skforecast repo in VS Code with GitHub Copilot, different files are loaded into the AI's context at different times. Understanding when each file type activates is key to understanding the system.
