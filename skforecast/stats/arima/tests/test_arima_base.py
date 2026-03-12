@@ -574,7 +574,8 @@ def test_arima_with_differencing(simple_ar1_series):
     
     result = arima(y, order=(1, 1, 0), fit_intercept=False)
     
-    assert result['converged'] is bool
+    # May not converge due to differencing
+    assert isinstance(result['converged'], bool)
     assert result['order_spec'].d == 1
 
 
