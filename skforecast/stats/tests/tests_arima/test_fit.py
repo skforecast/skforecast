@@ -427,12 +427,12 @@ def test_arima_fit_auto_arima_air_passengers_data():
     }
     expected_seasonal_order = {
         'Linux': (2, 1, 0),
-        'Darwin': (0, 1, 0),
+        'Darwin': (2, 1, 0),
         'Windows': (2, 1, 0)
     }
     expected_estimator_name_ = {
         'Linux': "AutoArima(0,1,1)(2,1,0)[12]",
-        'Darwin': "AutoArima(0,1,1)(0,1,0)[12]",
+        'Darwin': "AutoArima(0,1,1)(2,1,0)[12]",
         'Windows': "AutoArima(0,1,1)(2,1,0)[12]"
     }
     
