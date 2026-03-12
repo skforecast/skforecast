@@ -5,7 +5,7 @@ import uuid
 import sys
 from typing import Literal
 from .. import __version__
-from .utils import check_preprocess_series
+from ..utils import check_preprocess_series
 from ..preprocessing import reshape_series_wide_to_long
 
 

@@ -57,6 +57,10 @@ Special mention to the main contributors who have significantly impacted the lib
 
 [![GitHub contributors](https://img.shields.io/github/contributors-anon/skforecast/skforecast)](https://github.com/skforecast/skforecast/graphs/contributors)
 
+View the full list of [contributors](https://github.com/skforecast/skforecast/graphs/contributors) and their contributions to the project.
+
+Thank you for helping us make **skforecast** better! 🎉
+
 ???+ note "Get Involved"
 
     We value your input! Here are a few ways you can participate:
@@ -66,24 +70,6 @@ Special mention to the main contributors who have significantly impacted the lib
     - **Share your feedback** on LinkedIn to help spread the word about skforecast!
 
     Together, we can make time series forecasting accessible to everyone.
-
-| Name                        | GitHub                                     |
-|:---------------------------:|:------------------------------------------:|
-| Josh Wong                   | [@josh-wong](https://github.com/josh-wong) |
-| Edgar Bahilo Rodríguez      | [@edgBR](https://github.com/edgBR)         |
-| Mwainwright                 | [@syndct](https://github.com/syndct)       |
-| Kishan Manani               | [@KishManani](https://github.com/KishManani) |
-| Sergio Quijano              | [@Sergio-Quijano-Stratesys](https://github.com/Sergio-Quijano-Stratesys) |
-| Fernando da Silva           | [@schoulten](https://github.com/schoulten) |
-| Lillian Jensen, MPH         | [@tyg3rr](https://github.com/tyg3rr)       |
-| Ivan Liu                    | [@IvanLiuTW](https://github.com/IvanLiuTW) |
-| Ignacio Moya                | [@imMoya](https://github.com/imMoya)       |
-| Pablo Rodríguez Pérez       | [@pablorodriper](https://github.com/pablorodriper) |
-| g-rubio                     | [@g-rubio](https://github.com/g-rubio)     |
-| Ginés Meca                  | [@GinesMeca](https://github.com/GinesMeca) |
-
-<br>
-Thank you for helping us make **skforecast** better! 🎉
 
 
 ## Citing skforecast

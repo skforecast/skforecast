@@ -25,6 +25,8 @@ The main changes in this release are:
 
 **Added**
 
++ Added <code>[TimeSeriesSplitter]</code> class to the experimental module. This class provides a flexible way to split time series data into training and testing sets while respecting temporal order and allowing for various configurations of train/test sizes, gaps, and strides ([#1117](https://github.com/skforecast/skforecast/pull/1117)).
+
 
 **Changed**
 
@@ -1514,6 +1516,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- experimental -->
 [experimental]: ../api/experimental.md
+[TimeSeriesSplitter]: ../api/experimental.md#skforecast.experimental._splitter.TimeSeriesSplitter
 [calculate_distance_from_holiday]: ../api/experimental.md#skforecast.experimental._experimental.calculate_distance_from_holiday
 
 <!-- datasets -->

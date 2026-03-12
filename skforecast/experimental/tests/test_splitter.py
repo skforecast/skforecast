@@ -1,18 +1,10 @@
 # Unit test TimeSeriesSplitter class & methods
 # ==============================================================================
-
-"""
-Exhaustive unit tests for TimeSeriesSplitter class.
-
-This test suite aims for 100% code coverage of the TimeSeriesSplitter class,
-testing all methods, branches, edge cases, and error conditions.
-"""
-
 import sys
 import pytest
 import pandas as pd
 
-from skforecast.utils.splitter import TimeSeriesSplitter
+from .._splitter import TimeSeriesSplitter
 
 
 @pytest.fixture
