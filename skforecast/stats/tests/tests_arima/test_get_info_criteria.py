@@ -86,7 +86,7 @@ def test_get_info_criteria_aic_exact_value():
 
     aic = model.get_info_criteria(criteria='aic')
 
-    np.testing.assert_almost_equal(aic, 238.71125623380013, decimal=4)
+    np.testing.assert_almost_equal(aic, 238.8595629710312, decimal=4)
 
 
 def test_get_info_criteria_bic_matches_bic_attribute():

@@ -61,7 +61,7 @@ def test_output_get_feature_importances_ForecasterStats_with_Arima_estimator():
 
     expected = pd.DataFrame({
                    'feature': ['ar1', 'ma1', 'intercept'],
-                   'importance': np.array([0.46117829860676735, 0.323490635614004, 0.6017055539706445])
+                   'importance': np.array([0.46633503, 0.33602003, 0.6007719])
                })
 
     pd.testing.assert_frame_equal(expected, results)

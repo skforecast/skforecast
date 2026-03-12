@@ -597,7 +597,7 @@ def test_predict_output_ForecasterStats_skforecast_Arima():
     predictions = forecaster.predict(steps=5)
 
     expected = pd.Series(
-                   data  = [0.61870549, 0.60954556, 0.60532119, 0.60337301, 0.60247455],
+                   data  = [0.6192376, 0.6093831, 0.60478761, 0.60264456, 0.60164519],
                    index = pd.RangeIndex(start=50, stop=55, step=1),
                    name  = 'pred'
                )

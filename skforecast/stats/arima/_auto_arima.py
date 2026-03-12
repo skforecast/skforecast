@@ -415,17 +415,10 @@ def fit_custom_arima(
                 fit_intercept=constant,
                 **kwargs
             )
-    except Exception as e:
+    except Exception:
         if trace:
             print(arima_trace_str(order, seasonal, m, constant, np.inf))
         return _create_error_model(order, seasonal, m)
-
-    if exog_use is None:
-        n_exog = 0
-    elif isinstance(exog_use, pd.DataFrame):
-        n_exog = exog_use.shape[1]
-    else:
-        n_exog = exog_use.shape[1] if exog_use.ndim > 1 else 1
 
     nstar_adj = n - order[1] - seasonal[1] * m
     npar = np.sum(fit['mask']) + 1
@@ -451,10 +444,6 @@ def fit_custom_arima(
         fit['bic'] = np.inf
         fit['aicc'] = np.inf
         fit['ic'] = np.inf
-
-    resid_valid = fit['residuals'][~np.isnan(fit['residuals'])]
-    if len(resid_valid) > npar - 1:
-        fit['sigma2'] = np.sum(resid_valid**2) / (nstar_adj - npar + 1)
 
     minroot = 2.0
 
@@ -1611,13 +1600,6 @@ def arima_rjh(
         else:
             fit['aicc'] = np.inf
         fit['bic'] = fit['aic'] + np_ * (np.log(nstar) - 2)
-
-    if model is None:
-        n_cond = fit.get('n_cond', 0)
-        resid = fit['residuals'][n_cond:]
-        ss = np.sum(resid[~np.isnan(resid)]**2)
-        if nstar - np_ + 1 > 0:
-            fit['sigma2'] = ss / (nstar - np_ + 1)
 
     if model is None and exog_refit is not None:
         fit['exog'] = exog_refit

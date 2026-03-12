@@ -1084,8 +1084,8 @@ def test_arima_enforce_stationarity_false_near_unit_root():
 
     assert result['converged'] is True
     coef = result['coef'].values.flatten()[0]
-    np.testing.assert_allclose(coef, 0.97250926, rtol=1e-4)
-    np.testing.assert_allclose(result['sigma2'], 0.8360452821958437, rtol=1e-4)
+    np.testing.assert_allclose(coef, 0.9772565333232445, rtol=1e-4)
+    np.testing.assert_allclose(result['sigma2'], 0.8358454427268373, rtol=1e-4)
 
 
 def test_arima_enforce_stationarity_false_covariance_is_positive_definite():
