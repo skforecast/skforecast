@@ -260,7 +260,10 @@ def test_arima_fit_with_exog_pandas_dataframe():
     model.fit(y, exog=exog)
     
     # Check exact coefficients
-    expected_coef = np.array([0.97566830, 2.52651506, -1.83116516, 4.16924747, -0.96571850])
+    if platform.system() == 'Windows':
+        expected_coef = np.array([0.97567041, 2.52640181, -1.83108837, 4.1690563, -0.9656832])
+    else:
+        expected_coef = np.array([0.97566830, 2.52651506, -1.83116516, 4.16924747, -0.96571850])
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=4)
     
     assert model.n_exog_features_in_ == 3
