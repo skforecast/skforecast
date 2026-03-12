@@ -88,7 +88,7 @@ def analyze_series(x: np.ndarray) -> Tuple[Optional[int], int, np.ndarray]:
 
     first = nonmiss_idx[0]
     last = nonmiss_idx[-1]
-    serieslength = np.sum(~miss[first:last+1])
+    serieslength = np.sum(~miss[first : last + 1])
     x_trim = x[first:].copy()
 
     return (first, serieslength, x_trim)
@@ -606,17 +606,17 @@ def search_arima(
     bestfit = None
     best_constant = None
 
-    for i in range(max_p + 1):
-        for j in range(max_q + 1):
-            for I in range(max_P + 1):
-                for J in range(max_Q + 1):
-                    if i + j + I + J <= max_order:
-                        for K in range(maxK + 1):
+    for p in range(max_p + 1):
+        for q in range(max_q + 1):
+            for P_ in range(max_P + 1):
+                for Q_ in range(max_Q + 1):
+                    if p + q + P_ + Q_ <= max_order:
+                        for k in range(maxK + 1):
                             fit = fit_custom_arima(
                                 x, m,
-                                order=(i, d, j),
-                                seasonal=(I, D, J),
-                                constant=(K == 1),
+                                order=(p, d, q),
+                                seasonal=(P_, D, Q_),
+                                constant=(k == 1),
                                 ic=ic,
                                 trace=trace,
                                 approximation=approximation,
@@ -629,7 +629,7 @@ def search_arima(
                             if fit['ic'] < best_ic:
                                 best_ic = fit['ic']
                                 bestfit = fit
-                                best_constant = (K == 1)
+                                best_constant = (k == 1)
 
     if bestfit is None:
         raise ValueError("No ARIMA model able to be estimated")

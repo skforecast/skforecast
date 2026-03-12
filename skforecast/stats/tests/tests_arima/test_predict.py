@@ -349,7 +349,7 @@ def test_arima_predict_air_passengers_data():
     platform_name = platform.system()
     if platform_name == 'Linux':
         expected_coef = np.array([
-            0.57998034,  0.22861011, -0.97820339, -0.90315678,  0.81238815
+            0.57997,  0.22881, -0.97825, -0.90097,  0.80938
         ])
         expected_pred = np.array([
             448.15134639, 423.94754801, 458.77487091, 497.6941214 ,

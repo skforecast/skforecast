@@ -149,7 +149,6 @@ class StateSpaceArrays:
     predicted_covariance: np.ndarray
 
 
-
 @dataclass
 class ArimaResult:
     """
@@ -354,6 +353,7 @@ def _validate_choice(value, choices, param_name="argument"):
         f"Invalid `{param_name}`: '{value}'. Must be one of {choices}."
     )
 
+
 def _ensure_float64_pair(x: np.ndarray, exog: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
     Handle missing values by converting to NaN.
@@ -373,6 +373,7 @@ def _ensure_float64_pair(x: np.ndarray, exog: np.ndarray) -> Tuple[np.ndarray, n
     x = np.asarray(x, dtype=np.float64)
     exog = np.asarray(exog, dtype=np.float64)
     return x, exog
+
 
 def diff(x: np.ndarray, lag: int = 1, differences: int = 1) -> np.ndarray:
     """
@@ -472,6 +473,7 @@ def ar_check(ar: np.ndarray) -> bool:
     roots = _companion_matrix_roots(char_poly)
     return bool(np.all(np.abs(roots) > 1.0))
 
+
 def _poly_from_roots(roots: np.ndarray) -> np.ndarray:
     """
     Build polynomial coefficients (ascending power) from its roots.
@@ -565,7 +567,10 @@ def ma_invert(ma: np.ndarray) -> np.ndarray:
 # =============================================================================
 
 @njit(cache=True)
-def transform_unconstrained_to_ar_params(p: int, raw: np.ndarray) -> np.ndarray:  # pragma: no cover
+def transform_unconstrained_to_ar_params(
+    p: int, 
+    raw: np.ndarray
+) -> np.ndarray:  # pragma: no cover
     """
     Map unconstrained reals to stationary AR coefficients.
 
@@ -613,6 +618,7 @@ def transform_unconstrained_to_ar_params(p: int, raw: np.ndarray) -> np.ndarray:
         ar_coefs[:j] = ar_coefs_prev[:j]
 
     return ar_coefs
+
 
 @njit(cache=True)
 def inverse_ar_parameter_transform(phi: np.ndarray) -> np.ndarray:  # pragma: no cover
@@ -666,6 +672,7 @@ def inverse_ar_parameter_transform(phi: np.ndarray) -> np.ndarray:  # pragma: no
 
     return unconstrained
 
+
 @njit(cache=True)
 def inverse_arima_parameter_transform(
     theta: np.ndarray,
@@ -710,6 +717,7 @@ def inverse_arima_parameter_transform(
         )
 
     return unconstrained
+
 
 @njit(cache=True)
 def undo_arima_parameter_transform(
@@ -758,6 +766,7 @@ def undo_arima_parameter_transform(
         )
 
     return constrained
+
 
 @njit(cache=True)
 def compute_arima_transform_gradient(
@@ -831,6 +840,7 @@ def compute_arima_transform_gradient(
             workspace[j] -= h
 
     return jacobian
+
 
 @njit(cache=True)
 def transform_arima_parameters(
@@ -963,7 +973,10 @@ def transform_arima_parameters(
 # =============================================================================
 
 @njit(cache=True)
-def _solve_discrete_lyapunov(A: np.ndarray, Q: np.ndarray) -> np.ndarray:  # pragma: no cover
+def _solve_discrete_lyapunov(
+    A: np.ndarray, 
+    Q: np.ndarray
+) -> np.ndarray:  # pragma: no cover
     """
     Solve the discrete Lyapunov equation  X = A X A' + Q  for X.
 
@@ -990,7 +1003,8 @@ def _solve_discrete_lyapunov(A: np.ndarray, Q: np.ndarray) -> np.ndarray:  # pra
 
 @njit(cache=True)
 def _compute_q0_njit(
-    phi: np.ndarray, theta: np.ndarray
+    phi: np.ndarray, 
+    theta: np.ndarray
 ) -> np.ndarray:  # pragma: no cover
     """
     Compute P0 via Smith doubling (fast @njit path for small state dims).
@@ -1080,6 +1094,7 @@ def compute_q0_covariance_matrix(
     V_arma = np.outer(R_arma, R_arma)
 
     return solve_discrete_lyapunov(T_arma, V_arma)
+
 
 # =============================================================================
 # Section 5: Kalman Filter Core
@@ -1400,6 +1415,7 @@ def initialize_arima_state(
         predicted_covariance=Pn,
     )
 
+
 def _update_state_space(
     ss: 'StateSpaceArrays',
     phi: np.ndarray,
@@ -1543,6 +1559,7 @@ def compute_arima_likelihood(
 
     return result
 
+
 @njit(cache=True)
 def compute_css_residuals(
     y: np.ndarray,
@@ -1646,6 +1663,7 @@ def compute_css_residuals(
     sigma2 = sum_sq / n_valid if n_valid > 0 else np.nan
     return sigma2, resid
 
+
 @njit(cache=True, fastmath=True)
 def kalman_forecast_core(
     n_ahead: int,
@@ -1701,6 +1719,7 @@ def kalman_forecast_core(
         variances[t] = h + np.dot(Z, P_curr @ Z)
 
     return forecasts, variances, a_curr, P_curr
+
 
 def kalman_forecast(
     n_ahead: int,
@@ -1797,9 +1816,10 @@ def _process_exogenous(
             raise ValueError("Lengths of x and exog do not match!")
         exog_matrix = exog
         n_exog = exog_matrix.shape[1]
-        exog_names = [f"exog{i+1}" for i in range(n_exog)]
+        exog_names = [f"exog{i + 1}" for i in range(n_exog)]
 
     return exog_matrix, n_exog, exog_names
+
 
 def add_drift_term(
     exog: Union[pd.DataFrame, np.ndarray, None],
@@ -1835,8 +1855,9 @@ def add_drift_term(
         if exog.ndim == 1:
             exog = exog.reshape(-1, 1)
         combined = np.column_stack([drift, exog])
-        cols = [name] + [f"exog{i+1}" for i in range(exog.shape[1])]
+        cols = [name] + [f"exog{i + 1}" for i in range(exog.shape[1])]
         return pd.DataFrame(combined, columns=cols)
+
 
 def _initialize_regressor_params(
     x: np.ndarray,
@@ -1967,6 +1988,7 @@ def _initialize_regressor_params(
 
     return init_params, param_scale, n_used, use_orig_exog, svd_rotation
 
+
 def _build_coefficient_dataframe(
     order_spec: SARIMAOrder,
     coef: np.ndarray,
@@ -1995,13 +2017,13 @@ def _build_coefficient_dataframe(
     names = []
 
     if order_spec.p > 0:
-        names.extend([f"ar{i+1}" for i in range(order_spec.p)])
+        names.extend([f"ar{i + 1}" for i in range(order_spec.p)])
     if order_spec.q > 0:
-        names.extend([f"ma{i+1}" for i in range(order_spec.q)])
+        names.extend([f"ma{i + 1}" for i in range(order_spec.q)])
     if order_spec.P > 0:
-        names.extend([f"sar{i+1}" for i in range(order_spec.P)])
+        names.extend([f"sar{i + 1}" for i in range(order_spec.P)])
     if order_spec.Q > 0:
-        names.extend([f"sma{i+1}" for i in range(order_spec.Q)])
+        names.extend([f"sma{i + 1}" for i in range(order_spec.Q)])
     if n_exog > 0:
         names.extend(cn)
 
@@ -2496,7 +2518,8 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
             'fun': _ml_objective(np.zeros(0), c.enforce_stationarity)
         }
     else:
-        obj_fn = lambda p: _ml_objective(p, c.enforce_stationarity)
+        def obj_fn(p):
+            return _ml_objective(p, c.enforce_stationarity)
         minimize_options = dict(c.opt_options)
         # Seasonal ML with exogenous regressors is prone to very long BFGS runs
         # due to finite-difference gradient noise. A modest gtol dramatically
@@ -2893,7 +2916,7 @@ def predict_arima(
     if level is not None:
         levels = list(level)
         if min(levels) > 0 and max(levels) < 1:
-            levels = [l * 100 for l in levels]
+            levels = [lvl * 100 for lvl in levels]
         if min(levels) < 0 or max(levels) > 99.99:
             raise ValueError("Confidence level out of range")
         levels = sorted(levels)
@@ -2972,6 +2995,7 @@ def predict_arima(
         'method': model['method']
     }
 
+
 def fitted_values(model: DictType[str, Any]) -> np.ndarray:
     """
     Extract fitted values from ARIMA model.
@@ -2988,6 +3012,7 @@ def fitted_values(model: DictType[str, Any]) -> np.ndarray:
     """
     return model['fitted']
 
+
 def residuals_arima(model: DictType[str, Any]) -> np.ndarray:
     """
     Extract residuals from ARIMA model.
@@ -3003,4 +3028,3 @@ def residuals_arima(model: DictType[str, Any]) -> np.ndarray:
         Model residuals.
     """
     return model['residuals']
-
