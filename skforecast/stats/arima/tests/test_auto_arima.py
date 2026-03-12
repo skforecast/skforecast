@@ -39,7 +39,7 @@ def ar1_series():
     y = np.zeros(n)
     y[0] = np.random.randn()
     for t in range(1, n):
-        y[t] = phi * y[t-1] + np.random.randn()
+        y[t] = phi * y[t - 1] + np.random.randn()
     return y
 
 
@@ -171,16 +171,16 @@ def test_compute_approx_offset_with_seasonal_D(ar1_series):
     assert np.isfinite(offset)
 
 
-def test_compute_approx_offset_with_xreg_truncation():
-    """Test compute_approx_offset with xreg and truncation."""
+def test_compute_approx_offset_with_exog_truncation():
+    """Test compute_approx_offset with exog and truncation."""
     np.random.seed(42)
     y = np.random.randn(100)
-    xreg = pd.DataFrame({'x1': np.random.randn(100)})
-    
+    exog = pd.DataFrame({'x1': np.random.randn(100)})
+
     offset = compute_approx_offset(
-        approximation=True, x=y, d=0, D=0, m=1, xreg=xreg, truncate=50
+        approximation=True, x=y, d=0, D=0, m=1, exog=exog, truncate=50
     )
-    
+
     assert np.isfinite(offset)
 
 
@@ -304,7 +304,7 @@ def test_create_error_model_structure():
     assert result['bic'] == np.inf
     assert result['aicc'] == np.inf
     assert result['converged'] is False
-    assert result['arma'] == [1, 1, 0, 0, 1, 0, 0]
+    assert result['order_spec'].to_arma_list() == [1, 1, 0, 0, 1, 0, 0]
 
 
 # =============================================================================
@@ -329,8 +329,8 @@ def test_fit_custom_arima_with_drift(random_walk_series):
     )
     
     assert fit['converged'] is True
-    # Drift should be in xreg
-    assert fit['xreg'] is not None
+    # Drift should be in exog
+    assert fit['exog'] is not None
 
 
 def test_fit_custom_arima_different_ic(ar1_series):
@@ -529,11 +529,14 @@ def test_forecast_arima_with_only_drift(ar1_series):
 def test_forecast_arima_fan_levels(ar1_series):
     """Test forecast_arima with fan=True generates many levels."""
     fit = auto_arima(ar1_series, m=1, stepwise=True, trace=False)
-    
-    fc = forecast_arima(fit, h=5, level=[80, 95], fan=True)
-    
-    # fan=True should override level
+
+    # fan=True with level=None should produce the fan interval levels
+    fc = forecast_arima(fit, h=5, fan=True)
     assert len(fc['level']) > 2
+
+    # fan=True combined with explicit level should raise ValueError
+    with pytest.raises(ValueError, match="cannot be used together"):
+        forecast_arima(fit, h=5, level=[80, 95], fan=True)
 
 
 # =============================================================================
@@ -553,8 +556,7 @@ def test_auto_arima_random_walk(random_walk_series):
     fit = auto_arima(random_walk_series, m=1, stepwise=True, trace=False)
     
     # Should detect need for differencing
-    d = fit['arma'][5]  # d is at index 5
-    assert d >= 1
+    assert fit['order_spec'].d >= 1
 
 
 def test_auto_arima_constant_series():
@@ -564,8 +566,8 @@ def test_auto_arima_constant_series():
     fit = auto_arima(y, m=1, stepwise=True)
     
     # Should fit ARIMA(0,0,0)
-    assert fit['arma'][0] == 0  # p
-    assert fit['arma'][1] == 0  # q
+    assert fit['order_spec'].p == 0
+    assert fit['order_spec'].q == 0
 
 
 def test_auto_arima_all_nan_raises():
@@ -586,11 +588,11 @@ def test_auto_arima_grid_search(ar1_series):
     assert fit['converged'] is True
 
 
-def test_auto_arima_with_xreg(ar1_series):
+def test_auto_arima_with_exog(ar1_series):
     """Test auto_arima with exogenous regressors."""
     xreg = pd.DataFrame({'x1': np.random.randn(len(ar1_series))})
-    
-    fit = auto_arima(ar1_series, m=1, xreg=xreg, stepwise=True, trace=False)
+
+    fit = auto_arima(ar1_series, m=1, exog=xreg, stepwise=True, trace=False)
     
     assert fit['converged'] is True
     assert 'x1' in fit['coef'].columns
@@ -600,8 +602,8 @@ def test_auto_arima_stationary_constraint(ar1_series):
     """Test auto_arima with stationary=True forces d=D=0."""
     fit = auto_arima(ar1_series, m=1, stationary=True, stepwise=True)
     
-    assert fit['arma'][5] == 0  # d
-    assert fit['arma'][6] == 0  # D
+    assert fit['order_spec'].d == 0
+    assert fit['order_spec'].D == 0
 
 
 def test_auto_arima_different_ic(ar1_series):
@@ -636,7 +638,7 @@ def test_auto_arima_with_constant_d_D():
     fit = auto_arima(y, m=1, stepwise=True, trace=False)
     
     # Should detect d=1 for trend
-    assert fit['arma'][5] >= 1  # d >= 1
+    assert fit['order_spec'].d >= 1
 
 
 def test_auto_arima_allowdrift_false(random_walk_series):
@@ -674,8 +676,8 @@ def test_arima_rjh_with_drift(random_walk_series):
     """Test arima_rjh with drift term."""
     fit = arima_rjh(random_walk_series, m=1, order=(0, 1, 0), include_drift=True)
     
-    assert fit['xreg'] is not None
-    assert 'drift' in fit['xreg'].columns
+    assert fit['exog'] is not None
+    assert 'drift' in fit['exog'].columns
 
 
 def test_arima_rjh_include_constant(ar1_series):
@@ -744,15 +746,17 @@ def test_arima_rjh_minimum_data_length():
 # Tests for forecast_arima
 # =============================================================================
 def test_forecast_arima_basic(ar1_series):
-    """Test forecast_arima generates forecasts."""
+    """Test forecast_arima generates forecasts with default [80, 95] intervals."""
     fit = auto_arima(ar1_series, m=1, stepwise=True, trace=False)
     
     fc = forecast_arima(fit, h=10)
     
     assert 'mean' in fc
     assert len(fc['mean']) == 10
-    assert fc['lower'] is None  # No levels specified
-    assert fc['upper'] is None
+    assert fc['level'] == [80, 95]  # Default levels
+    assert fc['lower'].shape == (10, 2)
+    assert fc['upper'].shape == (10, 2)
+    assert np.all(fc['lower'] < fc['upper'])
 
 
 def test_forecast_arima_with_intervals(ar1_series):
@@ -768,15 +772,15 @@ def test_forecast_arima_with_intervals(ar1_series):
     assert np.all(fc['lower'] < fc['upper'])
 
 
-def test_forecast_arima_with_xreg(ar1_series):
+def test_forecast_arima_with_exog(ar1_series):
     """Test forecast_arima with exogenous regressors."""
     n = len(ar1_series)
     xreg_train = pd.DataFrame({'x1': np.random.randn(n)})
-    
-    fit = auto_arima(ar1_series, m=1, xreg=xreg_train, stepwise=True, trace=False)
-    
+
+    fit = auto_arima(ar1_series, m=1, exog=xreg_train, stepwise=True, trace=False)
+
     xreg_new = pd.DataFrame({'x1': np.random.randn(5)})
-    fc = forecast_arima(fit, xreg=xreg_new)
+    fc = forecast_arima(fit, exog=xreg_new)
     
     assert len(fc['mean']) == 5
 
@@ -826,7 +830,7 @@ def test_forecast_arima_with_box_cox_biasadj(ar1_series):
     fc = forecast_arima(fit, h=5, level=[80, 95])
     
     assert len(fc['mean']) == 5
-    assert fc['biasadj'] == True
+    assert fc['biasadj'] is True
 
 
 def test_forecast_arima_with_negative_lambda():
@@ -885,17 +889,17 @@ def test_predict_arima_with_intervals(ar1_series):
     assert np.all(fc['lower'] < fc['upper'])
 
 
-def test_predict_arima_with_xreg(ar1_series):
+def test_predict_arima_with_exog(ar1_series):
     """Test predict_arima with exogenous regressors."""
     from skforecast.stats.arima._arima_base import predict_arima
-    
+
     n = len(ar1_series)
     xreg_train = pd.DataFrame({'x1': np.random.randn(n)})
-    
-    fit = arima_rjh(ar1_series, m=1, order=(1, 0, 0), xreg=xreg_train)
-    
+
+    fit = arima_rjh(ar1_series, m=1, order=(1, 0, 0), exog=xreg_train)
+
     xreg_new = pd.DataFrame({'x1': np.random.randn(5)})
-    fc = predict_arima(fit, n_ahead=5, newxreg=xreg_new)
+    fc = predict_arima(fit, n_ahead=5, new_exog=xreg_new)
     
     assert len(fc['mean']) == 5
 
@@ -938,7 +942,7 @@ def test_search_arima_respects_max_order(ar1_series):
     )
     
     # p + q should not exceed max_order
-    p, q = fit['arma'][0], fit['arma'][1]
+    p, q = fit['order_spec'].p, fit['order_spec'].q
     assert p + q <= 2
 
 
@@ -1039,6 +1043,7 @@ def test_auto_arima_nmodels_very_low_no_index_error():
         # (results array has shape (nmodels, 8))
         assert fit.get('converged', True) is True or fit.get('arima') is not None
 
+
 # =============================================================================
 # Tests for prepare_drift
 # =============================================================================
@@ -1049,11 +1054,11 @@ def test_prepare_drift_model_without_drift(ar1_series):
     # Fit a model without drift
     fit = auto_arima(ar1_series, m=1, stepwise=True, trace=False)
     
-    xreg = pd.DataFrame({'x1': np.random.randn(len(ar1_series))})
-    
-    # Should raise ValueError since model has no xreg for drift reconstruction
-    with pytest.raises(ValueError, match="no xreg for drift reconstruction"):
-        prepare_drift(fit, ar1_series, xreg)
+    exog = pd.DataFrame({'x1': np.random.randn(len(ar1_series))})
+
+    # Should raise ValueError since model has no exog for drift reconstruction
+    with pytest.raises(ValueError, match="no exog for drift reconstruction"):
+        prepare_drift(fit, ar1_series, exog)
 
 
 def test_prepare_drift_model_with_drift(random_walk_series):
@@ -1081,7 +1086,7 @@ def test_refit_arima_model_basic(ar1_series):
     fit = auto_arima(ar1_series, m=1, stepwise=True, trace=False)
     
     # Refit on same data
-    refit = refit_arima_model(ar1_series, m=1, model=fit, xreg=None, method="CSS-ML")
+    refit = refit_arima_model(ar1_series, m=1, model=fit, exog=None, method="CSS-ML")
     
     assert refit['converged'] is True
     assert 'coef' in refit
@@ -1093,11 +1098,11 @@ def test_refit_arima_model_with_xreg(ar1_series):
     
     xreg = pd.DataFrame({'x1': np.random.randn(len(ar1_series))})
     
-    # First fit a model with xreg
-    fit = auto_arima(ar1_series, m=1, xreg=xreg, stepwise=True, trace=False)
+    # First fit a model with exog
+    fit = auto_arima(ar1_series, m=1, exog=xreg, stepwise=True, trace=False)
     
     # Refit on same data
-    refit = refit_arima_model(ar1_series, m=1, model=fit, xreg=xreg, method="CSS-ML")
+    refit = refit_arima_model(ar1_series, m=1, model=fit, exog=xreg, method="CSS-ML")
     
     assert refit['converged'] is True
 
@@ -1177,3 +1182,80 @@ def test_forecast_arima_single_level(ar1_series):
     assert fc['lower'].shape == (5, 1)
     assert fc['upper'].shape == (5, 1)
     assert fc['level'] == [90]
+
+
+# =============================================================================
+# Tests for refit_arima_model column alignment (issue 5)
+# =============================================================================
+def test_refit_arima_model_column_alignment(ar1_series):
+    """
+    Test arima_rjh(model=...) aligns exog columns to match the original model.
+
+    When the new exog DataFrame has a different column order or is missing a
+    column that was present in the original fit, arima_rjh must align columns
+    to the original model's order and fill missing ones with 0 before refitting.
+    """
+    np.random.seed(0)
+    # Train with two exog columns
+    xreg_train = pd.DataFrame({
+        'x1': np.random.randn(len(ar1_series)),
+        'x2': np.random.randn(len(ar1_series)),
+    })
+    fit = arima_rjh(
+        ar1_series, m=1, order=(1, 0, 0), exog=xreg_train, fit_intercept=False
+    )
+    assert fit['converged'] is True
+
+    # Refit with columns in reversed order: alignment must restore original order
+    xreg_reordered = xreg_train[['x2', 'x1']]
+    refit_reordered = arima_rjh(
+        ar1_series, m=1, order=(1, 0, 0), exog=xreg_reordered,
+        fit_intercept=False, model=fit
+    )
+    assert refit_reordered['converged'] is True
+
+    # Refit with one column missing: the absent column must be filled with zeros
+    xreg_partial = xreg_train[['x1']]
+    refit_partial = arima_rjh(
+        ar1_series, m=1, order=(1, 0, 0), exog=xreg_partial,
+        fit_intercept=False, model=fit
+    )
+    assert refit_partial['converged'] is True
+
+    # Exog columns in the refit must match original order
+    assert list(refit_partial['exog'].columns) == list(fit['exog'].columns)
+
+    # The missing column ('x2') must be filled with zeros
+    assert (refit_partial['exog']['x2'] == 0.0).all()
+
+    # Explicitly zero-filled exog must produce identical forecasts
+    xreg_explicit = xreg_train[['x1']].copy()
+    xreg_explicit['x2'] = 0.0
+    refit_explicit = arima_rjh(
+        ar1_series, m=1, order=(1, 0, 0), exog=xreg_explicit,
+        fit_intercept=False, model=fit
+    )
+    fc_partial = forecast_arima(refit_partial, h=5)
+    fc_explicit = forecast_arima(refit_explicit, h=5)
+    np.testing.assert_array_almost_equal(fc_partial['mean'], fc_explicit['mean'])
+
+
+# =============================================================================
+# Tests for predict_arima guard on error models (TEST-4)
+# =============================================================================
+def test_predict_arima_raises_clear_error_for_error_model():
+    """
+    Test that predict_arima raises a clear ValueError when called on an
+    error model produced by _create_error_model.
+
+    Without the guard, the degenerate (empty) state-space in the error model
+    causes a confusing 'incompatible array sizes' error deep inside
+    kalman_forecast_core. The guard must surface a diagnostic message before
+    reaching that code.
+    """
+    from skforecast.stats.arima._arima_base import predict_arima
+
+    error = _create_error_model((1, 0, 1), (0, 0, 0), 1)
+
+    with pytest.raises(ValueError, match="Cannot generate forecasts from an error model"):
+        predict_arima(error, n_ahead=5)

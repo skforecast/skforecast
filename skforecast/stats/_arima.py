@@ -46,10 +46,10 @@ class Arima(BaseEstimator, RegressorMixin):
     m : int, default 1
         Seasonal period (e.g., 12 for monthly data with yearly seasonality, 
         4 for quarterly data). Set to 1 for non-seasonal models.
-    include_mean : bool, default True
+    fit_intercept : bool, default True
         Whether to include a mean/intercept term in the model. Only applies 
         when there is no differencing (d=0 and D=0).
-    transform_pars : bool, default True
+    enforce_stationarity : bool, default True
         Whether to transform parameters to ensure stationarity and invertibility 
         during optimization.
     method : str, default "CSS-ML"
@@ -60,10 +60,6 @@ class Arima(BaseEstimator, RegressorMixin):
     n_cond : int, optional
         Number of initial observations to use for conditional sum of squares. 
         If None, defaults to max(p + d*m + P*m, q + Q*m).
-    SSinit : str, default "Gardner1980"
-        Method for state-space initialization. Options:
-        - "Gardner1980": Gardner's method (default, more numerically stable)
-        - "Rossignol2011": Rossignol's method (alternative)
     optim_method : str, default "BFGS"
         Optimization method passed to scipy.optimize.minimize. Common options 
         include "BFGS", "L-BFGS-B", "Nelder-Mead", etc.
@@ -137,16 +133,14 @@ class Arima(BaseEstimator, RegressorMixin):
         (P, D, Q) seasonal ARIMA order stored on the estimator.
     m : int
         Seasonal period (e.g., 12 for monthly data).
-    include_mean : bool
+    fit_intercept : bool
         Whether a mean/intercept term is included in the model.
-    transform_pars : bool
+    enforce_stationarity : bool
         Whether parameters are transformed to enforce stationarity/invertibility.
     method : str
         Estimation method (e.g., "CSS-ML", "ML", "CSS").
     n_cond : int or None
         Number of observations used for conditional sum of squares (if any).
-    SSinit : str
-        State-space initialization method (e.g., "Gardner1980").
     optim_method : str
         Optimization method passed to the optimizer (e.g., "BFGS").
     optim_kwargs : dict or None
@@ -222,6 +216,7 @@ class Arima(BaseEstimator, RegressorMixin):
         - 'aic': Akaike Information Criterion
         - 'bic': Bayesian Information Criterion
         - 'arma': ARIMA specification [p, q, P, Q, m, d, D]
+        - 'order_spec': SARIMAOrder dataclass with named fields
         - 'residuals': Model residuals
         - 'converged': Convergence status
         - 'model': State-space model dict
@@ -288,11 +283,10 @@ class Arima(BaseEstimator, RegressorMixin):
         order: tuple[int, int, int] | None = (1, 0, 0),
         seasonal_order: tuple[int, int, int] | None = (0, 0, 0),
         m: int = 1,
-        include_mean: bool = True,
-        transform_pars: bool = True,
+        fit_intercept: bool = True,
+        enforce_stationarity: bool = True,
         method: str = "CSS-ML",
         n_cond: int | None = None,
-        SSinit: str = "Gardner1980",
         optim_method: str = "BFGS",
         optim_kwargs: dict | None = None,
         kappa: float = 1e6,
@@ -339,11 +333,10 @@ class Arima(BaseEstimator, RegressorMixin):
         self.order                = order
         self.seasonal_order       = seasonal_order
         self.m                    = m
-        self.include_mean         = include_mean
-        self.transform_pars       = transform_pars
+        self.fit_intercept        = fit_intercept
+        self.enforce_stationarity = enforce_stationarity
         self.method               = method
         self.n_cond               = n_cond
-        self.SSinit               = SSinit
         self.optim_method         = optim_method
         self.optim_kwargs         = optim_kwargs
         self.kappa                = kappa
@@ -528,7 +521,7 @@ class Arima(BaseEstimator, RegressorMixin):
                     approximation      = self.approximation,
                     method             = self.method,
                     truncate           = self.truncate,
-                    xreg               = exog,
+                    exog               = exog,
                     test               = self.test,
                     test_args          = self.test_kwargs,
                     seasonal_test      = self.seasonal_test,
@@ -537,20 +530,12 @@ class Arima(BaseEstimator, RegressorMixin):
                     allowmean          = self.allowmean,
                     lambda_bc          = self.lambda_bc,
                     biasadj            = self.biasadj,
-                    SSinit             = self.SSinit,
                     kappa              = self.kappa
                 )
                 
-                best_model_order_ = (
-                    self.model_['arma'][0],
-                    self.model_['arma'][5],
-                    self.model_['arma'][1]
-                )
-                best_seasonal_order_ = (
-                    self.model_['arma'][2],
-                    self.model_['arma'][6],
-                    self.model_['arma'][3]
-                )
+                order_spec = self.model_['order_spec']
+                best_model_order_ = (order_spec.p, order_spec.d, order_spec.q)
+                best_seasonal_order_ = (order_spec.P, order_spec.D, order_spec.Q)
                 self.best_params_ = {
                     'order': best_model_order_,
                     'seasonal_order': best_seasonal_order_,
@@ -571,14 +556,13 @@ class Arima(BaseEstimator, RegressorMixin):
                     m              = self.m,
                     order          = self.order,
                     seasonal       = self.seasonal_order,
-                    xreg           = exog,
-                    include_mean   = self.include_mean,
-                    transform_pars = self.transform_pars,
+                    exog           = exog,
+                    fit_intercept   = self.fit_intercept,
+                    enforce_stationarity = self.enforce_stationarity,
                     fixed          = None,
                     init           = None,
                     method         = self.method,
                     n_cond         = self.n_cond,
-                    SSinit         = self.SSinit,
                     optim_method   = self.optim_method,
                     opt_options    = self.optim_kwargs,
                     kappa          = self.kappa
@@ -591,7 +575,8 @@ class Arima(BaseEstimator, RegressorMixin):
         self.loglik_              = self.model_['loglik']
         self.aic_                 = self.model_['aic']
         self.bic_                 = self.model_['bic']
-        self.arma_                = self.model_['arma']
+        self.order_spec_          = self.model_['order_spec']
+        self.arma_                = self.order_spec_.to_arma_list()
         self.converged_           = self.model_['converged']
         self.fitted_values_       = self.model_['fitted']
         self.in_sample_residuals_ = self.model_['residuals']
@@ -667,13 +652,14 @@ class Arima(BaseEstimator, RegressorMixin):
             predictions = forecast_arima(
                 model   = self.model_,
                 h       = steps,
-                xreg    = exog
+                exog    = exog,
+                level   = []
             )['mean']
         else:
             predictions = predict_arima(
                 model   = self.model_,
                 n_ahead = steps,
-                newxreg = exog,
+                new_exog = exog,
                 se_fit  = False
             )['mean']
         
@@ -777,14 +763,14 @@ class Arima(BaseEstimator, RegressorMixin):
             raw_preds = forecast_arima(
                 model   = self.model_,
                 h       = steps,
-                xreg    = exog,
+                exog    = exog,
                 level   = level
             )
         else:
             raw_preds = predict_arima(
                 model   = self.model_,
                 n_ahead = steps,
-                newxreg = exog,
+                new_exog = exog,
                 se_fit  = True,
                 level   = level
             )
@@ -948,11 +934,10 @@ class Arima(BaseEstimator, RegressorMixin):
             "order": self.order,
             "seasonal_order": self.seasonal_order,
             "m": self.m,
-            "include_mean": self.include_mean,
-            "transform_pars": self.transform_pars,
+            "fit_intercept": self.fit_intercept,
+            "enforce_stationarity": self.enforce_stationarity,
             "method": self.method,
             "n_cond": self.n_cond,
-            "SSinit": self.SSinit,
             "optim_method": self.optim_method,
             "optim_kwargs": self.optim_kwargs,
             "kappa": self.kappa,
@@ -1002,7 +987,7 @@ class Arima(BaseEstimator, RegressorMixin):
         ----------
         **params : dict
             Estimator parameters. Valid parameter keys are: 'order', 'seasonal_order',
-            'm', 'include_mean', 'transform_pars', 'method', 'n_cond', 'SSinit',
+            'm', 'fit_intercept', 'enforce_stationarity', 'method', 'n_cond',
             'optim_method', 'optim_kwargs', 'kappa'.
 
         Returns
@@ -1018,8 +1003,8 @@ class Arima(BaseEstimator, RegressorMixin):
         """
 
         valid_params = {
-            'order', 'seasonal_order', 'm', 'include_mean', 'transform_pars',
-            'method', 'n_cond', 'SSinit', 'optim_method', 'optim_kwargs', 'kappa'
+            'order', 'seasonal_order', 'm', 'fit_intercept', 'enforce_stationarity',
+            'method', 'n_cond', 'optim_method', 'optim_kwargs', 'kappa'
         }
         for key in params.keys():
             if key not in valid_params:

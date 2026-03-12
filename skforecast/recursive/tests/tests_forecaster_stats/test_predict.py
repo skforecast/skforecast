@@ -5,7 +5,7 @@ import pytest
 import platform
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.stats import Sarimax, Arar, Ets
+from skforecast.stats import Sarimax, Arar, Ets, Arima
 from skforecast.recursive import ForecasterStats
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
@@ -584,3 +584,22 @@ def test_predict_output_ForecasterStats_with_multiple_estimators(estimator, expe
     )
 
     pd.testing.assert_series_equal(predictions, expected_results)
+
+
+def test_predict_output_ForecasterStats_skforecast_Arima():
+    """
+    Test predict output of ForecasterStats using skforecast Arima estimator.
+    """
+    forecaster = ForecasterStats(
+                     estimator=Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
+                 )
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=5)
+
+    expected = pd.Series(
+                   data  = [0.6192376, 0.6093831, 0.60478761, 0.60264456, 0.60164519],
+                   index = pd.RangeIndex(start=50, stop=55, step=1),
+                   name  = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected, atol=1e-4)

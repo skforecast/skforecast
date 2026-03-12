@@ -99,9 +99,9 @@ def test_predict_interval_returns_dataframe_by_default():
     assert 'lower_95' in result.columns
     assert 'upper_95' in result.columns
 
-    expected_mean = np.array([-1.6103516001266247, -1.1072627028353699, -0.7753950199537363])
-    expected_lower_95 = np.array([-3.5061759690202594, -3.15078572725202, -2.8799551358866573])
-    expected_upper_95 = np.array([0.2854727687670102, 0.9362603215812801, 1.3291650959791845])
+    expected_mean = np.array([-1.60969915, -1.11552107, -0.78835957])
+    expected_lower_95 = np.array([-3.11903999, -3.01349618, -2.83352155])
+    expected_upper_95 = np.array([-0.10035832,  0.78245404,  1.25680241])
 
     np.testing.assert_array_almost_equal(result['mean'].iloc[:3], expected_mean, decimal=4)
     np.testing.assert_array_almost_equal(result['lower_95'].iloc[:3], expected_lower_95, decimal=4)
@@ -146,9 +146,9 @@ def test_predict_interval_with_single_level():
     assert 'lower_80' not in result.columns
     assert 'lower_95' not in result.columns
 
-    expected_mean = np.array([-1.6103516001266247, -1.1072627028353699, -0.7753950199537363])
-    expected_lower_90 = np.array([-3.201377564804984, -2.822241286617544, -2.5415975456812863])
-    expected_upper_90 = np.array([-0.019325635448265155, 0.6077158809468042, 0.9908075057738135])
+    expected_mean = np.array([-1.60969915, -1.11552107, -0.78835957])
+    expected_lower_90 = np.array([-2.87637791, -2.708352  , -2.50471361])
+    expected_upper_90 = np.array([-0.3430204 ,  0.47730986,  0.92799446])
 
     np.testing.assert_array_almost_equal(result['mean'].iloc[:3], expected_mean, decimal=4)
     np.testing.assert_array_almost_equal(result['lower_90'].iloc[:3], expected_lower_90, decimal=4)
@@ -171,9 +171,9 @@ def test_predict_interval_with_alpha_parameter():
     assert 'upper_95' in result.columns
     assert len(result.columns) == 3  # Only mean and one interval
 
-    expected_mean = np.array([-1.6103516001266247, -1.1072627028353699, -0.7753950199537363])
-    expected_lower_95 = np.array([-3.5061759690202594, -3.15078572725202, -2.8799551358866573])
-    expected_upper_95 = np.array([0.2854727687670102, 0.9362603215812801, 1.3291650959791845])
+    expected_mean = np.array([-1.60969915, -1.11552107, -0.78835957])
+    expected_lower_95 = np.array([-3.11903999, -3.01349618, -2.83352155])
+    expected_upper_95 = np.array([-0.10035832,  0.78245404,  1.25680241])
 
     np.testing.assert_array_almost_equal(result['mean'].iloc[:3], expected_mean, decimal=4)
     np.testing.assert_array_almost_equal(result['lower_95'].iloc[:3], expected_lower_95, decimal=4)
@@ -198,11 +198,11 @@ def test_predict_interval_with_custom_levels():
     assert 'lower_99' in result.columns
     assert 'upper_99' in result.columns
     
-    expected_mean = np.array([-1.6103516001266247, -1.1072627028353699])
-    expected_lower_50 = np.array([-2.262768744052251, -1.8105079385289138])
-    expected_upper_50 = np.array([-0.9579344562009986, -0.40401746714182596])
-    expected_lower_99 = np.array([-4.10188716011514, -3.792907199514493])
-    expected_upper_99 = np.array([0.8811839598618907, 1.5783817938437532])
+    expected_mean = np.array([-1.60969915, -1.11552107])
+    expected_lower_50 = np.array([-2.12911427, -1.76867836])
+    expected_upper_50 = np.array([-1.09028404, -0.46236378])
+    expected_lower_99 = np.array([-3.59330925, -3.60988319])
+    expected_upper_99 = np.array([0.37391094, 1.37884105])
 
     np.testing.assert_array_almost_equal(result['mean'].iloc[:2], expected_mean, decimal=4)
     np.testing.assert_array_almost_equal(result['lower_50'].iloc[:2], expected_lower_50, decimal=4)
@@ -268,9 +268,9 @@ def test_predict_interval_with_exog():
     assert result.shape[0] == 10
     assert 'mean' in result.columns
     
-    expected_mean = np.array([-0.7086254997055901, -0.28482871141306915, -0.09336880032784575])
-    expected_lower_95 = np.array([-2.814753398261278, -2.524216549793444, -2.387987574296295])
-    expected_upper_95 = np.array([1.3975023988500974, 1.954559126967306, 2.2012499736406035])
+    expected_mean = np.array([-0.69037816, -0.28696593, -0.09660924])
+    expected_lower_95 = np.array([-2.45209152, -2.40343258, -2.35255749])
+    expected_upper_95 = np.array([1.07133521, 1.82950073, 2.15933901])
 
     np.testing.assert_array_almost_equal(result['mean'].iloc[:3], expected_mean, decimal=4)
     np.testing.assert_array_almost_equal(result['lower_95'].iloc[:3], expected_lower_95, decimal=4)
@@ -321,13 +321,13 @@ def test_predict_interval_seasonal_model():
     assert np.all(np.isfinite(result.values))
     
     # Check exact values for first and last steps (R-based implementation)
-    expected_mean_first = np.array([2.6823667306424746, 2.6706837793404903, 2.6512215984190295])
-    expected_lower_95_first = np.array([-0.3273637082331806, -0.9184356280195636, -1.3861368693058589])
-    expected_upper_95_first = np.array([5.69209716951813, 6.259803186700545, 6.688580066143918])
+    expected_mean_first = np.array([2.60268909, 2.51255651, 2.4209728 ])
+    expected_lower_95_first = np.array([ 0.42550965, -0.48012104, -1.14357126])
+    expected_upper_95_first = np.array([4.77986853, 5.50523406, 5.98551686])
 
-    expected_mean_last = np.array([2.5554206376667588, 2.552322493238509, 2.549340142505205])
-    expected_lower_95_last = np.array([-3.8828087372309636, -3.9132293455135105, -3.9405573648502026])
-    expected_upper_95_last = np.array([8.993650012564482, 9.017874331990528, 9.039237649860613])
+    expected_mean_last = np.array([1.5023065 , 1.47665117, 1.45242347])
+    expected_lower_95_last = np.array([-4.77643708, -4.82993643, -4.87882661])
+    expected_upper_95_last = np.array([7.78105008, 7.78323877, 7.78367355])
 
     np.testing.assert_array_almost_equal(result['mean'].iloc[:3], expected_mean_first, decimal=3)
     np.testing.assert_array_almost_equal(result['lower_95'].iloc[:3], expected_lower_95_first, decimal=3)
@@ -356,15 +356,15 @@ def test_predict_interval_with_differencing():
     
     # Expected values from skforecast implementation
     expected_mean = np.array([
-        -10.38329029, -10.38329819, -10.38329815, -10.38329815,
-        -10.38329815
+        -10.38304468, -10.38305569, -10.38305562, -10.38305562,
+        -10.38305562
     ])
     expected_lower_95 = np.array([
-        -12.90567947, -13.46961784, -13.94536068, -14.36465596,
-        -14.74381768
+        -12.17202138, -12.90439972, -13.46756728, -13.94272507,
+        -14.36153284
     ])
     expected_upper_95 = np.array([
-        -7.86090112, -7.29697855, -6.82123562, -6.40194034, -6.02277862
+        -8.59406799, -7.86171166, -7.29854395, -6.82338616, -6.40457839
     ])
     
     np.testing.assert_array_almost_equal(result['mean'].values, expected_mean, decimal=4)
@@ -385,13 +385,12 @@ def test_predict_interval_fuel_consumption_data_with_exog():
                 order=(1, 1, 1),
                 seasonal_order=(1, 1, 1),
                 m=12,
-                include_mean = True,
-                transform_pars = True,
-                method = "CSS-ML",
-                n_cond = None,
-                SSinit = "Gardner1980",
-                optim_method = "BFGS",
-                optim_kwargs = {"maxiter": 2000},
+                fit_intercept=True,
+                enforce_stationarity=True,
+                method="CSS-ML",
+                n_cond=None,
+                optim_method="BFGS",
+                optim_kwargs={"maxiter": 2000},
             )
     model.fit(
         y=fuel_consumption.loc[:'1989-09-01', 'y'],
@@ -407,16 +406,16 @@ def test_predict_interval_fuel_consumption_data_with_exog():
     expected = {
         'Linux':
             pd.DataFrame({
-                'mean': np.array([1574773.72985479, 1449368.34742435, 1509249.89980132,
-                                  1484706.35242326, 1404055.23623305]),
-                'lower_95': np.array([1540700.25454104, 1412973.36300733, 1471902.52281119,
-                                      1446047.90020549, 1364270.25276509]),
-                'upper_95': np.array([1608847.20516855, 1485763.33184137, 1546597.27679145,
-                                      1523364.80464102, 1443840.219701  ]),
-                'lower_99': np.array([1529993.59262818, 1401537.23006555, 1460167.1264337 ,
-                                      1433900.53413383, 1351768.90491966]),
-                'upper_99': np.array([1619553.86708141, 1497199.46478316, 1558332.67316893,
-                                      1535512.17071268, 1456341.56754643])
+                'mean': np.array([1574719.88796327, 1449374.80320486, 1509201.84849718,
+                                  1484751.10902458, 1403989.16888583]),
+                'lower_95': np.array([1540585.1426525 , 1415232.19910491, 1472732.76680002,
+                                      1447317.00684114, 1365235.48780817]),
+                'upper_95': np.array([1608854.63327405, 1483517.40730482, 1545670.93019435,
+                                      1522185.21120802, 1442742.84996349]),
+                'lower_99': np.array([1529859.22831125, 1404503.81535314, 1461273.35080536,
+                                      1435554.35943289, 1353058.19866004]),
+                'upper_99': np.array([1619580.54761529, 1494245.79105659, 1557130.34618901,
+                                      1533947.85861628, 1454920.13911162])
             }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
         'Darwin':
             pd.DataFrame({
@@ -486,13 +485,13 @@ def test_predict_interval_with_exog_dataframe():
     
     # Check exact predicted values for DataFrame exog
     expected_mean_df = np.array([
-        -0.2013853, 0.19484881, -0.03919908, -0.24332757, -0.0255057
+        -0.18187, 0.20608757, -0.02945256, -0.22661237, -0.0109613
     ])
     expected_lower_95_df = np.array([
-        -1.90717175, -1.58961103, -1.85099262, -2.06480647, -1.85043932
+        -1.65126352, -1.50498276, -1.81869782, -2.04287589, -1.8367468
     ])
     expected_upper_95_df = np.array([
-        1.50440114, 1.97930865, 1.77259447, 1.57815133, 1.79942792
+        1.28752353, 1.91715791, 1.7597927 , 1.58965114, 1.81482419
     ])
     np.testing.assert_array_almost_equal(result['mean'].values, expected_mean_df, decimal=5)
     np.testing.assert_array_almost_equal(result['lower_95'].values, expected_lower_95_df, decimal=5)
@@ -514,13 +513,13 @@ def test_predict_interval_with_exog_dataframe():
     
     # Check exact predicted values for Series exog
     expected_mean_series = np.array([
-        -0.02240879, 0.0069841, 0.09581765, -0.09615039, -0.12792916
+        -0.00370962, 0.0191783, 0.09982658, -0.08205884, -0.11285304
     ])
     expected_lower_95_series = np.array([
-        -1.75636421, -1.80777753, -1.747181, -1.94921403, -1.98460463
+        -1.49667978, -1.72029709, -1.71968492, -1.92934068, -1.96996154
     ])
     expected_upper_95_series = np.array([
-        1.71154664, 1.82174572, 1.93881631, 1.75691325, 1.7287463
+        1.48926054, 1.75865368, 1.91933809, 1.76522299, 1.74425545
     ])
     np.testing.assert_array_almost_equal(result2['mean'].values, expected_mean_series, decimal=5)
     np.testing.assert_array_almost_equal(result2['lower_95'].values, expected_lower_95_series, decimal=5)
@@ -548,13 +547,13 @@ def test_predict_interval_level_as_single_value():
     
     # Check exact values for level=90
     expected_mean = np.array([
-        -1.6103516, -1.10726272, -0.77539506, -0.55647521, -0.41206252
+        -1.60969915, -1.11552107, -0.78835957, -0.57176833, -0.42837809
     ])
     expected_lower_90 = np.array([
-        -3.20137755, -2.82224127, -2.54159755, -2.3445097, -2.20951444
+        -2.87637791, -2.708352  , -2.50471361, -2.33954242, -2.21822331
     ])
     expected_upper_90 = np.array([
-        -0.01932566, 0.60771583, 0.99080742, 1.23155927, 1.38538939
+        -0.3430204 ,  0.47730986,  0.92799446,  1.19600576,  1.36147714
     ])
     
     np.testing.assert_array_almost_equal(result_int['mean'].values, expected_mean, decimal=4)
@@ -633,13 +632,13 @@ def test_predict_interval_after_reduce_memory():
     
     # Check exact expected values
     expected_mean = np.array([
-        -1.6103516, -1.10726272, -0.77539506, -0.55647521, -0.41206252
+        -1.60969915, -1.11552107, -0.78835957, -0.57176833, -0.42837809
     ])
     expected_lower_95 = np.array([
-        -3.50617595, -3.15078571, -2.87995513, -2.68704971, -2.55385858
+        -3.11903999, -3.01349618, -2.83352155, -2.67820108, -2.56111021
     ])
     expected_upper_95 = np.array([
-        0.28547275, 0.93626026, 1.329165, 1.57409929, 1.72973354
+        -0.10035832,  0.78245404,  1.25680241,  1.53466442,  1.70435404
     ])
     
     np.testing.assert_array_almost_equal(result_after['mean'].values, expected_mean, decimal=4)
@@ -689,16 +688,16 @@ def test_predict_interval_auto_arima_air_passengers_data():
     expected = {
         'Linux':
             pd.DataFrame({
-                'mean': np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
-                                  490.92842560605027, 502.3511798022874]),
-                'lower_95': np.array([419.01183057292997, 390.374886879868, 416.9267606112706,
-                                    457.9051928081597, 468.2289786562149]),
-                'upper_95': np.array([471.5594841633824, 449.2944254405835, 479.96150926434274,
-                                        523.9516584039409, 536.4733809483598]),
-                'lower_99': np.array([410.7559958492004, 381.1179564725308, 407.02328383973776,
-                                        447.52854101139263, 457.50700597719066]),
-                'upper_99': np.array([479.81531888711197, 458.55135584792066, 489.8649860358756,
-                                        534.3283102007078, 547.1953536273841])
+                'mean': np.array([451.34858312, 427.10478883, 463.38985401,
+                                  499.70660932, 514.03811796]),
+                'lower_95': np.array([428.96315079, 400.56937873, 433.27094968,
+                                      466.38741355, 477.80016527]),
+                'upper_95': np.array([473.73401545, 453.64019893, 493.50875834,
+                                      533.02580509, 550.27607065]),
+                'lower_99': np.array([421.92913816, 392.23134857, 423.80690403,
+                                      455.91776345, 466.41337527]),
+                'upper_99': np.array([480.76802809, 461.97822909, 502.97280399,
+                                      543.49545519, 561.66286065])
             }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
         'Darwin':
             pd.DataFrame({
@@ -715,24 +714,24 @@ def test_predict_interval_auto_arima_air_passengers_data():
             }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
         'Windows':
             pd.DataFrame({
-                'mean': np.array([445.28524764, 419.83438161, 448.44374789, 490.92802225,
-                                  502.35073213]),
-                'lower_95': np.array([419.00941455, 390.37229952, 416.92361073, 457.90182506,
-                                      468.22542199]),
-                'upper_95': np.array([471.56108074, 449.2964637, 479.96388505, 523.95421943,
-                                      536.47604228]),
-                'lower_99': np.array([410.7529494, 381.11464237, 407.01926581, 447.52424179,
-                                      457.50247239]),
-                'upper_99': np.array([479.81754588, 458.55412084, 489.86822997, 534.33180271,
-                                      547.19899187])
+                'mean': np.array([445.568403, 420.287912, 449.050330, 491.657220,
+                                  503.180763]),
+                'lower_95': np.array([419.213511, 390.753550, 417.456372, 458.554988,
+                                      468.972179]),
+                'upper_95': np.array([471.923294, 449.822274, 480.644288, 524.759452,
+                                      537.389347]),
+                'lower_99': np.array([410.932204, 381.473181, 407.528831, 448.153513,
+                                      458.223063]),
+                'upper_99': np.array([480.204601, 459.102643, 490.571829, 535.160927,
+                                      548.138463])
             }, index=[1, 2, 3, 4, 5]).rename_axis('step')
     }
     
     assert model.is_auto is True
-    assert model.best_params_['order'] == (2, 1, 1)
-    assert model.best_params_['seasonal_order'] == (0, 1, 0)
+    assert model.best_params_['order'] == (0, 1, 1)
+    assert model.best_params_['seasonal_order'] == (2, 1, 0)
     assert model.best_params_['m'] == 12
-    assert model.estimator_name_ == "AutoArima(2,1,1)(0,1,0)[12]"
+    assert model.estimator_name_ == "AutoArima(0,1,1)(2,1,0)[12]"
     pd.testing.assert_frame_equal(pred, expected[platform.system()], rtol=1e-4)
 
 

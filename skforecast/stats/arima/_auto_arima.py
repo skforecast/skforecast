@@ -17,7 +17,8 @@ from numba import njit
 from statsmodels.tsa.stattools import adfuller, kpss
 
 from ._arima_base import (
-    arima, predict_arima, diff, match_arg
+    arima, predict_arima, diff, _validate_choice, ArimaResult, SARIMAOrder,
+    StateSpaceArrays
 )
 
 from ..seasonal import (
@@ -120,7 +121,7 @@ def compute_approx_offset(
     d: int,
     D: int,
     m: int = 1,
-    xreg: Union[pd.DataFrame, np.ndarray, None] = None,
+    exog: Union[pd.DataFrame, np.ndarray, None] = None,
     truncate: Optional[int] = None,
     **kwargs
 ) -> float:
@@ -142,7 +143,7 @@ def compute_approx_offset(
         Seasonal differencing order.
     m : int
         Seasonal period.
-    xreg : DataFrame, ndarray, or None
+    exog : DataFrame, ndarray, or None
         Exogenous regressors.
     truncate : int or None
         Truncate series to this length.
@@ -158,32 +159,32 @@ def compute_approx_offset(
         return 0.0
 
     xx = x.copy()
-    Xreg = xreg
+    Exog = exog
     N0 = len(xx)
 
     if truncate is not None and N0 > truncate:
         start_idx = N0 - truncate
         xx = xx[start_idx:]
 
-        if Xreg is not None:
-            if isinstance(Xreg, pd.DataFrame):
-                nrows = len(Xreg)
+        if Exog is not None:
+            if isinstance(Exog, pd.DataFrame):
+                nrows = len(Exog)
                 if nrows == N0:
-                    Xreg = Xreg.iloc[start_idx:]
+                    Exog = Exog.iloc[start_idx:]
             else:
-                nrows = Xreg.shape[0]
+                nrows = Exog.shape[0]
                 if nrows == N0:
-                    Xreg = Xreg[start_idx:]
+                    Exog = Exog[start_idx:]
 
     serieslength = len(xx)
 
     try:
         if D == 0:
             fit = arima(xx, m, order=(0, d, 0), seasonal=(0, 0, 0),
-                       xreg=Xreg, include_mean=False, **kwargs)
+                       exog=Exog, fit_intercept=False, **kwargs)
         else:
             fit = arima(xx, m, order=(0, d, 0), seasonal=(0, D, 0),
-                       xreg=Xreg, include_mean=False, **kwargs)
+                       exog=Exog, fit_intercept=False, **kwargs)
 
         loglik = fit['loglik']
         sigma2 = fit['sigma2']
@@ -321,7 +322,7 @@ def fit_custom_arima(
     trace: bool = False,
     approximation: bool = False,
     offset: float = 0.0,
-    xreg: Union[pd.DataFrame, np.ndarray, None] = None,
+    exog: Union[pd.DataFrame, np.ndarray, None] = None,
     method: Optional[str] = None,
     nstar: Optional[int] = None,
     **kwargs
@@ -349,7 +350,7 @@ def fit_custom_arima(
         Use CSS approximation.
     offset : float
         Approximation offset.
-    xreg : DataFrame, ndarray, or None
+    exog : DataFrame, ndarray, or None
         Exogenous regressors.
     method : str or None
         Estimation method.
@@ -382,16 +383,16 @@ def fit_custom_arima(
 
     drift_case = (diffs == 1) and constant
 
-    xreg_use = xreg
+    exog_use = exog
     if drift_case:
         drift = np.arange(1, len(x) + 1, dtype=np.float64)
-        if xreg_use is None:
-            xreg_use = pd.DataFrame({'drift': drift})
-        elif isinstance(xreg_use, pd.DataFrame):
-            xreg_use = xreg_use.copy()
-            xreg_use.insert(0, 'drift', drift)
+        if exog_use is None:
+            exog_use = pd.DataFrame({'drift': drift})
+        elif isinstance(exog_use, pd.DataFrame):
+            exog_use = exog_use.copy()
+            exog_use.insert(0, 'drift', drift)
         else:
-            xreg_use = np.column_stack([drift, xreg_use])
+            exog_use = np.column_stack([drift, exog_use])
 
     try:
         if drift_case:
@@ -399,9 +400,9 @@ def fit_custom_arima(
                 x, m,
                 order=order,
                 seasonal=seasonal if use_season else (0, 0, 0),
-                xreg=xreg_use,
+                exog=exog_use,
                 method=method,
-                include_mean=False,
+                fit_intercept=False,
                 **kwargs
             )
         else:
@@ -409,22 +410,15 @@ def fit_custom_arima(
                 x, m,
                 order=order,
                 seasonal=seasonal if use_season else (0, 0, 0),
-                xreg=xreg_use,
+                exog=exog_use,
                 method=method,
-                include_mean=constant,
+                fit_intercept=constant,
                 **kwargs
             )
-    except Exception as e:
+    except Exception:
         if trace:
             print(arima_trace_str(order, seasonal, m, constant, np.inf))
         return _create_error_model(order, seasonal, m)
-
-    if xreg_use is None:
-        nxreg = 0
-    elif isinstance(xreg_use, pd.DataFrame):
-        nxreg = xreg_use.shape[1]
-    else:
-        nxreg = xreg_use.shape[1] if xreg_use.ndim > 1 else 1
 
     nstar_adj = n - order[1] - seasonal[1] * m
     npar = np.sum(fit['mask']) + 1
@@ -451,14 +445,10 @@ def fit_custom_arima(
         fit['aicc'] = np.inf
         fit['ic'] = np.inf
 
-    resid_valid = fit['residuals'][~np.isnan(fit['residuals'])]
-    if len(resid_valid) > npar - 1:
-        fit['sigma2'] = np.sum(resid_valid**2) / (nstar_adj - npar + 1)
-
     minroot = 2.0
 
     if order[0] + seasonal[0] > 0:
-        phi = fit['model']['phi']
+        phi = fit['state_space'].ar_coefs
         if len(phi) > 0:
             lastnz = len(phi)
             for i in range(len(phi) - 1, -1, -1):
@@ -474,7 +464,7 @@ def fit_custom_arima(
                     fit['ic'] = np.inf
 
     if order[2] + seasonal[2] > 0 and fit['ic'] < np.inf:
-        theta = fit['model']['theta']
+        theta = fit['state_space'].ma_coefs
         if len(theta) > 0:
             lastnz = len(theta)
             for i in range(len(theta) - 1, -1, -1):
@@ -498,7 +488,7 @@ def fit_custom_arima(
     if minroot < 1 + 1e-2 or bad_variances:
         fit['ic'] = np.inf
 
-    fit['xreg'] = xreg_use if drift_case else xreg
+    fit['exog'] = exog_use if drift_case else exog
 
     if trace:
         print(arima_trace_str(order, seasonal, m, constant, fit['ic']))
@@ -510,44 +500,40 @@ def _create_error_model(
     order: Tuple[int, int, int],
     seasonal: Tuple[int, int, int],
     m: int
-) -> DictType[str, Any]:
+) -> ArimaResult:
     """Create an error model with infinite IC."""
-    return {
-        'y': np.array([]),
-        'fitted': np.array([]),
-        'coef': pd.DataFrame(),
-        'sigma2': 0.0,
-        'var_coef': np.zeros((0, 0)),
-        'mask': np.array([], dtype=bool),
-        'loglik': 0.0,
-        'aic': np.inf,
-        'bic': np.inf,
-        'aicc': np.inf,
-        'ic': np.inf,
-        'arma': [order[0], order[2], seasonal[0], seasonal[2], m, order[1], seasonal[1]],
-        'residuals': np.array([]),
-        'converged': False,
-        'n_cond': 0,
-        'nobs': 0,
-        'model': {
-            'phi': np.array([]),
-            'theta': np.array([]),
-            'Delta': np.array([]),
-            'Z': np.array([]),
-            'a': np.array([]),
-            'P': np.zeros((1, 1)),
-            'T': np.zeros((1, 1)),
-            'V': np.zeros((1, 1)),
-            'h': 0.0,
-            'Pn': np.zeros((1, 1))
-        },
-        'xreg': None,
-        'method': 'Error model',
-        'lambda': None,
-        'biasadj': None,
-        'offset': None,
-        'constant': False
-    }
+    return ArimaResult(
+        y=np.array([]),
+        fitted_values=np.array([]),
+        coefficients=pd.DataFrame(),
+        sigma2=0.0,
+        param_covariance=np.zeros((0, 0)),
+        param_mask=np.array([], dtype=bool),
+        loglik=0.0,
+        aic=np.inf,
+        bic=np.inf,
+        aicc=np.inf,
+        ic=np.inf,
+        order=SARIMAOrder(p=order[0], d=order[1], q=order[2],
+                          P=seasonal[0], D=seasonal[1], Q=seasonal[2], s=m),
+        residuals=np.array([]),
+        converged=False,
+        n_cond=0,
+        nobs=0,
+        state_space=StateSpaceArrays(
+            ar_coefs=np.array([]), ma_coefs=np.array([]),
+            differencing_poly=np.array([]), observation_vector=np.array([]),
+            filtered_state=np.array([]), filtered_covariance=np.zeros((1, 1)),
+            transition_matrix=np.zeros((1, 1)), innovation_covariance=np.zeros((1, 1)),
+            observation_variance=0.0, predicted_covariance=np.zeros((1, 1))
+        ),
+        exog=None,
+        method='Error model',
+        lambda_bc=None,
+        biasadj=None,
+        offset=None,
+        constant=False,
+    )
 
 
 def search_arima(
@@ -564,7 +550,7 @@ def search_arima(
     ic: str = "aic",
     trace: bool = False,
     approximation: bool = False,
-    xreg: Union[pd.DataFrame, np.ndarray, None] = None,
+    exog: Union[pd.DataFrame, np.ndarray, None] = None,
     offset: float = 0.0,
     allowdrift: bool = True,
     allowmean: bool = True,
@@ -594,7 +580,7 @@ def search_arima(
         Print trace.
     approximation : bool
         Use CSS approximation.
-    xreg : DataFrame, ndarray, or None
+    exog : DataFrame, ndarray, or None
         Exogenous regressors.
     offset : float
         Approximation offset.
@@ -610,7 +596,7 @@ def search_arima(
     dict
         Best fitted model.
     """
-    ic = match_arg(ic, ["aic", "aicc", "bic"])
+    ic = _validate_choice(ic, ["aic", "aicc", "bic"], "ic")
 
     allowdrift = allowdrift and (d + D == 1)
     allowmean = allowmean and (d + D == 0)
@@ -635,7 +621,7 @@ def search_arima(
                                 trace=trace,
                                 approximation=approximation,
                                 offset=offset,
-                                xreg=xreg,
+                                exog=exog,
                                 method=method,
                                 **kwargs
                             )
@@ -652,10 +638,10 @@ def search_arima(
         if trace:
             print("\nNow re-fitting the best model(s) without approximations...\n")
 
-        arma = bestfit['arma']
-        p, q, P, Q = arma[0], arma[1], arma[2], arma[3]
-        d_ = arma[5]
-        D_ = arma[6]
+        order_spec = bestfit['order_spec']
+        p, q, P, Q = order_spec.p, order_spec.q, order_spec.P, order_spec.Q
+        d_ = order_spec.d
+        D_ = order_spec.D
 
         newbestfit = fit_custom_arima(
             x, m,
@@ -665,7 +651,7 @@ def search_arima(
             ic=ic,
             trace=False,
             approximation=False,
-            xreg=xreg,
+            exog=exog,
             **kwargs
         )
 
@@ -678,7 +664,7 @@ def search_arima(
                 stationary=stationary,
                 ic=ic, trace=trace,
                 approximation=False,
-                xreg=xreg,
+                exog=exog,
                 offset=offset,
                 allowdrift=allowdrift,
                 allowmean=allowmean,
@@ -757,7 +743,7 @@ def auto_arima(
     approximation: Optional[bool] = None,
     method: Optional[str] = None,
     truncate: Optional[int] = None,
-    xreg: Union[pd.DataFrame, np.ndarray, None] = None,
+    exog: Union[pd.DataFrame, np.ndarray, None] = None,
     test: str = "kpss",
     test_args: Optional[DictType] = None,
     seasonal_test: str = "seas",
@@ -808,7 +794,7 @@ def auto_arima(
         Estimation method.
     truncate : int or None
         Truncate series for approximation offset.
-    xreg : DataFrame, ndarray, or None
+    exog : DataFrame, ndarray, or None
         Exogenous regressors.
     test : str
         Unit root test: "kpss", "adf", or "pp".
@@ -850,9 +836,9 @@ def auto_arima(
     if seasonal_test_args is None:
         seasonal_test_args = {}
 
-    ic = match_arg(ic, ["aicc", "aic", "bic"])
-    test = match_arg(test, ["kpss", "adf", "pp"])
-    seasonal_test = match_arg(seasonal_test, ["seas", "ocsb", "hegy", "ch"])
+    ic = _validate_choice(ic, ["aicc", "aic", "bic"], "ic")
+    test = _validate_choice(test, ["kpss", "adf", "pp"], "test")
+    seasonal_test = _validate_choice(seasonal_test, ["seas", "ocsb", "hegy", "ch"], "seasonal_test")
 
     if approximation is None:
         approximation = len(y) > 150 or m > 12
@@ -863,17 +849,17 @@ def auto_arima(
     if firstnm is None:
         raise ValueError("All data are missing")
 
-    if xreg is not None:
-        if isinstance(xreg, pd.DataFrame):
-            xreg = xreg.iloc[firstnm:]
+    if exog is not None:
+        if isinstance(exog, pd.DataFrame):
+            exog = exog.iloc[firstnm:]
         else:
-            xreg = np.asarray(xreg)[firstnm:]
+            exog = np.asarray(exog)[firstnm:]
 
     if is_constant(x):
         if allowmean:
-            fit = arima(x, m, order=(0, 0, 0), include_mean=True, **kwargs)
+            fit = arima(x, m, order=(0, 0, 0), fit_intercept=True, **kwargs)
         else:
-            fit = arima(x, m, order=(0, 0, 0), include_mean=False, **kwargs)
+            fit = arima(x, m, order=(0, 0, 0), fit_intercept=False, **kwargs)
         fit['constant'] = True
         fit['y'] = y
         return fit
@@ -900,24 +886,24 @@ def auto_arima(
             x, lambda_bc = box_cox(x, m, lambda_bc=lambda_bc)
 
     xx = x.copy()
-    xregg = xreg
+    exog_processed = exog
 
-    if xregg is not None:
-        if isinstance(xregg, pd.DataFrame):
-            xreg_mat = xregg.values
+    if exog_processed is not None:
+        if isinstance(exog_processed, pd.DataFrame):
+            exog_mat = exog_processed.values
         else:
-            xreg_mat = xregg
+            exog_mat = exog_processed
 
-        nonconstant = [i for i in range(xreg_mat.shape[1])
-                      if not is_constant(xreg_mat[:, i])]
+        nonconstant = [i for i in range(exog_mat.shape[1])
+                      if not is_constant(exog_mat[:, i])]
         if len(nonconstant) == 0:
-            xregg = None
+            exog_processed = None
         else:
-            xreg_mat = xreg_mat[:, nonconstant]
+            exog_mat = exog_mat[:, nonconstant]
 
-            valid = ~np.isnan(xx) & np.all(np.isfinite(xreg_mat), axis=1)
-            if np.sum(valid) > xreg_mat.shape[1]:
-                X = xreg_mat[valid]
+            valid = ~np.isnan(xx) & np.all(np.isfinite(exog_mat), axis=1)
+            if np.sum(valid) > exog_mat.shape[1]:
+                X = exog_mat[valid]
                 y_valid = xx[valid]
                 beta, _, _, _ = np.linalg.lstsq(X, y_valid, rcond=None)
                 res = y_valid - X @ beta
@@ -960,10 +946,10 @@ def auto_arima(
     if is_constant(dx):
         if D > 0:
             fit = arima(x, m, order=(0, d, 0), seasonal=(0, D, 0),
-                       xreg=xreg, include_mean=False, method=method, **kwargs)
+                       exog=exog, fit_intercept=False, method=method, **kwargs)
         else:
-            fit = arima(x, m, order=(0, d, 0), xreg=xreg,
-                       include_mean=False, method=method, **kwargs)
+            fit = arima(x, m, order=(0, d, 0), exog=exog,
+                       fit_intercept=False, method=method, **kwargs)
         fit['y'] = y
         return fit
 
@@ -976,7 +962,7 @@ def auto_arima(
     offset = compute_approx_offset(
         approximation=approximation,
         x=x, d=d, D=D, m=m,
-        xreg=xreg, truncate=truncate,
+        exog=exog, truncate=truncate,
         **kwargs
     )
 
@@ -1000,7 +986,7 @@ def auto_arima(
             stationary=stationary,
             ic=ic, trace=trace,
             approximation=approximation,
-            xreg=xreg,
+            exog=exog,
             offset=offset,
             allowdrift=allowdrift,
             allowmean=allowmean,
@@ -1031,7 +1017,7 @@ def auto_arima(
         x, m, order=(p, d, q), seasonal=(P, D, Q),
         constant=constant, ic=ic, trace=trace,
         approximation=approximation, offset=offset,
-        xreg=xreg, method=method, **kwargs
+        exog=exog, method=method, **kwargs
     )
     results[0, :] = [p, d, q, P, D, Q, int(constant), bestfit['ic']]
     k = 1
@@ -1042,7 +1028,7 @@ def auto_arima(
             x, m, order=(0, d, 0), seasonal=(0, D, 0),
             constant=constant, ic=ic, trace=trace,
             approximation=approximation, offset=offset,
-            xreg=xreg, method=method, **kwargs
+            exog=exog, method=method, **kwargs
         )
         results[k, :] = [0, d, 0, 0, D, 0, int(constant), fit['ic']]
 
@@ -1059,7 +1045,7 @@ def auto_arima(
             x, m, order=(pp, d, 0), seasonal=(PP, D, 0),
             constant=constant, ic=ic, trace=trace,
             approximation=approximation, offset=offset,
-            xreg=xreg, method=method, **kwargs
+            exog=exog, method=method, **kwargs
         )
         results[k, :] = [pp, d, 0, PP, D, 0, int(constant), fit['ic']]
 
@@ -1078,7 +1064,7 @@ def auto_arima(
             x, m, order=(0, d, qq), seasonal=(0, D, QQ),
             constant=constant, ic=ic, trace=trace,
             approximation=approximation, offset=offset,
-            xreg=xreg, method=method, **kwargs
+            exog=exog, method=method, **kwargs
         )
         results[k, :] = [0, d, qq, 0, D, QQ, int(constant), fit['ic']]
 
@@ -1094,7 +1080,7 @@ def auto_arima(
             x, m, order=(0, d, 0), seasonal=(0, D, 0),
             constant=False, ic=ic, trace=trace,
             approximation=approximation, offset=offset,
-            xreg=xreg, method=method, **kwargs
+            exog=exog, method=method, **kwargs
         )
         results[k, :] = [0, d, 0, 0, D, 0, 0, fit['ic']]
 
@@ -1143,7 +1129,7 @@ def auto_arima(
                 x, m, order=(np_, d, nq), seasonal=(nP, D, nQ),
                 constant=constant, ic=ic, trace=trace,
                 approximation=approximation, offset=offset,
-                xreg=xreg, method=method, **kwargs
+                exog=exog, method=method, **kwargs
             )
             results[k - 1, :] = [np_, d, nq, nP, D, nQ, int(constant), fit['ic']]
 
@@ -1160,7 +1146,7 @@ def auto_arima(
                     x, m, order=(p, d, q), seasonal=(P, D, Q),
                     constant=new_constant, ic=ic, trace=trace,
                     approximation=approximation, offset=offset,
-                    xreg=xreg, method=method, **kwargs
+                    exog=exog, method=method, **kwargs
                 )
                 results[k - 1, :] = [p, d, q, P, D, Q, int(new_constant), fit['ic']]
 
@@ -1192,7 +1178,7 @@ def auto_arima(
                 constant=mod[6] > 0,
                 ic=ic, trace=trace,
                 approximation=False,
-                xreg=xreg, method=method,
+                exog=exog, method=method,
                 nstar=serieslength,
                 **kwargs
             )
@@ -1202,9 +1188,10 @@ def auto_arima(
                 break
 
     if trace:
+        order_spec = bestfit['order_spec']
         print(
-            f"\nBest model found: ARIMA({bestfit['arma'][0]},{bestfit['arma'][5]},{bestfit['arma'][1]})"
-            f"({bestfit['arma'][2]},{bestfit['arma'][6]},{bestfit['arma'][3]})[{m}]"
+            f"\nBest model found: ARIMA({order_spec.p},{order_spec.d},{order_spec.q})"
+            f"({order_spec.P},{order_spec.D},{order_spec.Q})[{m}]"
             f" with {ic}: {bestfit['ic']}\n"
         )
     bestfit['lambda'] = lambda_bc
@@ -1296,16 +1283,13 @@ def n_and_nstar(fit: DictType[str, Any]) -> Tuple[int, int]:
         Effective sample size after differencing.
     """
     n = fit.get('nobs', 0) - fit.get('n_cond', 0)
-    arma = fit.get('arma', [0, 0, 0, 0, 1, 0, 0])
-    d = int(arma[5])
-    D = int(arma[6])
-    m = int(arma[4])
-    nstar = n - d - D * m
+    order_spec = fit['order_spec']
+    nstar = n - order_spec.d - order_spec.D * order_spec.s
     return n, nstar
 
 
 def prepend_drift(
-    xreg: Union[pd.DataFrame, np.ndarray, None],
+    exog: Union[pd.DataFrame, np.ndarray, None],
     drift: np.ndarray
 ) -> pd.DataFrame:
     """
@@ -1313,7 +1297,7 @@ def prepend_drift(
 
     Parameters
     ----------
-    xreg : DataFrame, ndarray, or None
+    exog : DataFrame, ndarray, or None
         Exogenous regressors.
     drift : np.ndarray
         Drift vector.
@@ -1325,27 +1309,27 @@ def prepend_drift(
     """
     drift_arr = np.asarray(drift, dtype=np.float64).reshape(-1, 1)
 
-    if xreg is None:
+    if exog is None:
         return pd.DataFrame({'drift': drift_arr.flatten()})
 
-    if isinstance(xreg, pd.DataFrame):
+    if isinstance(exog, pd.DataFrame):
         result = pd.DataFrame({'drift': drift_arr.flatten()})
-        for col in xreg.columns:
-            result[col] = xreg[col].values
+        for col in exog.columns:
+            result[col] = exog[col].values
         return result
     else:
-        xreg_arr = np.asarray(xreg)
-        if xreg_arr.ndim == 1:
-            xreg_arr = xreg_arr.reshape(-1, 1)
-        combined = np.hstack([drift_arr, xreg_arr])
-        cols = ['drift'] + [f'x{i}' for i in range(xreg_arr.shape[1])]
+        exog_arr = np.asarray(exog)
+        if exog_arr.ndim == 1:
+            exog_arr = exog_arr.reshape(-1, 1)
+        combined = np.hstack([drift_arr, exog_arr])
+        cols = ['drift'] + [f'x{i}' for i in range(exog_arr.shape[1])]
         return pd.DataFrame(combined, columns=cols)
 
 
 def prepare_drift(
     model: DictType[str, Any],
     x: np.ndarray,
-    xreg: Union[pd.DataFrame, np.ndarray, None]
+    exog: Union[pd.DataFrame, np.ndarray, None]
 ) -> pd.DataFrame:
     """
     Prepare drift term for refitting model to new data.
@@ -1359,7 +1343,7 @@ def prepare_drift(
         Original fitted ARIMA model.
     x : np.ndarray
         New time series data.
-    xreg : DataFrame, ndarray, or None
+    exog : DataFrame, ndarray, or None
         New exogenous regressors.
 
     Returns
@@ -1369,18 +1353,18 @@ def prepare_drift(
     """
     y_train = model.get('y', np.array([]))
     n_train = len(y_train)
-    arma = model.get('arma', [0, 0, 0, 0, 1, 0, 0])
-    m_train = int(arma[4])
+    order_spec = model['order_spec']
+    m_train = order_spec.s
 
     t_train = time_index(n_train, m_train)
 
-    model_xreg = model.get('xreg')
-    if model_xreg is None or not isinstance(model_xreg, pd.DataFrame):
-        raise ValueError("Original model has no xreg for drift reconstruction")
-    if 'drift' not in model_xreg.columns:
+    model_exog = model.get('exog')
+    if model_exog is None or not isinstance(model_exog, pd.DataFrame):
+        raise ValueError("Original model has no exog for drift reconstruction")
+    if 'drift' not in model_exog.columns:
         raise ValueError("Original model has no 'drift' column")
 
-    drift_vec = model_xreg['drift'].values
+    drift_vec = model_exog['drift'].values
 
     X = np.column_stack([np.ones(n_train), t_train])
     coef, _, _, _ = np.linalg.lstsq(X, drift_vec, rcond=None)
@@ -1391,13 +1375,13 @@ def prepare_drift(
     t_new = time_index(n_new, m_new)
     newdr = a + b * t_new
 
-    xreg_with_drift = prepend_drift(xreg, newdr)
+    exog_with_drift = prepend_drift(exog, newdr)
 
-    target_cols = list(model_xreg.columns)
+    target_cols = list(model_exog.columns)
     aligned = pd.DataFrame(index=range(n_new))
     for col in target_cols:
-        if col in xreg_with_drift.columns:
-            aligned[col] = xreg_with_drift[col].values
+        if col in exog_with_drift.columns:
+            aligned[col] = exog_with_drift[col].values
         else:
             aligned[col] = 0.0
 
@@ -1408,7 +1392,7 @@ def refit_arima_model(
     x: np.ndarray,
     m: int,
     model: DictType[str, Any],
-    xreg: Union[pd.DataFrame, np.ndarray, None],
+    exog: Union[pd.DataFrame, np.ndarray, None],
     method: str = "CSS-ML",
     **kwargs
 ) -> DictType[str, Any]:
@@ -1425,7 +1409,7 @@ def refit_arima_model(
         Seasonal period (ignored if different from model's period).
     model : dict
         Previously fitted ARIMA model.
-    xreg : DataFrame, ndarray, or None
+    exog : DataFrame, ndarray, or None
         New exogenous regressors.
     method : str
         Estimation method.
@@ -1437,14 +1421,13 @@ def refit_arima_model(
     dict
         Refitted ARIMA model.
     """
-    arma = model.get('arma', [0, 0, 0, 0, 1, 0, 0])
-    p, q, P, Q, m_model, d, D = arma[:7]
+    order_spec = model['order_spec']
 
-    if m != m_model:
-        warnings.warn(f"Ignoring supplied m={m}; using model's seasonal period m={m_model}")
+    if m != order_spec.s:
+        warnings.warn(f"Ignoring supplied m={m}; using model's seasonal period m={order_spec.s}")
 
-    order = (int(p), int(d), int(q))
-    seasonal = (int(P), int(D), int(Q))
+    order = (order_spec.p, order_spec.d, order_spec.q)
+    seasonal = (order_spec.P, order_spec.D, order_spec.Q)
 
     coef = model.get('coef')
     if coef is not None and isinstance(coef, pd.DataFrame):
@@ -1453,11 +1436,11 @@ def refit_arima_model(
         fixed = None
 
     fit = arima(
-        x, int(m_model),
+        x, order_spec.s,
         order=order,
         seasonal=seasonal,
-        xreg=xreg,
-        include_mean=has_coef(model, 'intercept'),
+        exog=exog,
+        fit_intercept=has_coef(model, 'intercept'),
         method=method,
         fixed=fixed,
         **kwargs
@@ -1466,8 +1449,8 @@ def refit_arima_model(
     fit['var_coef'] = np.zeros_like(fit['var_coef'])
     fit['sigma2'] = model.get('sigma2', fit['sigma2'])
 
-    if xreg is not None:
-        fit['xreg'] = xreg
+    if exog is not None:
+        fit['exog'] = exog
 
     return fit
 
@@ -1477,8 +1460,8 @@ def arima_rjh(
     m: int,
     order: Tuple[int, int, int] = (0, 0, 0),
     seasonal: Tuple[int, int, int] = (0, 0, 0),
-    xreg: Union[pd.DataFrame, np.ndarray, None] = None,
-    include_mean: bool = True,
+    exog: Union[pd.DataFrame, np.ndarray, None] = None,
+    fit_intercept: bool = True,
     include_drift: bool = False,
     include_constant: Optional[bool] = None,
     lambda_bc: Union[float, str, None] = None,
@@ -1505,14 +1488,14 @@ def arima_rjh(
         Non-seasonal orders (p, d, q).
     seasonal : tuple
         Seasonal orders (P, D, Q).
-    xreg : DataFrame, ndarray, or None
+    exog : DataFrame, ndarray, or None
         Exogenous regressors.
-    include_mean : bool
+    fit_intercept : bool
         Include intercept/mean term for undifferenced series.
     include_drift : bool
         Include linear drift term.
     include_constant : bool or None
-        If True, sets include_mean=True for undifferenced and
+        If True, sets fit_intercept=True for undifferenced and
         include_drift=True for single-differenced series.
         If d+D > 1, no constant is included.
     lambda_bc : float, str, or None
@@ -1542,7 +1525,7 @@ def arima_rjh(
     ...                 include_drift=True)
     >>> print(fit['coef'])
     """
-    method = match_arg(method, ["CSS-ML", "ML", "CSS"])
+    method = _validate_choice(method, ["CSS-ML", "ML", "CSS"], "method")
 
     x2 = np.asarray(y, dtype=np.float64).copy()
 
@@ -1557,11 +1540,11 @@ def arima_rjh(
 
     if include_constant is not None:
         if include_constant:
-            include_mean = True
+            fit_intercept = True
             if (order[1] + seasonal2[1]) == 1:
                 include_drift = True
         else:
-            include_mean = False
+            fit_intercept = False
             include_drift = False
 
     if (order[1] + seasonal2[1]) > 1 and include_drift:
@@ -1571,39 +1554,39 @@ def arima_rjh(
     fit = None
 
     if model is not None:
-        model_xreg = model.get('xreg')
-        had_xreg = model_xreg is not None and isinstance(model_xreg, pd.DataFrame)
-        use_drift = had_xreg and 'drift' in model_xreg.columns
+        model_exog = model.get('exog')
+        had_exog = model_exog is not None and isinstance(model_exog, pd.DataFrame)
+        use_drift = had_exog and 'drift' in model_exog.columns
 
-        if had_xreg and xreg is None:
+        if had_exog and exog is None:
             raise ValueError("No regressors provided")
 
         if use_drift:
-            xreg2 = prepare_drift(model, x2, xreg)
-        elif had_xreg:
-            xreg2 = xreg
-            if isinstance(xreg2, pd.DataFrame):
-                target_cols = list(model_xreg.columns)
+            exog_refit = prepare_drift(model, x2, exog)
+        elif had_exog:
+            exog_refit = exog
+            if isinstance(exog_refit, pd.DataFrame):
+                target_cols = list(model_exog.columns)
                 aligned = pd.DataFrame(index=range(len(x2)))
                 for col in target_cols:
-                    if col in xreg2.columns:
-                        aligned[col] = xreg2[col].values
+                    if col in exog_refit.columns:
+                        aligned[col] = exog_refit[col].values
                     else:
                         aligned[col] = 0.0
-                xreg2 = aligned
+                exog_refit = aligned
         else:
-            xreg2 = xreg
+            exog_refit = exog
 
-        fit = refit_arima_model(x2, m, model, xreg2, method, **kwargs)
+        fit = refit_arima_model(x2, m, model, exog_refit, method, **kwargs)
     else:
-        xreg2 = prepend_drift(xreg, np.arange(1, len(x2) + 1)) if include_drift else xreg
+        exog_refit = prepend_drift(exog, np.arange(1, len(x2) + 1)) if include_drift else exog
 
         fit = arima(
             x2, m,
             order=order,
             seasonal=seasonal2,
-            xreg=xreg2,
-            include_mean=include_mean,
+            exog=exog_refit,
+            fit_intercept=fit_intercept,
             method=method,
             **kwargs
         )
@@ -1618,15 +1601,8 @@ def arima_rjh(
             fit['aicc'] = np.inf
         fit['bic'] = fit['aic'] + np_ * (np.log(nstar) - 2)
 
-    if model is None:
-        n_cond = fit.get('n_cond', 0)
-        resid = fit['residuals'][n_cond:]
-        ss = np.sum(resid[~np.isnan(resid)]**2)
-        if nstar - np_ + 1 > 0:
-            fit['sigma2'] = ss / (nstar - np_ + 1)
-
-    if model is None and xreg2 is not None:
-        fit['xreg'] = xreg2
+    if model is None and exog_refit is not None:
+        fit['exog'] = exog_refit
 
     fit['lambda'] = lambda_bc
     fit['biasadj'] = biasadj
@@ -1637,7 +1613,7 @@ def arima_rjh(
 def forecast_arima(
     model: DictType[str, Any],
     h: int = 10,
-    xreg: Union[pd.DataFrame, np.ndarray, None] = None,
+    exog: Union[pd.DataFrame, np.ndarray, None] = None,
     level: Union[List[float], np.ndarray, None] = None,
     fan: bool = False,
     lambda_bc: Optional[float] = None,
@@ -1657,8 +1633,8 @@ def forecast_arima(
         Fitted ARIMA model from auto_arima() or arima_rjh().
     h : int
         Number of periods to forecast (default 10).
-        If xreg is provided, h is derived from xreg rows.
-    xreg : DataFrame, ndarray, or None
+        If exog is provided, h is derived from exog rows.
+    exog : DataFrame, ndarray, or None
         Future values of exogenous regressors.
         Column names must match training regressors.
     level : list of float, default None
@@ -1715,37 +1691,44 @@ def forecast_arima(
 
     if level is not None:
         if fan:
-            levels = np.arange(51, 100, 3).tolist()
-        else:
-            levels = list(level)
+            raise ValueError(
+                "`level` and `fan=True` cannot be used together. "
+                "When `fan=True`, levels are automatically set to "
+                "`np.arange(51, 100, 3)`. Either set `fan=False` to use a "
+                "custom `level`, or set `level=None` to use fan intervals."
+            )
+        levels = list(level)
+        if levels:  # skip validation for empty list (no intervals requested)
             if min(levels) > 0 and max(levels) < 1:
                 levels = [l * 100 for l in levels]
             if min(levels) < 0 or max(levels) > 99.99:
                 raise ValueError("Confidence level out of range")
         levels = sorted(levels)
+    elif fan:
+        levels = np.arange(51, 100, 3).tolist()
     else:
-        levels = []
+        levels = [80, 95]
 
     n = len(model.get('y', model.get('x', [])))
-    model_xreg = model.get('xreg')
+    model_exog = model.get('exog')
     has_drift = (
-        model_xreg is not None and
-        isinstance(model_xreg, pd.DataFrame) and
-        'drift' in model_xreg.columns
+        model_exog is not None and
+        isinstance(model_exog, pd.DataFrame) and
+        'drift' in model_exog.columns
     )
 
-    if xreg is not None:
-        if isinstance(xreg, np.ndarray):
-            xreg = pd.DataFrame(xreg)
-        h = len(xreg)
+    if exog is not None:
+        if isinstance(exog, np.ndarray):
+            exog = pd.DataFrame(exog)
+        h = len(exog)
 
-        if has_drift and 'drift' not in xreg.columns:
-            xreg = xreg.copy()
-            xreg.insert(0, 'drift', np.arange(n + 1, n + h + 1))
+        if has_drift and 'drift' not in exog.columns:
+            exog = exog.copy()
+            exog.insert(0, 'drift', np.arange(n + 1, n + h + 1))
     elif has_drift:
-        xreg = pd.DataFrame({'drift': np.arange(n + 1, n + h + 1)})
+        exog = pd.DataFrame({'drift': np.arange(n + 1, n + h + 1)})
 
-    pred_result = predict_arima(model, n_ahead=h, newxreg=xreg, se_fit=True)
+    pred_result = predict_arima(model, n_ahead=h, new_exog=exog, se_fit=True)
     mean = pred_result['mean']
     se = pred_result['se']
 
@@ -1787,106 +1770,3 @@ def forecast_arima(
         'lambda': lambda_bc,
         'biasadj': biasadj
     }
-
-
-if __name__ == "__main__":
-    print("Testing auto_arima.py...")
-    print("=" * 60)
-
-    print("\n1. Testing analyze_series...")
-    x_test = np.array([np.nan, np.nan, 1.0, 2.0, np.nan, 3.0, 4.0, np.nan])
-    first, length, trimmed = analyze_series(x_test)
-    print(f"   First non-missing: {first}, Series length: {length}")
-    print(f"   Trimmed: {trimmed}")
-
-    print("\n2. Testing is_constant...")
-    print(f"   [1,1,1] is constant: {is_constant(np.array([1.0, 1.0, 1.0]))}")
-    print(f"   [1,2,3] is constant: {is_constant(np.array([1.0, 2.0, 3.0]))}")
-
-    print("\n3. Testing ndiffs...")
-    np.random.seed(42)
-    y_stationary = np.random.randn(100)
-    y_nonstationary = np.cumsum(np.random.randn(100))
-    print(f"   Stationary series: ndiffs = {ndiffs(y_stationary)}")
-    print(f"   Non-stationary series: ndiffs = {ndiffs(y_nonstationary)}")
-
-    print("\n4. Testing nsdiffs...")
-    t = np.arange(120)
-    y_seasonal = np.sin(2 * np.pi * t / 12) + np.random.randn(120) * 0.3
-    print(f"   Seasonal series (m=12): nsdiffs = {nsdiffs(y_seasonal, period=12)}")
-
-    print("\n5. Testing fit_custom_arima...")
-    np.random.seed(123)
-    y_ar = np.zeros(200)
-    for t in range(1, 200):
-        y_ar[t] = 0.7 * y_ar[t-1] + np.random.randn()
-
-    fit = fit_custom_arima(y_ar, m=1, order=(1, 0, 0), constant=True, ic="aic", trace=True)
-    print(f"   AIC: {fit['aic']:.4f}, IC: {fit['ic']:.4f}")
-
-    print("\n6. Testing auto_arima (stepwise)...")
-    np.random.seed(456)
-    y_test = np.zeros(150)
-    for t in range(1, 150):
-        y_test[t] = 0.6 * y_test[t-1] + np.random.randn()
-
-    best = auto_arima(y_test, m=1, stepwise=True, trace=False)
-    print(f"   Best model: {best['method']}")
-    print(f"   Coefficients:\n{best['coef']}")
-    print(f"   AICc: {best.get('aicc', 'N/A')}")
-
-    print("\n7. Testing auto_arima on non-stationary data...")
-    np.random.seed(789)
-    y_rw = np.cumsum(np.random.randn(100))
-
-    best_rw = auto_arima(y_rw, m=1, stepwise=True, trace=False)
-    print(f"   Best model: {best_rw['method']}")
-    print(f"   Differencing: d={best_rw['arma'][5]}")
-
-    print("\n8. Testing auto_arima on seasonal data...")
-    np.random.seed(321)
-    t = np.arange(120)
-    y_seas = 10 + 0.05 * t + 3 * np.sin(2 * np.pi * t / 12) + np.random.randn(120) * 0.5
-
-    best_seas = auto_arima(y_seas, m=12, stepwise=True, trace=False, max_P=1, max_Q=1)
-    print(f"   Best model: {best_seas['method']}")
-    print(f"   Seasonal: D={best_seas['arma'][6]}")
-
-    print("\n9. Testing time_index...")
-    ti = time_index(10, 4, start=1.0)
-    print(f"   time_index(10, 4): {ti[:5]}...")
-
-    print("\n10. Testing prepend_drift...")
-    drift_vec = np.arange(1, 6)
-    xreg_test = pd.DataFrame({'x1': [1, 2, 3, 4, 5], 'x2': [5, 4, 3, 2, 1]})
-    result = prepend_drift(xreg_test, drift_vec)
-    print(f"   Columns: {list(result.columns)}")
-    print(f"   Drift column: {result['drift'].values}")
-
-    print("\n11. Testing box_cox...")
-    y_pos = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])
-    y_bc, lam = box_cox(y_pos, m=1, lambda_bc=0.5)
-    print(f"   Lambda: {lam}")
-    print(f"   Transformed (first 5): {y_bc[:5]}")
-
-    print("\n12. Testing inv_box_cox...")
-    y_back = inv_box_cox(y_bc, lam)
-    print(f"   Back-transformed (first 5): {y_back[:5]}")
-    print(f"   Max error: {np.max(np.abs(y_back - y_pos)):.2e}")
-
-    print("\n13. Testing arima_rjh (basic)...")
-    np.random.seed(999)
-    y_drift = np.cumsum(np.random.randn(100)) + np.arange(100) * 0.1
-    fit_rjh = arima_rjh(y_drift, m=1, order=(1, 1, 0), include_drift=True)
-    print(f"   Coefficients:\n{fit_rjh['coef']}")
-    print(f"   Has drift: {'drift' in fit_rjh.get('xreg', pd.DataFrame()).columns}")
-
-    print("\n14. Testing arima_rjh with Box-Cox...")
-    np.random.seed(888)
-    y_exp = np.exp(np.cumsum(np.random.randn(80) * 0.1) + 2)
-    fit_bc = arima_rjh(y_exp, m=1, order=(1, 0, 0), lambda_bc=0.0)
-    print(f"   Lambda used: {fit_bc.get('lambda')}")
-    print(f"   AIC: {fit_bc.get('aic', 'N/A'):.4f}")
-
-    print("\n" + "=" * 60)
-    print("All tests completed!")
