@@ -747,6 +747,7 @@ class ForecasterRecursive(ForecasterBase):
                        inverse_transform = False
                    )
             
+            # TODO: Review when categorical transformation is managed by skforecast
             check_exog_dtypes(exog, call_check_exog=True)
             exog_dtypes_out_ = get_exog_dtypes(exog=exog)
             X_as_pandas = any(
@@ -797,9 +798,9 @@ class ForecasterRecursive(ForecasterBase):
 
         X_train_exog_names_out_ = None
         if exog is not None:
-            X_train_exog_names_out_ = exog.columns.to_list()  
+            X_train_exog_names_out_ = exog.columns.to_list()
             if not X_as_pandas:
-                exog = exog.to_numpy()     
+                exog = exog.to_numpy()
             X_train_features_names_out_.extend(X_train_exog_names_out_)
             X_train.append(exog)
         
@@ -1042,6 +1043,8 @@ class ForecasterRecursive(ForecasterBase):
             exog_dtypes_in_,
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
+
+        # fit_kwargs = _check_estimator_supports_native_categories()
         
         sample_weight = self.create_sample_weights(X_train=X_train)
 

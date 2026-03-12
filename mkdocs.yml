@@ -18,6 +18,7 @@ nav:
     - Forecaster Parameters: quick-start/forecaster-parameters.md
     - Forecaster Attributes: quick-start/forecaster-attributes.ipynb
     - How to install: quick-start/how-to-install.md
+    - AI-assisted forecasting: quick-start/ai-assisted-forecasting.md
 
   - User Guides:
     - Table of contents: user_guides/table-of-contents.md
@@ -42,7 +43,7 @@ nav:
       - Exogenous variables: user_guides/exogenous-variables.ipynb
       - Window and custom features: user_guides/window-features-and-custom-features.ipynb
       - Categorical features: user_guides/categorical-features.ipynb
-      - Calendars features: user_guides/calendar-features.ipynb
+      - Calendar features: user_guides/calendar-features.ipynb
       - Data transformation: user_guides/sklearn-transformers-and-pipeline.ipynb
       - Differentiation: user_guides/time-series-differentiation.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
