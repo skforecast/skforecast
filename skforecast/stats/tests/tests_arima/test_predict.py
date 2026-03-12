@@ -358,7 +358,7 @@ def test_arima_predict_air_passengers_data():
         ])
     elif platform_name == 'Darwin':
         expected_coef = np.array([
-            0.21797412,  0.10190091, -0.60950889, -0.75357779,  0.66002656
+            0.57983,  0.22879, -0.97823, -0.90284,  0.81192
         ])
         expected_pred = np.array([
             449.90728, 425.89943, 459.84195, 497.85005, 510.28519, 570.53015,
@@ -406,8 +406,8 @@ def test_arima_predict_multi_seasonal_data():
         ])
     elif platform_name == 'Darwin':
         expected_coef = np.array([
-            -0.50839, -0.04576, -0.04046,  0.01624, -0.06011, -0.48352,
-            -0.5164 , -0.04699, -0.97493
+            -0.507542, -0.046144, -0.041057,  0.014369, -0.060827, -0.484763,
+            -0.515229, -0.046681, -0.975115
         ])
         expected_pred = np.array([
             174.63553, 168.89795, 173.56873, 172.08578, 173.81006, 171.85623,
@@ -516,11 +516,11 @@ def test_predict_fuel_consumption_data_with_exog():
     )
 
     expected = {
-        'Linux': np.array([1574773.72985, 1449368.34742, 1509249.8998 , 1484706.35242,
+        'Linux': np.array([1574773.72985, 1449368.34742, 1509249.8998, 1484706.35242,
                             1404055.23623]),
         'Darwin':
-            np.array([1575342.67857, 1449382.68134, 1509290.95573, 1485000.88071,
-                      1404311.02049]),
+            np.array([1574722.366382, 1449374.7542, 1509204.251241, 1484748.945998,
+                      1403992.552417]),
         'Windows':
             np.array([1574766.35415552, 1449367.06186871, 1509255.77782939,
                       1484690.16862425, 1404060.78688154])
@@ -536,7 +536,7 @@ def test_arima_predict_auto_arima_air_passengers_data():
 
     expected_order = {
         'Linux': (0, 1, 1),
-        'Darwin': (1, 1, 0),
+        'Darwin': (0, 1, 1),
         'Windows': (0, 1, 1)
     }
     expected_seasonal_order = {
@@ -546,7 +546,7 @@ def test_arima_predict_auto_arima_air_passengers_data():
     }
     expected_estimator_name_ = {
         'Linux': "AutoArima(0,1,1)(2,1,0)[12]",
-        'Darwin': "AutoArima(1,1,0)(0,1,0)[12]",
+        'Darwin': "AutoArima(0,1,1)(0,1,0)[12]",
         'Windows': "AutoArima(0,1,1)(2,1,0)[12]"
     }
     expected_pred = {

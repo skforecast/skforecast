@@ -830,9 +830,15 @@ def bayesian_search_forecaster(
     if 'direction' not in kwargs_create_study.keys():
         kwargs_create_study['direction'] = 'minimize' if is_regression else 'maximize'
     if 'sampler' not in kwargs_create_study:
-        kwargs_create_study['sampler'] = TPESampler(
-            multivariate=True, group=True, consider_endpoints=True, seed=random_state
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                'ignore',
+                message='.*multivariate.*|.*group.*',
+                module='optuna'
+            )
+            kwargs_create_study['sampler'] = TPESampler(
+                multivariate=True, group=True, consider_endpoints=True, seed=random_state
+            )
 
     kwargs_study_optimize = kwargs_study_optimize.copy() if kwargs_study_optimize is not None else {}
     if show_progress:
@@ -1921,9 +1927,15 @@ def bayesian_search_forecaster_multiseries(
     if 'direction' not in kwargs_create_study:
         kwargs_create_study['direction'] = 'minimize' if is_regression else 'maximize'
     if 'sampler' not in kwargs_create_study:
-        kwargs_create_study['sampler'] = TPESampler(
-            multivariate=True, group=True, consider_endpoints=True, seed=random_state
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                'ignore',
+                message='.*multivariate.*|.*group.*',
+                module='optuna'
+            )
+            kwargs_create_study['sampler'] = TPESampler(
+                multivariate=True, group=True, consider_endpoints=True, seed=random_state
+            )
     
     kwargs_study_optimize = kwargs_study_optimize.copy() if kwargs_study_optimize is not None else {}
     if show_progress:
