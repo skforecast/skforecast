@@ -169,7 +169,7 @@ def test_arima_fit_ma_model():
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=6)
     expected_sigma2 = 1.3941861724091622
     np.testing.assert_almost_equal(model.sigma2_, expected_sigma2, decimal=6)
-    assert model.converged_ in [True, False]
+    assert isinstance(model.converged_, bool)
     assert len(model.coef_) >= 1
 
 
@@ -193,7 +193,7 @@ def test_arima_fit_seasonal_model():
     assert model.arma_[4] == 12  # Check m is stored correctly
     assert model.arma_ == [1, 0, 1, 0, 12, 0, 0]  # [p, q, P, Q, m, d, D]
     
-    assert model.converged_ in [True, False]  # May not converge depending on data
+    assert isinstance(model.converged_, bool)
     assert model.n_features_in_ == 1
     assert model.n_exog_features_in_ == 0
     assert len(model.coef_) == 3  # AR + SAR + intercept
@@ -216,7 +216,7 @@ def test_arima_fit_with_exog_numpy_array():
 
     assert model.n_exog_features_in_ == 2
     assert len(model.coef_) == 5  # AR + MA + 2 exog + intercept
-    assert model.converged_ in [True, False]
+    assert isinstance(model.converged_, bool)
     assert model.n_features_in_ == 1
 
 
@@ -349,7 +349,7 @@ def test_arima_fit_method_ml():
     assert "ML" in model.model_['method'] or "ARIMA" in model.model_['method']
     assert len(model.coef_) == 3  # AR + MA + intercept
     assert model.loglik_ is not None
-    assert model.converged_ in [True, False]
+    assert isinstance(model.converged_, bool)
 
 
 def test_arima_fit_without_mean():

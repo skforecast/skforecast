@@ -333,8 +333,8 @@ class Arima(BaseEstimator, RegressorMixin):
         self.order                = order
         self.seasonal_order       = seasonal_order
         self.m                    = m
-        self.fit_intercept         = fit_intercept
-        self.enforce_stationarity       = enforce_stationarity
+        self.fit_intercept        = fit_intercept
+        self.enforce_stationarity = enforce_stationarity
         self.method               = method
         self.n_cond               = n_cond
         self.optim_method         = optim_method

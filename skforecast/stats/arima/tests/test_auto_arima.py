@@ -39,7 +39,7 @@ def ar1_series():
     y = np.zeros(n)
     y[0] = np.random.randn()
     for t in range(1, n):
-        y[t] = phi * y[t-1] + np.random.randn()
+        y[t] = phi * y[t - 1] + np.random.randn()
     return y
 
 
@@ -830,7 +830,7 @@ def test_forecast_arima_with_box_cox_biasadj(ar1_series):
     fc = forecast_arima(fit, h=5, level=[80, 95])
     
     assert len(fc['mean']) == 5
-    assert fc['biasadj'] == True
+    assert fc['biasadj'] is True
 
 
 def test_forecast_arima_with_negative_lambda():
@@ -1043,6 +1043,7 @@ def test_auto_arima_nmodels_very_low_no_index_error():
         # (results array has shape (nmodels, 8))
         assert fit.get('converged', True) is True or fit.get('arima') is not None
 
+
 # =============================================================================
 # Tests for prepare_drift
 # =============================================================================
@@ -1219,12 +1220,29 @@ def test_refit_arima_model_column_alignment(ar1_series):
         ar1_series, m=1, order=(1, 0, 0), exog=xreg_partial,
         fit_intercept=False, model=fit
     )
+    assert refit_partial['converged'] is True
+
+    # Exog columns in the refit must match original order
+    assert list(refit_partial['exog'].columns) == list(fit['exog'].columns)
+
+    # The missing column ('x2') must be filled with zeros
+    assert (refit_partial['exog']['x2'] == 0.0).all()
+
+    # Explicitly zero-filled exog must produce identical forecasts
+    xreg_explicit = xreg_train[['x1']].copy()
+    xreg_explicit['x2'] = 0.0
+    refit_explicit = arima_rjh(
+        ar1_series, m=1, order=(1, 0, 0), exog=xreg_explicit,
+        fit_intercept=False, model=fit
+    )
+    fc_partial = forecast_arima(refit_partial, h=5)
+    fc_explicit = forecast_arima(refit_explicit, h=5)
+    np.testing.assert_array_almost_equal(fc_partial['mean'], fc_explicit['mean'])
 
 
 # =============================================================================
 # Tests for predict_arima guard on error models (TEST-4)
 # =============================================================================
-
 def test_predict_arima_raises_clear_error_for_error_model():
     """
     Test that predict_arima raises a clear ValueError when called on an

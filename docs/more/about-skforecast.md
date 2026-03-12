@@ -47,10 +47,10 @@ Meet the core developers behind [skforecast](https://github.com/skforecast/skfor
 
 Special mention to the main contributors who have significantly impacted the library development:
 
-| Name                 | GitHub                                                       |
-|:--------------------:|:------------------------------------------------------------:|
-| Fernando Carazo Melo | [@FernandoCarazoMelo](https://github.com/FernandoCarazoMelo) |
-| Resul Akay (taf-society)        | [@taf-society](https://github.com/taf-society) |
+| Name                     | GitHub                                                       |
+|:------------------------:|:------------------------------------------------------------:|
+| Fernando Carazo Melo     | [@FernandoCarazoMelo](https://github.com/FernandoCarazoMelo) |
+| Resul Akay (taf-society) | [@taf-society](https://github.com/taf-society)               |
 
 
 ## Contributors
