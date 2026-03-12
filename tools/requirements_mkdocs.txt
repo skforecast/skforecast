@@ -6,4 +6,4 @@ mkdocstrings==1.0.3
 mkdocstrings-python==2.0.2
 #notebook==7.5.3
 #jupyter-contrib-nbextensions==0.7.0
-black==26.1.0
+black==26.3.1
