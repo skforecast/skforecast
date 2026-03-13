@@ -16,6 +16,7 @@ from copy import copy
 from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OrdinalEncoder
 
 from .. import __version__
 from ..base import ForecasterBase
@@ -75,6 +76,16 @@ class ForecasterRecursive(ForecasterBase):
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
+    categorical_features : str, list, default 'auto'
+        Specifies which exogenous variables should be treated as categorical
+        features. Categorical features are encoded using an `OrdinalEncoder`
+        internally managed by the forecaster.
+
+        - If `'auto'`: after applying `transformer_exog`, any column with a
+        non-numeric dtype is treated as categorical.
+        - If `list`: a list of column names to be treated as categorical.
+        - If `None`: no categorical encoding is applied internally.
+        **New in version 0.22.0**
     weight_func : Callable, default None
         Function that defines the individual weights for each sample based on the
         index. For example, a function that assigns a lower weight to certain dates.
@@ -187,6 +198,13 @@ class ForecasterRecursive(ForecasterBase):
         some exogenous variables are transformed during the training process.
     X_train_features_names_out_ : list
         Names of columns of the matrix created internally for training.
+    categorical_features : str, list
+        How categorical features are identified among the exogenous variables. It 
+        can be 'auto', a list of column names or `None`.
+    categorical_features_names_in_ : list
+        Names of the exogenous variables considered as categorical.
+    categorical_encoder : sklearn OrdinalEncoder
+        `OrdinalEncoder` used internally to encode categorical features.
     fit_kwargs : dict
         Additional arguments to be passed to the `fit` method of the estimator.
     in_sample_residuals_ : numpy ndarray
@@ -249,6 +267,7 @@ class ForecasterRecursive(ForecasterBase):
         window_features: object | list[object] | None = None,
         transformer_y: object | None = None,
         transformer_exog: object | None = None,
+        categorical_features: str | list[str] | None = 'auto',
         weight_func: Callable | None = None,
         differentiation: int | None = None,
         fit_kwargs: dict[str, object] | None = None,
@@ -260,6 +279,7 @@ class ForecasterRecursive(ForecasterBase):
         self.estimator                          = copy(initialize_estimator(estimator, regressor))
         self.transformer_y                      = transformer_y
         self.transformer_exog                   = transformer_exog
+        self.categorical_features               = categorical_features
         self.weight_func                        = weight_func
         self.source_code_weight_func            = None
         self.differentiation                    = differentiation
@@ -275,6 +295,7 @@ class ForecasterRecursive(ForecasterBase):
         self.exog_type_in_                      = None
         self.exog_dtypes_in_                    = None
         self.exog_dtypes_out_                   = None
+        self.categorical_features_names_in_     = None
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
@@ -334,6 +355,29 @@ class ForecasterRecursive(ForecasterBase):
             self.differentiator = TimeSeriesDifferentiator(
                 order=differentiation, window_size=self.window_size
             )
+
+        if categorical_features is not None:
+            if not (
+                (isinstance(categorical_features, str) and categorical_features == 'auto')
+                or isinstance(categorical_features, list)
+            ):
+                raise ValueError(
+                    f"Argument `categorical_features` must be `'auto'`, a list of "
+                    f"column names, or `None`. Got {categorical_features}."
+                )
+            if isinstance(categorical_features, list):
+                if len(categorical_features) == 0:
+                    raise ValueError(
+                        "Argument `categorical_features` must not be an empty list. "
+                        "Use `None` to disable categorical encoding."
+                    )
+
+        self.categorical_encoder = OrdinalEncoder(
+                                       dtype                 = float,
+                                       handle_unknown        = 'use_encoded_value',
+                                       unknown_value         = np.nan,
+                                       encoded_missing_value = np.nan
+                                   ).set_output(transform="pandas")
 
         self.fit_kwargs = check_select_fit_kwargs(
                               estimator  = estimator,
@@ -746,6 +790,46 @@ class ForecasterRecursive(ForecasterBase):
                        fit               = fit_transformer,
                        inverse_transform = False
                    )
+
+            categorical_features_names_in_ = None
+            if self.categorical_features is not None:
+                if self.categorical_features == 'auto':
+                    # TODO: Optimize as X_as_pandas
+                    categorical_features_names_in_ = exog.select_dtypes(
+                        include=['object', 'string', 'category']
+                    ).columns.tolist()
+                else:
+                    missing_cols = set(self.categorical_features) - set(exog.columns)
+                    if missing_cols:
+                        raise ValueError(
+                            f"The following columns specified in `categorical_features` "
+                            f"are not present in `exog` after `transformer_exog`: "
+                            f"{missing_cols}."
+                        )
+                    categorical_features_names_in_ = list(self.categorical_features)
+                
+                if categorical_features_names_in_: 
+                    # This copy is only necessary if `transformer_exog` is not used
+                    if self.transformer_exog is None:
+                        exog = exog.copy()
+                    if fit_transformer:
+                        exog[categorical_features_names_in_] = (
+                            self.categorical_encoder.fit_transform(
+                                exog[categorical_features_names_in_]
+                            )
+                        )
+                    else:
+                        exog[categorical_features_names_in_] = (
+                            self.categorical_encoder.transform(
+                                exog[categorical_features_names_in_]
+                            )
+                        )
+
+            
+            # Continue from here
+            # Ver que lineas de abajo son necesarias
+            # Ver qué cosas debe devolver create_train_X_y 
+
             
             # TODO: Review when categorical transformation is managed by skforecast
             check_exog_dtypes(exog, call_check_exog=True)
