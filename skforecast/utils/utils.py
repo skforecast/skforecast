@@ -1703,8 +1703,9 @@ def expand_index(
                         )
         elif isinstance(index, pd.RangeIndex):
             new_index = pd.RangeIndex(
-                            start = index[-1] + 1,
-                            stop  = index[-1] + 1 + steps
+                            start = index[-1] + index.step,
+                            stop  = index[-1] + index.step + steps * index.step,
+                            step  = index.step
                         )
         else:
             raise TypeError(

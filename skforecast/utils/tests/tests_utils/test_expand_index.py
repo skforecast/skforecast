@@ -53,6 +53,18 @@ def test_output_expand_index_when_index_is_RangeIndex():
     pd.testing.assert_index_equal(results, expected)
 
 
+def test_output_expand_index_when_index_is_RangeIndex_with_step():
+    """
+    Test values returned by expand_index when input is RangeIndex with step != 1.
+    The step must be preserved in the expanded index.
+    """
+    index = pd.RangeIndex(start=0, stop=20, step=2)
+    expected = pd.RangeIndex(start=20, stop=26, step=2)
+    results  = expand_index(index, steps=3)
+
+    pd.testing.assert_index_equal(results, expected)
+
+
 def test_output_expand_index_when_index_is_not_pandas_index():
     """
     Test values returned by expand_index when input is not a pandas index.
