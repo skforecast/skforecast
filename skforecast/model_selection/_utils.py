@@ -21,6 +21,12 @@ from ..metrics import add_y_train_argument, _get_metric
 from ..utils import check_interval, date_to_index_position
 
 
+# TODO: Hay cálculos que se pueden simplificar para evitar calcular y_train en 
+# TODAS las funciones de métricas usando if ignore_y_train: cuando ninguna métrica lo 
+# necesita. esto también se puede hacer en el backtesting single seires, que tiene
+# la lógica en la propia funcion. Analiza bien.
+
+
 def initialize_lags_grid(
     forecaster: object, 
     lags_grid: (
@@ -783,9 +789,6 @@ def _calculate_metrics_one_step_ahead(
         y_pred = forecaster.transformer_y.inverse_transform(y_pred.reshape(-1, 1))
         y_train = forecaster.transformer_y.inverse_transform(y_train.reshape(-1, 1))
 
-    # NOTE: When using this metric in validation, `y_train` doesn't include
-    # the first window_size observations used to create the predictors and/or
-    # rolling features.
     y_true = y_true.ravel()
     y_pred = y_pred.ravel()
     y_train = y_train.ravel()
@@ -1103,7 +1106,26 @@ def _calculate_metrics_backtesting_multiseries(
     # if not isinstance(add_aggregated_metric, bool):
     #     raise TypeError("`add_aggregated_metric` must be a boolean.")
     
+    # TODO: review list of metric that do not need y_train
+    metrics_no_y_train = [
+        # Regression metrics
+        "mean_squared_error",
+        "mean_absolute_error",
+        "mean_absolute_percentage_error",
+        "mean_squared_log_error",
+        "median_absolute_error",
+        "symmetric_mean_absolute_percentage_error",
+
+        # Classification metrics
+        "accuracy_score",
+        "balanced_accuracy_score",
+        "f1_score",
+        "precision_score",
+        "recall_score"
+    ]
     metric_names = [m.__name__ for m in metrics]
+    ignore_y_train = all(name in metrics_no_y_train for name in metric_names)
+
     levels_in_predictions = predictions.index.get_level_values('level').unique()
 
     if isinstance(series, pd.DataFrame) and not isinstance(series.index, pd.MultiIndex):
@@ -1125,24 +1147,6 @@ def _calculate_metrics_backtesting_multiseries(
         how         = "inner",
     ).dropna(axis=0, how="any")
 
-    # TODO: review list of metric that do not need y_train
-    metrics_no_y_train = [
-        # Regression metrics
-        "mean_squared_error",
-        "mean_absolute_error",
-        "mean_absolute_percentage_error",
-        "mean_squared_log_error",
-        "median_absolute_error",
-        "symmetric_mean_absolute_percentage_error",
-
-        # Classification metrics
-        "accuracy_score",
-        "balanced_accuracy_score",
-        "f1_score",
-        "precision_score",
-        "recall_score"
-    ]
-
     train_indexes = []
     for i, fold in enumerate(folds):
         fit_fold = fold[-1]
@@ -1160,7 +1164,6 @@ def _calculate_metrics_backtesting_multiseries(
     series_train = series.loc[series.index.isin(train_indexes)]
     # NOTE: Exclude first window_size observations used to create predictors
     series_train = series_train[series_train.groupby(level="level").cumcount() >= window_size]
-    ignore_y_train = all(name in metrics_no_y_train for name in metric_names)
     
     y_true_y_pred_grouped = (
         y_true_y_pred
@@ -1175,8 +1178,9 @@ def _calculate_metrics_backtesting_multiseries(
     metrics_levels = []
     for level in levels:
         if level in levels_in_predictions:
-            y_true = y_true_y_pred_grouped.get_group(level)['y_true']
-            y_pred = y_true_y_pred_grouped.get_group(level)['y_pred']
+            group = y_true_y_pred_grouped.get_group(level)
+            y_true = group['y_true']
+            y_pred = group['y_pred']
             if not ignore_y_train:
                 # NOTE: y_train includes the intercepted NaNs
                 y_train = series_train_grouped.get_group(level)['y_true']
@@ -1375,6 +1379,25 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     ]
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metrics]
 
+    # TODO: review list of metric that do not need y_train
+    metrics_no_y_train = [
+        # Regression metrics
+        "mean_squared_error",
+        "mean_absolute_error",
+        "mean_absolute_percentage_error",
+        "mean_squared_log_error",
+        "median_absolute_error",
+        "symmetric_mean_absolute_percentage_error",
+
+        # Classification metrics
+        "accuracy_score",
+        "balanced_accuracy_score",
+        "f1_score",
+        "precision_score",
+        "recall_score"
+    ]
+    ignore_y_train = all(name in metrics_no_y_train for name in metric_names)
+
     if isinstance(series[levels[0]].index, pd.DatetimeIndex):
         freq = series[levels[0]].index.freq
     else:
@@ -1460,17 +1483,6 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             y_train_per_level[level]["y_train"] = transformer.inverse_transform(
                 y_train_per_level[level][["y_train"]]
             )
-
-    # NOTE: When using this metric in validation, `y_train` doesn't include
-    # the first window_size observations used to create the predictors and/or
-    # rolling features.
-    metrics_no_y_train = [
-        "mean_absolute_error",
-        "mean_squared_error",
-        "median_absolute_error",
-        "mean_absolute_percentage_error",
-    ]
-    ignore_y_train = all(name in metrics_no_y_train for name in metric_names)
 
     metrics_levels = []
     for level in levels:
