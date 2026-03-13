@@ -251,7 +251,14 @@ Sticky Banner Styles
 */
 /* Make the outdated version banner sticky at the top while scrolling - only when it has the warning class */
 .md-banner.md-banner--warning {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  z-index: 200;
+}
+
+/* Push all page content below the fixed banner */
+body:has(.md-banner--warning) {
+  padding-top: 2rem;
 }
