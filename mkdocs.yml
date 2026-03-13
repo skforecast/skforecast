@@ -175,7 +175,7 @@ plugins:
       include_requirejs: True
       include_source: True
   - mike:
-      alias_type: redirect
+      alias_type: copy
       canonical_version: null
       css_dir: css
       deploy_prefix: ''
