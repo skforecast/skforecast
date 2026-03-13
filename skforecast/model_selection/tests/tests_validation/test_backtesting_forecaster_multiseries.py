@@ -2604,6 +2604,164 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
 
 
+# ******************************************************************************
+# * Out sample residuals                                                       *
+# ******************************************************************************
+
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_out_sample_residuals_not_binned_with_mocked():
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries
+    with refit, out of sample residuals and use_binned_residuals=False.
+    Out sample residuals are set using set_out_sample_residuals method.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None,
+        encoding='onehot', binner_kwargs={'n_bins': 10}
+    )
+    forecaster.fit(series=series_dict_range)
+
+    rng = np.random.default_rng(42)
+    n_residuals = 50
+    y_pred_dict = {}
+    y_true_dict = {}
+    for level in ['l1', 'l2']:
+        y_pred_level = rng.uniform(0.2, 0.8, size=n_residuals)
+        residuals = rng.uniform(-0.3, 0.5, size=n_residuals)
+        y_true_level = y_pred_level + residuals
+        y_pred_dict[level] = y_pred_level
+        y_true_dict[level] = y_true_level
+    forecaster.set_out_sample_residuals(
+        y_true=y_true_dict, y_pred=y_pred_dict
+    )
+
+    cv = TimeSeriesFold(
+            initial_train_size = len(series_dict_range['l1']) - 12,
+            steps              = 4,
+            refit              = True,
+        )
+
+    metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                               forecaster              = forecaster,
+                                               series                  = series_dict_range,
+                                               cv                      = cv,
+                                               levels                  = 'l1',
+                                               metric                  = 'mean_absolute_error',
+                                               add_aggregated_metric   = False,
+                                               interval                = [5, 95],
+                                               interval_method         = 'bootstrapping',
+                                               n_boot                  = 500,
+                                               random_state            = 123,
+                                               use_in_sample_residuals = False,
+                                               use_binned_residuals    = False,
+                                               verbose                 = False,
+                                               show_progress           = False,
+                                               suppress_warnings       = True
+                                           )
+
+    expected_metric = pd.DataFrame({'levels': ['l1'],
+                                    'mean_absolute_error': [0.2126428594686577]})
+    expected_predictions = pd.DataFrame(
+                               data = np.array([[0.4978839 , 0.22253806, 0.84910042],
+                                                [0.46288427, 0.19593158, 0.81468311],
+                                                [0.48433446, 0.21235808, 0.82532489],
+                                                [0.48677605, 0.22005107, 0.84833058],
+                                                [0.46487551, 0.18953084, 0.81609259],
+                                                [0.49811831, 0.24363003, 0.85274362],
+                                                [0.49368425, 0.22772781, 0.84426077],
+                                                [0.49274964, 0.22870535, 0.86093179],
+                                                [0.46698305, 0.19163672, 0.81819988],
+                                                [0.47580279, 0.20710006, 0.82748006],
+                                                [0.47419019, 0.19750013, 0.81120622],
+                                                [0.47409035, 0.20106148, 0.83044522]]),
+                               columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
+                               index = pd.RangeIndex(start=38, stop=50, step=1)
+                           )
+    expected_predictions.insert(1, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+    expected_predictions = expected_df_to_long_format(
+        expected_predictions, method='backtesting-interval'
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_out_sample_residuals_binned_with_mocked():
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries
+    with refit, out of sample residuals and use_binned_residuals=True.
+    Out sample residuals are set using set_out_sample_residuals method.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None,
+        encoding='onehot', binner_kwargs={'n_bins': 10}
+    )
+    forecaster.fit(series=series_dict_range)
+
+    rng = np.random.default_rng(42)
+    n_residuals = 50
+    y_pred_dict = {}
+    y_true_dict = {}
+    for level in ['l1', 'l2']:
+        y_pred_level = rng.uniform(0.2, 0.8, size=n_residuals)
+        residuals = rng.uniform(-0.3, 0.5, size=n_residuals)
+        y_true_level = y_pred_level + residuals
+        y_pred_dict[level] = y_pred_level
+        y_true_dict[level] = y_true_level
+    forecaster.set_out_sample_residuals(
+        y_true=y_true_dict, y_pred=y_pred_dict
+    )
+
+    cv = TimeSeriesFold(
+            initial_train_size = len(series_dict_range['l1']) - 12,
+            steps              = 4,
+            refit              = True,
+        )
+
+    metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                               forecaster              = forecaster,
+                                               series                  = series_dict_range,
+                                               cv                      = cv,
+                                               levels                  = 'l1',
+                                               metric                  = 'mean_absolute_error',
+                                               add_aggregated_metric   = False,
+                                               interval                = [5, 95],
+                                               interval_method         = 'bootstrapping',
+                                               n_boot                  = 500,
+                                               random_state            = 123,
+                                               use_in_sample_residuals = False,
+                                               use_binned_residuals    = True,
+                                               verbose                 = False,
+                                               show_progress           = False,
+                                               suppress_warnings       = True
+                                           )
+
+    expected_metric = pd.DataFrame({'levels': ['l1'],
+                                    'mean_absolute_error': [0.2126428594686577]})
+    expected_predictions = pd.DataFrame(
+                               data = np.array([[0.4978839 , 0.22253806, 0.84910042],
+                                                [0.46288427, 0.17849192, 0.81637876],
+                                                [0.48433446, 0.21116082, 0.82945134],
+                                                [0.48677605, 0.22658078, 0.84471227],
+                                                [0.46487551, 0.17076599, 0.81609259],
+                                                [0.49811831, 0.25457065, 0.84432249],
+                                                [0.49368425, 0.24465891, 0.84667583],
+                                                [0.49274964, 0.24345334, 0.83979343],
+                                                [0.46698305, 0.17287266, 0.81819988],
+                                                [0.47580279, 0.24133499, 0.81025753],
+                                                [0.47419019, 0.21802026, 0.80880852],
+                                                [0.47409035, 0.22581373, 0.82548058]]),
+                               columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
+                               index = pd.RangeIndex(start=38, stop=50, step=1)
+                           )
+    expected_predictions.insert(1, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+    expected_predictions = expected_df_to_long_format(
+        expected_predictions, method='backtesting-interval'
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_return_predictors_same_predictions_as_predict():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 

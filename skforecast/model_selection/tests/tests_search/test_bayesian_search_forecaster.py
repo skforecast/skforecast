@@ -118,49 +118,41 @@ def test_ValueError_bayesian_search_forecaster_metric_list_duplicate_names():
         )
 
 
-def test_ValueError_bayesian_search_forecaster_when_search_space_names_do_not_match():
+@pytest.mark.parametrize(
+    'cv',
+    [TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=True, fixed_train_size=True),
+     OneStepAheadFold(initial_train_size=len(y) - 12)],
+    ids=lambda cv: f'cv: {type(cv).__name__}'
+)
+def test_ValueError_bayesian_search_forecaster_when_search_space_names_do_not_match(cv):
     """
     Test ValueError is raised when search_space key name do not match the trial 
     object name from optuna.
     """
     forecaster = ForecasterRecursive(
                      estimator = Ridge(random_state=123),
-                     lags      = 2 
+                     lags      = 2
                  )
-    n_validation = 12
-    y_train = y[:-n_validation]
-    cv = TimeSeriesFold(
-            steps                 = 3,
-            initial_train_size    = len(y_train),
-            window_size           = None,
-            differentiation       = None,
-            refit                 = True,
-            fixed_train_size      = True,
-            gap                   = 0,
-            skip_folds            = None,
-            allow_incomplete_fold = True,
-            return_all_indexes    = False,
-        )
 
     def search_space(trial):
-        search_space  = {
+        search_space = {
             'alpha': trial.suggest_float('not_alpha', 1e-2, 1.0),
             'lags': trial.suggest_categorical('lags', [2, 4])
         }
 
         return search_space
-    
+
     err_msg = re.escape(
         "`search_space` dict keys must match the names passed to "
         "`trial.suggest_*()`.\n"
         "  Dict keys    : ['alpha', 'lags']\n"
         "  Suggest names: ['not_alpha', 'lags']"
     )
-    with pytest.raises(ValueError, match = err_msg):
+    with pytest.raises(ValueError, match=err_msg):
         bayesian_search_forecaster(
             forecaster         = forecaster,
             y                  = y,
-            cv                 = cv, 
+            cv                 = cv,
             search_space       = search_space,
             metric             = 'mean_absolute_error',
             n_trials           = 10,
@@ -723,7 +715,7 @@ def test_evaluate_bayesian_search_forecaster_when_return_best_ForecasterRecursiv
         metric             = 'mean_absolute_error',
         n_trials           = 10,
         return_best        = True,
-        verbose            = False
+        verbose            = True
     )
     
     expected_lags = np.array([1, 2])

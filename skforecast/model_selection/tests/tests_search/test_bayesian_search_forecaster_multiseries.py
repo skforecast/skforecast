@@ -212,6 +212,46 @@ def test_ValueError_bayesian_search_forecaster_multiseries_when_search_space_nam
         )
 
 
+def test_ValueError_bayesian_search_forecaster_multiseries_when_search_space_names_do_not_match_OneStepAheadFold():
+    """
+    Test ValueError is raised when search_space key name do not match the trial 
+    object name from optuna using OneStepAheadFold.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = Ridge(random_state=123),
+                     lags      = 2,
+                     encoding  = 'onehot'
+                 )
+    cv = OneStepAheadFold(
+            initial_train_size = len(series_dict_range['l1']) - 12,
+        )
+
+    def search_space(trial):
+        search_space = {'alpha': trial.suggest_float('not_alpha', 1e-2, 1.0)}
+
+        return search_space
+
+    err_msg = re.escape(
+        "`search_space` dict keys must match the names passed to "
+        "`trial.suggest_*()`.\n"
+        "  Dict keys    : ['alpha']\n"
+        "  Suggest names: ['not_alpha']"
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        bayesian_search_forecaster_multiseries(
+            forecaster         = forecaster,
+            series             = series_dict_range,
+            cv                 = cv,
+            search_space       = search_space,
+            metric             = 'mean_absolute_error',
+            aggregate_metric   = 'weighted_average',
+            n_trials           = 10,
+            random_state       = 123,
+            return_best        = False,
+            verbose            = False,
+        )
+
+
 # This mark allows to only run test with "slow" label or all except this, "not slow".
 # The mark should be included in the pytest.ini file
 # pytest -m slow --verbose
@@ -1270,7 +1310,7 @@ def test_evaluate_bayesian_search_forecaster_multiseries_when_return_best_Foreca
         n_trials           = 10,
         random_state       = 123,
         return_best        = True,
-        verbose            = False
+        verbose            = True
     )
     expected_lags = np.array([1, 2])
     expected_alpha = 0.2345829390285611

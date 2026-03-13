@@ -56,6 +56,13 @@ from .fixtures_forecaster_recursive import y, exog
   - Output tests: `test_<method>_output_when_<condition>`.
   - Attribute tests: `test_<method>_<attribute>_correctly_stored`.
 - Always include a **docstring** explaining what the test does.
+- Docstrings use multi-line format with the text starting on the line after the opening `"""` and the closing `"""` on its own line:
+  ```python
+  def test_example():
+      """
+      Test that the function returns the expected value.
+      """
+  ```
 - Parametrize ids use `lambda` for readable test names:
   ```python
   ids=lambda dt: f'lags, window_features, expected: {dt}'
@@ -63,7 +70,7 @@ from .fixtures_forecaster_recursive import y, exog
 
 ## Parametrize & Grouping
 
-Minimize total test count by **grouping related checks** and **parametrizing** variations.
+Minimize total test count by **grouping related checks** and **parametrizing** variations. When multiple input types exercise the same code branch, combine them in a single parametrized test rather than creating one test function per type.
 
 ### Parametrize for variations of the same logic
 ```python
@@ -88,7 +95,7 @@ def test_init_ValueError_when_differentiation_not_valid(dif):
 ```
 
 ### Group multiple assertions in a single test
-When testing an output with many attributes, check all of them in one test:
+When multiple assertions verify facets of the same logical behavior or scenario, group them in a single test function — not only when checking object attributes:
 ```python
 def test_init_window_size_correctly_stored(lags, window_features, expected):
     ...

@@ -393,7 +393,7 @@ def test_evaluate_grid_hyperparameters_stats_when_return_best():
         metric            = mean_absolute_error,
         return_best       = True,
         suppress_warnings = False,
-        verbose           = False
+        verbose           = True
     )
     
     expected_params = {

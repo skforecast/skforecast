@@ -18,7 +18,7 @@ from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
 from skforecast.preprocessing import RollingFeatures
 
 # Fixtures
-from ..fixtures_model_selection import y, exog
+from ..fixtures_model_selection import y
 from ..fixtures_model_selection import y_feature_selection
 from ..fixtures_model_selection import exog_feature_selection
 
@@ -67,7 +67,8 @@ def test_ValueError_evaluate_grid_hyperparameters_when_return_best_and_len_y_exo
                      estimator = Ridge(random_state=123),
                      lags      = 2
                  )
-    exog = y[:30]
+    exog_short = y[:30]
+    
     cv = TimeSeriesFold(
             steps                 = 3,
             initial_train_size    = len(y[:-12]),
@@ -80,21 +81,22 @@ def test_ValueError_evaluate_grid_hyperparameters_when_return_best_and_len_y_exo
             allow_incomplete_fold = True,
             return_all_indexes    = False,
         )
+    
     err_msg = re.escape(
-        (f"`exog` must have same number of samples as `y`. "
-         f"length `exog`: ({len(exog)}), length `y`: ({len(y)})")
+        f"`exog` must have same number of samples as `y`. "
+        f"length `exog`: ({len(exog_short)}), length `y`: ({len(y)})"
     )
     with pytest.raises(ValueError, match = err_msg):
         _evaluate_grid_hyperparameters(
             forecaster  = forecaster,
             y           = y,
-            exog        = exog,
+            exog        = exog_short,
             cv          = cv,
             lags_grid   = [2, 4],
             param_grid  = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}],
             metric      = 'mean_absolute_error',
             return_best = True,
-            verbose     = False
+            verbose     = True
         )
 
 
@@ -132,6 +134,7 @@ def test_ValueError_evaluate_grid_hyperparameters_metric_list_duplicate_names():
             verbose     = False
         )
 
+
 def test_grid_hyperparameters_results_warn_when_non_valid_params():
     """
     Test that a warning is raised when non valid params are included in param_grid.
@@ -144,6 +147,7 @@ def test_grid_hyperparameters_results_warn_when_non_valid_params():
     param_grid = list(ParameterGrid(param_grid))
     cv = TimeSeriesFold(steps=12, initial_train_size=30, refit=False)
     forecaster = ForecasterRecursive(estimator=ElasticNet(), lags=5)
+
     msg = re.escape(
         "Parameters skipped: {'alpha': 0.1, 'l1_ratio': 10}. The 'l1_ratio' "
         "parameter of ElasticNet must be a float in the range [0.0, 1.0]. "
@@ -158,7 +162,7 @@ def test_grid_hyperparameters_results_warn_when_non_valid_params():
             metric="mean_squared_error",
             return_best=True,
             n_jobs="auto",
-            verbose=False,
+            verbose=True,
             show_progress=False,
         )
 
@@ -672,7 +676,7 @@ def test_evaluate_grid_hyperparameters_when_return_best_ForecasterRecursive(lags
         param_grid  = param_grid,
         metric      = 'mean_squared_error',
         return_best = True,
-        verbose     = False
+        verbose     = True
     )
     
     expected_lags = np.array([1, 2])
