@@ -22,6 +22,24 @@ function applyBannerLayout() {
 // Run on initial load
 applyBannerLayout();
 
+// The outdated component starts hidden and the bundle unhides it asynchronously
+// after checking versions.json. Watch for when the parent becomes visible.
+(function() {
+    var outdated = document.querySelector('[data-md-component=outdated]');
+    if (outdated && outdated.hidden) {
+        var observer = new MutationObserver(function(mutations) {
+            for (var i = 0; i < mutations.length; i++) {
+                if (mutations[i].attributeName === 'hidden' && !outdated.hidden) {
+                    applyBannerLayout();
+                    observer.disconnect();
+                    break;
+                }
+            }
+        });
+        observer.observe(outdated, { attributes: true });
+    }
+})();
+
 // Re-run on instant navigation (mkdocs-material replaces content without full reload)
 if (typeof document$ !== 'undefined') {
     document$.subscribe(function() { applyBannerLayout(); });
