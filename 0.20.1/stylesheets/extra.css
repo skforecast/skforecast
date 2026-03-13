@@ -249,16 +249,23 @@ Profile Cards (More section) Styles
 Sticky Banner Styles
 =============================== 
 */
-/* Make the outdated version banner sticky at the top while scrolling - only when it has the warning class */
+/* Make the outdated version banner sticky at the top while scrolling */
 .md-banner.md-banner--warning {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 200;
+  z-index: 10;
+  padding: 0.4rem 1rem;
+  text-align: center;
 }
 
-/* Push all page content below the fixed banner */
+/* Push the sticky header below the fixed banner */
+body:has(.md-banner--warning) .md-header {
+  top: 1.8rem;
+}
+
+/* Offset the body so content isn't hidden behind the fixed banner */
 body:has(.md-banner--warning) {
-  padding-top: 2rem;
+  padding-top: 1.8rem;
 }
