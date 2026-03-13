@@ -16,12 +16,12 @@
             🔍 Use the <strong>search</strong> to find what you need.
         </li>
         <li style="margin-bottom: 1rem;">
-            🏠 Return to the <a href="{{ base_url }}"
+            🏠 Return to the <a id="link-main-page" href="/"
                 style="color: var(--md-typeset-a-color); text-decoration: underline;">main page</a> of the
             documentation.
         </li>
         <li style="margin-bottom: 1rem;">
-            📖 Browse the <a href="{{ base_url }}/user_guides/table-of-contents"
+            📖 Browse the <a id="link-user-guides" href="/latest/user_guides/table-of-contents"
                 style="color: var(--md-typeset-a-color); text-decoration: underline;">User Guides</a> for important
             topics.
         </li>
@@ -33,4 +33,14 @@
             style="color: var(--md-typeset-a-color); text-decoration: underline;">open an issue on GitHub</a>.
     </p>
 </div>
+
+<script>
+  // Detect the current version from the URL path (e.g., /0.21.0/... or /latest/...)
+  (function() {
+    var match = window.location.pathname.match(/^\/([^/]+)\//);
+    var version = match ? "/" + match[1] : "/latest";
+    document.getElementById("link-main-page").href = version;
+    document.getElementById("link-user-guides").href = version + "/user_guides/table-of-contents";
+  })();
+</script>
 {% endblock %}

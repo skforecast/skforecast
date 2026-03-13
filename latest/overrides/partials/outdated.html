@@ -1,18 +1,12 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Redirecting</title>
-  <noscript>
-    <meta http-equiv="refresh" content="1; url=../../../0.21.0/overrides/partials/outdated.html" />
-  </noscript>
-  <script>
-    window.location.replace(
-      "../../../0.21.0/overrides/partials/outdated.html" + window.location.search + window.location.hash
-    );
-  </script>
-</head>
-<body>
-  Redirecting to <a href="../../../0.21.0/overrides/partials/outdated.html">../../../0.21.0/overrides/partials/outdated.html</a>...
-</body>
-</html>
+<div class="md-banner md-banner--warning">
+  This is documentation for an unstable development version.
+  {% if alternate_url %}
+    <a href="{{ alternate_url }}" id="version-switch-link">
+      <strong>Switch to latest stable version.</strong>
+    </a>
+  {% else %}
+    <a href="{{ '../' ~ base_url }}" id="version-switch-link">
+      <strong>Switch to latest stable version.</strong>
+    </a>
+  {% endif %}
+</div>
