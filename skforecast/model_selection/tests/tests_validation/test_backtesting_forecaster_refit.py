@@ -1149,6 +1149,7 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_no_exog_no_
                                        random_state            = 123,
                                        use_in_sample_residuals = False,
                                        use_binned_residuals    = False,
+                                       n_jobs                  = 1,
                                        verbose                 = False
                                    )
 
@@ -1217,6 +1218,7 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_binned_no_e
                                        random_state            = 123,
                                        use_in_sample_residuals = False,
                                        use_binned_residuals    = True,
+                                       n_jobs                  = 1,
                                        verbose                 = False,
                                        show_progress           = False
                                    )
