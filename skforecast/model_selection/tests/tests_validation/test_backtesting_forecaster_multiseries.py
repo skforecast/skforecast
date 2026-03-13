@@ -2653,6 +2653,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                random_state            = 123,
                                                use_in_sample_residuals = False,
                                                use_binned_residuals    = False,
+                                               n_jobs                  = 1,
                                                verbose                 = False,
                                                show_progress           = False,
                                                suppress_warnings       = True
@@ -2730,6 +2731,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                random_state            = 123,
                                                use_in_sample_residuals = False,
                                                use_binned_residuals    = True,
+                                               n_jobs                  = 1,
                                                verbose                 = False,
                                                show_progress           = False,
                                                suppress_warnings       = True
