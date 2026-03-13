@@ -1,5 +1,6 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Make the warning banner fixed at the top and push the header below it
+// Make the warning banner fixed at the top and push the header below it.
+// Runs on every page load/navigation (including navigation.instant).
+function applyBannerLayout() {
     var banner = document.querySelector('.md-banner.md-banner--warning');
     if (banner && banner.offsetHeight > 0) {
         banner.style.position = 'fixed';
@@ -7,14 +8,28 @@ document.addEventListener('DOMContentLoaded', function() {
         banner.style.left = '0';
         banner.style.right = '0';
         banner.style.zIndex = '10';
-        banner.style.padding = '0.4rem 1rem';
-        banner.style.textAlign = 'center';
         var bannerHeight = banner.offsetHeight + 'px';
         document.body.style.paddingTop = bannerHeight;
         var header = document.querySelector('.md-header');
         if (header) header.style.top = bannerHeight;
+    } else {
+        document.body.style.paddingTop = '';
+        var header = document.querySelector('.md-header');
+        if (header) header.style.top = '';
     }
+}
 
+// Run on initial load
+applyBannerLayout();
+
+// Re-run on instant navigation (mkdocs-material replaces content without full reload)
+if (typeof document$ !== 'undefined') {
+    document$.subscribe(function() { applyBannerLayout(); });
+} else {
+    document.addEventListener('DOMContentLoaded', applyBannerLayout);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
     const link = document.getElementById('version-switch-link');
     if (!link) return;
 

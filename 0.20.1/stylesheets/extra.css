@@ -249,5 +249,23 @@ Profile Cards (More section) Styles
 Sticky Banner Styles
 =============================== 
 */
-/* The outdated version banner positioning and offset are handled by
-   version-switcher.js to avoid layout issues when the banner is not visible. */
+/* Make the outdated version banner sticky at the top while scrolling */
+.md-banner.md-banner--warning {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 0.4rem 1rem;
+  text-align: center;
+}
+
+/* Push the sticky header below the fixed banner (only when banner is visible) */
+body.has-visible-banner .md-header {
+  top: 1.8rem;
+}
+
+/* Offset the body so content isn't hidden behind the fixed banner */
+body.has-visible-banner {
+  padding-top: 1.8rem;
+}
