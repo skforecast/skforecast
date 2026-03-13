@@ -12,7 +12,7 @@
         <meta name="author" content="Joaquin Amat Rodrigo and Javier Escobar Ortiz">
       
       
-        <link rel="canonical" href="https://skforecast.org/latest/api/ForecasterStats.html">
+        <link rel="canonical" href="https://skforecast.org/0.20.1/api/ForecasterStats.html">
       
       
         <link rel="prev" href="ForecasterRecursiveMultiSeries.html">
@@ -779,34 +779,6 @@
     
   
     How to install
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../quick-start/ai-assisted-forecasting.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    AI-assisted forecasting
   
 
     
@@ -1619,7 +1591,7 @@
   <span class="md-ellipsis">
     
   
-    Calendar features
+    Calendars features
   
 
     
@@ -5440,9 +5412,9 @@
         <p>This class turns statistical models into a Forecaster compatible with the 
 skforecast API. It supports single or multiple statistical models for the 
 same time series, enabling model comparison and ensemble predictions.</p>
-<p>Supported statistical models are: skforecast.stats.Arima, skforecast.stats.Arar, 
-skforecast.stats.Ets, skforecast.stats.Sarimax, sktime.forecasting.ARIMA, 
-aeon.forecasting.stats.ARIMA and aeon.forecasting.stats.ETS.</p>
+<p>Supported statistical models are: skforecast.stats.Sarimax, skforecast.stats.Arima,
+skforecast.stats.Arar, skforecast.stats.Ets, aeon.forecasting.stats.ARIMA and
+aeon.forecasting.stats.ETS.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -5473,7 +5445,7 @@ and predictions from all models are returned. Supported models are:</p>
 <li>skforecast.stats.Arar</li>
 <li>skforecast.stats.Ets</li>
 <li>skforecast.stats.Sarimax (statsmodels wrapper)</li>
-<li>sktime.forecasting.ARIMA (pmdarima wrapper)</li>
+<li>sktime.forecasting.ARIMA (pdmarima wrapper)</li>
 <li>aeon.forecasting.stats.ARIMA</li>
 <li>aeon.forecasting.stats.ETS</li>
 </ul>
@@ -5541,7 +5513,7 @@ forecaster. <code>inverse_transform</code> is not available when using ColumnTra
                 <code>regressor</code>
             </td>
             <td>
-                  <code>object, list of objects</code>
+                  <code>estimator or pipeline compatible with the Keras API</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5643,7 +5615,7 @@ from each model.</p>
       &lt;small class=&quot;doc doc-label doc-label-instance-attribute&quot;&gt;&lt;code&gt;instance-attribute&lt;/code&gt;&lt;/small&gt;
   &lt;/span&gt; (&lt;code&gt;skforecast.recursive._forecaster_stats.ForecasterStats.estimator_types&lt;/code&gt;)" href="#skforecast.recursive._forecaster_stats.ForecasterStats.estimator_types">estimator_types</a></code></td>
             <td>
-                  <code><span title="list">list</span></code>
+                  <code><span title="tuple">tuple</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5851,7 +5823,7 @@ is extended after predictions are made using an external 'last_window'.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Name of the series provided by the user during training.</p>
+                <p>Names of the series provided by the user during training.</p>
               </div>
             </td>
           </tr>
@@ -8705,8 +8677,9 @@ that y[i] is regressed on exog[i].</p>
 <span class="normal">793</span>
 <span class="normal">794</span>
 <span class="normal">795</span>
-<span class="normal">796</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
+<span class="normal">796</span>
+<span class="normal">797</span>
+<span class="normal">798</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">exog</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -8737,6 +8710,8 @@ that y[i] is regressed on exog[i].</p>
 <span class="sd">    None</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">set_skforecast_warnings</span><span class="p">(</span><span class="n">suppress_warnings</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">estimators_</span>             <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="p">(</span><span class="n">est</span><span class="p">)</span> <span class="k">for</span> <span class="n">est</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimators</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">estimator_names_</span>        <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimators</span><span class="p">)</span>
@@ -8781,11 +8756,10 @@ that y[i] is regressed on exog[i].</p>
             <span class="p">)</span>
 
     <span class="n">y</span> <span class="o">=</span> <span class="n">transform_series</span><span class="p">(</span>
-            <span class="n">series</span>              <span class="o">=</span> <span class="n">y</span><span class="p">,</span>
-            <span class="n">transformer</span>         <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_y</span><span class="p">,</span>
-            <span class="n">fit</span>                 <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-            <span class="n">inverse_transform</span>   <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-            <span class="n">force_single_column</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">series</span>            <span class="o">=</span> <span class="n">y</span><span class="p">,</span>
+            <span class="n">transformer</span>       <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_y</span><span class="p">,</span>
+            <span class="n">fit</span>               <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="n">inverse_transform</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">exog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -8857,6 +8831,8 @@ that y[i] is regressed on exog[i].</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">extended_index_</span> <span class="o">=</span> <span class="n">first_sarimax</span><span class="o">.</span><span class="n">sarimax_res</span><span class="o">.</span><span class="n">fittedvalues</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">extended_index_</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">index</span>
+
+    <span class="n">set_skforecast_warnings</span><span class="p">(</span><span class="n">suppress_warnings</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -9030,9 +9006,7 @@ the training data.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">798</span>
-<span class="normal">799</span>
-<span class="normal">800</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">800</span>
 <span class="normal">801</span>
 <span class="normal">802</span>
 <span class="normal">803</span>
@@ -9171,7 +9145,9 @@ the training data.</p>
 <span class="normal">936</span>
 <span class="normal">937</span>
 <span class="normal">938</span>
-<span class="normal">939</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_create_predict_inputs</span><span class="p">(</span>
+<span class="normal">939</span>
+<span class="normal">940</span>
+<span class="normal">941</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_create_predict_inputs</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">last_window</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9428,9 +9404,7 @@ estimators, and returns the updated prediction index.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 941</span>
-<span class="normal"> 942</span>
-<span class="normal"> 943</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 943</span>
 <span class="normal"> 944</span>
 <span class="normal"> 945</span>
 <span class="normal"> 946</span>
@@ -9490,7 +9464,9 @@ estimators, and returns the updated prediction index.</p>
 <span class="normal">1000</span>
 <span class="normal">1001</span>
 <span class="normal">1002</span>
-<span class="normal">1003</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_check_append_last_window</span><span class="p">(</span>
+<span class="normal">1003</span>
+<span class="normal">1004</span>
+<span class="normal">1005</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_check_append_last_window</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">last_window</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
@@ -9722,9 +9698,7 @@ information.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1005</span>
-<span class="normal">1006</span>
-<span class="normal">1007</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1007</span>
 <span class="normal">1008</span>
 <span class="normal">1009</span>
 <span class="normal">1010</span>
@@ -9830,8 +9804,12 @@ information.</p>
 <span class="normal">1110</span>
 <span class="normal">1111</span>
 <span class="normal">1112</span>
-<span class="normal">1113</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
+<span class="normal">1113</span>
+<span class="normal">1114</span>
+<span class="normal">1115</span>
+<span class="normal">1116</span>
+<span class="normal">1117</span>
+<span class="normal">1118</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">last_window</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9883,6 +9861,8 @@ information.</p>
 <span class="sd">        - For a single estimator: pandas Series with predicted values.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">set_skforecast_warnings</span><span class="p">(</span><span class="n">suppress_warnings</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
 
     <span class="n">last_window</span><span class="p">,</span> <span class="n">last_window_exog</span><span class="p">,</span> <span class="n">exog</span><span class="p">,</span> <span class="n">prediction_index</span> <span class="o">=</span> <span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_create_predict_inputs</span><span class="p">(</span>
@@ -9938,6 +9918,8 @@ information.</p>
             <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">prediction_index</span><span class="p">,</span> <span class="n">n_estimators</span><span class="p">),</span>
         <span class="p">)</span>
 
+    <span class="n">set_skforecast_warnings</span><span class="p">(</span><span class="n">suppress_warnings</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">predictions</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -9963,15 +9945,15 @@ information.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1115</span>
-<span class="normal">1116</span>
-<span class="normal">1117</span>
-<span class="normal">1118</span>
-<span class="normal">1119</span>
-<span class="normal">1120</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1120</span>
 <span class="normal">1121</span>
 <span class="normal">1122</span>
-<span class="normal">1123</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_sarimax</span><span class="p">(</span>
+<span class="normal">1123</span>
+<span class="normal">1124</span>
+<span class="normal">1125</span>
+<span class="normal">1126</span>
+<span class="normal">1127</span>
+<span class="normal">1128</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_sarimax</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">estimator</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> 
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
@@ -10004,15 +9986,15 @@ information.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1125</span>
-<span class="normal">1126</span>
-<span class="normal">1127</span>
-<span class="normal">1128</span>
-<span class="normal">1129</span>
-<span class="normal">1130</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1130</span>
 <span class="normal">1131</span>
 <span class="normal">1132</span>
-<span class="normal">1133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_skforecast_stats</span><span class="p">(</span>
+<span class="normal">1133</span>
+<span class="normal">1134</span>
+<span class="normal">1135</span>
+<span class="normal">1136</span>
+<span class="normal">1137</span>
+<span class="normal">1138</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_skforecast_stats</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">estimator</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> 
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
@@ -10045,18 +10027,18 @@ information.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1135</span>
-<span class="normal">1136</span>
-<span class="normal">1137</span>
-<span class="normal">1138</span>
-<span class="normal">1139</span>
-<span class="normal">1140</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1140</span>
 <span class="normal">1141</span>
 <span class="normal">1142</span>
 <span class="normal">1143</span>
 <span class="normal">1144</span>
 <span class="normal">1145</span>
-<span class="normal">1146</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_aeon</span><span class="p">(</span>
+<span class="normal">1146</span>
+<span class="normal">1147</span>
+<span class="normal">1148</span>
+<span class="normal">1149</span>
+<span class="normal">1150</span>
+<span class="normal">1151</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_aeon</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">estimator</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> 
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
@@ -10092,16 +10074,16 @@ information.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1148</span>
-<span class="normal">1149</span>
-<span class="normal">1150</span>
-<span class="normal">1151</span>
-<span class="normal">1152</span>
-<span class="normal">1153</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1153</span>
 <span class="normal">1154</span>
 <span class="normal">1155</span>
 <span class="normal">1156</span>
-<span class="normal">1157</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_sktime_arima</span><span class="p">(</span>
+<span class="normal">1157</span>
+<span class="normal">1158</span>
+<span class="normal">1159</span>
+<span class="normal">1160</span>
+<span class="normal">1161</span>
+<span class="normal">1162</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_sktime_arima</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">estimator</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -10145,7 +10127,7 @@ If exogenous variables were used during training, they must be provided
 for prediction.</p>
 <p>Estimators that do not support prediction intervals will be skipped 
 with a warning. Supported estimators for intervals are the ones listed
-in the attribute <code>estimators_support_interval</code>.</p>
+in the attribute <code>estimators_support_intervals</code>.</p>
 <p>When using <code>last_window</code> and <code>last_window_exog</code>, they must start right 
 after the end of the index seen by the forecaster during training. 
 This feature is only supported for skforecast.Sarimax estimator; 
@@ -10324,12 +10306,7 @@ estimated intervals:</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1159</span>
-<span class="normal">1160</span>
-<span class="normal">1161</span>
-<span class="normal">1162</span>
-<span class="normal">1163</span>
-<span class="normal">1164</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1164</span>
 <span class="normal">1165</span>
 <span class="normal">1166</span>
 <span class="normal">1167</span>
@@ -10474,8 +10451,15 @@ estimated intervals:</p>
 <span class="normal">1306</span>
 <span class="normal">1307</span>
 <span class="normal">1308</span>
-<span class="normal">1309</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">predict_interval</span><span class="p">(</span>
+<span class="normal">1309</span>
+<span class="normal">1310</span>
+<span class="normal">1311</span>
+<span class="normal">1312</span>
+<span class="normal">1313</span>
+<span class="normal">1314</span>
+<span class="normal">1315</span>
+<span class="normal">1316</span>
+<span class="normal">1317</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">predict_interval</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">last_window</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -10495,7 +10479,7 @@ estimated intervals:</p>
 
 <span class="sd">    Estimators that do not support prediction intervals will be skipped </span>
 <span class="sd">    with a warning. Supported estimators for intervals are the ones listed</span>
-<span class="sd">    in the attribute `estimators_support_interval`.</span>
+<span class="sd">    in the attribute `estimators_support_intervals`.</span>
 
 <span class="sd">    When using `last_window` and `last_window_exog`, they must start right </span>
 <span class="sd">    after the end of the index seen by the forecaster during training. </span>
@@ -10544,6 +10528,8 @@ estimated intervals:</p>
 <span class="sd">          &#39;pred&#39;, &#39;lower_bound&#39;, &#39;upper_bound&#39;.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">set_skforecast_warnings</span><span class="p">(</span><span class="n">suppress_warnings</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
 
     <span class="c1"># If interval and alpha take alpha, if interval transform to alpha</span>
     <span class="k">if</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -10624,6 +10610,8 @@ estimated intervals:</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">predictions</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;estimator_id&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">estimator_ids</span><span class="p">,</span> <span class="n">steps</span><span class="p">))</span>
 
+    <span class="n">set_skforecast_warnings</span><span class="p">(</span><span class="n">suppress_warnings</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">predictions</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -10649,18 +10637,18 @@ estimated intervals:</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1311</span>
-<span class="normal">1312</span>
-<span class="normal">1313</span>
-<span class="normal">1314</span>
-<span class="normal">1315</span>
-<span class="normal">1316</span>
-<span class="normal">1317</span>
-<span class="normal">1318</span>
-<span class="normal">1319</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1319</span>
 <span class="normal">1320</span>
 <span class="normal">1321</span>
-<span class="normal">1322</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_interval_sarimax</span><span class="p">(</span>
+<span class="normal">1322</span>
+<span class="normal">1323</span>
+<span class="normal">1324</span>
+<span class="normal">1325</span>
+<span class="normal">1326</span>
+<span class="normal">1327</span>
+<span class="normal">1328</span>
+<span class="normal">1329</span>
+<span class="normal">1330</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_interval_sarimax</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">estimator</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
@@ -10698,21 +10686,21 @@ estimated intervals:</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1324</span>
-<span class="normal">1325</span>
-<span class="normal">1326</span>
-<span class="normal">1327</span>
-<span class="normal">1328</span>
-<span class="normal">1329</span>
-<span class="normal">1330</span>
-<span class="normal">1331</span>
-<span class="normal">1332</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1332</span>
 <span class="normal">1333</span>
 <span class="normal">1334</span>
 <span class="normal">1335</span>
 <span class="normal">1336</span>
 <span class="normal">1337</span>
-<span class="normal">1338</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_interval_skforecast_stats</span><span class="p">(</span>
+<span class="normal">1338</span>
+<span class="normal">1339</span>
+<span class="normal">1340</span>
+<span class="normal">1341</span>
+<span class="normal">1342</span>
+<span class="normal">1343</span>
+<span class="normal">1344</span>
+<span class="normal">1345</span>
+<span class="normal">1346</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_interval_skforecast_stats</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">estimator</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
@@ -10753,17 +10741,17 @@ estimated intervals:</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1340</span>
-<span class="normal">1341</span>
-<span class="normal">1342</span>
-<span class="normal">1343</span>
-<span class="normal">1344</span>
-<span class="normal">1345</span>
-<span class="normal">1346</span>
-<span class="normal">1347</span>
-<span class="normal">1348</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1348</span>
 <span class="normal">1349</span>
-<span class="normal">1350</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_interval_sktime_arima</span><span class="p">(</span>
+<span class="normal">1350</span>
+<span class="normal">1351</span>
+<span class="normal">1352</span>
+<span class="normal">1353</span>
+<span class="normal">1354</span>
+<span class="normal">1355</span>
+<span class="normal">1356</span>
+<span class="normal">1357</span>
+<span class="normal">1358</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict_interval_sktime_arima</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">estimator</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -10862,15 +10850,7 @@ is a dictionary of parameters for that estimator.</li>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1352</span>
-<span class="normal">1353</span>
-<span class="normal">1354</span>
-<span class="normal">1355</span>
-<span class="normal">1356</span>
-<span class="normal">1357</span>
-<span class="normal">1358</span>
-<span class="normal">1359</span>
-<span class="normal">1360</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1360</span>
 <span class="normal">1361</span>
 <span class="normal">1362</span>
 <span class="normal">1363</span>
@@ -10926,7 +10906,15 @@ is a dictionary of parameters for that estimator.</li>
 <span class="normal">1413</span>
 <span class="normal">1414</span>
 <span class="normal">1415</span>
-<span class="normal">1416</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span>
+<span class="normal">1416</span>
+<span class="normal">1417</span>
+<span class="normal">1418</span>
+<span class="normal">1419</span>
+<span class="normal">1420</span>
+<span class="normal">1421</span>
+<span class="normal">1422</span>
+<span class="normal">1423</span>
+<span class="normal">1424</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -11071,15 +11059,7 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1418</span>
-<span class="normal">1419</span>
-<span class="normal">1420</span>
-<span class="normal">1421</span>
-<span class="normal">1422</span>
-<span class="normal">1423</span>
-<span class="normal">1424</span>
-<span class="normal">1425</span>
-<span class="normal">1426</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1426</span>
 <span class="normal">1427</span>
 <span class="normal">1428</span>
 <span class="normal">1429</span>
@@ -11096,7 +11076,15 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 <span class="normal">1440</span>
 <span class="normal">1441</span>
 <span class="normal">1442</span>
-<span class="normal">1443</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_fit_kwargs</span><span class="p">(</span>
+<span class="normal">1443</span>
+<span class="normal">1444</span>
+<span class="normal">1445</span>
+<span class="normal">1446</span>
+<span class="normal">1447</span>
+<span class="normal">1448</span>
+<span class="normal">1449</span>
+<span class="normal">1450</span>
+<span class="normal">1451</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_fit_kwargs</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">fit_kwargs</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -11200,15 +11188,7 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1445</span>
-<span class="normal">1446</span>
-<span class="normal">1447</span>
-<span class="normal">1448</span>
-<span class="normal">1449</span>
-<span class="normal">1450</span>
-<span class="normal">1451</span>
-<span class="normal">1452</span>
-<span class="normal">1453</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1453</span>
 <span class="normal">1454</span>
 <span class="normal">1455</span>
 <span class="normal">1456</span>
@@ -11246,7 +11226,15 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 <span class="normal">1488</span>
 <span class="normal">1489</span>
 <span class="normal">1490</span>
-<span class="normal">1491</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_feature_importances</span><span class="p">(</span>
+<span class="normal">1491</span>
+<span class="normal">1492</span>
+<span class="normal">1493</span>
+<span class="normal">1494</span>
+<span class="normal">1495</span>
+<span class="normal">1496</span>
+<span class="normal">1497</span>
+<span class="normal">1498</span>
+<span class="normal">1499</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_feature_importances</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">sort_importance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
@@ -11321,11 +11309,11 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1493</span>
-<span class="normal">1494</span>
-<span class="normal">1495</span>
-<span class="normal">1496</span>
-<span class="normal">1497</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1501</span>
+<span class="normal">1502</span>
+<span class="normal">1503</span>
+<span class="normal">1504</span>
+<span class="normal">1505</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_feature_importances_skforecast_stats</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get feature importances for skforecast Sarimax/Arima/Arar/Ets models.&quot;&quot;&quot;</span>
 
@@ -11358,13 +11346,13 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1499</span>
-<span class="normal">1500</span>
-<span class="normal">1501</span>
-<span class="normal">1502</span>
-<span class="normal">1503</span>
-<span class="normal">1504</span>
-<span class="normal">1505</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1507</span>
+<span class="normal">1508</span>
+<span class="normal">1509</span>
+<span class="normal">1510</span>
+<span class="normal">1511</span>
+<span class="normal">1512</span>
+<span class="normal">1513</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_feature_importances_aeon_arima</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get feature importances for AEON ARIMA model.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
@@ -11399,11 +11387,11 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1507</span>
-<span class="normal">1508</span>
-<span class="normal">1509</span>
-<span class="normal">1510</span>
-<span class="normal">1511</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1515</span>
+<span class="normal">1516</span>
+<span class="normal">1517</span>
+<span class="normal">1518</span>
+<span class="normal">1519</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_feature_importances_aeon_ets</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get feature importances for AEON ETS model.&quot;&quot;&quot;</span>
     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Feature importances is not available for the AEON ETS model.&quot;</span><span class="p">)</span>
@@ -11436,12 +11424,12 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1513</span>
-<span class="normal">1514</span>
-<span class="normal">1515</span>
-<span class="normal">1516</span>
-<span class="normal">1517</span>
-<span class="normal">1518</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1521</span>
+<span class="normal">1522</span>
+<span class="normal">1523</span>
+<span class="normal">1524</span>
+<span class="normal">1525</span>
+<span class="normal">1526</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_feature_importances_sktime_arima</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get feature importances for sktime ARIMA model.&quot;&quot;&quot;</span>
     <span class="n">feature_importances</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">_forecaster</span><span class="o">.</span><span class="n">params</span><span class="p">()</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
@@ -11532,7 +11520,7 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
       <tbody>
           <tr class="doc-section-item">
 <td><code>metric</code></td>            <td>
-                  <code>pandas DataFrame</code>
+                  <code><span title="float">float</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -11546,15 +11534,7 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1520</span>
-<span class="normal">1521</span>
-<span class="normal">1522</span>
-<span class="normal">1523</span>
-<span class="normal">1524</span>
-<span class="normal">1525</span>
-<span class="normal">1526</span>
-<span class="normal">1527</span>
-<span class="normal">1528</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1528</span>
 <span class="normal">1529</span>
 <span class="normal">1530</span>
 <span class="normal">1531</span>
@@ -11597,11 +11577,19 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 <span class="normal">1568</span>
 <span class="normal">1569</span>
 <span class="normal">1570</span>
-<span class="normal">1571</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_info_criteria</span><span class="p">(</span>
+<span class="normal">1571</span>
+<span class="normal">1572</span>
+<span class="normal">1573</span>
+<span class="normal">1574</span>
+<span class="normal">1575</span>
+<span class="normal">1576</span>
+<span class="normal">1577</span>
+<span class="normal">1578</span>
+<span class="normal">1579</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_info_criteria</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">criteria</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;aic&#39;</span><span class="p">,</span> 
     <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;standard&#39;</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the selected information criteria.</span>
 
@@ -11620,7 +11608,7 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    metric : pandas DataFrame</span>
+<span class="sd">    metric : float</span>
 <span class="sd">        The value of the selected information criteria.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -11677,11 +11665,11 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1573</span>
-<span class="normal">1574</span>
-<span class="normal">1575</span>
-<span class="normal">1576</span>
-<span class="normal">1577</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1581</span>
+<span class="normal">1582</span>
+<span class="normal">1583</span>
+<span class="normal">1584</span>
+<span class="normal">1585</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_info_criteria_sarimax</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="n">criteria</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get information criteria for SARIMAX statsmodels model.&quot;&quot;&quot;</span>
 
@@ -11716,11 +11704,11 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1579</span>
-<span class="normal">1580</span>
-<span class="normal">1581</span>
-<span class="normal">1582</span>
-<span class="normal">1583</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1587</span>
+<span class="normal">1588</span>
+<span class="normal">1589</span>
+<span class="normal">1590</span>
+<span class="normal">1591</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_info_criteria_skforecast_stats</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="n">criteria</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get information criteria for skforecast Arima/Arar/Ets models.&quot;&quot;&quot;</span>
 
@@ -11753,18 +11741,18 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1585</span>
-<span class="normal">1586</span>
-<span class="normal">1587</span>
-<span class="normal">1588</span>
-<span class="normal">1589</span>
-<span class="normal">1590</span>
-<span class="normal">1591</span>
-<span class="normal">1592</span>
-<span class="normal">1593</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1593</span>
 <span class="normal">1594</span>
 <span class="normal">1595</span>
-<span class="normal">1596</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">1596</span>
+<span class="normal">1597</span>
+<span class="normal">1598</span>
+<span class="normal">1599</span>
+<span class="normal">1600</span>
+<span class="normal">1601</span>
+<span class="normal">1602</span>
+<span class="normal">1603</span>
+<span class="normal">1604</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_info_criteria_aeon</span><span class="p">(</span>
     <span class="n">estimator</span><span class="p">,</span> <span class="n">criteria</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
@@ -11806,17 +11794,17 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1598</span>
-<span class="normal">1599</span>
-<span class="normal">1600</span>
-<span class="normal">1601</span>
-<span class="normal">1602</span>
-<span class="normal">1603</span>
-<span class="normal">1604</span>
-<span class="normal">1605</span>
-<span class="normal">1606</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1606</span>
 <span class="normal">1607</span>
-<span class="normal">1608</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">1608</span>
+<span class="normal">1609</span>
+<span class="normal">1610</span>
+<span class="normal">1611</span>
+<span class="normal">1612</span>
+<span class="normal">1613</span>
+<span class="normal">1614</span>
+<span class="normal">1615</span>
+<span class="normal">1616</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_info_criteria_sktime_arima</span><span class="p">(</span>
     <span class="n">estimator</span><span class="p">,</span> <span class="n">criteria</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
@@ -11881,15 +11869,7 @@ forecaster.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1610</span>
-<span class="normal">1611</span>
-<span class="normal">1612</span>
-<span class="normal">1613</span>
-<span class="normal">1614</span>
-<span class="normal">1615</span>
-<span class="normal">1616</span>
-<span class="normal">1617</span>
-<span class="normal">1618</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1618</span>
 <span class="normal">1619</span>
 <span class="normal">1620</span>
 <span class="normal">1621</span>
@@ -11920,7 +11900,15 @@ forecaster.</p>
 <span class="normal">1646</span>
 <span class="normal">1647</span>
 <span class="normal">1648</span>
-<span class="normal">1649</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_estimators_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="normal">1649</span>
+<span class="normal">1650</span>
+<span class="normal">1651</span>
+<span class="normal">1652</span>
+<span class="normal">1653</span>
+<span class="normal">1654</span>
+<span class="normal">1655</span>
+<span class="normal">1656</span>
+<span class="normal">1657</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_estimators_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get a summary DataFrame with information about all estimators in the </span>
 <span class="sd">    forecaster.</span>
@@ -11982,6 +11970,36 @@ forecaster.</p>
         <p>Show forecaster information.</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>self</code>
+            </td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     <p><span class="doc-section-title">Returns:</span></p>
     <table>
       <thead>
@@ -12007,19 +12025,27 @@ forecaster.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1651</span>
-<span class="normal">1652</span>
-<span class="normal">1653</span>
-<span class="normal">1654</span>
-<span class="normal">1655</span>
-<span class="normal">1656</span>
-<span class="normal">1657</span>
-<span class="normal">1658</span>
-<span class="normal">1659</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1659</span>
 <span class="normal">1660</span>
-<span class="normal">1661</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">1661</span>
+<span class="normal">1662</span>
+<span class="normal">1663</span>
+<span class="normal">1664</span>
+<span class="normal">1665</span>
+<span class="normal">1666</span>
+<span class="normal">1667</span>
+<span class="normal">1668</span>
+<span class="normal">1669</span>
+<span class="normal">1670</span>
+<span class="normal">1671</span>
+<span class="normal">1672</span>
+<span class="normal">1673</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Show forecaster information.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    self</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -12078,19 +12104,7 @@ The arrays removed depend on the specific estimator used.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1663</span>
-<span class="normal">1664</span>
-<span class="normal">1665</span>
-<span class="normal">1666</span>
-<span class="normal">1667</span>
-<span class="normal">1668</span>
-<span class="normal">1669</span>
-<span class="normal">1670</span>
-<span class="normal">1671</span>
-<span class="normal">1672</span>
-<span class="normal">1673</span>
-<span class="normal">1674</span>
-<span class="normal">1675</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1675</span>
 <span class="normal">1676</span>
 <span class="normal">1677</span>
 <span class="normal">1678</span>
@@ -12111,7 +12125,19 @@ The arrays removed depend on the specific estimator used.</p>
 <span class="normal">1693</span>
 <span class="normal">1694</span>
 <span class="normal">1695</span>
-<span class="normal">1696</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">reduce_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">1696</span>
+<span class="normal">1697</span>
+<span class="normal">1698</span>
+<span class="normal">1699</span>
+<span class="normal">1700</span>
+<span class="normal">1701</span>
+<span class="normal">1702</span>
+<span class="normal">1703</span>
+<span class="normal">1704</span>
+<span class="normal">1705</span>
+<span class="normal">1706</span>
+<span class="normal">1707</span>
+<span class="normal">1708</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">reduce_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Reduce memory usage by removing internal arrays of the estimator not</span>
 <span class="sd">    needed for prediction. This method only works for estimators that</span>

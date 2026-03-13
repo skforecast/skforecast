@@ -12,7 +12,7 @@
         <meta name="author" content="Joaquin Amat Rodrigo and Javier Escobar Ortiz">
       
       
-        <link rel="canonical" href="https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html">
+        <link rel="canonical" href="https://skforecast.org/0.20.1/user_guides/dependent-multi-series-multivariate-forecasting.html">
       
       
         <link rel="prev" href="multi-series-with-different-length-and-different_exog.html">
@@ -777,34 +777,6 @@
     
   
     How to install
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../quick-start/ai-assisted-forecasting.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    AI-assisted forecasting
   
 
     
@@ -1792,7 +1764,7 @@
   <span class="md-ellipsis">
     
   
-    Calendar features
+    Calendars features
   
 
     
@@ -5329,10 +5301,10 @@ data = fetch_dataset(name="air_quality_valencia_no_missing")</div>
 <pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">╭──────────────────────── <span style="font-weight: bold">air_quality_valencia_no_missing</span> ─────────────────────────╮
 │ <span style="font-weight: bold">Description:</span>                                                                     │
 │ Hourly measures of several air chemical pollutant at Valencia city (Avd.         │
-│ Francia) from 2019-01-01 to 2023-12-31. Including the following variables: pm2.5 │
-│ (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), PM10 (µg/m³), NOx (µg/m³), O3      │
-│ (µg/m³), Veloc. (m/s), Direc. (degrees), SO2 (µg/m³). Missing values have been   │
-│ imputed using linear interpolation.                                              │
+│ Francia) from 2019-01-01 to 20213-12-31. Including the following variables:      │
+│ pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), PM10 (µg/m³), NOx (µg/m³),   │
+│ O3 (µg/m³), Veloc. (m/s), Direc. (degrees), SO2 (µg/m³). Missing values have     │
+│ been imputed using linear interpolation.                                         │
 │                                                                                  │
 │ <span style="font-weight: bold">Source:</span>                                                                          │
 │ Red de Vigilancia y Control de la Contaminación Atmosférica, 46250047-València - │
@@ -5736,7 +5708,7 @@ forecaster</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-        .container-650ba7271f714893a7f6584b0022df05 {
+        .container-61057376f55a441c8683702610f8dfe0 {
             font-family: 'Arial', sans-serif;
             font-size: 0.9em;
             color: #333333;
@@ -5747,7 +5719,7 @@ forecaster</div>
             max-width: 600px;
             #margin: auto;
         }
-        .container-650ba7271f714893a7f6584b0022df05 h2 {
+        .container-61057376f55a441c8683702610f8dfe0 h2 {
             font-size: 1.5em;
             color: #222222;
             border-bottom: 2px solid #ddd;
@@ -5755,10 +5727,10 @@ forecaster</div>
             margin-bottom: 15px;
             margin-top: 5px;
         }
-        .container-650ba7271f714893a7f6584b0022df05 details {
+        .container-61057376f55a441c8683702610f8dfe0 details {
             margin: 10px 0;
         }
-        .container-650ba7271f714893a7f6584b0022df05 summary {
+        .container-61057376f55a441c8683702610f8dfe0 summary {
             font-weight: bold;
             font-size: 1.1em;
             color: #000000;
@@ -5768,38 +5740,38 @@ forecaster</div>
             padding: 5px;
             border-radius: 5px;
         }
-        .container-650ba7271f714893a7f6584b0022df05 summary:hover {
+        .container-61057376f55a441c8683702610f8dfe0 summary:hover {
             color: #000000;
             background-color: #e0e0e0;
         }
-        .container-650ba7271f714893a7f6584b0022df05 ul {
+        .container-61057376f55a441c8683702610f8dfe0 ul {
             font-family: 'Courier New', monospace;
             list-style-type: none;
             padding-left: 20px;
             margin: 10px 0;
             line-height: normal;
         }
-        .container-650ba7271f714893a7f6584b0022df05 li {
+        .container-61057376f55a441c8683702610f8dfe0 li {
             margin: 5px 0;
             font-family: 'Courier New', monospace;
         }
-        .container-650ba7271f714893a7f6584b0022df05 li strong {
+        .container-61057376f55a441c8683702610f8dfe0 li strong {
             font-weight: bold;
             color: #444444;
         }
-        .container-650ba7271f714893a7f6584b0022df05 li::before {
+        .container-61057376f55a441c8683702610f8dfe0 li::before {
             content: "- ";
             color: #666666;
         }
-        .container-650ba7271f714893a7f6584b0022df05 a {
+        .container-61057376f55a441c8683702610f8dfe0 a {
             color: #001633;
             text-decoration: none;
         }
-        .container-650ba7271f714893a7f6584b0022df05 a:hover {
+        .container-61057376f55a441c8683702610f8dfe0 a:hover {
             color: #359ccb; 
         }
     </style>
-<div class="container-650ba7271f714893a7f6584b0022df05">
+<div class="container-61057376f55a441c8683702610f8dfe0">
 <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">ForecasterDirectMultiVariate</p>
 <details open="">
 <summary>General Information</summary>
@@ -5813,9 +5785,9 @@ forecaster</div>
 <li><strong>Exogenous included:</strong> False</li>
 <li><strong>Weight function included:</strong> False</li>
 <li><strong>Differentiation order:</strong> None</li>
-<li><strong>Creation date:</strong> 2026-03-12 13:25:28</li>
-<li><strong>Last fit date:</strong> 2026-03-12 13:25:30</li>
-<li><strong>Skforecast version:</strong> 0.21.0</li>
+<li><strong>Creation date:</strong> 2026-01-30 12:14:01</li>
+<li><strong>Last fit date:</strong> 2026-01-30 12:14:05</li>
+<li><strong>Skforecast version:</strong> 0.20.0</li>
 <li><strong>Python version:</strong> 3.13.11</li>
 <li><strong>Forecaster id:</strong> None</li>
 </ul>
@@ -5856,9 +5828,9 @@ forecaster</div>
                 </ul>
 </details>
 <p>
-<a href="https://skforecast.org/0.21.0/api/forecasterdirectmultivariate.html">🛈 <strong>API Reference</strong></a>
+<a href="https://skforecast.org/0.20.0/api/forecasterdirectmultivariate.html">🛈 <strong>API Reference</strong></a>
                   
-                <a href="https://skforecast.org/0.21.0/user_guides/dependent-multi-series-multivariate-forecasting.html">🗎 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/0.20.0/user_guides/dependent-multi-series-multivariate-forecasting.html">🗎 <strong>User Guide</strong></a>
 </p>
 </div>
 </div>
@@ -6530,6 +6502,18 @@ results</div>
 <pre>params grid:   0%|          | 0/5 [00:00&lt;?, ?it/s]</pre>
 </div>
 </div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>`Forecaster` refitted using the best-found lags and parameters, and the whole data set: 
+  Lags: [ 1  2  3  4  5  6  7  8  9 10 11 12 13 14] 
+  Parameters: {'n_estimators': np.int64(19), 'max_depth': np.int64(5)}
+  Backtesting metric: 0.016567112132881933
+  Levels: ['co']
+
+</pre>
+</div>
+</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
@@ -6722,16 +6706,16 @@ results</div>
 
 <span class="n">cv</span> <span class="o">=</span> <span class="n">OneStepAheadFold</span><span class="p">(</span><span class="n">initial_train_size</span> <span class="o">=</span> <span class="s1">'2023-05-31 23:59:59'</span><span class="p">)</span>
 
-<span class="n">results</span><span class="p">,</span> <span class="n">study</span> <span class="o">=</span> <span class="n">bayesian_search_forecaster_multiseries</span><span class="p">(</span>
-                     <span class="n">forecaster</span>            <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
-                     <span class="n">series</span>                <span class="o">=</span> <span class="n">data</span><span class="p">,</span>
-                     <span class="n">search_space</span>          <span class="o">=</span> <span class="n">search_space</span><span class="p">,</span>
-                     <span class="n">cv</span>                    <span class="o">=</span> <span class="n">cv</span><span class="p">,</span>
-                     <span class="n">metric</span>                <span class="o">=</span> <span class="s1">'mean_absolute_error'</span><span class="p">,</span>
-                     <span class="n">n_trials</span>              <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>  <span class="c1"># Increase the number of trials to get better results</span>
-                     <span class="n">kwargs_create_study</span>   <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                     <span class="n">kwargs_study_optimize</span> <span class="o">=</span> <span class="kc">None</span>
-                 <span class="p">)</span>
+<span class="n">results</span><span class="p">,</span> <span class="n">best_trial</span> <span class="o">=</span> <span class="n">bayesian_search_forecaster_multiseries</span><span class="p">(</span>
+                          <span class="n">forecaster</span>            <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
+                          <span class="n">series</span>                <span class="o">=</span> <span class="n">data</span><span class="p">,</span>
+                          <span class="n">search_space</span>          <span class="o">=</span> <span class="n">search_space</span><span class="p">,</span>
+                          <span class="n">cv</span>                    <span class="o">=</span> <span class="n">cv</span><span class="p">,</span>
+                          <span class="n">metric</span>                <span class="o">=</span> <span class="s1">'mean_absolute_error'</span><span class="p">,</span>
+                          <span class="n">n_trials</span>              <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+                          <span class="n">kwargs_create_study</span>   <span class="o">=</span> <span class="p">{},</span>
+                          <span class="n">kwargs_study_optimize</span> <span class="o">=</span> <span class="p">{}</span>
+                      <span class="p">)</span>
 
 <span class="n">results</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 </pre></div>
@@ -6758,16 +6742,16 @@ def search_space(trial):
 
 cv = OneStepAheadFold(initial_train_size = '2023-05-31 23:59:59')
 
-results, study = bayesian_search_forecaster_multiseries(
-                     forecaster            = forecaster,
-                     series                = data,
-                     search_space          = search_space,
-                     cv                    = cv,
-                     metric                = 'mean_absolute_error',
-                     n_trials              = 5,  # Increase the number of trials to get better results
-                     kwargs_create_study   = None,
-                     kwargs_study_optimize = None
-                 )
+results, best_trial = bayesian_search_forecaster_multiseries(
+                          forecaster            = forecaster,
+                          series                = data,
+                          search_space          = search_space,
+                          cv                    = cv,
+                          metric                = 'mean_absolute_error',
+                          n_trials              = 5,
+                          kwargs_create_study   = {},
+                          kwargs_study_optimize = {}
+                      )
 
 results.head(4)</div>
 </div>
@@ -6780,25 +6764,20 @@ results.head(4)</div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #ffaf00; text-decoration-color: #ffaf00">╭─────────────────────────── OneStepAheadValidationWarning ────────────────────────────╮</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> One-step-ahead predictions are used for faster model comparison, but they may not    <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> fully represent multi-step prediction performance. It is recommended to backtest the <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> final model for a more accurate multi-step performance estimate.                     <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>                                                                                      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Category : skforecast.exceptions.OneStepAheadValidationWarning                       <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Location :                                                                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> c:\Users\jaesc2\Miniconda3\envs\skforecast_py13\Lib\site-packages\skforecast\model_s <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> election\_utils.py:629                                                               <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Suppress : warnings.simplefilter('ignore', category=OneStepAheadValidationWarning)   <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">╰──────────────────────────────────────────────────────────────────────────────────────╯</span>
-</pre>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>  0%|          | 0/5 [00:00&lt;?, ?it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  0%|          | 0/5 [00:00&lt;?, ?it/s]</pre>
+<pre>`Forecaster` refitted using the best-found lags and parameters, and the whole data set: 
+  Lags: [ 1  2  3  4  5  6  7  8  9 10 11 12 13 14] 
+  Parameters: {'n_estimators': 16, 'min_samples_leaf': 9, 'max_features': 'log2'}
+  Backtesting metric: 0.010437198123137972
+  Levels: ['co']
+
+</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
@@ -6822,7 +6801,6 @@ results.head(4)</div>
 <thead>
 <tr style="text-align: right;">
 <th></th>
-<th>trial_number</th>
 <th>levels</th>
 <th>lags</th>
 <th>params</th>
@@ -6835,7 +6813,6 @@ results.head(4)</div>
 <tbody>
 <tr>
 <th>0</th>
-<td>3</td>
 <td>[co]</td>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]</td>
 <td>{'n_estimators': 16, 'min_samples_leaf': 9, 'm...</td>
@@ -6846,7 +6823,6 @@ results.head(4)</div>
 </tr>
 <tr>
 <th>1</th>
-<td>1</td>
 <td>[co]</td>
 <td>[1, 2, 3, 4, 5, 6, 7]</td>
 <td>{'n_estimators': 15, 'min_samples_leaf': 4, 'm...</td>
@@ -6857,7 +6833,6 @@ results.head(4)</div>
 </tr>
 <tr>
 <th>2</th>
-<td>2</td>
 <td>[co]</td>
 <td>[1, 2, 3, 4, 5, 6, 7]</td>
 <td>{'n_estimators': 14, 'min_samples_leaf': 8, 'm...</td>
@@ -6868,7 +6843,6 @@ results.head(4)</div>
 </tr>
 <tr>
 <th>3</th>
-<td>0</td>
 <td>[co]</td>
 <td>[1, 2, 3, 4, 5, 6, 7]</td>
 <td>{'n_estimators': 12, 'min_samples_leaf': 6, 'm...</td>
@@ -6892,8 +6866,7 @@ results.head(4)</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>In addition to the results DataFrame, <code>bayesian_search_forecaster</code> also returns the Optuna <code>study</code> object. This gives the user full access to the optimization internals, enabling further analysis, visualization, or customization of the search process.</p>
-<p>For more information, refer to the <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html">Optuna Study class</a>.</p>
+<p>The <code>best_trial</code> return contains the details of the trial that achieved the best result during optimization. For more information, refer to the <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study">Study class</a>.</p>
 </div>
 </div>
 </div>
@@ -6916,13 +6889,13 @@ results.head(4)</div>
 </div>
 </clipboard-copy>
 </div>
-<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Optuna study</span>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Optuna best trial in the study</span>
 <span class="c1"># ==============================================================================</span>
-<span class="n">study</span>
+<span class="n">best_trial</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-14"># Optuna study
+<div class="clipboard-copy-txt" id="cell-14"># Optuna best trial in the study
 # ==============================================================================
-study</div>
+best_trial</div>
 </div>
 </div>
 </div>
@@ -6934,7 +6907,7 @@ study</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>&lt;optuna.study.study.Study at 0x1b4530ba270&gt;</pre>
+<pre>FrozenTrial(number=3, state=&lt;TrialState.COMPLETE: 1&gt;, values=[0.010437198123137972], datetime_start=datetime.datetime(2026, 1, 30, 12, 14, 13, 38829), datetime_complete=datetime.datetime(2026, 1, 30, 12, 14, 13, 139224), params={'lags': 14, 'n_estimators': 16, 'min_samples_leaf': 9, 'max_features': 'log2'}, user_attrs={}, system_attrs={}, intermediate_values={}, distributions={'lags': CategoricalDistribution(choices=(7, 14)), 'n_estimators': IntDistribution(high=20, log=False, low=10, step=1), 'min_samples_leaf': IntDistribution(high=10, log=False, low=1, step=1), 'max_features': CategoricalDistribution(choices=('log2', 'sqrt'))}, trial_id=3, value=None)</pre>
 </div>
 </div>
 </div>
@@ -7598,27 +7571,11 @@ forecaster</div>
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #ffaf00; text-decoration-color: #ffaf00">╭─────────────────────────────── IgnoredArgumentWarning ───────────────────────────────╮</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> {'no', 'so2', 'o3', 'pm2.5', 'veloc.', 'nox', 'pm10', 'direc.'} not present in       <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> `transformer_series`. No transformation is applied to these series.                  <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>                                                                                      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Category : skforecast.exceptions.IgnoredArgumentWarning                              <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Location :                                                                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> c:\Users\jaesc2\Miniconda3\envs\skforecast_py13\Lib\site-packages\skforecast\utils\u <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> tils.py:380                                                                          <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Suppress : warnings.simplefilter('ignore', category=IgnoredArgumentWarning)          <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">╰──────────────────────────────────────────────────────────────────────────────────────╯</span>
-</pre>
-</div>
-</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[19]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-        .container-3759f76bad0b47edad4f38b2230cb88f {
+        .container-db247a71617c4872b356b02ba63967e3 {
             font-family: 'Arial', sans-serif;
             font-size: 0.9em;
             color: #333333;
@@ -7629,7 +7586,7 @@ forecaster</div>
             max-width: 600px;
             #margin: auto;
         }
-        .container-3759f76bad0b47edad4f38b2230cb88f h2 {
+        .container-db247a71617c4872b356b02ba63967e3 h2 {
             font-size: 1.5em;
             color: #222222;
             border-bottom: 2px solid #ddd;
@@ -7637,10 +7594,10 @@ forecaster</div>
             margin-bottom: 15px;
             margin-top: 5px;
         }
-        .container-3759f76bad0b47edad4f38b2230cb88f details {
+        .container-db247a71617c4872b356b02ba63967e3 details {
             margin: 10px 0;
         }
-        .container-3759f76bad0b47edad4f38b2230cb88f summary {
+        .container-db247a71617c4872b356b02ba63967e3 summary {
             font-weight: bold;
             font-size: 1.1em;
             color: #000000;
@@ -7650,38 +7607,38 @@ forecaster</div>
             padding: 5px;
             border-radius: 5px;
         }
-        .container-3759f76bad0b47edad4f38b2230cb88f summary:hover {
+        .container-db247a71617c4872b356b02ba63967e3 summary:hover {
             color: #000000;
             background-color: #e0e0e0;
         }
-        .container-3759f76bad0b47edad4f38b2230cb88f ul {
+        .container-db247a71617c4872b356b02ba63967e3 ul {
             font-family: 'Courier New', monospace;
             list-style-type: none;
             padding-left: 20px;
             margin: 10px 0;
             line-height: normal;
         }
-        .container-3759f76bad0b47edad4f38b2230cb88f li {
+        .container-db247a71617c4872b356b02ba63967e3 li {
             margin: 5px 0;
             font-family: 'Courier New', monospace;
         }
-        .container-3759f76bad0b47edad4f38b2230cb88f li strong {
+        .container-db247a71617c4872b356b02ba63967e3 li strong {
             font-weight: bold;
             color: #444444;
         }
-        .container-3759f76bad0b47edad4f38b2230cb88f li::before {
+        .container-db247a71617c4872b356b02ba63967e3 li::before {
             content: "- ";
             color: #666666;
         }
-        .container-3759f76bad0b47edad4f38b2230cb88f a {
+        .container-db247a71617c4872b356b02ba63967e3 a {
             color: #001633;
             text-decoration: none;
         }
-        .container-3759f76bad0b47edad4f38b2230cb88f a:hover {
+        .container-db247a71617c4872b356b02ba63967e3 a:hover {
             color: #359ccb; 
         }
     </style>
-<div class="container-3759f76bad0b47edad4f38b2230cb88f">
+<div class="container-db247a71617c4872b356b02ba63967e3">
 <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">ForecasterDirectMultiVariate</p>
 <details open="">
 <summary>General Information</summary>
@@ -7695,9 +7652,9 @@ forecaster</div>
 <li><strong>Exogenous included:</strong> False</li>
 <li><strong>Weight function included:</strong> False</li>
 <li><strong>Differentiation order:</strong> None</li>
-<li><strong>Creation date:</strong> 2026-03-12 13:25:43</li>
-<li><strong>Last fit date:</strong> 2026-03-12 13:25:45</li>
-<li><strong>Skforecast version:</strong> 0.21.0</li>
+<li><strong>Creation date:</strong> 2026-01-30 12:14:14</li>
+<li><strong>Last fit date:</strong> 2026-01-30 12:14:15</li>
+<li><strong>Skforecast version:</strong> 0.20.0</li>
 <li><strong>Python version:</strong> 3.13.11</li>
 <li><strong>Forecaster id:</strong> None</li>
 </ul>
@@ -7738,9 +7695,9 @@ forecaster</div>
                 </ul>
 </details>
 <p>
-<a href="https://skforecast.org/0.21.0/api/forecasterdirectmultivariate.html">🛈 <strong>API Reference</strong></a>
+<a href="https://skforecast.org/0.20.0/api/forecasterdirectmultivariate.html">🛈 <strong>API Reference</strong></a>
                   
-                <a href="https://skforecast.org/0.21.0/user_guides/dependent-multi-series-multivariate-forecasting.html">🗎 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/0.20.0/user_guides/dependent-multi-series-multivariate-forecasting.html">🗎 <strong>User Guide</strong></a>
 </p>
 </div>
 </div>
@@ -8121,6 +8078,18 @@ results</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>params grid:   0%|          | 0/3 [00:00&lt;?, ?it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>`Forecaster` refitted using the best-found lags and parameters, and the whole data set: 
+  Lags: [ 1  2  3  4  5  6  7  8  9 10 11 12 13 14] 
+  Parameters: {'alpha': 0.01}
+  Backtesting metric: 0.014486558378954958
+  Levels: ['co']
+
+</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">

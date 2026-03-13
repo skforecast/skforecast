@@ -12,7 +12,7 @@
         <meta name="author" content="Joaquin Amat Rodrigo and Javier Escobar Ortiz">
       
       
-        <link rel="canonical" href="https://skforecast.org/latest/user_guides/input-data.html">
+        <link rel="canonical" href="https://skforecast.org/0.20.1/user_guides/input-data.html">
       
       
         <link rel="prev" href="migration-guide.html">
@@ -777,34 +777,6 @@
     
   
     How to install
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../quick-start/ai-assisted-forecasting.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    AI-assisted forecasting
   
 
     
@@ -1713,7 +1685,7 @@
   <span class="md-ellipsis">
     
   
-    Calendar features
+    Calendars features
   
 
     
@@ -5224,7 +5196,7 @@ from skforecast.recursive import ForecasterRecursive</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-2">
@@ -5240,7 +5212,7 @@ from skforecast.recursive import ForecasterRecursive</div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Download data</span>
 <span class="c1"># ==============================================================================</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">fetch_dataset</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">"h2o"</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kwargs_read</span><span class="o">=</span><span class="p">{</span><span class="s2">"names"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"date"</span><span class="p">],</span> <span class="s2">"header"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"h2o"</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kwargs_read_csv</span><span class="o">=</span><span class="p">{</span><span class="s2">"names"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"date"</span><span class="p">],</span> <span class="s2">"header"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
 <span class="p">)</span>
 <span class="n">data</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"date"</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">"</span><span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"date"</span><span class="p">)</span>
@@ -5250,7 +5222,7 @@ from skforecast.recursive import ForecasterRecursive</div>
 <div class="clipboard-copy-txt" id="cell-2"># Download data
 # ==============================================================================
 data = fetch_dataset(
-    name="h2o", raw=True, kwargs_read={"names": ["y", "date"], "header": 0}
+    name="h2o", raw=True, kwargs_read_csv={"names": ["y", "date"], "header": 0}
 )
 data["date"] = pd.to_datetime(data["date"], format="%Y-%m-%d")
 data = data.set_index("date")
@@ -5287,7 +5259,7 @@ data</div>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[ ]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">

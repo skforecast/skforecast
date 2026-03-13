@@ -1,8 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Add class to body only when the warning banner is actually visible
+    // Make the warning banner fixed at the top and push the header below it
     var banner = document.querySelector('.md-banner.md-banner--warning');
     if (banner && banner.offsetHeight > 0) {
-        document.body.classList.add('has-visible-banner');
+        banner.style.position = 'fixed';
+        banner.style.top = '0';
+        banner.style.left = '0';
+        banner.style.right = '0';
+        banner.style.zIndex = '10';
+        banner.style.padding = '0.4rem 1rem';
+        banner.style.textAlign = 'center';
+        var bannerHeight = banner.offsetHeight + 'px';
+        document.body.style.paddingTop = bannerHeight;
+        var header = document.querySelector('.md-header');
+        if (header) header.style.top = bannerHeight;
     }
 
     const link = document.getElementById('version-switch-link');

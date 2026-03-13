@@ -12,7 +12,7 @@
         <meta name="author" content="Joaquin Amat Rodrigo and Javier Escobar Ortiz">
       
       
-        <link rel="canonical" href="https://skforecast.org/latest/api/stats.html">
+        <link rel="canonical" href="https://skforecast.org/0.20.1/api/stats.html">
       
       
         <link rel="prev" href="ForecasterRnn.html">
@@ -779,34 +779,6 @@
     
   
     How to install
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../quick-start/ai-assisted-forecasting.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    AI-assisted forecasting
   
 
     
@@ -1619,7 +1591,7 @@
   <span class="md-ellipsis">
     
   
-    Calendar features
+    Calendars features
   
 
     
@@ -3720,10 +3692,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#skforecast.stats._arima.Arima.fit_intercept" class="md-nav__link">
+  <a href="#skforecast.stats._arima.Arima.include_mean" class="md-nav__link">
     <span class="md-ellipsis">
       
-        fit_intercept
+        include_mean
       
     </span>
   </a>
@@ -3731,10 +3703,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#skforecast.stats._arima.Arima.enforce_stationarity" class="md-nav__link">
+  <a href="#skforecast.stats._arima.Arima.transform_pars" class="md-nav__link">
     <span class="md-ellipsis">
       
-        enforce_stationarity
+        transform_pars
       
     </span>
   </a>
@@ -3757,6 +3729,17 @@
     <span class="md-ellipsis">
       
         n_cond
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skforecast.stats._arima.Arima.SSinit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SSinit
       
     </span>
   </a>
@@ -6887,10 +6870,11 @@
     <span class="n">order</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
     <span class="n">seasonal_order</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
     <span class="n">m</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">fit_intercept</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">enforce_stationarity</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">include_mean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">transform_pars</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">method</span><span class="o">=</span><span class="s2">&quot;CSS-ML&quot;</span><span class="p">,</span>
     <span class="n">n_cond</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">SSinit</span><span class="o">=</span><span class="s2">&quot;Gardner1980&quot;</span><span class="p">,</span>
     <span class="n">optim_method</span><span class="o">=</span><span class="s2">&quot;BFGS&quot;</span><span class="p">,</span>
     <span class="n">optim_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">kappa</span><span class="o">=</span><span class="mf">1000000.0</span><span class="p">,</span>
@@ -7009,7 +6993,7 @@ fitting.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>fit_intercept</code>
+                <code>include_mean</code>
             </td>
             <td>
                   <code><span title="bool">bool</span></code>
@@ -7026,7 +7010,7 @@ when there is no differencing (d=0 and D=0).</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>enforce_stationarity</code>
+                <code>transform_pars</code>
             </td>
             <td>
                   <code><span title="bool">bool</span></code>
@@ -7075,6 +7059,24 @@ If None, defaults to max(p + d*m + P*m, q + Q*m).</p>
             </td>
             <td>
                   <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>SSinit</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Method for state-space initialization. Options:
+- "Gardner1980": Gardner's method (default, more numerically stable)
+- "Rossignol2011": Rossignol's method (alternative)</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#34;Gardner1980&#34;</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -7624,12 +7626,12 @@ include "BFGS", "L-BFGS-B", "Nelder-Mead", etc.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-attribute-name&quot;&gt;fit_intercept&lt;/span&gt;
+            <td><code><a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-attribute-name&quot;&gt;include_mean&lt;/span&gt;
 
 
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-instance-attribute&quot;&gt;&lt;code&gt;instance-attribute&lt;/code&gt;&lt;/small&gt;
-  &lt;/span&gt; (&lt;code&gt;skforecast.stats._arima.Arima.fit_intercept&lt;/code&gt;)" href="#skforecast.stats._arima.Arima.fit_intercept">fit_intercept</a></code></td>
+  &lt;/span&gt; (&lt;code&gt;skforecast.stats._arima.Arima.include_mean&lt;/code&gt;)" href="#skforecast.stats._arima.Arima.include_mean">include_mean</a></code></td>
             <td>
                   <code><span title="bool">bool</span></code>
             </td>
@@ -7640,12 +7642,12 @@ include "BFGS", "L-BFGS-B", "Nelder-Mead", etc.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-attribute-name&quot;&gt;enforce_stationarity&lt;/span&gt;
+            <td><code><a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-attribute-name&quot;&gt;transform_pars&lt;/span&gt;
 
 
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-instance-attribute&quot;&gt;&lt;code&gt;instance-attribute&lt;/code&gt;&lt;/small&gt;
-  &lt;/span&gt; (&lt;code&gt;skforecast.stats._arima.Arima.enforce_stationarity&lt;/code&gt;)" href="#skforecast.stats._arima.Arima.enforce_stationarity">enforce_stationarity</a></code></td>
+  &lt;/span&gt; (&lt;code&gt;skforecast.stats._arima.Arima.transform_pars&lt;/code&gt;)" href="#skforecast.stats._arima.Arima.transform_pars">transform_pars</a></code></td>
             <td>
                   <code><span title="bool">bool</span></code>
             </td>
@@ -7684,6 +7686,22 @@ include "BFGS", "L-BFGS-B", "Nelder-Mead", etc.</p>
             <td>
               <div class="doc-md-description">
                 <p>Number of observations used for conditional sum of squares (if any).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-attribute-name&quot;&gt;SSinit&lt;/span&gt;
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-instance-attribute&quot;&gt;&lt;code&gt;instance-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;skforecast.stats._arima.Arima.SSinit&lt;/code&gt;)" href="#skforecast.stats._arima.Arima.SSinit">SSinit</a></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>State-space initialization method (e.g., "Gardner1980").</p>
               </div>
             </td>
           </tr>
@@ -8193,7 +8211,6 @@ Only available for auto arima mode.</p>
 - 'aic': Akaike Information Criterion
 - 'bic': Bayesian Information Criterion
 - 'arma': ARIMA specification [p, q, P, Q, m, d, D]
-- 'order_spec': SARIMAOrder dataclass with named fields
 - 'residuals': Model residuals
 - 'converged': Convergence status
 - 'model': State-space model dict
@@ -8661,12 +8678,7 @@ values and provides efficient recursive prediction.</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">286</span>
 <span class="normal">287</span>
 <span class="normal">288</span>
 <span class="normal">289</span>
@@ -8785,15 +8797,23 @@ values and provides efficient recursive prediction.</p>
 <span class="normal">402</span>
 <span class="normal">403</span>
 <span class="normal">404</span>
-<span class="normal">405</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">order</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
     <span class="n">seasonal_order</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
     <span class="n">m</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="n">fit_intercept</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">enforce_stationarity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">include_mean</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">transform_pars</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;CSS-ML&quot;</span><span class="p">,</span>
     <span class="n">n_cond</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">SSinit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Gardner1980&quot;</span><span class="p">,</span>
     <span class="n">optim_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;BFGS&quot;</span><span class="p">,</span>
     <span class="n">optim_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">kappa</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e6</span><span class="p">,</span>
@@ -8840,10 +8860,11 @@ values and provides efficient recursive prediction.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">order</span>                <span class="o">=</span> <span class="n">order</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">seasonal_order</span>       <span class="o">=</span> <span class="n">seasonal_order</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">m</span>                    <span class="o">=</span> <span class="n">m</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">fit_intercept</span>        <span class="o">=</span> <span class="n">fit_intercept</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">enforce_stationarity</span> <span class="o">=</span> <span class="n">enforce_stationarity</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">include_mean</span>         <span class="o">=</span> <span class="n">include_mean</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">transform_pars</span>       <span class="o">=</span> <span class="n">transform_pars</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">method</span>               <span class="o">=</span> <span class="n">method</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">n_cond</span>               <span class="o">=</span> <span class="n">n_cond</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">SSinit</span>               <span class="o">=</span> <span class="n">SSinit</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">optim_method</span>         <span class="o">=</span> <span class="n">optim_method</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">optim_kwargs</span>         <span class="o">=</span> <span class="n">optim_kwargs</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">kappa</span>                <span class="o">=</span> <span class="n">kappa</span>
@@ -8993,16 +9014,16 @@ values and provides efficient recursive prediction.</p>
 
 
 
-<h4 id="skforecast.stats._arima.Arima.fit_intercept" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">fit_intercept</span>
+<h4 id="skforecast.stats._arima.Arima.include_mean" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">include_mean</span>
 
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#skforecast.stats._arima.Arima.fit_intercept" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">fit_intercept</span> <span class="o">=</span> <span class="n">fit_intercept</span>
+<a href="#skforecast.stats._arima.Arima.include_mean" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">include_mean</span> <span class="o">=</span> <span class="n">include_mean</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -9015,16 +9036,16 @@ values and provides efficient recursive prediction.</p>
 
 
 
-<h4 id="skforecast.stats._arima.Arima.enforce_stationarity" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">enforce_stationarity</span>
+<h4 id="skforecast.stats._arima.Arima.transform_pars" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">transform_pars</span>
 
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#skforecast.stats._arima.Arima.enforce_stationarity" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">enforce_stationarity</span> <span class="o">=</span> <span class="n">enforce_stationarity</span>
+<a href="#skforecast.stats._arima.Arima.transform_pars" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">transform_pars</span> <span class="o">=</span> <span class="n">transform_pars</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -9069,6 +9090,28 @@ values and provides efficient recursive prediction.</p>
 
 <a href="#skforecast.stats._arima.Arima.n_cond" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_cond</span> <span class="o">=</span> <span class="n">n_cond</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="skforecast.stats._arima.Arima.SSinit" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">SSinit</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#skforecast.stats._arima.Arima.SSinit" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">SSinit</span> <span class="o">=</span> <span class="n">SSinit</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -10312,14 +10355,7 @@ attributes, and <code>estimator_selected_id_</code> is updated with the chosen m
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">413</span>
-<span class="normal">414</span>
-<span class="normal">415</span>
-<span class="normal">416</span>
-<span class="normal">417</span>
-<span class="normal">418</span>
-<span class="normal">419</span>
-<span class="normal">420</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">420</span>
 <span class="normal">421</span>
 <span class="normal">422</span>
 <span class="normal">423</span>
@@ -10493,7 +10529,22 @@ attributes, and <code>estimator_selected_id_</code> is updated with the chosen m
 <span class="normal">591</span>
 <span class="normal">592</span>
 <span class="normal">593</span>
-<span class="normal">594</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> 
     <span class="n">exog</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -10604,7 +10655,7 @@ attributes, and <code>estimator_selected_id_</code> is updated with the chosen m
                 <span class="n">approximation</span>      <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">approximation</span><span class="p">,</span>
                 <span class="n">method</span>             <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
                 <span class="n">truncate</span>           <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">truncate</span><span class="p">,</span>
-                <span class="n">exog</span>               <span class="o">=</span> <span class="n">exog</span><span class="p">,</span>
+                <span class="n">xreg</span>               <span class="o">=</span> <span class="n">exog</span><span class="p">,</span>
                 <span class="n">test</span>               <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">,</span>
                 <span class="n">test_args</span>          <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_kwargs</span><span class="p">,</span>
                 <span class="n">seasonal_test</span>      <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seasonal_test</span><span class="p">,</span>
@@ -10613,12 +10664,20 @@ attributes, and <code>estimator_selected_id_</code> is updated with the chosen m
                 <span class="n">allowmean</span>          <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">allowmean</span><span class="p">,</span>
                 <span class="n">lambda_bc</span>          <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_bc</span><span class="p">,</span>
                 <span class="n">biasadj</span>            <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">biasadj</span><span class="p">,</span>
+                <span class="n">SSinit</span>             <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SSinit</span><span class="p">,</span>
                 <span class="n">kappa</span>              <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kappa</span>
             <span class="p">)</span>
 
-            <span class="n">order_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;order_spec&#39;</span><span class="p">]</span>
-            <span class="n">best_model_order_</span> <span class="o">=</span> <span class="p">(</span><span class="n">order_spec</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">order_spec</span><span class="o">.</span><span class="n">d</span><span class="p">,</span> <span class="n">order_spec</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
-            <span class="n">best_seasonal_order_</span> <span class="o">=</span> <span class="p">(</span><span class="n">order_spec</span><span class="o">.</span><span class="n">P</span><span class="p">,</span> <span class="n">order_spec</span><span class="o">.</span><span class="n">D</span><span class="p">,</span> <span class="n">order_spec</span><span class="o">.</span><span class="n">Q</span><span class="p">)</span>
+            <span class="n">best_model_order_</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;arma&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;arma&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;arma&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">best_seasonal_order_</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;arma&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;arma&#39;</span><span class="p">][</span><span class="mi">6</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;arma&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">best_params_</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="n">best_model_order_</span><span class="p">,</span>
                 <span class="s1">&#39;seasonal_order&#39;</span><span class="p">:</span> <span class="n">best_seasonal_order_</span><span class="p">,</span>
@@ -10639,13 +10698,14 @@ attributes, and <code>estimator_selected_id_</code> is updated with the chosen m
                 <span class="n">m</span>              <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span>
                 <span class="n">order</span>          <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">,</span>
                 <span class="n">seasonal</span>       <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seasonal_order</span><span class="p">,</span>
-                <span class="n">exog</span>           <span class="o">=</span> <span class="n">exog</span><span class="p">,</span>
-                <span class="n">fit_intercept</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_intercept</span><span class="p">,</span>
-                <span class="n">enforce_stationarity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enforce_stationarity</span><span class="p">,</span>
+                <span class="n">xreg</span>           <span class="o">=</span> <span class="n">exog</span><span class="p">,</span>
+                <span class="n">include_mean</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_mean</span><span class="p">,</span>
+                <span class="n">transform_pars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_pars</span><span class="p">,</span>
                 <span class="n">fixed</span>          <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">init</span>           <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">method</span>         <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
                 <span class="n">n_cond</span>         <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cond</span><span class="p">,</span>
+                <span class="n">SSinit</span>         <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SSinit</span><span class="p">,</span>
                 <span class="n">optim_method</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim_method</span><span class="p">,</span>
                 <span class="n">opt_options</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim_kwargs</span><span class="p">,</span>
                 <span class="n">kappa</span>          <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kappa</span>
@@ -10658,8 +10718,7 @@ attributes, and <code>estimator_selected_id_</code> is updated with the chosen m
     <span class="bp">self</span><span class="o">.</span><span class="n">loglik_</span>              <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;loglik&#39;</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">aic_</span>                 <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;aic&#39;</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">bic_</span>                 <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;bic&#39;</span><span class="p">]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">order_spec_</span>          <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;order_spec&#39;</span><span class="p">]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">arma_</span>                <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_spec_</span><span class="o">.</span><span class="n">to_arma_list</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">arma_</span>                <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;arma&#39;</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">converged_</span>           <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;converged&#39;</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">fitted_values_</span>       <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;fitted&#39;</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">in_sample_residuals_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">[</span><span class="s1">&#39;residuals&#39;</span><span class="p">]</span>
@@ -10793,22 +10852,7 @@ number of features as used during fitting.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">596</span>
-<span class="normal">597</span>
-<span class="normal">598</span>
-<span class="normal">599</span>
-<span class="normal">600</span>
-<span class="normal">601</span>
-<span class="normal">602</span>
-<span class="normal">603</span>
-<span class="normal">604</span>
-<span class="normal">605</span>
-<span class="normal">606</span>
-<span class="normal">607</span>
-<span class="normal">608</span>
-<span class="normal">609</span>
-<span class="normal">610</span>
-<span class="normal">611</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">611</span>
 <span class="normal">612</span>
 <span class="normal">613</span>
 <span class="normal">614</span>
@@ -10863,7 +10907,21 @@ number of features as used during fitting.</p>
 <span class="normal">663</span>
 <span class="normal">664</span>
 <span class="normal">665</span>
-<span class="normal">666</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">666</span>
+<span class="normal">667</span>
+<span class="normal">668</span>
+<span class="normal">669</span>
+<span class="normal">670</span>
+<span class="normal">671</span>
+<span class="normal">672</span>
+<span class="normal">673</span>
+<span class="normal">674</span>
+<span class="normal">675</span>
+<span class="normal">676</span>
+<span class="normal">677</span>
+<span class="normal">678</span>
+<span class="normal">679</span>
+<span class="normal">680</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
@@ -10922,14 +10980,13 @@ number of features as used during fitting.</p>
         <span class="n">predictions</span> <span class="o">=</span> <span class="n">forecast_arima</span><span class="p">(</span>
             <span class="n">model</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">,</span>
             <span class="n">h</span>       <span class="o">=</span> <span class="n">steps</span><span class="p">,</span>
-            <span class="n">exog</span>    <span class="o">=</span> <span class="n">exog</span><span class="p">,</span>
-            <span class="n">level</span>   <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">xreg</span>    <span class="o">=</span> <span class="n">exog</span>
         <span class="p">)[</span><span class="s1">&#39;mean&#39;</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">predictions</span> <span class="o">=</span> <span class="n">predict_arima</span><span class="p">(</span>
             <span class="n">model</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">,</span>
             <span class="n">n_ahead</span> <span class="o">=</span> <span class="n">steps</span><span class="p">,</span>
-            <span class="n">new_exog</span> <span class="o">=</span> <span class="n">exog</span><span class="p">,</span>
+            <span class="n">newxreg</span> <span class="o">=</span> <span class="n">exog</span><span class="p">,</span>
             <span class="n">se_fit</span>  <span class="o">=</span> <span class="kc">False</span>
         <span class="p">)[</span><span class="s1">&#39;mean&#39;</span><span class="p">]</span>
 
@@ -11120,21 +11177,7 @@ matrix) and forecast uncertainty.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">668</span>
-<span class="normal">669</span>
-<span class="normal">670</span>
-<span class="normal">671</span>
-<span class="normal">672</span>
-<span class="normal">673</span>
-<span class="normal">674</span>
-<span class="normal">675</span>
-<span class="normal">676</span>
-<span class="normal">677</span>
-<span class="normal">678</span>
-<span class="normal">679</span>
-<span class="normal">680</span>
-<span class="normal">681</span>
-<span class="normal">682</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">682</span>
 <span class="normal">683</span>
 <span class="normal">684</span>
 <span class="normal">685</span>
@@ -11250,7 +11293,21 @@ matrix) and forecast uncertainty.</p>
 <span class="normal">795</span>
 <span class="normal">796</span>
 <span class="normal">797</span>
-<span class="normal">798</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">798</span>
+<span class="normal">799</span>
+<span class="normal">800</span>
+<span class="normal">801</span>
+<span class="normal">802</span>
+<span class="normal">803</span>
+<span class="normal">804</span>
+<span class="normal">805</span>
+<span class="normal">806</span>
+<span class="normal">807</span>
+<span class="normal">808</span>
+<span class="normal">809</span>
+<span class="normal">810</span>
+<span class="normal">811</span>
+<span class="normal">812</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict_interval</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -11348,14 +11405,14 @@ matrix) and forecast uncertainty.</p>
         <span class="n">raw_preds</span> <span class="o">=</span> <span class="n">forecast_arima</span><span class="p">(</span>
             <span class="n">model</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">,</span>
             <span class="n">h</span>       <span class="o">=</span> <span class="n">steps</span><span class="p">,</span>
-            <span class="n">exog</span>    <span class="o">=</span> <span class="n">exog</span><span class="p">,</span>
+            <span class="n">xreg</span>    <span class="o">=</span> <span class="n">exog</span><span class="p">,</span>
             <span class="n">level</span>   <span class="o">=</span> <span class="n">level</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">raw_preds</span> <span class="o">=</span> <span class="n">predict_arima</span><span class="p">(</span>
             <span class="n">model</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">,</span>
             <span class="n">n_ahead</span> <span class="o">=</span> <span class="n">steps</span><span class="p">,</span>
-            <span class="n">new_exog</span> <span class="o">=</span> <span class="n">exog</span><span class="p">,</span>
+            <span class="n">newxreg</span> <span class="o">=</span> <span class="n">exog</span><span class="p">,</span>
             <span class="n">se_fit</span>  <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
             <span class="n">level</span>   <span class="o">=</span> <span class="n">level</span>
         <span class="p">)</span>
@@ -11461,27 +11518,27 @@ matrix) and forecast uncertainty.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">800</span>
-<span class="normal">801</span>
-<span class="normal">802</span>
-<span class="normal">803</span>
-<span class="normal">804</span>
-<span class="normal">805</span>
-<span class="normal">806</span>
-<span class="normal">807</span>
-<span class="normal">808</span>
-<span class="normal">809</span>
-<span class="normal">810</span>
-<span class="normal">811</span>
-<span class="normal">812</span>
-<span class="normal">813</span>
-<span class="normal">814</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">814</span>
 <span class="normal">815</span>
 <span class="normal">816</span>
 <span class="normal">817</span>
 <span class="normal">818</span>
 <span class="normal">819</span>
-<span class="normal">820</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">820</span>
+<span class="normal">821</span>
+<span class="normal">822</span>
+<span class="normal">823</span>
+<span class="normal">824</span>
+<span class="normal">825</span>
+<span class="normal">826</span>
+<span class="normal">827</span>
+<span class="normal">828</span>
+<span class="normal">829</span>
+<span class="normal">830</span>
+<span class="normal">831</span>
+<span class="normal">832</span>
+<span class="normal">833</span>
+<span class="normal">834</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_residuals</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get in-sample residuals (observed - fitted) from the ARIMA model.</span>
@@ -11582,27 +11639,27 @@ matrix) and forecast uncertainty.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">822</span>
-<span class="normal">823</span>
-<span class="normal">824</span>
-<span class="normal">825</span>
-<span class="normal">826</span>
-<span class="normal">827</span>
-<span class="normal">828</span>
-<span class="normal">829</span>
-<span class="normal">830</span>
-<span class="normal">831</span>
-<span class="normal">832</span>
-<span class="normal">833</span>
-<span class="normal">834</span>
-<span class="normal">835</span>
-<span class="normal">836</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">836</span>
 <span class="normal">837</span>
 <span class="normal">838</span>
 <span class="normal">839</span>
 <span class="normal">840</span>
 <span class="normal">841</span>
-<span class="normal">842</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">842</span>
+<span class="normal">843</span>
+<span class="normal">844</span>
+<span class="normal">845</span>
+<span class="normal">846</span>
+<span class="normal">847</span>
+<span class="normal">848</span>
+<span class="normal">849</span>
+<span class="normal">850</span>
+<span class="normal">851</span>
+<span class="normal">852</span>
+<span class="normal">853</span>
+<span class="normal">854</span>
+<span class="normal">855</span>
+<span class="normal">856</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_fitted_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get in-sample fitted values from the ARIMA model.</span>
@@ -11647,14 +11704,14 @@ matrix) and forecast uncertainty.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">844</span>
-<span class="normal">845</span>
-<span class="normal">846</span>
-<span class="normal">847</span>
-<span class="normal">848</span>
-<span class="normal">849</span>
-<span class="normal">850</span>
-<span class="normal">851</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">858</span>
+<span class="normal">859</span>
+<span class="normal">860</span>
+<span class="normal">861</span>
+<span class="normal">862</span>
+<span class="normal">863</span>
+<span class="normal">864</span>
+<span class="normal">865</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_feature_importances</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get feature importances for Arima model.&quot;&quot;&quot;</span>
     <span class="n">importances</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
@@ -11740,21 +11797,7 @@ matrix) and forecast uncertainty.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">853</span>
-<span class="normal">854</span>
-<span class="normal">855</span>
-<span class="normal">856</span>
-<span class="normal">857</span>
-<span class="normal">858</span>
-<span class="normal">859</span>
-<span class="normal">860</span>
-<span class="normal">861</span>
-<span class="normal">862</span>
-<span class="normal">863</span>
-<span class="normal">864</span>
-<span class="normal">865</span>
-<span class="normal">866</span>
-<span class="normal">867</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">867</span>
 <span class="normal">868</span>
 <span class="normal">869</span>
 <span class="normal">870</span>
@@ -11770,7 +11813,21 @@ matrix) and forecast uncertainty.</p>
 <span class="normal">880</span>
 <span class="normal">881</span>
 <span class="normal">882</span>
-<span class="normal">883</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">883</span>
+<span class="normal">884</span>
+<span class="normal">885</span>
+<span class="normal">886</span>
+<span class="normal">887</span>
+<span class="normal">888</span>
+<span class="normal">889</span>
+<span class="normal">890</span>
+<span class="normal">891</span>
+<span class="normal">892</span>
+<span class="normal">893</span>
+<span class="normal">894</span>
+<span class="normal">895</span>
+<span class="normal">896</span>
+<span class="normal">897</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute R^2 score using in-sample fitted values.</span>
@@ -11880,21 +11937,7 @@ matrix) and forecast uncertainty.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">885</span>
-<span class="normal">886</span>
-<span class="normal">887</span>
-<span class="normal">888</span>
-<span class="normal">889</span>
-<span class="normal">890</span>
-<span class="normal">891</span>
-<span class="normal">892</span>
-<span class="normal">893</span>
-<span class="normal">894</span>
-<span class="normal">895</span>
-<span class="normal">896</span>
-<span class="normal">897</span>
-<span class="normal">898</span>
-<span class="normal">899</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">899</span>
 <span class="normal">900</span>
 <span class="normal">901</span>
 <span class="normal">902</span>
@@ -11911,7 +11954,21 @@ matrix) and forecast uncertainty.</p>
 <span class="normal">913</span>
 <span class="normal">914</span>
 <span class="normal">915</span>
-<span class="normal">916</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">916</span>
+<span class="normal">917</span>
+<span class="normal">918</span>
+<span class="normal">919</span>
+<span class="normal">920</span>
+<span class="normal">921</span>
+<span class="normal">922</span>
+<span class="normal">923</span>
+<span class="normal">924</span>
+<span class="normal">925</span>
+<span class="normal">926</span>
+<span class="normal">927</span>
+<span class="normal">928</span>
+<span class="normal">929</span>
+<span class="normal">930</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_info_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criteria</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;aic&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the selected information criterion.</span>
@@ -12022,21 +12079,7 @@ contained subobjects that are estimators.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">918</span>
-<span class="normal">919</span>
-<span class="normal">920</span>
-<span class="normal">921</span>
-<span class="normal">922</span>
-<span class="normal">923</span>
-<span class="normal">924</span>
-<span class="normal">925</span>
-<span class="normal">926</span>
-<span class="normal">927</span>
-<span class="normal">928</span>
-<span class="normal">929</span>
-<span class="normal">930</span>
-<span class="normal">931</span>
-<span class="normal">932</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">932</span>
 <span class="normal">933</span>
 <span class="normal">934</span>
 <span class="normal">935</span>
@@ -12048,7 +12091,22 @@ contained subobjects that are estimators.</p>
 <span class="normal">941</span>
 <span class="normal">942</span>
 <span class="normal">943</span>
-<span class="normal">944</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="normal">944</span>
+<span class="normal">945</span>
+<span class="normal">946</span>
+<span class="normal">947</span>
+<span class="normal">948</span>
+<span class="normal">949</span>
+<span class="normal">950</span>
+<span class="normal">951</span>
+<span class="normal">952</span>
+<span class="normal">953</span>
+<span class="normal">954</span>
+<span class="normal">955</span>
+<span class="normal">956</span>
+<span class="normal">957</span>
+<span class="normal">958</span>
+<span class="normal">959</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get parameters for this estimator.</span>
 
@@ -12067,10 +12125,11 @@ contained subobjects that are estimators.</p>
         <span class="s2">&quot;order&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">,</span>
         <span class="s2">&quot;seasonal_order&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">seasonal_order</span><span class="p">,</span>
         <span class="s2">&quot;m&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span>
-        <span class="s2">&quot;fit_intercept&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_intercept</span><span class="p">,</span>
-        <span class="s2">&quot;enforce_stationarity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">enforce_stationarity</span><span class="p">,</span>
+        <span class="s2">&quot;include_mean&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_mean</span><span class="p">,</span>
+        <span class="s2">&quot;transform_pars&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_pars</span><span class="p">,</span>
         <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
         <span class="s2">&quot;n_cond&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cond</span><span class="p">,</span>
+        <span class="s2">&quot;SSinit&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">SSinit</span><span class="p">,</span>
         <span class="s2">&quot;optim_method&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim_method</span><span class="p">,</span>
         <span class="s2">&quot;optim_kwargs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim_kwargs</span><span class="p">,</span>
         <span class="s2">&quot;kappa&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">kappa</span><span class="p">,</span>
@@ -12155,22 +12214,7 @@ use <code>set_params()</code> instead.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">946</span>
-<span class="normal">947</span>
-<span class="normal">948</span>
-<span class="normal">949</span>
-<span class="normal">950</span>
-<span class="normal">951</span>
-<span class="normal">952</span>
-<span class="normal">953</span>
-<span class="normal">954</span>
-<span class="normal">955</span>
-<span class="normal">956</span>
-<span class="normal">957</span>
-<span class="normal">958</span>
-<span class="normal">959</span>
-<span class="normal">960</span>
-<span class="normal">961</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">961</span>
 <span class="normal">962</span>
 <span class="normal">963</span>
 <span class="normal">964</span>
@@ -12186,7 +12230,22 @@ use <code>set_params()</code> instead.</p>
 <span class="normal">974</span>
 <span class="normal">975</span>
 <span class="normal">976</span>
-<span class="normal">977</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">977</span>
+<span class="normal">978</span>
+<span class="normal">979</span>
+<span class="normal">980</span>
+<span class="normal">981</span>
+<span class="normal">982</span>
+<span class="normal">983</span>
+<span class="normal">984</span>
+<span class="normal">985</span>
+<span class="normal">986</span>
+<span class="normal">987</span>
+<span class="normal">988</span>
+<span class="normal">989</span>
+<span class="normal">990</span>
+<span class="normal">991</span>
+<span class="normal">992</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set the parameters of this estimator. Internal method without resetting </span>
 <span class="sd">    the fitted state. This method is intended for internal use only, please </span>
@@ -12263,7 +12322,7 @@ are changed, requiring the model to be refitted before making predictions.</p>
             <td>
               <div class="doc-md-description">
                 <p>Estimator parameters. Valid parameter keys are: 'order', 'seasonal_order',
-'m', 'fit_intercept', 'enforce_stationarity', 'method', 'n_cond',
+'m', 'include_mean', 'transform_pars', 'method', 'n_cond', 'SSinit',
 'optim_method', 'optim_kwargs', 'kappa'.</p>
               </div>
             </td>
@@ -12323,22 +12382,7 @@ are changed, requiring the model to be refitted before making predictions.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 979</span>
-<span class="normal"> 980</span>
-<span class="normal"> 981</span>
-<span class="normal"> 982</span>
-<span class="normal"> 983</span>
-<span class="normal"> 984</span>
-<span class="normal"> 985</span>
-<span class="normal"> 986</span>
-<span class="normal"> 987</span>
-<span class="normal"> 988</span>
-<span class="normal"> 989</span>
-<span class="normal"> 990</span>
-<span class="normal"> 991</span>
-<span class="normal"> 992</span>
-<span class="normal"> 993</span>
-<span class="normal"> 994</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 994</span>
 <span class="normal"> 995</span>
 <span class="normal"> 996</span>
 <span class="normal"> 997</span>
@@ -12372,7 +12416,22 @@ are changed, requiring the model to be refitted before making predictions.</p>
 <span class="normal">1025</span>
 <span class="normal">1026</span>
 <span class="normal">1027</span>
-<span class="normal">1028</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Arima&quot;</span><span class="p">:</span>
+<span class="normal">1028</span>
+<span class="normal">1029</span>
+<span class="normal">1030</span>
+<span class="normal">1031</span>
+<span class="normal">1032</span>
+<span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span>
+<span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span>
+<span class="normal">1043</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Arima&quot;</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set the parameters of this estimator and reset the fitted state.</span>
 
@@ -12383,7 +12442,7 @@ are changed, requiring the model to be refitted before making predictions.</p>
 <span class="sd">    ----------</span>
 <span class="sd">    **params : dict</span>
 <span class="sd">        Estimator parameters. Valid parameter keys are: &#39;order&#39;, &#39;seasonal_order&#39;,</span>
-<span class="sd">        &#39;m&#39;, &#39;fit_intercept&#39;, &#39;enforce_stationarity&#39;, &#39;method&#39;, &#39;n_cond&#39;,</span>
+<span class="sd">        &#39;m&#39;, &#39;include_mean&#39;, &#39;transform_pars&#39;, &#39;method&#39;, &#39;n_cond&#39;, &#39;SSinit&#39;,</span>
 <span class="sd">        &#39;optim_method&#39;, &#39;optim_kwargs&#39;, &#39;kappa&#39;.</span>
 
 <span class="sd">    Returns</span>
@@ -12399,8 +12458,8 @@ are changed, requiring the model to be refitted before making predictions.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">valid_params</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;order&#39;</span><span class="p">,</span> <span class="s1">&#39;seasonal_order&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;fit_intercept&#39;</span><span class="p">,</span> <span class="s1">&#39;enforce_stationarity&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;method&#39;</span><span class="p">,</span> <span class="s1">&#39;n_cond&#39;</span><span class="p">,</span> <span class="s1">&#39;optim_method&#39;</span><span class="p">,</span> <span class="s1">&#39;optim_kwargs&#39;</span><span class="p">,</span> <span class="s1">&#39;kappa&#39;</span>
+        <span class="s1">&#39;order&#39;</span><span class="p">,</span> <span class="s1">&#39;seasonal_order&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;include_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;transform_pars&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;method&#39;</span><span class="p">,</span> <span class="s1">&#39;n_cond&#39;</span><span class="p">,</span> <span class="s1">&#39;SSinit&#39;</span><span class="p">,</span> <span class="s1">&#39;optim_method&#39;</span><span class="p">,</span> <span class="s1">&#39;optim_kwargs&#39;</span><span class="p">,</span> <span class="s1">&#39;kappa&#39;</span>
     <span class="p">}</span>
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_params</span><span class="p">:</span>
@@ -12448,22 +12507,7 @@ If reduce_memory() has been called, summary information will be limited.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1030</span>
-<span class="normal">1031</span>
-<span class="normal">1032</span>
-<span class="normal">1033</span>
-<span class="normal">1034</span>
-<span class="normal">1035</span>
-<span class="normal">1036</span>
-<span class="normal">1037</span>
-<span class="normal">1038</span>
-<span class="normal">1039</span>
-<span class="normal">1040</span>
-<span class="normal">1041</span>
-<span class="normal">1042</span>
-<span class="normal">1043</span>
-<span class="normal">1044</span>
-<span class="normal">1045</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1045</span>
 <span class="normal">1046</span>
 <span class="normal">1047</span>
 <span class="normal">1048</span>
@@ -12501,7 +12545,22 @@ If reduce_memory() has been called, summary information will be limited.</p>
 <span class="normal">1080</span>
 <span class="normal">1081</span>
 <span class="normal">1082</span>
-<span class="normal">1083</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">1083</span>
+<span class="normal">1084</span>
+<span class="normal">1085</span>
+<span class="normal">1086</span>
+<span class="normal">1087</span>
+<span class="normal">1088</span>
+<span class="normal">1089</span>
+<span class="normal">1090</span>
+<span class="normal">1091</span>
+<span class="normal">1092</span>
+<span class="normal">1093</span>
+<span class="normal">1094</span>
+<span class="normal">1095</span>
+<span class="normal">1096</span>
+<span class="normal">1097</span>
+<span class="normal">1098</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Print a summary of the fitted ARIMA model.</span>
@@ -12609,22 +12668,7 @@ need access to diagnostic information.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\stats\_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1085</span>
-<span class="normal">1086</span>
-<span class="normal">1087</span>
-<span class="normal">1088</span>
-<span class="normal">1089</span>
-<span class="normal">1090</span>
-<span class="normal">1091</span>
-<span class="normal">1092</span>
-<span class="normal">1093</span>
-<span class="normal">1094</span>
-<span class="normal">1095</span>
-<span class="normal">1096</span>
-<span class="normal">1097</span>
-<span class="normal">1098</span>
-<span class="normal">1099</span>
-<span class="normal">1100</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1100</span>
 <span class="normal">1101</span>
 <span class="normal">1102</span>
 <span class="normal">1103</span>
@@ -12644,7 +12688,22 @@ need access to diagnostic information.</p>
 <span class="normal">1117</span>
 <span class="normal">1118</span>
 <span class="normal">1119</span>
-<span class="normal">1120</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">1120</span>
+<span class="normal">1121</span>
+<span class="normal">1122</span>
+<span class="normal">1123</span>
+<span class="normal">1124</span>
+<span class="normal">1125</span>
+<span class="normal">1126</span>
+<span class="normal">1127</span>
+<span class="normal">1128</span>
+<span class="normal">1129</span>
+<span class="normal">1130</span>
+<span class="normal">1131</span>
+<span class="normal">1132</span>
+<span class="normal">1133</span>
+<span class="normal">1134</span>
+<span class="normal">1135</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">reduce_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Arima&quot;</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Free memory by deleting large attributes after fitting.</span>
