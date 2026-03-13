@@ -1,6 +1,5 @@
 <h1 align="left">
-    <img src="https://github.com/skforecast/skforecast/blob/master/images/banner-landing-page-skforecast.png?raw=true#gh-light-mode-only" style="margin-top: 0px;">
-    <img src="https://github.com/skforecast/skforecast/blob/master/images/banner-landing-page-dark-mode-skforecast-no-background.png?raw=true#gh-dark-mode-only" style="margin-top: 0px;">
+    <img src="https://github.com/skforecast/skforecast/blob/master/images/banner-landing-page-skforecast.png?raw=true" style="margin-top: 0px;">
 </h1>
 
 
