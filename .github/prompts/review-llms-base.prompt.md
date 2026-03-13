@@ -36,7 +36,7 @@ Evaluate each item and report **PASS**, **WARN**, or **FAIL** with a brief expla
 
 ### 1. Version
 
-- [ ] The version string in `llms-base.txt` (e.g., `v0.21.0+`) matches `skforecast/__init__.py` `__version__`
+- [ ] The version string in `llms-base.txt` (e.g., `v0.22.0+`) matches `skforecast/__init__.py` `__version__`
 - [ ] Python version list matches `pyproject.toml` `[project] requires-python` and classifiers
 
 ### 2. Project Structure

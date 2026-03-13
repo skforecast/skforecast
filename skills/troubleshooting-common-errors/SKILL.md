@@ -13,7 +13,7 @@ description: >
 
 The most frequent LLM error. Old import paths no longer exist.
 
-| Wrong (Deprecated) | Correct (v0.21.0+) |
+| Wrong (Deprecated) | Correct (v0.14.0+) |
 |-------|---------|
 | `from skforecast.ForecasterAutoreg import ForecasterAutoreg` | `from skforecast.recursive import ForecasterRecursive` |
 | `from skforecast.ForecasterAutoregMultiSeries import ForecasterAutoregMultiSeries` | `from skforecast.recursive import ForecasterRecursiveMultiSeries` |

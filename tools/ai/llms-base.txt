@@ -2,13 +2,13 @@
 
 > Python library for time series forecasting using machine learning models
 
-This document is for skforecast v0.21.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.22.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library that simplifies time series forecasting using machine learning. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.21.0
+- Version: 0.22.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -494,5 +494,5 @@ show_datasets_info()
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.22.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```

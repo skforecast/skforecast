@@ -85,5 +85,5 @@ The context files are **auto-generated** from a single source of truth (`tools/a
 
 1. **Always provide the context URL** — Without it, LLMs may hallucinate methods that don't exist or use outdated API names (e.g., `ForecasterAutoreg` instead of `ForecasterRecursive`).
 2. **Be specific about your forecaster** — Mention which forecaster you're using. Parameter names and defaults differ across forecasters.
-3. **Mention the version** — Say "skforecast 0.21.0" so the LLM doesn't mix advice from older versions.
+3. **Mention the version** — Say "skforecast 0.22.0" so the LLM doesn't mix advice from older versions.
 4. **Validate the output** — AI-generated code is a starting point. Always run backtesting to verify model performance.
