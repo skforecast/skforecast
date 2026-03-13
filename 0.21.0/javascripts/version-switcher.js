@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Add class to body only when the warning banner is actually visible
+    var banner = document.querySelector('.md-banner.md-banner--warning');
+    if (banner && banner.offsetHeight > 0) {
+        document.body.classList.add('has-visible-banner');
+    }
+
     const link = document.getElementById('version-switch-link');
     if (!link) return;
 
