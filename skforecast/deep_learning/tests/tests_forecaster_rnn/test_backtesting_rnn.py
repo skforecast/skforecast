@@ -126,15 +126,16 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog_and_interval
          )
 
     metrics, preds = backtesting_forecaster_multiseries(
-                         forecaster      = forecaster,
-                         series          = series,
-                         exog            = exog,
-                         cv              = cv,
-                         levels          = ['1', '2'],
-                         metric          = 'mean_absolute_error', 
-                         interval        = [5, 95],
-                         interval_method = "conformal",
-                         verbose         = False
+                         forecaster           = forecaster,
+                         series               = series,
+                         exog                 = exog,
+                         cv                   = cv,
+                         levels               = ['1', '2'],
+                         metric               = 'mean_absolute_error', 
+                         interval             = [5, 95],
+                         interval_method      = "conformal",
+                         use_binned_residuals = False,
+                         verbose              = False
                      )
 
     assert metrics.shape == (5, 2)

@@ -1179,6 +1179,12 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff(differen
             steps=steps, levels=levels, last_window=last_window, exog=exog_dict_nans_test
         )
 
+    # Get differentiator copies fitted with predict-time data
+    *_, differentiators = forecaster._create_predict_inputs(
+        steps=steps, levels=levels, last_window=last_window,
+        exog=exog_dict_nans_test, check_inputs=False
+    )
+
     results = np.full(
         shape=(steps, len(levels)), fill_value=np.nan, order='F', dtype=float
     )
@@ -1187,8 +1193,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff(differen
             X_predict.loc[X_predict['level'] == level, forecaster.X_train_features_names_out_]
         )
         results[:, i] = (
-            forecaster
-            .differentiator_[level]
+            differentiators[level]
             .inverse_transform_next_window(results[:, i])
         )
         results[:, i] = transform_numpy(

@@ -1357,7 +1357,7 @@ def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterDi
         exog               = None,
         lags_grid          = lags_grid,
         return_best        = True,
-        verbose            = False,
+        verbose            = True,
         show_progress      = False
     )
 
@@ -1663,6 +1663,7 @@ def test_evaluate_grid_hyperparameters_multiseries_warn_when_non_valid_params():
     param_grid = list(ParameterGrid(param_grid))
     cv = TimeSeriesFold(steps=12, initial_train_size=30, refit=False)
     forecaster = ForecasterRecursiveMultiSeries(estimator=ElasticNet(), lags=5)
+
     msg = re.escape(
         "Parameters skipped: {'alpha': 0.1, 'l1_ratio': 10}. The 'l1_ratio' "
         "parameter of ElasticNet must be a float in the range [0.0, 1.0]. "
@@ -1677,7 +1678,7 @@ def test_evaluate_grid_hyperparameters_multiseries_warn_when_non_valid_params():
             metric="mean_squared_error",
             return_best=True,
             n_jobs="auto",
-            verbose=False,
+            verbose=True,
             show_progress=False,
         )
 
@@ -1695,3 +1696,83 @@ def test_evaluate_grid_hyperparameters_multiseries_warn_when_non_valid_params():
         }
     )
     pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test_evaluate_grid_hyperparameters_multiseries_warns_when_all_params_raise_exceptions():
+    """
+    Test that a RuntimeWarning is raised and an empty DataFrame is returned
+    when all parameter combinations in param_grid are invalid and raise
+    exceptions during evaluation (TimeSeriesFold).
+    """
+    # All l1_ratio values are invalid for ElasticNet (must be in [0.0, 1.0])
+    param_grid = [
+        {"alpha": 0.1, "l1_ratio": 10},
+        {"alpha": 0.5, "l1_ratio": 20},
+    ]
+    cv = TimeSeriesFold(steps=12, initial_train_size=30, refit=False)
+    forecaster = ForecasterRecursiveMultiSeries(estimator=ElasticNet(), lags=5)
+
+    warn_msg = re.escape(
+        "No valid parameter combinations found. All combinations raised exceptions."
+    )
+    with pytest.warns(RuntimeWarning, match=warn_msg):
+        results = _evaluate_grid_hyperparameters_multiseries(
+            forecaster    = forecaster,
+            series        = series_dict_dt,
+            param_grid    = param_grid,
+            cv            = cv,
+            metric        = "mean_squared_error",
+            return_best   = False,
+            n_jobs        = "auto",
+            verbose       = False,
+            show_progress = False,
+        )
+
+    assert results.empty
+    assert isinstance(results, pd.DataFrame)
+    expected_columns = [
+        'levels', 'lags', 'lags_label', 'params',
+        'mean_squared_error__weighted_average',
+        'mean_squared_error__average',
+        'mean_squared_error__pooling',
+    ]
+    assert list(results.columns) == expected_columns
+
+
+def test_evaluate_grid_hyperparameters_multiseries_warns_when_all_params_raise_exceptions_OneStepAheadFold():
+    """
+    Test that a RuntimeWarning is raised and an empty DataFrame is returned
+    when all parameter combinations raise exceptions with OneStepAheadFold
+    (multiseries).
+    """
+    param_grid = [
+        {"alpha": 0.1, "l1_ratio": 10},
+        {"alpha": 0.5, "l1_ratio": 20},
+    ]
+    cv = OneStepAheadFold(initial_train_size=30)
+    forecaster = ForecasterRecursiveMultiSeries(estimator=ElasticNet(), lags=5)
+
+    warn_msg = re.escape(
+        "No valid parameter combinations found. All combinations raised exceptions."
+    )
+    with pytest.warns(RuntimeWarning, match=warn_msg):
+        results = _evaluate_grid_hyperparameters_multiseries(
+            forecaster    = forecaster,
+            series        = series_dict_dt,
+            param_grid    = param_grid,
+            cv            = cv,
+            metric        = "mean_squared_error",
+            return_best   = False,
+            verbose       = False,
+            show_progress = False,
+        )
+
+    assert results.empty
+    assert isinstance(results, pd.DataFrame)
+    expected_columns = [
+        'levels', 'lags', 'lags_label', 'params',
+        'mean_squared_error__weighted_average',
+        'mean_squared_error__average',
+        'mean_squared_error__pooling',
+    ]
+    assert list(results.columns) == expected_columns

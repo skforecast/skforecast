@@ -64,11 +64,10 @@ def test_set_params_all_parameters():
         'order': (2, 1, 2),
         'seasonal_order': (1, 1, 1),
         'm': 12,
-        'include_mean': False,
-        'transform_pars': False,
+        'fit_intercept': False,
+        'enforce_stationarity': False,
         'method': 'ML',
         'n_cond': 15,
-        'SSinit': 'Rossignol2011',
         'optim_method': 'L-BFGS-B',
         'optim_kwargs': {'maxiter': 200},
         'kappa': 1e5

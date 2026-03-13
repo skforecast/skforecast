@@ -42,7 +42,7 @@ def test_recursive_predict_output_when_estimator_is_LinearRegression(encoding):
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -80,7 +80,7 @@ def test_recursive_predict_output_when_estimator_is_Ridge_StandardScaler(encodin
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -115,7 +115,7 @@ def test_recursive_predict_output_when_estimator_is_Ridge_StandardScaler_encodin
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -166,7 +166,7 @@ def test_recursive_predict_output_when_with_transform_series_and_transform_exog_
                  )
     forecaster.fit(series=series_dict_range_nan, exog=exog_wide_range)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5, exog=exog_pred_wide_range)
     )
     predictions = forecaster._recursive_predict(
@@ -208,7 +208,7 @@ def test_recursive_predict_output_with_window_features_LGBMRegressor():
                  )
     forecaster.fit(series=series_dict_range, exog=exog_wide_range)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5, exog=exog_pred_wide_range)
     )
     predictions = forecaster._recursive_predict(
@@ -250,7 +250,7 @@ def test_recursive_predict_output_with_window_features_XGBRegressor():
                  )
     forecaster.fit(series=series_dict_range, exog=exog_wide_range)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5, exog=exog_pred_wide_range)
     )
     predictions = forecaster._recursive_predict(
@@ -292,7 +292,7 @@ def test_recursive_predict_output_with_two_window_features():
                  )
     forecaster.fit(series=series_dict_range, exog=exog_wide_range)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5, exog=exog_pred_wide_range)
     )
     predictions = forecaster._recursive_predict(

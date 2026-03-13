@@ -28,6 +28,46 @@ from .fixtures_forecaster_direct import exog_predict as exog_predict_categorical
 from .fixtures_forecaster_direct import data  # to test results when using differentiation
 
 
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "lags": 5, "steps": 2},
+        {"estimator": LinearRegression(), "lags": 5, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3)},
+        {"estimator": LinearRegression(), "lags": 5, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "lags": 5, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=3),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_predict_does_not_modify_y_exog(forecaster_kwargs):
+    """
+    Test forecaster.predict does not modify y, exog, exog_predict or last_window.
+    """
+    y_local = y_categorical.copy()
+    exog_local = exog_categorical.copy()
+    exog_predict_local = exog_predict_categorical.copy()
+    last_window_local = y_local.iloc[-6:].copy()
+
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+    exog_predict_copy = exog_predict_local.copy()
+    last_window_copy = last_window_local.copy()
+
+    forecaster = ForecasterDirect(**forecaster_kwargs)
+    forecaster.fit(y=y_local, exog=exog_local)
+    _ = forecaster.predict(steps=2, exog=exog_predict_local, last_window=last_window_local)
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
+    pd.testing.assert_series_equal(last_window_local, last_window_copy)
+    pd.testing.assert_series_equal(exog_predict_local, exog_predict_copy)
+
+
 @pytest.mark.parametrize("steps", [[1, 2.0, 3], [1, 4.]], 
                          ids=lambda steps: f'steps: {steps}')
 def test_predict_TypeError_when_steps_list_contain_floats(steps):

@@ -25,6 +25,42 @@ from .fixtures_forecaster_recursive_classifier import y, y_dt
 from .fixtures_forecaster_recursive_classifier import exog, exog_dt, exog_predict, exog_dt_predict
 
 
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LogisticRegression(), "lags": 3},
+        {"estimator": LogisticRegression(), "lags": 3,
+         "window_features": RollingFeaturesClassification(stats=['proportion'], window_sizes=4)},
+        {"estimator": LogisticRegression(), "lags": 3,
+         "window_features": RollingFeaturesClassification(stats=['proportion'], window_sizes=4),
+         "transformer_exog": StandardScaler()},
+    ],
+    ids=["base", "window_features", "transformers"]
+)
+def test_predict_does_not_modify_y_exog(forecaster_kwargs):
+    """
+    Test forecaster.predict does not modify y, exog, exog_predict or last_window.
+    """
+    y_local = y.copy()
+    exog_local = exog.copy()
+    exog_predict_local = exog_predict.copy()
+    last_window_local = y_local.iloc[-4:].copy()
+
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+    exog_predict_copy = exog_predict_local.copy()
+    last_window_copy = last_window_local.copy()
+
+    forecaster = ForecasterRecursiveClassifier(**forecaster_kwargs)
+    forecaster.fit(y=y_local, exog=exog_local)
+    _ = forecaster.predict(steps=5, exog=exog_predict_local, last_window=last_window_local)
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
+    pd.testing.assert_series_equal(last_window_local, last_window_copy)
+    pd.testing.assert_series_equal(exog_predict_local, exog_predict_copy)
+
+
 def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.

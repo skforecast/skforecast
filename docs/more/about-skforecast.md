@@ -47,15 +47,19 @@ Meet the core developers behind [skforecast](https://github.com/skforecast/skfor
 
 Special mention to the main contributors who have significantly impacted the library development:
 
-| Name                 | GitHub                                                       |
-|:--------------------:|:------------------------------------------------------------:|
-| Fernando Carazo Melo | [@FernandoCarazoMelo](https://github.com/FernandoCarazoMelo) |
-| Resul Akay           | [@Akai01](https://github.com/Akai01) |
+| Name                     | GitHub                                                       |
+|:------------------------:|:------------------------------------------------------------:|
+| Fernando Carazo Melo     | [@FernandoCarazoMelo](https://github.com/FernandoCarazoMelo) |
+| Resul Akay (taf-society) | [@taf-society](https://github.com/taf-society)               |
 
 
 ## Contributors
 
 [![GitHub contributors](https://img.shields.io/github/contributors-anon/skforecast/skforecast)](https://github.com/skforecast/skforecast/graphs/contributors)
+
+View the full list of [contributors](https://github.com/skforecast/skforecast/graphs/contributors) and their contributions to the project.
+
+Thank you for helping us make **skforecast** better! 🎉
 
 ???+ note "Get Involved"
 
@@ -67,24 +71,6 @@ Special mention to the main contributors who have significantly impacted the lib
 
     Together, we can make time series forecasting accessible to everyone.
 
-| Name                        | GitHub                                     |
-|:---------------------------:|:------------------------------------------:|
-| Josh Wong                   | [@josh-wong](https://github.com/josh-wong) |
-| Edgar Bahilo Rodríguez      | [@edgBR](https://github.com/edgBR)         |
-| Mwainwright                 | [@syndct](https://github.com/syndct)       |
-| Kishan Manani               | [@KishManani](https://github.com/KishManani) |
-| Sergio Quijano              | [@Sergio-Quijano-Stratesys](https://github.com/Sergio-Quijano-Stratesys) |
-| Fernando da Silva           | [@schoulten](https://github.com/schoulten) |
-| Lillian Jensen, MPH         | [@tyg3rr](https://github.com/tyg3rr)       |
-| Ivan Liu                    | [@IvanLiuTW](https://github.com/IvanLiuTW) |
-| Ignacio Moya                | [@imMoya](https://github.com/imMoya)       |
-| Pablo Rodríguez Pérez       | [@pablorodriper](https://github.com/pablorodriper) |
-| g-rubio                     | [@g-rubio](https://github.com/g-rubio)     |
-| Ginés Meca                  | [@GinesMeca](https://github.com/GinesMeca) |
-
-<br>
-Thank you for helping us make **skforecast** better! 🎉
-
 
 ## Citing skforecast
 
@@ -95,12 +81,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.20.1). Zenodo. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.21.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.20.1) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **BibTeX**:
@@ -108,8 +94,8 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.20.1) [Compu
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.20.1},
-  month   = {2},
+  version = {0.21.0},
+  month   = {3},
   year    = {2026},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},

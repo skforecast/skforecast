@@ -1110,10 +1110,20 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_no_exog_no_
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
-    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
-    forecaster.out_sample_residuals_ = out_sample_residuals
     n_backtest = 12
     y_train = y[:-n_backtest]
+
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
+    forecaster.fit(y=y_train)
+
+    rng = np.random.default_rng(42)
+    y_pred_residuals = rng.uniform(0.2, 0.8, size=len(out_sample_residuals))
+    y_true_residuals = y_pred_residuals + out_sample_residuals
+    forecaster.set_out_sample_residuals(
+        y_true=y_true_residuals,
+        y_pred=y_pred_residuals
+    )
+    
     cv = TimeSeriesFold(
             steps                 = 4,
             initial_train_size    = len(y_train),
@@ -1140,6 +1150,75 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_no_exog_no_
                                        use_in_sample_residuals = False,
                                        use_binned_residuals    = False,
                                        verbose                 = False
+                                   )
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_interval_out_sample_residuals_binned_no_exog_no_remainder_with_mocked():
+    """
+    Test output of _backtesting_forecaster with backtesting mocked, interval yes.
+    Estimator is LinearRegression with lags=3, Series y is mocked, no exog,
+    12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error',
+    'use_in_sample_residuals = False', 'use_binned_residuals = True'.
+    Out sample residuals are set using set_out_sample_residuals method.
+    """
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.06720844553763934]})
+    expected_predictions = pd.DataFrame(
+        data = np.array([
+            [0.55717779, 0.55986585, 1.48476203],
+            [0.43355138, 0.59287643, 1.53420349],
+            [0.54969767, 0.69506682, 1.5627216 ],
+            [0.52945466, 0.68942089, 1.64953697],
+            [0.34597367, 0.3945527 , 1.32960455],
+            [0.50223873, 0.70104604, 1.65065467],
+            [0.47833829, 0.63931012, 1.59308945],
+            [0.46082257, 0.65352286, 1.56881561],
+            [0.37810191, 0.42668094, 1.36173279],
+            [0.49508366, 0.66544928, 1.5822227 ],
+            [0.48808014, 0.56101875, 1.51770574],
+            [0.47323313, 0.55583175, 1.47287138]]),
+        columns=['pred', 'lower_bound', 'upper_bound'],
+        index=pd.RangeIndex(start=38, stop=50, step=1)
+    )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(), lags=3, binner_kwargs={'n_bins': 10}
+    )
+    forecaster.fit(y=y_train)
+
+    rng = np.random.default_rng(42)
+    y_pred_residuals = rng.uniform(0.2, 0.8, size=len(out_sample_residuals))
+    y_true_residuals = y_pred_residuals + out_sample_residuals
+    forecaster.set_out_sample_residuals(
+        y_true=y_true_residuals,
+        y_pred=y_pred_residuals
+    )
+
+    cv = TimeSeriesFold(
+            steps              = 4,
+            initial_train_size = len(y_train),
+            refit              = True,
+        )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                       forecaster              = forecaster,
+                                       y                       = y,
+                                       exog                    = None,
+                                       cv                      = cv,
+                                       metric                  = 'mean_squared_error',
+                                       interval                = [5, 95],
+                                       interval_method         = 'bootstrapping',
+                                       n_boot                  = 500,
+                                       random_state            = 123,
+                                       use_in_sample_residuals = False,
+                                       use_binned_residuals    = True,
+                                       verbose                 = False,
+                                       show_progress           = False
                                    )
 
     pd.testing.assert_frame_equal(expected_metric, metric)

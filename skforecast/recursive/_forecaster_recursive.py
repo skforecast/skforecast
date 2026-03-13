@@ -15,7 +15,6 @@ import inspect
 from copy import copy
 from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
-from sklearn.linear_model._base import LinearModel
 from sklearn.pipeline import Pipeline
 
 from .. import __version__
@@ -41,7 +40,8 @@ from ..utils import (
     transform_dataframe,
     get_style_repr_html,
     set_cpu_gpu_device,
-    set_skforecast_warnings,
+    _build_predict_function,
+    manage_warnings,
     initialize_estimator
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -55,7 +55,7 @@ class ForecasterRecursive(ForecasterBase):
     Parameters
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     lags : int, list, numpy ndarray, range, default None
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
     
@@ -97,13 +97,13 @@ class ForecasterRecursive(ForecasterBase):
         **New in version 0.14.0**
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : estimator or pipeline compatible with the Keras API
+    regressor : estimator or pipeline compatible with the scikit-learn API
         **Deprecated**, alias for `estimator`.
     
     Attributes
     ----------
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
     lags : numpy ndarray
         Lags used as predictors.
     lags_names : list
@@ -163,7 +163,7 @@ class ForecasterRecursive(ForecasterBase):
     training_range_ : pandas Index
         First and last values of index of the data used during training.
     series_name_in_ : str
-        Names of the series provided by the user during training.
+        Name of the series provided by the user during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -291,6 +291,10 @@ class ForecasterRecursive(ForecasterBase):
         self._probabilistic_mode                = "binned"
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         self.window_features, self.window_features_names, self.max_size_window_features = (
             initialize_window_features(window_features)
         )
@@ -516,7 +520,7 @@ class ForecasterRecursive(ForecasterBase):
         Create the lagged values and their target variable from a time series.
         
         Note that the returned matrix `X_data` contains the lag 1 in the first 
-        column, the lag 2 in the in the second column and so on.
+        column, the lag 2 in the second column and so on.
         
         Parameters
         ----------
@@ -537,7 +541,7 @@ class ForecasterRecursive(ForecasterBase):
         
         Notes
         -----
-        Returned matrices are views into the original `y` so care must be taken
+        Returned matrices may be views into the original `y` so care must be taken
         when modifying them.
 
         """
@@ -545,7 +549,12 @@ class ForecasterRecursive(ForecasterBase):
         X_data = None
         if self.lags is not None:
             y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
-            X_data = y_strided[:, self.window_size - self.lags]
+            if self.lags_are_contiguous:
+                # Basic slice → view (no copy); reversed to put lag_1 first.
+                X_data = y_strided[:, self.window_size - self.max_lag:][:, ::-1]
+            else:
+                # Non-contiguous lags require fancy indexing, which forces a copy.
+                X_data = y_strided[:, self.window_size - self.lags]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -687,11 +696,13 @@ class ForecasterRecursive(ForecasterBase):
 
         fit_transformer = False if self.is_fitted else True
         y = transform_dataframe(
-                df                = y, 
-                transformer       = self.transformer_y,
-                fit               = fit_transformer,
-                inverse_transform = False,
+                df                  = y, 
+                transformer         = self.transformer_y,
+                fit                 = fit_transformer,
+                inverse_transform   = False,
+                force_single_column = True
             )
+        
         y_values, y_index = check_extract_values_and_index(data=y, data_label='`y`')
         train_index = y_index[self.window_size:]
 
@@ -736,6 +747,7 @@ class ForecasterRecursive(ForecasterBase):
                        inverse_transform = False
                    )
             
+            # TODO: Review when categorical transformation is managed by skforecast
             check_exog_dtypes(exog, call_check_exog=True)
             exog_dtypes_out_ = get_exog_dtypes(exog=exog)
             X_as_pandas = any(
@@ -786,9 +798,9 @@ class ForecasterRecursive(ForecasterBase):
 
         X_train_exog_names_out_ = None
         if exog is not None:
-            X_train_exog_names_out_ = exog.columns.to_list()  
+            X_train_exog_names_out_ = exog.columns.to_list()
             if not X_as_pandas:
-                exog = exog.to_numpy()     
+                exog = exog.to_numpy()
             X_train_features_names_out_.extend(X_train_exog_names_out_)
             X_train.append(exog)
         
@@ -848,7 +860,7 @@ class ForecasterRecursive(ForecasterBase):
         X_train : pandas DataFrame
             Training values (predictors).
         y_train : pandas Series
-            Values of the time series related to each row of `X_data`.
+            Values of the time series related to each row of `X_train`.
         
         """
 
@@ -953,6 +965,7 @@ class ForecasterRecursive(ForecasterBase):
 
         return sample_weight
 
+    @manage_warnings
     def fit(
         self,
         y: pd.Series,
@@ -997,8 +1010,6 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         # TODO: create a method reset_forecaster() to reset all attributes
         # Reset values in case the forecaster has already been fitted.
         self.last_window_                       = None
@@ -1016,6 +1027,8 @@ class ForecasterRecursive(ForecasterBase):
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
+        self.out_sample_residuals_              = None
+        self.out_sample_residuals_by_bin_       = None
         self.binner_intervals_                  = None
         self.is_fitted                          = False
         self.fit_date                           = None
@@ -1030,6 +1043,8 @@ class ForecasterRecursive(ForecasterBase):
             exog_dtypes_in_,
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
+
+        # fit_kwargs = _check_estimator_supports_native_categories()
         
         sample_weight = self.create_sample_weights(X_train=X_train)
 
@@ -1079,8 +1094,6 @@ class ForecasterRecursive(ForecasterBase):
                 .copy()
                 .to_frame(name=y.name if y.name is not None else 'y')
             )
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
     def _binning_in_sample_residuals(
         self,
@@ -1162,7 +1175,7 @@ class ForecasterRecursive(ForecasterBase):
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         check_inputs: bool = True
-    ) -> tuple[np.ndarray, np.ndarray | None, pd.Index, int]:
+    ) -> tuple[np.ndarray, np.ndarray | None, pd.Index, int, object | None]:
         """
         Create the inputs needed for the first iteration of the prediction 
         process. As this is a recursive process, the last window is updated at 
@@ -1212,6 +1225,11 @@ class ForecasterRecursive(ForecasterBase):
             Index of the predictions.
         steps: int
             Number of future steps predicted.
+        differentiator : TimeSeriesDifferentiator, None
+            A copy of the differentiator fitted with the last window values.
+            `None` if no differentiation is applied. This is used to reverse
+            the differentiation of predictions without mutating the forecaster's
+            internal state.
         
         """
 
@@ -1262,7 +1280,10 @@ class ForecasterRecursive(ForecasterBase):
                                  inverse_transform = False
                              )
         if self.differentiation is not None:
-            last_window_values = self.differentiator.fit_transform(last_window_values)
+            differentiator = copy(self.differentiator)
+            last_window_values = differentiator.fit_transform(last_window_values)
+        else:
+            differentiator = None
 
         if exog is not None:
 
@@ -1292,7 +1313,7 @@ class ForecasterRecursive(ForecasterBase):
                                steps = steps,
                            )
 
-        return last_window_values, exog_values, prediction_index, steps
+        return last_window_values, exog_values, prediction_index, steps, differentiator
 
     def _recursive_predict(
         self,
@@ -1303,6 +1324,12 @@ class ForecasterRecursive(ForecasterBase):
         """
         Predict n steps ahead. It is an iterative process in which, each prediction,
         is used as a predictor for the next step.
+
+        Fast prediction paths (bypassing sklearn's predict overhead) are used for
+        the following estimators: linear models inheriting from sklearn's
+        `LinearModel` (np.dot), `LGBMRegressor` (booster.predict),
+        `XGBRegressor` (booster.inplace_predict), `RandomForestRegressor` and
+        `DecisionTreeRegressor` (tree_.predict).
         
         Parameters
         ----------
@@ -1337,53 +1364,40 @@ class ForecasterRecursive(ForecasterBase):
         predictions = np.full(shape=steps, fill_value=np.nan, dtype=float)
         last_window = np.concatenate((last_window_values, predictions))
 
-        estimator_name = type(self.estimator).__name__
-        is_linear = isinstance(self.estimator, LinearModel)
-        is_lightgbm = estimator_name == 'LGBMRegressor'
-        is_xgboost = estimator_name == 'XGBRegressor'
-        
-        if is_linear:
-            coef = self.estimator.coef_
-            intercept = self.estimator.intercept_
-        elif is_lightgbm:
-            booster = self.estimator.booster_
-        elif is_xgboost:
-            booster = self.estimator.get_booster()
-        
+        predict_fn = _build_predict_function(self.estimator)
+
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
         
         for i in range(steps):
 
+            remaining = steps - i
+
             if has_lags:
-                X[:n_lags] = last_window[-self.lags - (steps - i)]
+                if self.lags_are_contiguous:
+                    X[:n_lags] = last_window[-(remaining + n_lags): -remaining][::-1]
+                else:
+                    X[:n_lags] = last_window[-self.lags - remaining]
+            
             if has_window_features:
-                window_data = last_window[i : -(steps - i)]
+                window_data = last_window[i : -remaining]
                 X[n_lags : n_lags + n_window_features] = np.concatenate(
                     [
                         wf.transform(window_data)
                         for wf in self.window_features
                     ]
                 )
+            
             if has_exog:
                 X[n_lags + n_window_features:] = exog_values[i]
         
-            if is_linear:
-                pred = np.dot(X, coef) + intercept
-            elif is_lightgbm:
-                pred = booster.predict(X.reshape(1, -1))
-            elif is_xgboost:
-                pred = booster.inplace_predict(X.reshape(1, -1))
-            else:
-                pred = self.estimator.predict(X.reshape(1, -1)).ravel()
-            
-            pred = pred.item()
+            pred = predict_fn(X.reshape(1, -1)).item()
             predictions[i] = pred
 
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
-            last_window[-(steps - i)] = pred
+            last_window[-remaining] = pred
 
         set_cpu_gpu_device(estimator=self.estimator, device=original_device)
 
@@ -1402,6 +1416,12 @@ class ForecasterRecursive(ForecasterBase):
         Vectorized bootstrap prediction - predict all n_boot iterations per step.
         Instead of running n_boot sequential predictions, this method predicts 
         all bootstrap samples at once per step, significantly reducing overhead.
+
+        Fast prediction paths (bypassing sklearn's predict overhead) are used for
+        the following estimators: linear models inheriting from sklearn's
+        `LinearModel` (np.dot), `LGBMRegressor` (booster.predict),
+        `XGBRegressor` (booster.inplace_predict), `RandomForestRegressor` and
+        `DecisionTreeRegressor` (tree_.predict).
         
         Parameters
         ----------
@@ -1451,31 +1471,27 @@ class ForecasterRecursive(ForecasterBase):
         last_window = np.tile(last_window_values[:, np.newaxis], (1, n_boot))
         last_window = np.vstack([last_window, np.full((steps, n_boot), np.nan)])
 
-        estimator_name = type(self.estimator).__name__
-        is_linear = isinstance(self.estimator, LinearModel)
-        is_lightgbm = estimator_name == 'LGBMRegressor'
-        is_xgboost = estimator_name == 'XGBRegressor'
-        
-        if is_linear:
-            coef = self.estimator.coef_
-            intercept = self.estimator.intercept_
-        elif is_lightgbm:
-            booster = self.estimator.booster_
-        elif is_xgboost:
-            booster = self.estimator.get_booster()
-        
+        predict_fn = _build_predict_function(self.estimator)
+
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
 
+        if use_binned_residuals:
+            boot_indices = np.arange(n_boot)
+
         for i in range(steps):
 
+            remaining = steps - i
+
             if has_lags:
-                for j, lag in enumerate(self.lags):
-                    X[:, j] = last_window[-(lag + steps - i), :]
+                if self.lags_are_contiguous:
+                    X[:, :n_lags] = last_window[-(remaining + n_lags): -remaining, :][::-1].T
+                else:
+                    X[:, :n_lags] = last_window[-(self.lags + remaining), :].T
             
             if has_window_features:
-                window_data = last_window[:-(steps - i), :]
+                window_data = last_window[:-remaining, :]
                 # transform accepts 2D: (window_length, n_boot) -> (n_boot, n_stats)
                 # and concatenate along axis=1: (n_boot, total_window_features)
                 X[:, n_lags:n_lags + n_window_features] = np.concatenate(
@@ -1486,36 +1502,30 @@ class ForecasterRecursive(ForecasterBase):
             if has_exog:
                 X[:, n_lags + n_window_features:] = exog_values[i]
         
-            if is_linear:
-                pred = np.dot(X, coef) + intercept
-            elif is_lightgbm:
-                pred = booster.predict(X)
-            elif is_xgboost:
-                pred = booster.inplace_predict(X)
-            else:
-                pred = self.estimator.predict(X).ravel()
+            pred = predict_fn(X)
             
             if use_binned_residuals:
                 # sampled_residuals is a 3D array: (n_bins, steps, n_boot)
-                boot_indices = np.arange(n_boot)
                 pred_bins = self.binner.transform(pred).astype(int)
                 pred += sampled_residuals[pred_bins, i, boot_indices]
             else:
                 pred += sampled_residuals[i, :]
             
             predictions[i, :] = pred
-            last_window[-(steps - i), :] = pred
+            last_window[-remaining, :] = pred
 
         set_cpu_gpu_device(estimator=self.estimator, device=original_device)
 
         return predictions
 
+    @manage_warnings
     def create_predict_X(
         self,
         steps: int,
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        check_inputs: bool = True
+        check_inputs: bool = True,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Create the predictors needed to predict `steps` ahead. As it is a recursive
@@ -1554,7 +1564,8 @@ class ForecasterRecursive(ForecasterBase):
             last_window_values,
             exog_values,
             prediction_index,
-            steps
+            steps,
+            _
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -1626,15 +1637,17 @@ class ForecasterRecursive(ForecasterBase):
 
         return X_predict
 
+    @manage_warnings
     def predict(
         self,
         steps: int | str | pd.Timestamp,
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        check_inputs: bool = True
+        check_inputs: bool = True,
+        suppress_warnings: bool = False
     ) -> pd.Series:
         """
-        Predict n steps ahead. It is an recursive process in which, each prediction,
+        Predict n steps ahead. It is a recursive process in which, each prediction,
         is used as a predictor for the next step.
         
         Parameters
@@ -1656,6 +1669,10 @@ class ForecasterRecursive(ForecasterBase):
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
@@ -1668,7 +1685,8 @@ class ForecasterRecursive(ForecasterBase):
             last_window_values,
             exog_values,
             prediction_index,
-            steps
+            steps,
+            differentiator
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -1688,8 +1706,8 @@ class ForecasterRecursive(ForecasterBase):
                               exog_values        = exog_values
                           )
 
-        if self.differentiation is not None:
-            predictions = self.differentiator.inverse_transform_next_window(predictions)
+        if differentiator is not None:
+            predictions = differentiator.inverse_transform_next_window(predictions)
 
         predictions = transform_numpy(
                           array             = predictions,
@@ -1706,6 +1724,7 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_bootstrapping(
         self,
         steps: int | str | pd.Timestamp,
@@ -1714,7 +1733,8 @@ class ForecasterRecursive(ForecasterBase):
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Generate multiple forecasting predictions using a bootstrapping process.
@@ -1752,6 +1772,10 @@ class ForecasterRecursive(ForecasterBase):
             If `False`, residuals are selected randomly.
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
@@ -1770,7 +1794,8 @@ class ForecasterRecursive(ForecasterBase):
             last_window_values,
             exog_values,
             prediction_index,
-            steps
+            steps,
+            differentiator
         ) = self._create_predict_inputs(
                 steps                   = steps, 
                 last_window             = last_window, 
@@ -1816,9 +1841,9 @@ class ForecasterRecursive(ForecasterBase):
                 n_boot               = n_boot
             )
 
-        if self.differentiation is not None:
+        if differentiator is not None:
             boot_predictions = (
-                self.differentiator.inverse_transform_next_window(boot_predictions)
+                differentiator.inverse_transform_next_window(boot_predictions)
             )
         
         if self.transformer_y:
@@ -1900,7 +1925,8 @@ class ForecasterRecursive(ForecasterBase):
             last_window_values,
             exog_values,
             prediction_index,
-            steps
+            steps,
+            differentiator
         ) = self._create_predict_inputs(
                 steps                   = steps,
                 last_window             = last_window,
@@ -1944,10 +1970,8 @@ class ForecasterRecursive(ForecasterBase):
         upper_bound = predictions + correction_factor
         predictions = np.column_stack([predictions, lower_bound, upper_bound])
 
-        if self.differentiation is not None:
-            predictions = (
-                self.differentiator.inverse_transform_next_window(predictions)
-            )
+        if differentiator is not None:
+            predictions = differentiator.inverse_transform_next_window(predictions)
         
         if self.transformer_y:
             predictions = transform_numpy(
@@ -1965,6 +1989,7 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int | str | pd.Timestamp,
@@ -1975,7 +2000,8 @@ class ForecasterRecursive(ForecasterBase):
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Predict n steps ahead and estimate prediction intervals using either 
@@ -2031,6 +2057,10 @@ class ForecasterRecursive(ForecasterBase):
             If `False`, residuals are selected randomly.
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
@@ -2067,14 +2097,16 @@ class ForecasterRecursive(ForecasterBase):
                                    n_boot                  = n_boot,
                                    random_state            = random_state,
                                    use_in_sample_residuals = use_in_sample_residuals,
-                                   use_binned_residuals    = use_binned_residuals
+                                   use_binned_residuals    = use_binned_residuals,
+                                   suppress_warnings       = suppress_warnings
                                )
 
             predictions = self.predict(
-                              steps        = steps,
-                              last_window  = last_window,
-                              exog         = exog,
-                              check_inputs = False
+                              steps             = steps,
+                              last_window       = last_window,
+                              exog              = exog,
+                              check_inputs      = False,
+                              suppress_warnings = suppress_warnings
                           )
             
             predictions_interval = boot_predictions.quantile(q=interval, axis=1).transpose()
@@ -2105,6 +2137,7 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_quantiles(
         self,
         steps: int | str | pd.Timestamp,
@@ -2115,6 +2148,7 @@ class ForecasterRecursive(ForecasterBase):
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Calculate the specified quantiles for each step. After generating 
@@ -2154,6 +2188,10 @@ class ForecasterRecursive(ForecasterBase):
             If `False`, residuals are selected randomly.
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
@@ -2176,7 +2214,8 @@ class ForecasterRecursive(ForecasterBase):
                                n_boot                  = n_boot,
                                random_state            = random_state,
                                use_in_sample_residuals = use_in_sample_residuals,
-                               use_binned_residuals    = use_binned_residuals
+                               use_binned_residuals    = use_binned_residuals,
+                               suppress_warnings       = suppress_warnings
                            )
 
         predictions = boot_predictions.quantile(q=quantiles, axis=1).transpose()
@@ -2184,6 +2223,7 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_dist(
         self,
         steps: int | str | pd.Timestamp,
@@ -2194,6 +2234,7 @@ class ForecasterRecursive(ForecasterBase):
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
         Fit a given probability distribution for each step. After generating 
@@ -2233,6 +2274,10 @@ class ForecasterRecursive(ForecasterBase):
             If `False`, residuals are selected randomly.
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings are suppressed during execution.
+            See `skforecast.exceptions.warn_skforecast_categories` for the
+            list of warnings that are suppressed.
 
         Returns
         -------
@@ -2259,7 +2304,8 @@ class ForecasterRecursive(ForecasterBase):
                           n_boot                  = n_boot,
                           random_state            = random_state,
                           use_in_sample_residuals = use_in_sample_residuals,
-                          use_binned_residuals    = use_binned_residuals
+                          use_binned_residuals    = use_binned_residuals,
+                          suppress_warnings       = suppress_warnings
                       )       
 
         param_names = [
@@ -2353,6 +2399,10 @@ class ForecasterRecursive(ForecasterBase):
             )
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
+        )
         self.window_size = max(
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]

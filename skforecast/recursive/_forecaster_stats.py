@@ -29,7 +29,7 @@ from ..utils import (
     transform_numpy,
     transform_dataframe,
     get_style_repr_html,
-    set_skforecast_warnings,
+    manage_warnings,
     initialize_estimator
 )
 
@@ -40,9 +40,9 @@ class ForecasterStats():
     skforecast API. It supports single or multiple statistical models for the 
     same time series, enabling model comparison and ensemble predictions.
     
-    Supported statistical models are: skforecast.stats.Sarimax, skforecast.stats.Arima,
-    skforecast.stats.Arar, skforecast.stats.Ets, aeon.forecasting.stats.ARIMA and
-    aeon.forecasting.stats.ETS.
+    Supported statistical models are: skforecast.stats.Arima, skforecast.stats.Arar, 
+    skforecast.stats.Ets, skforecast.stats.Sarimax, sktime.forecasting.ARIMA, 
+    aeon.forecasting.stats.ARIMA and aeon.forecasting.stats.ETS.
     
     Parameters
     ----------
@@ -55,7 +55,7 @@ class ForecasterStats():
         - skforecast.stats.Arar
         - skforecast.stats.Ets
         - skforecast.stats.Sarimax (statsmodels wrapper)
-        - sktime.forecasting.ARIMA (pdmarima wrapper)
+        - sktime.forecasting.ARIMA (pmdarima wrapper)
         - aeon.forecasting.stats.ARIMA
         - aeon.forecasting.stats.ETS
     transformer_y : object transformer (preprocessor), default None
@@ -69,7 +69,7 @@ class ForecasterStats():
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : estimator or pipeline compatible with the Keras API
+    regressor : object, list of objects
         **Deprecated**, alias for `estimator`.
     fit_kwargs : Ignored
         Not used, present here for API consistency by convention.
@@ -87,7 +87,7 @@ class ForecasterStats():
         numeric suffixes to handle duplicates (e.g., 'skforecast.Arima', 
         'skforecast.Arima_2', 'skforecast.Ets'). Used to identify predictions 
         from each model.
-    estimator_types : tuple
+    estimator_types : list
         Full qualified type string for each estimator (e.g., 
         'skforecast.stats._arima.Arima').
     estimator_names_ : list
@@ -124,7 +124,7 @@ class ForecasterStats():
     training_range_ : pandas Index
         First and last values of index of the data used during training.
     series_name_in_ : str
-        Names of the series provided by the user during training.
+        Name of the series provided by the user during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -642,6 +642,7 @@ class ForecasterStats():
 
         return style + content
 
+    @manage_warnings
     def fit(
         self,
         y: pd.Series,
@@ -673,8 +674,6 @@ class ForecasterStats():
         None
         
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         self.estimators_             = [copy(est) for est in self.estimators]
         self.estimator_names_        = [None] * len(self.estimators)
@@ -719,10 +718,11 @@ class ForecasterStats():
                 )
 
         y = transform_series(
-                series            = y,
-                transformer       = self.transformer_y,
-                fit               = True,
-                inverse_transform = False
+                series              = y,
+                transformer         = self.transformer_y,
+                fit                 = True,
+                inverse_transform   = False,
+                force_single_column = True
             )
 
         if exog is not None:
@@ -794,8 +794,6 @@ class ForecasterStats():
             self.extended_index_ = first_sarimax.sarimax_res.fittedvalues.index.copy()
         else:
             self.extended_index_ = y.index
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
     def _create_predict_inputs(
         self,
@@ -1004,6 +1002,7 @@ class ForecasterStats():
 
         return prediction_index
 
+    @manage_warnings
     def predict(
         self,
         steps: int,
@@ -1056,8 +1055,6 @@ class ForecasterStats():
             - For a single estimator: pandas Series with predicted values.
         
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         last_window, last_window_exog, exog, prediction_index = (
             self._create_predict_inputs(
@@ -1112,8 +1109,6 @@ class ForecasterStats():
                 {"estimator_id": np.tile(estimator_ids, steps), "pred": predictions.ravel()},
                 index = np.repeat(prediction_index, n_estimators),
             )
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
@@ -1161,6 +1156,7 @@ class ForecasterStats():
         preds = estimator.predict(fh=fh, X=exog).to_numpy()
         return preds
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int,
@@ -1181,7 +1177,7 @@ class ForecasterStats():
         
         Estimators that do not support prediction intervals will be skipped 
         with a warning. Supported estimators for intervals are the ones listed
-        in the attribute `estimators_support_intervals`.
+        in the attribute `estimators_support_interval`.
 
         When using `last_window` and `last_window_exog`, they must start right 
         after the end of the index seen by the forecaster during training. 
@@ -1230,8 +1226,6 @@ class ForecasterStats():
               'pred', 'lower_bound', 'upper_bound'.
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         # If interval and alpha take alpha, if interval transform to alpha
         if alpha is None:
@@ -1311,8 +1305,6 @@ class ForecasterStats():
             predictions.index = prediction_index
         else:
             predictions.insert(0, 'estimator_id', np.tile(estimator_ids, steps))
-        
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
@@ -1529,7 +1521,7 @@ class ForecasterStats():
         self, 
         criteria: str = 'aic', 
         method: str = 'standard'
-    ) -> float:
+    ) -> pd.DataFrame:
         """
         Get the selected information criteria.
 
@@ -1548,7 +1540,7 @@ class ForecasterStats():
 
         Returns
         -------
-        metric : float
+        metric : pandas DataFrame
             The value of the selected information criteria.
 
         """
@@ -1659,10 +1651,6 @@ class ForecasterStats():
     def summary(self) -> None:
         """
         Show forecaster information.
-        
-        Parameters
-        ----------
-        self
 
         Returns
         -------

@@ -5,6 +5,7 @@ from pytest import approx
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
 from skforecast.preprocessing import RollingFeatures
 from skforecast.recursive import ForecasterRecursive
 
@@ -24,6 +25,38 @@ def custom_weights(index):  # pragma: no cover
               )
     
     return weights
+
+
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "lags": 3},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4)},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "lags": 3,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_forecaster_fit_does_not_modify_y_exog(forecaster_kwargs):
+    """
+    Test forecaster.fit does not modify y and exog.
+    """
+    y_local = y.copy()
+    exog_local = exog.copy()
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+
+    forecaster = ForecasterRecursive(**forecaster_kwargs)
+    forecaster.fit(y=y_local, exog=exog_local)
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
 
 
 def test_forecaster_y_exog_features_stored():
@@ -256,3 +289,24 @@ def test_fit_model_coef_when_not_using_weight_func():
     expected = np.array([0.16773502, -0.09712939,  0.10046413, -0.09971515, -0.15849756])
 
     np.testing.assert_almost_equal(results, expected)
+
+
+def test_fit_resets_out_sample_residuals_on_refit():
+    """
+    Test that out_sample_residuals_ and out_sample_residuals_by_bin_ are reset
+    to None when the forecaster is refitted.
+    """
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=y)
+    forecaster.set_out_sample_residuals(
+        y_true=np.arange(1, 46, dtype=float),
+        y_pred=np.zeros(45),
+    )
+
+    assert forecaster.out_sample_residuals_ is not None
+    assert forecaster.out_sample_residuals_by_bin_ is not None
+
+    forecaster.fit(y=y)
+
+    assert forecaster.out_sample_residuals_ is None
+    assert forecaster.out_sample_residuals_by_bin_ is None

@@ -20,7 +20,7 @@ from ..exceptions import (
     UnknownLevelWarning
 )
 from ..utils import (
-    set_skforecast_warnings,
+    manage_warnings,
     get_style_repr_html
 )
 
@@ -32,10 +32,6 @@ class RangeDriftDetector:
     The detector is intentionally lightweight: it does not compute advanced
     drift statistics since it is used to check single observations during
     inference. Suitable for real-time applications.
-
-    Parameters
-    ----------
-    self
 
     Attributes
     ----------
@@ -516,6 +512,7 @@ class RangeDriftDetector:
 
         self.is_fitted = True
 
+    @manage_warnings
     def predict(
         self,
         last_window: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
@@ -533,7 +530,7 @@ class RangeDriftDetector:
             first iteration of the prediction (t + 1).
         exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
-        verbose : bool, default False
+        verbose : bool, default True
             Whether to print a summary of the check.
         suppress_warnings : bool, default False
             Whether to suppress warnings.
@@ -567,8 +564,6 @@ class RangeDriftDetector:
             raise TypeError(
                 "`exog` must be a pandas Series, DataFrame, dict or None."
             )
-        
-        set_skforecast_warnings(suppress_warnings, action='ignore')
         
         flag_out_of_range = False
 
@@ -659,7 +654,5 @@ class RangeDriftDetector:
                 out_of_range_exog          = out_of_range_exog,
                 out_of_range_exog_ranges   = out_of_range_exog_ranges
             )
-
-        set_skforecast_warnings(suppress_warnings, action='default')
 
         return flag_out_of_range, out_of_range_series, out_of_range_exog

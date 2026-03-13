@@ -278,3 +278,29 @@ def test_transform_numpy_inverse_transform_preserves_shape():
                       inverse_transform = True
                   )
         assert results.shape == shape, f"Shape mismatch: expected {shape}, got {results.shape}"
+
+
+def test_transform_numpy_ValueError_when_force_single_column_with_sparse_output():
+    """
+    Test that transform_numpy raises ValueError when force_single_column is True
+    and transformer expands columns. Also covers toarray() conversion from sparse
+    matrix to dense array.
+    """
+    input_array = np.array(['A'] * 5 + ['B'] * 5).reshape(-1, 1)
+    transformer = OneHotEncoder(sparse_output=True)
+
+    err_msg = re.escape(
+        "`transformer_y` and `transformer_series` must return a single column. "
+        "The transformer generated 2 columns. "
+        "Transformers that expand target series into multiple feature "
+        "columns are not supported; use `window_features` or pass "
+        "those features through `exog` instead."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        transform_numpy(
+            array=input_array,
+            transformer=transformer,
+            fit=True,
+            inverse_transform=False,
+            force_single_column=True
+        )

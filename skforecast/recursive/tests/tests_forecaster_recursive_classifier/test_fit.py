@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from lightgbm import LGBMClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
 from skforecast.preprocessing import RollingFeaturesClassification
 from skforecast.recursive import ForecasterRecursiveClassifier
 
@@ -24,6 +25,34 @@ def custom_weights(index):  # pragma: no cover
               )
     
     return weights
+
+
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LogisticRegression(), "lags": 3},
+        {"estimator": LogisticRegression(), "lags": 3,
+         "window_features": RollingFeaturesClassification(stats=['proportion'], window_sizes=4)},
+        {"estimator": LogisticRegression(), "lags": 3,
+         "window_features": RollingFeaturesClassification(stats=['proportion'], window_sizes=4),
+         "transformer_exog": StandardScaler()},
+    ],
+    ids=["base", "window_features", "transformers"]
+)
+def test_forecaster_fit_does_not_modify_y_exog(forecaster_kwargs):
+    """
+    Test forecaster.fit does not modify y and exog.
+    """
+    y_local = y.copy()
+    exog_local = exog.copy()
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+
+    forecaster = ForecasterRecursiveClassifier(**forecaster_kwargs)
+    forecaster.fit(y=y_local, exog=exog_local)
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
 
 
 def test_forecaster_y_exog_features_stored():

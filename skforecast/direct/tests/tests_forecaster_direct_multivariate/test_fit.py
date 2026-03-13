@@ -23,6 +23,38 @@ transformer_exog = ColumnTransformer(
                    )
 
 
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4)},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_forecaster_fit_does_not_modify_series_exog(forecaster_kwargs):
+    """
+    Test forecaster.fit does not modify series and exog.
+    """
+    series_local = series_fixtures.copy()
+    exog_local = exog[['exog_1']].copy()
+    series_copy = series_local.copy()
+    exog_copy = exog_local.copy()
+
+    forecaster = ForecasterDirectMultiVariate(**forecaster_kwargs)
+    forecaster.fit(series=series_local, exog=exog_local)
+
+    pd.testing.assert_frame_equal(series_local, series_copy)
+    pd.testing.assert_frame_equal(exog_local, exog_copy)
+
+
 def test_forecaster_series_exog_features_stored():
     """
     Test forecaster stores series and exog features after fitting.
@@ -415,3 +447,26 @@ def test_fit_last_window_stored_when_lags_dict_with_None(level):
     pd.testing.assert_frame_equal(forecaster.last_window_, expected)
     assert forecaster.series_names_in_ == ['l1', 'l2']
     assert forecaster.X_train_series_names_in_ == ['l1']
+
+
+def test_fit_resets_out_sample_residuals_on_refit():
+    """
+    Test that out_sample_residuals_ and out_sample_residuals_by_bin_ are reset
+    to None when the forecaster is refitted.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
+    )
+    forecaster.fit(series=series_fixtures)
+    forecaster.set_out_sample_residuals(
+        y_true={'l1': np.arange(1, 46, dtype=float)},
+        y_pred={'l1': np.zeros(45)},
+    )
+
+    assert forecaster.out_sample_residuals_ is not None
+    assert forecaster.out_sample_residuals_by_bin_ is not None
+
+    forecaster.fit(series=series_fixtures)
+
+    assert forecaster.out_sample_residuals_ is None
+    assert forecaster.out_sample_residuals_by_bin_ is None

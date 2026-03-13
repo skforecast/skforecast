@@ -24,7 +24,7 @@ exog = pd.DataFrame(data, columns = exog_cols, index = index)
 @pytest.mark.parametrize("transformer_series", 
                          [StandardScaler(), 
                           {k: StandardScaler() for k in list(series_dict.keys()) + ['_unknown_level']}], 
-                         ids = lambda ts: f'transformer_series: {ts}')
+                         ids = ['single_scaler', 'dict_scalers_60_cols'])
 def test_output_preprocess_repr(transformer_series):
     """
     Test matrix of lags created properly when lags is 3, steps is 1 and y is

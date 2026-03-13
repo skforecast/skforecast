@@ -12,6 +12,28 @@ from skforecast.recursive import ForecasterEquivalentDate
 from .fixtures_forecaster_equivalent_date import y
 
 
+def test_predict_does_not_modify_y():
+    """
+    Test forecaster.predict does not modify y or last_window.
+    """
+    y_local = y.copy()
+    last_window_local = y_local.iloc[-7:].copy()
+
+    y_copy = y_local.copy()
+    last_window_copy = last_window_local.copy()
+
+    forecaster = ForecasterEquivalentDate(
+        offset=7,
+        n_offsets=1,
+        agg_func=np.mean,
+    )
+    forecaster.fit(y=y_local)
+    _ = forecaster.predict(steps=5, last_window=last_window_local)
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(last_window_local, last_window_copy)
+
+
 def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
