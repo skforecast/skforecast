@@ -12,7 +12,7 @@
         <meta name="author" content="Joaquin Amat Rodrigo and Javier Escobar Ortiz">
       
       
-        <link rel="canonical" href="https://skforecast.org/0.20.1/api/plot.html">
+        <link rel="canonical" href="https://skforecast.org/latest/api/plot.html">
       
       
         <link rel="prev" href="metrics.html">
@@ -108,7 +108,7 @@
           <aside class="md-banner md-banner--warning">
             <div class="md-banner__inner md-grid md-typeset">
               
-  <div class="md-banner md-banner--warning">
+  <div>
   This is documentation for an unstable development version.
   
     <a href="../.." id="version-switch-link">
@@ -779,6 +779,34 @@
     
   
     How to install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-start/ai-assisted-forecasting.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI-assisted forecasting
   
 
     
@@ -1591,7 +1619,7 @@
   <span class="md-ellipsis">
     
   
-    Calendars features
+    Calendar features
   
 
     
@@ -4696,9 +4724,7 @@ using the <code>plt.rcParams.update()</code> method.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\plot\plot.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">194</span>
 <span class="normal">195</span>
 <span class="normal">196</span>
 <span class="normal">197</span>
@@ -4743,7 +4769,9 @@ using the <code>plt.rcParams.update()</code> method.</p>
 <span class="normal">236</span>
 <span class="normal">237</span>
 <span class="normal">238</span>
-<span class="normal">239</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_dark_theme</span><span class="p">(</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_dark_theme</span><span class="p">(</span>
     <span class="n">custom_style</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -4839,7 +4867,7 @@ using the <code>plt.rcParams.update()</code> method.</p>
             <td>
               <div class="doc-md-description">
                 <p>Values of residuals. If <code>None</code>, residuals are calculated internally using
-<code>y_true</code> and <code>y_true</code>.</p>
+<code>y_true</code> and <code>y_pred</code>.</p>
               </div>
             </td>
             <td>
@@ -5006,7 +5034,7 @@ internally.</p>
 <span class="sd">    ----------</span>
 <span class="sd">    residuals : pandas Series, numpy ndarray, default None.</span>
 <span class="sd">        Values of residuals. If `None`, residuals are calculated internally using</span>
-<span class="sd">        `y_true` and `y_true`.</span>
+<span class="sd">        `y_true` and `y_pred`.</span>
 <span class="sd">    y_true : pandas Series, numpy ndarray, default None.</span>
 <span class="sd">        Ground truth (correct) values. Ignored if residuals is not `None`.</span>
 <span class="sd">    y_pred : pandas Series, numpy ndarray, default None. </span>
@@ -5244,9 +5272,7 @@ to speed up calculations when the series is very long.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\plot\plot.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">313</span>
 <span class="normal">314</span>
 <span class="normal">315</span>
 <span class="normal">316</span>
@@ -5353,7 +5379,9 @@ to speed up calculations when the series is very long.</p>
 <span class="normal">417</span>
 <span class="normal">418</span>
 <span class="normal">419</span>
-<span class="normal">420</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">calculate_lag_autocorrelation</span><span class="p">(</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">calculate_lag_autocorrelation</span><span class="p">(</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">n_lags</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
     <span class="n">last_n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5578,9 +5606,7 @@ is used. See scipy.stats.gaussian_kde for more information.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\plot\plot.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">130</span>
 <span class="normal">131</span>
 <span class="normal">132</span>
 <span class="normal">133</span>
@@ -5639,7 +5665,9 @@ is used. See scipy.stats.gaussian_kde for more information.</p>
 <span class="normal">186</span>
 <span class="normal">187</span>
 <span class="normal">188</span>
-<span class="normal">189</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_prediction_distribution</span><span class="p">(</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_prediction_distribution</span><span class="p">(</span>
     <span class="n">bootstrapping_predictions</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">bw_method</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">fig_kw</span>
@@ -5939,9 +5967,7 @@ and 'upper_bound'.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\plot\plot.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">242</span>
-<span class="normal">243</span>
-<span class="normal">244</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">244</span>
 <span class="normal">245</span>
 <span class="normal">246</span>
 <span class="normal">247</span>
@@ -6005,7 +6031,9 @@ and 'upper_bound'.</p>
 <span class="normal">305</span>
 <span class="normal">306</span>
 <span class="normal">307</span>
-<span class="normal">308</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_prediction_intervals</span><span class="p">(</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_prediction_intervals</span><span class="p">(</span>
     <span class="n">predictions</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">y_true</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target_variable</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -6314,7 +6342,7 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
       <tbody>
           <tr class="doc-section-item">
 <td><code>filename_path</code></td>            <td>
-                  <code><span title="str">str</span></code>
+                  <code><span title="pathlib.Path">Path</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6328,9 +6356,7 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast\plot\plot.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">423</span>
-<span class="normal">424</span>
-<span class="normal">425</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">425</span>
 <span class="normal">426</span>
 <span class="normal">427</span>
 <span class="normal">428</span>
@@ -6601,7 +6627,9 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
 <span class="normal">693</span>
 <span class="normal">694</span>
 <span class="normal">695</span>
-<span class="normal">696</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">backtesting_gif_creator</span><span class="p">(</span>
+<span class="normal">696</span>
+<span class="normal">697</span>
+<span class="normal">698</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">backtesting_gif_creator</span><span class="p">(</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">cv</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">series_to_plot</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6613,7 +6641,7 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
     <span class="n">title_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Backtesting — Fold </span><span class="si">{fold_num}</span><span class="s2"> (refit: </span><span class="si">{refit}</span><span class="s2">)&quot;</span><span class="p">,</span>
     <span class="n">fps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
     <span class="n">dpi</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a GIF of the backtesting folds using Matplotlib FuncAnimation.</span>
 
@@ -6650,7 +6678,7 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    filename_path : str</span>
+<span class="sd">    filename_path : Path</span>
 <span class="sd">        Path to the output GIF file.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -7024,7 +7052,9 @@ internally.</p>
 <span class="normal">122</span>
 <span class="normal">123</span>
 <span class="normal">124</span>
-<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_multivariate_time_series_corr</span><span class="p">(</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_multivariate_time_series_corr</span><span class="p">(</span>
     <span class="n">corr</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">ax</span><span class="p">:</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">fig_kw</span>
@@ -7051,6 +7081,8 @@ internally.</p>
 
     <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">fig_kw</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_figure</span><span class="p">()</span>
 
     <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span>
         <span class="n">corr</span><span class="p">,</span>

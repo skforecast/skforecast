@@ -12,7 +12,7 @@
         <meta name="author" content="Joaquin Amat Rodrigo and Javier Escobar Ortiz">
       
       
-        <link rel="canonical" href="https://skforecast.org/0.20.1/index.html">
+        <link rel="canonical" href="https://skforecast.org/latest/index.html">
       
       
       
@@ -106,7 +106,7 @@
           <aside class="md-banner md-banner--warning">
             <div class="md-banner__inner md-grid md-typeset">
               
-  <div class="md-banner md-banner--warning">
+  <div>
   This is documentation for an unstable development version.
   
     <a href="../." id="version-switch-link">
@@ -715,6 +715,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ai-assisted-forecasting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AI-assisted forecasting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-to-contribute" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -967,6 +978,34 @@
     
   
     How to install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="quick-start/ai-assisted-forecasting.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI-assisted forecasting
   
 
     
@@ -1779,7 +1818,7 @@
   <span class="md-ellipsis">
     
   
-    Calendars features
+    Calendar features
   
 
     
@@ -4696,9 +4735,11 @@
 <a href="https://pypistats.org/packages/skforecast"><img alt="Downloads" src="https://img.shields.io/pypi/dm/skforecast?style=flat-square&amp;color=blue&amp;label=downloads%2Fmonth" /></a>
 <a href="https://github.com/skforecast/skforecast/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/github/license/skforecast/skforecast" /></a>
 <a href="https://zenodo.org/doi/10.5281/zenodo.8382787"><img alt="DOI" src="https://zenodo.org/badge/337705968.svg" /></a>
+<a href="https://skforecast.org/latest/llms-full.txt"><img alt="llms.txt" src="https://img.shields.io/badge/llms.txt-available-blue" /></a>
 <a href="https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6"><img alt="paypal" src="https://img.shields.io/static/v1?style=social&amp;label=Donate&amp;message=%E2%9D%A4&amp;logo=Paypal&amp;color&amp;link=%3curl%3e" /></a>
 <a href="https://www.buymeacoffee.com/skforecast"><img alt="buymeacoffee" src="https://img.shields.io/badge/-Buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee" /></a>
 <img alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/joaquinamatrodrigo?logo=github&amp;label=Github%20sponsors&amp;link=https%3A%2F%2Fgithub.com%2Fsponsors%2FJoaquinAmatRodrigo" />
+<a href="https://opencollective.com/skforecast"><img alt="Open Collective" src="https://img.shields.io/badge/Open_Collective-2A3F54?logo=opencollective&amp;logoColor=white" /></a>
 <a href="https://www.linkedin.com/company/skforecast/"><img alt="!linkedin" src="https://img.shields.io/static/v1?logo=linkedin&amp;label=LinkedIn&amp;message=news&amp;color=lightblue" /></a>
 <a href="https://discord.gg/3V52qpNkuj"><img alt="!discord" src="https://img.shields.io/static/v1?logo=discord&amp;label=discord&amp;message=chat&amp;color=lightgreen" /></a>
 <a href="https://cienciadedatos.net/en/forecasting-python"><img alt="Forecasting Python" src="https://img.shields.io/static/v1?logo=readme&amp;logoColor=white&amp;label=Blog&amp;labelColor=%23333333&amp;message=Forecasting%20Python&amp;color=%23ffab40" /></a>
@@ -4842,6 +4883,8 @@
 <p>Skforecast provides a set of key features designed to make time series forecasting with machine learning easy and efficient. For a detailed overview, see the <a href="user_guides/table-of-contents.html">User Guides</a>.</p>
 <h2 id="examples-and-tutorials">Examples and tutorials<a class="headerlink" href="#examples-and-tutorials" title="Permanent link">&para;</a></h2>
 <p>Explore our extensive list of examples and tutorials (English and Spanish) to get you started with skforecast. You can find them <a href="examples/examples_english.html">here</a>.</p>
+<h2 id="ai-assisted-forecasting">AI-assisted forecasting<a class="headerlink" href="#ai-assisted-forecasting" title="Permanent link">&para;</a></h2>
+<p>Skforecast includes machine-readable context files so AI assistants (ChatGPT, Claude, Copilot, and others) can generate accurate code. Paste <code>https://skforecast.org/latest/llms-full.txt</code> into any LLM, or let your IDE pick up context automatically. Learn more in <a href="quick-start/ai-assisted-forecasting.html">AI-assisted forecasting</a>.</p>
 <h2 id="how-to-contribute">How to contribute<a class="headerlink" href="#how-to-contribute" title="Permanent link">&para;</a></h2>
 <p>Primarily, skforecast development consists of adding and creating new <em>Forecasters</em>, new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:</p>
 <ul>
@@ -4857,17 +4900,17 @@
 <h2 id="citation">Citation<a class="headerlink" href="#citation" title="Permanent link">&para;</a></h2>
 <p>If you use skforecast for a scientific publication, we would appreciate citations to the published software.</p>
 <p><strong>Zenodo</strong></p>
-<div class="language-text highlight"><pre><span></span><code>Amat Rodrigo, Joaquin, &amp; Escobar Ortiz, Javier. (2026). skforecast (v0.20.1). Zenodo. https://doi.org/10.5281/zenodo.8382787
+<div class="language-text highlight"><pre><span></span><code>Amat Rodrigo, Joaquin, &amp; Escobar Ortiz, Javier. (2026). skforecast (v0.21.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
 </code></pre></div>
 <p><strong>APA</strong>:
-<div class="language-text highlight"><pre><span></span><code>Amat Rodrigo, J., &amp; Escobar Ortiz, J. (2026). skforecast (Version 0.20.1) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+<div class="language-text highlight"><pre><span></span><code>Amat Rodrigo, J., &amp; Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 </code></pre></div></p>
 <p><strong>BibTeX</strong>:
 <div class="language-text highlight"><pre><span></span><code>@software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.20.1},
-  month   = {2},
+  version = {0.21.0},
+  month   = {3},
   year    = {2026},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},
@@ -4953,7 +4996,11 @@ Marcillo Vera, F., Rosado, R., Zambrano, P., Velastegui, J., Morales, G., Lagla,
 
 <h2 id="donating">Donating<a class="headerlink" href="#donating" title="Permanent link">&para;</a></h2>
 <p>If you found <strong>skforecast</strong> useful, you can support us with a donation. Your contribution will help us <strong>continue developing, maintaining, and improving</strong> this project. Every contribution, no matter the size, makes a difference. <strong>Thank you for your support!</strong></p>
-<p><a href="https://www.buymeacoffee.com/skforecast" target="_blank" title="Buy me a coffee skforecast">
+<p><a href="https://opencollective.com/skforecast" target="_blank" rel="noopener noreferrer" title="Sponsor us on Open Collective">
+    <img style="margin-bottom: 1em; width: 240px;" src="./img/opencollective_button.png" alt="Sponsor on Open Collective">
+</a>
+<br>
+<a href="https://www.buymeacoffee.com/skforecast" target="_blank" rel="noopener noreferrer" title="Buy me a coffee skforecast">
     <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" alt="Buy me a coffee skforecast">
 </a>
 <br>

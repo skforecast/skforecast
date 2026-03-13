@@ -12,7 +12,7 @@
         <meta name="author" content="Joaquin Amat Rodrigo and Javier Escobar Ortiz">
       
       
-        <link rel="canonical" href="https://skforecast.org/0.20.1/user_guides/hyperparameter-tuning-and-lags-selection.html">
+        <link rel="canonical" href="https://skforecast.org/latest/user_guides/hyperparameter-tuning-and-lags-selection.html">
       
       
         <link rel="prev" href="backtesting.html">
@@ -108,7 +108,7 @@
           <aside class="md-banner md-banner--warning">
             <div class="md-banner__inner md-grid md-typeset">
               
-  <div class="md-banner md-banner--warning">
+  <div>
   This is documentation for an unstable development version.
   
     <a href="../.." id="version-switch-link">
@@ -777,6 +777,34 @@
     
   
     How to install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-start/ai-assisted-forecasting.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI-assisted forecasting
   
 
     
@@ -1594,7 +1622,7 @@
   <span class="md-ellipsis">
     
   
-    Calendars features
+    Calendar features
   
 
     
@@ -5247,7 +5275,7 @@ warnings.filterwarnings('ignore')</div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Download data</span>
 <span class="c1"># ==============================================================================</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">fetch_dataset</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">"h2o"</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kwargs_read_csv</span><span class="o">=</span><span class="p">{</span><span class="s2">"names"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"datetime"</span><span class="p">],</span> <span class="s2">"header"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"h2o"</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kwargs_read</span><span class="o">=</span><span class="p">{</span><span class="s2">"names"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"datetime"</span><span class="p">],</span> <span class="s2">"header"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
 <span class="p">)</span>
 
 <span class="c1"># Data preprocessing</span>
@@ -5262,7 +5290,7 @@ warnings.filterwarnings('ignore')</div>
 <div class="clipboard-copy-txt" id="cell-2"># Download data
 # ==============================================================================
 data = fetch_dataset(
-    name="h2o", raw=True, kwargs_read_csv={"names": ["y", "datetime"], "header": 0}
+    name="h2o", raw=True, kwargs_read={"names": ["y", "datetime"], "header": 0}
 )
 
 # Data preprocessing
@@ -5628,16 +5656,6 @@ results</div>
 <pre>params grid:   0%|          | 0/6 [00:00&lt;?, ?it/s]</pre>
 </div>
 </div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>`Forecaster` refitted using the best-found lags and parameters, and the whole data set: 
-  Lags: [1 2 3] 
-  Parameters: {'max_depth': 5, 'n_estimators': 100}
-  Backtesting metric: 0.04387531272712768
-</pre>
-</div>
-</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
@@ -5883,7 +5901,7 @@ results</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-        .container-e60c040201ea40b2b1bfb26ff297480c {
+        .container-78497c05ced349729fee960bbdf6a1c0 {
             font-family: 'Arial', sans-serif;
             font-size: 0.9em;
             color: #333333;
@@ -5894,7 +5912,7 @@ results</div>
             max-width: 600px;
             #margin: auto;
         }
-        .container-e60c040201ea40b2b1bfb26ff297480c h2 {
+        .container-78497c05ced349729fee960bbdf6a1c0 h2 {
             font-size: 1.5em;
             color: #222222;
             border-bottom: 2px solid #ddd;
@@ -5902,10 +5920,10 @@ results</div>
             margin-bottom: 15px;
             margin-top: 5px;
         }
-        .container-e60c040201ea40b2b1bfb26ff297480c details {
+        .container-78497c05ced349729fee960bbdf6a1c0 details {
             margin: 10px 0;
         }
-        .container-e60c040201ea40b2b1bfb26ff297480c summary {
+        .container-78497c05ced349729fee960bbdf6a1c0 summary {
             font-weight: bold;
             font-size: 1.1em;
             color: #000000;
@@ -5915,38 +5933,38 @@ results</div>
             padding: 5px;
             border-radius: 5px;
         }
-        .container-e60c040201ea40b2b1bfb26ff297480c summary:hover {
+        .container-78497c05ced349729fee960bbdf6a1c0 summary:hover {
             color: #000000;
             background-color: #e0e0e0;
         }
-        .container-e60c040201ea40b2b1bfb26ff297480c ul {
+        .container-78497c05ced349729fee960bbdf6a1c0 ul {
             font-family: 'Courier New', monospace;
             list-style-type: none;
             padding-left: 20px;
             margin: 10px 0;
             line-height: normal;
         }
-        .container-e60c040201ea40b2b1bfb26ff297480c li {
+        .container-78497c05ced349729fee960bbdf6a1c0 li {
             margin: 5px 0;
             font-family: 'Courier New', monospace;
         }
-        .container-e60c040201ea40b2b1bfb26ff297480c li strong {
+        .container-78497c05ced349729fee960bbdf6a1c0 li strong {
             font-weight: bold;
             color: #444444;
         }
-        .container-e60c040201ea40b2b1bfb26ff297480c li::before {
+        .container-78497c05ced349729fee960bbdf6a1c0 li::before {
             content: "- ";
             color: #666666;
         }
-        .container-e60c040201ea40b2b1bfb26ff297480c a {
+        .container-78497c05ced349729fee960bbdf6a1c0 a {
             color: #001633;
             text-decoration: none;
         }
-        .container-e60c040201ea40b2b1bfb26ff297480c a:hover {
+        .container-78497c05ced349729fee960bbdf6a1c0 a:hover {
             color: #359ccb; 
         }
     </style>
-<div class="container-e60c040201ea40b2b1bfb26ff297480c">
+<div class="container-78497c05ced349729fee960bbdf6a1c0">
 <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">ForecasterRecursive</p>
 <details open="">
 <summary>General Information</summary>
@@ -5959,9 +5977,9 @@ results</div>
 <li><strong>Exogenous included:</strong> False</li>
 <li><strong>Weight function included:</strong> False</li>
 <li><strong>Differentiation order:</strong> None</li>
-<li><strong>Creation date:</strong> 2026-01-29 11:18:30</li>
-<li><strong>Last fit date:</strong> 2026-01-29 11:18:32</li>
-<li><strong>Skforecast version:</strong> 0.20.0</li>
+<li><strong>Creation date:</strong> 2026-03-12 13:14:31</li>
+<li><strong>Last fit date:</strong> 2026-03-12 13:14:34</li>
+<li><strong>Skforecast version:</strong> 0.21.0</li>
 <li><strong>Python version:</strong> 3.13.11</li>
 <li><strong>Forecaster id:</strong> None</li>
 </ul>
@@ -6000,9 +6018,9 @@ results</div>
                 </ul>
 </details>
 <p>
-<a href="https://skforecast.org/0.20.0/api/forecasterrecursive.html">🛈 <strong>API Reference</strong></a>
+<a href="https://skforecast.org/0.21.0/api/forecasterrecursive.html">🛈 <strong>API Reference</strong></a>
                   
-                <a href="https://skforecast.org/0.20.0/user_guides/autoregressive-forecaster.html">🗎 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/0.21.0/user_guides/autoregressive-forecaster.html">🗎 <strong>User Guide</strong></a>
 </p>
 </div>
 </div>
@@ -6142,16 +6160,6 @@ results.head(4)</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>params grid:   0%|          | 0/5 [00:00&lt;?, ?it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>`Forecaster` refitted using the best-found lags and parameters, and the whole data set: 
-  Lags: [1 2 3 4 5] 
-  Parameters: {'n_estimators': np.int64(96), 'max_depth': np.int64(19)}
-  Backtesting metric: 0.04313147793349785
-</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
@@ -6337,22 +6345,22 @@ results.head(4)</div>
          <span class="n">refit</span>              <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
      <span class="p">)</span>
 
-<span class="n">results</span><span class="p">,</span> <span class="n">best_trial</span> <span class="o">=</span> <span class="n">bayesian_search_forecaster</span><span class="p">(</span>
-                          <span class="n">forecaster</span>            <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
-                          <span class="n">y</span>                     <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">end_val</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">],</span>
-                          <span class="n">search_space</span>          <span class="o">=</span> <span class="n">search_space</span><span class="p">,</span>
-                          <span class="n">cv</span>                    <span class="o">=</span> <span class="n">cv</span><span class="p">,</span>
-                          <span class="n">metric</span>                <span class="o">=</span> <span class="s1">'mean_absolute_error'</span><span class="p">,</span>
-                          <span class="n">n_trials</span>              <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-                          <span class="n">random_state</span>          <span class="o">=</span> <span class="mi">123</span><span class="p">,</span>
-                          <span class="n">return_best</span>           <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                          <span class="n">n_jobs</span>                <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
-                          <span class="n">verbose</span>               <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                          <span class="n">show_progress</span>         <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-                          <span class="n">suppress_warnings</span>     <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                          <span class="n">kwargs_create_study</span>   <span class="o">=</span> <span class="p">{},</span>
-                          <span class="n">kwargs_study_optimize</span> <span class="o">=</span> <span class="p">{}</span>
-                      <span class="p">)</span>
+<span class="n">results</span><span class="p">,</span> <span class="n">study</span> <span class="o">=</span> <span class="n">bayesian_search_forecaster</span><span class="p">(</span>
+                     <span class="n">forecaster</span>            <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
+                     <span class="n">y</span>                     <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">end_val</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">],</span>
+                     <span class="n">search_space</span>          <span class="o">=</span> <span class="n">search_space</span><span class="p">,</span>
+                     <span class="n">cv</span>                    <span class="o">=</span> <span class="n">cv</span><span class="p">,</span>
+                     <span class="n">metric</span>                <span class="o">=</span> <span class="s1">'mean_absolute_error'</span><span class="p">,</span>
+                     <span class="n">n_trials</span>              <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+                     <span class="n">random_state</span>          <span class="o">=</span> <span class="mi">123</span><span class="p">,</span>
+                     <span class="n">return_best</span>           <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                     <span class="n">n_jobs</span>                <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
+                     <span class="n">verbose</span>               <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                     <span class="n">show_progress</span>         <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                     <span class="n">suppress_warnings</span>     <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                     <span class="n">kwargs_create_study</span>   <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">kwargs_study_optimize</span> <span class="o">=</span> <span class="kc">None</span>
+                 <span class="p">)</span>
 <span class="n">results</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-7"># Bayesian search hyperparameters and lags with Optuna
@@ -6382,22 +6390,22 @@ cv = TimeSeriesFold(
          refit              = False,
      )
 
-results, best_trial = bayesian_search_forecaster(
-                          forecaster            = forecaster,
-                          y                     = data.loc[:end_val, 'y'],
-                          search_space          = search_space,
-                          cv                    = cv,
-                          metric                = 'mean_absolute_error',
-                          n_trials              = 10,
-                          random_state          = 123,
-                          return_best           = False,
-                          n_jobs                = 'auto',
-                          verbose               = False,
-                          show_progress         = True,
-                          suppress_warnings     = False,
-                          kwargs_create_study   = {},
-                          kwargs_study_optimize = {}
-                      )
+results, study = bayesian_search_forecaster(
+                     forecaster            = forecaster,
+                     y                     = data.loc[:end_val, 'y'],
+                     search_space          = search_space,
+                     cv                    = cv,
+                     metric                = 'mean_absolute_error',
+                     n_trials              = 20,
+                     random_state          = 123,
+                     return_best           = False,
+                     n_jobs                = 'auto',
+                     verbose               = False,
+                     show_progress         = True,
+                     suppress_warnings     = False,
+                     kwargs_create_study   = None,
+                     kwargs_study_optimize = None
+                 )
 results.head(4)</div>
 </div>
 </div>
@@ -6410,7 +6418,7 @@ results.head(4)</div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  0%|          | 0/10 [00:00&lt;?, ?it/s]</pre>
+<pre>  0%|          | 0/20 [00:00&lt;?, ?it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
@@ -6434,6 +6442,7 @@ results.head(4)</div>
 <thead>
 <tr style="text-align: right;">
 <th></th>
+<th>trial_number</th>
 <th>lags</th>
 <th>params</th>
 <th>mean_absolute_error</th>
@@ -6445,6 +6454,7 @@ results.head(4)</div>
 <tbody>
 <tr>
 <th>0</th>
+<td>7</td>
 <td>[1, 2, 3, 4, 5]</td>
 <td>{'n_estimators': 19, 'min_samples_leaf': 3, 'm...</td>
 <td>0.126995</td>
@@ -6454,6 +6464,7 @@ results.head(4)</div>
 </tr>
 <tr>
 <th>1</th>
+<td>1</td>
 <td>[1, 2, 3]</td>
 <td>{'n_estimators': 15, 'min_samples_leaf': 4, 'm...</td>
 <td>0.153278</td>
@@ -6463,6 +6474,7 @@ results.head(4)</div>
 </tr>
 <tr>
 <th>2</th>
+<td>4</td>
 <td>[1, 2, 3]</td>
 <td>{'n_estimators': 13, 'min_samples_leaf': 3, 'm...</td>
 <td>0.160396</td>
@@ -6472,11 +6484,12 @@ results.head(4)</div>
 </tr>
 <tr>
 <th>3</th>
-<td>[1, 2, 3, 4, 5]</td>
-<td>{'n_estimators': 14, 'min_samples_leaf': 5, 'm...</td>
-<td>0.172366</td>
-<td>14</td>
-<td>5</td>
+<td>18</td>
+<td>[1, 2, 3]</td>
+<td>{'n_estimators': 10, 'min_samples_leaf': 2, 'm...</td>
+<td>0.169696</td>
+<td>10</td>
+<td>2</td>
 <td>log2</td>
 </tr>
 </tbody>
@@ -6494,7 +6507,8 @@ results.head(4)</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>The <code>best_trial</code> return contains the details of the trial that achieved the best result during optimization. For more information, refer to the <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study">Study class</a>.</p>
+<p>In addition to the results DataFrame, <code>bayesian_search_forecaster</code> also returns the Optuna <code>study</code> object. This gives the user full access to the optimization internals, enabling further analysis, visualization, or customization of the search process.</p>
+<p>For more information, refer to the <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html">Optuna Study class</a>.</p>
 </div>
 </div>
 </div>
@@ -6517,13 +6531,13 @@ results.head(4)</div>
 </div>
 </clipboard-copy>
 </div>
-<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Optuna best trial in the study</span>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Optuna study</span>
 <span class="c1"># ==============================================================================</span>
-<span class="n">best_trial</span>
+<span class="n">study</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-8"># Optuna best trial in the study
+<div class="clipboard-copy-txt" id="cell-8"># Optuna study
 # ==============================================================================
-best_trial</div>
+study</div>
 </div>
 </div>
 </div>
@@ -6535,7 +6549,50 @@ best_trial</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>FrozenTrial(number=7, state=&lt;TrialState.COMPLETE: 1&gt;, values=[0.1269945910624239], datetime_start=datetime.datetime(2026, 1, 29, 11, 18, 33, 586009), datetime_complete=datetime.datetime(2026, 1, 29, 11, 18, 33, 614525), params={'lags': 5, 'n_estimators': 19, 'min_samples_leaf': 3, 'max_features': 'sqrt'}, user_attrs={}, system_attrs={}, intermediate_values={}, distributions={'lags': CategoricalDistribution(choices=(3, 5)), 'n_estimators': IntDistribution(high=20, log=False, low=10, step=1), 'min_samples_leaf': IntDistribution(high=10, log=False, low=1, step=1), 'max_features': CategoricalDistribution(choices=('log2', 'sqrt'))}, trial_id=7, value=None)</pre>
+<pre>&lt;optuna.study.study.Study at 0x197cfe22900&gt;</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=1924d188">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-9">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Optuna best trial in the study</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">study</span><span class="o">.</span><span class="n">trials</span><span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'trial_number'</span><span class="p">]]</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-9"># Optuna best trial in the study
+# ==============================================================================
+study.trials[results.loc[0, 'trial_number']]</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
+<pre>FrozenTrial(number=7, state=&lt;TrialState.COMPLETE: 1&gt;, values=[0.1269945910624239], datetime_start=datetime.datetime(2026, 3, 12, 13, 14, 34, 864586), datetime_complete=datetime.datetime(2026, 3, 12, 13, 14, 34, 892490), params={'lags': 5, 'n_estimators': 19, 'min_samples_leaf': 3, 'max_features': 'sqrt'}, user_attrs={'mean_absolute_error': 0.1269945910624239}, system_attrs={}, intermediate_values={}, distributions={'lags': CategoricalDistribution(choices=(3, 5)), 'n_estimators': IntDistribution(high=20, log=False, low=10, step=1), 'min_samples_leaf': IntDistribution(high=10, log=False, low=1, step=1), 'max_features': CategoricalDistribution(choices=('log2', 'sqrt'))}, trial_id=7, value=None)</pre>
 </div>
 </div>
 </div>
@@ -6575,10 +6632,10 @@ best_trial</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-9">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-10">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -6613,25 +6670,25 @@ best_trial</div>
     <span class="n">initial_train_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">end_train</span><span class="p">])</span>  <span class="c1"># Can use a date: '2001-01-01 23:59:00'</span>
 <span class="p">)</span>
 
-<span class="n">results</span><span class="p">,</span> <span class="n">best_trial</span> <span class="o">=</span> <span class="n">bayesian_search_forecaster</span><span class="p">(</span>
-                          <span class="n">forecaster</span>            <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
-                          <span class="n">y</span>                     <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">end_val</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">],</span>
-                          <span class="n">search_space</span>          <span class="o">=</span> <span class="n">search_space</span><span class="p">,</span>
-                          <span class="n">cv</span>                    <span class="o">=</span> <span class="n">cv</span><span class="p">,</span>
-                          <span class="n">metric</span>                <span class="o">=</span> <span class="s1">'mean_absolute_error'</span><span class="p">,</span>
-                          <span class="n">n_trials</span>              <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-                          <span class="n">random_state</span>          <span class="o">=</span> <span class="mi">123</span><span class="p">,</span>
-                          <span class="n">return_best</span>           <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                          <span class="n">n_jobs</span>                <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
-                          <span class="n">verbose</span>               <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                          <span class="n">show_progress</span>         <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-                          <span class="n">suppress_warnings</span>     <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                          <span class="n">kwargs_create_study</span>   <span class="o">=</span> <span class="p">{},</span>
-                          <span class="n">kwargs_study_optimize</span> <span class="o">=</span> <span class="p">{}</span>
-                      <span class="p">)</span>
+<span class="n">results</span><span class="p">,</span> <span class="n">study</span> <span class="o">=</span> <span class="n">bayesian_search_forecaster</span><span class="p">(</span>
+                     <span class="n">forecaster</span>            <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
+                     <span class="n">y</span>                     <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">end_val</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">],</span>
+                     <span class="n">search_space</span>          <span class="o">=</span> <span class="n">search_space</span><span class="p">,</span>
+                     <span class="n">cv</span>                    <span class="o">=</span> <span class="n">cv</span><span class="p">,</span>
+                     <span class="n">metric</span>                <span class="o">=</span> <span class="s1">'mean_absolute_error'</span><span class="p">,</span>
+                     <span class="n">n_trials</span>              <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>  <span class="c1"># Increase the number of trials to get better results</span>
+                     <span class="n">random_state</span>          <span class="o">=</span> <span class="mi">123</span><span class="p">,</span>
+                     <span class="n">return_best</span>           <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                     <span class="n">n_jobs</span>                <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
+                     <span class="n">verbose</span>               <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                     <span class="n">show_progress</span>         <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                     <span class="n">suppress_warnings</span>     <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                     <span class="n">kwargs_create_study</span>   <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">kwargs_study_optimize</span> <span class="o">=</span> <span class="kc">None</span>
+                 <span class="p">)</span>
 <span class="n">results</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-9"># Bayesian search with OneStepAheadFold
+<div class="clipboard-copy-txt" id="cell-10"># Bayesian search with OneStepAheadFold
 # ==============================================================================
 forecaster = ForecasterRecursive(
                  estimator = LGBMRegressor(random_state=123, verbose=-1),
@@ -6656,22 +6713,22 @@ cv = OneStepAheadFold(
     initial_train_size = len(data.loc[:end_train])  # Can use a date: '2001-01-01 23:59:00'
 )
 
-results, best_trial = bayesian_search_forecaster(
-                          forecaster            = forecaster,
-                          y                     = data.loc[:end_val, 'y'],
-                          search_space          = search_space,
-                          cv                    = cv,
-                          metric                = 'mean_absolute_error',
-                          n_trials              = 10,
-                          random_state          = 123,
-                          return_best           = False,
-                          n_jobs                = 'auto',
-                          verbose               = False,
-                          show_progress         = True,
-                          suppress_warnings     = False,
-                          kwargs_create_study   = {},
-                          kwargs_study_optimize = {}
-                      )
+results, study = bayesian_search_forecaster(
+                     forecaster            = forecaster,
+                     y                     = data.loc[:end_val, 'y'],
+                     search_space          = search_space,
+                     cv                    = cv,
+                     metric                = 'mean_absolute_error',
+                     n_trials              = 20,  # Increase the number of trials to get better results
+                     random_state          = 123,
+                     return_best           = False,
+                     n_jobs                = 'auto',
+                     verbose               = False,
+                     show_progress         = True,
+                     suppress_warnings     = False,
+                     kwargs_create_study   = None,
+                     kwargs_study_optimize = None
+                 )
 results.head(4)</div>
 </div>
 </div>
@@ -6684,11 +6741,11 @@ results.head(4)</div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  0%|          | 0/10 [00:00&lt;?, ?it/s]</pre>
+<pre>  0%|          | 0/20 [00:00&lt;?, ?it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[ ]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -6708,6 +6765,7 @@ results.head(4)</div>
 <thead>
 <tr style="text-align: right;">
 <th></th>
+<th>trial_number</th>
 <th>lags</th>
 <th>params</th>
 <th>mean_absolute_error</th>
@@ -6719,6 +6777,7 @@ results.head(4)</div>
 <tbody>
 <tr>
 <th>0</th>
+<td>6</td>
 <td>[1, 2, 3, 4, 5]</td>
 <td>{'n_estimators': 20, 'min_samples_leaf': 6, 'm...</td>
 <td>0.180137</td>
@@ -6728,6 +6787,17 @@ results.head(4)</div>
 </tr>
 <tr>
 <th>1</th>
+<td>17</td>
+<td>[1, 2, 3, 4, 5]</td>
+<td>{'n_estimators': 20, 'min_samples_leaf': 10, '...</td>
+<td>0.180764</td>
+<td>20</td>
+<td>10</td>
+<td>sqrt</td>
+</tr>
+<tr>
+<th>2</th>
+<td>5</td>
 <td>[1, 2, 3, 4, 5]</td>
 <td>{'n_estimators': 14, 'min_samples_leaf': 5, 'm...</td>
 <td>0.180815</td>
@@ -6736,21 +6806,13 @@ results.head(4)</div>
 <td>log2</td>
 </tr>
 <tr>
-<th>2</th>
-<td>[1, 2, 3, 4, 5]</td>
-<td>{'n_estimators': 16, 'min_samples_leaf': 9, 'm...</td>
-<td>0.187584</td>
-<td>16</td>
-<td>9</td>
-<td>log2</td>
-</tr>
-<tr>
 <th>3</th>
-<td>[1, 2, 3]</td>
-<td>{'n_estimators': 14, 'min_samples_leaf': 7, 'm...</td>
-<td>0.188359</td>
-<td>14</td>
-<td>7</td>
+<td>11</td>
+<td>[1, 2, 3, 4, 5]</td>
+<td>{'n_estimators': 20, 'min_samples_leaf': 8, 'm...</td>
+<td>0.182231</td>
+<td>20</td>
+<td>8</td>
 <td>log2</td>
 </tr>
 </tbody>
@@ -6798,10 +6860,10 @@ results.head(4)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-10">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-11">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -6823,7 +6885,7 @@ results.head(4)</div>
     
     <span class="k">return</span> <span class="n">metric</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-10"># Custom metric
+<div class="clipboard-copy-txt" id="cell-11"># Custom metric
 # ==============================================================================
 def custom_metric(y_true, y_pred, y_train=None):
     """
@@ -6845,10 +6907,10 @@ def custom_metric(y_true, y_pred, y_train=None):
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-11">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-12">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -6896,7 +6958,7 @@ def custom_metric(y_true, y_pred, y_train=None):
 
 <span class="n">results</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-11"># Grid search hyperparameter and lags with custom metric
+<div class="clipboard-copy-txt" id="cell-12"># Grid search hyperparameter and lags with custom metric
 # ==============================================================================
 forecaster = ForecasterRecursive(
                  estimator = LGBMRegressor(random_state=123, verbose=-1),
@@ -6965,18 +7027,8 @@ results.head(4)</div>
 <pre>params grid:   0%|          | 0/6 [00:00&lt;?, ?it/s]</pre>
 </div>
 </div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>`Forecaster` refitted using the best-found lags and parameters, and the whole data set: 
-  Lags: [ 1  2  3 20] 
-  Parameters: {'max_depth': 5, 'n_estimators': 100}
-  Backtesting metric: 0.0681822427249296
-</pre>
-</div>
-</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -7084,10 +7136,10 @@ results.head(4)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-12">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-13">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -7135,7 +7187,7 @@ results.head(4)</div>
 
 <span class="n">results</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-12"># Grid search hyperparameter and lags with multiple metrics
+<div class="clipboard-copy-txt" id="cell-13"># Grid search hyperparameter and lags with multiple metrics
 # ==============================================================================
 forecaster = ForecasterRecursive(
                  estimator = LGBMRegressor(random_state=123, verbose=-1),
@@ -7204,18 +7256,8 @@ results.head(4)</div>
 <pre>params grid:   0%|          | 0/6 [00:00&lt;?, ?it/s]</pre>
 </div>
 </div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>`Forecaster` refitted using the best-found lags and parameters, and the whole data set: 
-  Lags: [1 2 3] 
-  Parameters: {'max_depth': 5, 'n_estimators': 100}
-  Backtesting metric: 0.18359367014650177
-</pre>
-</div>
-</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -7315,10 +7357,10 @@ results.head(4)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-13">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-14">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -7391,7 +7433,7 @@ results.head(4)</div>
 <span class="n">df_results</span> <span class="o">=</span> <span class="n">df_results</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">'mean_squared_error'</span><span class="p">)</span>
 <span class="n">df_results</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-13"># Models to compare
+<div class="clipboard-copy-txt" id="cell-14"># Models to compare
 from sklearn.ensemble import RandomForestRegressor
 from lightgbm import LGBMRegressor
 from sklearn.linear_model import Ridge
@@ -7540,7 +7582,7 @@ df_results.head(10)</div>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -7707,10 +7749,10 @@ df_results.head(10)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-14">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-15">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -7757,7 +7799,7 @@ df_results.head(10)</div>
               <span class="n">output_file</span>   <span class="o">=</span> <span class="s2">"results_grid_search.txt"</span>
           <span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-14"># Save results to file
+<div class="clipboard-copy-txt" id="cell-15"># Save results to file
 # ==============================================================================
 forecaster = ForecasterRecursive(
                  estimator = LGBMRegressor(random_state=123, verbose=-1),
@@ -7825,16 +7867,6 @@ results = grid_search_forecaster(
 <pre>params grid:   0%|          | 0/6 [00:00&lt;?, ?it/s]</pre>
 </div>
 </div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>`Forecaster` refitted using the best-found lags and parameters, and the whole data set: 
-  Lags: [1 2 3] 
-  Parameters: {'max_depth': 5, 'n_estimators': 100}
-  Backtesting metric: 0.04387531272712768
-</pre>
-</div>
-</div>
 </div>
 </div>
 </div>
@@ -7844,10 +7876,10 @@ results = grid_search_forecaster(
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-15">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-16">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -7861,7 +7893,7 @@ results = grid_search_forecaster(
 <span class="c1"># ==============================================================================</span>
 <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">"results_grid_search.txt"</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-15"># Read results file
+<div class="clipboard-copy-txt" id="cell-16"># Read results file
 # ==============================================================================
 pd.read_csv("results_grid_search.txt", sep="\t")</div>
 </div>
@@ -7873,7 +7905,7 @@ pd.read_csv("results_grid_search.txt", sep="\t")</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[16]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">

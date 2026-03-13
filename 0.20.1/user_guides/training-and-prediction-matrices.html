@@ -12,7 +12,7 @@
         <meta name="author" content="Joaquin Amat Rodrigo and Javier Escobar Ortiz">
       
       
-        <link rel="canonical" href="https://skforecast.org/0.20.1/user_guides/training-and-prediction-matrices.html">
+        <link rel="canonical" href="https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html">
       
       
         <link rel="prev" href="datasets.html">
@@ -108,7 +108,7 @@
           <aside class="md-banner md-banner--warning">
             <div class="md-banner__inner md-grid md-typeset">
               
-  <div class="md-banner md-banner--warning">
+  <div>
   This is documentation for an unstable development version.
   
     <a href="../.." id="version-switch-link">
@@ -777,6 +777,34 @@
     
   
     How to install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-start/ai-assisted-forecasting.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI-assisted forecasting
   
 
     
@@ -1594,7 +1622,7 @@
   <span class="md-ellipsis">
     
   
-    Calendars features
+    Calendar features
   
 
     
@@ -5149,7 +5177,7 @@ from skforecast.plot import set_dark_theme</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-2">
@@ -5165,7 +5193,7 @@ from skforecast.plot import set_dark_theme</div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Download data single series</span>
 <span class="c1"># ==============================================================================</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">fetch_dataset</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">"h2o"</span><span class="p">,</span> <span class="n">kwargs_read_csv</span><span class="o">=</span><span class="p">{</span><span class="s2">"names"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"datetime"</span><span class="p">],</span> <span class="s2">"header"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"h2o"</span><span class="p">,</span> <span class="n">kwargs_read</span><span class="o">=</span><span class="p">{</span><span class="s2">"names"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"datetime"</span><span class="p">],</span> <span class="s2">"header"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
 
@@ -5186,7 +5214,7 @@ from skforecast.plot import set_dark_theme</div>
 <div class="clipboard-copy-txt" id="cell-2"># Download data single series
 # ==============================================================================
 data = fetch_dataset(
-    name="h2o", kwargs_read_csv={"names": ["y", "datetime"], "header": 0}
+    name="h2o", kwargs_read={"names": ["y", "datetime"], "header": 0}
 )
 print("")
 
