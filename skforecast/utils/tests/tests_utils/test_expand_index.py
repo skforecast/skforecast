@@ -29,14 +29,24 @@ def test_TypeError_expand_index_when_index_is_no_pandas_DatetimeIndex_or_RangeIn
         expand_index(index, steps=3)
 
 
-def test_output_expand_index_when_index_is_DatetimeIndex():
+@pytest.mark.parametrize(
+    'freq, start, expected_dates',
+    [
+        ('D',   '1990-01-01', ['1990-01-04', '1990-01-05', '1990-01-06']),
+        ('h',   '1990-01-01', ['1990-01-01 03:00', '1990-01-01 04:00', '1990-01-01 05:00']),
+        ('MS',  '1990-01-01', ['1990-04-01', '1990-05-01', '1990-06-01']),
+        ('min', '1990-01-01', ['1990-01-01 00:03', '1990-01-01 00:04', '1990-01-01 00:05']),
+        ('QS',  '1990-01-01', ['1990-10-01', '1991-01-01', '1991-04-01']),
+    ],
+    ids=lambda x: f'{x}'
+)
+def test_output_expand_index_when_index_is_DatetimeIndex(freq, start, expected_dates):
     """
-    Test values returned by expand_index when input is DatetimeIndex.
+    Test values returned by expand_index when input is DatetimeIndex with
+    different frequencies.
     """
-    index = pd.DatetimeIndex(['1990-01-01', '1990-01-02', '1990-01-03'],
-                             dtype='datetime64[ns]', freq='D')
-    expected = pd.DatetimeIndex(['1990-01-04', '1990-01-05', '1990-01-06'],
-                             dtype='datetime64[ns]', freq='D')
+    index = pd.date_range(start=start, periods=3, freq=freq)
+    expected = pd.DatetimeIndex(expected_dates, freq=freq)
     results = expand_index(index, steps=3)
     
     pd.testing.assert_index_equal(results, expected)

@@ -10,7 +10,7 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.21.0 <small>Mar 12, 2026</small> { id="0.21.0" }
+## 0.21.0 <small>Mar 13, 2026</small> { id="0.21.0" }
 
 The main changes in this release are:
 
@@ -46,6 +46,8 @@ The main changes in this release are:
 + Fixed an issue where using a `transformer_y` or `transformer_series` that expands the target into multiple columns (e.g., `OneHotEncoder`) produced a non-descriptive internal error. Now, a clear `ValueError` is raised explaining that transformers applied to the target series must return a single column. ([#1126](https://github.com/skforecast/skforecast/pull/1126))
 
 + Fixed an issue where `out_sample_residuals_` and `out_sample_residuals_by_bin_` were not reset during `fit()`, causing stale residuals from a previous model to silently persist after refitting. ([#1123](https://github.com/skforecast/skforecast/pull/1123))
+
++ Fixed an issue in <code>[expand_index]</code> where the original `RangeIndex.step` was not preserved when creating future indices. Previously, `step=1` was always assumed, which could lead to incorrect prediction indices. ([#1150](https://github.com/skforecast/skforecast/pull/1150))
 
 
 ## 0.20.1 <small>Feb 11, 2026</small> { id="0.20.1" }
