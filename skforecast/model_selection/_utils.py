@@ -17,14 +17,8 @@ from sklearn.pipeline import Pipeline
 from tqdm.auto import tqdm
 
 from ..exceptions import IgnoredArgumentWarning, OneStepAheadValidationWarning
-from ..metrics import add_y_train_argument, _get_metric
+from ..metrics import add_y_train_argument, any_metric_needs_y_train, _get_metric
 from ..utils import check_interval, date_to_index_position
-
-
-# TODO: Hay cálculos que se pueden simplificar para evitar calcular y_train en 
-# TODAS las funciones de métricas usando if ignore_y_train: cuando ninguna métrica lo 
-# necesita. esto también se puede hacer en el backtesting single seires, que tiene
-# la lógica en la propia funcion. Analiza bien.
 
 
 def initialize_lags_grid(
@@ -755,6 +749,8 @@ def _calculate_metrics_one_step_ahead(
     
     """
 
+    needs_y_train = any_metric_needs_y_train(metrics)
+
     if type(forecaster).__name__ == 'ForecasterDirect':
 
         step = 1  # Only the model for step 1 is optimized.
@@ -777,21 +773,28 @@ def _calculate_metrics_one_step_ahead(
 
     y_true = y_test.to_numpy()
     y_pred = y_pred.ravel()
-    y_train = y_train.to_numpy()
+    if needs_y_train:
+        y_train = y_train.to_numpy()
+    else:
+        y_train = None
 
     if forecaster.differentiation is not None:
         y_true = forecaster.differentiator.inverse_transform_next_window(y_true)
         y_pred = forecaster.differentiator.inverse_transform_next_window(y_pred)
-        y_train = forecaster.differentiator.inverse_transform_training(y_train)
+        if needs_y_train:
+            y_train = forecaster.differentiator.inverse_transform_training(y_train)
 
     if forecaster.transformer_y is not None:
         y_true = forecaster.transformer_y.inverse_transform(y_true.reshape(-1, 1))
         y_pred = forecaster.transformer_y.inverse_transform(y_pred.reshape(-1, 1))
-        y_train = forecaster.transformer_y.inverse_transform(y_train.reshape(-1, 1))
+        if needs_y_train:
+            y_train = forecaster.transformer_y.inverse_transform(y_train.reshape(-1, 1))
 
     y_true = y_true.ravel()
     y_pred = y_pred.ravel()
-    y_train = y_train.ravel()
+    if needs_y_train:
+        y_train = y_train.ravel()
+    
     metric_values = [
         m(y_true=y_true, y_pred=y_pred, y_train=y_train) for m in metrics
     ]
@@ -1106,25 +1109,8 @@ def _calculate_metrics_backtesting_multiseries(
     # if not isinstance(add_aggregated_metric, bool):
     #     raise TypeError("`add_aggregated_metric` must be a boolean.")
     
-    # TODO: review list of metric that do not need y_train
-    metrics_no_y_train = [
-        # Regression metrics
-        "mean_squared_error",
-        "mean_absolute_error",
-        "mean_absolute_percentage_error",
-        "mean_squared_log_error",
-        "median_absolute_error",
-        "symmetric_mean_absolute_percentage_error",
-
-        # Classification metrics
-        "accuracy_score",
-        "balanced_accuracy_score",
-        "f1_score",
-        "precision_score",
-        "recall_score"
-    ]
     metric_names = [m.__name__ for m in metrics]
-    ignore_y_train = all(name in metrics_no_y_train for name in metric_names)
+    needs_y_train = any_metric_needs_y_train(metrics)
 
     levels_in_predictions = predictions.index.get_level_values('level').unique()
 
@@ -1147,31 +1133,32 @@ def _calculate_metrics_backtesting_multiseries(
         how         = "inner",
     ).dropna(axis=0, how="any")
 
-    train_indexes = []
-    for i, fold in enumerate(folds):
-        fit_fold = fold[-1]
-        if i == 0 or fit_fold:
-            train_iloc_start = fold[1][0]
-            train_iloc_end = fold[1][1]
-            train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
-    
-    train_indexes = np.unique(np.concatenate(train_indexes))
-    train_indexes = span_index[train_indexes]
-    train_indexes = pd.MultiIndex.from_product([
-        levels_in_predictions,
-        train_indexes,
-    ])
-    series_train = series.loc[series.index.isin(train_indexes)]
-    # NOTE: Exclude first window_size observations used to create predictors
-    series_train = series_train[series_train.groupby(level="level").cumcount() >= window_size]
-    
+    if needs_y_train:
+        train_indexes = []
+        for i, fold in enumerate(folds):
+            fit_fold = fold[-1]
+            if i == 0 or fit_fold:
+                train_iloc_start = fold[1][0]
+                train_iloc_end = fold[1][1]
+                train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
+        
+        train_indexes = np.unique(np.concatenate(train_indexes))
+        train_indexes = span_index[train_indexes]
+        train_indexes = pd.MultiIndex.from_product([
+            levels_in_predictions,
+            train_indexes,
+        ])
+        series_train = series.loc[series.index.isin(train_indexes)]
+        # NOTE: Exclude first window_size observations used to create predictors
+        series_train = series_train[series_train.groupby(level="level").cumcount() >= window_size]
+        series_train_grouped = (
+            series_train
+            .reset_index(level="level")
+            .groupby(by="level", sort=False, as_index=False)
+        )
+
     y_true_y_pred_grouped = (
         y_true_y_pred
-        .reset_index(level="level")
-        .groupby(by="level", sort=False, as_index=False)
-    )
-    series_train_grouped = (
-        series_train
         .reset_index(level="level")
         .groupby(by="level", sort=False, as_index=False)
     )
@@ -1181,7 +1168,7 @@ def _calculate_metrics_backtesting_multiseries(
             group = y_true_y_pred_grouped.get_group(level)
             y_true = group['y_true']
             y_pred = group['y_pred']
-            if not ignore_y_train:
+            if needs_y_train:
                 # NOTE: y_train includes the intercepted NaNs
                 y_train = series_train_grouped.get_group(level)['y_true']
             else:
@@ -1238,16 +1225,19 @@ def _calculate_metrics_backtesting_multiseries(
 
         y_true = y_true_y_pred.loc[:, 'y_true'].droplevel("level")
         y_pred = y_true_y_pred.loc[:, 'y_pred'].droplevel("level")
-        y_train = series_train.loc[:, 'y_true'].droplevel("level")
-        if any(name in scaled_metrics for name in metric_names):
-            series_train_list = [
-                group['y_true'] 
-                for _, group in series_train.groupby('level', sort=False)
-            ]
-            
+        if needs_y_train:
+            y_train = series_train.loc[:, 'y_true'].droplevel("level")
+            if any(name in scaled_metrics for name in metric_names):
+                series_train_list = [
+                    group['y_true'] 
+                    for _, group in series_train.groupby('level', sort=False)
+                ]
+        else:
+            y_train = None
+
         pooled = []
         for m, m_name in zip(metrics, metric_names):
-            if m_name in scaled_metrics:
+            if needs_y_train and m_name in scaled_metrics:
                 pooled.append(
                     m(y_true=y_true, y_pred=y_pred, y_train=series_train_list)
                 )
@@ -1378,25 +1368,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         for m in metrics
     ]
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metrics]
-
-    # TODO: review list of metric that do not need y_train
-    metrics_no_y_train = [
-        # Regression metrics
-        "mean_squared_error",
-        "mean_absolute_error",
-        "mean_absolute_percentage_error",
-        "mean_squared_log_error",
-        "median_absolute_error",
-        "symmetric_mean_absolute_percentage_error",
-
-        # Classification metrics
-        "accuracy_score",
-        "balanced_accuracy_score",
-        "f1_score",
-        "precision_score",
-        "recall_score"
-    ]
-    ignore_y_train = all(name in metrics_no_y_train for name in metric_names)
+    needs_y_train = any_metric_needs_y_train(metrics)
 
     if isinstance(series[levels[0]].index, pd.DatetimeIndex):
         freq = series[levels[0]].index.freq
@@ -1431,25 +1403,27 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     ).groupby('_level_skforecast')
     predictions_per_level = {key: group for key, group in predictions_per_level}
 
-    y_train_per_level = pd.DataFrame(
-        {"y_train": y_train, "_level_skforecast": X_train_encoding},
-        index=y_train.index,
-    ).groupby("_level_skforecast")
+    if needs_y_train:
+        
+        y_train_per_level = pd.DataFrame(
+            {"y_train": y_train, "_level_skforecast": X_train_encoding},
+            index=y_train.index,
+        ).groupby("_level_skforecast")
 
-    # NOTE: Interleaved Nan values were excluded fom y_train. They are restored
-    if isinstance(series[levels[0]].index, pd.DatetimeIndex):
-        y_train_per_level = {
-            key: group.asfreq(freq) for key, group in y_train_per_level
-        }
-    else:
-        y_train_per_level = {
-            key: group.reindex(
-                pd.RangeIndex(
-                    start=min(group.index), stop=max(group.index) + 1, step=freq
+        # NOTE: Interleaved Nan values were excluded fom y_train. They are restored
+        if isinstance(series[levels[0]].index, pd.DatetimeIndex):
+            y_train_per_level = {
+                key: group.asfreq(freq) for key, group in y_train_per_level
+            }
+        else:
+            y_train_per_level = {
+                key: group.reindex(
+                    pd.RangeIndex(
+                        start=min(group.index), stop=max(group.index) + 1, step=freq
+                    )
                 )
-            )
-            for key, group in y_train_per_level
-        }
+                for key, group in y_train_per_level
+            }
 
     if forecaster.differentiation is not None:
         for level in predictions_per_level:
@@ -1465,11 +1439,12 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
                         predictions_per_level[level]["y_pred"].to_numpy()
                     )   
                 )
-                y_train_per_level[level]["y_train"] = (
-                    differentiator.inverse_transform_training(
-                        y_train_per_level[level]["y_train"].to_numpy()
+                if needs_y_train:
+                    y_train_per_level[level]["y_train"] = (
+                        differentiator.inverse_transform_training(
+                            y_train_per_level[level]["y_train"].to_numpy()
+                        )
                     )
-                )
 
     if forecaster.transformer_series is not None:
         for level in predictions_per_level:
@@ -1480,16 +1455,17 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             predictions_per_level[level]["y_pred"] = transformer.inverse_transform(
                 predictions_per_level[level][["y_pred"]]
             )
-            y_train_per_level[level]["y_train"] = transformer.inverse_transform(
-                y_train_per_level[level][["y_train"]]
-            )
+            if needs_y_train:
+                y_train_per_level[level]["y_train"] = transformer.inverse_transform(
+                    y_train_per_level[level][["y_train"]]
+                )
 
     metrics_levels = []
     for level in levels:
         if level in predictions_per_level:
             y_true = predictions_per_level[level].loc[:, 'y_true']
             y_pred = predictions_per_level[level].loc[:, 'y_pred']
-            if not ignore_y_train:
+            if needs_y_train:
                 y_train = y_train_per_level[level].loc[:, 'y_train']
             else:
                 y_train = None
@@ -1540,28 +1516,39 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
 
         # aggregation: pooling
         scaled_metrics = ['mean_absolute_scaled_error', 'root_mean_squared_scaled_error']
-        if any(name in scaled_metrics for name in metric_names):
-            list_y_train_by_level = [
-                v['y_train'].to_numpy()
-                for k, v in y_train_per_level.items()
-                if k in predictions_per_level
-            ]
         predictions_pooled = pd.concat(predictions_per_level.values())
-        y_train_pooled = pd.concat(
-            [v for k, v in y_train_per_level.items() if k in predictions_per_level]
-        )
+        if needs_y_train:
+            y_train_pooled = pd.concat(
+                [v for k, v in y_train_per_level.items() if k in predictions_per_level]
+            )
+            if any(name in scaled_metrics for name in metric_names):
+                list_y_train_by_level = [
+                    v['y_train'].to_numpy()
+                    for k, v in y_train_per_level.items()
+                    if k in predictions_per_level
+                ]
+        else:
+            y_train_pooled = None
 
         pooled = []
         y_true = predictions_pooled['y_true']
         y_pred = predictions_pooled['y_pred']
         for m, m_name in zip(metrics, metric_names):
-            if m_name in scaled_metrics:
+            if needs_y_train and m_name in scaled_metrics:
                 pooled.append(
                     m(y_true=y_true, y_pred=y_pred, y_train=list_y_train_by_level)
                 )
             else:
                 pooled.append(
-                    m(y_true=y_true, y_pred=y_pred, y_train=y_train_pooled["y_train"])
+                    m(
+                        y_true=y_true,
+                        y_pred=y_pred,
+                        y_train=(
+                            y_train_pooled["y_train"]
+                            if y_train_pooled is not None
+                            else None
+                        ),
+                    )
                 )
         pooled = pd.DataFrame([pooled], columns=metric_names)
         pooled['levels'] = 'pooling'

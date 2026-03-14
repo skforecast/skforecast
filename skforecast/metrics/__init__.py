@@ -3,6 +3,7 @@ from .metrics import (
     root_mean_squared_scaled_error,
     symmetric_mean_absolute_percentage_error,
     add_y_train_argument,
+    any_metric_needs_y_train,
     crps_from_predictions,
     crps_from_quantiles,
     calculate_coverage,

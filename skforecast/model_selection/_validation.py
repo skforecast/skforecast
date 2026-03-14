@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed, cpu_count
 from tqdm.auto import tqdm
-from ..metrics import add_y_train_argument, _get_metric
+from ..metrics import add_y_train_argument, any_metric_needs_y_train, _get_metric
 from ..exceptions import LongTrainingWarning, IgnoredArgumentWarning
 from ..model_selection._split import TimeSeriesFold
 from ..model_selection._utils import (
@@ -591,19 +591,21 @@ def _backtesting_forecaster(
 
     backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
 
-    train_indexes = []
-    for i, fold in enumerate(folds):
-        fit_fold = fold[-1]
-        if i == 0 or fit_fold:
-            # NOTE: When using a scaled metric, `y_train` doesn't include the
-            # first window_size observations used to create the predictors and/or
-            # rolling features.
-            train_iloc_start = fold[1][0] + window_size
-            train_iloc_end = fold[1][1]
-            train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
-    
-    train_indexes = np.unique(np.concatenate(train_indexes))
-    y_train = y.iloc[train_indexes]
+    if any_metric_needs_y_train(metrics):
+        train_indexes = []
+        for i, fold in enumerate(folds):
+            fit_fold = fold[-1]
+            if i == 0 or fit_fold:
+                # NOTE: When using a scaled metric, `y_train` doesn't include the
+                # first window_size observations used to create the predictors and/or
+                # rolling features.
+                train_iloc_start = fold[1][0] + window_size
+                train_iloc_end = fold[1][1]
+                train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
+        train_indexes = np.unique(np.concatenate(train_indexes))
+        y_train = y.iloc[train_indexes]
+    else:
+        y_train = None
 
     backtest_predictions_for_metrics = backtest_predictions
     if overlapping_folds:
@@ -2022,16 +2024,19 @@ def _backtesting_stats(
         estimator_names_ = [result[1] for result in results]
         backtest_predictions['estimator_params'] = np.concatenate(estimator_names_)
 
-    train_indexes = []
-    for i, fold in enumerate(folds):
-        fit_fold = fold[-1]
-        if i == 0 or fit_fold:
-            train_iloc_start = fold[1][0]
-            train_iloc_end = fold[1][1]
-            train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
-    
-    train_indexes = np.unique(np.concatenate(train_indexes))
-    y_train = y.iloc[train_indexes]
+    if any_metric_needs_y_train(metrics):
+        train_indexes = []
+        for i, fold in enumerate(folds):
+            fit_fold = fold[-1]
+            if i == 0 or fit_fold:
+                train_iloc_start = fold[1][0]
+                train_iloc_end = fold[1][1]
+                train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
+        
+        train_indexes = np.unique(np.concatenate(train_indexes))
+        y_train = y.iloc[train_indexes]
+    else:
+        y_train = None
 
     backtest_predictions_for_metrics = backtest_predictions
     if overlapping_folds:
