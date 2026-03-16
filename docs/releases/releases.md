@@ -27,9 +27,9 @@ The main changes in this release are:
 
 **Added**
 
-+ Added <code>[TimeSeriesSplitter]</code> class to the experimental module. This class provides a flexible way to split time series data into training and testing sets while respecting temporal order and allowing for various configurations of train/test sizes, gaps, and strides ([#1117](https://github.com/skforecast/skforecast/pull/1117)).
-
 + Added machine-readable AI context files (`llms.txt`, `llms-full.txt`) following the [llmstxt.org](https://llmstxt.org) spec, automatic IDE integration (`.github/copilot-instructions.md`, `AGENTS.md`), 12 workflow skills in `skills/`, and a generation script (`tools/ai/generate_ai_context_files.py`) to keep all derived files in sync. [User guide](../quick-start/ai-assisted-forecasting.md)
+
++ Added <code>[TimeSeriesSplitter]</code> class to the experimental module. This class provides a flexible way to split time series data into training and testing sets while respecting temporal order and allowing for various configurations of train/test sizes, gaps, and strides ([#1117](https://github.com/skforecast/skforecast/pull/1117)).
 
 
 **Changed**
