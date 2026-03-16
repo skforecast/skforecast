@@ -1766,14 +1766,19 @@ class ForecasterRecursive(ForecasterBase):
 
         """
 
+        if not isinstance(n_boot, (int, np.integer)) or n_boot < 1:
+            raise ValueError(
+                f"`n_boot` must be an integer greater than 0. Got {n_boot}."
+            )
+
         (
             last_window_values,
             exog_values,
             prediction_index,
             steps
         ) = self._create_predict_inputs(
-                steps                   = steps, 
-                last_window             = last_window, 
+                steps                   = steps,
+                last_window             = last_window,
                 exog                    = exog,
                 predict_probabilistic   = True, 
                 use_in_sample_residuals = use_in_sample_residuals,

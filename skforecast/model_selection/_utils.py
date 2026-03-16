@@ -364,8 +364,10 @@ def check_backtesting_input(
 
     if not isinstance(add_aggregated_metric, bool):
         raise TypeError("`add_aggregated_metric` must be a boolean: `True`, `False`.")
-    if not isinstance(n_boot, (int, np.integer)) or n_boot < 0:
-        raise TypeError(f"`n_boot` must be an integer greater than 0. Got {n_boot}.")
+    if not isinstance(n_boot, (int, np.integer)):
+        raise TypeError(f"`n_boot` must be an integer greater than 0. Got {type(n_boot)}.")
+    if n_boot < 1:
+        raise ValueError(f"`n_boot` must be an integer greater than 0. Got {n_boot}.")
     if not isinstance(use_in_sample_residuals, bool):
         raise TypeError("`use_in_sample_residuals` must be a boolean: `True`, `False`.")
     if not isinstance(use_binned_residuals, bool):
