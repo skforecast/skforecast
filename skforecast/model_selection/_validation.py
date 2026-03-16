@@ -1308,9 +1308,6 @@ def _backtesting_forecaster_multiseries(
                 LongTrainingWarning
             )
 
-    if show_progress:
-        folds = tqdm(folds)
-        
     externally_fitted = True if initial_train_size is None else False
     data_folds = _extract_data_folds_multiseries(
                      series             = series,
@@ -1329,6 +1326,9 @@ def _backtesting_forecaster_multiseries(
         else (s_train, lw, levels_lw, e_train, e_test, fold)
         for s_train, lw, levels_lw, e_train, e_test, fold in data_folds
     ]
+
+    if show_progress:
+        data_folds_list = tqdm(data_folds_list)
 
     kwargs_fit_predict_forecaster = {
         "forecaster": forecaster,

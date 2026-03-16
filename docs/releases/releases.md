@@ -23,6 +23,8 @@ The main changes in this release are:
 
 **Fixed**
 
++ Fixed an issue in <code>[backtesting_forecaster_multiseries]</code> where the `tqdm` progress bar completed during data preparation instead of tracking the actual fold computation, giving the false impression that backtesting had finished.
+
 
 ## 0.21.0 <small>Mar 13, 2026</small> { id="0.21.0" }
 
