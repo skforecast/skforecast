@@ -520,7 +520,7 @@ def configure_estimator_categorical_features(
     For estimators that require configuration via `set_params` (XGBoost,
     HistGradientBoosting), the estimator is modified in-place.
 
-    Supported estimators: LGBMRegressor, XGBRegressor,
+    Supported estimators: LGBMRegressor, CatBoostRegressor, XGBRegressor,
     HistGradientBoostingRegressor (sklearn).
 
     Parameters
@@ -577,17 +577,17 @@ def configure_estimator_categorical_features(
         fit_kwargs['categorical_feature'] = cat_indices
 
     # NOTE: https://github.com/catboost/catboost/issues/3064
-    # elif module == 'catboost':
-    #     # CatBoostRegressor.fit() accepts `cat_features` as a list of int
-    #     # indices.
-    #     if 'cat_features' in fit_kwargs:
-    #         warnings.warn(
-    #             "The `cat_features` argument in `fit_kwargs` is being "
-    #             "overridden by the values detected from `categorical_features`. "
-    #             f"Overridden value: {fit_kwargs['cat_features']}.",
-    #             IgnoredArgumentWarning
-    #         )
-    #     fit_kwargs['cat_features'] = cat_indices
+    elif module == 'catboost':
+        # CatBoostRegressor.fit() accepts `cat_features` as a list of int
+        # indices.
+        if 'cat_features' in fit_kwargs:
+            warnings.warn(
+                "The `cat_features` argument in `fit_kwargs` is being "
+                "overridden by the values detected from `categorical_features`. "
+                f"Overridden value: {fit_kwargs['cat_features']}.",
+                IgnoredArgumentWarning
+            )
+        fit_kwargs['cat_features'] = cat_indices
 
     elif module == 'xgboost':
         # XGBRegressor requires `feature_types` and `enable_categorical=True`
@@ -2544,6 +2544,12 @@ def _build_predict_function(
     - ``RandomForestRegressor`` (per-tree ``tree_.predict``)
     - ``DecisionTreeRegressor`` (``tree_.predict``)
 
+    For ``CatBoostRegressor`` with categorical features, the categorical column
+    indices are resolved once at build time and the array is cast to ``object``
+    dtype with those columns converted to ``int`` before each prediction call.
+    CatBoost requires integer values (not float) for categorical features when
+    the input is a numpy array.
+
     For any other estimator the standard ``estimator.predict`` method is used.
 
     Parameters
@@ -2602,6 +2608,19 @@ def _build_predict_function(
             return tree_.predict(X.astype(np.float32))[:, 0]
 
         return predict_fn
+
+    if estimator_name == 'CatBoostRegressor':
+        # CatBoost requires integer values (not float) for categorical features
+        # when X is a numpy array. This requires casting the array to object
+        # dtype and converting the categorical columns to int before each prediction call.
+        cat_indices = np.array(estimator.get_cat_feature_indices())
+        if len(cat_indices) > 0:
+            def predict_fn(X):
+                X_obj = X.astype(object)
+                X_obj[:, cat_indices] = X_obj[:, cat_indices].astype(int)
+                return estimator.predict(X_obj).ravel()
+
+            return predict_fn
 
     # Generic fallback
     def predict_fn(X):

@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import pytest
+from catboost import CatBoostRegressor
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
@@ -368,44 +369,44 @@ def test_histgbr_fit_kwargs_not_modified():
 # ==============================================================================
 # Tests: CatBoost
 # ==============================================================================
-# def test_catboost_cat_features_added_to_fit_kwargs():
-#     """
-#     Test that CatBoostRegressor gets cat_features as a list of column
-#     indices in fit_kwargs.
-#     """
-#     estimator = CatBoostRegressor(verbose=0)
-#     features = ['lag_1', 'cat_a', 'num_1']
-#     result = configure_estimator_categorical_features(
-#         estimator=estimator,
-#         categorical_features_names_in_=['cat_a'],
-#         X_train_features_names_out_=features,
-#         fit_kwargs={}
-#     )
-#     assert result == {'cat_features': [1]}
+def test_catboost_cat_features_added_to_fit_kwargs():
+    """
+    Test that CatBoostRegressor gets cat_features as a list of column
+    indices in fit_kwargs.
+    """
+    estimator = CatBoostRegressor(verbose=0, allow_writing_files=False)
+    features = ['lag_1', 'cat_a', 'num_1']
+    result = configure_estimator_categorical_features(
+        estimator=estimator,
+        categorical_features_names_in_=['cat_a'],
+        X_train_features_names_out_=features,
+        fit_kwargs={}
+    )
+    assert result == {'cat_features': [1]}
 
 
-# def test_catboost_warning_when_overriding_cat_features_in_fit_kwargs():
-#     """
-#     Test that an IgnoredArgumentWarning is raised when the user already
-#     had cat_features in fit_kwargs and it gets overridden.
-#     """
-#     estimator = CatBoostRegressor(verbose=0)
-#     fit_kwargs = {'cat_features': [0]}
-#     features = ['lag_1', 'cat_a']
+def test_catboost_warning_when_overriding_cat_features_in_fit_kwargs():
+    """
+    Test that an IgnoredArgumentWarning is raised when the user already
+    had cat_features in fit_kwargs and it gets overridden.
+    """
+    estimator = CatBoostRegressor(verbose=0, allow_writing_files=False)
+    fit_kwargs = {'cat_features': [0]}
+    features = ['lag_1', 'cat_a']
 
-#     warn_msg = re.escape(
-#         "The `cat_features` argument in `fit_kwargs` is being "
-#         "overridden by the values detected from `categorical_features`. "
-#         f"Overridden value: {fit_kwargs['cat_features']}."
-#     )
-#     with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
-#         result = configure_estimator_categorical_features(
-#             estimator=estimator,
-#             categorical_features_names_in_=['cat_a'],
-#             X_train_features_names_out_=features,
-#             fit_kwargs=fit_kwargs
-#         )
-#     assert result == {'cat_features': [1]}
+    warn_msg = re.escape(
+        "The `cat_features` argument in `fit_kwargs` is being "
+        "overridden by the values detected from `categorical_features`. "
+        f"Overridden value: {fit_kwargs['cat_features']}."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        result = configure_estimator_categorical_features(
+            estimator=estimator,
+            categorical_features_names_in_=['cat_a'],
+            X_train_features_names_out_=features,
+            fit_kwargs=fit_kwargs
+        )
+    assert result == {'cat_features': [1]}
 
 
 # ==============================================================================
