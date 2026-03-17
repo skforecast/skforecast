@@ -1,0 +1,824 @@
+################################################################################
+#                        ForecasterFoundational                                #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
+# coding=utf-8
+
+from __future__ import annotations
+import sys
+import textwrap
+from copy import copy
+
+import pandas as pd
+from sklearn.exceptions import NotFittedError
+
+from .. import __version__
+from ..utils import (
+    check_y,
+    check_exog,
+    get_style_repr_html,
+)
+from ._foundational_model import FoundationalModel
+
+
+def _check_series_type(
+    series: pd.Series | pd.DataFrame | dict,
+) -> tuple[bool, list[str]]:
+    """
+    Validate `series` and return ``(is_multiseries, series_names)``.
+    """
+    if isinstance(series, pd.Series):
+        name = series.name if series.name is not None else 'y'
+        return False, [name]
+    elif isinstance(series, pd.DataFrame):
+        return True, series.columns.tolist()
+    elif isinstance(series, dict):
+        return True, list(series.keys())
+    else:
+        raise TypeError(
+            "`series` must be a pandas Series, a wide pandas DataFrame, or a "
+            f"dict[str, pd.Series]. Got {type(series)}."
+        )
+
+
+class ForecasterFoundational:
+    """
+    Forecaster that wraps a `FoundationalModel` for full skforecast ecosystem
+    compatibility: backtesting, model selection, etc.
+
+    Unlike ML-based forecasters, there is no training step — the underlying
+    foundational model (Chronos-2) is zero-shot. `fit` only stores the history
+    as context and records index metadata. Predictions are generated directly
+    by the model's `predict_quantiles` pipeline.
+
+    Supports both single-series and multi-series modes. Pass a `pandas.Series`
+    to `fit` for single-series forecasting or a wide `pandas.DataFrame` / a
+    `dict[str, pd.Series]` for multi-series (global-model) forecasting.
+
+    Parameters
+    ----------
+    estimator : FoundationalModel
+        A configured `FoundationalModel` instance, e.g.
+        `FoundationalModel("autogluon/chronos-2-small", context_length=512)`.
+    forecaster_id : str, int, default None
+        Name used as an identifier of the forecaster.
+
+    Attributes
+    ----------
+    estimator : FoundationalModel
+        The `FoundationalModel` instance provided by the user.
+    window_size : int
+        Number of historical observations used as context. Set to
+        `estimator.adapter.context_length` if specified, otherwise 1.
+    last_window_ : None
+        Intentionally `None` — `ForecasterFoundational` never stores training
+        data directly; the adapter's internal `_history` is used instead.
+    extended_index_ : pandas Index
+        Index of the data seen during training. For multi-series, this is the
+        index of the first series in the training data.
+    index_type_ : type
+        Type of index of the input used in training.
+    index_freq_ : str
+        Frequency of the index of the input used in training.
+    training_range_ : pandas Index or dict
+        First and last values of the index of the data used during training.
+        `pandas.Index` in single-series mode; `dict[str, pandas.Index]` in
+        multi-series mode.
+    series_name_in_ : str or None
+        Name of the series provided during training (single-series mode only).
+        `None` in multi-series mode.
+    series_names_in_ : list of str
+        Names of all series seen during training. In single-series mode this
+        is a one-element list `[series_name_in_]`.
+    exog_in_ : bool
+        `True` if the forecaster has been trained with exogenous variables.
+    exog_names_in_ : list
+        Names of the exogenous variables used during training.
+    exog_type_in_ : type
+        Type of exogenous variable/s used in training.
+    fit_date : str
+        Date of last fit.
+    is_fitted : bool
+        Tag to identify if the forecaster has been fitted (trained).
+    creation_date : str
+        Date of creation.
+    skforecast_version : str
+        Version of skforecast library used to create the forecaster.
+    python_version : str
+        Version of python used to create the forecaster.
+    forecaster_id : str, int
+        Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
+
+    """
+
+    def __init__(
+        self,
+        estimator: FoundationalModel,
+        forecaster_id: str | int | None = None,
+    ) -> None:
+
+        if not isinstance(estimator, FoundationalModel):
+            raise TypeError(
+                f"`estimator` must be a `FoundationalModel` instance. "
+                f"Got {type(estimator)}."
+            )
+
+        self.estimator     = estimator
+        self.forecaster_id = forecaster_id
+
+        # window_size: used by backtesting to slice the correct context window.
+        self.window_size = (
+            estimator.adapter.context_length
+            if estimator.adapter.context_length is not None
+            else 1
+        )
+
+        # Attributes set at fit time.
+        self.last_window_     = None   # intentionally None — adapter stores history
+        self.extended_index_  = None
+        self.index_type_      = None
+        self.index_freq_      = None
+        self.training_range_  = None
+        self.series_name_in_  = None   # str in single-series mode, None in multi-series
+        self.series_names_in_ = None   # list[str] always set after fit
+        self._is_multiseries  = False
+        self.exog_in_         = False
+        self.exog_names_in_   = None
+        self.exog_type_in_    = None
+        self.is_fitted        = False
+        self.fit_date         = None
+
+        # Metadata.
+        self.creation_date      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
+        self.skforecast_version = __version__
+        self.python_version     = sys.version.split(" ")[0]
+
+        self.__skforecast_tags__ = {
+            "library": "skforecast",
+            "forecaster_name": "ForecasterFoundational",
+            "forecaster_task": "regression",
+            "forecasting_scope": "single-series|multi-series",
+            "forecasting_strategy": "foundational",
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types_series": [
+                "pandas.Series",
+                "pandas.DataFrame",
+                "dict[str, pandas.Series]",
+            ],
+            "supports_exog": True,
+            "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
+            "handles_missing_values_series": False,
+            "handles_missing_values_exog": False,
+
+            "supports_lags": False,
+            "supports_window_features": False,
+            "supports_transformer_series": False,
+            "supports_transformer_exog": False,
+            "supports_weight_func": False,
+            "supports_differentiation": False,
+
+            "prediction_types": ["point", "interval", "quantiles"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["quantile_native"],
+            "handles_binned_residuals": False,
+        }
+
+    def __repr__(self) -> str:
+        """
+        Information displayed when a ForecasterFoundational object is printed.
+        """
+
+        exog_names_in_ = None
+        if self.exog_names_in_ is not None:
+            names = copy(self.exog_names_in_)
+            if len(names) > 50:
+                names = names[:50] + ["..."]
+            exog_names_in_ = ", ".join(names)
+            if len(exog_names_in_) > 58:
+                exog_names_in_ = "\n    " + textwrap.fill(
+                    exog_names_in_, width=80, subsequent_indent="    "
+                )
+
+        if self.is_fitted and self._is_multiseries:
+            training_range_repr = {
+                k: v.to_list() for k, v in self.training_range_.items()
+            }
+        elif self.is_fitted:
+            training_range_repr = self.training_range_.to_list()
+        else:
+            training_range_repr = None
+
+        series_repr = self.series_names_in_ if self._is_multiseries else self.series_name_in_
+        series_label = "Series names" if self._is_multiseries else "Series name"
+
+        info = (
+            f"{'=' * len(type(self).__name__)} \n"
+            f"{type(self).__name__} \n"
+            f"{'=' * len(type(self).__name__)} \n"
+            f"Model: {self.estimator.adapter.model_id} \n"
+            f"Context length: {self.estimator.adapter.context_length} \n"
+            f"Cross learning: {self.estimator.adapter.cross_learning} \n"
+            f"{series_label}: {series_repr} \n"
+            f"Exogenous included: {self.exog_in_} \n"
+            f"Exogenous names: {exog_names_in_} \n"
+            f"Training range: {training_range_repr} \n"
+            f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
+            f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
+            f"Creation date: {self.creation_date} \n"
+            f"Last fit date: {self.fit_date} \n"
+            f"Skforecast version: {self.skforecast_version} \n"
+            f"Python version: {self.python_version} \n"
+            f"Forecaster id: {self.forecaster_id} \n"
+        )
+
+        return info
+
+    def _repr_html_(self) -> str:
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+
+        style, unique_id = get_style_repr_html(self.is_fitted)
+
+        exog_names_html = None
+        if self.exog_names_in_ is not None:
+            names = copy(self.exog_names_in_)
+            if len(names) > 50:
+                names = names[:50] + ["..."]
+            exog_names_html = "".join(f"<li>{n}</li>" for n in names)
+
+        if self.is_fitted and self._is_multiseries:
+            training_range_html = "".join(
+                f"<li><strong>{k}:</strong> {v.to_list()}</li>"
+                for k, v in self.training_range_.items()
+            )
+            training_range_html = f"<ul>{training_range_html}</ul>"
+        elif self.is_fitted:
+            training_range_html = str(self.training_range_.to_list())
+        else:
+            training_range_html = "Not fitted"
+
+        if self._is_multiseries:
+            series_label_html = "Series names"
+            series_value_html = str(self.series_names_in_)
+        else:
+            series_label_html = "Series name"
+            series_value_html = str(self.series_name_in_)
+
+        content = f"""
+        <div class="container-{unique_id}">
+            <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Model:</strong> {self.estimator.adapter.model_id}</li>
+                    <li><strong>Context length:</strong> {self.estimator.adapter.context_length}</li>
+                    <li><strong>Window size:</strong> {self.window_size}</li>
+                    <li><strong>{series_label_html}:</strong> {series_value_html}</li>
+                    <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
+                    <li><strong>Creation date:</strong> {self.creation_date}</li>
+                    <li><strong>Last fit date:</strong> {self.fit_date}</li>
+                    <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
+                    <li><strong>Python version:</strong> {self.python_version}</li>
+                    <li><strong>Forecaster id:</strong> {self.forecaster_id}</li>
+                </ul>
+            </details>
+            <details>
+                <summary>Exogenous Variables</summary>
+                <ul>
+                    {exog_names_html}
+                </ul>
+            </details>
+            <details>
+                <summary>Training Information</summary>
+                <ul>
+                    <li><strong>Training range:</strong> {training_range_html}</li>
+                    <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index frequency:</strong> {self.index_freq_ if self.is_fitted else 'Not fitted'}</li>
+                </ul>
+            </details>
+            <details>
+                <summary>Model Parameters</summary>
+                <ul>
+                    <li><strong>cross_learning:</strong> {self.estimator.adapter.cross_learning}</li>
+                    <li><strong>predict_kwargs:</strong> {self.estimator.adapter.predict_kwargs}</li>
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{__version__}/api/forecasterfoundational.html">&#128712 <strong>API Reference</strong></a>
+            </p>
+        </div>
+        """
+
+        return style + content
+
+    def fit(
+        self,
+        series: pd.Series | pd.DataFrame | dict[str, pd.Series],
+        exog: (
+            pd.Series
+            | pd.DataFrame
+            | dict[str, pd.Series | pd.DataFrame | None]
+            | None
+        ) = None,
+    ) -> ForecasterFoundational:
+        """
+        Fit the forecaster.
+
+        Stores index metadata and delegates history storage to the underlying
+        adapter. No model training occurs — the foundational model is zero-shot.
+
+        Parameters
+        ----------
+        series : pandas Series, pandas DataFrame, or dict of pandas Series
+            Training time series.
+
+            - `pandas.Series` — single-series mode.
+            - Wide `pandas.DataFrame` (one column per series) — multi-series
+              mode.
+            - `dict[str, pd.Series]` — multi-series mode.
+        exog : pandas Series, pandas DataFrame, dict, default None
+            Historical exogenous variables aligned to `series`. These map to
+            `past_covariates` in the Chronos-2 input at prediction time.
+
+            In single-series mode: `pd.Series` or `pd.DataFrame` aligned to
+            `series`.
+
+            In multi-series mode: a `dict[str, pd.Series | pd.DataFrame | None]`
+            with one entry per series, or a single `pd.Series` / `pd.DataFrame`
+            broadcast to all series.
+
+        Returns
+        -------
+        self : ForecasterFoundational
+
+        """
+
+        # Reset fit-time state so re-fitting always starts clean.
+        self.last_window_     = None
+        self.extended_index_  = None
+        self.index_type_      = None
+        self.index_freq_      = None
+        self.training_range_  = None
+        self.series_name_in_  = None
+        self.series_names_in_ = None
+        self._is_multiseries  = False
+        self.exog_in_         = False
+        self.exog_names_in_   = None
+        self.exog_type_in_    = None
+        self.is_fitted        = False
+        self.fit_date         = None
+
+        is_multiseries, series_names = _check_series_type(series)
+
+        if not is_multiseries:
+            # Single-series validation path.
+            check_y(y=series)
+            if exog is not None:
+                check_exog(exog=exog)
+                if len(exog) != len(series):
+                    raise ValueError(
+                        f"`exog` must have same number of samples as `series`. "
+                        f"length `exog`: ({len(exog)}), "
+                        f"length `series`: ({len(series)})"
+                    )
+                self.exog_in_       = True
+                self.exog_type_in_  = type(exog)
+                self.exog_names_in_ = (
+                    exog.columns.to_list()
+                    if isinstance(exog, pd.DataFrame)
+                    else [exog.name]
+                )
+            # Delegate to adapter.
+            self.estimator.fit(series=series, exog=exog)
+            # Store single-series metadata.
+            self.series_name_in_  = series_names[0]
+            self.series_names_in_ = series_names
+            self.training_range_  = series.index[[0, -1]]
+            self.index_type_      = type(series.index)
+            self.extended_index_  = series.index
+            if isinstance(series.index, pd.DatetimeIndex):
+                self.index_freq_ = series.index.freqstr
+            else:
+                self.index_freq_ = series.index.step
+        else:
+            # Multi-series validation and metadata.
+            if exog is not None:
+                self.exog_in_      = True
+                self.exog_type_in_ = type(exog)
+                if isinstance(exog, dict):
+                    # Collect all exog column names across all series.
+                    all_names: list[str] = []
+                    for e in exog.values():
+                        if e is not None:
+                            cols = (
+                                e.columns.to_list()
+                                if isinstance(e, pd.DataFrame)
+                                else [e.name]
+                            )
+                            for c in cols:
+                                if c not in all_names:
+                                    all_names.append(c)
+                    self.exog_names_in_ = all_names
+                else:
+                    self.exog_names_in_ = (
+                        exog.columns.to_list()
+                        if isinstance(exog, pd.DataFrame)
+                        else [exog.name]
+                    )
+            # Delegate to adapter.
+            self.estimator.fit(series=series, exog=exog)
+            # Store multi-series metadata.
+            self._is_multiseries  = True
+            self.series_name_in_  = None
+            self.series_names_in_ = series_names
+            # training_range_ as dict[str, pd.Index] — one entry per series.
+            if isinstance(series, pd.DataFrame):
+                self.training_range_ = {
+                    name: series[name].index[[0, -1]] for name in series_names
+                }
+                ref_index = series.iloc[:, 0].index
+            else:  # dict
+                self.training_range_ = {
+                    name: s.index[[0, -1]] for name, s in series.items()
+                }
+                ref_index = next(iter(series.values())).index
+            self.index_type_     = type(ref_index)
+            self.extended_index_ = ref_index
+            if isinstance(ref_index, pd.DatetimeIndex):
+                self.index_freq_ = ref_index.freqstr
+            else:
+                self.index_freq_ = ref_index.step
+
+        self.fit_date  = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
+        self.is_fitted = True
+
+        return self
+
+    def predict(
+        self,
+        steps: int,
+        levels: str | list[str] | None = None,
+        exog: (
+            pd.Series
+            | pd.DataFrame
+            | dict[str, pd.Series | pd.DataFrame | None]
+            | None
+        ) = None,
+        last_window: pd.Series | pd.DataFrame | dict[str, pd.Series] | None = None,
+        last_window_exog: (
+            pd.Series
+            | pd.DataFrame
+            | dict[str, pd.DataFrame | pd.Series | None]
+            | None
+        ) = None,
+    ) -> pd.Series | pd.DataFrame:
+        """
+        Forecast future values.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        levels : str, list of str, default None
+            Series to predict. Only used in multi-series mode. If `None`,
+            all series seen at fit time are predicted.
+        exog : pandas Series, pandas DataFrame, dict, default None
+            Future-known exogenous variables for the forecast horizon. Maps to
+            `future_covariates` in Chronos-2. Must cover exactly `steps` steps
+            for each series.
+        last_window : pandas Series, pandas DataFrame, dict, default None
+            Context override for backtesting. In single-series mode pass a
+            `pd.Series`; in multi-series mode pass a wide `pd.DataFrame` or a
+            `dict[str, pd.Series]`.
+        last_window_exog : pandas Series, pandas DataFrame, dict, default None
+            Historical exogenous variables aligned to `last_window`. Maps to
+            `past_covariates` in Chronos-2.
+
+        Returns
+        -------
+        predictions : pandas Series or pandas DataFrame
+            In single-series mode: `pd.Series` named `'pred'`.
+
+            In multi-series mode: long-format `pd.DataFrame` with columns
+            ``['level', 'pred']``. The index repeats each forecast timestamp
+            once per series (``n_steps × n_series`` rows).
+
+        """
+
+        if not self.is_fitted and last_window is None:
+            raise NotFittedError(
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `predict()`."
+            )
+
+        is_multi = self._is_multiseries or isinstance(
+            last_window, (pd.DataFrame, dict)
+        )
+
+        if is_multi:
+            # Trim broadcast exog (Series/DataFrame) — mirrors single-series behaviour.
+            # Dict exog is per-series and must reach the adapter untrimmed.
+            if exog is not None and isinstance(exog, (pd.Series, pd.DataFrame)):
+                exog = exog.iloc[:steps]
+            predictions = self.estimator.predict(
+                steps=steps,
+                exog=exog,
+                quantiles=None,
+                last_window=last_window,
+                last_window_exog=last_window_exog,
+            )
+            if levels is not None:
+                if isinstance(levels, str):
+                    levels = [levels]
+                predictions = predictions[predictions["level"].isin(levels)]
+            return predictions
+        else:
+            if exog is not None:
+                exog = exog.iloc[:steps]
+            predictions = self.estimator.predict(
+                steps=steps,
+                exog=exog,
+                quantiles=None,
+                last_window=last_window,
+                last_window_exog=last_window_exog,
+            )
+            predictions.name = 'pred'
+            return predictions
+
+    def predict_interval(
+        self,
+        steps: int,
+        interval: list[float] | tuple[float] = [10, 90],
+        levels: str | list[str] | None = None,
+        exog: (
+            pd.Series
+            | pd.DataFrame
+            | dict[str, pd.Series | pd.DataFrame | None]
+            | None
+        ) = None,
+        last_window: pd.Series | pd.DataFrame | dict[str, pd.Series] | None = None,
+        last_window_exog: (
+            pd.Series
+            | pd.DataFrame
+            | dict[str, pd.DataFrame | pd.Series | None]
+            | None
+        ) = None,
+    ) -> pd.DataFrame:
+        """
+        Forecast future values with prediction intervals.
+
+        Prediction intervals are derived directly from Chronos-2's native
+        quantile output — no bootstrapping or residual estimation is used.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        interval : list, tuple, default [10, 90]
+            Confidence of the prediction interval. Sequence of two percentiles
+            `[lower, upper]`, e.g. `[10, 90]` for an 80 % interval.
+            Values must be between 0 and 100 inclusive.
+        levels : str, list of str, default None
+            Series to predict. Only used in multi-series mode. If `None`,
+            all series seen at fit time are predicted.
+        exog : pandas Series, pandas DataFrame, dict, default None
+            Future-known exogenous variables (`future_covariates`).
+        last_window : pandas Series, pandas DataFrame, dict, default None
+            Context override for backtesting.
+        last_window_exog : pandas Series, pandas DataFrame, dict, default None
+            Historical exog aligned to `last_window`.
+
+        Returns
+        -------
+        predictions : pandas DataFrame
+            In single-series mode: columns `['pred', 'lower_bound', 'upper_bound']`.
+
+            In multi-series mode: long-format columns
+            ``['level', 'pred', 'lower_bound', 'upper_bound']``.
+
+        """
+
+        if not self.is_fitted and last_window is None:
+            raise NotFittedError(
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `predict_interval()`."
+            )
+
+        if len(interval) != 2:
+            raise ValueError(
+                f"`interval` must be a sequence of exactly two values [lower, upper]. "
+                f"Got {len(interval)} values."
+            )
+        lower_pct, upper_pct = float(interval[0]), float(interval[1])
+        if not (0 <= lower_pct < upper_pct <= 100):
+            raise ValueError(
+                f"`interval` values must satisfy 0 <= lower < upper <= 100. "
+                f"Got [{lower_pct}, {upper_pct}]."
+            )
+
+        lower_q = lower_pct / 100
+        upper_q = upper_pct / 100
+        # Always include the median (0.5) so 'pred' is the central forecast.
+        quantiles = sorted({lower_q, 0.5, upper_q})
+
+        is_multi = self._is_multiseries or isinstance(
+            last_window, (pd.DataFrame, dict)
+        )
+
+        if is_multi:
+            if exog is not None and isinstance(exog, (pd.Series, pd.DataFrame)):
+                exog = exog.iloc[:steps]
+            df = self.estimator.predict(
+                steps=steps,
+                exog=exog,
+                quantiles=quantiles,
+                last_window=last_window,
+                last_window_exog=last_window_exog,
+            )
+            if levels is not None:
+                if isinstance(levels, str):
+                    levels = [levels]
+                df = df[df["level"].isin(levels)]
+            result = pd.DataFrame(index=df.index)
+            result['level']       = df['level']
+            result['pred']        = df[f'q_{0.5}']
+            result['lower_bound'] = df[f'q_{lower_q}']
+            result['upper_bound'] = df[f'q_{upper_q}']
+            return result
+        else:
+            if exog is not None:
+                exog = exog.iloc[:steps]
+            df = self.estimator.predict(
+                steps=steps,
+                exog=exog,
+                quantiles=quantiles,
+                last_window=last_window,
+                last_window_exog=last_window_exog,
+            )
+            result = pd.DataFrame(index=df.index)
+            result['pred']        = df[f'q_{0.5}']
+            result['lower_bound'] = df[f'q_{lower_q}']
+            result['upper_bound'] = df[f'q_{upper_q}']
+            return result
+
+    def predict_quantiles(
+        self,
+        steps: int,
+        quantiles: list[float] | tuple[float] = [0.1, 0.5, 0.9],
+        levels: str | list[str] | None = None,
+        exog: (
+            pd.Series
+            | pd.DataFrame
+            | dict[str, pd.Series | pd.DataFrame | None]
+            | None
+        ) = None,
+        last_window: pd.Series | pd.DataFrame | dict[str, pd.Series] | None = None,
+        last_window_exog: (
+            pd.Series
+            | pd.DataFrame
+            | dict[str, pd.DataFrame | pd.Series | None]
+            | None
+        ) = None,
+    ) -> pd.DataFrame:
+        """
+        Forecast future values at specified quantile levels.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        quantiles : list of float, default [0.1, 0.5, 0.9]
+            Quantile levels to forecast. Values must be in the range (0, 1).
+        levels : str, list of str, default None
+            Series to predict. Only used in multi-series mode. If `None`,
+            all series seen at fit time are predicted.
+        exog : pandas Series, pandas DataFrame, dict, default None
+            Future-known exogenous variables (`future_covariates`).
+        last_window : pandas Series, pandas DataFrame, dict, default None
+            Context override for backtesting.
+        last_window_exog : pandas Series, pandas DataFrame, dict, default None
+            Historical exog aligned to `last_window`.
+
+        Returns
+        -------
+        predictions : pandas DataFrame
+            In single-series mode: columns ``q_0.1``, ``q_0.5``, ``q_0.9``, etc.
+
+            In multi-series mode: long-format columns
+            ``['level', 'q_0.1', 'q_0.5', ...]``.
+
+        """
+
+        if not self.is_fitted and last_window is None:
+            raise NotFittedError(
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `predict_quantiles()`."
+            )
+
+        is_multi = self._is_multiseries or isinstance(
+            last_window, (pd.DataFrame, dict)
+        )
+
+        if is_multi:
+            if exog is not None and isinstance(exog, (pd.Series, pd.DataFrame)):
+                exog = exog.iloc[:steps]
+            predictions = self.estimator.predict(
+                steps=steps,
+                exog=exog,
+                quantiles=list(quantiles),
+                last_window=last_window,
+                last_window_exog=last_window_exog,
+            )
+            if levels is not None:
+                if isinstance(levels, str):
+                    levels = [levels]
+                predictions = predictions[predictions["level"].isin(levels)]
+            return predictions
+        else:
+            if exog is not None:
+                exog = exog.iloc[:steps]
+            return self.estimator.predict(
+                steps=steps,
+                exog=exog,
+                quantiles=list(quantiles),
+                last_window=last_window,
+                last_window_exog=last_window_exog,
+            )
+
+    def set_params(self, params: dict) -> None:
+        """
+        Set new values to the parameters of the underlying adapter.
+
+        After calling this method, the forecaster is reset to an unfitted state.
+        The `fit` method must be called before prediction.
+
+        Parameters
+        ----------
+        params : dict
+            Parameter names and their new values. Valid keys correspond to
+            init parameters of `Chronos2Adapter`: `context_length`,
+            `predict_kwargs`, `device_map`, `torch_dtype`,
+            `cross_learning`.
+
+        Returns
+        -------
+        None
+
+        """
+
+        allowed = {'context_length', 'predict_kwargs', 'device_map', 'torch_dtype', 'cross_learning'}
+        invalid = set(params.keys()) - allowed
+        if invalid:
+            raise ValueError(
+                f"Invalid parameter(s): {invalid}. "
+                f"Allowed parameters are: {allowed}."
+            )
+
+        # If device or dtype changes, the cached pipeline must be reloaded.
+        pipeline_params = {'device_map', 'torch_dtype'}
+        if params.keys() & pipeline_params:
+            self.estimator.adapter._pipeline = None
+
+        for key, value in params.items():
+            setattr(self.estimator.adapter, key, value)
+
+        # Sync window_size in case context_length changed.
+        self.window_size = (
+            self.estimator.adapter.context_length
+            if self.estimator.adapter.context_length is not None
+            else 1
+        )
+
+        # Invalidate fit state.
+        self.is_fitted        = False
+        self.fit_date         = None
+        self.training_range_  = None
+        self.index_type_      = None
+        self.index_freq_      = None
+        self.last_window_     = None
+        self.extended_index_  = None
+        self.series_name_in_  = None
+        self.series_names_in_ = None
+        self._is_multiseries  = False
+        self.exog_in_         = False
+        self.exog_names_in_   = None
+        self.exog_type_in_    = None
+
+    def summary(self) -> None:
+        """
+        Show forecaster information.
+
+        Returns
+        -------
+        None
+
+        """
+
+        print(self)

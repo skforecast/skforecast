@@ -413,7 +413,9 @@ class FoundationalModel:
 
 ### 4.2 `skforecast/foundational/_forecaster_foundational.py` — **NEW FILE**
 
-Full skforecast-compatible forecaster. Structural reference: `ForecasterStats` in `skforecast/recursive/_forecaster_stats.py`.
+Full skforecast-compatible forecaster. Primary structural reference: `ForecasterStats` in `skforecast/recursive/_forecaster_stats.py`.
+
+**Review against `ForecasterRecursive`:** Only one thing from `ForecasterRecursive` is relevant and already included in this plan — `predict_quantiles` (Chronos-2 is quantile-native). Everything else (`predict_bootstrapping`, `set_out_sample_residuals`, `lags`, `window_features`, `differentiation`) is inapplicable. `transformer_y` / `transformer_exog` are intentionally excluded: Chronos-2 operates on raw values without an sklearn preprocessing pipeline.
 
 ```python
 class ForecasterFoundational:
@@ -446,11 +448,16 @@ self.window_size: int              # = estimator.adapter.context_length or 1
 
 # Set after fit
 self.is_fitted: bool = False
-self.fitted_date: str | None = None
+self.fit_date: str | None = None               # renamed from fitted_date → matches ForecasterStats
 self.training_range_: pd.Index | None = None   # [first_date, last_date]
 self.last_window_: None = None                 # intentionally None — never stored
+self.extended_index_: pd.Index | None = None   # tracks index seen beyond training (needed for last_window backtesting)
 self.index_type_: type | None = None
 self.index_freq_: str | pd.offsets.DateOffset | None = None
+self.series_name_in_: str | None = None        # name of series used in training
+self.exog_in_: bool = False                    # True if exog was used during training
+self.exog_names_in_: list[str] | None = None   # exog column names seen at fit
+self.exog_type_in_: type | None = None         # type of exog (Series or DataFrame)
 
 # skforecast tags
 self.__skforecast_tags__ = {
@@ -476,7 +483,9 @@ def fit(self, series: pd.Series, exog: pd.DataFrame | pd.Series | None = None) -
     stores the history for context-window purposes.
     """
     # validate series, exog
-    # store: training_range_, index_type_, index_freq_, is_fitted, fitted_date
+    # store: training_range_, extended_index_, index_type_, index_freq_,
+    #         series_name_in_, exog_in_, exog_names_in_, exog_type_in_,
+    #         is_fitted, fit_date
     # call self.estimator.fit(series, exog)
     return self
 
@@ -512,8 +521,11 @@ def predict_quantiles(
 ) -> pd.DataFrame:
     """Returns DataFrame with columns q_0.1, q_0.5, ..."""
 
+def summary(self) -> None:
+    """Show forecaster information (delegates to print(self))."""
+
 def __repr__(self) -> str: ...
-def __repr_html__(self) -> str: ...
+def _repr_html_(self) -> str: ...  # note: underscore prefix, not __repr_html__
 ```
 
 ---
@@ -705,14 +717,16 @@ assert len(pred) == 12
 ### Phase 2 — Create `_forecaster_foundational.py`
 
 **Tasks:**
-- [ ] Create file with `ForecasterFoundational` class.
-- [ ] `__init__(estimator: FoundationalModel, forecaster_id=None)`: store estimator + metadata attrs + `__skforecast_tags__`; derive `window_size` from `estimator.adapter.context_length`.
-- [ ] `fit()`: validate + store index metadata + call `estimator.fit(series, exog)`.
-- [ ] `predict()`: delegate to `estimator.predict()`.
-- [ ] `predict_interval()`: delegate; format output columns.
-- [ ] `predict_quantiles()`: delegate.
-- [ ] `__repr__` / `__repr_html__`: follow `ForecasterStats` pattern.
-- [ ] `set_params()`, `get_params()` for compatibility.
+- [x] Create file with `ForecasterFoundational` class.
+- [x] `__init__(estimator: FoundationalModel, forecaster_id=None)`: store estimator + metadata attrs + `__skforecast_tags__`; derive `window_size` from `estimator.adapter.context_length`.
+- [x] `fit()`: validate + store index metadata + call `estimator.fit(series, exog)`.
+- [x] `predict()`: delegate to `estimator.predict()`.
+- [x] `predict_interval()`: delegate; format output columns.
+- [x] `predict_quantiles()`: delegate.
+- [x] `__repr__` / `_repr_html_`: follow `ForecasterStats` pattern.
+- [x] `set_params()` for compatibility.
+- [x] `summary()` — delegates to `print(self)`.
+- [x] Update `skforecast/foundational/__init__.py` to export `ForecasterFoundational`.
 
 ---
 
@@ -738,7 +752,7 @@ assert len(pred) == 12
 ### Phase 5 — Exports and Tests
 
 **Tasks:**
-- [ ] Update `skforecast/foundational/__init__.py`.
+- [x] Update `skforecast/foundational/__init__.py`.
 - [ ] Update `skforecast/model_selection/__init__.py`.
 - [ ] Create `skforecast/foundational/tests/` directory with:
   - `test_foundational_models.py`: mock `Chronos2Pipeline`, test `fit/predict/predict_quantiles`.
@@ -760,12 +774,17 @@ self.forecaster_id     = forecaster_id
 
 # Initially None, set after fit
 self.is_fitted         = False
-self.fitted_date       = None
+self.fit_date          = None   # ForecasterStats convention (not fitted_date)
 self.training_range_   = None
 self.last_window_      = None
+self.extended_index_   = None
 self.index_type_       = None
 self.index_freq_       = None
-self.window_size       = None   # set from model after fit
+self.series_name_in_   = None
+self.exog_in_          = False
+self.exog_names_in_    = None
+self.exog_type_in_     = None
+self.window_size       = None   # set from estimator.adapter.context_length at init
 ```
 
 `__skforecast_tags__` example (from `ForecasterStats`):
