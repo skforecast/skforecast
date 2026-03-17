@@ -508,6 +508,125 @@ def check_select_fit_kwargs(
     return fit_kwargs
 
 
+def configure_estimator_categorical_features(
+    estimator: object,
+    categorical_features_names_in_: list[str] | None,
+    X_train_features_names_out_: list[str],
+    fit_kwargs: dict[str, object]
+) -> dict[str, object]:
+    """
+    Configure native categorical feature support for the estimator. Returns
+    updated `fit_kwargs` with the appropriate arguments for the estimator.
+    For estimators that require configuration via `set_params` (XGBoost,
+    HistGradientBoosting), the estimator is modified in-place.
+
+    Supported estimators: LGBMRegressor, XGBRegressor,
+    HistGradientBoostingRegressor (sklearn).
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator object. If the estimator is a Pipeline, the last step is
+        used.
+    categorical_features_names_in_ : list, None
+        Names of the categorical features. If `None` or empty, any previously
+        set categorical configuration on the estimator is reset.
+    X_train_features_names_out_ : list
+        Names of all features in `X_train`, in column order.
+    fit_kwargs : dict
+        Dictionary with the arguments to pass to the `fit` method of the
+        estimator. This dictionary is updated in-place and returned.
+
+    Returns
+    -------
+    fit_kwargs : dict
+        Updated dictionary with the categorical feature arguments added for
+        the estimator's `fit` method.
+
+    """
+
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+
+    estimator_name = type(estimator).__name__
+    module = type(estimator).__module__.split('.')[0]
+
+    if not categorical_features_names_in_:
+        # Reset any previously set categorical params (from a prior fit call)
+        if module == 'xgboost':
+            estimator.set_params(feature_types=None)
+        elif module == 'sklearn' and estimator_name == 'HistGradientBoostingRegressor':
+            estimator.set_params(categorical_features='from_dtype')
+        return fit_kwargs
+
+    cat_indices = [
+        X_train_features_names_out_.index(name)
+        for name in categorical_features_names_in_
+    ]
+
+    if module == 'lightgbm':
+        # LGBMRegressor.fit() accepts `categorical_feature` as a list of
+        # int indices when X is a numpy array.
+        if 'categorical_feature' in fit_kwargs:
+            warnings.warn(
+                "The `categorical_feature` argument in `fit_kwargs` is being "
+                "overridden by the values detected from `categorical_features`. "
+                f"Overridden value: {fit_kwargs['categorical_feature']}.",
+                IgnoredArgumentWarning
+            )
+        fit_kwargs['categorical_feature'] = cat_indices
+
+    # NOTE: https://github.com/catboost/catboost/issues/3064
+    # elif module == 'catboost':
+    #     # CatBoostRegressor.fit() accepts `cat_features` as a list of int
+    #     # indices.
+    #     if 'cat_features' in fit_kwargs:
+    #         warnings.warn(
+    #             "The `cat_features` argument in `fit_kwargs` is being "
+    #             "overridden by the values detected from `categorical_features`. "
+    #             f"Overridden value: {fit_kwargs['cat_features']}.",
+    #             IgnoredArgumentWarning
+    #         )
+    #     fit_kwargs['cat_features'] = cat_indices
+
+    elif module == 'xgboost':
+        # XGBRegressor requires `feature_types` and `enable_categorical=True`
+        # set via set_params (they are constructor params, not fit params).
+        prev_feature_types = estimator.get_params().get('feature_types')
+        prev_enable_categorical = estimator.get_params().get('enable_categorical')
+        set_cat_indices = set(cat_indices)
+        feature_types = [
+            'c' if i in set_cat_indices else 'q'
+            for i in range(len(X_train_features_names_out_))
+        ]
+        estimator.set_params(
+            feature_types=feature_types, enable_categorical=True
+        )
+        if prev_feature_types is not None or prev_enable_categorical is not True:
+            warnings.warn(
+                "The estimator's `feature_types` and `enable_categorical` "
+                "parameters have been set to handle categorical features. "
+                f"Previous values: feature_types={prev_feature_types}, "
+                f"enable_categorical={prev_enable_categorical}.",
+                IgnoredArgumentWarning
+            )
+
+    elif module == 'sklearn' and estimator_name == 'HistGradientBoostingRegressor':
+        # HistGradientBoostingRegressor accepts `categorical_features` as a
+        # list of int indices via set_params (constructor param).
+        prev_categorical = estimator.get_params().get('categorical_features')
+        estimator.set_params(categorical_features=cat_indices)
+        if prev_categorical not in (None, 'from_dtype'):
+            warnings.warn(
+                "The estimator's `categorical_features` parameter has been "
+                "set to handle categorical features. Previous value: "
+                f"`categorical_features={prev_categorical}`.",
+                IgnoredArgumentWarning
+            )
+
+    return fit_kwargs
+
+
 def check_y(
     y: Any,
     series_id: str = "`y`"

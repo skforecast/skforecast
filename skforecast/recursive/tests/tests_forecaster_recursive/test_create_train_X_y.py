@@ -568,18 +568,23 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_ca
 
 @pytest.mark.parametrize(
     "categorical_features",
-    [None, 'auto', ['exog_3']],
+    [None, 'auto', ['exog_3', 'exog_4']],
     ids=lambda cf: f'categorical_features: {cf}'
 )
 def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_float_int_category(categorical_features):
     """
     Test the output of _create_train_X_y when y=pd.Series(np.arange(10)) and 
-    exog is a pandas dataframe with 3 columns of float, int, category.
+    exog is a pandas dataframe with columns of float, int, category, and int
+    (forced as categorical in explicit list). The explicit list includes
+    exog_4 (int) to verify that numeric columns can be forced as categorical.
     """
     y = pd.Series(np.arange(10), dtype=float)
-    exog = pd.DataFrame({'exog_1': pd.Series(np.arange(100, 110), dtype=float),
-                         'exog_2': pd.Series(np.arange(1000, 1010), dtype=int),
-                         'exog_3': pd.Categorical(range(100, 110))})
+    exog = pd.DataFrame({
+        'exog_1': pd.Series(np.arange(100, 110), dtype=float),
+        'exog_2': pd.Series(np.arange(1000, 1010), dtype=int),
+        'exog_3': pd.Categorical(range(100, 110)),
+        'exog_4': pd.Series(np.arange(10, 20), dtype=int),
+    })
 
     forecaster = ForecasterRecursive(
         LinearRegression(), lags=5, categorical_features=categorical_features
@@ -589,49 +594,76 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
     exog_dtypes_in = {
         'exog_1': exog['exog_1'].dtypes,
         'exog_2': exog['exog_2'].dtypes,
-        'exog_3': exog['exog_3'].dtypes
+        'exog_3': exog['exog_3'].dtypes,
+        'exog_4': exog['exog_4'].dtypes,
     }
 
     if categorical_features is None:
         # Category passes through: exog_3 keeps original values [105..109]
-        expected_X = np.array([[4., 3., 2., 1., 0., 105., 1005., 105.],
-                               [5., 4., 3., 2., 1., 106., 1006., 106.],
-                               [6., 5., 4., 3., 2., 107., 1007., 107.],
-                               [7., 6., 5., 4., 3., 108., 1008., 108.],
-                               [8., 7., 6., 5., 4., 109., 1009., 109.]])
+        expected_X = np.array([[4., 3., 2., 1., 0., 105., 1005., 105., 15.],
+                               [5., 4., 3., 2., 1., 106., 1006., 106., 16.],
+                               [6., 5., 4., 3., 2., 107., 1007., 107., 17.],
+                               [7., 6., 5., 4., 3., 108., 1008., 108., 18.],
+                               [8., 7., 6., 5., 4., 109., 1009., 109., 19.]])
         expected_cat_names = None
         expected_dtypes_out = exog_dtypes_in
-    else:
-        # OrdinalEncoder on exog_3: [100..109] -> [0..9]
-        expected_X = np.array([[4., 3., 2., 1., 0., 105., 1005., 5.],
-                               [5., 4., 3., 2., 1., 106., 1006., 6.],
-                               [6., 5., 4., 3., 2., 107., 1007., 7.],
-                               [7., 6., 5., 4., 3., 108., 1008., 8.],
-                               [8., 7., 6., 5., 4., 109., 1009., 9.]])
+    elif categorical_features == 'auto':
+        # auto: only non-numeric detected -> exog_3 encoded, exog_4 stays int
+        expected_X = np.array([[4., 3., 2., 1., 0., 105., 1005., 5., 15.],
+                               [5., 4., 3., 2., 1., 106., 1006., 6., 16.],
+                               [6., 5., 4., 3., 2., 107., 1007., 7., 17.],
+                               [7., 6., 5., 4., 3., 108., 1008., 8., 18.],
+                               [8., 7., 6., 5., 4., 109., 1009., 9., 19.]])
         expected_cat_names = ['exog_3']
         expected_dtypes_out = {
             'exog_1': exog['exog_1'].dtypes,
             'exog_2': exog['exog_2'].dtypes,
-            'exog_3': np.dtype('float64')
+            'exog_3': np.dtype('float64'),
+            'exog_4': exog['exog_4'].dtypes,
+        }
+    else:
+        # explicit: exog_3 AND exog_4 (int forced as categorical) both encoded
+        # exog_3: [100..109] -> [0..9], exog_4: [10..19] -> [0..9]
+        expected_X = np.array([[4., 3., 2., 1., 0., 105., 1005., 5., 5.],
+                               [5., 4., 3., 2., 1., 106., 1006., 6., 6.],
+                               [6., 5., 4., 3., 2., 107., 1007., 7., 7.],
+                               [7., 6., 5., 4., 3., 108., 1008., 8., 8.],
+                               [8., 7., 6., 5., 4., 109., 1009., 9., 9.]])
+        expected_cat_names = ['exog_3', 'exog_4']
+        expected_dtypes_out = {
+            'exog_1': exog['exog_1'].dtypes,
+            'exog_2': exog['exog_2'].dtypes,
+            'exog_3': np.dtype('float64'),
+            'exog_4': np.dtype('float64'),
         }
 
     np.testing.assert_allclose(results[0], expected_X)
     np.testing.assert_allclose(results[1], np.array([5., 6., 7., 8., 9.]))
     pd.testing.assert_index_equal(results[2], pd.RangeIndex(start=5, stop=10, step=1))
-    assert results[3] == ['exog_1', 'exog_2', 'exog_3']
+    assert results[3] == ['exog_1', 'exog_2', 'exog_3', 'exog_4']
     assert results[4] == expected_cat_names
     assert results[5] is None
-    assert results[6] == ['exog_1', 'exog_2', 'exog_3']
-    assert results[7] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2', 'exog_3']
+    assert results[6] == ['exog_1', 'exog_2', 'exog_3', 'exog_4']
+    assert results[7] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
     for k in results[8].keys():
         assert results[8][k] == exog_dtypes_in[k]
     for k in results[9].keys():
         assert results[9][k] == expected_dtypes_out[k]
-    if categorical_features is not None:
+    if categorical_features == 'auto':
         assert len(forecaster.categorical_encoder.categories_) == 1
         np.testing.assert_array_equal(
             forecaster.categorical_encoder.categories_[0],
             np.array([100, 101, 102, 103, 104, 105, 106, 107, 108, 109])
+        )
+    elif categorical_features is not None:
+        assert len(forecaster.categorical_encoder.categories_) == 2
+        np.testing.assert_array_equal(
+            forecaster.categorical_encoder.categories_[0],
+            np.array([100, 101, 102, 103, 104, 105, 106, 107, 108, 109])
+        )
+        np.testing.assert_array_equal(
+            forecaster.categorical_encoder.categories_[1],
+            np.array([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
         )
 
 
@@ -986,13 +1018,13 @@ def test_create_train_X_y_output_when_transformer_exog_is_make_column_transforme
     with StandardScaler only for numeric columns and a string categorical
     column passed through as remainder. With set_output(transform='pandas'),
     the category dtype is preserved and 'auto' correctly detects col_2.
-    OrdinalEncoder maps ['a'..'j'] -> [0.0..9.0].
+    OrdinalEncoder maps ['a'..'c'] -> [0.0..2.0].
     """
     y = pd.Series(np.arange(10), dtype=float)
     y.index = pd.date_range("1990-01-01", periods=10, freq='D')
     exog = pd.DataFrame({
                'col_1': [7.5, 24.4, 60.3, 57.3, 50.7, 41.4, 87.2, 47.4, 30.1, 22.3],
-               'col_2': pd.Categorical(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'])},
+               'col_2': pd.Categorical(['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'c'])},
                index=pd.date_range("1990-01-01", periods=10, freq='D')
            )
 
@@ -1010,13 +1042,13 @@ def test_create_train_X_y_output_when_transformer_exog_is_make_column_transforme
                  )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
-    # OrdinalEncoder maps ['a'..'j'] -> [0..9], col_2 values for rows 5-9 -> [5..9]
+    # OrdinalEncoder maps ['a'..'c'] -> [0..2]
     expected_X = np.array(
-        [[4., 3., 2., 1., 0., -0.06706325, 5.],
-         [5., 4., 3., 2., 1.,  2.03670162, 6.],
-         [6., 5., 4., 3., 2.,  0.20853914, 7.],
-         [7., 6., 5., 4., 3., -0.5861144 , 8.],
-         [8., 7., 6., 5., 4., -0.9443975 , 9.]]
+        [[4., 3., 2., 1., 0., -0.06706325, 2.],
+         [5., 4., 3., 2., 1.,  2.03670162, 0.],
+         [6., 5., 4., 3., 2.,  0.20853914, 1.],
+         [7., 6., 5., 4., 3., -0.5861144 , 2.],
+         [8., 7., 6., 5., 4., -0.9443975 , 2.]]
     )
 
     np.testing.assert_allclose(results[0], expected_X, atol=1e-08)

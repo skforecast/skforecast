@@ -26,6 +26,7 @@ from ..utils import (
     initialize_window_features,
     initialize_weights,    
     check_select_fit_kwargs,
+    configure_estimator_categorical_features,
     check_y,
     check_exog,
     get_exog_dtypes,
@@ -1144,9 +1145,13 @@ class ForecasterRecursive(ForecasterBase):
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
 
-        # TODO: Continue here, inject in the estimator the categorical configuration
-        # fit_kwargs = _check_estimator_supports_native_categories()
-        
+        fit_kwargs = configure_estimator_categorical_features(
+                         estimator                      = self.estimator,
+                         categorical_features_names_in_ = categorical_features_names_in_,
+                         X_train_features_names_out_    = X_train_features_names_out_,
+                         fit_kwargs                     = {**self.fit_kwargs}
+                     )
+
         sample_weight = self.create_sample_weights(X_train=train_index)
 
         if sample_weight is not None:
@@ -1154,10 +1159,10 @@ class ForecasterRecursive(ForecasterBase):
                 X             = X_train,
                 y             = y_train,
                 sample_weight = sample_weight,
-                **self.fit_kwargs
+                **fit_kwargs
             )
         else:
-            self.estimator.fit(X=X_train, y=y_train, **self.fit_kwargs)
+            self.estimator.fit(X=X_train, y=y_train, **fit_kwargs)
 
         self.X_train_window_features_names_out_ = X_train_window_features_names_out_
         self.X_train_features_names_out_ = X_train_features_names_out_
@@ -1260,6 +1265,80 @@ class ForecasterRecursive(ForecasterBase):
                     if len(v) > max_sample:
                         sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
                         self.in_sample_residuals_by_bin_[k] = sample
+   
+            if len(residuals) > 10_000:
+                residuals = residuals[
+                    rng.integers(low=0, high=len(residuals), size=10_000)
+                ]
+
+            self.in_sample_residuals_ = residuals
+
+    def _binning_in_sample_residuals_new(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        store_in_sample_residuals: bool = False,
+        random_state: int = 123
+    ) -> None:
+        """
+        Bin residuals according to the predicted value each residual is
+        associated with. First a `skforecast.preprocessing.QuantileBinner` object
+        is fitted to the predicted values. Then, residuals are binned according
+        to the predicted value each residual is associated with. Residuals are
+        stored in the forecaster object as `in_sample_residuals_` and
+        `in_sample_residuals_by_bin_`.
+
+        Optimized version that uses pure numpy operations instead of pandas
+        DataFrame + groupby.
+
+        `y_true` and `y_pred` assumed to be differentiated and or transformed
+        according to the attributes `differentiation` and `transformer_y`.
+        The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_`. The total number of residuals stored is
+        `10_000`.
+
+        Parameters
+        ----------
+        y_true : numpy ndarray
+            True values of the time series.
+        y_pred : numpy ndarray
+            Predicted values of the time series.
+        store_in_sample_residuals : bool, default False
+            If `True`, in-sample residuals will be stored in the forecaster object
+            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+            attributes).
+            If `False`, only the intervals of the bins are stored.
+        random_state : int, default 123
+            Set a seed for the random generator so that the stored sample 
+            residuals are always deterministic.
+
+        Returns
+        -------
+        None
+        
+        """
+
+        residuals = y_true - y_pred
+
+        if self._probabilistic_mode == "binned":
+            self.binner.fit(y_pred)
+            self.binner_intervals_ = self.binner.intervals_
+    
+        if store_in_sample_residuals:
+            rng = np.random.default_rng(seed=random_state)
+            if self._probabilistic_mode == "binned":
+                bins = self.binner.transform(y_pred).astype(int)
+                max_sample = 10_000 // self.binner.n_bins_
+                self.in_sample_residuals_by_bin_ = {}
+                for b in range(self.binner.n_bins_):
+                    bin_residuals = residuals[bins == b]
+                    if len(bin_residuals) == 0:
+                        continue
+                    if len(bin_residuals) > max_sample:
+                        bin_residuals = bin_residuals[
+                            rng.integers(low=0, high=len(bin_residuals), size=max_sample)
+                        ]
+                    self.in_sample_residuals_by_bin_[b] = bin_residuals
    
             if len(residuals) > 10_000:
                 residuals = residuals[
@@ -1399,6 +1478,8 @@ class ForecasterRecursive(ForecasterBase):
                        fit               = False,
                        inverse_transform = False
                    )
+
+            # TODO: Ver si es necesario checkear los tipos con la nueva gestión de las categoricas
             
             # NOTE: Only check dtypes if they are not the same as seen in training
             if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
@@ -1796,6 +1877,7 @@ class ForecasterRecursive(ForecasterBase):
                 check_inputs = check_inputs
             )
 
+        # TODO: Evaluate if delete this warning (also in other predict methods)
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", 

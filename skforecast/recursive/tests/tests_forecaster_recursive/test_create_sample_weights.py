@@ -75,7 +75,12 @@ X_train = pd.DataFrame(
           )
 
 
-def test_create_sample_weights_output():
+@pytest.mark.parametrize(
+    "X_train",
+    [X_train, X_train.index],
+    ids=lambda X_tr: f'X_train: {type(X_tr)}'
+)
+def test_create_sample_weights_output(X_train):
     """
     Test sample_weights creation.
     """
