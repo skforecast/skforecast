@@ -362,7 +362,8 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
                      lags             = 5,
                      steps            = 10, 
                      transformer_y    = None,
-                     transformer_exog = transformer_exog
+                     transformer_exog = transformer_exog,
+                     categorical_features = None
                  )
     forecaster.fit(y=y_categorical, exog=df_exog)
     results = forecaster.create_predict_X(steps=10, exog=exog_predict)

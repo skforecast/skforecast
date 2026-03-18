@@ -1601,7 +1601,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 for dtype in set(self.exog_dtypes_out_.values())
             )
             if categorical_features:
-                X_predict = X_predict.astype(self.exog_dtypes_out_)
+                X_predict = X_predict.astype(self.exog_dtypes_out_, copy=False)
 
         if self.transformer_exog is not None:
             warnings.warn(

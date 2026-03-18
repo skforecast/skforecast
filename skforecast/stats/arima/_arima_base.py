@@ -2351,11 +2351,11 @@ def _fit_css(config: _ArimaConfig) -> _FitResult:
     Reference: Hamilton (1994), *Time Series Analysis*, §5.2.
     """
     c = config
-    params = c.fixed.astype(np.float64).copy()
+    params = c.fixed.astype(np.float64, copy=False).copy()
     all_params_fixed = not np.any(c.free_param_mask)
 
     # Persistent scratch array for objective — avoids copy per call
-    _par = c.fixed.astype(np.float64).copy()
+    _par = c.fixed.astype(np.float64, copy=False).copy()
 
     def _css_objective(free_params):
         """CSS objective: ½ log(σ²) where σ² = Σeₜ² / n_eff."""
@@ -2456,7 +2456,7 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
     Jones (1980), Technometrics 22(3), pp. 389-395.
     """
     c = config
-    params = c.fixed.astype(np.float64).copy()
+    params = c.fixed.astype(np.float64, copy=False).copy()
     all_params_fixed = not np.any(c.free_param_mask)
     init = warm_start if warm_start is not None else c.init.copy()
 
@@ -2464,7 +2464,7 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
     ss_holder = [None]
 
     # Persistent scratch array for objective — avoids copy per call
-    _par = c.fixed.astype(np.float64).copy()
+    _par = c.fixed.astype(np.float64, copy=False).copy()
 
     def _ml_objective(free_params, use_transform):
         """Negative concentrated log-likelihood via Kalman filter."""
@@ -2636,7 +2636,7 @@ def _fit_css_ml(config: _ArimaConfig) -> _FitResult:
     all_params_fixed = not np.any(c.free_param_mask)
 
     # Persistent scratch array for objective — avoids copy per call
-    _par = c.fixed.astype(np.float64).copy()
+    _par = c.fixed.astype(np.float64, copy=False).copy()
 
     def _css_objective(free_params):
         """CSS objective for warm-start stage."""
