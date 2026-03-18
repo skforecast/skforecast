@@ -12,6 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.compose import make_column_transformer
+from sklearn.compose import make_column_selector
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 
@@ -208,13 +209,14 @@ def test_create_predict_inputs_when_categorical_features_native_implementation_H
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursive(
-                     estimator        = HistGradientBoostingRegressor(
-                                            categorical_features = categorical_features,
-                                            random_state         = 123
-                                        ),
-                     lags             = 5,
-                     transformer_y    = None,
-                     transformer_exog = transformer_exog
+                     estimator            = HistGradientBoostingRegressor(
+                                                categorical_features = categorical_features,
+                                                random_state         = 123
+                                            ),
+                     lags                 = 5,
+                     transformer_y        = None,
+                     transformer_exog     = transformer_exog,
+                     categorical_features = None
                  )
     forecaster.fit(y=y_categorical, exog=df_exog)
     results = forecaster._create_predict_inputs(steps=10, exog=exog_predict)
@@ -327,3 +329,114 @@ def test_create_predict_inputs_does_not_mutate_differentiator():
     # Verify differentiator state is unchanged
     assert forecaster.differentiator.last_values == last_values_after_fit
     assert forecaster.differentiator.initial_values == initial_values_after_fit
+
+
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_create_predict_inputs_when_categorical_features_auto_and_explicit_no_transformer_exog(
+    categorical_features,
+):
+    """
+    Test _create_predict_inputs when using internal categorical encoding
+    (`categorical_features='auto'` and explicit list) without `transformer_exog`.
+    This exercises the copy guard branch (`transformer_exog is None`).
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog_categorical,
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
+
+    exog_predict = df_exog.copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+
+    forecaster = ForecasterRecursive(
+                     estimator             = LinearRegression(),
+                     lags                  = 5,
+                     transformer_y         = None,
+                     transformer_exog      = None,
+                     categorical_features  = categorical_features
+                 )
+    forecaster.fit(y=y_categorical, exog=df_exog)
+    results = forecaster._create_predict_inputs(steps=10, exog=exog_predict)
+
+    expected = (
+        np.array([0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453]),
+        np.array([[0.12062867, 0.        , 0.        ],
+                  [0.8263408 , 1.        , 1.        ],
+                  [0.60306013, 2.        , 2.        ],
+                  [0.54506801, 3.        , 3.        ],
+                  [0.34276383, 4.        , 4.        ],
+                  [0.30412079, 0.        , 0.        ],
+                  [0.41702221, 1.        , 1.        ],
+                  [0.68130077, 2.        , 2.        ],
+                  [0.87545684, 3.        , 3.        ],
+                  [0.51042234, 4.        , 4.        ]]),
+        pd.RangeIndex(start=50, stop=60, step=1),
+        10
+    )
+
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
+    pd.testing.assert_index_equal(results[2], expected[2])
+    assert results[3] == expected[3]
+    assert results[4] is None
+
+
+def test_create_predict_inputs_when_categorical_features_auto_with_transformer_exog():
+    """
+    Test _create_predict_inputs when using internal categorical encoding
+    (`categorical_features='auto'`) together with `transformer_exog`
+    (StandardScaler on numeric columns). This exercises the branch where
+    copy is NOT needed because `transformer_exog` already returns a new
+    DataFrame.
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog_categorical,
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
+
+    exog_predict = df_exog.copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+
+    transformer_exog = make_column_transformer(
+                           (StandardScaler(), make_column_selector(dtype_include=np.number)),
+                           remainder='passthrough',
+                           verbose_feature_names_out=False,
+                       ).set_output(transform='pandas')
+
+    forecaster = ForecasterRecursive(
+                     estimator             = LinearRegression(),
+                     lags                  = 5,
+                     transformer_y         = None,
+                     transformer_exog      = transformer_exog,
+                     categorical_features  = 'auto'
+                 )
+    forecaster.fit(y=y_categorical, exog=df_exog)
+    results = forecaster._create_predict_inputs(steps=10, exog=exog_predict)
+
+    expected = (
+        np.array([0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453]),
+        np.array([[-1.47636391, 0.        , 0.        ],
+                  [ 1.26277054, 1.        , 1.        ],
+                  [ 0.3961342 , 2.        , 2.        ],
+                  [ 0.17104495, 3.        , 3.        ],
+                  [-0.61417373, 4.        , 4.        ],
+                  [-0.76416192, 0.        , 0.        ],
+                  [-0.325949  , 1.        , 1.        ],
+                  [ 0.69981558, 2.        , 2.        ],
+                  [ 1.45340838, 3.        , 3.        ],
+                  [ 0.03657206, 4.        , 4.        ]]),
+        pd.RangeIndex(start=50, stop=60, step=1),
+        10
+    )
+
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
+    pd.testing.assert_index_equal(results[2], expected[2])
+    assert results[3] == expected[3]
+    assert results[4] is None

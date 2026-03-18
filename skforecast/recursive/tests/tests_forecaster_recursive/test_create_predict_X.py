@@ -241,13 +241,14 @@ def test_create_predict_X_when_categorical_features_native_implementation_HistGr
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursive(
-                     estimator        = HistGradientBoostingRegressor(
-                                            categorical_features = categorical_features,
-                                            random_state         = 123
-                                        ),
-                     lags             = 5,
-                     transformer_y    = None,
-                     transformer_exog = transformer_exog
+                     estimator            = HistGradientBoostingRegressor(
+                                                categorical_features = categorical_features,
+                                                random_state         = 123
+                                            ),
+                     lags                 = 5,
+                     transformer_y        = None,
+                     transformer_exog     = transformer_exog,
+                     categorical_features = None
                  )
     forecaster.fit(y=y_categorical, exog=df_exog)
     results = forecaster.create_predict_X(steps=10, exog=exog_predict)
@@ -276,7 +277,7 @@ def test_create_predict_X_when_categorical_features_native_implementation_HistGr
                     4.        , 4.        , 0.51042234]]),
         columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_2', 'exog_3', 'exog_1'],
         index = pd.RangeIndex(start=50, stop=60, step=1)
-    )
+    ).astype({'exog_2': int, 'exog_3': int})
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -317,10 +318,11 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursive(
-                     estimator        = LGBMRegressor(verbose=-1, random_state=123),
-                     lags             = 5,
-                     transformer_y    = None,
-                     transformer_exog = transformer_exog
+                     estimator            = LGBMRegressor(verbose=-1, random_state=123),
+                     lags                 = 5,
+                     transformer_y        = None,
+                     transformer_exog     = transformer_exog,
+                     categorical_features = None
                  )
     forecaster.fit(y=y_categorical, exog=df_exog)
     results = forecaster.create_predict_X(steps=10, exog=exog_predict)
@@ -352,6 +354,128 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
     ).astype({'exog_2': int, 'exog_3': int}
     ).astype({'exog_2': 'category', 'exog_3': 'category'})
     
+    pd.testing.assert_frame_equal(results, expected)
+
+
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_create_predict_X_when_categorical_features_auto_and_explicit_no_transformer_exog(
+    categorical_features,
+):
+    """
+    Test create_predict_X when using internal categorical encoding
+    (`categorical_features='auto'` and explicit list) without `transformer_exog`.
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog_categorical,
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
+
+    exog_predict = df_exog.copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+
+    forecaster = ForecasterRecursive(
+                     estimator            = LinearRegression(),
+                     lags                 = 5,
+                     transformer_y        = None,
+                     transformer_exog     = None,
+                     categorical_features = categorical_features
+                 )
+    forecaster.fit(y=y_categorical, exog=df_exog)
+    results = forecaster.create_predict_X(steps=10, exog=exog_predict)
+
+    expected = pd.DataFrame(
+        data = np.array([
+                [0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                 0.12062867, 0.        , 0.        ],
+                [0.65529104, 0.61289453, 0.51948512, 0.98555979, 0.48303426,
+                 0.8263408 , 1.        , 1.        ],
+                [0.37029718, 0.65529104, 0.61289453, 0.51948512, 0.98555979,
+                 0.60306013, 2.        , 2.        ],
+                [0.36421596, 0.37029718, 0.65529104, 0.61289453, 0.51948512,
+                 0.54506801, 3.        , 3.        ],
+                [0.51370516, 0.36421596, 0.37029718, 0.65529104, 0.61289453,
+                 0.34276383, 4.        , 4.        ],
+                [0.56346296, 0.51370516, 0.36421596, 0.37029718, 0.65529104,
+                 0.30412079, 0.        , 0.        ],
+                [0.45986219, 0.56346296, 0.51370516, 0.36421596, 0.37029718,
+                 0.41702221, 1.        , 1.        ],
+                [0.5124963 , 0.45986219, 0.56346296, 0.51370516, 0.36421596,
+                 0.68130077, 2.        , 2.        ],
+                [0.49820168, 0.5124963 , 0.45986219, 0.56346296, 0.51370516,
+                 0.87545684, 3.        , 3.        ],
+                [0.43335453, 0.49820168, 0.5124963 , 0.45986219, 0.56346296,
+                 0.51042234, 4.        , 4.        ]]),
+        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5',
+                   'exog_1', 'exog_2', 'exog_3'],
+        index = pd.RangeIndex(start=50, stop=60, step=1)
+    )
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_create_predict_X_when_categorical_features_auto_with_transformer_exog():
+    """
+    Test create_predict_X when using internal categorical encoding
+    (`categorical_features='auto'`) together with `transformer_exog`
+    (StandardScaler on numeric columns).
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog_categorical,
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
+
+    exog_predict = df_exog.copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+
+    transformer_exog = make_column_transformer(
+                           (StandardScaler(), make_column_selector(dtype_include=np.number)),
+                           remainder='passthrough',
+                           verbose_feature_names_out=False,
+                       ).set_output(transform='pandas')
+
+    forecaster = ForecasterRecursive(
+                     estimator            = LinearRegression(),
+                     lags                 = 5,
+                     transformer_y        = None,
+                     transformer_exog     = transformer_exog,
+                     categorical_features = 'auto'
+                 )
+    forecaster.fit(y=y_categorical, exog=df_exog)
+    results = forecaster.create_predict_X(steps=10, exog=exog_predict)
+
+    expected = pd.DataFrame(
+        data = np.array([
+                [0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                 -1.47636391, 0.        , 0.        ],
+                [0.65529104, 0.61289453, 0.51948512, 0.98555979, 0.48303426,
+                  1.26277054, 1.        , 1.        ],
+                [0.37029718, 0.65529104, 0.61289453, 0.51948512, 0.98555979,
+                  0.3961342 , 2.        , 2.        ],
+                [0.36421596, 0.37029718, 0.65529104, 0.61289453, 0.51948512,
+                  0.17104495, 3.        , 3.        ],
+                [0.51370516, 0.36421596, 0.37029718, 0.65529104, 0.61289453,
+                 -0.61417373, 4.        , 4.        ],
+                [0.56346296, 0.51370516, 0.36421596, 0.37029718, 0.65529104,
+                 -0.76416192, 0.        , 0.        ],
+                [0.45986219, 0.56346296, 0.51370516, 0.36421596, 0.37029718,
+                 -0.325949  , 1.        , 1.        ],
+                [0.5124963 , 0.45986219, 0.56346296, 0.51370516, 0.36421596,
+                  0.69981558, 2.        , 2.        ],
+                [0.49820168, 0.5124963 , 0.45986219, 0.56346296, 0.51370516,
+                  1.45340838, 3.        , 3.        ],
+                [0.43335453, 0.49820168, 0.5124963 , 0.45986219, 0.56346296,
+                  0.03657206, 4.        , 4.        ]]),
+        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5',
+                   'exog_1', 'exog_2', 'exog_3'],
+        index = pd.RangeIndex(start=50, stop=60, step=1)
+    )
+
     pd.testing.assert_frame_equal(results, expected)
 
 

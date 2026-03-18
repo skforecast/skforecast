@@ -953,7 +953,7 @@ class ForecasterRecursive(ForecasterBase):
         if exog_dtypes_out_ is not None:
             X_train_dtypes = {col: float for col in X_train_features_names_out_}
             X_train_dtypes.update(exog_dtypes_out_)
-            X_train = X_train.astype(X_train_dtypes)
+            X_train = X_train.astype(X_train_dtypes, copy=False)
         
         y_train = pd.Series(
                       data  = y_train,
@@ -1145,6 +1145,8 @@ class ForecasterRecursive(ForecasterBase):
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
 
+        sample_weight = self.create_sample_weights(X_train=train_index)
+
         fit_kwargs = configure_estimator_categorical_features(
                          estimator                      = self.estimator,
                          categorical_features_names_in_ = categorical_features_names_in_,
@@ -1162,8 +1164,6 @@ class ForecasterRecursive(ForecasterBase):
             cat_idx = np.array(fit_kwargs['cat_features'])
             X_train = X_train.astype(object)
             X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
-
-        sample_weight = self.create_sample_weights(X_train=train_index)
 
         if sample_weight is not None:
             self.estimator.fit(
@@ -1214,77 +1214,6 @@ class ForecasterRecursive(ForecasterBase):
             )
 
     def _binning_in_sample_residuals(
-        self,
-        y_true: np.ndarray,
-        y_pred: np.ndarray,
-        store_in_sample_residuals: bool = False,
-        random_state: int = 123
-    ) -> None:
-        """
-        Bin residuals according to the predicted value each residual is
-        associated with. First a `skforecast.preprocessing.QuantileBinner` object
-        is fitted to the predicted values. Then, residuals are binned according
-        to the predicted value each residual is associated with. Residuals are
-        stored in the forecaster object as `in_sample_residuals_` and
-        `in_sample_residuals_by_bin_`.
-
-        `y_true` and `y_pred` assumed to be differentiated and or transformed
-        according to the attributes `differentiation` and `transformer_y`.
-        The number of residuals stored per bin is limited to 
-        `10_000 // self.binner.n_bins_`. The total number of residuals stored is
-        `10_000`.
-        **New in version 0.14.0**
-
-        Parameters
-        ----------
-        y_true : numpy ndarray
-            True values of the time series.
-        y_pred : numpy ndarray
-            Predicted values of the time series.
-        store_in_sample_residuals : bool, default False
-            If `True`, in-sample residuals will be stored in the forecaster object
-            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
-            attributes).
-            If `False`, only the intervals of the bins are stored.
-        random_state : int, default 123
-            Set a seed for the random generator so that the stored sample 
-            residuals are always deterministic.
-
-        Returns
-        -------
-        None
-        
-        """
-
-        residuals = y_true - y_pred
-
-        if self._probabilistic_mode == "binned":
-            data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
-            self.binner.fit(y_pred)
-            self.binner_intervals_ = self.binner.intervals_
-    
-        if store_in_sample_residuals:
-            rng = np.random.default_rng(seed=random_state)
-            if self._probabilistic_mode == "binned":
-                data['bin'] = self.binner.transform(y_pred).astype(int)
-                self.in_sample_residuals_by_bin_ = (
-                    data.groupby('bin')['residuals'].apply(np.array).to_dict()
-                )
-
-                max_sample = 10_000 // self.binner.n_bins_
-                for k, v in self.in_sample_residuals_by_bin_.items():
-                    if len(v) > max_sample:
-                        sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
-                        self.in_sample_residuals_by_bin_[k] = sample
-   
-            if len(residuals) > 10_000:
-                residuals = residuals[
-                    rng.integers(low=0, high=len(residuals), size=10_000)
-                ]
-
-            self.in_sample_residuals_ = residuals
-
-    def _binning_in_sample_residuals_new(
         self,
         y_true: np.ndarray,
         y_pred: np.ndarray,
@@ -1357,7 +1286,7 @@ class ForecasterRecursive(ForecasterBase):
                 ]
 
             self.in_sample_residuals_ = residuals
-        
+
     def _create_predict_inputs(
         self,
         steps: int | str | pd.Timestamp, 
@@ -1490,7 +1419,16 @@ class ForecasterRecursive(ForecasterBase):
                        inverse_transform = False
                    )
 
-            # TODO: Ver si es necesario checkear los tipos con la nueva gestión de las categoricas
+            if self.categorical_features is not None and self.categorical_features_names_in_:
+                # This copy is only necessary if `transformer_exog` is not used
+                if self.transformer_exog is None:
+                    exog = exog.copy()
+                
+                exog[self.categorical_features_names_in_] = (
+                    self.categorical_encoder.transform(
+                        exog[self.categorical_features_names_in_]
+                    )
+                )
             
             # NOTE: Only check dtypes if they are not the same as seen in training
             if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
@@ -1767,17 +1705,11 @@ class ForecasterRecursive(ForecasterBase):
                 check_inputs = check_inputs,
             )
         
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predictions = self._recursive_predict(
-                              steps              = steps,
-                              last_window_values = last_window_values,
-                              exog_values        = exog_values
-                          )
+        predictions = self._recursive_predict(
+                          steps              = steps,
+                          last_window_values = last_window_values,
+                          exog_values        = exog_values
+                      )
 
         X_predict = []
         full_predictors = np.concatenate((last_window_values, predictions))
@@ -1811,12 +1743,9 @@ class ForecasterRecursive(ForecasterBase):
                     )
         
         if self.exog_in_:
-            categorical_features = any(
-                not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
-                for dtype in set(self.exog_dtypes_out_.values())
-            )
-            if categorical_features:
-                X_predict = X_predict.astype(self.exog_dtypes_out_)
+            X_predict_dtypes = {col: float for col in self.X_train_features_names_out_}
+            X_predict_dtypes.update(self.exog_dtypes_out_)
+            X_predict = X_predict.astype(X_predict_dtypes, copy=False)
 
         if self.transformer_y is not None or self.differentiation is not None:
             warnings.warn(
@@ -1888,18 +1817,11 @@ class ForecasterRecursive(ForecasterBase):
                 check_inputs = check_inputs
             )
 
-        # TODO: Evaluate if delete this warning (also in other predict methods)
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predictions = self._recursive_predict(
-                              steps              = steps,
-                              last_window_values = last_window_values,
-                              exog_values        = exog_values
-                          )
+        predictions = self._recursive_predict(
+                          steps              = steps,
+                          last_window_values = last_window_values,
+                          exog_values        = exog_values
+                      )
 
         if differentiator is not None:
             predictions = differentiator.inverse_transform_next_window(predictions)
@@ -2021,20 +1943,14 @@ class ForecasterRecursive(ForecasterBase):
                 rng.integers(low=0, high=len(residuals), size=(steps, n_boot))
             ]
         
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            boot_predictions = self._recursive_predict_bootstrapping(
-                steps                = steps,
-                last_window_values   = last_window_values,
-                exog_values          = exog_values,
-                sampled_residuals    = sampled_residuals,
-                use_binned_residuals = use_binned_residuals,
-                n_boot               = n_boot
-            )
+        boot_predictions = self._recursive_predict_bootstrapping(
+            steps                = steps,
+            last_window_values   = last_window_values,
+            exog_values          = exog_values,
+            sampled_residuals    = sampled_residuals,
+            use_binned_residuals = use_binned_residuals,
+            n_boot               = n_boot
+        )
 
         if differentiator is not None:
             boot_predictions = (
@@ -2138,17 +2054,11 @@ class ForecasterRecursive(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predictions = self._recursive_predict(
-                              steps              = steps,
-                              last_window_values = last_window_values,
-                              exog_values        = exog_values
-                          )
+        predictions = self._recursive_predict(
+                          steps              = steps,
+                          last_window_values = last_window_values,
+                          exog_values        = exog_values
+                      )
         
         if use_binned_residuals:
             correction_factor_by_bin = {
@@ -2541,27 +2451,6 @@ class ForecasterRecursive(ForecasterBase):
         self.estimator.set_params(**params)
         self.is_fitted = False
 
-    def set_fit_kwargs(
-        self, 
-        fit_kwargs: dict[str, object]
-    ) -> None:
-        """
-        Set new values for the additional keyword arguments passed to the `fit` 
-        method of the estimator.
-        
-        Parameters
-        ----------
-        fit_kwargs : dict
-            Dict of the form {"argument": new_value}.
-
-        Returns
-        -------
-        None
-        
-        """
-
-        self.fit_kwargs = check_select_fit_kwargs(self.estimator, fit_kwargs=fit_kwargs)
-
     def set_lags(
         self, 
         lags: int | list[int] | np.ndarray[int] | range[int] | None = None
@@ -2649,6 +2538,27 @@ class ForecasterRecursive(ForecasterBase):
         if self.differentiation is not None:
             self.window_size += self.differentiation
             self.differentiator.set_params(window_size=self.window_size)
+
+    def set_fit_kwargs(
+        self, 
+        fit_kwargs: dict[str, object]
+    ) -> None:
+        """
+        Set new values for the additional keyword arguments passed to the `fit` 
+        method of the estimator.
+        
+        Parameters
+        ----------
+        fit_kwargs : dict
+            Dict of the form {"argument": new_value}.
+
+        Returns
+        -------
+        None
+        
+        """
+
+        self.fit_kwargs = check_select_fit_kwargs(self.estimator, fit_kwargs=fit_kwargs)
 
     def set_in_sample_residuals(
         self,
