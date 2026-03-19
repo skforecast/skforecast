@@ -1467,6 +1467,8 @@ class ForecasterDirect(ForecasterBase):
         )
         X_train_step_features_names = X_train_features_names_out_[:n_lags + n_wf]
         if X_train_exog_names_out_ is not None:
+            # NOTE: Need here as configure_estimator_categorical_features uses it
+            self.categorical_features_names_in_ = categorical_features_names_in_
             X_train_step_features_names = (
                 X_train_step_features_names + X_train_exog_names_out_
             )
@@ -1514,7 +1516,6 @@ class ForecasterDirect(ForecasterBase):
             self.exog_names_in_ = exog_names_in_
             self.exog_dtypes_in_ = exog_dtypes_in_
             self.exog_dtypes_out_ = exog_dtypes_out_
-            self.categorical_features_names_in_ = categorical_features_names_in_
             self.X_train_exog_names_out_ = X_train_exog_names_out_
 
         if store_last_window:
