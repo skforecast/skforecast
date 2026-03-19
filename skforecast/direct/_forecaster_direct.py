@@ -1782,13 +1782,8 @@ class ForecasterDirect(ForecasterBase):
             for i, step in enumerate(steps):
                 Xs_array[i, n_features_autoreg:] = exog_values[(step - 1) * n_exog : step * n_exog]
             
-            # Convert to list of row arrays for compatibility with existing code
             Xs = [Xs_array[i:i + 1] for i in range(len(steps))]
-            
-            # HACK: This is not the best way to do it. Can have any problem
-            # if the exog_columns are not in the same order as the
-            # self.window_features_names.
-            Xs_col_names = Xs_col_names + exog.columns.to_list()
+            Xs_col_names = Xs_col_names + self.X_train_exog_names_out_
         else:
             Xs = [X_autoreg] * len(steps)
 
@@ -1801,7 +1796,6 @@ class ForecasterDirect(ForecasterBase):
         ):
             prediction_index.freq = last_window.index.freq
 
-        # HACK: Why no use self.X_train_features_names_out_ as Xs_col_names?
         return Xs, Xs_col_names, steps, prediction_index, differentiator
 
     def _direct_predict(
@@ -1836,9 +1830,7 @@ class ForecasterDirect(ForecasterBase):
 
         estimators = [self.estimators_[step] for step in steps]
         predict_fns = [_build_predict_function(est) for est in estimators]
-        predictions = np.array([
-            fn(X).item() for fn, X in zip(predict_fns, Xs)
-        ])
+        predictions = np.array([fn(X).item() for fn, X in zip(predict_fns, Xs)])
 
         return predictions
 
@@ -1910,13 +1902,8 @@ class ForecasterDirect(ForecasterBase):
                     )
         
         if self.exog_in_:
-            X_predict_dtypes = {col: float for col in self.X_train_features_names_out_}
-            exog_dtypes_direct = {
-                f"{col}_step_{i + 1}": dtype
-                for col, dtype in self.exog_dtypes_out_.items()
-                for i in range(self.max_step)
-            }
-            X_predict_dtypes.update(exog_dtypes_direct)
+            X_predict_dtypes = {col: float for col in Xs_col_names}
+            X_predict_dtypes.update(self.exog_dtypes_out_)
             X_predict = X_predict.astype(X_predict_dtypes, copy=False)
         
         if self.transformer_y is not None or self.differentiation is not None:

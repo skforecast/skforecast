@@ -2628,6 +2628,7 @@ class ForecasterRecursive(ForecasterBase):
             _,
             _,
             _,
+            _,
             X_train_features_names_out_,
             *_
         ) = self._create_train_X_y(y=y, exog=exog)

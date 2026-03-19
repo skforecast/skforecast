@@ -321,7 +321,7 @@ def test_predict_output_when_categorical_features_LGBMRegressor(categorical_feat
     # Need indices [5, 6] as X_train is a numpy array. make_column_transformer
     # reorders columns to ['exog_2', 'exog_3', 'exog_1']
     forecaster = ForecasterRecursive(
-                     estimator            = LGBMRegressor(random_state=123),
+                     estimator            = LGBMRegressor(random_state=123, verbose=-1),
                      lags                 = 5,
                      transformer_y        = None,
                      transformer_exog     = transformer_exog,
@@ -332,7 +332,7 @@ def test_predict_output_when_categorical_features_LGBMRegressor(categorical_feat
     predictions = forecaster.predict(steps=10, exog=exog_predict)
     
     forecaster_2 = ForecasterRecursive(
-                       estimator            = LGBMRegressor(random_state=123),
+                       estimator            = LGBMRegressor(random_state=123, verbose=-1),
                        lags                 = 5,
                        transformer_y        = None,
                        transformer_exog     = transformer_exog,
@@ -395,7 +395,7 @@ def test_predict_output_when_categorical_features_LGBMRegressor_auto(categorical
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursive(
-                     estimator            = LGBMRegressor(random_state=123),
+                     estimator            = LGBMRegressor(random_state=123, verbose=-1),
                      lags                 = 5,
                      transformer_y        = None,
                      transformer_exog     = transformer_exog,
@@ -406,7 +406,7 @@ def test_predict_output_when_categorical_features_LGBMRegressor_auto(categorical
     predictions = forecaster.predict(steps=10, exog=exog_predict)
     
     forecaster_2 = ForecasterRecursive(
-                       estimator            = LGBMRegressor(random_state=123),
+                       estimator            = LGBMRegressor(random_state=123, verbose=-1),
                        lags                 = 5,
                        transformer_y        = None,
                        transformer_exog     = transformer_exog,
