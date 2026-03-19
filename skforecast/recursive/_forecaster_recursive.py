@@ -273,7 +273,7 @@ class ForecasterRecursive(ForecasterBase):
         forecaster_id: str | int | None = None
     ) -> None:
         
-        self.estimator                          = copy(estimator)
+        self.estimator                          = clone(estimator)
         self.transformer_y                      = transformer_y
         self.transformer_exog                   = transformer_exog
         self.categorical_features               = categorical_features

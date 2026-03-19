@@ -244,7 +244,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         forecaster_id: str | int | None = None
     ) -> None:
         
-        self.estimator                          = copy(estimator)
+        self.estimator                          = clone(estimator)
         self.transformer_exog                   = transformer_exog
         self.weight_func                        = weight_func
         self.source_code_weight_func            = None

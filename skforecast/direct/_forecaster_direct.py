@@ -424,7 +424,7 @@ class ForecasterDirect(ForecasterBase):
         forecaster_id: str | int | None = None
     ) -> None:
         
-        self.estimator                          = copy(estimator)
+        self.estimator                          = clone(estimator)
         self.transformer_y                      = transformer_y
         self.transformer_exog                   = transformer_exog
         self.categorical_features               = categorical_features
@@ -1474,7 +1474,7 @@ class ForecasterDirect(ForecasterBase):
         results_fit = Parallel(n_jobs=self.n_jobs)(
             delayed(_fit_one_step_estimator)(
                 forecaster                  = self,
-                estimator                   = copy(self.estimator),
+                estimator                   = clone(self.estimator),
                 X_train                     = X_train,
                 y_train                     = y_train,
                 train_index                 = train_index,

@@ -388,7 +388,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         forecaster_id: str | int | None = None
     ) -> None:
 
-        self.estimator                          = copy(estimator)
+        self.estimator                          = clone(estimator)
         self.encoding                           = encoding
         self.encoder                            = None
         self.encoding_mapping_                  = {}

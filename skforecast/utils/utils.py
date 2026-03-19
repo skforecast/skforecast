@@ -554,7 +554,7 @@ def configure_estimator_categorical_features(
     if not categorical_features_names_in_:
         # Reset any previously set categorical params (from a prior fit call)
         if module == 'xgboost':
-            estimator.set_params(feature_types=None)
+            estimator.set_params(feature_types=None, enable_categorical=False)
         elif module == 'sklearn' and estimator_name == 'HistGradientBoostingRegressor':
             estimator.set_params(categorical_features='from_dtype')
         return fit_kwargs

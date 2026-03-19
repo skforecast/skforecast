@@ -332,7 +332,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         forecaster_id: str | int | None = None
     ) -> None:
         
-        self.estimator                          = copy(estimator)
+        self.estimator                          = clone(estimator)
         self.level                              = level
         self.lags_                              = None
         self.transformer_series                 = transformer_series
@@ -1527,7 +1527,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         results_fit = Parallel(n_jobs=self.n_jobs)(
             delayed(_fit_one_step_estimator)(
                 forecaster = self,
-                estimator  = copy(self.estimator),
+                estimator  = clone(self.estimator),
                 X_train    = X_train,
                 y_train    = y_train,
                 step       = step

@@ -217,7 +217,7 @@ class ForecasterStats():
         # TODO: Evaluate if include 'aggregate' parameter for multiple estimators, it
         # aggregates predictions from all estimators.
         self.estimators              = estimator
-        self.estimators_             = [copy(est) for est in self.estimators]
+        self.estimators_             = [clone(est) for est in self.estimators]
         self.estimator_ids           = self._generate_ids(self.estimators)
         self.estimator_types         = estimator_types
         self.estimator_names_        = [None] * len(self.estimators)
@@ -637,7 +637,7 @@ class ForecasterStats():
         
         """
 
-        self.estimators_             = [copy(est) for est in self.estimators]
+        self.estimators_             = [clone(est) for est in self.estimators]
         self.estimator_names_        = [None] * len(self.estimators)
         self.estimator_params_       = None
         self.last_window_            = None
