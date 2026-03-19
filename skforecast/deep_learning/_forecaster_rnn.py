@@ -43,8 +43,7 @@ from ..utils import (
     transform_dataframe,
     transform_numpy,
     transform_series,
-    check_optional_dependency,
-    initialize_estimator
+    check_optional_dependency
 )
 
 # TODO: Review in skforecast 0.21.0
@@ -106,8 +105,6 @@ class ForecasterRnn(ForecasterBase):
         Additional arguments to be passed to the `fit` method of the estimator.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : estimator or pipeline compatible with the Keras API
-        **Deprecated**, alias for `estimator`.
     
     Attributes
     ----------
@@ -237,19 +234,18 @@ class ForecasterRnn(ForecasterBase):
 
     def __init__(
         self,
+        estimator: object,
         levels: str | list[str],
         lags: int | list[int] | np.ndarray[int] | range[int],
-        estimator: object = None,
         transformer_series: object | dict[str, object] | None = MinMaxScaler(
             feature_range=(0, 1)
         ),
         transformer_exog: object | None = MinMaxScaler(feature_range=(0, 1)),
         fit_kwargs: dict[str, object] | None = None,
-        forecaster_id: str | int | None = None,
-        regressor: object = None
+        forecaster_id: str | int | None = None
     ) -> None:
         
-        self.estimator = deepcopy(initialize_estimator(estimator, regressor))
+        self.estimator = deepcopy(estimator)
         self.levels = None
         self.transformer_series = transformer_series
         self.transformer_series_ = None

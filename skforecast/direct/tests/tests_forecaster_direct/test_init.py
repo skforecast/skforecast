@@ -4,6 +4,7 @@ import re
 import pytest
 import numpy as np
 from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import OrdinalEncoder
 from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirect
 
@@ -147,3 +148,100 @@ def test_init_TypeError_when_n_jobs_not_int_or_auto(n_jobs):
         ForecasterDirect(
             estimator=LinearRegression(), steps=2, lags=2, n_jobs=n_jobs
         )
+
+
+@pytest.mark.parametrize("categorical_features", 
+                         [True, 5, 'not_auto'], 
+                         ids = lambda cf: f'categorical_features: {cf}')
+def test_init_ValueError_when_categorical_features_is_not_auto_list_or_None(categorical_features):
+    """
+    Test ValueError is raised when categorical_features is not 'auto', list, or None.
+    """
+    err_msg = re.escape(
+        f"Argument `categorical_features` must be `'auto'`, a list of "
+        f"column names, or `None`. Got {categorical_features}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        ForecasterDirect(
+            estimator            = LinearRegression(),
+            steps                = 3,
+            lags                 = 5,
+            categorical_features = categorical_features
+        )
+
+
+def test_init_ValueError_when_categorical_features_is_empty_list():
+    """
+    Test ValueError is raised when categorical_features is an empty list.
+    """
+    err_msg = re.escape(
+        "Argument `categorical_features` must not be an empty list. "
+        "Use `None` to disable categorical encoding."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        ForecasterDirect(
+            estimator            = LinearRegression(),
+            steps                = 3,
+            lags                 = 5,
+            categorical_features = []
+        )
+
+
+@pytest.mark.parametrize("categorical_features", 
+                         ['auto', ['col_1', 'col_2'], None], 
+                         ids = lambda cf: f'categorical_features: {cf}')
+def test_init_categorical_features_correctly_stored(categorical_features):
+    """
+    Test categorical_features is correctly stored when 'auto', list, or None.
+    """
+    forecaster = ForecasterDirect(
+                     estimator            = LinearRegression(),
+                     steps                = 3,
+                     lags                 = 5,
+                     categorical_features = categorical_features
+                 )
+    
+    assert forecaster.categorical_features == categorical_features
+    assert forecaster.categorical_features_names_in_ is None
+    assert isinstance(forecaster.categorical_encoder, OrdinalEncoder)
+
+
+def test_init_binner_is_created_when_binner_kwargs_is_None():
+    """
+    Test binner is initialized with the default kwargs.
+    """
+    forecaster = ForecasterDirect(
+                     estimator = LinearRegression(),
+                     steps     = 3,
+                     lags      = 5,
+                 )
+    
+    expected = {
+        'n_bins': 10, 'method': 'linear', 'subsample': 200000,
+        'random_state': 789654, 'dtype': np.float64
+    }
+
+    assert forecaster.binner.get_params() == expected
+
+
+def test_init_binner_is_created_when_binner_kwargs_is_not_None():
+    """
+    Test binner is initialized with kwargs.
+    """
+    binner_kwargs = {
+        'n_bins': 10, 'method': 'linear', 'subsample': 500,
+        'random_state': 1234, 'dtype': np.float64
+    }
+    forecaster = ForecasterDirect(
+                     estimator     = LinearRegression(),
+                     steps         = 3,
+                     lags          = 5,
+                     binner_kwargs = binner_kwargs
+                 )
+    
+    expected = {
+        'n_bins': 10, 'method': 'linear', 'subsample': 500,
+        'random_state': 1234, 'dtype': np.float64
+    }
+
+    assert forecaster.binner.get_params() == expected

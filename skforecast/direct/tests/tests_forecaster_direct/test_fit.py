@@ -6,13 +6,30 @@ from pytest import approx
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
+from catboost import CatBoostRegressor
+from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
 from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirect
 
 # Fixtures
 from .fixtures_forecaster_direct import y
 from .fixtures_forecaster_direct import exog
+
+
+def custom_weights(index):  # pragma: no cover
+    """
+    Return 0 if index is between 20 and 40 else 1.
+    """
+    weights = np.where(
+                (index >= 20) & (index <= 40),
+                0,
+                1
+              )
+    
+    return weights
 
 
 @pytest.mark.parametrize(
@@ -83,6 +100,7 @@ def test_forecaster_y_exog_features_stored():
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
     assert forecaster.X_train_direct_exog_names_out_ == X_train_direct_exog_names_out_
     assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
+    assert forecaster.categorical_features_names_in_ == []
 
 
 def test_forecaster_DatetimeIndex_index_freq_stored():
@@ -299,6 +317,45 @@ def test_fit_last_window_stored(store_last_window):
         assert forecaster.last_window_ is None
 
 
+def test_fit_model_coef_when_using_weight_func():
+    """
+    Check the value of the estimator coefs when using a `weight_func`.
+    """
+    forecaster = ForecasterDirect(
+                     estimator   = LinearRegression(),
+                     lags        = 5,
+                     steps       = 2,
+                     weight_func = custom_weights
+                 )
+    forecaster.fit(y=y)
+    results_1 = forecaster.estimators_[1].coef_
+    results_2 = forecaster.estimators_[2].coef_
+    expected_1 = np.array([-0.00121128, -0.31945658,  0.01931306,  0.01551439, -0.28076234])
+    expected_2 = np.array([-0.21397852,  0.02896657, -0.06334833, -0.16818855, -0.09102205])
+
+    np.testing.assert_almost_equal(results_1, expected_1)
+    np.testing.assert_almost_equal(results_2, expected_2)
+
+
+def test_fit_model_coef_when_not_using_weight_func():
+    """
+    Check the value of the estimator coefs when not using a `weight_func`.
+    """
+    forecaster = ForecasterDirect(
+                     estimator = LinearRegression(),
+                     lags      = 5,
+                     steps     = 2
+                 )
+    forecaster.fit(y=y)
+    results_1 = forecaster.estimators_[1].coef_
+    results_2 = forecaster.estimators_[2].coef_
+    expected_1 = np.array([ 0.16920045, -0.13759965,  0.0998036 , -0.07509307, -0.19697292])
+    expected_2 = np.array([-0.08046536,  0.07361112, -0.11008386, -0.12900694, -0.18735018])
+
+    np.testing.assert_almost_equal(results_1, expected_1)
+    np.testing.assert_almost_equal(results_2, expected_2)
+
+
 def test_fit_resets_out_sample_residuals_on_refit():
     """
     Test that out_sample_residuals_ and out_sample_residuals_by_bin_ are reset
@@ -318,3 +375,120 @@ def test_fit_resets_out_sample_residuals_on_refit():
 
     assert forecaster.out_sample_residuals_ is None
     assert forecaster.out_sample_residuals_by_bin_ is None
+
+
+# ==============================================================================
+# Tests: fit with categorical features and configure_estimator_categorical_features
+# ==============================================================================
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        CatBoostRegressor(
+            iterations=10, random_seed=123, verbose=0,
+            allow_writing_files=False
+        ),
+        LGBMRegressor(verbose=-1, random_state=123),
+        XGBRegressor(random_state=123),
+        HistGradientBoostingRegressor(random_state=123),
+    ],
+    ids=['CatBoostRegressor', 'LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_fit_configures_estimator_categorical_features(estimator):
+    """
+    Test that fit correctly configures native categorical feature support
+    for each supported estimator (LGBMRegressor, XGBRegressor,
+    HistGradientBoostingRegressor).
+    """
+    y_cat = pd.Series(np.arange(20, dtype=float), name='y')
+    exog_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float),
+        'exog_cat': pd.Categorical(range(20))
+    })
+
+    forecaster = ForecasterDirect(
+        estimator=estimator, lags=3, steps=2, categorical_features='auto'
+    )
+    forecaster.fit(y=y_cat, exog=exog_cat)
+
+    assert forecaster.is_fitted
+    assert forecaster.categorical_features_names_in_ == ['exog_cat']
+    assert 'exog_cat_step_1' in forecaster.X_train_features_names_out_
+    assert 'exog_cat_step_2' in forecaster.X_train_features_names_out_
+
+    # fit_kwargs must not be mutated
+    assert forecaster.fit_kwargs == {}
+
+
+@pytest.mark.parametrize(
+    "estimator, param_name, default_value",
+    [
+        (
+            XGBRegressor(random_state=123),
+            'feature_types',
+            None
+        ),
+        (
+            HistGradientBoostingRegressor(random_state=123),
+            'categorical_features',
+            'from_dtype'
+        ),
+    ],
+    ids=['XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_fit_resets_estimator_categorical_params_on_refit_without_categoricals(
+    estimator, param_name, default_value
+):
+    """
+    Test that fitting with categorical features and then refitting without
+    categoricals resets the estimator's categorical parameters to their
+    default values (XGBoost: feature_types=None,
+    HistGradientBoosting: categorical_features='from_dtype').
+    """
+    y_cat = pd.Series(np.arange(20, dtype=float), name='y')
+    exog_with_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float),
+        'exog_cat': pd.Categorical(['a', 'b'] * 10)
+    })
+    exog_no_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float)
+    })
+
+    forecaster = ForecasterDirect(
+        estimator=estimator, lags=3, steps=2, categorical_features='auto'
+    )
+
+    # First fit — with categoricals
+    forecaster.fit(y=y_cat, exog=exog_with_cat)
+    assert forecaster.categorical_features_names_in_ == ['exog_cat']
+
+    # Second fit — without categoricals (auto detects no categories → [])
+    forecaster.fit(y=y_cat, exog=exog_no_cat)
+    assert forecaster.categorical_features_names_in_ == []
+    assert forecaster.estimators_[1].get_params()[param_name] == default_value
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        CatBoostRegressor(
+            iterations=10, random_seed=123, verbose=0,
+            allow_writing_files=False
+        ),
+        LGBMRegressor(verbose=-1, random_state=123),
+        XGBRegressor(random_state=123),
+        HistGradientBoostingRegressor(random_state=123),
+    ],
+    ids=['CatBoostRegressor', 'LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_fit_no_categoricals_with_supported_estimators(estimator):
+    """
+    Test that fit works correctly with supported estimators when
+    categorical_features=None (no categorical encoding).
+    """
+    forecaster = ForecasterDirect(
+        estimator=estimator, lags=3, steps=2, categorical_features=None
+    )
+    forecaster.fit(y=y, exog=exog)
+
+    assert forecaster.is_fitted
+    assert forecaster.categorical_features_names_in_ is None

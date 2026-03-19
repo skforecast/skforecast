@@ -43,8 +43,7 @@ from ..utils import (
     get_style_repr_html,
     set_cpu_gpu_device,
     _build_predict_function,
-    manage_warnings,
-    initialize_estimator
+    manage_warnings    
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
@@ -109,8 +108,6 @@ class ForecasterRecursive(ForecasterBase):
         **New in version 0.14.0**
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : estimator or pipeline compatible with the scikit-learn API
-        **Deprecated**, alias for `estimator`.
     
     Attributes
     ----------
@@ -263,7 +260,7 @@ class ForecasterRecursive(ForecasterBase):
 
     def __init__(
         self,
-        estimator: object = None,
+        estimator: object,
         lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
         window_features: object | list[object] | None = None,
         transformer_y: object | None = None,
@@ -273,11 +270,10 @@ class ForecasterRecursive(ForecasterBase):
         differentiation: int | None = None,
         fit_kwargs: dict[str, object] | None = None,
         binner_kwargs: dict[str, object] | None = None,
-        forecaster_id: str | int | None = None,
-        regressor: object = None
+        forecaster_id: str | int | None = None
     ) -> None:
         
-        self.estimator                          = copy(initialize_estimator(estimator, regressor))
+        self.estimator                          = copy(estimator)
         self.transformer_y                      = transformer_y
         self.transformer_exog                   = transformer_exog
         self.categorical_features               = categorical_features
@@ -454,6 +450,7 @@ class ForecasterRecursive(ForecasterBase):
             f"Series name: {self.series_name_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
+            f"Categorical features: {self.categorical_features} \n"
             f"Transformer for y: {self.transformer_y} \n"
             f"Transformer for exog: {self.transformer_exog} \n"
             f"Weight function included: {True if self.weight_func is not None else False} \n"
@@ -503,6 +500,7 @@ class ForecasterRecursive(ForecasterBase):
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
+                    <li><strong>Categorical features:</strong> {self.categorical_features}</li>
                     <li><strong>Weight function included:</strong> {self.weight_func is not None}</li>
                     <li><strong>Differentiation order:</strong> {self.differentiation}</li>
                     <li><strong>Creation date:</strong> {self.creation_date}</li>
@@ -767,8 +765,8 @@ class ForecasterRecursive(ForecasterBase):
         exog_names_in_ = None
         exog_dtypes_in_ = None
         exog_dtypes_out_ = None
-        categorical_features_names_in_ = None
         X_train_exog_names_out_ = None
+        categorical_features_names_in_ = None
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
             exog = input_to_frame(data=exog, input_name='exog')
@@ -2629,6 +2627,7 @@ class ForecasterRecursive(ForecasterBase):
             _,
             _,
             _,
+            _,
             X_train_features_names_out_,
             *_
         ) = self._create_train_X_y(y=y, exog=exog)
@@ -2644,7 +2643,7 @@ class ForecasterRecursive(ForecasterBase):
             )
 
         self._binning_in_sample_residuals(
-            y_true                    = y_train.to_numpy(),
+            y_true                    = y_train,
             y_pred                    = self.estimator.predict(X_train).ravel(),
             store_in_sample_residuals = True,
             random_state              = random_state

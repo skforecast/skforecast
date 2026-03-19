@@ -3357,49 +3357,6 @@ def show_versions(
         return None
 
 
-# TODO: Remove regressor in 0.21.0
-def initialize_estimator(
-    estimator: object | None = None,
-    regressor: object | None = None
-) -> None:
-    """
-    Helper to handle the deprecation of 'regressor' in favor of 'estimator'.
-    Returns the valid estimator object.
-
-    Parameters
-    ----------
-    estimator : estimator or pipeline compatible with the scikit-learn API, default None
-        An instance of an estimator or pipeline compatible with the scikit-learn API.
-    regressor : estimator or pipeline compatible with the scikit-learn API, default None
-        Deprecated. An instance of an estimator or pipeline compatible with the
-        scikit-learn API.
-
-    Returns
-    -------
-    estimator : estimator or pipeline compatible with the scikit-learn API
-        The valid estimator object.
-    
-    """
-    
-    if regressor is not None:
-        warnings.warn(
-            "The `regressor` argument is deprecated and will be removed in a future "
-            "version. Please use `estimator` instead.",
-            FutureWarning,
-            stacklevel=3  # Important: to point to the user's code
-        )
-        if estimator is not None:
-            raise ValueError(
-                "Both `estimator` and `regressor` were provided. Use only `estimator`."
-            )
-        return regressor
-    
-    if estimator is None:
-        raise TypeError("__init__() missing 1 required positional argument: 'estimator'")
-    
-    return estimator
-
-
 def deepcopy_forecaster(
     forecaster: object,
     include_in_sample_residuals: bool = False,

@@ -48,8 +48,7 @@ from ..utils import (
     select_n_jobs_fit_forecaster,
     manage_warnings,
     get_style_repr_html,
-    _build_predict_function,
-    initialize_estimator
+    _build_predict_function
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..model_selection._utils import _extract_data_folds_multiseries
@@ -121,8 +120,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         skforecast.utils.select_n_jobs_fit_forecaster.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : estimator or pipeline compatible with the scikit-learn API
-        **Deprecated**, alias for `estimator`.
 
     Attributes
     ----------
@@ -320,9 +317,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     
     def __init__(
         self,
+        estimator: object,
         level: str,
         steps: int,
-        estimator: object = None,
         lags: int | list[int] | np.ndarray[int] | range[int] | dict[str, int | list] | None = None,
         window_features: object | list[object] | None = None,
         transformer_series: object | dict[str, object] | None = StandardScaler(),
@@ -332,11 +329,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         fit_kwargs: dict[str, object] | None = None,
         binner_kwargs: dict[str, object] | None = None,
         n_jobs: int | str = 'auto',
-        forecaster_id: str | int | None = None,
-        regressor: object = None
+        forecaster_id: str | int | None = None
     ) -> None:
         
-        self.estimator                          = copy(initialize_estimator(estimator, regressor))
+        self.estimator                          = copy(estimator)
         self.level                              = level
         self.lags_                              = None
         self.transformer_series                 = transformer_series

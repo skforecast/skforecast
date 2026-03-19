@@ -18,6 +18,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
 
++ <span class="badge text-bg-api-change">API Change</span> The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
+
 
 **Added**
 
@@ -25,6 +27,8 @@ The main changes in this release are:
 
 
 **Changed**
+
++ The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
 
 + Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
 

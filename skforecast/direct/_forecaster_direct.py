@@ -45,7 +45,6 @@ from ..utils import (
     get_style_repr_html,
     _build_predict_function,
     manage_warnings,
-    initialize_estimator,
     configure_estimator_categorical_features
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -54,10 +53,12 @@ from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 def _fit_one_step_estimator(
     forecaster: object,
     estimator: object,
-    X_train: pd.DataFrame,
+    X_train: np.ndarray,
     y_train: dict,
+    train_index: dict,
+    X_train_step_features_names: list[str],
     step: int
-) -> tuple:
+) -> tuple[int, object, np.ndarray | None]:
     """
     Fit a single estimator for a given step of a direct forecaster.
 
@@ -71,10 +72,14 @@ def _fit_one_step_estimator(
         Forecaster instance (ForecasterDirect or ForecasterDirectMultiVariate).
     estimator : object
         Estimator to be fitted.
-    X_train : pandas DataFrame
-        Dataframe created with the `create_train_X_y` method, first return.
+    X_train : numpy ndarray
+        Numpy array created with the `_create_train_X_y` method, first return.
     y_train : dict
-        Dict created with the `create_train_X_y` method, second return.
+        Dict created with the `_create_train_X_y` method, second return.
+    train_index : dict
+        Dict created with the `_create_train_X_y` method, third return.
+    X_train_step_features_names : list
+        Feature names for the step after filtering and removing suffix.
     step : int
         Step of the forecaster to be fitted.
 
@@ -84,25 +89,24 @@ def _fit_one_step_estimator(
         Step number.
     estimator : object
         Fitted estimator.
-    y_true_step : numpy ndarray, None
-        True values for the step (only if probabilistic mode is active).
     y_pred_step : numpy ndarray, None
         Predicted values for the step (only if probabilistic mode is active).
 
     """
 
     X_train_step, y_train_step = forecaster.filter_train_X_y_for_step(
-                                     step          = step,
-                                     X_train       = X_train,
-                                     y_train       = y_train,
-                                     remove_suffix = True
+                                     step    = step,
+                                     X_train = X_train,
+                                     y_train = y_train
                                  )
-    sample_weight = forecaster.create_sample_weights(X_train=X_train_step)
+    sample_weight = forecaster.create_sample_weights(
+                        X_train=train_index[step]
+                    )
 
     fit_kwargs = configure_estimator_categorical_features(
                      estimator                      = estimator,
                      categorical_features_names_in_ = forecaster.categorical_features_names_in_,
-                     X_train_features_names_out_    = X_train_step.columns.tolist(),
+                     X_train_features_names_out_    = X_train_step_features_names,
                      fit_kwargs                     = {**forecaster.fit_kwargs}
                  )
 
@@ -114,8 +118,8 @@ def _fit_one_step_estimator(
         and type(estimator).__name__ == 'CatBoostRegressor'
     ):
         cat_idx = np.array(fit_kwargs['cat_features'])
-        X_train_step = X_train_step.copy()
-        X_train_step.iloc[:, cat_idx] = X_train_step.iloc[:, cat_idx].astype(int)
+        X_train_step = X_train_step.astype(object)
+        X_train_step[:, cat_idx] = X_train_step[:, cat_idx].astype(int)
 
     if sample_weight is not None:
         estimator.fit(
@@ -132,13 +136,11 @@ def _fit_one_step_estimator(
         )
 
     # NOTE: This is done to save time during fit in functions such as backtesting()
-    y_true_step = None
     y_pred_step = None
     if forecaster._probabilistic_mode is not False:
-        y_true_step = y_train_step.to_numpy()
         y_pred_step = estimator.predict(X_train_step)
 
-    return step, estimator, y_true_step, y_pred_step
+    return step, estimator, y_pred_step
 
 
 class ForecasterDirect(ForecasterBase):
@@ -210,8 +212,6 @@ class ForecasterDirect(ForecasterBase):
         skforecast.utils.select_n_jobs_fit_forecaster.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : estimator or pipeline compatible with the scikit-learn API
-        **Deprecated**, alias for `estimator`.
     
     Attributes
     ----------
@@ -409,8 +409,8 @@ class ForecasterDirect(ForecasterBase):
 
     def __init__(
         self,
+        estimator: object,
         steps: int,
-        estimator: object = None,
         lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
         window_features: object | list[object] | None = None,
         transformer_y: object | None = None,
@@ -421,11 +421,10 @@ class ForecasterDirect(ForecasterBase):
         fit_kwargs: dict[str, object] | None = None,
         binner_kwargs: dict[str, object] | None = None,
         n_jobs: int | str = 'auto',
-        forecaster_id: str | int | None = None,
-        regressor: object = None
+        forecaster_id: str | int | None = None
     ) -> None:
         
-        self.estimator                          = copy(initialize_estimator(estimator, regressor))
+        self.estimator                          = copy(estimator)
         self.transformer_y                      = transformer_y
         self.transformer_exog                   = transformer_exog
         self.categorical_features               = categorical_features
@@ -633,6 +632,7 @@ class ForecasterDirect(ForecasterBase):
             f"Series name: {self.series_name_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
+            f"Categorical features: {self.categorical_features} \n"
             f"Transformer for y: {self.transformer_y} \n"
             f"Transformer for exog: {self.transformer_exog} \n"
             f"Weight function included: {True if self.weight_func is not None else False} \n"
@@ -683,6 +683,7 @@ class ForecasterDirect(ForecasterBase):
                     <li><strong>Maximum steps to predict:</strong> {self.max_step}</li>
                     <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
+                    <li><strong>Categorical features:</strong> {self.categorical_features}</li>
                     <li><strong>Weight function included:</strong> {self.weight_func is not None}</li>
                     <li><strong>Differentiation order:</strong> {self.differentiation}</li>
                     <li><strong>Creation date:</strong> {self.creation_date}</li>
@@ -855,8 +856,9 @@ class ForecasterDirect(ForecasterBase):
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None
     ) -> tuple[
-        pd.DataFrame, 
-        dict[int, pd.Series], 
+        np.ndarray, 
+        dict[int, np.ndarray], 
+        dict[int, pd.Index],
         list[str], 
         list[str],
         list[str], 
@@ -886,6 +888,8 @@ class ForecasterDirect(ForecasterBase):
         y_train : dict
             Values of the time series related to each row of `X_train` for each 
             step in the form {step: y_step_[i]}.
+        train_index : dict
+            Indexes of the time series for each step in the form {step: train_index_step_[i]}.
         exog_names_in_ : list
             Names of the exogenous variables used during training.
         categorical_features_names_in_ : list
@@ -1047,7 +1051,7 @@ class ForecasterDirect(ForecasterBase):
         len_train_index = len(train_index)
 
         X_train_lags, y_train = self._create_lags(
-            y=y_values, X_as_pandas=False, train_index=train_index
+            y=y_values, train_index=train_index
         )
         if X_train_lags is not None:
             X_train.append(X_train_lags)
@@ -1062,9 +1066,7 @@ class ForecasterDirect(ForecasterBase):
             )
             X_train_window_features, X_train_window_features_names_out_ = (
                 self._create_window_features(
-                    y           = y_window_features, 
-                    X_as_pandas = False, 
-                    train_index = train_index
+                    y = y_window_features, train_index = train_index
                 )
             )
             X_train.extend(X_train_window_features)
@@ -1094,24 +1096,19 @@ class ForecasterDirect(ForecasterBase):
         else:
             X_train = np.concatenate(X_train, axis=1)
 
-        X_train = pd.DataFrame(
-                      data    = X_train,
-                      index   = train_index,
-                      columns = X_train_features_names_out_
-                  )
-
         y_train = {
-            step: pd.Series(
-                      data  = y_train[:, step - 1], 
-                      index = y_index[self.window_size + step - 1:][:len_train_index],
-                      name  = f"y_step_{step}"
-                  )
+            step: y_train[:, step - 1] for step in self.steps
+        }
+
+        train_index = {
+            step: y_index[self.window_size + step - 1:][:len_train_index]
             for step in self.steps
         }
         
         return (
             X_train,
             y_train,
+            train_index,
             exog_names_in_,
             categorical_features_names_in_,
             X_train_exog_names_out_,
@@ -1150,43 +1147,81 @@ class ForecasterDirect(ForecasterBase):
         
         """
 
-        output = self._create_train_X_y(y=y, exog=exog)
+        (
+            X_train,
+            y_train,
+            train_index,
+            exog_names_in_,
+            categorical_features_names_in_,
+            X_train_exog_names_out_,
+            X_train_features_names_out_,
+            exog_dtypes_in_,
+            exog_dtypes_out_
+        ) = self._create_train_X_y(y=y, exog=exog)
 
-        X_train = output[0]
-        y_train = output[1]
+        X_train = pd.DataFrame(
+                      data    = X_train,
+                      index   = train_index[self.max_step],
+                      columns = X_train_features_names_out_
+                  )
+        
+        if exog_dtypes_out_ is not None:
+            X_train_dtypes = {col: float for col in X_train_features_names_out_}
+            exog_dtypes_direct = {
+                f"{col}_step_{i + 1}": dtype
+                for col, dtype in exog_dtypes_out_.items()
+                for i in range(self.max_step)
+            }
+            X_train_dtypes.update(exog_dtypes_direct)
+            X_train = X_train.astype(X_train_dtypes, copy=False)
+
+        y_train = {
+            step: pd.Series(
+                      data  = y_train[step],
+                      index = train_index[step],
+                      name  = f"y_step_{step}"
+                  )
+            for step in self.steps
+        }
 
         return X_train, y_train
 
     def filter_train_X_y_for_step(
         self,
         step: int,
-        X_train: pd.DataFrame,
-        y_train: dict[int, pd.Series],
+        X_train: np.ndarray | pd.DataFrame,
+        y_train: dict[int, np.ndarray | pd.Series],
         remove_suffix: bool = False
-    ) -> tuple[pd.DataFrame, pd.Series]:
+    ) -> tuple[np.ndarray | pd.DataFrame, np.ndarray | pd.Series]:
         """
         Select the columns needed to train a forecaster for a specific step.  
         The input matrices should be created using `create_train_X_y` method. 
         This method updates the index of `X_train` to the corresponding one 
         according to `y_train`. If `remove_suffix=True` the suffix "_step_i" 
-        will be removed from the column names. 
+        will be removed from the column names.
+
+        Supports both pandas DataFrames (from `create_train_X_y`) and numpy 
+        arrays (from `_create_train_X_y`). When numpy arrays are passed, 
+        `remove_suffix` is ignored.
 
         Parameters
         ----------
         step : int
             Step for which columns must be selected. Starts at 1.
-        X_train : pandas DataFrame
-            Dataframe created with the `create_train_X_y` method, first return.
+        X_train : numpy ndarray, pandas DataFrame
+            Training data created with `create_train_X_y` (DataFrame) or
+            `_create_train_X_y` (ndarray).
         y_train : dict
-            Dict created with the `create_train_X_y` method, second return.
+            Dict created with `create_train_X_y` or `_create_train_X_y`.
         remove_suffix : bool, default False
             If True, suffix "_step_i" is removed from the column names.
+            Only applies when `X_train` is a pandas DataFrame.
 
         Returns
         -------
-        X_train_step : pandas DataFrame
+        X_train_step : numpy ndarray, pandas DataFrame
             Training values (predictors) for the selected step.
-        y_train_step : pandas Series
+        y_train_step : numpy ndarray, pandas Series
             Values of the time series related to each row of `X_train`.
 
         """
@@ -1198,27 +1233,32 @@ class ForecasterDirect(ForecasterBase):
             )
 
         y_train_step = y_train[step]
+        is_numpy = isinstance(X_train, np.ndarray)
 
-        # Matrix X_train starts at index 0.
         if not self.exog_in_:
             X_train_step = X_train
         else:
-            # Optimization: Cache column indices to avoid repeated calculations
             if step not in self.filter_train_X_y_index_cache_:
                 n_lags = len(self.lags) if self.lags is not None else 0
                 n_window_features = (
                     len(self.X_train_window_features_names_out_) if self.window_features is not None else 0
                 )
                 idx_columns_autoreg = np.arange(n_lags + n_window_features)
-                n_exog = len(self.X_train_direct_exog_names_out_) / self.max_step
+                n_exog = len(self.X_train_direct_exog_names_out_) // self.max_step
                 idx_columns_exog = (
                     np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
                 )
                 idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
                 self.filter_train_X_y_index_cache_[step] = idx_columns
-            
+
             idx_columns = self.filter_train_X_y_index_cache_[step]
-            X_train_step = X_train.iloc[:, idx_columns]
+            if is_numpy:
+                X_train_step = X_train[:, idx_columns]
+            else:
+                X_train_step = X_train.iloc[:, idx_columns]
+
+        if is_numpy:
+            return X_train_step, y_train_step
 
         X_train_step.index = y_train_step.index
 
@@ -1274,14 +1314,14 @@ class ForecasterDirect(ForecasterBase):
 
         is_fitted = self.is_fitted
         self.is_fitted = False
-        X_train, y_train, *_ = self._create_train_X_y(
+        X_train, y_train, *_ = self.create_train_X_y(
             y    = y.iloc[: initial_train_size],
             exog = exog.iloc[: initial_train_size] if exog is not None else None
         )
 
         test_init = initial_train_size - self.window_size
         self.is_fitted = True
-        X_test, y_test, *_ = self._create_train_X_y(
+        X_test, y_test, *_ = self.create_train_X_y(
             y    = y.iloc[test_init:],
             exog = exog.iloc[test_init:] if exog is not None else None
         )
@@ -1292,7 +1332,7 @@ class ForecasterDirect(ForecasterBase):
 
     def create_sample_weights(
         self,
-        X_train: pd.DataFrame,
+        X_train: pd.DataFrame | pd.Index,
     ) -> np.ndarray:
         """
         Create weights for each observation according to the forecaster's attribute
@@ -1300,9 +1340,9 @@ class ForecasterDirect(ForecasterBase):
 
         Parameters
         ----------
-        X_train : pandas DataFrame
+        X_train : pandas DataFrame, pandas Index
             Dataframe created with `create_train_X_y` and `filter_train_X_y_for_step`
-            methods, first return.
+            methods, first return, or the index of the dataframe.
 
         Returns
         -------
@@ -1314,7 +1354,9 @@ class ForecasterDirect(ForecasterBase):
         sample_weight = None
 
         if self.weight_func is not None:
-            sample_weight = self.weight_func(X_train.index)
+            sample_weight = self.weight_func(
+                X_train.index if isinstance(X_train, pd.DataFrame) else X_train
+            )
 
         if sample_weight is not None:
             if np.isnan(sample_weight).any():
@@ -1407,6 +1449,7 @@ class ForecasterDirect(ForecasterBase):
         (
             X_train,
             y_train,
+            train_index,
             exog_names_in_,
             categorical_features_names_in_,
             X_train_exog_names_out_,
@@ -1415,13 +1458,28 @@ class ForecasterDirect(ForecasterBase):
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
 
+        # Compute step-specific feature names (without _step_N suffix) for
+        # configure_estimator_categorical_features. Same for all steps.
+        n_lags = len(self.lags) if self.lags is not None else 0
+        n_wf = (
+            len(self.X_train_window_features_names_out_)
+            if self.window_features is not None else 0
+        )
+        X_train_step_features_names = X_train_features_names_out_[:n_lags + n_wf]
+        if X_train_exog_names_out_ is not None:
+            X_train_step_features_names = (
+                X_train_step_features_names + X_train_exog_names_out_
+            )
+
         results_fit = Parallel(n_jobs=self.n_jobs)(
             delayed(_fit_one_step_estimator)(
-                forecaster = self,
-                estimator  = copy(self.estimator),
-                X_train    = X_train,
-                y_train    = y_train,
-                step       = step
+                forecaster                  = self,
+                estimator                   = copy(self.estimator),
+                X_train                     = X_train,
+                y_train                     = y_train,
+                train_index                 = train_index,
+                X_train_step_features_names = X_train_step_features_names,
+                step                        = step
             )
             for step in self.steps
         )
@@ -1429,9 +1487,8 @@ class ForecasterDirect(ForecasterBase):
         self.estimators_ = {step: estimator for step, estimator, *_ in results_fit}
 
         if self._probabilistic_mode is not False:
-            y_true, y_pred = zip(
-                *[(y_true, y_pred) for *_, y_true, y_pred in results_fit]
-            )
+            y_pred = [y_pred for _, _, y_pred in results_fit]
+            y_true = [y_train[step] for step in self.steps]
             self._binning_in_sample_residuals(
                 y_true                    = np.concatenate(y_true),
                 y_pred                    = np.concatenate(y_pred),
@@ -1747,6 +1804,44 @@ class ForecasterDirect(ForecasterBase):
         # HACK: Why no use self.X_train_features_names_out_ as Xs_col_names?
         return Xs, Xs_col_names, steps, prediction_index, differentiator
 
+    def _direct_predict(
+        self,
+        steps: list[int],
+        Xs: list[np.ndarray]
+    ) -> np.ndarray:
+        """
+        Generate predictions for the specified steps using the fitted estimators.
+        
+        This method optimizes prediction for common estimator types:
+        - LinearModel: Uses direct dot product with coefficients
+        - LGBMRegressor: Uses booster_.predict for faster inference
+        - XGBRegressor: Uses get_booster().inplace_predict for faster inference
+        - Other estimators: Uses standard predict method
+        
+        Parameters
+        ----------
+        steps : list[int]
+            List of steps to predict. Each step corresponds to an estimator
+            in `self.estimators_`.
+        Xs : list[np.ndarray]
+            List of numpy arrays with the predictors for each step.
+            Each array has shape (1, n_features).
+
+        Returns
+        -------
+        predictions : numpy ndarray
+            Predicted values for each step. Shape: (len(steps),)
+        
+        """
+
+        estimators = [self.estimators_[step] for step in steps]
+        predict_fns = [_build_predict_function(est) for est in estimators]
+        predictions = np.array([
+            fn(X).item() for fn, X in zip(predict_fns, Xs)
+        ])
+
+        return predictions
+
     @manage_warnings
     def create_predict_X(
         self,
@@ -1815,12 +1910,14 @@ class ForecasterDirect(ForecasterBase):
                     )
         
         if self.exog_in_:
-            categorical_features = any(
-                not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
-                for dtype in set(self.exog_dtypes_out_.values())
-            )
-            if categorical_features:
-                X_predict = X_predict.astype(self.exog_dtypes_out_, copy=False)
+            X_predict_dtypes = {col: float for col in self.X_train_features_names_out_}
+            exog_dtypes_direct = {
+                f"{col}_step_{i + 1}": dtype
+                for col, dtype in self.exog_dtypes_out_.items()
+                for i in range(self.max_step)
+            }
+            X_predict_dtypes.update(exog_dtypes_direct)
+            X_predict = X_predict.astype(X_predict_dtypes, copy=False)
         
         if self.transformer_y is not None or self.differentiation is not None:
             warnings.warn(
@@ -1834,51 +1931,6 @@ class ForecasterDirect(ForecasterBase):
             )
 
         return X_predict
-
-    def _direct_predict(
-        self,
-        steps: list[int],
-        Xs: list[np.ndarray]
-    ) -> np.ndarray:
-        """
-        Generate predictions for the specified steps using the fitted estimators.
-        
-        This method optimizes prediction for common estimator types:
-        - LinearModel: Uses direct dot product with coefficients
-        - LGBMRegressor: Uses booster_.predict for faster inference
-        - XGBRegressor: Uses get_booster().inplace_predict for faster inference
-        - Other estimators: Uses standard predict method
-        
-        Parameters
-        ----------
-        steps : list[int]
-            List of steps to predict. Each step corresponds to an estimator
-            in `self.estimators_`.
-        Xs : list[np.ndarray]
-            List of numpy arrays with the predictors for each step.
-            Each array has shape (1, n_features).
-
-        Returns
-        -------
-        predictions : numpy ndarray
-            Predicted values for each step. Shape: (len(steps),)
-        
-        """
-
-        estimators = [self.estimators_[step] for step in steps]
-        
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predict_fns = [_build_predict_function(est) for est in estimators]
-            predictions = np.array([
-                fn(X).item() for fn, X in zip(predict_fns, Xs)
-            ])
-
-        return predictions
 
     @manage_warnings
     def predict(
@@ -2783,6 +2835,7 @@ class ForecasterDirect(ForecasterBase):
             _,
             _,
             _,
+            _,
             X_train_features_names_out_,
             *_
         ) = self._create_train_X_y(y=y, exog=exog)
@@ -2808,13 +2861,12 @@ class ForecasterDirect(ForecasterBase):
         self.in_sample_residuals_ = {}
         for step in self.steps:
             X_train_step, y_train_step = self.filter_train_X_y_for_step(
-                                             step          = step,
-                                             X_train       = X_train,
-                                             y_train       = y_train,
-                                             remove_suffix = True
+                                             step    = step,
+                                             X_train = X_train,
+                                             y_train = y_train
                                          )
             
-            y_true_steps.append(y_train_step.to_numpy())
+            y_true_steps.append(y_train_step)
             y_pred_steps.append(self.estimators_[step].predict(X_train_step))
 
         self._binning_in_sample_residuals(

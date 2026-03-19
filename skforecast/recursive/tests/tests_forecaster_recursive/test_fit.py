@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
+from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
 from skforecast.preprocessing import RollingFeatures
@@ -323,6 +324,13 @@ def test_fit_resets_out_sample_residuals_on_refit():
     "estimator, check_fn",
     [
         (
+            CatBoostRegressor(
+                iterations=10, random_seed=123, verbose=0,
+                allow_writing_files=False
+            ),
+            None
+        ),
+        (
             LGBMRegressor(verbose=-1, random_state=123),
             None
         ),
@@ -342,7 +350,7 @@ def test_fit_resets_out_sample_residuals_on_refit():
             )
         ),
     ],
-    ids=['LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
+    ids=['CatBoostRegressor', 'LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
 )
 def test_fit_configures_estimator_categorical_features(estimator, check_fn):
     """
@@ -427,11 +435,15 @@ def test_fit_resets_estimator_categorical_params_on_refit_without_categoricals(
 @pytest.mark.parametrize(
     "estimator",
     [
+        CatBoostRegressor(
+            iterations=10, random_seed=123, verbose=0,
+            allow_writing_files=False
+        ),
         LGBMRegressor(verbose=-1, random_state=123),
         XGBRegressor(random_state=123),
         HistGradientBoostingRegressor(random_state=123),
     ],
-    ids=['LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
+    ids=['CatBoostRegressor', 'LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
 )
 def test_fit_no_categoricals_with_supported_estimators(estimator):
     """
