@@ -103,12 +103,15 @@ def _fit_one_step_estimator(
                         X_train=train_index[step]
                     )
 
-    fit_kwargs = configure_estimator_categorical_features(
-                     estimator                      = estimator,
-                     categorical_features_names_in_ = forecaster.categorical_features_names_in_,
-                     X_train_features_names_out_    = X_train_step_features_names,
-                     fit_kwargs                     = {**forecaster.fit_kwargs}
-                 )
+    if forecaster.categorical_features is not None:
+        fit_kwargs = configure_estimator_categorical_features(
+                         estimator                      = estimator,
+                         categorical_features_names_in_ = forecaster.categorical_features_names_in_,
+                         X_train_features_names_out_    = X_train_step_features_names,
+                         fit_kwargs                     = {**forecaster.fit_kwargs}
+                     )
+    else:
+        fit_kwargs = {**forecaster.fit_kwargs}
 
     # NOTE: CatBoost requires integer values (not float) for categorical features
     # when X is a numpy array. This requires converting X_train_step to object

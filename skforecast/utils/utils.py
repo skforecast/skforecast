@@ -602,7 +602,7 @@ def configure_estimator_categorical_features(
         estimator.set_params(
             feature_types=feature_types, enable_categorical=True
         )
-        if prev_feature_types is not None or prev_enable_categorical is not True:
+        if prev_feature_types is not None:
             warnings.warn(
                 "The estimator's `feature_types` and `enable_categorical` "
                 "parameters have been set to handle categorical features. "
