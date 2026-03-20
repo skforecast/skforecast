@@ -479,15 +479,29 @@ class ForecasterRecursive(ForecasterBase):
             params,
             _,
             _,
-            exog_names_in_,
             _,
-        ) = self._preprocess_repr(
-                estimator      = self.estimator,
-                exog_names_in_ = self.exog_names_in_
-            )
+            _,
+        ) = self._preprocess_repr(estimator=self.estimator)
 
         style, unique_id = get_style_repr_html(self.is_fitted)
-        
+
+        if self.exog_names_in_ is None:
+            exog_names_in_ = '<li>None</li>'
+        else:
+            cat_set = set(self.categorical_features_names_in_ or [])
+            exog_items = self.exog_names_in_
+            if len(exog_items) > 50:
+                exog_items = exog_items[:25] + ['...'] + exog_items[-25:]
+            _cat_badge = (
+                '<span style="background-color: #FFA726; color: white; '
+                'border-radius: 3px; padding: 1px 5px; font-size: 0.8em; '
+                'margin-left: 4px;">categorical</span>'
+            )
+            exog_names_in_ = '\n                    '.join(
+                f'<li>{name}{_cat_badge}</li>' if name in cat_set else f'<li>{name}</li>'
+                for name in exog_items
+            )
+
         content = f"""
         <div class="container-{unique_id}">
             <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>

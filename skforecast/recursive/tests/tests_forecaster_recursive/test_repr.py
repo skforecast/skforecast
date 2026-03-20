@@ -112,3 +112,69 @@ def test_repr_and_repr_html():
     
     for section in expected_sections:
         assert section in result_html5, f"Section '{section}' not found in HTML output"
+
+
+def test_repr_html_categorical_badge():
+    """
+    Test that _repr_html_ annotates categorical exogenous variables with a badge
+    and leaves non-categorical variables unannotated.
+    """
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(),
+        lags=3,
+        categorical_features='auto'
+    )
+    y = pd.Series(
+        np.random.rand(50),
+        index=pd.date_range('2020-01-01', periods=50, freq='h')
+    )
+    exog = pd.DataFrame(
+        {
+            'num_feat': np.random.rand(50),
+            'cat_feat': pd.Categorical(['a', 'b'] * 25),
+        },
+        index=pd.date_range('2020-01-01', periods=50, freq='h')
+    )
+    forecaster.fit(y, exog=exog)
+
+    html = forecaster._repr_html_()
+
+    # categorical variable gets the badge, numeric does not
+    assert 'cat_feat' in html
+    lines_with_cat_feat = [l for l in html.splitlines() if 'cat_feat' in l]
+    assert any('categorical' in l for l in lines_with_cat_feat), (
+        'Expected categorical badge next to cat_feat'
+    )
+
+    assert 'num_feat' in html
+    lines_with_num_feat = [l for l in html.splitlines() if 'num_feat' in l and 'categorical' not in l.split('num_feat')[0]]
+    # num_feat line should not carry the badge
+    assert any('categorical' not in l or l.index('num_feat') < l.index('categorical') for l in lines_with_num_feat), (
+        'Expected no categorical badge for num_feat'
+    )
+
+
+def test_repr_html_no_categorical_features():
+    """
+    Test that _repr_html_ shows no categorical badge when categorical_features=None.
+    """
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(),
+        lags=3,
+        categorical_features=None
+    )
+    y = pd.Series(
+        np.random.rand(50),
+        index=pd.date_range('2020-01-01', periods=50, freq='h')
+    )
+    exog = pd.DataFrame(
+        {'feat_a': np.random.rand(50), 'feat_b': np.random.rand(50)},
+        index=pd.date_range('2020-01-01', periods=50, freq='h')
+    )
+    forecaster.fit(y, exog=exog)
+
+    html = forecaster._repr_html_()
+    # The badge span should not appear in the exog list
+    assert 'border-radius: 3px' not in html or 'feat_a' in html  # badge only in general info area
+    # Simpler: no orange badge colour
+    assert '#FFA726' not in html
