@@ -159,7 +159,7 @@ def test_init_binner_is_created_when_binner_kwargs_is_None():
     Test binner is initialized with the default kwargs
     """
     forecaster = ForecasterRecursive(
-                     estimator = object(),
+                     estimator = LinearRegression(),
                      lags      = 5,
                  )
     
@@ -180,7 +180,7 @@ def test_init_binner_is_created_when_binner_kwargs_is_not_None():
         'random_state': 1234, 'dtype': np.float64
     }
     forecaster = ForecasterRecursive(
-                     estimator     = object(),
+                     estimator     = LinearRegression(),
                      lags          = 5,
                      binner_kwargs = binner_kwargs
                  )

@@ -351,6 +351,9 @@ def test_predict_output_when_categorical_features_HistGradientBoostingRegressor(
                      categorical_features  = None
                  )
     forecaster.fit(y=y_categorical, exog=df_exog)
+    assert forecaster.X_train_features_names_out_ == [
+        'lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_2', 'exog_3', 'exog_1'
+    ]
     predictions = forecaster.predict(steps=10, exog=exog_predict)
     
     # Categorical features managed by the forecaster
@@ -365,6 +368,9 @@ def test_predict_output_when_categorical_features_HistGradientBoostingRegressor(
                        categorical_features  = categorical_features
                    )
     forecaster_2.fit(y=y_categorical, exog=df_exog)
+    assert forecaster_2.X_train_features_names_out_ == [
+        'lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2', 'exog_3'
+    ]
     predictions_2 = forecaster_2.predict(steps=10, exog=exog_predict)
 
     expected = pd.Series(
@@ -428,6 +434,9 @@ def test_predict_output_when_categorical_features_LGBMRegressor(categorical_feat
                      fit_kwargs           = {'categorical_feature': [5, 6]}
                  )
     forecaster.fit(y=y_categorical, exog=df_exog)
+    assert forecaster.X_train_features_names_out_ == [
+        'lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_2', 'exog_3', 'exog_1'
+    ]
     predictions = forecaster.predict(steps=10, exog=exog_predict)
     
     forecaster_2 = ForecasterDirect(
@@ -435,10 +444,13 @@ def test_predict_output_when_categorical_features_LGBMRegressor(categorical_feat
                        lags                 = 5,
                        steps                = 10,
                        transformer_y        = None,
-                       transformer_exog     = transformer_exog,
+                       transformer_exog     = None,
                        categorical_features = categorical_features
                    )
     forecaster_2.fit(y=y_categorical, exog=df_exog)
+    assert forecaster_2.X_train_features_names_out_ == [
+        'lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2', 'exog_3'
+    ]
     predictions_2 = forecaster_2.predict(steps=10, exog=exog_predict)
 
     expected = pd.Series(
@@ -511,7 +523,7 @@ def test_predict_output_when_categorical_features_LGBMRegressor_auto(categorical
                        lags                 = 5,
                        steps                = 10,
                        transformer_y        = None,
-                       transformer_exog     = transformer_exog,
+                       transformer_exog     = None,
                        categorical_features = categorical_features
                    )
     forecaster_2.fit(y=y_categorical, exog=df_exog)

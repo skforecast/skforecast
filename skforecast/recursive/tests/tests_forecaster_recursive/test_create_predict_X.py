@@ -240,9 +240,13 @@ def test_create_predict_X_when_categorical_features_native_implementation_HistGr
                            verbose_feature_names_out=False,
                        ).set_output(transform="pandas")
     
+    # No categorical features managed by the forecaster.
+    # make_column_transformer reorders columns to ['exog_2', 'exog_3', 'exog_1']
+    # so categorical indices in X_train_step (5 lags + 3 exog) are [5, 6].
+    # HistGradientBoostingRegressor requires integer indices when X is numpy.
     forecaster = ForecasterRecursive(
                      estimator            = HistGradientBoostingRegressor(
-                                                categorical_features = categorical_features,
+                                                categorical_features = [5, 6],
                                                 random_state         = 123
                                             ),
                      lags                 = 5,
