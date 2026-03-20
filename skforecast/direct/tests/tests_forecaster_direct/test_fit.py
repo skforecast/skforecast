@@ -381,23 +381,42 @@ def test_fit_resets_out_sample_residuals_on_refit():
 # Tests: fit with categorical features and configure_estimator_categorical_features
 # ==============================================================================
 @pytest.mark.parametrize(
-    "estimator",
+    "estimator, check_fn",
     [
-        CatBoostRegressor(
-            iterations=10, random_seed=123, verbose=0,
-            allow_writing_files=False
+        (
+            CatBoostRegressor(
+                iterations=10, random_seed=123, verbose=0,
+                allow_writing_files=False
+            ),
+            None
         ),
-        LGBMRegressor(verbose=-1, random_state=123),
-        XGBRegressor(random_state=123),
-        HistGradientBoostingRegressor(random_state=123),
+        (
+            LGBMRegressor(verbose=-1, random_state=123),
+            None
+        ),
+        (
+            XGBRegressor(random_state=123),
+            lambda est, cat_idx, n_features: (
+                est.get_params()['enable_categorical'] is True
+                and est.get_params()['feature_types'] == [
+                    'c' if i in cat_idx else 'q' for i in range(n_features)
+                ]
+            )
+        ),
+        (
+            HistGradientBoostingRegressor(random_state=123),
+            lambda est, cat_idx, n_features: (
+                est.get_params()['categorical_features'] == cat_idx
+            )
+        ),
     ],
     ids=['CatBoostRegressor', 'LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
 )
-def test_fit_configures_estimator_categorical_features(estimator):
+def test_fit_configures_estimator_categorical_features(estimator, check_fn):
     """
     Test that fit correctly configures native categorical feature support
-    for each supported estimator (LGBMRegressor, XGBRegressor,
-    HistGradientBoostingRegressor).
+    for each supported estimator. Verifies that the individual step
+    estimators in estimators_ have the categorical params set.
     """
     y_cat = pd.Series(np.arange(20, dtype=float), name='y')
     exog_cat = pd.DataFrame({
@@ -414,6 +433,16 @@ def test_fit_configures_estimator_categorical_features(estimator):
     assert forecaster.categorical_features_names_in_ == ['exog_cat']
     assert 'exog_cat_step_1' in forecaster.X_train_features_names_out_
     assert 'exog_cat_step_2' in forecaster.X_train_features_names_out_
+
+    if check_fn is not None:
+        # Step-specific feature names (without _step_N suffix)
+        n_lags = len(forecaster.lags)
+        step_features = forecaster.X_train_features_names_out_[:n_lags]
+        step_features = step_features + forecaster.X_train_exog_names_out_
+        cat_idx = [step_features.index('exog_cat')]
+        n_features = len(step_features)
+        for step_est in forecaster.estimators_.values():
+            assert check_fn(step_est, cat_idx, n_features)
 
     # fit_kwargs must not be mutated
     assert forecaster.fit_kwargs == {}

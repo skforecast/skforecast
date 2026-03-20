@@ -78,6 +78,7 @@ def test_xgboost_reset_feature_types_when_no_categoricals():
         fit_kwargs={}
     )
     assert estimator.get_params()['feature_types'] is None
+    assert estimator.get_params()['enable_categorical'] is False
 
 
 def test_histgbr_reset_categorical_features_when_no_categoricals():
