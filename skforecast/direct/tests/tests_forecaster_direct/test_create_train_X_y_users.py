@@ -19,7 +19,7 @@ from sklearn.preprocessing import OneHotEncoder
 from skforecast.direct import ForecasterDirect
 
 
-def _assert_y_train_dict(results_y, expected_y):
+def _assert_y_train_dict(results_y, expected_y):  # pragma: no cover
     """Helper to assert y_train dicts match."""
     assert isinstance(results_y, dict)
     assert all(isinstance(x, pd.Series) for x in results_y.values())

@@ -409,6 +409,7 @@ class ForecasterRecursive(ForecasterBase):
             "supports_window_features": True,
             "supports_transformer_series": True,
             "supports_transformer_exog": True,
+            "supports_categorical_features": True,
             "supports_weight_func": True,
             "supports_differentiation": True,
 

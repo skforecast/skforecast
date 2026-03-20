@@ -87,6 +87,10 @@ def test_forecaster_y_exog_features_stored():
     X_train_direct_exog_names_out_ = ['exog_step_1', 'exog_step_2']
     X_train_features_names_out_ = [
         'lag_1', 'lag_2', 'lag_3', 
+        'roll_ratio_min_max_4', 'roll_median_4', 'exog'
+    ]
+    X_train_direct_features_names_out_ = [
+        'lag_1', 'lag_2', 'lag_3', 
         'roll_ratio_min_max_4', 'roll_median_4', 'exog_step_1', 'exog_step_2'
     ]
     
@@ -100,6 +104,7 @@ def test_forecaster_y_exog_features_stored():
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
     assert forecaster.X_train_direct_exog_names_out_ == X_train_direct_exog_names_out_
     assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
+    assert forecaster.X_train_direct_features_names_out_ == X_train_direct_features_names_out_
     assert forecaster.categorical_features_names_in_ == []
 
 
@@ -431,16 +436,13 @@ def test_fit_configures_estimator_categorical_features(estimator, check_fn):
 
     assert forecaster.is_fitted
     assert forecaster.categorical_features_names_in_ == ['exog_cat']
-    assert 'exog_cat_step_1' in forecaster.X_train_features_names_out_
-    assert 'exog_cat_step_2' in forecaster.X_train_features_names_out_
+    assert 'exog_cat' in forecaster.X_train_features_names_out_
+    assert 'exog_cat_step_1' in forecaster.X_train_direct_features_names_out_
+    assert 'exog_cat_step_2' in forecaster.X_train_direct_features_names_out_
 
     if check_fn is not None:
-        # Step-specific feature names (without _step_N suffix)
-        n_lags = len(forecaster.lags)
-        step_features = forecaster.X_train_features_names_out_[:n_lags]
-        step_features = step_features + forecaster.X_train_exog_names_out_
-        cat_idx = [step_features.index('exog_cat')]
-        n_features = len(step_features)
+        cat_idx = [forecaster.X_train_features_names_out_.index('exog_cat')]
+        n_features = len(forecaster.X_train_features_names_out_)
         for step_est in forecaster.estimators_.values():
             assert check_fn(step_est, cat_idx, n_features)
 

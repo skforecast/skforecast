@@ -56,7 +56,7 @@ def _fit_one_step_estimator(
     X_train: np.ndarray,
     y_train: dict,
     train_index: dict,
-    X_train_step_features_names: list[str],
+    X_train_features_names_out_: list[str],
     step: int
 ) -> tuple[int, object, np.ndarray | None]:
     """
@@ -73,13 +73,13 @@ def _fit_one_step_estimator(
     estimator : object
         Estimator to be fitted.
     X_train : numpy ndarray
-        Numpy array created with the `_create_train_X_y` method, first return.
+        Numpy array created with the `_create_train_X_y` method, X_train.
     y_train : dict
-        Dict created with the `_create_train_X_y` method, second return.
+        Dict created with the `_create_train_X_y` method, y_train.
     train_index : dict
-        Dict created with the `_create_train_X_y` method, third return.
-    X_train_step_features_names : list
-        Feature names for the step after filtering and removing suffix.
+        Dict created with the `_create_train_X_y` method, train_index.
+    X_train_features_names_out_ : list[str]
+        List created with the `_create_train_X_y` method, X_train_features_names_out_.
     step : int
         Step of the forecaster to be fitted.
 
@@ -107,7 +107,7 @@ def _fit_one_step_estimator(
         fit_kwargs = configure_estimator_categorical_features(
                          estimator                      = estimator,
                          categorical_features_names_in_ = forecaster.categorical_features_names_in_,
-                         X_train_features_names_out_    = X_train_step_features_names,
+                         X_train_features_names_out_    = X_train_features_names_out_,
                          fit_kwargs                     = {**forecaster.fit_kwargs}
                      )
     else:
@@ -317,7 +317,13 @@ class ForecasterDirect(ForecasterBase):
         Same as `X_train_exog_names_out_` but using the direct format. The same 
         exogenous variable is repeated for each step.
     X_train_features_names_out_ : list
-        Names of columns of the matrix created internally for training.
+        Names of the features seen by each individual step estimator. These
+        are the autoregressive features (lags + window features) and exogenous
+        variable names.
+    X_train_direct_features_names_out_ : list
+        Names of all columns of the full training matrix created internally.
+        Same as `X_train_features_names_out_` but with exogenous variables
+        expanded with the `_step_N` suffix (direct format).
     categorical_features : str, list
         How categorical features are identified among the exogenous variables. It 
         can be 'auto', a list of column names or `None`.
@@ -451,6 +457,7 @@ class ForecasterDirect(ForecasterBase):
         self.X_train_exog_names_out_            = None
         self.X_train_direct_exog_names_out_     = None
         self.X_train_features_names_out_        = None
+        self.X_train_direct_features_names_out_ = None
         self.in_sample_residuals_               = None
         self.out_sample_residuals_              = None
         self.in_sample_residuals_by_bin_        = None
@@ -593,6 +600,7 @@ class ForecasterDirect(ForecasterBase):
             "supports_window_features": True,
             "supports_transformer_series": True,
             "supports_transformer_exog": True,
+            "supports_categorical_features": True,
             "supports_weight_func": True,
             "supports_differentiation": True,
 
@@ -866,6 +874,7 @@ class ForecasterDirect(ForecasterBase):
         list[str],
         list[str], 
         list[str], 
+        list[str], 
         dict[str, type], 
         dict[str, type]
     ]:
@@ -902,7 +911,11 @@ class ForecasterDirect(ForecasterBase):
             internally for training. It can be different from `exog_names_in_` if
             some exogenous variables are transformed during the training process.
         X_train_features_names_out_ : list
-            Names of the columns of the matrix created internally for training.
+            Names of the features seen by each individual step estimator
+            (autoregressive + exogenous names).
+        X_train_direct_features_names_out_ : list
+            Names of all columns of the full training matrix (autoregressive +
+            exogenous expanded with the `_step_N` suffix).
         exog_dtypes_in_ : dict
             Type of each exogenous variable/s used in training before the transformation
             applied by `transformer_exog`. If `transformer_exog` is not used, it
@@ -1050,6 +1063,7 @@ class ForecasterDirect(ForecasterBase):
         
         X_train = []
         X_train_features_names_out_ = []
+        X_train_direct_features_names_out_ = []
         train_index = y_index[self.window_size + (self.max_step - 1):]
         len_train_index = len(train_index)
 
@@ -1059,6 +1073,7 @@ class ForecasterDirect(ForecasterBase):
         if X_train_lags is not None:
             X_train.append(X_train_lags)
             X_train_features_names_out_.extend(self.lags_names)
+            X_train_direct_features_names_out_.extend(self.lags_names)
         
         X_train_window_features_names_out_ = None
         if self.window_features is not None:
@@ -1069,11 +1084,12 @@ class ForecasterDirect(ForecasterBase):
             )
             X_train_window_features, X_train_window_features_names_out_ = (
                 self._create_window_features(
-                    y = y_window_features, train_index = train_index
+                    y=y_window_features, train_index=train_index
                 )
             )
             X_train.extend(X_train_window_features)
             X_train_features_names_out_.extend(X_train_window_features_names_out_)
+            X_train_direct_features_names_out_.extend(X_train_window_features_names_out_)
 
         # NOTE: Need here for filter_train_X_y_for_step to work without fitting
         self.X_train_window_features_names_out_ = X_train_window_features_names_out_
@@ -1091,8 +1107,9 @@ class ForecasterDirect(ForecasterBase):
             # NOTE: Need here for filter_train_X_y_for_step to work without fitting
             self.X_train_direct_exog_names_out_ = X_train_direct_exog_names_out_
 
-            X_train_features_names_out_.extend(self.X_train_direct_exog_names_out_)
             X_train.append(exog_direct)
+            X_train_features_names_out_.extend(X_train_exog_names_out_)
+            X_train_direct_features_names_out_.extend(X_train_direct_exog_names_out_)
         
         if len(X_train) == 1:
             X_train = X_train[0]
@@ -1116,6 +1133,7 @@ class ForecasterDirect(ForecasterBase):
             categorical_features_names_in_,
             X_train_exog_names_out_,
             X_train_features_names_out_,
+            X_train_direct_features_names_out_,
             exog_dtypes_in_,
             exog_dtypes_out_
         )
@@ -1158,6 +1176,7 @@ class ForecasterDirect(ForecasterBase):
             categorical_features_names_in_,
             X_train_exog_names_out_,
             X_train_features_names_out_,
+            X_train_direct_features_names_out_,
             exog_dtypes_in_,
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
@@ -1165,11 +1184,11 @@ class ForecasterDirect(ForecasterBase):
         X_train = pd.DataFrame(
                       data    = X_train,
                       index   = train_index[self.max_step],
-                      columns = X_train_features_names_out_
+                      columns = X_train_direct_features_names_out_
                   )
         
         if exog_dtypes_out_ is not None:
-            X_train_dtypes = {col: float for col in X_train_features_names_out_}
+            X_train_dtypes = {col: float for col in X_train_direct_features_names_out_}
             exog_dtypes_direct = {
                 f"{col}_step_{i + 1}": dtype
                 for col, dtype in exog_dtypes_out_.items()
@@ -1439,6 +1458,7 @@ class ForecasterDirect(ForecasterBase):
         self.X_train_exog_names_out_            = None
         self.X_train_direct_exog_names_out_     = None
         self.X_train_features_names_out_        = None
+        self.X_train_direct_features_names_out_ = None
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
         self.out_sample_residuals_              = None
@@ -1457,24 +1477,14 @@ class ForecasterDirect(ForecasterBase):
             categorical_features_names_in_,
             X_train_exog_names_out_,
             X_train_features_names_out_,
+            X_train_direct_features_names_out_,
             exog_dtypes_in_,
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
 
-        # Compute step-specific feature names (without _step_N suffix) for
-        # configure_estimator_categorical_features. Same for all steps.
-        n_lags = len(self.lags) if self.lags is not None else 0
-        n_wf = (
-            len(self.X_train_window_features_names_out_)
-            if self.window_features is not None else 0
-        )
-        X_train_step_features_names = X_train_features_names_out_[:n_lags + n_wf]
         if X_train_exog_names_out_ is not None:
             # NOTE: Need here as configure_estimator_categorical_features uses it
             self.categorical_features_names_in_ = categorical_features_names_in_
-            X_train_step_features_names = (
-                X_train_step_features_names + X_train_exog_names_out_
-            )
 
         results_fit = Parallel(n_jobs=self.n_jobs)(
             delayed(_fit_one_step_estimator)(
@@ -1483,7 +1493,7 @@ class ForecasterDirect(ForecasterBase):
                 X_train                     = X_train,
                 y_train                     = y_train,
                 train_index                 = train_index,
-                X_train_step_features_names = X_train_step_features_names,
+                X_train_features_names_out_ = X_train_features_names_out_,
                 step                        = step
             )
             for step in self.steps
@@ -1502,6 +1512,7 @@ class ForecasterDirect(ForecasterBase):
             )
         
         self.X_train_features_names_out_ = X_train_features_names_out_
+        self.X_train_direct_features_names_out_ = X_train_direct_features_names_out_
 
         self.is_fitted = True
         self.series_name_in_ = y.name if y.name is not None else 'y'
@@ -2827,11 +2838,13 @@ class ForecasterDirect(ForecasterBase):
             _,
             _,
             _,
-            X_train_features_names_out_,
-            *_
+            _,
+            X_train_direct_features_names_out_,
+            _,
+            _
         ) = self._create_train_X_y(y=y, exog=exog)
             
-        if not X_train_features_names_out_ == self.X_train_features_names_out_:
+        if not X_train_direct_features_names_out_ == self.X_train_direct_features_names_out_:
 
             # NOTE: Reset attributes modified in _create_train_X_y to their original values
             self.exog_in_ = original_exog_in_
@@ -2843,8 +2856,8 @@ class ForecasterDirect(ForecasterBase):
                 f"generated from the provided data do not match those used during "
                 f"the training process. To correctly set in-sample residuals, "
                 f"ensure that the same data and preprocessing steps are applied.\n"
-                f"    Expected output : {self.X_train_features_names_out_}\n"
-                f"    Current output  : {X_train_features_names_out_}"
+                f"    Expected output : {self.X_train_direct_features_names_out_}\n"
+                f"    Current output  : {X_train_direct_features_names_out_}"
             )
         
         y_true_steps = []
@@ -3103,26 +3116,27 @@ class ForecasterDirect(ForecasterBase):
             estimator = self.estimators_[step][-1]
         else:
             estimator = self.estimators_[step]
-
-        n_lags = len(self.lags) if self.lags is not None else 0
-        n_window_features = (
-            len(self.window_features_names) if self.window_features is not None else 0
-        )
-        idx_columns_autoreg = np.arange(n_lags + n_window_features)
-        if not self.exog_in_:
-            idx_columns = idx_columns_autoreg
-        else:
-            n_exog = len(self.X_train_direct_exog_names_out_) / self.max_step
-            idx_columns_exog = (
-                np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
-            )
-            idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
         
-        idx_columns = [int(x) for x in idx_columns]  # Required since numpy 2.0
-        feature_names = [
-            self.X_train_features_names_out_[i].replace(f"_step_{step}", "") 
-            for i in idx_columns
-        ]
+        # TODO: Review 
+        # n_lags = len(self.lags) if self.lags is not None else 0
+        # n_window_features = (
+        #     len(self.window_features_names) if self.window_features is not None else 0
+        # )
+        # idx_columns_autoreg = np.arange(n_lags + n_window_features)
+        # if not self.exog_in_:
+        #     idx_columns = idx_columns_autoreg
+        # else:
+        #     n_exog = len(self.X_train_direct_exog_names_out_) / self.max_step
+        #     idx_columns_exog = (
+        #         np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
+        #     )
+        #     idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
+        
+        # idx_columns = [int(x) for x in idx_columns]  # Required since numpy 2.0
+        # feature_names = [
+        #     self.X_train_features_names_out_[i].replace(f"_step_{step}", "") 
+        #     for i in idx_columns
+        # ]
 
         if hasattr(estimator, 'feature_importances_'):
             feature_importances = estimator.feature_importances_
@@ -3139,7 +3153,7 @@ class ForecasterDirect(ForecasterBase):
 
         if feature_importances is not None:
             feature_importances = pd.DataFrame({
-                                      'feature': feature_names,
+                                      'feature': self.X_train_features_names_out_,
                                       'importance': feature_importances
                                   })
             if sort_importance:
