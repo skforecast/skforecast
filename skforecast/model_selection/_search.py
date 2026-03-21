@@ -833,8 +833,7 @@ def bayesian_search_forecaster(
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 'ignore',
-                message='.*multivariate.*|.*group.*',
-                module='optuna'
+                message='.*multivariate.*|.*group.*'
             )
             kwargs_create_study['sampler'] = TPESampler(
                 multivariate=True, group=True, consider_endpoints=True, seed=random_state
@@ -1930,8 +1929,7 @@ def bayesian_search_forecaster_multiseries(
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 'ignore',
-                message='.*multivariate.*|.*group.*',
-                module='optuna'
+                message='.*multivariate.*|.*group.*'
             )
             kwargs_create_study['sampler'] = TPESampler(
                 multivariate=True, group=True, consider_endpoints=True, seed=random_state
