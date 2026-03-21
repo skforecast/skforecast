@@ -1215,9 +1215,16 @@ class ForecasterRecursive(ForecasterBase):
 
         # NOTE: This is done to save time during fit in functions such as backtesting()
         if self._probabilistic_mode is not False:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message="X does not have valid feature names",
+                    category=UserWarning
+                )
+                y_pred = self.estimator.predict(X_train).ravel()
             self._binning_in_sample_residuals(
                 y_true                    = y_train,
-                y_pred                    = self.estimator.predict(X_train).ravel(),
+                y_pred                    = y_pred,
                 store_in_sample_residuals = store_in_sample_residuals,
                 random_state              = random_state
             )
@@ -1721,11 +1728,17 @@ class ForecasterRecursive(ForecasterBase):
                 check_inputs = check_inputs,
             )
         
-        predictions = self._recursive_predict(
-                          steps              = steps,
-                          last_window_values = last_window_values,
-                          exog_values        = exog_values
-                      )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            predictions = self._recursive_predict(
+                              steps              = steps,
+                              last_window_values = last_window_values,
+                              exog_values        = exog_values
+                          )
 
         X_predict = []
         full_predictors = np.concatenate((last_window_values, predictions))
@@ -1833,11 +1846,17 @@ class ForecasterRecursive(ForecasterBase):
                 check_inputs = check_inputs
             )
 
-        predictions = self._recursive_predict(
-                          steps              = steps,
-                          last_window_values = last_window_values,
-                          exog_values        = exog_values
-                      )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            predictions = self._recursive_predict(
+                              steps              = steps,
+                              last_window_values = last_window_values,
+                              exog_values        = exog_values
+                          )
 
         if differentiator is not None:
             predictions = differentiator.inverse_transform_next_window(predictions)
@@ -1959,14 +1978,20 @@ class ForecasterRecursive(ForecasterBase):
                 rng.integers(low=0, high=len(residuals), size=(steps, n_boot))
             ]
         
-        boot_predictions = self._recursive_predict_bootstrapping(
-            steps                = steps,
-            last_window_values   = last_window_values,
-            exog_values          = exog_values,
-            sampled_residuals    = sampled_residuals,
-            use_binned_residuals = use_binned_residuals,
-            n_boot               = n_boot
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            boot_predictions = self._recursive_predict_bootstrapping(
+                steps                = steps,
+                last_window_values   = last_window_values,
+                exog_values          = exog_values,
+                sampled_residuals    = sampled_residuals,
+                use_binned_residuals = use_binned_residuals,
+                n_boot               = n_boot
+            )
 
         if differentiator is not None:
             boot_predictions = (
@@ -2070,11 +2095,17 @@ class ForecasterRecursive(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        predictions = self._recursive_predict(
-                          steps              = steps,
-                          last_window_values = last_window_values,
-                          exog_values        = exog_values
-                      )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            predictions = self._recursive_predict(
+                              steps              = steps,
+                              last_window_values = last_window_values,
+                              exog_values        = exog_values
+                          )
         
         if use_binned_residuals:
             correction_factor_by_bin = {
@@ -2661,9 +2692,16 @@ class ForecasterRecursive(ForecasterBase):
                 f"    Current output  : {X_train_features_names_out_}"
             )
 
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="X does not have valid feature names",
+                category=UserWarning
+            )
+            y_pred = self.estimator.predict(X_train).ravel()
         self._binning_in_sample_residuals(
             y_true                    = y_train,
-            y_pred                    = self.estimator.predict(X_train).ravel(),
+            y_pred                    = y_pred,
             store_in_sample_residuals = True,
             random_state              = random_state
         )

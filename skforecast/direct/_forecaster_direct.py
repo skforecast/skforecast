@@ -141,7 +141,13 @@ def _fit_one_step_estimator(
     # NOTE: This is done to save time during fit in functions such as backtesting()
     y_pred_step = None
     if forecaster._probabilistic_mode is not False:
-        y_pred_step = estimator.predict(X_train_step)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="X does not have valid feature names",
+                category=UserWarning
+            )
+            y_pred_step = estimator.predict(X_train_step)
 
     return step, estimator, y_pred_step
 
@@ -1844,8 +1850,15 @@ class ForecasterDirect(ForecasterBase):
         """
 
         estimators = [self.estimators_[step] for step in steps]
-        predict_fns = [_build_predict_function(est) for est in estimators]
-        predictions = np.array([fn(X).item() for fn, X in zip(predict_fns, Xs)])
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            predict_fns = [_build_predict_function(est) for est in estimators]
+            predictions = np.array([fn(X).item() for fn, X in zip(predict_fns, Xs)])
 
         return predictions
 
