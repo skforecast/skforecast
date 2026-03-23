@@ -1593,6 +1593,7 @@ class ForecasterDirect(ForecasterBase):
             if self._probabilistic_mode == "binned":
                 bins = self.binner.transform(y_pred).astype(int)
                 max_sample = 10_000 // self.binner.n_bins_
+
                 self.in_sample_residuals_by_bin_ = {}
                 for b in range(self.binner.n_bins_):
                     bin_residuals = residuals[bins == b]
@@ -3116,27 +3117,6 @@ class ForecasterDirect(ForecasterBase):
             estimator = self.estimators_[step][-1]
         else:
             estimator = self.estimators_[step]
-        
-        # TODO: Review 
-        # n_lags = len(self.lags) if self.lags is not None else 0
-        # n_window_features = (
-        #     len(self.window_features_names) if self.window_features is not None else 0
-        # )
-        # idx_columns_autoreg = np.arange(n_lags + n_window_features)
-        # if not self.exog_in_:
-        #     idx_columns = idx_columns_autoreg
-        # else:
-        #     n_exog = len(self.X_train_direct_exog_names_out_) / self.max_step
-        #     idx_columns_exog = (
-        #         np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
-        #     )
-        #     idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
-        
-        # idx_columns = [int(x) for x in idx_columns]  # Required since numpy 2.0
-        # feature_names = [
-        #     self.X_train_features_names_out_[i].replace(f"_step_{step}", "") 
-        #     for i in idx_columns
-        # ]
 
         if hasattr(estimator, 'feature_importances_'):
             feature_importances = estimator.feature_importances_

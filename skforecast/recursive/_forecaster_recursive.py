@@ -1285,6 +1285,7 @@ class ForecasterRecursive(ForecasterBase):
             if self._probabilistic_mode == "binned":
                 bins = self.binner.transform(y_pred).astype(int)
                 max_sample = 10_000 // self.binner.n_bins_
+                
                 self.in_sample_residuals_by_bin_ = {}
                 for b in range(self.binner.n_bins_):
                     bin_residuals = residuals[bins == b]

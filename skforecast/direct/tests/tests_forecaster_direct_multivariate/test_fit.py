@@ -96,6 +96,11 @@ def test_forecaster_series_exog_features_stored():
     X_train_features_names_out_ = [
         'l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_roll_ratio_min_max_4', 'l1_roll_median_4',
         'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_roll_ratio_min_max_4', 'l2_roll_median_4',
+        'exog_1', 'exog_2_a', 'exog_2_b', 
+    ]
+    X_train_direct_features_names_out_ = [
+        'l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_roll_ratio_min_max_4', 'l1_roll_median_4',
+        'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_roll_ratio_min_max_4', 'l2_roll_median_4',
         'exog_1_step_1', 'exog_2_a_step_1', 'exog_2_b_step_1', 
         'exog_1_step_2', 'exog_2_a_step_2', 'exog_2_b_step_2'
     ]
@@ -111,6 +116,7 @@ def test_forecaster_series_exog_features_stored():
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
     assert forecaster.X_train_direct_exog_names_out_ == X_train_direct_exog_names_out_
     assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
+    assert forecaster.X_train_direct_features_names_out_ == X_train_direct_features_names_out_
     assert forecaster.categorical_features_names_in_ == []
 
 

@@ -250,7 +250,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Same as `X_train_exog_names_out_` but using the direct format. The same 
         exogenous variable is repeated for each step.
     X_train_features_names_out_ : list
-        Names of columns of the matrix created internally for training.
+        Names of the features seen by each individual step estimator. These
+        are the autoregressive features (lags + window features) and exogenous
+        variable names.
+    X_train_direct_features_names_out_ : list
+        Names of all columns of the full training matrix created internally.
+        Same as `X_train_features_names_out_` but with exogenous variables
+        expanded with the `_step_N` suffix (direct format).
     categorical_features : str, list
         How categorical features are identified among the exogenous variables. It 
         can be 'auto', a list of column names or `None`.
@@ -380,6 +386,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.X_train_exog_names_out_            = None
         self.X_train_direct_exog_names_out_     = None
         self.X_train_features_names_out_        = None
+        self.X_train_direct_features_names_out_ = None
         self.in_sample_residuals_               = None
         self.out_sample_residuals_              = None
         self.in_sample_residuals_by_bin_        = None
@@ -909,6 +916,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         list[str],
         list[str], 
         list[str], 
+        list[str], 
         dict[str, type], 
         dict[str, type]
     ]:
@@ -952,7 +960,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             internally for training. It can be different from `exog_names_in_` if
             some exogenous variables are transformed during the training process.
         X_train_features_names_out_ : list
-            Names of the columns of the matrix created internally for training.
+            Names of the features seen by each individual step estimator
+            (autoregressive + exogenous names).
+        X_train_direct_features_names_out_ : list
+            Names of all columns of the full training matrix (autoregressive +
+            exogenous expanded with the `_step_N` suffix).
         exog_dtypes_in_ : dict
             Type of each exogenous variable/s used in training before the transformation
             applied by `transformer_exog`. If `transformer_exog` is not used, it
@@ -1134,6 +1146,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         X_train_autoreg = []
         X_train_window_features_names_out_ = [] if self.window_features is not None else None
         X_train_features_names_out_ = []
+        X_train_direct_features_names_out_ = []
         train_index = series_index[self.window_size + (self.max_step - 1):]
         for col in series_to_create_autoreg_features_and_y:
 
@@ -1164,6 +1177,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             if X_train_lags is not None:
                 X_train_autoreg_col.append(X_train_lags)
                 X_train_features_names_out_.extend(self.lags_names[col])
+                X_train_direct_features_names_out_.extend(self.lags_names[col])
 
             if col == self.level:
                 y_train = y_train_values
@@ -1182,6 +1196,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 X_train_autoreg_col.extend(X_train_window_features)
                 X_train_window_features_names_out_.extend(X_train_wf_names_out_)
                 X_train_features_names_out_.extend(X_train_wf_names_out_)
+                X_train_direct_features_names_out_.extend(X_train_wf_names_out_)
 
             if X_train_autoreg_col:
                 if len(X_train_autoreg_col) == 1:
@@ -1211,8 +1226,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             # NOTE: Need here for filter_train_X_y_for_step to work without fitting
             self.X_train_direct_exog_names_out_ = X_train_direct_exog_names_out_
 
-            X_train_features_names_out_.extend(self.X_train_direct_exog_names_out_)
             X_train.append(exog_direct)
+            X_train_features_names_out_.extend(X_train_exog_names_out_)
+            X_train_direct_features_names_out_.extend(X_train_direct_exog_names_out_)
         
         if len(X_train) == 1:
             X_train = X_train[0]
@@ -1238,6 +1254,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             categorical_features_names_in_,
             X_train_exog_names_out_,
             X_train_features_names_out_,
+            X_train_direct_features_names_out_,
             exog_dtypes_in_,
             exog_dtypes_out_
         )
@@ -1288,6 +1305,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             categorical_features_names_in_,
             X_train_exog_names_out_,
             X_train_features_names_out_,
+            X_train_direct_features_names_out_,
             exog_dtypes_in_,
             exog_dtypes_out_
         ) = self._create_train_X_y(series=series, exog=exog)
@@ -1295,11 +1313,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         X_train = pd.DataFrame(
                       data    = X_train,
                       index   = train_index[self.max_step],
-                      columns = X_train_features_names_out_
+                      columns = X_train_direct_features_names_out_
                   )
 
         if exog_dtypes_out_ is not None:
-            X_train_dtypes = {col: float for col in X_train_features_names_out_}
+            X_train_dtypes = {col: float for col in X_train_direct_features_names_out_}
             exog_dtypes_direct = {
                 f"{col}_step_{i + 1}": dtype
                 for col, dtype in exog_dtypes_out_.items()
@@ -1383,6 +1401,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             idx_columns_exog = (
                 np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1 
             )
+            
             idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
             if is_numpy:
                 X_train_step = X_train[:, idx_columns]
@@ -1608,12 +1627,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.exog_type_in_                      = None
         self.exog_dtypes_in_                    = None
         self.exog_dtypes_out_                   = None
+        self.categorical_features_names_in_     = None
         self.X_train_series_names_in_           = None
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_direct_exog_names_out_     = None
         self.X_train_features_names_out_        = None
-        self.categorical_features_names_in_     = None
+        self.X_train_direct_features_names_out_ = None
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
         self.out_sample_residuals_              = None
@@ -1633,26 +1653,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             categorical_features_names_in_,
             X_train_exog_names_out_,
             X_train_features_names_out_,
+            X_train_direct_features_names_out_,
             exog_dtypes_in_,
             exog_dtypes_out_
         ) = self._create_train_X_y(series=series, exog=exog)
 
-        # Compute step-specific feature names (without _step_N suffix) for
-        # configure_estimator_categorical_features. Same for all steps.
-        n_lags = len(list(
-            chain(*[v for v in self.lags_.values() if v is not None])
-        ))
-        n_wf = (
-            len(self.X_train_window_features_names_out_)
-            if self.window_features is not None else 0
-        )
-        X_train_step_features_names = X_train_features_names_out_[:n_lags + n_wf]
         if X_train_exog_names_out_ is not None:
             # NOTE: Need here as configure_estimator_categorical_features uses it
             self.categorical_features_names_in_ = categorical_features_names_in_
-            X_train_step_features_names = (
-                X_train_step_features_names + X_train_exog_names_out_
-            )
 
         results_fit = Parallel(n_jobs=self.n_jobs)(
             delayed(_fit_one_step_estimator)(
@@ -1661,7 +1669,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 X_train                     = X_train,
                 y_train                     = y_train,
                 train_index                 = train_index,
-                X_train_step_features_names = X_train_step_features_names,
+                X_train_features_names_out_ = X_train_features_names_out_,
                 step                        = step
             )
             for step in self.steps
@@ -1691,6 +1699,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.series_names_in_ = series_names_in_
         self.X_train_series_names_in_ = X_train_series_names_in_
         self.X_train_features_names_out_ = X_train_features_names_out_
+        self.X_train_direct_features_names_out_ = X_train_direct_features_names_out_
         
         self.is_fitted = True
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
@@ -1760,12 +1769,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         """
         
-        y_true = np.asarray(y_true)
-        y_pred = np.asarray(y_pred)
         residuals = y_true - y_pred
 
         if self._probabilistic_mode == "binned":
-            data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
             self.binner[level] = QuantileBinner(**self.binner_kwargs)
             self.binner[level].fit(y_pred)
             self.binner_intervals_[level] = self.binner[level].intervals_
@@ -1773,16 +1779,19 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         if store_in_sample_residuals:
             rng = np.random.default_rng(seed=random_state)
             if self._probabilistic_mode == "binned":
-                data['bin'] = self.binner[level].transform(y_pred).astype(int)
-                self.in_sample_residuals_by_bin_[level] = (
-                    data.groupby('bin')['residuals'].apply(np.array).to_dict()
-                )
-
+                bins = self.binner[level].transform(y_pred).astype(int)
                 max_sample = 10_000 // self.binner[level].n_bins_
-                for k, v in self.in_sample_residuals_by_bin_[level].items():
-                    if len(v) > max_sample:
-                        sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
-                        self.in_sample_residuals_by_bin_[level][k] = sample
+                
+                self.in_sample_residuals_by_bin_[level] = {}
+                for b in range(self.binner[level].n_bins_):
+                    bin_residuals = residuals[bins == b]
+                    if len(bin_residuals) == 0:
+                        continue
+                    if len(bin_residuals) > max_sample:
+                        bin_residuals = bin_residuals[
+                            rng.integers(low=0, high=len(bin_residuals), size=max_sample)
+                        ]
+                    self.in_sample_residuals_by_bin_[level][b] = bin_residuals
             else:
                 self.in_sample_residuals_by_bin_[level] = None
 
@@ -1974,10 +1983,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 )
                 for step in steps
             ]
-            # HACK: This is not the best way to do it. Can have any problem
-            # if the exog_columns are not in the same order as the
-            # self.window_features_names.
-            Xs_col_names = Xs_col_names + exog.columns.to_list()
+            Xs_col_names = Xs_col_names + self.X_train_exog_names_out_
         else:
             Xs = [X_autoreg] * len(steps)
 
@@ -1990,7 +1996,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         ):
             prediction_index.freq = last_window.index.freq
 
-        # HACK: Why no use self.X_train_features_names_out_ as Xs_col_names?
         return Xs, Xs_col_names, steps, prediction_index, differentiator_level
 
     @manage_warnings
