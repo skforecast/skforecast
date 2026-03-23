@@ -2957,13 +2957,17 @@ def test_create_train_X_y_output_when_exog_is_series_of_string_category(categori
         ['exog'],
         ['exog'],
         ['exog'],
-        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5', 'exog'],
+        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
+         'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5', 'exog'],
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5',
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
          'exog_step_1'],
         {'exog': exog.dtypes},
         {'exog': np.float64}
     )
+
+    forecaster.exog_in_ is True
+    forecaster.X_train_direct_exog_names_out_ == ['exog_step_1']
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert isinstance(results[1], dict)
@@ -3028,13 +3032,17 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_string_category(categ
         ['exog_1', 'exog_2'],
         ['exog_1', 'exog_2'],
         ['exog_1', 'exog_2'],
-        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5', 'exog_1', 'exog_2'],
+        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
+         'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5', 'exog_1', 'exog_2'],
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5',
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
          'exog_1_step_1', 'exog_2_step_1'],
         {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes},
         {'exog_1': np.float64, 'exog_2': np.float64}
     )
+
+    forecaster.exog_in_ is True
+    forecaster.X_train_direct_exog_names_out_ == ['exog_step_1', 'exog_2_step_1']
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert isinstance(results[1], dict)
@@ -3105,7 +3113,9 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_float_int_string_cate
         ['exog_1', 'exog_2', 'exog_3'],
         ['exog_3'],
         ['exog_1', 'exog_2', 'exog_3'],
-        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5', 'exog_1', 'exog_2', 'exog_3'],
+        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
+         'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5', 
+         'exog_1', 'exog_2', 'exog_3'],
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5',
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
          'exog_1_step_1', 'exog_2_step_1', 'exog_3_step_1'],
@@ -3113,6 +3123,11 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_float_int_string_cate
          'exog_3': exog['exog_3'].dtypes},
         {'exog_1': np.float64, 'exog_2': np.int64, 'exog_3': np.float64}
     )
+
+    forecaster.exog_in_ is True
+    forecaster.X_train_direct_exog_names_out_ == [
+        'exog_1_step_1', 'exog_2_step_1', 'exog_3_step_1'
+    ]
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert isinstance(results[1], dict)
@@ -3181,13 +3196,20 @@ def test_create_train_X_y_output_when_is_fitted_uses_transform_not_fit_transform
         ['exog_1', 'exog_2'],
         ['exog_2'],
         ['exog_1', 'exog_2'],
-        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5', 'exog_1', 'exog_2'],
+        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
+         'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5', 
+         'exog_1', 'exog_2'],
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5',
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
          'exog_1_step_1', 'exog_2_step_1'],
         {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes},
         {'exog_1': np.float64, 'exog_2': np.float64}
     )
+
+    forecaster.exog_in_ is True
+    forecaster.X_train_direct_exog_names_out_ == [
+        'exog_1_step_1', 'exog_2_step_1'
+    ]
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert isinstance(results[1], dict)
@@ -3274,13 +3296,20 @@ def test_create_train_X_y_output_when_transformer_exog_is_make_column_transforme
         ['col_1', 'col_2'],
         ['col_2'],
         ['col_1', 'col_2'],
-        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5', 'col_1', 'col_2'],
+        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
+         'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5', 
+         'col_1', 'col_2'],
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5',
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
          'col_1_step_1', 'col_2_step_1'],
         {'col_1': exog['col_1'].dtypes, 'col_2': exog['col_2'].dtypes},
         {'col_1': np.float64, 'col_2': np.float64}
     )
+
+    forecaster.exog_in_ is True
+    forecaster.X_train_direct_exog_names_out_ == [
+        'col_1_step_1', 'col_2_step_1'
+    ]
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert isinstance(results[1], dict)

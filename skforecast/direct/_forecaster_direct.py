@@ -384,7 +384,6 @@ class ForecasterDirect(ForecasterBase):
         repeated calculations when filtering `X_train` for specific steps. The 
         cache is cleared during `fit()` and when `set_lags()` or 
         `set_window_features()` are called.
-        **New in version 0.20.0**
     filter_train_X_y_columns_cache_ : dict
         Cache storing column names for each forecasting step to speed up the 
         creation of training matrices during backtesting. The cache uses step 
@@ -392,7 +391,6 @@ class ForecasterDirect(ForecasterBase):
         string operations when removing step suffixes from column names. The cache 
         is cleared during `fit()` and when `set_lags()` or `set_window_features()` 
         are called.
-        **New in version 0.20.0**
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -1859,7 +1857,9 @@ class ForecasterDirect(ForecasterBase):
                 category=UserWarning
             )
             predict_fns = [_build_predict_function(est) for est in estimators]
-            predictions = np.array([fn(X).item() for fn, X in zip(predict_fns, Xs)])
+            predictions = np.array(
+                [fn(X).item() for fn, X in zip(predict_fns, Xs)]
+            )
 
         return predictions
 

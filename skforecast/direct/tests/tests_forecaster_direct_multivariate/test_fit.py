@@ -2,6 +2,7 @@
 # ==============================================================================
 import pytest
 from pytest import approx
+from itertools import chain
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -607,12 +608,12 @@ def test_fit_configures_estimator_categorical_features(estimator, check_fn):
 
     assert forecaster.is_fitted
     assert forecaster.categorical_features_names_in_ == ['exog_cat']
-    assert 'exog_cat_step_1' in forecaster.X_train_features_names_out_
-    assert 'exog_cat_step_2' in forecaster.X_train_features_names_out_
+    assert 'exog_cat' in forecaster.X_train_features_names_out_
+    assert 'exog_cat_step_1' in forecaster.X_train_direct_features_names_out_
+    assert 'exog_cat_step_2' in forecaster.X_train_direct_features_names_out_
 
     if check_fn is not None:
         # Step-specific feature names (without _step_N suffix)
-        from itertools import chain
         n_lags = len(list(
             chain(*[v for v in forecaster.lags_.values() if v is not None])
         ))

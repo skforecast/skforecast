@@ -489,8 +489,9 @@ def _evaluate_grid_hyperparameters(
                 metric_dict[m_name].append(m_value)
         
             if output_file is not None:
-                header = ['lags', 'lags_label', 'params', 
-                          *metric_dict.keys(), *params.keys()]
+                header = [
+                    'lags', 'lags_label', 'params', *metric_dict.keys(), *params.keys()
+                ]
                 row = [lags_v, lags_k, params, 
                        *metric_values, *params.values()]
                 if not os.path.isfile(output_file):
@@ -1484,8 +1485,9 @@ def _evaluate_grid_hyperparameters_multiseries(
             metrics_list.append(metrics)
 
             if output_file is not None:
-                header = ['levels', 'lags', 'lags_label', 'params', 
-                          *metric_names, *params.keys()]
+                header = [
+                    'levels', 'lags', 'lags_label', 'params', *metric_names, *params.keys()
+                ]
                 row = [
                     levels,
                     lags_v,

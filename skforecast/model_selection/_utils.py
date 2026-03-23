@@ -749,6 +749,9 @@ def _calculate_metrics_one_step_ahead(
     
     """
 
+    # TODO: Bug here, estimator.fit is not using weights, fit_kwargs or 
+    # categoriacal parameters. NEED TO FIX THIS.
+
     needs_y_train = any_metric_needs_y_train(metrics)
 
     if type(forecaster).__name__ == 'ForecasterDirect':
@@ -1322,6 +1325,9 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         Value of predictions for each level.
     
     """
+
+    # TODO: Bug here, estimator.fit is not using weights, fit_kwargs or 
+    # categoriacal parameters. NEED TO FIX THIS.
 
     # NOTE: All this checks can be deleted as they are done in the public
     # function that calls this private function.

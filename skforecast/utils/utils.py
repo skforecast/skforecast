@@ -520,8 +520,9 @@ def configure_estimator_categorical_features(
     For estimators that require configuration via `set_params` (XGBoost,
     HistGradientBoosting), the estimator is modified in-place.
 
-    Supported estimators: LGBMRegressor, CatBoostRegressor, XGBRegressor,
-    HistGradientBoostingRegressor (sklearn).
+    Supported estimators: LGBMRegressor/LGBMClassifier,
+    CatBoostRegressor/CatBoostClassifier, XGBRegressor/XGBClassifier,
+    HistGradientBoostingRegressor/HistGradientBoostingClassifier (sklearn).
 
     Parameters
     ----------
@@ -555,7 +556,9 @@ def configure_estimator_categorical_features(
         # Reset any previously set categorical params (from a prior fit call)
         if module == 'xgboost':
             estimator.set_params(feature_types=None, enable_categorical=False)
-        elif module == 'sklearn' and estimator_name == 'HistGradientBoostingRegressor':
+        elif module == 'sklearn' and estimator_name in (
+            'HistGradientBoostingRegressor', 'HistGradientBoostingClassifier'
+        ):
             estimator.set_params(categorical_features='from_dtype')
         return fit_kwargs
 
@@ -611,8 +614,10 @@ def configure_estimator_categorical_features(
                 IgnoredArgumentWarning
             )
 
-    elif module == 'sklearn' and estimator_name == 'HistGradientBoostingRegressor':
-        # HistGradientBoostingRegressor accepts `categorical_features` as a
+    elif module == 'sklearn' and estimator_name in (
+        'HistGradientBoostingRegressor', 'HistGradientBoostingClassifier'
+    ):
+        # HistGradientBoosting accepts `categorical_features` as a
         # list of int indices via set_params (constructor param).
         prev_categorical = estimator.get_params().get('categorical_features')
         estimator.set_params(categorical_features=cat_indices)
