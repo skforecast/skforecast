@@ -48,6 +48,40 @@ exog_predict = pd.DataFrame(
     index=pd.date_range("2024-07-31", periods=5, freq="ME"),
 )
 
+# Wide-format DataFrame with two series (DatetimeIndex)
+series_wide = pd.DataFrame(
+    {
+        "series_1": np.arange(50, dtype=float),
+        "series_2": np.arange(50, 100, dtype=float),
+    },
+    index=pd.date_range("2020-01-01", periods=50, freq="ME"),
+)
+
+# Long-format DataFrame (MultiIndex: series ID × DatetimeIndex)
+# Manually constructed to guarantee the DatetimeIndex level carries "ME" freq.
+_date_idx = pd.date_range("2020-01-31", periods=50, freq="ME")
+_s1 = pd.Series(np.arange(50, dtype=float), index=_date_idx, name="series_1")
+_s2 = pd.Series(np.arange(50, 100, dtype=float), index=_date_idx, name="series_2")
+series_long = pd.concat(
+    [_s1.rename("value").to_frame().assign(dummy=0),
+     _s2.rename("value").to_frame().assign(dummy=0)],
+    keys=["series_1", "series_2"],
+)[["value"]]
+
+# Long-format exog (MultiIndex: series ID × DatetimeIndex) aligned to series_long
+_exog_s1 = pd.DataFrame({"feat_a": np.arange(50, dtype=float)}, index=_date_idx)
+_exog_s2 = pd.DataFrame({"feat_a": np.arange(50, dtype=float) * 2}, index=_date_idx)
+exog_long = pd.concat([_exog_s1, _exog_s2], keys=["series_1", "series_2"])
+
+# Wide-format DataFrame with RangeIndex (two series)
+series_wide_range = pd.DataFrame(
+    {
+        "series_1": np.arange(50, dtype=float),
+        "series_2": np.arange(50, 100, dtype=float),
+    },
+    index=pd.RangeIndex(0, 50),
+)
+
 # Multi-column exogenous DataFrame aligned to `y`
 df_exog = pd.DataFrame(
     {

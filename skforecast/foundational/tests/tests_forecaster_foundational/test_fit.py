@@ -2,9 +2,11 @@
 # ==============================================================================
 import re
 import pytest
+import warnings
 import numpy as np
 import pandas as pd
 from skforecast.foundational import ForecasterFoundational
+from skforecast.exceptions import InputTypeWarning, IgnoredArgumentWarning, MissingExogWarning
 
 # Fixtures
 from .fixtures_forecaster_foundational import (
@@ -13,6 +15,10 @@ from .fixtures_forecaster_foundational import (
     y_range,
     exog,
     df_exog,
+    series_wide,
+    series_wide_range,
+    series_long,
+    exog_long,
 )
 
 
@@ -87,11 +93,11 @@ def test_fit_stores_index_type_for_RangeIndex():
 
 def test_fit_stores_index_freq_for_DatetimeIndex():
     """
-    index_freq_ stores the frequency string for a DatetimeIndex.
+    index_freq_ stores the frequency object for a DatetimeIndex.
     """
     forecaster = make_forecaster()
     forecaster.fit(series=y)
-    assert forecaster.index_freq_ == y.index.freqstr
+    assert forecaster.index_freq_ == y.index.freq
 
 
 def test_fit_stores_index_freq_for_RangeIndex():
@@ -101,15 +107,6 @@ def test_fit_stores_index_freq_for_RangeIndex():
     forecaster = make_forecaster()
     forecaster.fit(series=y_range)
     assert forecaster.index_freq_ == y_range.index.step
-
-
-def test_fit_stores_extended_index_():
-    """
-    extended_index_ is equal to the training series index after fit.
-    """
-    forecaster = make_forecaster()
-    forecaster.fit(series=y)
-    pd.testing.assert_index_equal(forecaster.extended_index_, y.index)
 
 
 def test_fit_stores_fit_date():
@@ -188,7 +185,6 @@ def test_fit_resets_state_on_refit():
     forecaster.fit(series=y2)
 
     assert forecaster.series_name_in_ == "z"
-    assert len(forecaster.extended_index_) == 30
     assert forecaster.exog_in_ is False
 
 
@@ -210,3 +206,177 @@ def test_fit_does_not_modify_exog():
     exog_copy = df_exog.copy()
     forecaster.fit(series=y, exog=df_exog)
     pd.testing.assert_frame_equal(df_exog, exog_copy)
+
+
+# Tests fit — long-format DataFrame
+# ==============================================================================
+
+def test_fit_long_format_dataframe_works():
+    """
+    fit() accepts a long-format (MultiIndex) DataFrame and stores correct metadata.
+    """
+    forecaster = make_forecaster()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        forecaster.fit(series=series_long)
+
+    assert forecaster.is_fitted is True
+    assert forecaster.series_names_in_ == ["series_1", "series_2"]
+    assert forecaster._is_multiseries is True
+    assert forecaster.series_name_in_ is None
+    assert forecaster.index_type_ == pd.DatetimeIndex
+    # training_range_ is a dict with one entry per series
+    assert set(forecaster.training_range_.keys()) == {"series_1", "series_2"}
+
+
+def test_fit_long_format_issues_InputTypeWarning():
+    """
+    fit() raises an InputTypeWarning when a long-format DataFrame is passed.
+    """
+    forecaster = make_forecaster()
+    with pytest.warns(InputTypeWarning):
+        forecaster.fit(series=series_long)
+
+
+def test_fit_long_format_multiple_columns_issues_IgnoredArgumentWarning():
+    """
+    fit() raises an IgnoredArgumentWarning when the long-format DataFrame has
+    more than one column, and only uses the first column values.
+    """
+    forecaster = make_forecaster()
+    series_long_multicol = series_long.copy()
+    series_long_multicol["extra"] = 99.0
+
+    with pytest.warns(IgnoredArgumentWarning, match="first column"):
+        with warnings.catch_warnings():
+            warnings.simplefilter("always")
+            forecaster.fit(series=series_long_multicol)
+
+    # Only the first column ('value') should have been used.
+    assert forecaster.series_names_in_ == ["series_1", "series_2"]
+
+
+def test_fit_long_format_non_datetime_second_level_raises_TypeError():
+    """
+    fit() raises TypeError when a long-format DataFrame has a non-DatetimeIndex
+    as the second level of the MultiIndex (e.g. RangeIndex).
+    """
+    # Build a long-format DataFrame whose second level is NOT a DatetimeIndex.
+    arrays = [
+        ["s1", "s1", "s2", "s2"],
+        [0, 1, 0, 1],
+    ]
+    idx = pd.MultiIndex.from_arrays(arrays, names=["series_id", "time"])
+    series_bad = pd.DataFrame({"value": [1.0, 2.0, 3.0, 4.0]}, index=idx)
+
+    forecaster = make_forecaster()
+    with pytest.raises(TypeError, match="second level of the MultiIndex"):
+        forecaster.fit(series=series_bad)
+
+
+# Tests fit — RangeIndex regression
+# ==============================================================================
+
+def test_fit_range_index_single_series_sets_index_freq_correctly():
+    """
+    index_freq_ is set to the RangeIndex step (not a freqstr) for a single
+    series with a RangeIndex.
+    """
+    forecaster = make_forecaster()
+    forecaster.fit(series=y_range)
+    assert forecaster.index_freq_ == y_range.index.step
+
+
+def test_fit_range_index_multiseries_sets_index_freq_correctly():
+    """
+    index_freq_ is set to the RangeIndex step for a wide DataFrame with a
+    RangeIndex.
+    """
+    forecaster = make_forecaster()
+    forecaster.fit(series=series_wide_range)
+    assert forecaster.index_freq_ == series_wide_range.index.step
+    assert forecaster.index_type_ == pd.RangeIndex
+
+
+# Tests fit — long-format exog DataFrame
+# ==============================================================================
+
+def test_fit_long_format_exog_works():
+    """
+    fit() accepts a long-format (MultiIndex) DataFrame as `exog` and stores
+    correct metadata. exog_type_in_ records the original type (pd.DataFrame).
+    """
+    forecaster = make_forecaster()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        forecaster.fit(series=series_long, exog=exog_long)
+
+    assert forecaster.exog_in_ is True
+    assert forecaster.exog_type_in_ == pd.DataFrame
+    assert forecaster.exog_names_in_ == ["feat_a"]
+    assert forecaster.is_fitted is True
+
+
+def test_fit_long_format_exog_issues_InputTypeWarning():
+    """
+    fit() raises an InputTypeWarning when a long-format DataFrame is passed
+    as `exog`.
+    """
+    forecaster = make_forecaster()
+    with warnings.catch_warnings():
+        warnings.simplefilter("always")
+        with pytest.warns(InputTypeWarning, match="long-format DataFrame"):
+            forecaster.fit(series=series_long, exog=exog_long)
+
+
+def test_fit_long_format_exog_non_datetime_second_level_raises_TypeError():
+    """
+    fit() raises TypeError when a long-format exog DataFrame has a
+    non-DatetimeIndex as the second MultiIndex level.
+    """
+    arrays = [
+        ["series_1", "series_1", "series_2", "series_2"],
+        [0, 1, 0, 1],
+    ]
+    idx = pd.MultiIndex.from_arrays(arrays, names=["series_id", "time"])
+    exog_bad = pd.DataFrame({"feat_a": [1.0, 2.0, 3.0, 4.0]}, index=idx)
+
+    forecaster = make_forecaster()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        with pytest.raises(TypeError, match="second level of the MultiIndex in `exog`"):
+            forecaster.fit(series=series_long, exog=exog_bad)
+
+
+def test_fit_long_format_series_exog_works():
+    """
+    fit() accepts a long-format MultiIndex pd.Series as `exog` (Fix #2:
+    MultiIndex pd.Series is coerced to pd.DataFrame before normalisation).
+    """
+    exog_series_long = exog_long["feat_a"]  # MultiIndex pd.Series
+    assert isinstance(exog_series_long.index, pd.MultiIndex)
+
+    forecaster = make_forecaster()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        forecaster.fit(series=series_long, exog=exog_series_long)
+
+    assert forecaster.exog_in_ is True
+    assert forecaster.exog_names_in_ == ["feat_a"]
+    assert forecaster.exog_type_in_ == pd.Series
+
+
+def test_fit_long_format_exog_missing_series_issues_MissingExogWarning():
+    """
+    fit() issues a MissingExogWarning when the long-format exog does not
+    cover all series provided in `series`.
+    """
+    # exog only for series_1 — series_2 is missing
+    exog_partial = exog_long.loc[["series_1"]]
+
+    forecaster = make_forecaster()
+    with warnings.catch_warnings():
+        warnings.simplefilter("always")
+        with pytest.warns(MissingExogWarning, match="series_2"):
+            forecaster.fit(series=series_long, exog=exog_partial)
+

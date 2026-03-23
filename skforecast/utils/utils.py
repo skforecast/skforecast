@@ -2539,7 +2539,7 @@ def check_preprocess_series(
             series.index = series.index.set_names([series.index.names[0], None])
             series_dict = {
                 series_id: series.loc[series_id][first_col].rename(series_id)
-                for series_id in series.index.levels[0]
+                for series_id in series.index.remove_unused_levels().levels[0]
             }
         
         warnings.warn(
@@ -2690,11 +2690,11 @@ def check_preprocess_exog_multiseries(
             exog_dict.update(
                 {
                     series_id: exog.loc[series_id] 
-                    for series_id in exog.index.levels[0]
+                    for series_id in exog.index.remove_unused_levels().levels[0]
                     if series_id in series_names_in_
                 }
             )
-            series_ids_in_exog = exog.index.levels[0]
+            series_ids_in_exog = exog.index.remove_unused_levels().levels[0]
             warnings.warn(
                 "Using a long-format DataFrame as `exog` requires additional transformations, "
                 "which can increase computational time. It is recommended to use a dictionary of "

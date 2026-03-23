@@ -130,12 +130,7 @@ class TestFitMultiSeries:
     def test_fit_multiseries_stores_index_freq(self):
         forecaster = make_forecaster()
         forecaster.fit(series=series_df)
-        assert forecaster.index_freq_ == INDEX.freqstr
-
-    def test_fit_multiseries_stores_extended_index(self):
-        forecaster = make_forecaster()
-        forecaster.fit(series=series_df)
-        pd.testing.assert_index_equal(forecaster.extended_index_, INDEX)
+        assert forecaster.index_freq_ == INDEX.freq
 
     def test_fit_multiseries_exog_dict_stores_metadata(self):
         forecaster = make_forecaster()

@@ -102,7 +102,6 @@ def test_set_params_clears_training_metadata():
     assert forecaster.index_type_ is None
     assert forecaster.index_freq_ is None
     assert forecaster.last_window_ is None
-    assert forecaster.extended_index_ is None
     assert forecaster.series_name_in_ is None
     assert forecaster.series_names_in_ is None
     assert forecaster._is_multiseries is False

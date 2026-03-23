@@ -8,38 +8,199 @@
 from __future__ import annotations
 import sys
 import textwrap
+import warnings
 from copy import copy
-
 import pandas as pd
 from sklearn.exceptions import NotFittedError
+
+from ..exceptions import IgnoredArgumentWarning, InputTypeWarning, MissingExogWarning
 
 from .. import __version__
 from ..utils import (
     check_y,
     check_exog,
+    check_interval,
     get_style_repr_html,
 )
 from ._foundational_model import FoundationalModel
 
 
-def _check_series_type(
+def _check_preprocess_series_type(
     series: pd.Series | pd.DataFrame | dict,
-) -> tuple[bool, list[str]]:
+) -> tuple[bool, list[str], pd.Series | pd.DataFrame | dict]:
     """
-    Validate `series` and return ``(is_multiseries, series_names)``.
+    Validate `series`, normalise long-format DataFrames, and return
+    ``(is_multiseries, series_names, normalised_series)``.
+
+    Long-format DataFrames (MultiIndex with series IDs in the first level and
+    a ``DatetimeIndex`` in the second level) are converted to a
+    ``dict[str, pd.Series]`` before being returned. All other supported types
+    are returned unchanged.
+
+    Parameters
+    ----------
+    series : pd.Series, pd.DataFrame, or dict of pd.Series
+        Input to validate and normalise.
+
+    Returns
+    -------
+    is_multiseries : bool
+    series_names : list of str
+    series : pd.Series, pd.DataFrame, or dict of pd.Series
+        Normalised series. Guaranteed NOT to be a long-format DataFrame.
+
+    Raises
+    ------
+    TypeError
+        If `series` is a long-format DataFrame whose second MultiIndex level is
+        not a ``pandas.DatetimeIndex``, or if `series` is an unsupported type.
     """
     if isinstance(series, pd.Series):
         name = series.name if series.name is not None else 'y'
-        return False, [name]
+        return False, [name], series
+
     elif isinstance(series, pd.DataFrame):
-        return True, series.columns.tolist()
+        if not isinstance(series.index, pd.MultiIndex):
+            # Wide-format DataFrame — each column is one series.
+            return True, series.columns.tolist(), series
+
+        # Long-format DataFrame: first level = series IDs, second = timestamps.
+        if not isinstance(series.index.levels[1], pd.DatetimeIndex):
+            raise TypeError(
+                "The second level of the MultiIndex in `series` must be a "
+                "pandas DatetimeIndex with the same frequency for each series. "
+                f"Found {type(series.index.levels[1])}."
+            )
+
+        first_col = series.columns[0]
+        if len(series.columns) != 1:
+            warnings.warn(
+                f"`series` DataFrame has multiple columns. Only the values of "
+                f"the first column, '{first_col}', will be used as series "
+                f"values. All other columns will be ignored.",
+                IgnoredArgumentWarning,
+                stacklevel=3,
+            )
+
+        series_ids = series.index.remove_unused_levels().levels[0].tolist()
+        series_dict = {
+            sid: series.loc[sid][first_col].rename(sid)
+            for sid in series_ids
+        }
+
+        warnings.warn(
+            "Passing a DataFrame (either wide or long format) as `series` "
+            "requires additional internal transformations, which can increase "
+            "computational time. It is recommended to use a dictionary of "
+            "pandas Series instead. For more details, see: "
+            "https://skforecast.org/latest/user_guides/"
+            "independent-multi-time-series-forecasting.html#input-data",
+            InputTypeWarning,
+            stacklevel=3,
+        )
+
+        return True, series_ids, series_dict
+
     elif isinstance(series, dict):
-        return True, list(series.keys())
+        return True, list(series.keys()), series
+
     else:
         raise TypeError(
-            "`series` must be a pandas Series, a wide pandas DataFrame, or a "
+            "`series` must be a pandas Series, a wide pandas DataFrame, a "
+            "long-format pandas DataFrame (MultiIndex), or a "
             f"dict[str, pd.Series]. Got {type(series)}."
         )
+
+
+def _check_preprocess_exog_type(
+    exog: pd.Series | pd.DataFrame | dict | None,
+    series_names_in_: list[str] | None = None,
+) -> pd.Series | pd.DataFrame | dict | None:
+    """
+    Validate `exog` and normalise long-format MultiIndex DataFrames.
+
+    Flat-index ``pd.Series`` and wide ``pd.DataFrame`` are returned
+    unchanged — they are broadcast to all series by the adapter.  A
+    ``dict`` is returned unchanged.  A long-format ``pd.Series`` or
+    ``pd.DataFrame`` (MultiIndex, first level = series IDs, second level
+    = ``DatetimeIndex``) is converted to a ``dict[str, pd.DataFrame]``
+    and an ``InputTypeWarning`` is issued.
+
+    Parameters
+    ----------
+    exog : pd.Series, pd.DataFrame, dict, or None
+        Input to validate and normalise.
+    series_names_in_ : list of str, optional
+        Series names seen at fit time. When provided, a
+        ``MissingExogWarning`` is issued for any series that has no
+        corresponding entry in a long-format `exog`.
+
+    Returns
+    -------
+    pd.Series, pd.DataFrame, dict, or None
+        Normalised exog. Guaranteed NOT to be a long-format DataFrame.
+
+    Raises
+    ------
+    TypeError
+        If `exog` is a long-format DataFrame whose second MultiIndex level
+        is not a ``pandas.DatetimeIndex``, or if `exog` is an unsupported
+        type.
+    """
+    if exog is None or isinstance(exog, dict):
+        return exog
+
+    # Coerce a MultiIndex pd.Series to pd.DataFrame so it follows the same
+    # long-format path as a MultiIndex DataFrame.
+    if isinstance(exog, pd.Series):
+        if not isinstance(exog.index, pd.MultiIndex):
+            return exog  # flat-index pd.Series — broadcast unchanged
+        exog = exog.to_frame()  # fall through to the DataFrame path below
+
+    if isinstance(exog, pd.DataFrame):
+        if not isinstance(exog.index, pd.MultiIndex):
+            # Wide-format DataFrame — broadcast to all series unchanged.
+            return exog
+
+        # Long-format: first level = series IDs, second = timestamps.
+        if not isinstance(exog.index.levels[1], pd.DatetimeIndex):
+            raise TypeError(
+                "The second level of the MultiIndex in `exog` must be a "
+                "pandas DatetimeIndex. "
+                f"Found {type(exog.index.levels[1])}."
+            )
+
+        series_ids = exog.index.remove_unused_levels().levels[0].tolist()
+        exog_dict = {sid: exog.loc[sid] for sid in series_ids}
+
+        warnings.warn(
+            "Passing a long-format DataFrame as `exog` requires additional "
+            "internal transformations, which can increase computational time. "
+            "It is recommended to use a dictionary of pandas Series or "
+            "DataFrames instead. For more details, see: "
+            "https://skforecast.org/latest/user_guides/"
+            "independent-multi-time-series-forecasting.html#input-data",
+            InputTypeWarning,
+            stacklevel=3,
+        )
+
+        if series_names_in_ is not None:
+            missing = [n for n in series_names_in_ if n not in exog_dict]
+            if missing:
+                warnings.warn(
+                    f"The following series are present in `series_names_in_` "
+                    f"but have no entry in the long-format `exog`: {missing}. "
+                    f"No exogenous variables will be used for these series.",
+                    MissingExogWarning,
+                    stacklevel=3,
+                )
+
+        return exog_dict
+
+    raise TypeError(
+        "`exog` must be a pandas Series, a pandas DataFrame, or a "
+        f"dict[str, pd.Series | pd.DataFrame | None]. Got {type(exog)}."
+    )
 
 
 class ForecasterFoundational:
@@ -48,13 +209,14 @@ class ForecasterFoundational:
     compatibility: backtesting, model selection, etc.
 
     Unlike ML-based forecasters, there is no training step — the underlying
-    foundational model (Chronos-2) is zero-shot. `fit` only stores the history
+    foundational models are zero-shot. `fit` only stores the history
     as context and records index metadata. Predictions are generated directly
     by the model's `predict_quantiles` pipeline.
 
     Supports both single-series and multi-series modes. Pass a `pandas.Series`
-    to `fit` for single-series forecasting or a wide `pandas.DataFrame` / a
-    `dict[str, pd.Series]` for multi-series (global-model) forecasting.
+    to `fit` for single-series forecasting or a wide `pandas.DataFrame`, a
+    long-format `pandas.DataFrame` (MultiIndex), or a `dict[str, pd.Series]`
+    for multi-series (global-model) forecasting.
 
     Parameters
     ----------
@@ -74,13 +236,12 @@ class ForecasterFoundational:
     last_window_ : None
         Intentionally `None` — `ForecasterFoundational` never stores training
         data directly; the adapter's internal `_history` is used instead.
-    extended_index_ : pandas Index
-        Index of the data seen during training. For multi-series, this is the
-        index of the first series in the training data.
     index_type_ : type
         Type of index of the input used in training.
-    index_freq_ : str
-        Frequency of the index of the input used in training.
+    index_freq_ : pandas.DateOffset or int
+        Frequency of the index of the input used in training. A
+        ``pandas.DateOffset`` for ``DatetimeIndex``; the ``step`` integer
+        for ``RangeIndex``.
     training_range_ : pandas Index or dict
         First and last values of the index of the data used during training.
         `pandas.Index` in single-series mode; `dict[str, pandas.Index]` in
@@ -138,7 +299,6 @@ class ForecasterFoundational:
 
         # Attributes set at fit time.
         self.last_window_     = None   # intentionally None — adapter stores history
-        self.extended_index_  = None
         self.index_type_      = None
         self.index_freq_      = None
         self.training_range_  = None
@@ -168,10 +328,16 @@ class ForecasterFoundational:
             "allowed_input_types_series": [
                 "pandas.Series",
                 "pandas.DataFrame",
+                "long-format pandas.DataFrame",
                 "dict[str, pandas.Series]",
             ],
             "supports_exog": True,
-            "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
+            "allowed_input_types_exog": [
+                "pandas.Series",
+                "pandas.DataFrame",
+                "long-format pandas.DataFrame",
+                "dict[str, pandas.Series | pandas.DataFrame | None]",
+            ],
             "handles_missing_values_series": False,
             "handles_missing_values_exog": False,
 
@@ -342,6 +508,10 @@ class ForecasterFoundational:
             - `pandas.Series` — single-series mode.
             - Wide `pandas.DataFrame` (one column per series) — multi-series
               mode.
+            - Long-format `pandas.DataFrame` with a MultiIndex (first level =
+              series IDs, second level = ``DatetimeIndex``) — multi-series
+              mode. Internally converted to a dict. An `InputTypeWarning` is
+              issued; consider passing a dict directly for better performance.
             - `dict[str, pd.Series]` — multi-series mode.
         exog : pandas Series, pandas DataFrame, dict, default None
             Historical exogenous variables aligned to `series`. These map to
@@ -351,8 +521,11 @@ class ForecasterFoundational:
             `series`.
 
             In multi-series mode: a `dict[str, pd.Series | pd.DataFrame | None]`
-            with one entry per series, or a single `pd.Series` / `pd.DataFrame`
-            broadcast to all series.
+            with one entry per series, a single `pd.Series` / `pd.DataFrame`
+            broadcast to all series, or a long-format `pd.DataFrame` with a
+            MultiIndex (first level = series IDs, second level =
+            ``DatetimeIndex``). Long-format inputs are converted to a ``dict``
+            internally; an `InputTypeWarning` is issued.
 
         Returns
         -------
@@ -362,7 +535,6 @@ class ForecasterFoundational:
 
         # Reset fit-time state so re-fitting always starts clean.
         self.last_window_     = None
-        self.extended_index_  = None
         self.index_type_      = None
         self.index_freq_      = None
         self.training_range_  = None
@@ -375,7 +547,7 @@ class ForecasterFoundational:
         self.is_fitted        = False
         self.fit_date         = None
 
-        is_multiseries, series_names = _check_series_type(series)
+        is_multiseries, series_names, series = _check_preprocess_series_type(series)
 
         if not is_multiseries:
             # Single-series validation path.
@@ -402,16 +574,21 @@ class ForecasterFoundational:
             self.series_names_in_ = series_names
             self.training_range_  = series.index[[0, -1]]
             self.index_type_      = type(series.index)
-            self.extended_index_  = series.index
             if isinstance(series.index, pd.DatetimeIndex):
-                self.index_freq_ = series.index.freqstr
-            else:
+                self.index_freq_ = series.index.freq
+            elif isinstance(series.index, pd.RangeIndex):
                 self.index_freq_ = series.index.step
+            else:
+                raise TypeError(
+                    f"`series` index must be a `pandas.DatetimeIndex` or "
+                    f"`pandas.RangeIndex`. Got {type(series.index)}."
+                )
         else:
             # Multi-series validation and metadata.
             if exog is not None:
+                self.exog_type_in_ = type(exog)  # capture original type before normalisation
+                exog = _check_preprocess_exog_type(exog, series_names_in_=series_names)
                 self.exog_in_      = True
-                self.exog_type_in_ = type(exog)
                 if isinstance(exog, dict):
                     # Collect all exog column names across all series.
                     all_names: list[str] = []
@@ -450,11 +627,15 @@ class ForecasterFoundational:
                 }
                 ref_index = next(iter(series.values())).index
             self.index_type_     = type(ref_index)
-            self.extended_index_ = ref_index
             if isinstance(ref_index, pd.DatetimeIndex):
-                self.index_freq_ = ref_index.freqstr
-            else:
+                self.index_freq_ = ref_index.freq
+            elif isinstance(ref_index, pd.RangeIndex):
                 self.index_freq_ = ref_index.step
+            else:
+                raise TypeError(
+                    f"`series` index must be a `pandas.DatetimeIndex` or "
+                    f"`pandas.RangeIndex`. Got {type(ref_index)}."
+                )
 
         self.fit_date  = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted = True
@@ -523,6 +704,8 @@ class ForecasterFoundational:
         )
 
         if is_multi:
+            exog = _check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
+            last_window_exog = _check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
             # Trim broadcast exog (Series/DataFrame) — mirrors single-series behaviour.
             # Dict exog is per-series and must reach the adapter untrimmed.
             if exog is not None and isinstance(exog, (pd.Series, pd.DataFrame)):
@@ -611,6 +794,10 @@ class ForecasterFoundational:
                 "arguments before using `predict_interval()`."
             )
 
+        if isinstance(interval, (int, float)):
+            check_interval(alpha=interval, alpha_literal='interval')
+            interval = [(0.5 - interval / 2) * 100, (0.5 + interval / 2) * 100]
+
         if len(interval) != 2:
             raise ValueError(
                 f"`interval` must be a sequence of exactly two values [lower, upper]. "
@@ -633,6 +820,8 @@ class ForecasterFoundational:
         )
 
         if is_multi:
+            exog = _check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
+            last_window_exog = _check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
             if exog is not None and isinstance(exog, (pd.Series, pd.DataFrame)):
                 exog = exog.iloc[:steps]
             df = self.estimator.predict(
@@ -727,6 +916,8 @@ class ForecasterFoundational:
         )
 
         if is_multi:
+            exog = _check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
+            last_window_exog = _check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
             if exog is not None and isinstance(exog, (pd.Series, pd.DataFrame)):
                 exog = exog.iloc[:steps]
             predictions = self.estimator.predict(
@@ -803,7 +994,6 @@ class ForecasterFoundational:
         self.index_type_      = None
         self.index_freq_      = None
         self.last_window_     = None
-        self.extended_index_  = None
         self.series_name_in_  = None
         self.series_names_in_ = None
         self._is_multiseries  = False

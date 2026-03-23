@@ -77,7 +77,6 @@ def test_init_default_attributes_before_fit():
     forecaster = make_forecaster()
 
     assert forecaster.last_window_ is None
-    assert forecaster.extended_index_ is None
     assert forecaster.index_type_ is None
     assert forecaster.index_freq_ is None
     assert forecaster.training_range_ is None
