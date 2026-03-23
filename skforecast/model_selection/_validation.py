@@ -2224,3 +2224,464 @@ def backtesting_stats(
     )
 
     return metric_values, backtest_predictions
+
+
+@manage_warnings
+def _backtesting_foundational(
+    forecaster: object,
+    series: pd.Series | pd.DataFrame | dict,
+    cv: TimeSeriesFold,
+    metric: str | Callable | list[str | Callable],
+    add_aggregated_metric: bool = True,
+    exog: pd.Series | pd.DataFrame | dict | None = None,
+    interval: list[float] | tuple[float] | None = None,
+    quantiles: list[float] | None = None,
+    verbose: bool = False,
+    show_progress: bool = True,
+    suppress_warnings: bool = False,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Backtesting of ForecasterFoundational.
+
+    A copy of the original forecaster is created so that it is not modified
+    during the process.
+
+    Parameters
+    ----------
+    forecaster : ForecasterFoundational
+        Forecaster model.
+    series : pandas Series, pandas DataFrame, or dict
+        Training time series. A single ``pd.Series`` runs in single-series
+        mode; a wide ``pd.DataFrame`` or ``dict[str, pd.Series]`` runs in
+        multi-series mode.
+    cv : TimeSeriesFold
+        TimeSeriesFold object with the information needed to split the data
+        into folds.
+    metric : str, Callable, list
+        Metric used to quantify the goodness of fit of the model.
+
+        - If `string`: {'mean_squared_error', 'mean_absolute_error',
+        'mean_absolute_percentage_error', 'mean_squared_log_error',
+        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `Callable`: Function with arguments `y_true`, `y_pred` and
+        `y_train` (Optional) that returns a float.
+        - If `list`: List containing multiple strings and/or Callables.
+    add_aggregated_metric : bool, default True
+        If `True`, and multiple series (multi-series mode) are predicted,
+        the aggregated metrics (average, weighted average and pooled) are
+        also returned.
+    exog : pandas Series, pandas DataFrame, dict, default None
+        Exogenous variable/s included as predictor/s. Must cover the full
+        time range of `series` including the forecast horizon of each fold.
+    interval : list, tuple, default None
+        Confidence of the prediction interval estimated. Sequence of two
+        percentiles to compute (e.g. ``[10, 90]`` for an 80 % interval).
+        Cannot be provided together with ``quantiles``.
+    quantiles : list, default None
+        Sequence of quantile levels (between 0 and 1 inclusive) to estimate
+        (e.g. ``[0.1, 0.5, 0.9]``). Cannot be provided together with
+        ``interval``.
+    verbose : bool, default False
+        Print number of folds and index of training and validation sets used
+        for backtesting.
+    show_progress : bool, default True
+        Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the
+        backtesting process. See
+        skforecast.exceptions.warn_skforecast_categories for more
+        information.
+
+    Returns
+    -------
+    metric_values : pandas DataFrame
+        Value(s) of the metric(s).
+    backtest_predictions : pandas DataFrame
+        Value of predictions and (optionally) prediction intervals or
+        quantiles.
+
+    """
+
+    from ..foundational._forecaster_foundational import _check_preprocess_series_type
+
+    forecaster = deepcopy_forecaster(forecaster)
+    cv = deepcopy(cv)
+
+    is_multiseries, series_names, series_norm = _check_preprocess_series_type(series)
+
+    cv.set_params({
+        'window_size': forecaster.window_size,
+        'return_all_indexes': False,
+        'verbose': verbose,
+    })
+
+    refit = cv.refit
+    gap = cv.gap
+    overlapping_folds = cv.overlapping_folds
+
+    if not isinstance(metric, list):
+        metrics = [
+            _get_metric(metric=metric) if isinstance(metric, str)
+            else add_y_train_argument(metric)
+        ]
+    else:
+        metrics = [
+            _get_metric(metric=m) if isinstance(m, str)
+            else add_y_train_argument(m)
+            for m in metric
+        ]
+
+    # Reference series used for cv.split() and index extraction.
+    if is_multiseries:
+        ref_series = (
+            series_norm.iloc[:, 0]
+            if isinstance(series_norm, pd.DataFrame)
+            else next(iter(series_norm.values()))
+        )
+    else:
+        ref_series = series_norm
+
+    folds = cv.split(X=ref_series, as_pandas=False)
+    span_index = cv._extract_index(X=series_norm)
+    initial_train_size = cv.initial_train_size
+
+    def _slice_series(s, i, j):
+        """Slice a pd.Series, pd.DataFrame or dict of pd.Series by iloc."""
+        if isinstance(s, dict):
+            return {k: v.iloc[i:j] for k, v in s.items()}
+        return s.iloc[i:j]
+
+    def _slice_exog(e, i, j):
+        """Slice exog (pd.Series, pd.DataFrame, dict, or None) by iloc."""
+        if e is None:
+            return None
+        if isinstance(e, dict):
+            return {k: (v.iloc[i:j] if v is not None else None) for k, v in e.items()}
+        return e.iloc[i:j]
+
+    if initial_train_size is not None:
+        train_start, train_end = folds[0][1]
+        forecaster.fit(
+            series=_slice_series(series_norm, train_start, train_end),
+            exog=_slice_exog(exog, train_start, train_end),
+        )
+        folds[0][5] = False
+
+    if refit:
+        n_of_fits = int(len(folds) / refit)
+        if n_of_fits > 50:
+            warnings.warn(
+                f"The forecaster will be fit {n_of_fits} times. This can take "
+                f"substantial amounts of time. If not feasible, try with "
+                f"`refit = False`.\n",
+                LongTrainingWarning,
+            )
+
+    folds_tqdm = tqdm(folds) if show_progress else folds
+    backtest_predictions = []
+
+    for fold in folds_tqdm:
+        fold_number = fold[0]
+        train_start, train_end = fold[1]
+        window_start, window_end = fold[2]
+        test_gap_start, test_gap_end = fold[3]
+        test_start, test_end = fold[4]
+        should_refit = fold[5]
+
+        steps_with_gap = test_gap_end - test_gap_start
+        last_window = _slice_series(series_norm, window_start, window_end)
+        last_window_exog = _slice_exog(exog, window_start, window_end)
+        exog_test = _slice_exog(exog, test_gap_start, test_gap_end)
+
+        if should_refit:
+            forecaster.fit(
+                series=_slice_series(series_norm, train_start, train_end),
+                exog=_slice_exog(exog, train_start, train_end),
+            )
+
+        if quantiles is not None:
+            pred = forecaster.predict_quantiles(
+                steps=steps_with_gap,
+                quantiles=quantiles,
+                exog=exog_test,
+                last_window=last_window,
+                last_window_exog=last_window_exog,
+            )
+        elif interval is not None:
+            pred = forecaster.predict_interval(
+                steps=steps_with_gap,
+                interval=interval,
+                exog=exog_test,
+                last_window=last_window,
+                last_window_exog=last_window_exog,
+            )
+        else:
+            pred = forecaster.predict(
+                steps=steps_with_gap,
+                exog=exog_test,
+                last_window=last_window,
+                last_window_exog=last_window_exog,
+            )
+
+        if isinstance(pred, pd.Series):
+            pred = pred.to_frame(name='pred')
+
+        # Slice to actual test period (remove gap rows if gap > 0).
+        test_index = ref_series.iloc[test_start:test_end].index
+        if is_multiseries:
+            pred = pred[pred.index.isin(test_index)]
+        else:
+            pred = pred.loc[test_index]
+
+        pred.insert(0, 'fold', fold_number)
+        backtest_predictions.append(pred)
+
+    backtest_predictions = pd.concat(backtest_predictions, axis=0)
+
+    # Collect training indexes used across all fits (for y_train in metrics).
+    train_indexes = []
+    for i, fold in enumerate(folds):
+        if i == 0 or fold[-1]:
+            train_indexes.append(np.arange(fold[1][0], fold[1][1]))
+    train_indexes = np.unique(np.concatenate(train_indexes))
+
+    if is_multiseries:
+        # Convert to (idx, level) MultiIndex required by
+        # _calculate_metrics_backtesting_multiseries.
+        backtest_predictions = (
+            backtest_predictions
+            .rename_axis('idx', axis=0)
+            .set_index('level', append=True)
+        )
+        backtest_predictions_for_metrics = backtest_predictions
+        if overlapping_folds:
+            backtest_predictions_for_metrics = (
+                backtest_predictions_for_metrics
+                .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
+            )
+
+        # For quantile-only output, derive 'pred' from the median quantile.
+        if 'pred' not in backtest_predictions_for_metrics.columns and quantiles is not None:
+            q_col = (
+                'q_0.5' if 0.5 in quantiles
+                else f"q_{min(quantiles, key=lambda q: abs(q - 0.5))}"
+            )
+            backtest_predictions_for_metrics = backtest_predictions_for_metrics.copy()
+            backtest_predictions_for_metrics['pred'] = (
+                backtest_predictions_for_metrics[q_col]
+            )
+
+        metrics_levels = _calculate_metrics_backtesting_multiseries(
+            series=series_norm,
+            predictions=backtest_predictions_for_metrics[['pred']],
+            folds=folds,
+            span_index=span_index,
+            window_size=forecaster.window_size,
+            metrics=metrics,
+            levels=series_names,
+            add_aggregated_metric=add_aggregated_metric,
+        )
+
+        backtest_predictions = (
+            backtest_predictions
+            .reset_index('level')
+            .rename_axis(None, axis=0)
+        )
+    else:
+        backtest_predictions_for_metrics = backtest_predictions
+        if overlapping_folds:
+            backtest_predictions_for_metrics = (
+                backtest_predictions_for_metrics
+                .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
+            )
+
+        if 'pred' in backtest_predictions_for_metrics.columns:
+            y_pred = backtest_predictions_for_metrics['pred']
+        else:
+            q_col = (
+                'q_0.5' if 0.5 in quantiles
+                else f"q_{min(quantiles, key=lambda q: abs(q - 0.5))}"
+            )
+            y_pred = backtest_predictions_for_metrics[q_col]
+
+        y_train = ref_series.iloc[train_indexes]
+        y_true = ref_series.loc[backtest_predictions_for_metrics.index]
+
+        metric_values = [[
+            m(y_true=y_true, y_pred=y_pred, y_train=y_train)
+            for m in metrics
+        ]]
+        metrics_levels = pd.DataFrame(
+            data=metric_values,
+            columns=[m.__name__ for m in metrics],
+        )
+
+    return metrics_levels, backtest_predictions
+
+
+def backtesting_foundational(
+    forecaster: object,
+    series: pd.Series | pd.DataFrame | dict,
+    cv: TimeSeriesFold,
+    metric: str | Callable | list[str | Callable],
+    add_aggregated_metric: bool = True,
+    exog: pd.Series | pd.DataFrame | dict | None = None,
+    interval: list[float] | tuple[float] | None = None,
+    quantiles: list[float] | None = None,
+    verbose: bool = False,
+    show_progress: bool = True,
+    suppress_warnings: bool = False,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Backtesting of ForecasterFoundational.
+
+    A copy of the original forecaster is created so that it is not modified
+    during the process.
+
+    Parameters
+    ----------
+    forecaster : ForecasterFoundational
+        Forecaster model.
+    series : pandas Series, pandas DataFrame, or dict
+        Training time series. A single ``pd.Series`` runs in single-series
+        mode; a wide ``pd.DataFrame`` or ``dict[str, pd.Series]`` runs in
+        multi-series mode.
+    cv : TimeSeriesFold
+        TimeSeriesFold object with the information needed to split the data
+        into folds.
+    metric : str, Callable, list
+        Metric used to quantify the goodness of fit of the model.
+
+        - If `string`: {'mean_squared_error', 'mean_absolute_error',
+        'mean_absolute_percentage_error', 'mean_squared_log_error',
+        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `Callable`: Function with arguments `y_true`, `y_pred` and
+        `y_train` (Optional) that returns a float.
+        - If `list`: List containing multiple strings and/or Callables.
+    add_aggregated_metric : bool, default True
+        If `True`, and multiple series (multi-series mode) are predicted,
+        the aggregated metrics (average, weighted average and pooled) are
+        also returned.
+
+        - 'average': the average (arithmetic mean) of all levels.
+        - 'weighted_average': the average of the metrics weighted by the
+        number of predicted values of each level.
+        - 'pooling': the values of all levels are pooled and then the metric
+        is calculated.
+    exog : pandas Series, pandas DataFrame, dict, default None
+        Exogenous variable/s included as predictor/s. Must have the same
+        number of observations as `series` and should be aligned so that
+        ``series[i]`` is regressed on ``exog[i]``. Must also cover the
+        forecast horizon of each fold.
+    interval : list, tuple, default None
+        Confidence of the prediction interval estimated. Sequence of two
+        percentiles to compute, which must be between 0 and 100 inclusive.
+        For example, an 80 % interval should be specified as
+        ``interval = [10, 90]``. Cannot be provided together with
+        ``quantiles``.
+    quantiles : list, default None
+        Sequence of quantile levels (between 0 and 1 inclusive) to estimate.
+        For example, ``quantiles = [0.1, 0.5, 0.9]``. Cannot be provided
+        together with ``interval``.
+    verbose : bool, default False
+        Print number of folds and index of training and validation sets used
+        for backtesting.
+    show_progress : bool, default True
+        Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the
+        backtesting process. See
+        skforecast.exceptions.warn_skforecast_categories for more
+        information.
+
+    Returns
+    -------
+    metric_values : pandas DataFrame
+        Value(s) of the metric(s).
+    backtest_predictions : pandas DataFrame
+        Value of predictions. The DataFrame includes the following columns:
+
+        - fold: Indicates the fold number where the prediction was made.
+        - pred: Predicted values (when ``interval`` and ``quantiles`` are
+        ``None``, or when ``interval`` is provided).
+
+        If ``interval`` is provided, additional columns are included:
+
+        - lower_bound: lower bound of the interval.
+        - upper_bound: upper bound of the interval.
+
+        If ``quantiles`` is provided, one column per quantile is included
+        (e.g. ``q_0.1``, ``q_0.5``, ``q_0.9``).
+
+        In multi-series mode, a ``level`` column identifies the series.
+
+        Depending on the relation between ``steps`` and ``fold_stride``, the
+        output may include repeated indexes (if ``fold_stride < steps``) or
+        gaps (if ``fold_stride > steps``). See Notes below for more details.
+
+    Notes
+    -----
+    Note on `fold_stride` vs. `steps`:
+
+    - If `fold_stride == steps`, test sets are placed back-to-back without
+    overlap. Each observation appears only once in the output DataFrame, so
+    the index is unique.
+    - If `fold_stride < steps`, test sets overlap. Multiple forecasts are
+    generated for the same observations and, therefore, the output DataFrame
+    contains repeated indexes.
+    - If `fold_stride > steps`, there are gaps between consecutive test sets.
+    Some observations in the series will not have associated predictions, so
+    the output DataFrame has non-contiguous indexes.
+
+    """
+
+    if type(forecaster).__name__ != 'ForecasterFoundational':
+        raise TypeError(
+            "`forecaster` must be of type `ForecasterFoundational`. For all "
+            "other types of forecasters use the other functions available in "
+            "the `model_selection` module."
+        )
+
+    if interval is not None and quantiles is not None:
+        raise ValueError(
+            "`interval` and `quantiles` cannot be provided simultaneously. "
+            "Use `interval` for a prediction interval (e.g. [10, 90]) or "
+            "`quantiles` for specific quantile levels (e.g. [0.1, 0.5, 0.9])."
+        )
+
+    if quantiles is not None:
+        if not isinstance(quantiles, (list, tuple)) or not all(
+            isinstance(q, (int, float)) and 0 <= q <= 1 for q in quantiles
+        ):
+            raise TypeError(
+                "`quantiles` must be a list or tuple of floats in the range "
+                f"[0, 1]. Got {quantiles}."
+            )
+
+    check_backtesting_input(
+        forecaster             = forecaster,
+        cv                     = cv,
+        series                 = series,
+        metric                 = metric,
+        add_aggregated_metric  = add_aggregated_metric,
+        exog                   = exog,
+        interval               = interval,
+        show_progress          = show_progress,
+        suppress_warnings      = suppress_warnings,
+    )
+
+    metric_values, backtest_predictions = _backtesting_foundational(
+        forecaster            = forecaster,
+        series                = series,
+        cv                    = cv,
+        metric                = metric,
+        add_aggregated_metric = add_aggregated_metric,
+        exog                  = exog,
+        interval              = interval,
+        quantiles             = quantiles,
+        verbose               = verbose,
+        show_progress         = show_progress,
+        suppress_warnings     = suppress_warnings,
+    )
+
+    return metric_values, backtest_predictions

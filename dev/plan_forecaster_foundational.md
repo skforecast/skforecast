@@ -549,128 +549,173 @@ Add two new functions following the `backtesting_stats` / `_backtesting_stats` p
 
 #### Private `_backtesting_foundational()`
 
-Located near `_backtesting_stats()` (~line 1771).
+Located after `_backtesting_stats()` (appended at end of file).
 
+**Signature:**
 ```python
+@manage_warnings
 def _backtesting_foundational(
     forecaster,
-    y,
+    series,                  # pd.Series | pd.DataFrame | dict
     cv,
     metric,
+    add_aggregated_metric=True,
     exog=None,
-    interval=None,
-    quantiles=None,
+    interval=None,           # e.g. [10, 90]
+    quantiles=None,          # e.g. [0.1, 0.5, 0.9]
     verbose=False,
     show_progress=True,
+    suppress_warnings=False,
 ):
-    """
-    Internal backtesting loop for ForecasterFoundational.
-    Each fold: re-fits the adapter on the training window, then predicts test window.
-    """
 ```
+
+**Key implementation notes:**
+- Import `_check_preprocess_series_type` inside function (avoids circular import)
+- `deepcopy_forecaster(forecaster)` + `deepcopy(cv)` at start
+- `_check_preprocess_series_type(series)` → `is_multiseries, series_names, series_norm`
+- `cv.set_params({'window_size': ..., 'return_all_indexes': False, 'verbose': verbose})`
+- Reference series for `cv.split()`: first column/value for multi, series itself for single
+- Initial fit on `folds[0][1]` then `folds[0][5] = False`
+- `@manage_warnings` decorator handles suppress_warnings
+
+**Fold structure (6 elements, `return_all_indexes=False`):**
+
+| fold[i] | Content |
+|---------|----------|
+| fold[0] | fold number (int) |
+| fold[1] | [train_start, train_end+1] |
+| fold[2] | [window_start, window_end+1] — context window (window_size obs) |
+| fold[3] | [test_with_gap_start, test_with_gap_end+1] — steps + gap |
+| fold[4] | [test_no_gap_start, test_no_gap_end+1] — actual test for metrics |
+| fold[5] | should_refit (bool) |
 
 **Fold loop logic:**
 
 ```python
-for fold in folds:
-    train_idx, test_idx, last_window_idx = fold
-    y_train = y.iloc[train_idx[0]:train_idx[1]]
-    y_test  = y.iloc[test_idx[0]:test_idx[1]]
-    last_window = y.iloc[last_window_idx[0]:last_window_idx[1]]  # context window
+for fold in folds_tqdm:
+    fold_number, (train_start, train_end), (window_start, window_end), \
+        (test_gap_start, test_gap_end), (test_start, test_end), should_refit = fold
 
-    exog_train = exog.iloc[...] if exog is not None else None
-    exog_future = exog.iloc[test_idx[0]:test_idx[1]] if exog is not None else None
-    last_window_exog = exog.iloc[last_window_idx[0]:last_window_idx[1]] if exog is not None else None
+    steps_with_gap = test_gap_end - test_gap_start
+    last_window = series_norm.iloc[window_start:window_end]       # context (pd.Series/df/dict)
+    last_window_exog = exog.iloc[window_start:window_end]          # (if exog is not None)
+    exog_test = exog.iloc[test_gap_start:test_gap_end]             # (if exog is not None)
 
-    forecaster.fit(y=y_train, exog=exog_train)
-    preds = forecaster.predict(
-        steps=len(y_test),
-        exog=exog_future,
-        last_window=last_window,
-        last_window_exog=last_window_exog,
-    )
-    # collect predictions, compute metric
+    if should_refit:
+        forecaster.fit(series=series_norm.iloc[train_start:train_end], exog=exog_train)
+
+    pred = forecaster.predict(steps=steps_with_gap, ..., last_window=last_window)
+    # OR: predict_interval(...) / predict_quantiles(...)
+
+    # Slice to actual test period (remove gap rows)
+    test_index = ref_series.iloc[test_start:test_end].index
+    pred = pred.loc[test_index]  # single; or pred[pred.index.isin(test_index)] for multi
+    pred.insert(0, 'fold', fold_number)
+```
+
+**For dict/DataFrame slicing**, two inner helper functions are defined locally:
+```python
+def _slice_series(s, i, j):
+    return {k: v.iloc[i:j] for k, v in s.items()} if isinstance(s, dict) else s.iloc[i:j]
+
+def _slice_exog(e, i, j):
+    if e is None: return None
+    if isinstance(e, dict): return {k: (v.iloc[i:j] if v is not None else None) for k, v in e.items()}
+    return e.iloc[i:j]
+```
+
+**Multi-series metrics path:**
+```python
+# Convert to (idx, level) MultiIndex
+backtest_predictions = backtest_predictions.rename_axis('idx').set_index('level', append=True)
+# For quantile-only output: derive 'pred' from q_0.5 or closest quantile
+metrics_levels = _calculate_metrics_backtesting_multiseries(
+    series=series_norm, predictions=backtest_predictions_for_metrics[['pred']],
+    folds=folds, span_index=span_index, window_size=forecaster.window_size,
+    metrics=metrics, levels=series_names, add_aggregated_metric=add_aggregated_metric,
+)
+backtest_predictions = backtest_predictions.reset_index('level').rename_axis(None)
+```
+
+**Single-series metrics path** (same as `backtesting_stats`):
+```python
+y_train = ref_series.iloc[train_indexes]
+y_true  = ref_series.loc[backtest_predictions_for_metrics.index]
+y_pred  = backtest_predictions_for_metrics['pred']  # or q_0.5 for quantile mode
 ```
 
 #### Public `backtesting_foundational()`
 
-Located near `backtesting_stats()` (~line 2077).
+Located after `backtesting_stats()` (appended at end of file).
 
 ```python
 def backtesting_foundational(
     forecaster,
-    y,
+    series,                  # pd.Series | pd.DataFrame | dict
     cv,
     metric,
+    add_aggregated_metric=True,
     exog=None,
     interval=None,
     quantiles=None,
-    n_jobs="auto",
     verbose=False,
     show_progress=True,
     suppress_warnings=False,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Backtesting for ForecasterFoundational.
-
-    Parameters
-    ----------
-    forecaster : ForecasterFoundational
-    y : pd.Series with DatetimeIndex and frequency
-    cv : TimeSeriesFold
-    metric : str or callable or list
-    exog : pd.DataFrame or pd.Series, optional
-        Full exog covering training + test period.
-    interval : list[float], optional
-        e.g. [10, 90] for 80% interval.
-    quantiles : list[float], optional
-        e.g. [0.1, 0.5, 0.9].
-    ...
-    
-    Returns
-    -------
-    metrics_df : pd.DataFrame
-    predictions_df : pd.DataFrame
-    """
-    if type(forecaster).__name__ != "ForecasterFoundational":
-        raise TypeError(...)
-    check_backtesting_input(...)
-    return _backtesting_foundational(...)
 ```
+
+**Guards:**
+1. `type(forecaster).__name__ != 'ForecasterFoundational'` → TypeError
+2. `interval is not None and quantiles is not None` → ValueError (cannot combine)
+3. `check_backtesting_input(forecaster, cv, series=series, metric=metric, exog=exog, interval=interval, ...)`
+4. Delegate to `_backtesting_foundational(...)`
 
 ---
 
 ### 4.5 `skforecast/model_selection/_utils.py` — **UPDATE**
 
-Three locations to add `"ForecasterFoundational"`:
+Three locations to update:
 
-1. **`forecasters_uni` list** (~line 196):
+1. **New `elif` branch in `check_backtesting_input`** (after the `forecasters_multi_dict` block,
+   NOT in `forecasters_uni` — `ForecasterFoundational` accepts pd.Series/DataFrame/dict):
 
 ```python
-forecasters_uni = [
-    "ForecasterRecursive",
-    "ForecasterDirect",
-    "ForecasterStats",
-    "ForecasterFoundational",    # ADD
-    ...
-]
+elif forecaster_name == "ForecasterFoundational":
+    if not isinstance(series, (pd.Series, pd.DataFrame, dict)):
+        raise TypeError(
+            f"`series` must be a pandas Series, DataFrame or dict. Got {type(series)}."
+        )
+    data_name = 'series'
+    data_length = (
+        max(len(v) for v in series.values() if v is not None)
+        if isinstance(series, dict)
+        else len(series)
+    )
 ```
 
-2. **`initial_train_size` required block** (~line 345):
-
+   Also, the `exog` check for `ForecasterFoundational` must accept dict exog:
 ```python
-if type(forecaster).__name__ in [
-    "ForecasterStats",
-    "ForecasterFoundational",   # ADD
-] and initial_train_size is None:
-    raise ValueError(...)
+elif forecaster_name == "ForecasterFoundational":
+    pass  # checks done in forecaster.fit() / predict()
 ```
 
-3. **`select_n_jobs_backtesting()` early return** (~line 682):
+2. **`initial_train_size is None` block** (~line 468) — add `'ForecasterFoundational'`:
 
 ```python
-if type(forecaster).__name__ in ["ForecasterStats", "ForecasterFoundational"]:
-    return 1   # Foundational models handle their own parallelism internally
+if forecaster_name in ['ForecasterStats', 'ForecasterFoundational', 'ForecasterEquivalentDate']:
+    raise ValueError(
+        f"When using {forecaster_name}, `initial_train_size` must be an "
+        f"integer smaller than the length of `{data_name}` ({data_length})."
+    )
+```
+
+3. **`select_n_jobs_backtesting()` early return** (~line 683) — must come BEFORE
+   `forecaster.estimator` access to avoid AttributeError on ForecasterFoundational:
+
+```python
+if forecaster_name in ('ForecasterStats', 'ForecasterFoundational'):
+    n_jobs = 1
+    return n_jobs
 ```
 
 ---
@@ -733,19 +778,20 @@ assert len(pred) == 12
 ### Phase 3 — `backtesting_foundational` in `_validation.py`
 
 **Tasks:**
-- [ ] Implement `_backtesting_foundational()` with fold loop.
-- [ ] Implement `backtesting_foundational()` public function.
-- [ ] Handle `interval` and `quantiles` arguments.
-- [ ] Support `metric` as str / callable / list (same as `backtesting_stats`).
+- [x] Implement `_backtesting_foundational()` with fold loop (`series=` parameter, `add_aggregated_metric`, 6-element fold structure).
+- [x] Implement `backtesting_foundational()` public function.
+- [x] Handle `interval` and `quantiles` arguments; raise ValueError if both provided.
+- [x] Multi-series metrics via `_calculate_metrics_backtesting_multiseries` (Option B: per-level + aggregated).
+- [x] Support `metric` as str / callable / list (same as `backtesting_stats`).
 
 ---
 
 ### Phase 4 — Wire `model_selection/_utils.py`
 
 **Tasks:**
-- [ ] Add `"ForecasterFoundational"` to `forecasters_uni`.
-- [ ] Add to `initial_train_size` required check.
-- [ ] Add to `select_n_jobs_backtesting` early-return block.
+- [x] Add new `elif forecaster_name == "ForecasterFoundational":` branch in `check_backtesting_input` (NOT in `forecasters_uni` — accepts Series/DataFrame/dict).
+- [x] Add `'ForecasterFoundational'` to `initial_train_size is None` required check.
+- [x] Add `'ForecasterFoundational'` to `select_n_jobs_backtesting` early-return block (before `forecaster.estimator` access).
 
 ---
 
@@ -753,7 +799,7 @@ assert len(pred) == 12
 
 **Tasks:**
 - [x] Update `skforecast/foundational/__init__.py`.
-- [ ] Update `skforecast/model_selection/__init__.py`.
+- [x] Update `skforecast/model_selection/__init__.py`.
 - [ ] Create `skforecast/foundational/tests/` directory with:
   - `test_foundational_models.py`: mock `Chronos2Pipeline`, test `fit/predict/predict_quantiles`.
   - `test_forecaster_foundational.py`: mock adapter, test backtesting compatibility.

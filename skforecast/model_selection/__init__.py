@@ -5,7 +5,8 @@ from ._split import (
 from ._validation import (
     backtesting_forecaster,
     backtesting_forecaster_multiseries,
-    backtesting_stats
+    backtesting_stats,
+    backtesting_foundational
 )
 from ._search import (
     grid_search_forecaster,

@@ -247,11 +247,24 @@ def check_backtesting_input(
         data_name = 'series'
         data_length = max([len(series[serie]) for serie in series])
 
+    elif forecaster_name == 'ForecasterFoundational':
+        if not isinstance(series, (pd.Series, pd.DataFrame, dict)):
+            raise TypeError(
+                f"`series` must be a pandas Series, DataFrame or dict. "
+                f"Got {type(series)}."
+            )
+        data_name = 'series'
+        data_length = (
+            max(len(v) for v in series.values() if v is not None)
+            if isinstance(series, dict)
+            else len(series)
+        )
+
     if exog is not None:
-        if forecaster_name in forecasters_multi_dict:
+        if forecaster_name in (forecasters_multi_dict + ['ForecasterFoundational']):
             # NOTE: Checks are not need as they are done in the function 
-            # `check_preprocess_exog_multiseries` that is used before 
-            # `check_backtesting_input` in the backtesting function.
+            # `check_preprocess_exog_multiseries` / forecaster.fit() that is 
+            # used before `check_backtesting_input` in the backtesting function.
             pass
         else:
             if not isinstance(exog, (pd.Series, pd.DataFrame)):
@@ -342,7 +355,7 @@ def check_backtesting_input(
                     f"    steps: {steps}\n"
                 )
     else:
-        if forecaster_name in ['ForecasterStats', 'ForecasterEquivalentDate']:
+        if forecaster_name in ['ForecasterStats', 'ForecasterFoundational', 'ForecasterEquivalentDate']:
             raise ValueError(
                 f"When using {forecaster_name}, `initial_train_size` must be an "
                 f"integer smaller than the length of `{data_name}` ({data_length})."
@@ -679,7 +692,7 @@ def select_n_jobs_backtesting(
 
     forecaster_name = type(forecaster).__name__
 
-    if forecaster_name == 'ForecasterStats':
+    if forecaster_name in ('ForecasterStats', 'ForecasterFoundational'):
         n_jobs = 1
         return n_jobs
 
