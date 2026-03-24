@@ -9,6 +9,10 @@ from skforecast.foundational._foundational_model import (
     FoundationalModel,
 )
 
+from ..tests_forecaster_foundational.fixtures_forecaster_foundational import (
+    FakePipeline,
+)
+
 
 # Fixtures
 # ==============================================================================
@@ -42,31 +46,6 @@ data = pd.Series(
     index=pd.date_range(start="1949-01", periods=len(data), freq="MS"),
     name="y",
 )
-
-
-class FakePipeline:
-    """
-    Fake Chronos-2 pipeline for testing without torch or chronos dependency.
-    Stores last call arguments for inspection.
-    Supports both single-series and multi-series (len(inputs) elements returned).
-    """
-
-    def __init__(self):
-        self.last_inputs = None
-        self.last_prediction_length = None
-        self.last_quantile_levels = None
-        self.last_kwargs = None
-
-    def predict_quantiles(self, inputs, prediction_length, quantile_levels, **kwargs):
-        self.last_inputs = inputs
-        self.last_prediction_length = prediction_length
-        self.last_quantile_levels = quantile_levels
-        self.last_kwargs = kwargs
-
-        n_q = len(quantile_levels)
-        q_values = np.array(quantile_levels, dtype=float)
-        arr = np.broadcast_to(q_values, (1, prediction_length, n_q)).copy()
-        return [arr] * len(inputs), [np.zeros((1, prediction_length))] * len(inputs)
 
 
 # Tests FoundationalModels.__init__
@@ -431,4 +410,51 @@ def test_FoundationalModels_predict_multiseries_exact_point_values():
     for name in ["s1", "s2"]:
         subset = result[result["level"] == name]
         np.testing.assert_array_almost_equal(subset["pred"].to_numpy(), np.full(5, 0.5))
+
+
+# Tests FoundationalModel.get_params / set_params
+# ==============================================================================
+
+def test_FoundationalModels_get_params_returns_expected_keys():
+    """
+    Test that get_params returns a dict with the canonical set of parameter
+    names and does NOT expose internal attributes like 'pipeline'.
+    """
+    m = FoundationalModel("autogluon/chronos-2-small")
+    params = m.get_params()
+    assert set(params.keys()) == {
+        "model",
+        "cross_learning",
+        "context_length",
+        "device_map",
+        "torch_dtype",
+        "predict_kwargs",
+    }
+    assert "pipeline" not in params
+
+
+def test_FoundationalModels_get_params_returns_correct_values():
+    """
+    Test that get_params reflects the values passed at construction time.
+    """
+    m = FoundationalModel(
+        "autogluon/chronos-2-small",
+        context_length=64,
+        cross_learning=True,
+    )
+    params = m.get_params()
+    assert params["model"] == "autogluon/chronos-2-small"
+    assert params["context_length"] == 64
+    assert params["cross_learning"] is True
+
+
+def test_FoundationalModels_set_params_invalid_key_raises_ValueError():
+    """
+    Test that set_params raises ValueError when given a key that is not a valid
+    constructor parameter.
+    """
+    m = FoundationalModel("autogluon/chronos-2-small")
+    err_msg = re.escape("Invalid parameter")
+    with pytest.raises(ValueError, match=err_msg):
+        m.set_params(invalid_param=True)
 
