@@ -325,7 +325,18 @@ def check_backtesting_input(
                                  method       = 'validation',
                                  date_literal = 'initial_train_size'
                              )
-        if initial_train_size < forecaster.window_size or initial_train_size >= data_length:
+        if forecaster_name == 'ForecasterFoundational':
+            # For ForecasterFoundational, window_size equals context_length which
+            # is the *maximum* context the model accepts, not a minimum required
+            # training size. Only validate that initial_train_size is at least 1
+            # and smaller than data_length.
+            if initial_train_size < 1 or initial_train_size >= data_length:
+                raise ValueError(
+                    f"If `initial_train_size` is an integer, it must be greater than "
+                    f"0 and smaller than the length of `{data_name}` ({data_length}). "
+                    f"If it is a date, it must be within this range of the index."
+                )
+        elif initial_train_size < forecaster.window_size or initial_train_size >= data_length:
             raise ValueError(
                 f"If `initial_train_size` is an integer, it must be greater than "
                 f"the `window_size` of the forecaster ({forecaster.window_size}) "
