@@ -93,10 +93,10 @@ def test_forecaster_y_exog_features_stored():
     assert forecaster.exog_names_in_ == exog_names_in_
     assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
     assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
+    assert forecaster.categorical_features_names_in_ == []
     assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
     assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
-    assert forecaster.categorical_features_names_in_ == []
 
 
 def test_forecaster_DatetimeIndex_index_freq_stored():

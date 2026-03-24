@@ -254,20 +254,20 @@ def test_output_get_feature_importances_when_CalibratedClassifierCV_LGBMClassifi
         {
             "cv_fold": [0, 0, 0, 1, 1, 1, 2, 2, 2],
             "feature": [
-                "lag_3",
-                "lag_1",
                 "lag_2",
-                "lag_1",
-                "lag_2",
-                "lag_3",
                 "lag_1",
                 "lag_3",
                 "lag_2",
+                "lag_1",
+                "lag_3",
+                "lag_2",
+                "lag_1",
+                "lag_3",
             ],
-            "importance": [387, 376, 324, 368, 366, 338, 386, 361, 338],
+            "importance": [367, 350, 293, 408, 344, 324, 356, 327, 283],
         }
     ).astype({"importance": int})
-    expected.index = pd.Index([2, 0, 1, 3, 4, 5, 6, 8, 7], dtype=int)
+    expected.index = pd.Index([1, 0, 2, 4, 3, 5, 7, 6, 8], dtype=int)
 
     pd.testing.assert_frame_equal(results.astype({"importance": int}), expected)
 

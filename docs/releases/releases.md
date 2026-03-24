@@ -37,6 +37,8 @@ The main changes in this release are:
 
 + Fixed an issue in <code>[backtesting_forecaster_multiseries]</code> where the `tqdm` progress bar completed during data preparation instead of tracking the actual fold computation, giving the false impression that backtesting had finished.
 
++ Fixed an issue in <code>[ForecasterRecursiveClassifier]</code> where the lags were not correctly passed as categorical features when using categorical exogenous variables.
+
 
 ## 0.21.0 <small>Mar 13, 2026</small> { id="0.21.0" }
 

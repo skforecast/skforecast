@@ -163,21 +163,15 @@ def test_create_window_features_output_as_pandas():
         LogisticRegression(), lags=3, window_features=rolling
     )
     results = forecaster._create_window_features(
-        y=y_datetime, train_index=train_index, X_as_pandas=True
+        y=y_datetime, train_index=train_index
     )
     expected = (
         [
-            pd.DataFrame(
-                data = np.array(
-                           [[0.2, 0.4, 0.4, 2., 1.5849625],
-                            [0.4, 0.2, 0.4, 1., 1.5849625],
-                            [0.4, 0.4, 0.2, 1., 1.5849625],
-                            [0.2, 0.4, 0.4, 2., 1.5849625]]),
-                index = train_index,
-                columns = [
-                    'roll_proportion_5_class_1', 'roll_proportion_5_class_2',
-                    'roll_proportion_5_class_3', 'roll_mode_5', 'roll_entropy_6'
-                ]
+            np.array(
+                [[0.2, 0.4, 0.4, 2., 1.5849625],
+                 [0.4, 0.2, 0.4, 1., 1.5849625],
+                 [0.4, 0.4, 0.2, 1., 1.5849625],
+                 [0.2, 0.4, 0.4, 2., 1.5849625]]
             )
         ],
         ['roll_proportion_5_class_1', 'roll_proportion_5_class_2',

@@ -11,7 +11,6 @@ import warnings
 import sys
 import numpy as np
 import pandas as pd
-from copy import copy
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
@@ -31,6 +30,7 @@ from ..utils import (
     check_exog_dtypes,
     check_predict_input,
     check_extract_values_and_index,
+    configure_estimator_categorical_features,
     input_to_frame,
     date_to_index_position,
     expand_index,
@@ -77,6 +77,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
+    categorical_features : str, list, default 'auto'
+        Specifies which exogenous variables should be treated as categorical
+        by the estimator's native categorical feature handling.
+ 
+        - 'auto': Automatically detect categorical columns (non-numeric, non-bool)
+        after `transformer_exog`.
+        - list: Explicit list of column names to treat as categorical.
+        - None: No categorical feature handling for exogenous variables.
     weight_func : Callable, default None
         Function that defines the individual weights for each sample based on the
         index. For example, a function that assigns a lower weight to certain dates.
@@ -129,6 +137,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
+    categorical_features : str, list
+        Specifies which exogenous variables should be treated as categorical.
+    categorical_features_names_in_ : list
+        Names of the exogenous variables considered as categorical during training.
+    categorical_encoder : OrdinalEncoder
+        Instance of `OrdinalEncoder` used to encode categorical exogenous variables.
     weight_func : Callable
         Function that defines the individual weights for each sample based on the
         index. For example, a function that assigns a lower weight to certain dates.
@@ -200,35 +214,34 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
     Notes
     -----
-    Categorical features are transformed using an `OrdinalEncoder` (self.encoder).
-    The encoder's learned mappings (self.encoding_mapping_) are stored so that 
-    later, when creating lag (autoregressive) features, the same category-to-integer 
-    relationships can be applied consistently.
+    **`features_encoding`:**
+    Controls how features derived from the target series (lags and window
+    features that return class values) are treated by the estimator. When set
+    to `'auto'` or `'categorical'`, the encoded class codes (integers) are
+    communicated as categorical to the estimator's native categorical handling
+    (e.g., LightGBM, CatBoost). When set to `'ordinal'`, they are treated as
+    numeric values.
+    Related attributes: `encoder` (`OrdinalEncoder`), `encoding_mapping_`, 
+    `code_to_class_mapping_`, `classes_`, `class_codes_`, `n_classes_`.
 
-    The goal is to ensure that the lag features — which are recreated as 
-    categorical variables — use the exact same integer codes as the original encoding.
-    In other words, the numerical values in the lagged features should 
-    exactly match the integer codes that the `OrdinalEncoder` assigned.
-    Formally, this means the following should hold true:
+    **`categorical_features`:**
+    Controls which exogenous variables should be treated as categorical. These
+    columns are encoded and their indices are combined with the lag indices
+    when configuring the estimator's native categorical handling.
+    Related attributes: `categorical_encoder` (`OrdinalEncoder`), 
+    `categorical_features_names_in_`.
 
-    `(X_train['lag_1'].cat.codes == X_train['lag_1']).all()`
+    All exogenous categorical management **must** be done through this
+    parameter. Setting categorical features directly on the estimator or via
+    `fit_kwargs` is not supported, as the forecaster always overwrites
+    the estimator's categorical configuration during `fit` to include both
+    autoregressive and exogenous categorical indices.
 
-    This consistency is guaranteed because:
+    **Difference between `features_encoding` and `categorical_features`:**
 
-    - `OrdinalEncoder` assigns integer codes starting from 0, in the alphabetical 
-    order of category labels.
-
-    - When autoregressive (lag) features are created later, they are converted 
-    to pandas Categorical types using the same category ordering 
-    (`categories = forecaster.class_codes_`).
-
-    As a result, the categorical codes used in lag features remain aligned
-    with the original encoding from the `OrdinalEncoder`.
-
-    During prediction, we can work directly with NumPy arrays because the 
-    `OrdinalEncoder` transforms new observations into the same integer codes 
-    used by pandas Categorical during training. This eliminates the need to 
-    convert data to pandas categorical types at inference time.
+    - `features_encoding`: Applies to features derived from the **target
+    series** (lags and window features that return class codes).
+    - `categorical_features`: Applies to **exogenous variables** (`exog`).
     
     """
 
@@ -239,6 +252,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         window_features: object | list[object] | None = None,
         features_encoding: str = 'auto',
         transformer_exog: object | None = None,
+        categorical_features: str | list[str] | None = 'auto',
         weight_func: Callable | None = None,
         fit_kwargs: dict[str, object] | None = None,
         forecaster_id: str | int | None = None
@@ -246,6 +260,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
         self.estimator                          = clone(estimator)
         self.transformer_exog                   = transformer_exog
+        self.categorical_features               = categorical_features
         self.weight_func                        = weight_func
         self.source_code_weight_func            = None
         self.last_window_                       = None
@@ -261,6 +276,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
+        self.categorical_features_names_in_     = None
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
@@ -303,7 +319,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         self.encoder = OrdinalEncoder(
                            categories = 'auto',
-                           dtype      = int if self.use_native_categoricals else float
+                           dtype      = int
                        )
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
@@ -330,6 +346,29 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             self.window_features_class_names = [
                 type(wf).__name__ for wf in self.window_features
             ]
+
+        if categorical_features is not None:
+            if not (
+                (isinstance(categorical_features, str) and categorical_features == 'auto')
+                or isinstance(categorical_features, list)
+            ):
+                raise ValueError(
+                    f"Argument `categorical_features` must be `'auto'`, a list of "
+                    f"column names, or `None`. Got {categorical_features}."
+                )
+            if isinstance(categorical_features, list):
+                if len(categorical_features) == 0:
+                    raise ValueError(
+                        "Argument `categorical_features` must not be an empty list. "
+                        "Use `None` to disable categorical encoding."
+                    )
+
+        self.categorical_encoder = OrdinalEncoder(
+                                       dtype                 = float,
+                                       handle_unknown        = 'use_encoded_value',
+                                       unknown_value         = np.nan,
+                                       encoded_missing_value = np.nan
+                                   ).set_output(transform="pandas")
 
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
@@ -362,6 +401,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             "supports_window_features": True,
             "supports_transformer_series": False,
             "supports_transformer_exog": True,
+            "supports_categorical_features": True,
             "supports_weight_func": True,
             "supports_differentiation": False,
 
@@ -406,6 +446,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Feature encoding: {self.features_encoding} \n"
+            f"Categorical features: {self.categorical_features} \n"
             f"Transformer for exog: {self.transformer_exog} \n"
             f"Weight function included: {True if self.weight_func is not None else False} \n"
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
@@ -453,6 +494,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
+                    <li><strong>Categorical features:</strong> {self.categorical_features}</li>
                     <li><strong>Weight function included:</strong> {self.weight_func is not None}</li>
                     <li><strong>Creation date:</strong> {self.creation_date}</li>
                     <li><strong>Last fit date:</strong> {self.fit_date}</li>
@@ -540,11 +582,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
     def _create_lags(
         self,
-        y: np.ndarray,
-        X_as_pandas: bool = False,
-        train_index: pd.Index | None = None,
-        class_codes: list[int | float] | None = None
-    ) -> tuple[np.ndarray | pd.DataFrame | None, np.ndarray]:
+        y: np.ndarray
+    ) -> tuple[np.ndarray | None, np.ndarray]:
         """
         Create the lagged values and their target variable from a time series.
         
@@ -555,19 +594,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         ----------
         y : numpy ndarray
             Training time series values.
-        X_as_pandas : bool, default False
-            If `True`, the returned matrix `X_data` is a pandas DataFrame.
-        train_index : pandas Index, default None
-            Index of the training data. It is used to create the pandas DataFrame
-            `X_data` when `X_as_pandas` is `True`.
-        class_codes : list, default None
-            List of category codes to be used when converting lagged values to
-            pandas Categorical. Only used when `self.use_native_categoricals` is 
-            `True`.
 
         Returns
         -------
-        X_data : numpy ndarray, pandas DataFrame, None
+        X_data : numpy ndarray, None
             Lagged values (predictors).
         y_data : numpy ndarray
             Values of the time series related to each row of `X_data`.
@@ -589,20 +619,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 # Non-contiguous lags require fancy indexing, which forces a copy.
                 X_data = y_strided[:, self.window_size - self.lags]
 
-            if X_as_pandas:
-                X_data = pd.DataFrame(
-                             data    = X_data,
-                             columns = self.lags_names,
-                             index   = train_index
-                         )
-                if self.use_native_categoricals:
-                    for col in X_data.columns:
-                        X_data[col] = pd.Categorical(
-                                          values     = X_data[col],
-                                          categories = class_codes,
-                                          ordered    = False
-                                      )
-
         y_data = y[self.window_size:]
 
         return X_data, y_data
@@ -611,8 +627,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self, 
         y: pd.Series,
         train_index: pd.Index,
-        X_as_pandas: bool = False,
-    ) -> tuple[list[np.ndarray | pd.DataFrame], list[str]]:
+    ) -> tuple[list[np.ndarray], list[str]]:
         """
         Create window features from a time series.
         
@@ -621,16 +636,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         y : pandas Series
             Training time series.
         train_index : pandas Index
-            Index of the training data. It is used to create the pandas DataFrame
-            `X_train_window_features` when `X_as_pandas` is `True`.
-        X_as_pandas : bool, default False
-            If `True`, the returned matrix `X_train_window_features` is a 
-            pandas DataFrame.
+            Index of the training data.
 
         Returns
         -------
         X_train_window_features : list
-            List of numpy ndarrays or pandas DataFrames with the window features.
+            List of numpy ndarrays with the window features.
         X_train_window_features_names_out_ : list
             Names of the window features.
         
@@ -661,8 +672,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 )
             
             X_train_window_features_names_out_.extend(X_train_wf.columns)
-            if not X_as_pandas:
-                X_train_wf = X_train_wf.to_numpy()     
+            X_train_wf = X_train_wf.to_numpy()     
             X_train_window_features.append(X_train_wf)
 
         return X_train_window_features, X_train_window_features_names_out_
@@ -671,12 +681,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self,
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
-        store_last_window: bool | list[str] = True
+        store_last_window: bool = True
     ) -> tuple[
-        pd.DataFrame, 
-        pd.Series, 
+        np.ndarray, 
+        np.ndarray, 
+        pd.Index,
         dict[str, Any],
         list[str], 
+        list[str],
         list[str], 
         list[str], 
         list[str], 
@@ -700,14 +712,18 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         Returns
         -------
-        X_train : pandas DataFrame
+        X_train : numpy ndarray
             Training values (predictors).
-        y_train : pandas Series
+        y_train : numpy ndarray
             Values of the time series related to each row of `X_train`.
+        train_index : pandas Index
+            Index of the training data.
         y_encoding_info_ : dict
             Information related to the encoding of the target variable.
         exog_names_in_ : list
             Names of the exogenous variables used during training.
+        categorical_features_names_in_ : list
+            Names of the exogenous variables considered as categorical.
         X_train_window_features_names_out_ : list
             Names of the window features included in the matrix `X_train` created
             internally for training.
@@ -765,7 +781,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             encoding_mapping_ = {}
             y_encoded = self.encoder.fit_transform(y_values.reshape(-1, 1)).ravel()
             for i, cat in enumerate(self.encoder.categories_[0]):
-                encoding_mapping_[cat] = i if self.use_native_categoricals else float(i)
+                encoding_mapping_[cat] = i
         else:
             encoding_mapping_ = self.encoding_mapping_
             y_encoded = self.encoder.transform(y_values.reshape(-1, 1)).ravel()
@@ -790,7 +806,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         exog_names_in_ = None
         exog_dtypes_in_ = None
         exog_dtypes_out_ = None
-        X_as_pandas = False if not self.use_native_categoricals else True
+        X_train_exog_names_out_ = None
+        categorical_features_names_in_ = None
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
             exog = input_to_frame(data=exog, input_name='exog')
@@ -820,14 +837,48 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                        fit               = fit_transformer,
                        inverse_transform = False
                    )
+
+            if self.categorical_features is not None:
+                if self.categorical_features == 'auto':
+                    categorical_features_names_in_ = [
+                        col for col, dtype in exog.dtypes.items()
+                        if not pd.api.types.is_numeric_dtype(dtype)
+                        and not pd.api.types.is_bool_dtype(dtype)
+                    ]
+                else:
+                    missing_cols = set(self.categorical_features) - set(exog.columns)
+                    if missing_cols:
+                        raise ValueError(
+                            f"The following columns specified in `categorical_features` "
+                            f"are not present in `exog` after `transformer_exog`: "
+                            f"{missing_cols}."
+                        )
+                    categorical_features_names_in_ = list(self.categorical_features)
+                
+                if categorical_features_names_in_: 
+                    if self.transformer_exog is None:
+                        exog = exog.copy()
+                    if fit_transformer:
+                        exog[categorical_features_names_in_] = (
+                            self.categorical_encoder.fit_transform(
+                                exog[categorical_features_names_in_]
+                            )
+                        )
+                    else:
+                        exog[categorical_features_names_in_] = (
+                            self.categorical_encoder.transform(
+                                exog[categorical_features_names_in_]
+                            )
+                        )
+
+            check_exog(exog=exog, allow_nan=False)
+            if self.categorical_features is None:
+                check_exog_dtypes(exog, call_check_exog=False)
             
-            check_exog_dtypes(exog, call_check_exog=True)
+            X_train_exog_names_out_ = exog.columns.to_list()
             exog_dtypes_out_ = get_exog_dtypes(exog=exog)
-            if X_as_pandas is False:
-                X_as_pandas = any(
-                    not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
-                    for dtype in set(exog.dtypes)
-                )
+
+            exog = exog.to_numpy()
 
             if len_exog == len_y:
                 if not (exog_index == y_index).all():
@@ -838,7 +889,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                     )
                 # The first `self.window_size` positions have to be removed from 
                 # exog since they are not in X_train.
-                exog = exog.iloc[self.window_size:, ]
+                exog = exog[self.window_size:, ]
             else:
                 if not (exog_index == train_index).all():
                     raise ValueError(
@@ -847,16 +898,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                         "the first `window_size` observations to ensure the correct "
                         "alignment of values."
                     )
-            
+
         X_train = []
         X_train_features_names_out_ = []
 
-        X_train_lags, y_train = self._create_lags(
-                                    y           = y_encoded, 
-                                    X_as_pandas = X_as_pandas, 
-                                    train_index = train_index,
-                                    class_codes = class_codes
-                                )
+        X_train_lags, y_train = self._create_lags(y=y_encoded)
         if X_train_lags is not None:
             X_train.append(X_train_lags)
             X_train_features_names_out_.extend(self.lags_names)
@@ -866,46 +912,20 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             y_window_features = pd.Series(y_encoded, index=y_index)
             X_train_window_features, X_train_window_features_names_out_ = (
                 self._create_window_features(
-                    y=y_window_features, X_as_pandas=X_as_pandas, train_index=train_index
+                    y=y_window_features, train_index=train_index
                 )
             )
-
-            # FIXME: When 'mode' is used, ideally it should be converted to categorical
-            # not done as we can't know its position when 'proportion' is used.
-
             X_train.extend(X_train_window_features)
             X_train_features_names_out_.extend(X_train_window_features_names_out_)
 
-        X_train_exog_names_out_ = None
         if exog is not None:
-            X_train_exog_names_out_ = exog.columns.to_list()  
-            if not X_as_pandas:
-                exog = exog.to_numpy()     
-            X_train_features_names_out_.extend(X_train_exog_names_out_)
             X_train.append(exog)
+            X_train_features_names_out_.extend(X_train_exog_names_out_)
         
         if len(X_train) == 1:
             X_train = X_train[0]
         else:
-            if X_as_pandas:
-                X_train = pd.concat(X_train, axis=1)
-            else:
-                X_train = np.concatenate(X_train, axis=1)
-                
-        if X_as_pandas:
-            X_train.index = train_index
-        else:
-            X_train = pd.DataFrame(
-                          data    = X_train,
-                          index   = train_index,
-                          columns = X_train_features_names_out_
-                      )
-        
-        y_train = pd.Series(
-                      data  = y_train,
-                      index = train_index,
-                      name  = 'y'
-                  )
+            X_train = np.concatenate(X_train, axis=1)
 
         last_window_ = None
         if store_last_window:
@@ -918,8 +938,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         return (
             X_train,
             y_train,
+            train_index,
             y_encoding_info_,
             exog_names_in_,
+            categorical_features_names_in_,
             X_train_window_features_names_out_,
             X_train_exog_names_out_,
             X_train_features_names_out_,
@@ -946,8 +968,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `y` and their indexes must be aligned.
         encoded : bool, default True
-            Whether to return the target and lag features encoded as integers
-            (as used during training) or decoded to their original categories.
+            Whether to return the target (`y_train`) and lag features encoded
+            as integers (as used during training) or decoded to their original
+            categories. This only affects features derived from `y` (lags and
+            `y_train`); exogenous variables encoded via `categorical_features`
+            are always returned in their encoded form.
 
         Returns
         -------
@@ -958,42 +983,59 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         Notes
         -----
-        Categorical features are transformed using an `OrdinalEncoder` (self.encoder).
-        The encoder's learned mappings (self.encoding_mapping_) are stored so that 
-        later, when creating lag (autoregressive) features, the same category-to-integer 
-        relationships can be applied consistently.
+        **Autoregressive Features (`features_encoding`)**
+        During training, target class labels are ordinal-encoded as integers
+        using `encoder` (`OrdinalEncoder`). When `features_encoding` is `'auto'` 
+        or `'categorical'`, lag features and window features returning class
+        codes (e.g., mode) are communicated as categorical to the estimator's
+        native categorical handling (e.g., LightGBM, CatBoost). When set to
+        `'ordinal'`, they are treated as numeric values.
+        Related attributes: `encoder` (`OrdinalEncoder`), `encoding_mapping_`, 
+        `code_to_class_mapping_`, `classes_`, `class_codes_`, `n_classes_`.
 
-        The goal is to ensure that the lag features — which are recreated as 
-        categorical variables — use the exact same integer codes as the original encoding.
-        In other words, the numerical values in the lagged features should 
-        exactly match the integer codes that the `OrdinalEncoder` assigned.
-        Formally, this means the following should hold true:
-
-        `(X_train['lag_1'].cat.codes == X_train['lag_1']).all()`
-
-        This consistency is guaranteed because:
-
-        - `OrdinalEncoder` assigns integer codes starting from 0, in the alphabetical 
-        order of category labels.
-
-        - When autoregressive (lag) features are created later, they are converted 
-        to pandas Categorical types using the same category ordering 
-        (`categories = forecaster.class_codes_`).
-
-        As a result, the categorical codes used in lag features remain aligned
-        with the original encoding from the `OrdinalEncoder`.
-
-        During prediction, we can work directly with NumPy arrays because the 
-        `OrdinalEncoder` transforms new observations into the same integer codes 
-        used by pandas Categorical during training. This eliminates the need to 
-        convert data to pandas categorical types at inference time.
+        **Exogenous Features (`categorical_features`)**
+        Exogenous variables specified via `categorical_features` are ordinal-
+        encoded using `categorical_encoder` (`OrdinalEncoder`) and their column 
+        indices are combined with the autoregressive categorical indices when 
+        configuring the estimator's native categorical handling. The forecaster 
+        always overwrites the estimator's categorical configuration to include 
+        both autoregressive and exogenous categorical indices.
+        Related attributes: `categorical_encoder` (`OrdinalEncoder`), 
+        `categorical_features_names_in_`.
         
         """
 
-        output = self._create_train_X_y(y=y, exog=exog, store_last_window=False)
+        (
+            X_train,
+            y_train,
+            train_index,
+            y_encoding_info_,
+            exog_names_in_,
+            categorical_features_names_in_,
+            X_train_window_features_names_out_,
+            X_train_exog_names_out_,
+            X_train_features_names_out_,
+            exog_dtypes_in_,
+            exog_dtypes_out_,
+            last_window_
+        ) = self._create_train_X_y(y=y, exog=exog)
 
-        X_train = output[0]
-        y_train = output[1]
+        X_train = pd.DataFrame(
+                      data    = X_train,
+                      index   = train_index,
+                      columns = X_train_features_names_out_
+                  )
+
+        if exog_dtypes_out_ is not None:
+            X_train_dtypes = {col: float for col in X_train_features_names_out_}
+            X_train_dtypes.update(exog_dtypes_out_)
+            X_train = X_train.astype(X_train_dtypes, copy=False)
+
+        y_train = pd.Series(
+                      data  = y_train,
+                      index = train_index,
+                      name  = 'y'
+                  )
 
         if not encoded:
             
@@ -1015,10 +1057,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         y: pd.Series,
         initial_train_size: int,
         exog: pd.Series | pd.DataFrame | None = None
-    ) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray | None, dict]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
-        predictions.
+        predictions. Uses `_create_train_X_y` to work directly with numpy arrays
+        and precomputes sample weights and fit kwargs (including categorical
+        feature configuration) so they are computed once rather than per trial.
 
         Parameters
         ----------
@@ -1033,14 +1077,19 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
         Returns
         -------
-        X_train : pandas DataFrame
+        X_train : numpy ndarray
             Predictor values used to train the model.
-        y_train : pandas Series
+        y_train : numpy ndarray
             Target values related to each row of `X_train`.
-        X_test : pandas DataFrame
+        X_test : numpy ndarray
             Predictor values used to test the model.
-        y_test : pandas Series
+        y_test : numpy ndarray
             Target values related to each row of `X_test`.
+        sample_weight : numpy ndarray, None
+            Precomputed sample weights for training. `None` if no `weight_func`.
+        fit_kwargs : dict
+            Precomputed keyword arguments for `estimator.fit`, including
+            categorical feature configuration.
         
         """
 
@@ -1048,28 +1097,71 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         encoding_mapping_ = self.encoding_mapping_
 
         self.is_fitted = False
-        X_train, y_train, y_encoding_info_, *_ = self._create_train_X_y(
-            y    = y.iloc[: initial_train_size],
-            exog = exog.iloc[: initial_train_size] if exog is not None else None
-        )
+        
+        (
+            X_train,
+            y_train,
+            train_index,
+            y_encoding_info_,
+            _,
+            categorical_features_names_in_,
+            _,
+            _,
+            X_train_features_names_out_,
+            _,
+            _,
+            _
+        ) = self._create_train_X_y(
+                y    = y.iloc[: initial_train_size],
+                exog = exog.iloc[: initial_train_size] if exog is not None else None,
+                store_last_window = False
+            )
 
         test_init = initial_train_size - self.window_size
         self.is_fitted = True
         self.encoding_mapping_ = y_encoding_info_['encoding_mapping_']
-        X_test, y_test, *_ = self._create_train_X_y(
-            y    = y.iloc[test_init:],
-            exog = exog.iloc[test_init:] if exog is not None else None
-        )
+
+        (
+            X_test,
+            y_test,
+            _,
+            *_
+        ) = self._create_train_X_y(
+                y    = y.iloc[test_init:],
+                exog = exog.iloc[test_init:] if exog is not None else None,
+                store_last_window = False
+            )
 
         self.is_fitted = is_fitted
         self.encoding_mapping_ = encoding_mapping_
 
-        return X_train, y_train, X_test, y_test
+        sample_weight = self.create_sample_weights(X_train=train_index)
 
+        if self.categorical_features is not None:
+            fit_kwargs = configure_estimator_categorical_features(
+                             estimator                      = self.estimator,
+                             categorical_features_names_in_ = categorical_features_names_in_,
+                             X_train_features_names_out_    = X_train_features_names_out_,
+                             fit_kwargs                     = {**self.fit_kwargs}
+                         )
+        else:
+            fit_kwargs = {**self.fit_kwargs}
+
+        if (
+            'cat_features' in fit_kwargs
+            and type(self.estimator).__name__ == 'CatBoostClassifier'
+        ):
+            cat_idx = np.array(fit_kwargs['cat_features'])
+            X_train = X_train.astype(object)
+            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
+            X_test = X_test.astype(object)
+            X_test[:, cat_idx] = X_test[:, cat_idx].astype(int)
+
+        return X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
 
     def create_sample_weights(
         self,
-        X_train: pd.DataFrame,
+        X_train: pd.DataFrame | pd.Index,
     ) -> np.ndarray:
         """
         Create weights for each observation according to the forecaster's attribute
@@ -1077,8 +1169,9 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         Parameters
         ----------
-        X_train : pandas DataFrame
-            Dataframe created with the `create_train_X_y` method, first return.
+        X_train : pandas DataFrame, pandas Index
+            Dataframe created with the `create_train_X_y` method, first return, 
+            or the index of the DataFrame.
 
         Returns
         -------
@@ -1090,7 +1183,9 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         sample_weight = None
 
         if self.weight_func is not None:
-            sample_weight = self.weight_func(X_train.index)
+            sample_weight = self.weight_func(
+                X_train.index if isinstance(X_train, pd.DataFrame) else X_train
+            )
 
         if sample_weight is not None:
             if np.isnan(sample_weight).any():
@@ -1108,7 +1203,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 )
 
         return sample_weight
-
 
     @manage_warnings
     def fit(
@@ -1148,35 +1242,25 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         Notes
         -----
-        Categorical features are transformed using an `OrdinalEncoder` (self.encoder).
-        The encoder's learned mappings (self.encoding_mapping_) are stored so that 
-        later, when creating lag (autoregressive) features, the same category-to-integer 
-        relationships can be applied consistently.
+        **Autoregressive Features (`features_encoding`)**
+        During training, target class labels are ordinal-encoded as integers
+        using `encoder` (`OrdinalEncoder`). When `features_encoding` is `'auto'` 
+        or `'categorical'`, lag features and window features returning class
+        codes (e.g., mode) are communicated as categorical to the estimator's
+        native categorical handling (e.g., LightGBM, CatBoost). When set to
+        `'ordinal'`, they are treated as numeric values.
+        Related attributes: `encoder` (`OrdinalEncoder`), `encoding_mapping_`, 
+        `code_to_class_mapping_`, `classes_`, `class_codes_`, `n_classes_`.
 
-        The goal is to ensure that the lag features — which are recreated as 
-        categorical variables — use the exact same integer codes as the original encoding.
-        In other words, the numerical values in the lagged features should 
-        exactly match the integer codes that the `OrdinalEncoder` assigned.
-        Formally, this means the following should hold true:
-
-        `(X_train['lag_1'].cat.codes == X_train['lag_1']).all()`
-
-        This consistency is guaranteed because:
-
-        - `OrdinalEncoder` assigns integer codes starting from 0, in the alphabetical 
-        order of category labels.
-
-        - When autoregressive (lag) features are created later, they are converted 
-        to pandas Categorical types using the same category ordering 
-        (`categories = forecaster.class_codes_`).
-
-        As a result, the categorical codes used in lag features remain aligned
-        with the original encoding from the `OrdinalEncoder`.
-
-        During prediction, we can work directly with NumPy arrays because the 
-        `OrdinalEncoder` transforms new observations into the same integer codes 
-        used by pandas Categorical during training. This eliminates the need to 
-        convert data to pandas categorical types at inference time.
+        **Exogenous Features (`categorical_features`)**
+        Exogenous variables specified via `categorical_features` are ordinal-
+        encoded using `categorical_encoder` (`OrdinalEncoder`) and their column 
+        indices are combined with the autoregressive categorical indices when 
+        configuring the estimator's native categorical handling. The forecaster 
+        always overwrites the estimator's categorical configuration to include 
+        both autoregressive and exogenous categorical indices.
+        Related attributes: `categorical_encoder` (`OrdinalEncoder`), 
+        `categorical_features_names_in_`.
         
         """
 
@@ -1190,6 +1274,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.exog_type_in_                      = None
         self.exog_dtypes_in_                    = None
         self.exog_dtypes_out_                   = None
+        self.categorical_features_names_in_     = None
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
@@ -1204,8 +1289,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         (
             X_train,
             y_train,
+            train_index,
             y_encoding_info_,
             exog_names_in_,
+            categorical_features_names_in_,
             X_train_window_features_names_out_,
             X_train_exog_names_out_,
             X_train_features_names_out_,
@@ -1216,17 +1303,51 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 y=y, exog=exog, store_last_window=store_last_window
             )
         
-        sample_weight = self.create_sample_weights(X_train=X_train)
+        sample_weight = self.create_sample_weights(X_train=train_index)
+
+        all_categorical_names = []
+        if self.use_native_categoricals and self.lags is not None:
+            all_categorical_names.extend(self.lags_names)
+        if self.use_native_categoricals and X_train_window_features_names_out_:
+            # NOTE: Window features whose name contains 'mode' are treated as
+            # categorical (they return class codes).
+            all_categorical_names.extend(
+                [name for name in X_train_window_features_names_out_
+                 if 'mode' in name]
+            )
+        if categorical_features_names_in_:
+            all_categorical_names.extend(categorical_features_names_in_)
+
+        if self.categorical_features is not None or self.use_native_categoricals:
+            fit_kwargs = configure_estimator_categorical_features(
+                             estimator                      = self.estimator,
+                             categorical_features_names_in_ = all_categorical_names,
+                             X_train_features_names_out_    = X_train_features_names_out_,
+                             fit_kwargs                     = {**self.fit_kwargs}
+                         )
+        else:
+            fit_kwargs = {**self.fit_kwargs}
+
+        # NOTE: CatBoost requires integer values (not float) for categorical features
+        # when X is a numpy array. This requires converting X_train to object
+        # dtype and casting the categorical columns to int.
+        if (
+            'cat_features' in fit_kwargs
+            and type(self.estimator).__name__ == 'CatBoostClassifier'
+        ):
+            cat_idx = np.array(fit_kwargs['cat_features'])
+            X_train = X_train.astype(object)
+            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
 
         if sample_weight is not None:
             self.estimator.fit(
                 X             = X_train,
                 y             = y_train,
                 sample_weight = sample_weight,
-                **self.fit_kwargs
+                **fit_kwargs
             )
         else:
-            self.estimator.fit(X=X_train, y=y_train, **self.fit_kwargs)
+            self.estimator.fit(X=X_train, y=y_train, **fit_kwargs)
 
         self.classes_ = y_encoding_info_['classes_']
         self.class_codes_ = y_encoding_info_['class_codes_']
@@ -1255,6 +1376,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             self.exog_names_in_ = exog_names_in_
             self.exog_dtypes_in_ = exog_dtypes_in_
             self.exog_dtypes_out_ = exog_dtypes_out_
+            self.categorical_features_names_in_ = categorical_features_names_in_
             self.X_train_exog_names_out_ = X_train_exog_names_out_
 
         if store_last_window:
@@ -1372,6 +1494,15 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                        fit               = False,
                        inverse_transform = False
                    )
+
+            if self.categorical_features is not None and self.categorical_features_names_in_:
+                if self.transformer_exog is None:
+                    exog = exog.copy()
+                exog[self.categorical_features_names_in_] = (
+                    self.categorical_encoder.transform(
+                        exog[self.categorical_features_names_in_]
+                    )
+                )
             
             # NOTE: Only check dtypes if they are not the same as seen in training
             if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
@@ -1389,7 +1520,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                            )
 
         return last_window_values, exog_values, prediction_index, steps
-
 
     def _recursive_predict(
         self,
@@ -1587,21 +1717,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                         index   = prediction_index
                     )
         
-        if self.use_native_categoricals:
-            for col in self.lags_names:
-                X_predict[col] = pd.Categorical(
-                                     values     = X_predict[col],
-                                     categories = self.class_codes_,
-                                     ordered    = False
-                                 )
-        
         if self.exog_in_:
-            categorical_features = any(
-                not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
-                for dtype in set(self.exog_dtypes_out_.values())
-            )
-            if categorical_features:
-                X_predict = X_predict.astype(self.exog_dtypes_out_, copy=False)
+            X_predict_dtypes = {col: float for col in self.X_train_features_names_out_}
+            X_predict_dtypes.update(self.exog_dtypes_out_)
+            X_predict = X_predict.astype(X_predict_dtypes, copy=False)
 
         if self.transformer_exog is not None:
             warnings.warn(
@@ -1789,27 +1908,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.estimator.set_params(**params)
         self.is_fitted = False
 
-    def set_fit_kwargs(
-        self, 
-        fit_kwargs: dict[str, object]
-    ) -> None:
-        """
-        Set new values for the additional keyword arguments passed to the `fit` 
-        method of the estimator.
-        
-        Parameters
-        ----------
-        fit_kwargs : dict
-            Dict of the form {"argument": new_value}.
-
-        Returns
-        -------
-        None
-        
-        """
-
-        self.fit_kwargs = check_select_fit_kwargs(self.estimator, fit_kwargs=fit_kwargs)
-
     def set_lags(
         self, 
         lags: int | list[int] | np.ndarray[int] | range[int] | None = None
@@ -1891,6 +1989,27 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]
         )
+
+    def set_fit_kwargs(
+        self, 
+        fit_kwargs: dict[str, object]
+    ) -> None:
+        """
+        Set new values for the additional keyword arguments passed to the `fit` 
+        method of the estimator.
+        
+        Parameters
+        ----------
+        fit_kwargs : dict
+            Dict of the form {"argument": new_value}.
+
+        Returns
+        -------
+        None
+        
+        """
+
+        self.fit_kwargs = check_select_fit_kwargs(self.estimator, fit_kwargs=fit_kwargs)
     
     def get_feature_importances(
         self,

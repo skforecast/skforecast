@@ -25,6 +25,42 @@ from .fixtures_forecaster_recursive_classifier import y, y_dt
 from .fixtures_forecaster_recursive_classifier import exog, exog_dt, exog_predict, exog_dt_predict
 
 
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LogisticRegression(), "lags": 3},
+        {"estimator": LogisticRegression(), "lags": 3,
+         "window_features": RollingFeaturesClassification(stats=['proportion'], window_sizes=4)},
+        {"estimator": LogisticRegression(), "lags": 3,
+         "window_features": RollingFeaturesClassification(stats=['proportion'], window_sizes=4),
+         "transformer_exog": StandardScaler()},
+    ],
+    ids=["base", "window_features", "transformers"]
+)
+def test_predict_proba_does_not_modify_y_exog(forecaster_kwargs):
+    """
+    Test forecaster.predict_proba does not modify y, exog, exog_predict or last_window.
+    """
+    y_local = y.copy()
+    exog_local = exog.copy()
+    exog_predict_local = exog_predict.copy()
+    last_window_local = y_local.iloc[-4:].copy()
+
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+    exog_predict_copy = exog_predict_local.copy()
+    last_window_copy = last_window_local.copy()
+
+    forecaster = ForecasterRecursiveClassifier(**forecaster_kwargs)
+    forecaster.fit(y=y_local, exog=exog_local)
+    _ = forecaster.predict_proba(steps=5, exog=exog_predict_local, last_window=last_window_local)
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
+    pd.testing.assert_series_equal(last_window_local, last_window_copy)
+    pd.testing.assert_series_equal(exog_predict_local, exog_predict_copy)
+
+
 def test_predict_proba_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
@@ -144,9 +180,16 @@ def test_predict_proba_output_with_transform_exog():
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_proba_output_when_categorical_features_native_implementation_HistGradientBoostingClassifier():
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_predict_proba_output_when_categorical_features_HistGradientBoostingClassifier(categorical_features):
     """
-    Test predict_proba output when using HistGradientBoostingClassifier and categorical variables.
+    Test predict_proba output when using HistGradientBoostingClassifier and
+    categorical variables. Both `categorical_features='auto'` and an explicit
+    list should produce the same predictions.
     """
     df_exog = pd.DataFrame({'exog_1': exog.to_numpy(),
                             'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
@@ -155,43 +198,27 @@ def test_predict_proba_output_when_categorical_features_native_implementation_Hi
     df_exog_predict = df_exog.iloc[:10, :].copy()
     df_exog_predict.index = pd.RangeIndex(start=50, stop=60)
 
-    categorical_features = df_exog.select_dtypes(exclude=[np.number]).columns.tolist()
-    transformer_exog = make_column_transformer(
-                           (
-                               OrdinalEncoder(
-                                   dtype=int,
-                                   handle_unknown="use_encoded_value",
-                                   unknown_value=-1,
-                                   encoded_missing_value=-1
-                               ),
-                               categorical_features
-                           ),
-                           remainder="passthrough",
-                           verbose_feature_names_out=False,
-                       ).set_output(transform="pandas")
-    
     forecaster = ForecasterRecursiveClassifier(
-                     estimator        = HistGradientBoostingClassifier(
-                                            categorical_features = categorical_features,
-                                            random_state         = 123
-                                        ),
-                     lags             = 5,
-                     transformer_exog = transformer_exog
+                     estimator            = HistGradientBoostingClassifier(
+                                                random_state = 123
+                                            ),
+                     lags                 = 5,
+                     categorical_features = categorical_features
                  )
     forecaster.fit(y=y, exog=df_exog)
     predictions = forecaster.predict_proba(steps=10, exog=df_exog_predict)
 
     expected = pd.DataFrame(
-                   data = np.array([[0.21505924, 0.39766585, 0.38727491],
-                                    [0.28929007, 0.49786819, 0.21284174],
-                                    [0.28929007, 0.49786819, 0.21284174],
-                                    [0.15448094, 0.57014446, 0.2753746 ],
-                                    [0.21505924, 0.39766585, 0.38727491],
-                                    [0.21505924, 0.39766585, 0.38727491],
-                                    [0.21505924, 0.39766585, 0.38727491],
-                                    [0.28929007, 0.49786819, 0.21284174],
-                                    [0.28929007, 0.49786819, 0.21284174],
-                                    [0.39008787, 0.31108289, 0.29882924]]),
+                   data = np.array([[0.14094939, 0.51412759, 0.34492302],
+                                    [0.46748341, 0.37135751, 0.16115908],
+                                    [0.40762409, 0.36783112, 0.22454478],
+                                    [0.10945589, 0.50152688, 0.38901722],
+                                    [0.14094939, 0.51412759, 0.34492302],
+                                    [0.31361194, 0.31477162, 0.37161644],
+                                    [0.2479161 , 0.28266388, 0.46942002],
+                                    [0.18460338, 0.60538689, 0.21000973],
+                                    [0.21744631, 0.62774431, 0.15480938],
+                                    [0.43857413, 0.25746504, 0.30396083]]),
                    index = pd.RangeIndex(start=50, stop=60, step=1),
                    columns = ['1_proba', '2_proba', '3_proba']
                )
@@ -199,9 +226,16 @@ def test_predict_proba_output_when_categorical_features_native_implementation_Hi
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_proba_output_when_categorical_features_native_implementation_LGBMClassifier():
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_predict_proba_output_when_categorical_features_LGBMClassifier(categorical_features):
     """
     Test predict_proba output when using LGBMClassifier and categorical variables.
+    Both `categorical_features='auto'` and an explicit list should produce the
+    same predictions.
     """
     df_exog = pd.DataFrame({'exog_1': exog.to_numpy(),
                             'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
@@ -210,41 +244,25 @@ def test_predict_proba_output_when_categorical_features_native_implementation_LG
     df_exog_predict = df_exog.iloc[:10, :].copy()
     df_exog_predict.index = pd.RangeIndex(start=50, stop=60)
 
-    categorical_features = df_exog.select_dtypes(exclude=[np.number]).columns.tolist()
-    transformer_exog = make_column_transformer(
-                           (
-                               OrdinalEncoder(
-                                   dtype=int,
-                                   handle_unknown="use_encoded_value",
-                                   unknown_value=-1,
-                                   encoded_missing_value=-1
-                               ),
-                               categorical_features
-                           ),
-                           remainder="passthrough",
-                           verbose_feature_names_out=False,
-                       ).set_output(transform="pandas")
-    
     forecaster = ForecasterRecursiveClassifier(
-                     estimator        = LGBMClassifier(verbose=-1, random_state=123),
-                     lags             = 5,
-                     transformer_exog = transformer_exog,
-                     fit_kwargs       = {'categorical_feature': categorical_features}
+                     estimator            = LGBMClassifier(verbose=-1, random_state=123),
+                     lags                 = 5,
+                     categorical_features = categorical_features
                  )
     forecaster.fit(y=y, exog=df_exog)
     predictions = forecaster.predict_proba(steps=10, exog=df_exog_predict)
 
     expected = pd.DataFrame(
-                   data = np.array([[0.22829797, 0.38950076, 0.38220126],
-                                    [0.27679603, 0.4837721 , 0.23943188],
-                                    [0.27679603, 0.4837721 , 0.23943188],
-                                    [0.13247683, 0.55335888, 0.31416429],
-                                    [0.22829797, 0.38950076, 0.38220126],
-                                    [0.22829797, 0.38950076, 0.38220126],
-                                    [0.22829797, 0.38950076, 0.38220126],
-                                    [0.27679603, 0.4837721 , 0.23943188],
-                                    [0.27679603, 0.4837721 , 0.23943188],
-                                    [0.22829797, 0.38950076, 0.38220126]]),
+                   data = np.array([[0.17224153, 0.44370028, 0.38405819],
+                                    [0.50668773, 0.30518928, 0.18812299],
+                                    [0.34780065, 0.40852763, 0.24367172],
+                                    [0.16616252, 0.46415355, 0.36968392],
+                                    [0.42795775, 0.24426185, 0.3277804 ],
+                                    [0.42466306, 0.27703231, 0.29830463],
+                                    [0.09774055, 0.49100823, 0.41125122],
+                                    [0.23814169, 0.53285177, 0.22900654],
+                                    [0.50668773, 0.30518928, 0.18812299],
+                                    [0.25145828, 0.34004613, 0.40849559]]),
                    index = pd.RangeIndex(start=50, stop=60, step=1),
                    columns = ['1_proba', '2_proba', '3_proba']
                )
@@ -252,10 +270,16 @@ def test_predict_proba_output_when_categorical_features_native_implementation_LG
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_proba_output_when_categorical_features_native_implementation_LGBMClassifier_auto():
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_predict_proba_output_when_categorical_features_LGBMClassifier_auto(categorical_features):
     """
-    Test predict_proba output when using LGBMClassifier and categorical variables with 
-    categorical_features='auto'.
+    Test predict_proba output when using LGBMClassifier and categorical variables
+    with categorical_features='auto'. Uses FunctionTransformer pipeline to cast
+    encoded columns to 'category' dtype via transformer_exog.
     """
     df_exog = pd.DataFrame({'exog_1': exog.to_numpy(),
                             'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
@@ -286,10 +310,10 @@ def test_predict_proba_output_when_categorical_features_native_implementation_LG
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveClassifier(
-                     estimator        = LGBMClassifier(verbose=-1, random_state=123),
-                     lags             = 5,
-                     transformer_exog = transformer_exog,
-                     fit_kwargs       = {'categorical_feature': 'auto'}
+                     estimator            = LGBMClassifier(verbose=-1, random_state=123),
+                     lags                 = 5,
+                     transformer_exog     = transformer_exog,
+                     categorical_features = categorical_features
                  )
     forecaster.fit(y=y, exog=df_exog)
     predictions = forecaster.predict_proba(steps=10, exog=df_exog_predict)
@@ -309,6 +333,99 @@ def test_predict_proba_output_when_categorical_features_native_implementation_LG
                    columns = ['1_proba', '2_proba', '3_proba']
                )
     
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'features_encoding, categorical_features, use_exog_cat, expected_data',
+    [
+        ('auto', 'auto', True,
+         np.array([[0.17224153, 0.44370028, 0.38405819],
+                   [0.50668773, 0.30518928, 0.18812299],
+                   [0.34780065, 0.40852763, 0.24367172],
+                   [0.16616252, 0.46415355, 0.36968392],
+                   [0.42795775, 0.24426185, 0.3277804 ],
+                   [0.42466306, 0.27703231, 0.29830463],
+                   [0.09774055, 0.49100823, 0.41125122],
+                   [0.23814169, 0.53285177, 0.22900654],
+                   [0.50668773, 0.30518928, 0.18812299],
+                   [0.25145828, 0.34004613, 0.40849559]])),
+        ('auto', None, False,
+         np.array([[0.17224153, 0.44370028, 0.38405819],
+                   [0.50668773, 0.30518928, 0.18812299],
+                   [0.34780065, 0.40852763, 0.24367172],
+                   [0.16616252, 0.46415355, 0.36968392],
+                   [0.42795775, 0.24426185, 0.3277804 ],
+                   [0.42466306, 0.27703231, 0.29830463],
+                   [0.09774055, 0.49100823, 0.41125122],
+                   [0.23814169, 0.53285177, 0.22900654],
+                   [0.50668773, 0.30518928, 0.18812299],
+                   [0.25145828, 0.34004613, 0.40849559]])),
+        ('ordinal', 'auto', True,
+         np.array([[0.22829797, 0.38950076, 0.38220126],
+                   [0.27679603, 0.4837721 , 0.23943188],
+                   [0.27679603, 0.4837721 , 0.23943188],
+                   [0.13247683, 0.55335888, 0.31416429],
+                   [0.22829797, 0.38950076, 0.38220126],
+                   [0.22829797, 0.38950076, 0.38220126],
+                   [0.22829797, 0.38950076, 0.38220126],
+                   [0.27679603, 0.4837721 , 0.23943188],
+                   [0.27679603, 0.4837721 , 0.23943188],
+                   [0.22829797, 0.38950076, 0.38220126]])),
+        ('ordinal', None, False,
+         np.array([[0.22829797, 0.38950076, 0.38220126],
+                   [0.27679603, 0.4837721 , 0.23943188],
+                   [0.27679603, 0.4837721 , 0.23943188],
+                   [0.13247683, 0.55335888, 0.31416429],
+                   [0.22829797, 0.38950076, 0.38220126],
+                   [0.22829797, 0.38950076, 0.38220126],
+                   [0.22829797, 0.38950076, 0.38220126],
+                   [0.27679603, 0.4837721 , 0.23943188],
+                   [0.27679603, 0.4837721 , 0.23943188],
+                   [0.22829797, 0.38950076, 0.38220126]])),
+    ],
+    ids=[
+        'autoreg_cat-exog_cat',
+        'autoreg_cat-no_exog_cat',
+        'no_autoreg_cat-exog_cat',
+        'no_autoreg_cat-no_exog_cat',
+    ]
+)
+def test_predict_proba_output_when_features_encoding_and_categorical_features_combinations(
+    features_encoding, categorical_features, use_exog_cat, expected_data
+):
+    """
+    Test predict_proba output for all combinations of `features_encoding`
+    (autoreg categorical) and `categorical_features` (exog categorical)
+    with LGBMClassifier.
+    """
+    if use_exog_cat:
+        df_exog = pd.DataFrame(
+            {'exog_1': exog.to_numpy(),
+             'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+             'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+        )
+        df_exog_predict = df_exog.iloc[:10, :].copy()
+        df_exog_predict.index = pd.RangeIndex(start=50, stop=60)
+    else:
+        df_exog = exog
+        df_exog_predict = exog_predict
+
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator            = LGBMClassifier(verbose=-1, random_state=123),
+                     lags                 = 5,
+                     features_encoding    = features_encoding,
+                     categorical_features = categorical_features
+                 )
+    forecaster.fit(y=y, exog=df_exog)
+    predictions = forecaster.predict_proba(steps=10, exog=df_exog_predict)
+
+    expected = pd.DataFrame(
+                   data = expected_data,
+                   index = pd.RangeIndex(start=50, stop=60, step=1),
+                   columns = ['1_proba', '2_proba', '3_proba']
+               )
+
     pd.testing.assert_frame_equal(predictions, expected)
 
 

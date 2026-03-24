@@ -6,17 +6,60 @@ import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
 from skforecast.recursive import ForecasterRecursiveClassifier
-from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import OrdinalEncoder
+from sklearn.preprocessing import FunctionTransformer
 from sklearn.compose import make_column_transformer
+from sklearn.compose import make_column_selector
+from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import HistGradientBoostingClassifier
+from lightgbm import LGBMClassifier
+
+from skforecast.preprocessing import RollingFeaturesClassification
 
 # Fixtures
 from .fixtures_forecaster_recursive_classifier import y, y_dt
-from .fixtures_forecaster_recursive_classifier import exog
+from .fixtures_forecaster_recursive_classifier import exog, exog_dt, exog_predict, exog_dt_predict
+
+
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LogisticRegression(), "lags": 3},
+        {"estimator": LogisticRegression(), "lags": 3,
+         "window_features": RollingFeaturesClassification(stats=['proportion'], window_sizes=4)},
+        {"estimator": LogisticRegression(), "lags": 3,
+         "window_features": RollingFeaturesClassification(stats=['proportion'], window_sizes=4),
+         "transformer_exog": StandardScaler()},
+    ],
+    ids=["base", "window_features", "transformers"]
+)
+def test_create_predict_inputs_does_not_modify_y_exog(forecaster_kwargs):
+    """
+    Test _create_predict_inputs does not modify y, exog, exog_predict or
+    last_window.
+    """
+    y_local = y.copy()
+    exog_local = exog.copy()
+    exog_predict_local = exog_predict.copy()
+    last_window_local = y_local.iloc[-4:].copy()
+
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+    exog_predict_copy = exog_predict_local.copy()
+    last_window_copy = last_window_local.copy()
+
+    forecaster = ForecasterRecursiveClassifier(**forecaster_kwargs)
+    forecaster.fit(y=y_local, exog=exog_local)
+    _ = forecaster._create_predict_inputs(
+            steps=5, exog=exog_predict_local, last_window=last_window_local
+        )
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
+    pd.testing.assert_series_equal(last_window_local, last_window_copy)
+    pd.testing.assert_series_equal(exog_predict_local, exog_predict_copy)
 
 
 def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
@@ -147,9 +190,16 @@ def test_create_predict_inputs_when_with_transform_exog():
     assert results[3] == expected[3]
 
 
-def test_create_predict_inputs_when_categorical_features_native_implementation_HistGradientBoostingClassifier():
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_create_predict_inputs_when_categorical_features_HistGradientBoostingClassifier(categorical_features):
     """
-    Test _create_predict_inputs when using HistGradientBoostingClassifier and categorical variables.
+    Test _create_predict_inputs when using HistGradientBoostingClassifier and
+    categorical variables managed by the forecaster's `categorical_features`
+    parameter.
     """
     df_exog = pd.DataFrame(
         {'exog_1': exog.to_numpy(),
@@ -157,51 +207,216 @@ def test_create_predict_inputs_when_categorical_features_native_implementation_H
          'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
     )
     
-    exog_predict = df_exog.copy()
-    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+    df_exog_predict = df_exog.iloc[:10, :].copy()
+    df_exog_predict.index = pd.RangeIndex(start=50, stop=60)
 
-    categorical_features = df_exog.select_dtypes(exclude=[np.number]).columns.tolist()
-    transformer_exog = make_column_transformer(
-                           (
-                               OrdinalEncoder(
-                                   dtype=int,
-                                   handle_unknown="use_encoded_value",
-                                   unknown_value=-1,
-                                   encoded_missing_value=-1
-                               ),
-                               categorical_features
-                           ),
-                           remainder="passthrough",
-                           verbose_feature_names_out=False,
-                       ).set_output(transform="pandas")
-    
     forecaster = ForecasterRecursiveClassifier(
-                     estimator        = HistGradientBoostingClassifier(
-                                            categorical_features = categorical_features,
-                                            random_state         = 123
-                                        ),
-                     lags             = 5,
-                     transformer_exog = transformer_exog
+                     estimator            = HistGradientBoostingClassifier(
+                                                random_state = 123
+                                            ),
+                     lags                 = 5,
+                     categorical_features = categorical_features
                  )
     forecaster.fit(y=y, exog=df_exog)
-    results = forecaster._create_predict_inputs(steps=10, exog=exog_predict)
+    results = forecaster._create_predict_inputs(steps=10, exog=df_exog_predict)
     
     expected = (
         np.array([1, 1, 0, 2, 1]),
-        np.array([[0.        , 0.        , 0.12062867],
-                  [1.        , 1.        , 0.8263408 ],
-                  [2.        , 2.        , 0.60306013],
-                  [3.        , 3.        , 0.54506801],
-                  [4.        , 4.        , 0.34276383],
-                  [0.        , 0.        , 0.30412079],
-                  [1.        , 1.        , 0.41702221],
-                  [2.        , 2.        , 0.68130077],
-                  [3.        , 3.        , 0.87545684],
-                  [4.        , 4.        , 0.51042234]]),
+        np.array([[0.12062867, 0.        , 0.        ],
+                  [0.8263408 , 1.        , 1.        ],
+                  [0.60306013, 2.        , 2.        ],
+                  [0.54506801, 3.        , 3.        ],
+                  [0.34276383, 4.        , 4.        ],
+                  [0.30412079, 0.        , 0.        ],
+                  [0.41702221, 1.        , 1.        ],
+                  [0.68130077, 2.        , 2.        ],
+                  [0.87545684, 3.        , 3.        ],
+                  [0.51042234, 4.        , 4.        ]]),
         pd.RangeIndex(start=50, stop=60, step=1),
         10
     )
     
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
+    pd.testing.assert_index_equal(results[2], expected[2])
+    assert results[3] == expected[3]
+
+
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_create_predict_inputs_when_categorical_features_LGBMClassifier(categorical_features):
+    """
+    Test _create_predict_inputs when using LGBMClassifier and categorical
+    variables managed by the forecaster's `categorical_features` parameter.
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog.to_numpy(),
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
+    
+    df_exog_predict = df_exog.iloc[:10, :].copy()
+    df_exog_predict.index = pd.RangeIndex(start=50, stop=60)
+
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator            = LGBMClassifier(verbose=-1, random_state=123),
+                     lags                 = 5,
+                     categorical_features = categorical_features
+                 )
+    forecaster.fit(y=y, exog=df_exog)
+    results = forecaster._create_predict_inputs(steps=10, exog=df_exog_predict)
+    
+    expected = (
+        np.array([1, 1, 0, 2, 1]),
+        np.array([[0.12062867, 0.        , 0.        ],
+                  [0.8263408 , 1.        , 1.        ],
+                  [0.60306013, 2.        , 2.        ],
+                  [0.54506801, 3.        , 3.        ],
+                  [0.34276383, 4.        , 4.        ],
+                  [0.30412079, 0.        , 0.        ],
+                  [0.41702221, 1.        , 1.        ],
+                  [0.68130077, 2.        , 2.        ],
+                  [0.87545684, 3.        , 3.        ],
+                  [0.51042234, 4.        , 4.        ]]),
+        pd.RangeIndex(start=50, stop=60, step=1),
+        10
+    )
+    
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
+    pd.testing.assert_index_equal(results[2], expected[2])
+    assert results[3] == expected[3]
+
+
+@pytest.mark.parametrize(
+    'features_encoding, categorical_features, use_exog_cat, expected_exog',
+    [
+        ('auto', 'auto', True,
+         np.array([[0.12062867, 0.        , 0.        ],
+                   [0.8263408 , 1.        , 1.        ],
+                   [0.60306013, 2.        , 2.        ],
+                   [0.54506801, 3.        , 3.        ],
+                   [0.34276383, 4.        , 4.        ],
+                   [0.30412079, 0.        , 0.        ],
+                   [0.41702221, 1.        , 1.        ],
+                   [0.68130077, 2.        , 2.        ],
+                   [0.87545684, 3.        , 3.        ],
+                   [0.51042234, 4.        , 4.        ]])),
+        ('auto', None, False,
+         np.array([[0.12062867],
+                   [0.8263408 ],
+                   [0.60306013],
+                   [0.54506801],
+                   [0.34276383],
+                   [0.30412079],
+                   [0.41702221],
+                   [0.68130077],
+                   [0.87545684],
+                   [0.51042234]])),
+        ('ordinal', 'auto', True,
+         np.array([[0.12062867, 0.        , 0.        ],
+                   [0.8263408 , 1.        , 1.        ],
+                   [0.60306013, 2.        , 2.        ],
+                   [0.54506801, 3.        , 3.        ],
+                   [0.34276383, 4.        , 4.        ],
+                   [0.30412079, 0.        , 0.        ],
+                   [0.41702221, 1.        , 1.        ],
+                   [0.68130077, 2.        , 2.        ],
+                   [0.87545684, 3.        , 3.        ],
+                   [0.51042234, 4.        , 4.        ]])),
+        ('ordinal', None, False,
+         np.array([[0.12062867],
+                   [0.8263408 ],
+                   [0.60306013],
+                   [0.54506801],
+                   [0.34276383],
+                   [0.30412079],
+                   [0.41702221],
+                   [0.68130077],
+                   [0.87545684],
+                   [0.51042234]])),
+    ],
+    ids=[
+        'autoreg_cat-exog_cat',
+        'autoreg_cat-no_exog_cat',
+        'no_autoreg_cat-exog_cat',
+        'no_autoreg_cat-no_exog_cat',
+    ]
+)
+def test_create_predict_inputs_when_features_encoding_and_categorical_features_combinations(
+    features_encoding, categorical_features, use_exog_cat, expected_exog
+):
+    """
+    Test _create_predict_inputs output for all combinations of
+    `features_encoding` (autoreg categorical) and `categorical_features`
+    (exog categorical) with LGBMClassifier.
+    """
+    if use_exog_cat:
+        df_exog = pd.DataFrame(
+            {'exog_1': exog.to_numpy(),
+             'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+             'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+        )
+        df_exog_predict = df_exog.iloc[:10, :].copy()
+        df_exog_predict.index = pd.RangeIndex(start=50, stop=60)
+    else:
+        df_exog = exog
+        df_exog_predict = exog_predict
+
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator            = LGBMClassifier(verbose=-1, random_state=123),
+                     lags                 = 5,
+                     features_encoding    = features_encoding,
+                     categorical_features = categorical_features
+                 )
+    forecaster.fit(y=y, exog=df_exog)
+    results = forecaster._create_predict_inputs(steps=10, exog=df_exog_predict)
+
+    np.testing.assert_array_almost_equal(results[0], np.array([1, 1, 0, 2, 1]))
+    np.testing.assert_array_almost_equal(results[1], expected_exog)
+    pd.testing.assert_index_equal(results[2], pd.RangeIndex(start=50, stop=60, step=1))
+    assert results[3] == 10
+
+
+@pytest.mark.parametrize(
+    "steps",
+    [10, '2020-02-29', pd.to_datetime('2020-02-29')],
+    ids=lambda steps: f'steps: {steps}'
+)
+def test_create_predict_inputs_when_window_features(steps):
+    """
+    Test _create_predict_inputs when estimator is LGBMClassifier and window
+    features.
+    """
+    rolling = RollingFeaturesClassification(
+                  stats=['proportion', 'entropy'], window_sizes=[3, 5]
+              )
+    forecaster = ForecasterRecursiveClassifier(
+                     LGBMClassifier(verbose=-1, random_state=123),
+                     lags=3, window_features=rolling
+                 )
+    forecaster.fit(y=y_dt, exog=exog_dt)
+    results = forecaster._create_predict_inputs(steps=steps, exog=exog_dt_predict)
+
+    expected = (
+        np.array([1, 1, 0, 2, 1]),
+        np.array([[0.12062867],
+                  [0.8263408 ],
+                  [0.60306013],
+                  [0.54506801],
+                  [0.34276383],
+                  [0.30412079],
+                  [0.41702221],
+                  [0.68130077],
+                  [0.87545684],
+                  [0.51042234]]),
+        pd.date_range(start='2020-02-20', periods=10, freq='D'),
+        10
+    )
+
     np.testing.assert_array_almost_equal(results[0], expected[0])
     np.testing.assert_array_almost_equal(results[1], expected[1])
     pd.testing.assert_index_equal(results[2], expected[2])
