@@ -30,6 +30,7 @@ from ..utils import (
     manage_warnings,
     deepcopy_forecaster
 )
+from ..foundational._utils import _check_preprocess_series_type
 
 
 def _prepare_fold_data(
@@ -2233,6 +2234,7 @@ def _backtesting_foundational(
     cv: TimeSeriesFold,
     metric: str | Callable | list[str | Callable],
     add_aggregated_metric: bool = True,
+    levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict | None = None,
     interval: list[float] | tuple[float] | None = None,
     quantiles: list[float] | None = None,
@@ -2270,6 +2272,9 @@ def _backtesting_foundational(
         If `True`, and multiple series (multi-series mode) are predicted,
         the aggregated metrics (average, weighted average and pooled) are
         also returned.
+    levels : str, list of str, default None
+        Series to predict and evaluate. Only used in multi-series mode. If
+        `None`, all series seen at fit time are used.
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variable/s included as predictor/s. Must cover the full
         time range of `series` including the forecast horizon of each fold.
@@ -2302,12 +2307,15 @@ def _backtesting_foundational(
 
     """
 
-    from ..foundational._forecaster_foundational import _check_preprocess_series_type
-
     forecaster = deepcopy_forecaster(forecaster)
     cv = deepcopy(cv)
 
     is_multiseries, series_names, series_norm = _check_preprocess_series_type(series)
+
+    if levels is not None and is_multiseries:
+        levels = [levels] if isinstance(levels, str) else list(levels)
+    else:
+        levels = None
 
     cv.set_params({
         'window_size': forecaster.window_size,
@@ -2316,7 +2324,6 @@ def _backtesting_foundational(
     })
 
     refit = cv.refit
-    gap = cv.gap
     overlapping_folds = cv.overlapping_folds
 
     if not isinstance(metric, list):
@@ -2402,6 +2409,7 @@ def _backtesting_foundational(
         if quantiles is not None:
             pred = forecaster.predict_quantiles(
                 steps=steps_with_gap,
+                levels=levels,
                 quantiles=quantiles,
                 exog=exog_test,
                 last_window=last_window,
@@ -2410,6 +2418,7 @@ def _backtesting_foundational(
         elif interval is not None:
             pred = forecaster.predict_interval(
                 steps=steps_with_gap,
+                levels=levels,
                 interval=interval,
                 exog=exog_test,
                 last_window=last_window,
@@ -2418,6 +2427,7 @@ def _backtesting_foundational(
         else:
             pred = forecaster.predict(
                 steps=steps_with_gap,
+                levels=levels,
                 exog=exog_test,
                 last_window=last_window,
                 last_window_exog=last_window_exog,
@@ -2478,7 +2488,7 @@ def _backtesting_foundational(
             span_index=span_index,
             window_size=forecaster.window_size,
             metrics=metrics,
-            levels=series_names,
+            levels=levels if levels is not None else series_names,
             add_aggregated_metric=add_aggregated_metric,
         )
 
@@ -2525,6 +2535,7 @@ def backtesting_foundational(
     cv: TimeSeriesFold,
     metric: str | Callable | list[str | Callable],
     add_aggregated_metric: bool = True,
+    levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict | None = None,
     interval: list[float] | tuple[float] | None = None,
     quantiles: list[float] | None = None,
@@ -2544,8 +2555,11 @@ def backtesting_foundational(
         Forecaster model.
     series : pandas Series, pandas DataFrame, or dict
         Training time series. A single ``pd.Series`` runs in single-series
-        mode; a wide ``pd.DataFrame`` or ``dict[str, pd.Series]`` runs in
-        multi-series mode.
+        mode. A wide ``pd.DataFrame``, a long-format ``pd.DataFrame`` with a
+        MultiIndex (series IDs in the first level, ``DatetimeIndex`` in the
+        second), or a ``dict[str, pd.Series]`` runs in multi-series mode.
+        Long-format DataFrames are normalised internally to a dict before
+        processing.
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data
         into folds.
@@ -2568,6 +2582,9 @@ def backtesting_foundational(
         number of predicted values of each level.
         - 'pooling': the values of all levels are pooled and then the metric
         is calculated.
+    levels : str, list of str, default None
+        Series to predict and evaluate. Only used in multi-series mode. If
+        `None`, all series seen at fit time are used.
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `series` and should be aligned so that
@@ -2642,6 +2659,8 @@ def backtesting_foundational(
             "the `model_selection` module."
         )
 
+    _, _, series_norm = _check_preprocess_series_type(series)
+
     if interval is not None and quantiles is not None:
         raise ValueError(
             "`interval` and `quantiles` cannot be provided simultaneously. "
@@ -2661,7 +2680,7 @@ def backtesting_foundational(
     check_backtesting_input(
         forecaster             = forecaster,
         cv                     = cv,
-        series                 = series,
+        series                 = series_norm,
         metric                 = metric,
         add_aggregated_metric  = add_aggregated_metric,
         exog                   = exog,
@@ -2672,10 +2691,11 @@ def backtesting_foundational(
 
     metric_values, backtest_predictions = _backtesting_foundational(
         forecaster            = forecaster,
-        series                = series,
+        series                = series_norm,
         cv                    = cv,
         metric                = metric,
         add_aggregated_metric = add_aggregated_metric,
+        levels                = levels,
         exog                  = exog,
         interval              = interval,
         quantiles             = quantiles,

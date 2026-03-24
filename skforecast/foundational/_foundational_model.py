@@ -1,5 +1,5 @@
 ################################################################################
-#                           FoundationalModels                                 #
+#                           FoundationalModel                                  #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
@@ -414,10 +414,10 @@ class Chronos2Adapter:
         if last_window is not None:
             if isinstance(last_window, pd.DataFrame):
                 history_dict: dict[str, pd.Series] = {
-                    col: last_window[col].copy() for col in last_window.columns
+                    col: last_window[col] for col in last_window.columns
                 }
             elif isinstance(last_window, dict):
-                history_dict = {k: v.copy() for k, v in last_window.items()}
+                history_dict = last_window
             else:
                 raise TypeError(
                     "`last_window` must be a wide pd.DataFrame or a "
@@ -703,6 +703,7 @@ class FoundationalModel:
         """
         return self.adapter._is_fitted
 
+
     def fit(
         self,
         series: pd.Series | pd.DataFrame | dict[str, pd.Series],
@@ -798,3 +799,74 @@ class FoundationalModel:
             last_window=last_window,
             last_window_exog=last_window_exog,
         )
+
+    def get_params(self, deep: bool = True) -> dict:
+        """
+        Get parameters for this estimator (sklearn-compatible).
+
+        Required so that ``sklearn.base.clone`` can create an unfitted copy
+        of this object, which is used internally by ``deepcopy_forecaster``
+        during backtesting. The pre-loaded pipeline is intentionally excluded
+        so that clones are created without copying heavy model weights; the
+        pipeline is reloaded lazily on the first ``predict`` call.
+
+        Parameters
+        ----------
+        deep : bool, default True
+            Ignored. Included for sklearn API compatibility.
+
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their current values.
+        """
+        return {
+            'model': self.adapter.model_id,
+            'cross_learning': self.adapter.cross_learning,
+            'context_length': self.adapter.context_length,
+            'device_map': self.adapter.device_map,
+            'torch_dtype': self.adapter.torch_dtype,
+            'predict_kwargs': self.adapter.predict_kwargs or None,
+        }
+
+    def set_params(self, **params) -> FoundationalModel:
+        """
+        Set parameters for this estimator (sklearn-compatible).
+
+        Parameters
+        ----------
+        **params :
+            Estimator parameters to set. Valid keys: ``model``,
+            ``cross_learning``, ``context_length``, ``device_map``,
+            ``torch_dtype``, ``predict_kwargs``.
+
+        Returns
+        -------
+        self : FoundationalModel
+        """
+        valid = {
+            'model', 'cross_learning', 'context_length',
+            'device_map', 'torch_dtype', 'predict_kwargs',
+        }
+        invalid = set(params) - valid
+        if invalid:
+            raise ValueError(
+                f"Invalid parameter(s) for FoundationalModel: {sorted(invalid)}. "
+                f"Valid parameters are: {sorted(valid)}."
+            )
+        if 'model' in params:
+            self.adapter.model_id = params['model']
+            self.adapter._pipeline = None
+        if 'cross_learning' in params:
+            self.adapter.cross_learning = params['cross_learning']
+        if 'context_length' in params:
+            self.adapter.context_length = params['context_length']
+        if 'device_map' in params:
+            self.adapter.device_map = params['device_map']
+            self.adapter._pipeline = None
+        if 'torch_dtype' in params:
+            self.adapter.torch_dtype = params['torch_dtype']
+            self.adapter._pipeline = None
+        if 'predict_kwargs' in params:
+            self.adapter.predict_kwargs = params['predict_kwargs'] or {}
+        return self

@@ -3262,8 +3262,9 @@ def deepcopy_forecaster(
     ----------
     forecaster : object
         Forecaster object to copy. Can be any skforecast forecaster:
-        `ForecasterRecursive`, `ForecasterDirect`, `ForecasterRecursiveMultiSeries`, 
-        `ForecasterDirectMultiVariate` or `ForecasterStats`.
+        `ForecasterRecursive`, `ForecasterDirect`, `ForecasterRecursiveMultiSeries`,
+        `ForecasterDirectMultiVariate`, `ForecasterStats` or
+        `ForecasterFoundational`.
     include_in_sample_residuals : bool, default `False`
         If `True`, `in_sample_residuals_` and `in_sample_residuals_by_bin_` are 
         preserved in the copy. These are recomputed during `fit()`, so they can 

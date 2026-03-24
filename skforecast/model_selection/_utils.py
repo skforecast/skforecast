@@ -248,17 +248,19 @@ def check_backtesting_input(
         data_length = max([len(series[serie]) for serie in series])
 
     elif forecaster_name == 'ForecasterFoundational':
+        # NOTE: Input is pre-normalised by `_check_preprocess_series_type` in
+        # `backtesting_foundational` before `check_backtesting_input` is called,
+        # so `series` is never a long-format MultiIndex DataFrame here.
         if not isinstance(series, (pd.Series, pd.DataFrame, dict)):
             raise TypeError(
                 f"`series` must be a pandas Series, DataFrame or dict. "
                 f"Got {type(series)}."
             )
         data_name = 'series'
-        data_length = (
-            max(len(v) for v in series.values() if v is not None)
-            if isinstance(series, dict)
-            else len(series)
-        )
+        if isinstance(series, dict):
+            data_length = max(len(v) for v in series.values() if v is not None)
+        else:
+            data_length = len(series)
 
     if exog is not None:
         if forecaster_name in (forecasters_multi_dict + ['ForecasterFoundational']):
