@@ -7,6 +7,8 @@ import pandas as pd
 from skforecast.foundational._foundational_model import (
     Chronos2Adapter,
     FoundationalModel,
+    _resolve_adapter,
+    _ADAPTER_REGISTRY,
 )
 
 from ..tests_forecaster_foundational.fixtures_forecaster_foundational import (
@@ -124,8 +126,9 @@ def test_FoundationalModels_fit_raises_TypeError_when_series_is_invalid_type():
     """
     m = FoundationalModel("autogluon/chronos-2-small")
     err_msg = re.escape(
-        "`series` must be a pd.Series, a wide pd.DataFrame, or a "
-        f"dict[str, pd.Series]. Got {type([1, 2, 3])}."
+        "`series` must be a pd.Series, a wide pd.DataFrame (one column "
+        "per series), or a dict[str, pd.Series]. "
+        f"Got {type([1, 2, 3])}."
     )
     with pytest.raises(TypeError, match=err_msg):
         m.fit(series=[1, 2, 3])
@@ -457,4 +460,204 @@ def test_FoundationalModels_set_params_invalid_key_raises_ValueError():
     err_msg = re.escape("Invalid parameter")
     with pytest.raises(ValueError, match=err_msg):
         m.set_params(invalid_param=True)
+
+
+# Tests _resolve_adapter / _ADAPTER_REGISTRY
+# ==============================================================================
+def test_resolve_adapter_returns_Chronos2Adapter_for_chronos_prefix():
+    """
+    Test that _resolve_adapter returns Chronos2Adapter for any model ID
+    starting with 'autogluon/chronos'.
+    """
+    assert _resolve_adapter("autogluon/chronos-2-small") is Chronos2Adapter
+    assert _resolve_adapter("autogluon/chronos-2-large") is Chronos2Adapter
+
+
+def test_resolve_adapter_raises_ValueError_for_unknown_prefix():
+    """
+    Test that _resolve_adapter raises ValueError with a clear message when
+    no registered prefix matches the model ID.
+    """
+    err_msg = re.escape("No adapter found for model 'unknown/my-model'.")
+    with pytest.raises(ValueError, match=err_msg):
+        _resolve_adapter("unknown/my-model")
+
+
+def test_resolve_adapter_error_lists_registered_prefixes():
+    """
+    Test that the ValueError message for an unknown model ID lists the
+    known prefixes so the user knows what is supported.
+    """
+    with pytest.raises(ValueError, match="Registered prefixes"):
+        _resolve_adapter("unknown/model")
+
+
+def test_FoundationalModel_init_raises_ValueError_for_unknown_model():
+    """
+    Test that FoundationalModel raises ValueError when the model ID does
+    not match any registered adapter prefix.
+    """
+    with pytest.raises(ValueError, match="No adapter found"):
+        FoundationalModel("unknown/unsupported-model")
+
+
+def test_ADAPTER_REGISTRY_contains_chronos_key():
+    """
+    Test that _ADAPTER_REGISTRY has the 'autogluon/chronos' prefix mapped
+    to Chronos2Adapter.
+    """
+    assert "autogluon/chronos" in _ADAPTER_REGISTRY
+    assert _ADAPTER_REGISTRY["autogluon/chronos"] is Chronos2Adapter
+
+
+# Tests Chronos2Adapter.get_params
+# ==============================================================================
+def test_Chronos2Adapter_get_params_returns_expected_keys():
+    """
+    Test that get_params returns a dict with all constructor parameter keys
+    and does NOT include private attributes like '_pipeline'.
+    """
+    adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
+    params = adapter.get_params()
+    assert set(params.keys()) == {
+        "model_id", "cross_learning", "context_length",
+        "device_map", "torch_dtype", "predict_kwargs",
+    }
+    assert "_pipeline" not in params
+    assert "pipeline" not in params
+
+
+def test_Chronos2Adapter_get_params_returns_correct_values():
+    """
+    Test that get_params reflects the values set at construction time.
+    """
+    adapter = Chronos2Adapter(
+        model_id="autogluon/chronos-2-small",
+        context_length=512,
+        cross_learning=True,
+        device_map="cpu",
+    )
+    params = adapter.get_params()
+    assert params["model_id"] == "autogluon/chronos-2-small"
+    assert params["context_length"] == 512
+    assert params["cross_learning"] is True
+    assert params["device_map"] == "cpu"
+
+
+def test_Chronos2Adapter_get_params_predict_kwargs_is_none_when_empty():
+    """
+    Test that get_params returns None for predict_kwargs when the adapter
+    was created without any predict_kwargs (normalised to {} internally).
+    """
+    adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
+    assert adapter.get_params()["predict_kwargs"] is None
+
+
+# Tests Chronos2Adapter.set_params
+# ==============================================================================
+def test_Chronos2Adapter_set_params_updates_cross_learning():
+    """
+    Test that set_params correctly updates cross_learning without resetting
+    the pipeline (cross_learning is not a pipeline-reset key).
+    """
+    adapter = Chronos2Adapter(
+        model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
+    )
+    adapter.set_params(cross_learning=True)
+    assert adapter.cross_learning is True
+    assert adapter._pipeline is not None  # pipeline NOT reset
+
+
+def test_Chronos2Adapter_set_params_model_id_resets_pipeline():
+    """
+    Test that changing model_id via set_params clears the cached pipeline,
+    since it will need to be reloaded for the new model.
+    """
+    adapter = Chronos2Adapter(
+        model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
+    )
+    assert adapter._pipeline is not None
+    adapter.set_params(model_id="autogluon/chronos-2-large")
+    assert adapter._pipeline is None
+    assert adapter.model_id == "autogluon/chronos-2-large"
+
+
+def test_Chronos2Adapter_set_params_device_map_resets_pipeline():
+    """
+    Test that changing device_map resets the pipeline.
+    """
+    adapter = Chronos2Adapter(
+        model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
+    )
+    adapter.set_params(device_map="cpu")
+    assert adapter._pipeline is None
+    assert adapter.device_map == "cpu"
+
+
+def test_Chronos2Adapter_set_params_invalid_key_raises_ValueError():
+    """
+    Test that set_params raises ValueError for unrecognised keys.
+    """
+    adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
+    with pytest.raises(ValueError, match="Invalid parameter"):
+        adapter.set_params(bad_key=42)
+
+
+def test_Chronos2Adapter_set_params_predict_kwargs_none_normalises_to_empty_dict():
+    """
+    Test that passing predict_kwargs=None via set_params normalises
+    the internal value to an empty dict (consistent with __init__ behaviour).
+    """
+    adapter = Chronos2Adapter(
+        model_id="autogluon/chronos-2-small",
+        predict_kwargs={"num_samples": 20},
+    )
+    adapter.set_params(predict_kwargs=None)
+    assert adapter.predict_kwargs == {}
+
+
+# Tests FoundationalModel.set_params — model → model_id translation
+# ==============================================================================
+def test_FoundationalModels_set_params_model_translates_to_model_id():
+    """
+    Test that set_params(model=...) correctly translates to model_id on the
+    underlying adapter.
+    """
+    m = FoundationalModel("autogluon/chronos-2-small")
+    m.set_params(model="autogluon/chronos-2-large")
+    assert m.adapter.model_id == "autogluon/chronos-2-large"
+
+
+def test_FoundationalModels_set_params_model_resets_pipeline():
+    """
+    Test that set_params(model=...) resets the adapter's cached pipeline.
+    """
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    assert m.adapter._pipeline is not None
+    m.set_params(model="autogluon/chronos-2-large")
+    assert m.adapter._pipeline is None
+
+
+def test_FoundationalModels_set_params_non_pipeline_key_no_pipeline_reset():
+    """
+    Test that set_params with a non-pipeline key (cross_learning) does not
+    reset the cached pipeline.
+    """
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m.set_params(cross_learning=True)
+    assert m.adapter.cross_learning is True
+    assert m.adapter._pipeline is not None
+
+
+def test_FoundationalModels_set_params_error_message_says_FoundationalModel():
+    """
+    Test that an invalid-key error from set_params names 'FoundationalModel',
+    not the internal 'Chronos2Adapter'.
+    """
+    m = FoundationalModel("autogluon/chronos-2-small")
+    with pytest.raises(ValueError) as exc_info:
+        m.set_params(bad_param=1)
+    assert "FoundationalModel" in str(exc_info.value)
+    assert "Chronos2Adapter" not in str(exc_info.value)
+
 

@@ -60,8 +60,8 @@ class ForecasterFoundational:
         Type of index of the input used in training.
     index_freq_ : pandas.DateOffset or int
         Frequency of the index of the input used in training. A
-        ``pandas.DateOffset`` for ``DatetimeIndex``; the ``step`` integer
-        for ``RangeIndex``.
+        `pandas.DateOffset` for `DatetimeIndex`; the `step` integer
+        for `RangeIndex`.
     training_range_ : pandas Index or dict
         First and last values of the index of the data used during training.
         `pandas.Index` in single-series mode; `dict[str, pandas.Index]` in
@@ -107,34 +107,29 @@ class ForecasterFoundational:
                 f"Got {type(estimator)}."
             )
 
-        self.estimator     = estimator
-        self.forecaster_id = forecaster_id
+        self.estimator          = estimator
+        self.forecaster_id      = forecaster_id
+        self.last_window_       = None
+        self.index_type_        = None
+        self.index_freq_        = None
+        self.training_range_    = None
+        self.series_name_in_    = None # Only used in single-series mode; `None` in multi-series mode.
+        self.series_names_in_   = None
+        self._is_multiseries    = False
+        self.exog_in_           = False
+        self.exog_names_in_     = None
+        self.exog_type_in_      = None
+        self.is_fitted          = False
+        self.fit_date           = None
+        self.creation_date      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
+        self.skforecast_version = __version__
+        self.python_version     = sys.version.split(" ")[0]
 
-        # window_size: used by backtesting to slice the correct context window.
         self.window_size = (
             estimator.adapter.context_length
             if estimator.adapter.context_length is not None
             else 1
         )
-
-        # Attributes set at fit time.
-        self.last_window_     = None   # intentionally None — adapter stores history
-        self.index_type_      = None
-        self.index_freq_      = None
-        self.training_range_  = None
-        self.series_name_in_  = None   # str in single-series mode, None in multi-series
-        self.series_names_in_ = None   # list[str] always set after fit
-        self._is_multiseries  = False
-        self.exog_in_         = False
-        self.exog_names_in_   = None
-        self.exog_type_in_    = None
-        self.is_fitted        = False
-        self.fit_date         = None
-
-        # Metadata.
-        self.creation_date      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.skforecast_version = __version__
-        self.python_version     = sys.version.split(" ")[0]
 
         self.__skforecast_tags__ = {
             "library": "skforecast",
@@ -318,21 +313,21 @@ class ForecasterFoundational:
         Fit the forecaster.
 
         Stores index metadata and delegates history storage to the underlying
-        adapter. No model training occurs — the foundational model is zero-shot.
+        adapter. No model training occurs since foundational model is zero-shot.
 
         Parameters
         ----------
         series : pandas Series, pandas DataFrame, or dict of pandas Series
             Training time series.
 
-            - `pandas.Series` — single-series mode.
-            - Wide `pandas.DataFrame` (one column per series) — multi-series
+            - `pandas.Series`: single-series mode.
+            - Wide `pandas.DataFrame` (one column per series): multi-series
               mode.
             - Long-format `pandas.DataFrame` with a MultiIndex (first level =
-              series IDs, second level = ``DatetimeIndex``) — multi-series
+              series IDs, second level = `DatetimeIndex`): multi-series
               mode. Internally converted to a dict. An `InputTypeWarning` is
               issued; consider passing a dict directly for better performance.
-            - `dict[str, pd.Series]` — multi-series mode.
+            - `dict[str, pd.Series]`: multi-series mode.
         exog : pandas Series, pandas DataFrame, dict, default None
             Historical exogenous variables aligned to `series`. These map to
             `past_covariates` in the Chronos-2 input at prediction time.
@@ -344,7 +339,7 @@ class ForecasterFoundational:
             with one entry per series, a single `pd.Series` / `pd.DataFrame`
             broadcast to all series, or a long-format `pd.DataFrame` with a
             MultiIndex (first level = series IDs, second level =
-            ``DatetimeIndex``). Long-format inputs are converted to a ``dict``
+            `DatetimeIndex`). Long-format inputs are converted to a `dict`
             internally; an `InputTypeWarning` is issued.
 
         Returns
@@ -353,7 +348,6 @@ class ForecasterFoundational:
 
         """
 
-        # Reset fit-time state so re-fitting always starts clean.
         self.last_window_     = None
         self.index_type_      = None
         self.index_freq_      = None
@@ -370,7 +364,6 @@ class ForecasterFoundational:
         is_multiseries, series_names, series = _check_preprocess_series_type(series)
 
         if not is_multiseries:
-            # Single-series validation path.
             check_y(y=series)
             if exog is not None:
                 check_exog(exog=exog)
@@ -387,9 +380,7 @@ class ForecasterFoundational:
                     if isinstance(exog, pd.DataFrame)
                     else [exog.name]
                 )
-            # Delegate to adapter.
             self.estimator.fit(series=series, exog=exog)
-            # Store single-series metadata.
             self.series_name_in_  = series_names[0]
             self.series_names_in_ = series_names
             self.training_range_  = series.index[[0, -1]]
@@ -404,13 +395,11 @@ class ForecasterFoundational:
                     f"`pandas.RangeIndex`. Got {type(series.index)}."
                 )
         else:
-            # Multi-series validation and metadata.
             if exog is not None:
                 self.exog_type_in_ = type(exog)  # capture original type before normalisation
                 exog = _check_preprocess_exog_type(exog, series_names_in_=series_names)
                 self.exog_in_      = True
                 if isinstance(exog, dict):
-                    # Collect all exog column names across all series.
                     all_names: list[str] = []
                     for e in exog.values():
                         if e is not None:
@@ -429,19 +418,17 @@ class ForecasterFoundational:
                         if isinstance(exog, pd.DataFrame)
                         else [exog.name]
                     )
-            # Delegate to adapter.
+
             self.estimator.fit(series=series, exog=exog)
-            # Store multi-series metadata.
             self._is_multiseries  = True
             self.series_name_in_  = None
             self.series_names_in_ = series_names
-            # training_range_ as dict[str, pd.Index] — one entry per series.
             if isinstance(series, pd.DataFrame):
                 self.training_range_ = {
                     name: series[name].index[[0, -1]] for name in series_names
                 }
                 ref_index = series.iloc[:, 0].index
-            else:  # dict
+            else:
                 self.training_range_ = {
                     name: s.index[[0, -1]] for name, s in series.items()
                 }
@@ -508,8 +495,8 @@ class ForecasterFoundational:
             In single-series mode: `pd.Series` named `'pred'`.
 
             In multi-series mode: long-format `pd.DataFrame` with columns
-            ``['level', 'pred']``. The index repeats each forecast timestamp
-            once per series (``n_steps × n_series`` rows).
+            `['level', 'pred']`. The index repeats each forecast timestamp
+            once per series (`n_steps x n_series` rows).
 
         """
 
@@ -526,8 +513,7 @@ class ForecasterFoundational:
         if is_multi:
             exog = _check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
             last_window_exog = _check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
-            # Trim broadcast exog (Series/DataFrame) — mirrors single-series behaviour.
-            # Dict exog is per-series and must reach the adapter untrimmed.
+          
             if exog is not None and isinstance(exog, (pd.Series, pd.DataFrame)):
                 exog = exog.iloc[:steps]
             predictions = self.estimator.predict(
@@ -604,7 +590,7 @@ class ForecasterFoundational:
             In single-series mode: columns `['pred', 'lower_bound', 'upper_bound']`.
 
             In multi-series mode: long-format columns
-            ``['level', 'pred', 'lower_bound', 'upper_bound']``.
+            `['level', 'pred', 'lower_bound', 'upper_bound']`.
 
         """
 
@@ -718,10 +704,10 @@ class ForecasterFoundational:
         Returns
         -------
         predictions : pandas DataFrame
-            In single-series mode: columns ``q_0.1``, ``q_0.5``, ``q_0.9``, etc.
+            In single-series mode: columns `q_0.1`, `q_0.5`, `q_0.9`, etc.
 
             In multi-series mode: long-format columns
-            ``['level', 'q_0.1', 'q_0.5', ...]``.
+            `['level', 'q_0.1', 'q_0.5', ...]`.
 
         """
 
@@ -800,14 +786,12 @@ class ForecasterFoundational:
         for key, value in params.items():
             setattr(self.estimator.adapter, key, value)
 
-        # Sync window_size in case context_length changed.
         self.window_size = (
             self.estimator.adapter.context_length
             if self.estimator.adapter.context_length is not None
             else 1
         )
 
-        # Invalidate fit state.
         self.is_fitted        = False
         self.fit_date         = None
         self.training_range_  = None

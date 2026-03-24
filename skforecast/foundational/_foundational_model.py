@@ -4,6 +4,10 @@
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
 # coding=utf-8
+# Each adapter imports its own backend library lazily (i.e. inside the method
+# that first needs it) rather than at module level. This means that only the
+# library required by the adapter you actually use needs to be installed, other
+# foundational-model backends remain optional.
 
 from __future__ import annotations
 from typing import Any
@@ -20,9 +24,12 @@ class Chronos2Adapter:
     ----------
     model_id : str
         HuggingFace model ID, e.g. "autogluon/chronos-2-small".
-    context_length : int, optional
-        Maximum number of historical observations to use as context. If None,
-        the full history stored at fit time is used.
+    context_length : int, default 2048
+        Maximum number of historical observations to use as context. Only the
+        last `context_length` observations are stored at fit time. Defaults
+        to 2048, which matches the context window of all current Chronos-2
+        variants. Set to None to pass the full history (the model will
+        truncate internally), at the cost of higher memory usage.
     pipeline : BaseChronosPipeline, optional
         Pre-loaded pipeline instance. If None, the pipeline is loaded lazily on
         the first call to `predict`.
@@ -41,7 +48,7 @@ class Chronos2Adapter:
         model_id: str,
         *,
         pipeline: Any | None = None,
-        context_length: int | None = None,
+        context_length: int | None = 2048,
         predict_kwargs: dict[str, Any] | None = None,
         device_map: str | None = None,
         torch_dtype: Any | None = None,
@@ -57,13 +64,15 @@ class Chronos2Adapter:
         pipeline : BaseChronosPipeline, optional
             Pre-loaded pipeline instance. If `None`, the pipeline is
             loaded lazily on the first call to `predict`.
-        context_length : int, optional
+        context_length : int, default 2048
             Maximum number of historical observations to retain as context.
             At `fit` time only the last `context_length` observations
             of `series` (and `exog`) are stored. At `predict` time any
             `last_window` longer than `context_length` is trimmed to
-            this length before inference. If `None`, no trimming is
-            applied.
+            this length before inference. Defaults to 2048, which matches
+            the context window of all current Chronos-2 variants. Set to
+            `None` to pass the full history (the model will truncate
+            internally), at the cost of higher memory usage.
         predict_kwargs : dict, optional
             Additional keyword arguments forwarded verbatim to the
             pipeline's `predict_quantiles` method.
@@ -79,22 +88,72 @@ class Chronos2Adapter:
             the batch when predicting in multi-series mode. Forwarded
             directly to `predict_quantiles`. Ignored in single-series mode.
         """
-        self.model_id = model_id
-        self._pipeline = pipeline
-        self._history: pd.Series | dict[str, pd.Series] | None = None
-        self._history_exog: (
-            pd.DataFrame
-            | pd.Series
-            | dict[str, pd.DataFrame | pd.Series | None]
-            | None
-        ) = None
-        self.context_length = context_length
-        self.predict_kwargs = predict_kwargs or {}
-        self.device_map = device_map
-        self.torch_dtype = torch_dtype
-        self.cross_learning = cross_learning
-        self._is_fitted = False
+
+        self.model_id        = model_id
+        self._pipeline       = pipeline
+        self._history        = None
+        self._history_exog   = None
+        self.context_length  = context_length
+        self.predict_kwargs  = predict_kwargs or {}
+        self.device_map      = device_map
+        self.torch_dtype     = torch_dtype
+        self.cross_learning  = cross_learning
+        self._is_fitted      = False
         self._is_multiseries = False
+
+    def get_params(self) -> dict:
+        """
+        Return the adapter's constructor parameters.
+
+        Returns
+        -------
+        dict
+            Keys: ``model_id``, ``cross_learning``, ``context_length``,
+            ``device_map``, ``torch_dtype``, ``predict_kwargs``.
+        """
+        return {
+            'model_id':       self.model_id,
+            'cross_learning': self.cross_learning,
+            'context_length': self.context_length,
+            'device_map':     self.device_map,
+            'torch_dtype':    self.torch_dtype,
+            'predict_kwargs': self.predict_kwargs or None,
+        }
+
+    def set_params(self, **params) -> Chronos2Adapter:
+        """
+        Set adapter parameters. Resets the pipeline when a device or dtype
+        param changes, since those are baked into the loaded pipeline.
+
+        Parameters
+        ----------
+        **params :
+            Valid keys: ``model_id``, ``cross_learning``, ``context_length``,
+            ``device_map``, ``torch_dtype``, ``predict_kwargs``.
+
+        Returns
+        -------
+        self : Chronos2Adapter
+        """
+        valid = {
+            'model_id', 'cross_learning', 'context_length',
+            'device_map', 'torch_dtype', 'predict_kwargs',
+        }
+        invalid = set(params) - valid
+        if invalid:
+            raise ValueError(
+                f"Invalid parameter(s) for Chronos2Adapter: {sorted(invalid)}. "
+                f"Valid parameters are: {sorted(valid)}."
+            )
+        pipeline_reset_keys = {'model_id', 'device_map', 'torch_dtype'}
+        if params.keys() & pipeline_reset_keys:
+            self._pipeline = None
+        for key, value in params.items():
+            if key == 'predict_kwargs':
+                self.predict_kwargs = value or {}
+            else:
+                setattr(self, key, value)
+        return self
 
     def _load_pipeline(self) -> None:
         """
@@ -112,6 +171,7 @@ class Chronos2Adapter:
         ImportError
             If `chronos-forecasting` >=2.0 is not installed.
         """
+
         if self._pipeline is not None:
             return
         try:
@@ -149,6 +209,7 @@ class Chronos2Adapter:
             A 1-D numpy array. Numeric/bool → `float64`. Others → original
             dtype (typically `object` for string and categorical data).
         """
+
         # Handle pandas Series first to correctly process nullable extension
         # dtypes (pd.Int64Dtype, pd.Float64Dtype, pd.BooleanDtype): np.asarray()
         # on those produces dtype=object with pd.NA sentinels instead of float64.
@@ -159,7 +220,7 @@ class Chronos2Adapter:
 
         # Fallback for numpy arrays, lists, etc.
         arr = np.asarray(col_data)
-        if np.issubdtype(arr.dtype, np.integer) or np.issubdtype(arr.dtype, np.floating) or arr.dtype.kind == "b":
+        if arr.dtype.kind in ("i", "u", "f", "b"):  # integer, unsigned int, float, bool
             return arr.astype(np.float64)
         return arr
 
@@ -200,7 +261,8 @@ class Chronos2Adapter:
             arrays (`float64` for numeric/bool columns, `object` dtype
             for string/categorical columns).
         """
-        input_dict: dict[str, Any] = {"target": np.asarray(target, dtype=float)}
+
+        input_dict = {"target": np.asarray(target, dtype=float)}
         if past_exog is not None:
             df = (
                 past_exog
@@ -252,6 +314,7 @@ class Chronos2Adapter:
         dict[str, pd.DataFrame | pd.Series | None]
             Per-series exog dict with exactly the keys in `series_names`.
         """
+
         if exog is None:
             return {name: None for name in series_names}
         if isinstance(exog, dict):
@@ -271,24 +334,25 @@ class Chronos2Adapter:
     ) -> Chronos2Adapter:
         """
         Store the training series and optional historical exogenous variables.
-        No model training occurs — Chronos-2 is a zero-shot inference model.
+        No model training occurs since Chronos-2 is a zero-shot inference model.
 
         Parameters
         ----------
         series : pd.Series, pd.DataFrame, or dict of pd.Series
-            Training time series.
+            Training time series. Based on the type of `series`, the adapter
+            operates in single-series or multi-series mode.
 
-            - `pd.Series` — single-series mode.
-            - Wide `pd.DataFrame` (each column = one series) — multi-series
+            - `pd.Series`: single-series mode.
+            - Wide `pd.DataFrame` (each column = one series): multi-series
               mode.
-            - `dict[str, pd.Series]` — multi-series mode; keys become the
+            - `dict[str, pd.Series]`: multi-series mode; keys become the
               series names.
         exog : pd.Series, pd.DataFrame, dict, or None
             Historical exogenous variables. Passed as `past_covariates` in
             the Chronos-2 input.
 
-            - `pd.Series` or `pd.DataFrame` — broadcast to all series.
-            - `dict[str, pd.DataFrame | pd.Series | None]` — per-series
+            - `pd.Series` or `pd.DataFrame`: broadcast to all series.
+            - `dict[str, pd.DataFrame | pd.Series | None]`: per-series
               covariates; series absent from the dict receive no past
               covariates.
 
@@ -296,8 +360,10 @@ class Chronos2Adapter:
         -------
         self : Chronos2Adapter
         """
+
+        # single-series path
         if isinstance(series, pd.Series):
-            # --- single-series path (unchanged) ---
+            
             check_y(series, series_id="`series`")
             self._is_multiseries = False
             if self.context_length is not None:
@@ -310,14 +376,16 @@ class Chronos2Adapter:
             else:
                 self._history = series.copy()
                 self._history_exog = exog.copy() if exog is not None else None
+    
+        # multi-series path
         elif isinstance(series, (pd.DataFrame, dict)):
-            # --- multi-series path ---
+            
             if isinstance(series, pd.DataFrame):
                 series_dict: dict[str, pd.Series] = {
-                    col: series[col].copy() for col in series.columns
+                    col: series[col] for col in series.columns
                 }
             else:
-                series_dict = {k: v.copy() for k, v in series.items()}
+                series_dict = series
 
             if not series_dict:
                 raise ValueError("`series` must contain at least one series.")
@@ -329,7 +397,6 @@ class Chronos2Adapter:
                         f"Got {type(s)} for series '{name}'."
                     )
                 check_y(s, series_id=f"'{name}'")
-                series_dict[name].name = name
 
             series_names = list(series_dict.keys())
             exog_dict = self._normalize_exog_to_dict(exog, series_names)
@@ -348,17 +415,21 @@ class Chronos2Adapter:
                     for name, e in exog_dict.items()
                 }
             else:
-                self._history = series_dict
+                self._history = {name: s.copy() for name, s in series_dict.items()}
                 self._history_exog = exog_dict
 
             self._is_multiseries = True
         else:
             raise TypeError(
-                "`series` must be a pd.Series, a wide pd.DataFrame, or a "
-                f"dict[str, pd.Series]. Got {type(series)}."
+                "`series` must be a pd.Series, a wide pd.DataFrame (one column "
+                "per series), or a dict[str, pd.Series]. "
+                f"Got {type(series)}. "
+                "To use a long-format DataFrame, pass it to `ForecasterFoundational`, "
+                "which converts it automatically before calling this adapter."
             )
 
         self._is_fitted = True
+
         return self
 
     def _predict_multiseries(
@@ -370,7 +441,6 @@ class Chronos2Adapter:
             | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ),
-        quantile_levels: list[float],
         quantiles: list[float] | None,
         last_window: pd.DataFrame | dict[str, pd.Series] | None,
         last_window_exog: (
@@ -390,11 +460,9 @@ class Chronos2Adapter:
         exog : pd.Series, pd.DataFrame, dict, or None
             Future covariates for the forecast horizon. Broadcast or
             per-series dict; see :meth:`_normalize_exog_to_dict`.
-        quantile_levels : list of float
-            Quantile levels passed verbatim to `predict_quantiles`.
         quantiles : list of float or None
-            Original `quantiles` argument from :meth:`predict`; used to
-            choose between point and quantile output format.
+            Quantile levels to return. If `None`, a point forecast (median)
+            is produced; only `[0.5]` is requested from the pipeline.
         last_window : pd.DataFrame, dict, or None
             Override stored history. Wide DataFrame (column per series) or
             `dict[str, pd.Series]`.
@@ -410,7 +478,9 @@ class Chronos2Adapter:
             forecast timestamps once per series (`n_steps × n_series`
             rows total); the `level` column identifies the series.
         """
-        # --- resolve history dict ---
+
+        quantile_levels = list(quantiles) if quantiles is not None else [0.5]
+
         if last_window is not None:
             if isinstance(last_window, pd.DataFrame):
                 history_dict: dict[str, pd.Series] = {
@@ -425,21 +495,18 @@ class Chronos2Adapter:
                     f"Got {type(last_window)}."
                 )
         else:
-            history_dict = self._history  # already a dict[str, pd.Series]
+            history_dict = self._history
 
         series_names = list(history_dict.keys())
 
-        # --- resolve past exog dict ---
         if last_window is not None:
             past_exog_dict = self._normalize_exog_to_dict(last_window_exog, series_names)
         else:
             past_exog_dict = self._history_exog  # already a dict
 
-        # --- resolve future exog dict ---
         future_exog_dict = self._normalize_exog_to_dict(exog, series_names)
 
-        # --- context_length trimming (only when last_window is provided;
-        #     _history was already trimmed at fit time) ---
+        # Context_length trimming (only when last_window is provided
         if last_window is not None and self.context_length is not None:
             history_dict = {
                 name: s.iloc[-self.context_length :]
@@ -452,26 +519,25 @@ class Chronos2Adapter:
                 for name, e in past_exog_dict.items()
             }
 
-        # --- build list of per-series input dicts for the pipeline ---
+        # Build list of per-series input dicts for the pipeline
         inputs_list = [
             self._build_chronos_input(
-                target=history_dict[name].to_numpy(),
-                past_exog=past_exog_dict[name],
-                future_exog=future_exog_dict[name],
+                target      = history_dict[name].to_numpy(),
+                past_exog   = past_exog_dict[name],
+                future_exog = future_exog_dict[name],
             )
             for name in series_names
         ]
 
-        # --- single batched pipeline call ---
         quantile_preds, _ = self._pipeline.predict_quantiles(
-            inputs=inputs_list,
-            prediction_length=steps,
-            quantile_levels=quantile_levels,
-            cross_learning=self.cross_learning,
+            inputs            = inputs_list,
+            prediction_length = steps,
+            quantile_levels   = quantile_levels,
+            cross_learning    = self.cross_learning,
             **self.predict_kwargs,
         )
 
-        # --- decode all per-series quantile arrays once ---
+        # Decode all per-series quantile arrays once
         # Each decoded[i] has shape (steps, n_q)
         decoded: list[np.ndarray] = []
         for i in range(len(series_names)):
@@ -482,26 +548,24 @@ class Chronos2Adapter:
                 q_arr = np.asarray(q_arr)
             decoded.append(q_arr.squeeze(0))
 
-        # --- build shared long-format index and level column ---
-        # Layout mirrors ForecasterRecursiveMultiSeries.predict():
-        #   index  = [t0, t0, t1, t1, …] (each timestamp repeated n_series times)
-        #   level  = [s1, s2, s1, s2, …] (series names tiled for each step)
+        # Build shared long-format index and level column
+        #  index = [t0, t0, t1, t1, …] (each timestamp repeated n_series times)
+        #  level = [s1, s2, s1, s2, …] (series names tiled for each step)
         n_series = len(series_names)
         forecast_index = expand_index(history_dict[series_names[0]].index, steps=steps)
         long_index = np.repeat(forecast_index, n_series)
         level_col = np.tile(series_names, steps)
 
         if quantiles is None:
-            # point forecast → long DataFrame with columns [level, pred]
-            median_idx = quantile_levels.index(0.5)
-            # shape (steps, n_series) → ravel row-major → [s1_t0, s2_t0, s1_t1, …]
-            point_matrix = np.column_stack([decoded[i][:, median_idx] for i in range(n_series)])
+            # point forecast: long DataFrame with columns [level, pred]
+            # quantile_levels == [0.5], so the median is always at index 0
+            point_matrix = np.column_stack([decoded[i][:, 0] for i in range(n_series)])
             return pd.DataFrame(
                 {"level": level_col, "pred": point_matrix.ravel()},
                 index=long_index,
             )
         else:
-            # quantile forecast → long DataFrame with columns [level, q_0.1, q_0.5, …]
+            # quantile forecast: long DataFrame with columns [level, q_0.1, q_0.5, ...]
             q_columns = [f"q_{q}" for q in quantile_levels]
             data_dict: dict[str, np.ndarray] = {"level": level_col}
             for j, col in enumerate(q_columns):
@@ -548,11 +612,12 @@ class Chronos2Adapter:
             returns a point forecast (median, i.e. the 0.5 quantile).
         last_window : pd.Series, pd.DataFrame, dict, or None
             Override the stored history with this window. Used by backtesting
-            to pass the appropriate context window per fold.
+            to pass the appropriate context window per fold. Based on the type
+            of `last_window`, the output is generated via the single-series or
+            multi-series path.
 
-            - `pd.Series` — single-series mode.
-            - Wide `pd.DataFrame` or `dict[str, pd.Series]` —
-              multi-series mode.
+            - `pd.Series`: single-series mode.
+            - Wide `pd.DataFrame` or `dict[str, pd.Series]`: multi-series mode.
         last_window_exog : pd.Series, pd.DataFrame, dict, or None
             Historical exog corresponding to `last_window`. Same
             broadcast-vs-dict semantics as `exog`.
@@ -568,8 +633,9 @@ class Chronos2Adapter:
             `["level", "pred"]`. Multi-series quantile forecast: long
             format with columns `["level", "q_0.1", "q_0.5", …]`. In both
             multi-series cases the index repeats each forecast timestamp once
-            per series (`n_steps × n_series` rows total).
+            per series (`n_steps x n_series` rows total).
         """
+
         if not self._is_fitted and last_window is None:
             raise ValueError(
                 "Call `fit` before `predict`, or pass `last_window`."
@@ -577,7 +643,7 @@ class Chronos2Adapter:
         if not isinstance(steps, (int, np.integer)) or steps < 1:
             raise ValueError("`steps` must be a positive integer.")
 
-        quantile_levels = list(quantiles) if quantiles is not None else [0.1, 0.5, 0.9]
+        quantile_levels = list(quantiles) if quantiles is not None else [0.5]
 
         if quantiles is not None:
             for q in quantile_levels:
@@ -586,46 +652,43 @@ class Chronos2Adapter:
                         f"All quantiles must be between 0 and 1. Got {q}."
                     )
 
+        # NOTE: the pipeline is loaded lazily here so that the adapter can be
+        # instantiated and fitted without requiring Chronos-2 to be installed.
         self._load_pipeline()
 
         if self._is_multiseries or isinstance(last_window, (pd.DataFrame, dict)):
             return self._predict_multiseries(
-                steps=steps,
-                exog=exog,
-                quantile_levels=quantile_levels,
-                quantiles=quantiles,
-                last_window=last_window,
-                last_window_exog=last_window_exog,
+                steps            = steps,
+                exog             = exog,
+                quantiles        = quantiles,
+                last_window      = last_window,
+                last_window_exog = last_window_exog,
             )
 
-        # --- single-series path ---
         history = last_window if last_window is not None else self._history
         past_exog = (
             last_window_exog if last_window is not None else self._history_exog
         )
 
         # When last_window is provided (backtesting), still trim to context_length.
-        # When _history is used directly it was already trimmed at fit time.
         if last_window is not None and self.context_length is not None:
             history = history.iloc[-self.context_length :]
             if past_exog is not None:
                 past_exog = past_exog.iloc[-self.context_length :]
 
         input_dict = self._build_chronos_input(
-            target=history.to_numpy(),
-            past_exog=past_exog,
-            future_exog=exog,
+            target      = history.to_numpy(),
+            past_exog   = past_exog,
+            future_exog = exog,
         )
 
         quantile_preds, _ = self._pipeline.predict_quantiles(
-            inputs=[input_dict],
-            prediction_length=steps,
-            quantile_levels=quantile_levels,
+            inputs            = [input_dict],
+            prediction_length = steps,
+            quantile_levels   = quantile_levels,
             **self.predict_kwargs,
         )
 
-        # quantile_preds[0] shape: (n_vars, steps, n_q).
-        # Univariate: n_vars == 1 — squeeze to (steps, n_q).
         q_arr = quantile_preds[0].squeeze(0)
         if hasattr(q_arr, "detach"):
             q_arr = q_arr.detach().cpu().numpy()
@@ -633,15 +696,32 @@ class Chronos2Adapter:
         forecast_index = expand_index(history.index, steps=steps)
 
         if quantiles is None:
-            median_idx = quantile_levels.index(0.5)
             return pd.Series(
-                q_arr[:, median_idx],
-                index=forecast_index,
-                name=history.name,
+                data  = q_arr[:, 0],
+                index = forecast_index,
+                name  = history.name,
             )
 
         columns = [f"q_{q}" for q in quantile_levels]
         return pd.DataFrame(q_arr, index=forecast_index, columns=columns)
+
+
+_ADAPTER_REGISTRY: dict[str, type] = {
+    "autogluon/chronos": Chronos2Adapter,
+    # "amazon/moirai": MoiraiAdapter,
+    # "some_other_prefix": SomeOtherAdapter,
+}
+
+
+def _resolve_adapter(model_id: str) -> type:
+    """Return the adapter class for *model_id* based on prefix matching."""
+    for prefix, cls in _ADAPTER_REGISTRY.items():
+        if model_id.startswith(prefix):
+            return cls
+    raise ValueError(
+        f"No adapter found for model '{model_id}'. "
+        f"Registered prefixes: {list(_ADAPTER_REGISTRY)}."
+    )
 
 
 class FoundationalModel:
@@ -657,9 +737,16 @@ class FoundationalModel:
     model : str
         HuggingFace model ID, e.g. "autogluon/chronos-2-small".
     **kwargs :
-        Additional keyword arguments forwarded to `Chronos2Adapter`
-        (`context_length`, `pipeline`, `device_map`, `torch_dtype`,
-        `predict_kwargs`).
+        Additional keyword arguments forwarded to the underlying adapter.
+        Valid keys depend on the adapter selected by `model`; see the
+        corresponding adapter class for the full parameter list.
+
+    Notes
+    -----
+    Each adapter imports its own backend library lazily (i.e. inside the
+    method that first needs it) rather than at module level. This means
+    that only the library required by the adapter you actually use needs to
+    be installed — other foundational-model backends remain optional.
 
     """
 
@@ -682,11 +769,12 @@ class FoundationalModel:
             the batch when predicting in multi-series mode. Ignored in
             single-series mode.
         **kwargs :
-            Additional keyword arguments forwarded to `Chronos2Adapter`:
-            `context_length`, `pipeline`, `device_map`,
-            `torch_dtype`, `predict_kwargs`.
+            Additional keyword arguments forwarded to the underlying adapter.
+            Valid keys depend on the adapter selected by `model`; see the
+            corresponding adapter class for the full parameter list.
         """
-        self.adapter = Chronos2Adapter(
+        adapter_cls = _resolve_adapter(model)
+        self.adapter = adapter_cls(
             model_id=model, cross_learning=cross_learning, **kwargs
         )
 
@@ -722,22 +810,24 @@ class FoundationalModel:
         series : pd.Series, pd.DataFrame, or dict of pd.Series
             Training time series.
 
-            - `pd.Series` — single-series mode.
-            - Wide `pd.DataFrame` (each column = one series) — multi-series
+            - `pd.Series`: single-series mode.
+            - Wide `pd.DataFrame` (each column = one series): multi-series
               mode.
-            - `dict[str, pd.Series]` — multi-series mode; keys are series
+            - `dict[str, pd.Series]`: multi-series mode; keys are series
               names.
         exog : pd.Series, pd.DataFrame, dict, or None
             Historical exogenous variables aligned to `series`.
 
-            - `pd.Series` or `pd.DataFrame` — broadcast to all series.
-            - `dict[str, pd.DataFrame | pd.Series | None]` — per-series.
+            - `pd.Series` or `pd.DataFrame`: broadcast to all series.
+            - `dict[str, pd.DataFrame | pd.Series | None]`: per-series.
 
         Returns
         -------
         self : FoundationalModels
         """
+
         self.adapter.fit(series=series, exog=exog)
+        
         return self
 
     def predict(
@@ -774,9 +864,8 @@ class FoundationalModel:
         last_window : pd.Series, pd.DataFrame, dict, or None
             Override the stored history with this window.
 
-            - `pd.Series` — single-series override.
-            - Wide `pd.DataFrame` or `dict[str, pd.Series]` —
-              multi-series override.
+            - `pd.Series`: single-series override.
+            - Wide `pd.DataFrame` or `dict[str, pd.Series]`: multi-series override.
         last_window_exog : pd.Series, pd.DataFrame, dict, or None
             Historical exog corresponding to `last_window`.
 
@@ -788,16 +877,17 @@ class FoundationalModel:
             Single-series with quantiles: columns are `q_0.1`, `q_0.5`,
             etc. Multi-series point forecast: long format with columns
             `["level", "pred"]`. Multi-series quantile forecast: long
-            format with columns `["level", "q_0.1", "q_0.5", …]`. In both
+            format with columns `["level", "q_0.1", "q_0.5", ...]`. In both
             multi-series cases the index repeats each forecast timestamp once
             per series (`n_steps x n_series` rows total).
         """
+
         return self.adapter.predict(
-            steps=steps,
-            exog=exog,
-            quantiles=quantiles,
-            last_window=last_window,
-            last_window_exog=last_window_exog,
+            steps            = steps,
+            exog             = exog,
+            quantiles        = quantiles,
+            last_window      = last_window,
+            last_window_exog = last_window_exog,
         )
 
     def get_params(self, deep: bool = True) -> dict:
@@ -820,14 +910,11 @@ class FoundationalModel:
         params : dict
             Parameter names mapped to their current values.
         """
-        return {
-            'model': self.adapter.model_id,
-            'cross_learning': self.adapter.cross_learning,
-            'context_length': self.adapter.context_length,
-            'device_map': self.adapter.device_map,
-            'torch_dtype': self.adapter.torch_dtype,
-            'predict_kwargs': self.adapter.predict_kwargs or None,
-        }
+
+        params = self.adapter.get_params()
+        # Expose model_id as 'model' to match the FoundationalModel constructor
+        params['model'] = params.pop('model_id')
+        return params
 
     def set_params(self, **params) -> FoundationalModel:
         """
@@ -836,37 +923,21 @@ class FoundationalModel:
         Parameters
         ----------
         **params :
-            Estimator parameters to set. Valid keys: ``model``,
-            ``cross_learning``, ``context_length``, ``device_map``,
-            ``torch_dtype``, ``predict_kwargs``.
+            Estimator parameters forwarded to the underlying adapter's
+            ``set_params``. Use ``model`` to change the model ID (mapped
+            to ``model_id`` on the adapter). All other keys are
+            adapter-specific.
 
         Returns
         -------
         self : FoundationalModel
         """
-        valid = {
-            'model', 'cross_learning', 'context_length',
-            'device_map', 'torch_dtype', 'predict_kwargs',
-        }
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for FoundationalModel: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
+
         if 'model' in params:
-            self.adapter.model_id = params['model']
-            self.adapter._pipeline = None
-        if 'cross_learning' in params:
-            self.adapter.cross_learning = params['cross_learning']
-        if 'context_length' in params:
-            self.adapter.context_length = params['context_length']
-        if 'device_map' in params:
-            self.adapter.device_map = params['device_map']
-            self.adapter._pipeline = None
-        if 'torch_dtype' in params:
-            self.adapter.torch_dtype = params['torch_dtype']
-            self.adapter._pipeline = None
-        if 'predict_kwargs' in params:
-            self.adapter.predict_kwargs = params['predict_kwargs'] or {}
+            params = dict(params)
+            params['model_id'] = params.pop('model')
+        try:
+            self.adapter.set_params(**params)
+        except ValueError as exc:
+            raise ValueError(str(exc).replace("Chronos2Adapter", "FoundationalModel")) from exc
         return self
