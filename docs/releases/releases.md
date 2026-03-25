@@ -14,7 +14,7 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> New `categorical_features` parameter in all Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
++ <span class="badge text-bg-feature">Feature</span> New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
 
@@ -23,7 +23,7 @@ The main changes in this release are:
 
 **Added**
 
-+ New `categorical_features` parameter in all Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
++ New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
 
 
 **Changed**
