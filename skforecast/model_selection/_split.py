@@ -1042,6 +1042,13 @@ class TimeSeriesFold(BaseFold):
                 test_iloc_start = self.initial_train_size + i * (self.fold_stride)
             
             if self.window_size is not None:
+                # NOTE: When window_size > test_iloc_start (e.g. a large
+                # context_length for ForecasterFoundational on a short series),
+                # this value is negative. Python range slicing silently clips
+                # negative start indices to 0, so the resulting last_window
+                # will contain all available history up to test_iloc_start
+                # rather than exactly window_size observations. This is the
+                # intended expanding-window behaviour for early folds.
                 last_window_iloc_start = test_iloc_start - self.window_size
 
             test_iloc_end = test_iloc_start + self.gap + self.steps
