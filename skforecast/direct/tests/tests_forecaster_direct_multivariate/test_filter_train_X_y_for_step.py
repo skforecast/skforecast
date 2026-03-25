@@ -10,11 +10,11 @@ from skforecast.direct import ForecasterDirectMultiVariate
 
 
 @pytest.mark.parametrize(
-    "step, input_type",
-    [(0, 'pandas'), (4, 'pandas'), (0, 'numpy'), (4, 'numpy')],
+    "step",
+    [0, 4],
     ids=lambda dt: f'{dt}'
 )
-def test_filter_train_X_y_for_step_ValueError_when_step_not_in_steps(step, input_type):
+def test_filter_train_X_y_for_step_ValueError_when_step_not_in_steps(step):
     """
     Test ValueError is raised when step not in steps.
     """
@@ -24,10 +24,7 @@ def test_filter_train_X_y_for_step_ValueError_when_step_not_in_steps(step, input
     forecaster = ForecasterDirectMultiVariate(
         estimator=LinearRegression(), level='l1', lags=3, steps=3
     )
-    if input_type == 'pandas':
-        X_train, y_train = forecaster.create_train_X_y(series=series)
-    else:
-        X_train, y_train, *_ = forecaster._create_train_X_y(series=series)
+    X_train, y_train = forecaster.create_train_X_y(series=series)
 
     err_msg = re.escape(
         f"Invalid value `step`. For this forecaster, minimum value is 1 "
@@ -37,10 +34,7 @@ def test_filter_train_X_y_for_step_ValueError_when_step_not_in_steps(step, input
         forecaster.filter_train_X_y_for_step(step=step, X_train=X_train, y_train=y_train)
 
 
-@pytest.mark.parametrize(
-    "input_type", ['pandas', 'numpy'], ids=lambda dt: f'input_type: {dt}'
-)
-def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_exog_is_None_for_step_1(input_type):
+def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_exog_is_None_for_step_1():
     """
     Test output of filter_train_X_y_for_step when estimator is LinearRegression, 
     lags is 3 and steps is 2 for step 1.
@@ -51,48 +45,38 @@ def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_exog_is_None_for_s
     forecaster = ForecasterDirectMultiVariate(
         estimator=LinearRegression(), level='l1', lags=3, steps=2, transformer_series=None
     )
-    if input_type == 'pandas':
-        X_train, y_train = forecaster.create_train_X_y(series=series)
-    else:
-        X_train, y_train, *_ = forecaster._create_train_X_y(series=series)
+    X_train, y_train = forecaster.create_train_X_y(series=series)
 
     results = forecaster.filter_train_X_y_for_step(step=1, X_train=X_train, y_train=y_train)
 
-    expected_X_data = np.array([[2., 1., 0., 102., 101., 100.],
+    expected = (
+        pd.DataFrame(
+            data    = np.array([[2., 1., 0., 102., 101., 100.],
                                 [3., 2., 1., 103., 102., 101.],
                                 [4., 3., 2., 104., 103., 102.],
                                 [5., 4., 3., 105., 104., 103.],
                                 [6., 5., 4., 106., 105., 104.],
-                                [7., 6., 5., 107., 106., 105.]], dtype=float)
-    expected_y_data = np.array([3., 4., 5., 6., 7., 8.], dtype=float)
-
-    if input_type == 'pandas':
-        expected = (
-            pd.DataFrame(
-                data    = expected_X_data,
-                index   = pd.RangeIndex(start=3, stop=9, step=1),
-                columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3',
-                           'l2_lag_1', 'l2_lag_2', 'l2_lag_3']
-            ),
-            pd.Series(
-                data  = expected_y_data,
-                index = pd.RangeIndex(start=3, stop=9, step=1),
-                name  = 'l1_step_1'
-            )
+                                [7., 6., 5., 107., 106., 105.]], dtype=float),
+            index   = pd.RangeIndex(start=3, stop=9, step=1),
+            columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3',
+                       'l2_lag_1', 'l2_lag_2', 'l2_lag_3']
+        ),
+        pd.Series(
+            data  = np.array([3., 4., 5., 6., 7., 8.], dtype=float),
+            index = pd.RangeIndex(start=3, stop=9, step=1),
+            name  = 'l1_step_1'
         )
-        pd.testing.assert_frame_equal(results[0], expected[0])
-        pd.testing.assert_series_equal(results[1], expected[1])
-    else:
-        np.testing.assert_array_almost_equal(results[0], expected_X_data)
-        np.testing.assert_array_almost_equal(results[1], expected_y_data)
+    )
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
 
 
 @pytest.mark.parametrize(
-    "input_type, remove_suffix",
-    [('pandas', False), ('pandas', True), ('numpy', None)],
-    ids=['pandas-keep_suffix', 'pandas-remove_suffix', 'numpy']
+    "remove_suffix",
+    [False, True],
+    ids=['keep_suffix', 'remove_suffix']
 )
-def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_and_exog_for_step_2(input_type, remove_suffix):
+def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_and_exog_for_step_2(remove_suffix):
     """
     Test output of filter_train_X_y_for_step when estimator is LinearRegression, 
     lags is 3 and steps is 2 with exog for step 2.
@@ -104,16 +88,13 @@ def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_and_exog_for_step_
     forecaster = ForecasterDirectMultiVariate(
         estimator=LinearRegression(), level='l2', lags=[1, 2, 3], steps=2, transformer_series=None
     )
-    if input_type == 'pandas':
-        X_train, y_train = forecaster.create_train_X_y(series=series, exog=exog)
-    else:
-        X_train, y_train, *_ = forecaster._create_train_X_y(series=series, exog=exog)
+    X_train, y_train = forecaster.create_train_X_y(series=series, exog=exog)
 
     results = forecaster.filter_train_X_y_for_step(
                   step          = 2,
                   X_train       = X_train,
                   y_train       = y_train,
-                  remove_suffix = remove_suffix if remove_suffix is not None else False
+                  remove_suffix = remove_suffix
               )
 
     expected_X_data = np.array([[2., 1., 0., 52., 51., 50., 104.],
@@ -124,36 +105,32 @@ def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_and_exog_for_step_
                                 [7., 6., 5., 57., 56., 55., 109.]], dtype=float)
     expected_y_data = np.array([54., 55., 56., 57., 58., 59.], dtype=float)
 
-    if input_type == 'numpy':
-        np.testing.assert_array_almost_equal(results[0], expected_X_data)
-        np.testing.assert_array_almost_equal(results[1], expected_y_data)
+    if remove_suffix:
+        expected_columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3',
+                            'l2_lag_1', 'l2_lag_2', 'l2_lag_3',
+                            'exog']
+        expected_y_name = 'l2'
     else:
-        if remove_suffix:
-            expected_columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3',
-                                'l2_lag_1', 'l2_lag_2', 'l2_lag_3',
-                                'exog']
-            expected_y_name = 'l2'
-        else:
-            expected_columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3',
-                                'l2_lag_1', 'l2_lag_2', 'l2_lag_3',
-                                'exog_step_2']
-            expected_y_name = 'l2_step_2'
+        expected_columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3',
+                            'l2_lag_1', 'l2_lag_2', 'l2_lag_3',
+                            'exog_step_2']
+        expected_y_name = 'l2_step_2'
 
-        expected = (
-            pd.DataFrame(
-                data    = expected_X_data,
-                index   = pd.RangeIndex(start=4, stop=10, step=1),
-                columns = expected_columns
-            ),
-            pd.Series(
-                data  = expected_y_data,
-                index = pd.RangeIndex(start=4, stop=10, step=1),
-                name  = expected_y_name,
-                dtype = float
-            )
+    expected = (
+        pd.DataFrame(
+            data    = expected_X_data,
+            index   = pd.RangeIndex(start=4, stop=10, step=1),
+            columns = expected_columns
+        ),
+        pd.Series(
+            data  = expected_y_data,
+            index = pd.RangeIndex(start=4, stop=10, step=1),
+            name  = expected_y_name,
+            dtype = float
         )
-        pd.testing.assert_frame_equal(results[0], expected[0])
-        pd.testing.assert_series_equal(results[1], expected[1])
+    )
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
 
 
 @pytest.mark.parametrize(
@@ -219,11 +196,11 @@ def test_filter_train_X_y_for_step_output_when_lags_dict_with_None_steps_2_and_e
 
 
 @pytest.mark.parametrize(
-    "input_type, remove_suffix",
-    [('pandas', False), ('pandas', True), ('numpy', None)],
-    ids=['pandas-keep_suffix', 'pandas-remove_suffix', 'numpy']
+    "remove_suffix",
+    [False, True],
+    ids=['keep_suffix', 'remove_suffix']
 )
-def test_filter_train_X_y_for_step_output_when_window_features_and_exog_steps_1(input_type, remove_suffix):
+def test_filter_train_X_y_for_step_output_when_window_features_and_exog_steps_1(remove_suffix):
     """
     Test the output of filter_train_X_y_for_step when using window_features 
     and exog with datetime index and steps=1.
@@ -245,16 +222,13 @@ def test_filter_train_X_y_for_step_output_when_window_features_and_exog_steps_1(
         estimator=LinearRegression(), steps=1, level='l1', lags=5, 
         window_features=rolling, transformer_series=None
     )
-    if input_type == 'pandas':
-        X_train, y_train = forecaster.create_train_X_y(series=series, exog=exog)
-    else:
-        X_train, y_train, *_ = forecaster._create_train_X_y(series=series, exog=exog)
+    X_train, y_train = forecaster.create_train_X_y(series=series, exog=exog)
 
     results = forecaster.filter_train_X_y_for_step(
                   step          = 1, 
                   X_train       = X_train, 
                   y_train       = y_train,
-                  remove_suffix = remove_suffix if remove_suffix is not None else False
+                  remove_suffix = remove_suffix
               )
 
     expected_X_data = np.array(
@@ -271,48 +245,44 @@ def test_filter_train_X_y_for_step_output_when_window_features_and_exog_steps_1(
     )
     expected_y_data = np.array([6., 7., 8., 9., 10., 11., 12., 13., 14.], dtype=float)
 
-    if input_type == 'numpy':
-        np.testing.assert_array_almost_equal(results[0], expected_X_data)
-        np.testing.assert_array_almost_equal(results[1], expected_y_data)
+    if remove_suffix:
+        expected_columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
+                            'l1_roll_mean_5', 'l1_roll_median_5', 'l1_roll_sum_6',
+                            'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
+                            'l2_roll_mean_5', 'l2_roll_median_5', 'l2_roll_sum_6',
+                            'exog']
+        expected_y_name = 'l1'
     else:
-        if remove_suffix:
-            expected_columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
-                                'l1_roll_mean_5', 'l1_roll_median_5', 'l1_roll_sum_6',
-                                'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
-                                'l2_roll_mean_5', 'l2_roll_median_5', 'l2_roll_sum_6',
-                                'exog']
-            expected_y_name = 'l1'
-        else:
-            expected_columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
-                                'l1_roll_mean_5', 'l1_roll_median_5', 'l1_roll_sum_6',
-                                'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
-                                'l2_roll_mean_5', 'l2_roll_median_5', 'l2_roll_sum_6',
-                                'exog_step_1']
-            expected_y_name = 'l1_step_1'
+        expected_columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
+                            'l1_roll_mean_5', 'l1_roll_median_5', 'l1_roll_sum_6',
+                            'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
+                            'l2_roll_mean_5', 'l2_roll_median_5', 'l2_roll_sum_6',
+                            'exog_step_1']
+        expected_y_name = 'l1_step_1'
 
-        expected = (
-            pd.DataFrame(
-                data    = expected_X_data,
-                index   = pd.date_range('2000-01-07', periods=9, freq='D'),
-                columns = expected_columns
-            ),
-            pd.Series(
-                data  = expected_y_data,
-                index = pd.date_range('2000-01-07', periods=9, freq='D'),
-                name  = expected_y_name,
-                dtype = float
-            )
+    expected = (
+        pd.DataFrame(
+            data    = expected_X_data,
+            index   = pd.date_range('2000-01-07', periods=9, freq='D'),
+            columns = expected_columns
+        ),
+        pd.Series(
+            data  = expected_y_data,
+            index = pd.date_range('2000-01-07', periods=9, freq='D'),
+            name  = expected_y_name,
+            dtype = float
         )
-        pd.testing.assert_frame_equal(results[0], expected[0])
-        pd.testing.assert_series_equal(results[1], expected[1])
+    )
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
 
 
 @pytest.mark.parametrize(
-    "input_type, remove_suffix",
-    [('pandas', False), ('pandas', True), ('numpy', None)],
-    ids=['pandas-keep_suffix', 'pandas-remove_suffix', 'numpy']
+    "remove_suffix",
+    [False, True],
+    ids=['keep_suffix', 'remove_suffix']
 )
-def test_filter_train_X_y_for_step_output_when_window_features_and_exog_steps_2(input_type, remove_suffix):
+def test_filter_train_X_y_for_step_output_when_window_features_and_exog_steps_2(remove_suffix):
     """
     Test the output of filter_train_X_y_for_step when using window_features 
     and exog with datetime index and steps=2.
@@ -334,16 +304,13 @@ def test_filter_train_X_y_for_step_output_when_window_features_and_exog_steps_2(
         estimator=LinearRegression(), steps=2, level='l1', lags=5, 
         window_features=rolling, transformer_series=None
     )
-    if input_type == 'pandas':
-        X_train, y_train = forecaster.create_train_X_y(series=series, exog=exog)
-    else:
-        X_train, y_train, *_ = forecaster._create_train_X_y(series=series, exog=exog)
+    X_train, y_train = forecaster.create_train_X_y(series=series, exog=exog)
 
     results = forecaster.filter_train_X_y_for_step(
                   step          = 2, 
                   X_train       = X_train, 
                   y_train       = y_train,
-                  remove_suffix = remove_suffix if remove_suffix is not None else False
+                  remove_suffix = remove_suffix
               )
 
     expected_X_data = np.array(
@@ -359,37 +326,33 @@ def test_filter_train_X_y_for_step_output_when_window_features_and_exog_steps_2(
     )
     expected_y_data = np.array([7., 8., 9., 10., 11., 12., 13., 14.], dtype=float)
 
-    if input_type == 'numpy':
-        np.testing.assert_array_almost_equal(results[0], expected_X_data)
-        np.testing.assert_array_almost_equal(results[1], expected_y_data)
+    if remove_suffix:
+        expected_columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
+                            'l1_roll_mean_5', 'l1_roll_median_5', 'l1_roll_sum_6',
+                            'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
+                            'l2_roll_mean_5', 'l2_roll_median_5', 'l2_roll_sum_6',
+                            'exog']
+        expected_y_name = 'l1'
     else:
-        if remove_suffix:
-            expected_columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
-                                'l1_roll_mean_5', 'l1_roll_median_5', 'l1_roll_sum_6',
-                                'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
-                                'l2_roll_mean_5', 'l2_roll_median_5', 'l2_roll_sum_6',
-                                'exog']
-            expected_y_name = 'l1'
-        else:
-            expected_columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
-                                'l1_roll_mean_5', 'l1_roll_median_5', 'l1_roll_sum_6',
-                                'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
-                                'l2_roll_mean_5', 'l2_roll_median_5', 'l2_roll_sum_6',
-                                'exog_step_2']
-            expected_y_name = 'l1_step_2'
+        expected_columns = ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
+                            'l1_roll_mean_5', 'l1_roll_median_5', 'l1_roll_sum_6',
+                            'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
+                            'l2_roll_mean_5', 'l2_roll_median_5', 'l2_roll_sum_6',
+                            'exog_step_2']
+        expected_y_name = 'l1_step_2'
 
-        expected = (
-            pd.DataFrame(
-                data    = expected_X_data,
-                index   = pd.date_range('2000-01-08', periods=8, freq='D'),
-                columns = expected_columns
-            ),
-            pd.Series(
-                data  = expected_y_data,
-                index = pd.date_range('2000-01-08', periods=8, freq='D'),
-                name  = expected_y_name,
-                dtype = float
-            )
+    expected = (
+        pd.DataFrame(
+            data    = expected_X_data,
+            index   = pd.date_range('2000-01-08', periods=8, freq='D'),
+            columns = expected_columns
+        ),
+        pd.Series(
+            data  = expected_y_data,
+            index = pd.date_range('2000-01-08', periods=8, freq='D'),
+            name  = expected_y_name,
+            dtype = float
         )
-        pd.testing.assert_frame_equal(results[0], expected[0])
-        pd.testing.assert_series_equal(results[1], expected[1])
+    )
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])

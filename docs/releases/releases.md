@@ -18,6 +18,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
 
++ <span class="badge text-bg-enhancement">Enhancement</span> Significantly reduced memory consumption and improved training speed in direct Forecasters (<code>[ForecasterDirect]</code>) when using exogenous variables. Memory usage is reduced by up to **90%** and fit times improve by **1.2x–3.8x** in large-scale scenarios, enabling training with more steps and exogenous features without running into memory limitations.
+
 + <span class="badge text-bg-api-change">API Change</span> The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
 
 
@@ -31,6 +33,8 @@ The main changes in this release are:
 + The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
 
 + Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
+
++ Significantly reduced memory consumption and improved training speed in direct Forecasters (<code>[ForecasterDirect]</code>) when using exogenous variables. Memory usage is reduced by up to 90% and fit times improve by 1.2x–3.8x in large-scale scenarios, enabling training with more steps and exogenous features without running into memory limitations.
 
 
 **Fixed**
