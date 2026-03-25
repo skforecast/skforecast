@@ -718,14 +718,17 @@ def select_n_jobs_backtesting(
 def _calculate_metrics_one_step_ahead(
     forecaster: object,
     metrics: list,
-    X_train: pd.DataFrame,
-    y_train: pd.Series | dict[int, pd.Series],
-    X_test: pd.DataFrame,
-    y_test: pd.Series | dict[int, pd.Series]
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    sample_weight: np.ndarray | None,
+    fit_kwargs: dict[str, object]
 ) -> list:
     """
     Calculate metrics when predictions are one-step-ahead. When forecaster is
-    of type ForecasterDirect only the estimator for step 1 is used.
+    of type ForecasterDirect only the estimator for step 1 is used. Data is
+    expected as numpy arrays already filtered and ready for fitting.
 
     Parameters
     ----------
@@ -733,14 +736,19 @@ def _calculate_metrics_one_step_ahead(
         Forecaster model.
     metrics : list
         List of metrics.
-    X_train : pandas DataFrame
+    X_train : numpy ndarray
         Predictor values used to train the model.
-    y_train : pandas Series, dict
+    y_train : numpy ndarray
         Target values related to each row of `X_train`.
-    X_test : pandas DataFrame
+    X_test : numpy ndarray
         Predictor values used to test the model.
-    y_test : pandas Series, dict
+    y_test : numpy ndarray
         Target values related to each row of `X_test`.
+    sample_weight : numpy ndarray, None
+        Precomputed sample weights for training. `None` if no weight function
+        is defined.
+    fit_kwargs : dict
+        Precomputed keyword arguments for `estimator.fit`. Can be empty dict.
 
     Returns
     -------
@@ -749,36 +757,28 @@ def _calculate_metrics_one_step_ahead(
     
     """
 
-    # TODO: Bug here, estimator.fit is not using weights, fit_kwargs or 
-    # categoriacal parameters. NEED TO FIX THIS.
-
     needs_y_train = any_metric_needs_y_train(metrics)
 
     if type(forecaster).__name__ == 'ForecasterDirect':
-
-        step = 1  # Only the model for step 1 is optimized.
-        X_train, y_train = forecaster.filter_train_X_y_for_step(
-                               step    = step,
-                               X_train = X_train,
-                               y_train = y_train
-                           )
-        X_test, y_test = forecaster.filter_train_X_y_for_step(
-                             step    = step,  
-                             X_train = X_test,
-                             y_train = y_test
-                         )
-        forecaster.estimators_[step].fit(X_train, y_train)
-        y_pred = forecaster.estimators_[step].predict(X_test)
-
+        # NOTE: Only step 1 is optimized in one-step-ahead validation.
+        estimator = forecaster.estimators_[1]
     else:
-        forecaster.estimator.fit(X_train, y_train)
-        y_pred = forecaster.estimator.predict(X_test)
+        estimator = forecaster.estimator
 
-    y_true = y_test.to_numpy()
-    y_pred = y_pred.ravel()
-    if needs_y_train:
-        y_train = y_train.to_numpy()
+    if sample_weight is not None:
+        estimator.fit(
+            X             = X_train,
+            y             = y_train,
+            sample_weight = sample_weight,
+            **fit_kwargs
+        )
     else:
+        estimator.fit(X=X_train, y=y_train, **fit_kwargs)
+
+    y_true = y_test
+    y_pred = estimator.predict(X_test).ravel()
+
+    if not needs_y_train:
         y_train = None
 
     if forecaster.differentiation is not None:

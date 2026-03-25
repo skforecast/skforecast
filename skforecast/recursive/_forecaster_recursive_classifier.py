@@ -1057,7 +1057,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         y: pd.Series,
         initial_train_size: int,
         exog: pd.Series | pd.DataFrame | None = None
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray | None, dict]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray | None, dict[str, object]]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
         predictions. Uses `_create_train_X_y` to work directly with numpy arrays
@@ -1105,7 +1105,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             y_encoding_info_,
             _,
             categorical_features_names_in_,
-            _,
+            X_train_window_features_names_out_,
             _,
             X_train_features_names_out_,
             _,
@@ -1137,10 +1137,21 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         sample_weight = self.create_sample_weights(X_train=train_index)
 
-        if self.categorical_features is not None:
+        all_categorical_names = []
+        if self.use_native_categoricals and self.lags is not None:
+            all_categorical_names.extend(self.lags_names)
+        if self.use_native_categoricals and X_train_window_features_names_out_:
+            all_categorical_names.extend(
+                [name for name in X_train_window_features_names_out_
+                 if 'mode' in name]
+            )
+        if categorical_features_names_in_:
+            all_categorical_names.extend(categorical_features_names_in_)
+
+        if self.categorical_features is not None or self.use_native_categoricals:
             fit_kwargs = configure_estimator_categorical_features(
                              estimator                      = self.estimator,
-                             categorical_features_names_in_ = categorical_features_names_in_,
+                             categorical_features_names_in_ = all_categorical_names,
                              X_train_features_names_out_    = X_train_features_names_out_,
                              fit_kwargs                     = {**self.fit_kwargs}
                          )

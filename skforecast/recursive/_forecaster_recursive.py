@@ -897,8 +897,8 @@ class ForecasterRecursive(ForecasterBase):
             X_train_features_names_out_.extend(X_train_window_features_names_out_)
 
         if exog is not None:
-            X_train_features_names_out_.extend(X_train_exog_names_out_)
             X_train.append(exog)
+            X_train_features_names_out_.extend(X_train_exog_names_out_)
         
         if len(X_train) == 1:
             X_train = X_train[0]
@@ -981,10 +981,12 @@ class ForecasterRecursive(ForecasterBase):
         y: pd.Series,
         initial_train_size: int,
         exog: pd.Series | pd.DataFrame | None = None
-    ) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray | None, dict[str, object]]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
-        predictions.
+        predictions. Uses `_create_train_X_y` to work directly with numpy arrays
+        and precomputes sample weights and fit kwargs (including categorical
+        feature configuration) so they are computed once rather than per trial.
 
         Parameters
         ----------
@@ -999,37 +1001,78 @@ class ForecasterRecursive(ForecasterBase):
         
         Returns
         -------
-        X_train : pandas DataFrame
+        X_train : numpy ndarray
             Predictor values used to train the model.
-        y_train : pandas Series
+        y_train : numpy ndarray
             Target values related to each row of `X_train`.
-        X_test : pandas DataFrame
+        X_test : numpy ndarray
             Predictor values used to test the model.
-        y_test : pandas Series
+        y_test : numpy ndarray
             Target values related to each row of `X_test`.
+        sample_weight : numpy ndarray, None
+            Precomputed sample weights for training. `None` if no `weight_func`.
+        fit_kwargs : dict
+            Precomputed keyword arguments for `estimator.fit`, including
+            categorical feature configuration.
         
         """
 
-        # TODO: Ver si se puede optimizar este método para que use el método privado
-        # _create_train_X_y y trabaje directamente con numpy
-
         is_fitted = self.is_fitted
         self.is_fitted = False
-        X_train, y_train, *_ = self.create_train_X_y(
-            y    = y.iloc[: initial_train_size],
-            exog = exog.iloc[: initial_train_size] if exog is not None else None
-        )
+
+        (
+            X_train,
+            y_train,
+            train_index,
+            _,
+            categorical_features_names_in_,
+            _,
+            _,
+            X_train_features_names_out_,
+            _,
+            _
+        ) = self._create_train_X_y(
+                y    = y.iloc[:initial_train_size],
+                exog = exog.iloc[:initial_train_size] if exog is not None else None
+            )
 
         test_init = initial_train_size - self.window_size
         self.is_fitted = True
-        X_test, y_test, *_ = self.create_train_X_y(
-            y    = y.iloc[test_init:],
-            exog = exog.iloc[test_init:] if exog is not None else None
-        )
+
+        (
+            X_test,
+            y_test,
+            *_
+        ) = self._create_train_X_y(
+                y    = y.iloc[test_init:],
+                exog = exog.iloc[test_init:] if exog is not None else None
+            )
 
         self.is_fitted = is_fitted
 
-        return X_train, y_train, X_test, y_test
+        sample_weight = self.create_sample_weights(X_train=train_index)
+
+        if self.categorical_features is not None:
+            fit_kwargs = configure_estimator_categorical_features(
+                             estimator                      = self.estimator,
+                             categorical_features_names_in_ = categorical_features_names_in_,
+                             X_train_features_names_out_    = X_train_features_names_out_,
+                             fit_kwargs                     = {**self.fit_kwargs}
+                         )
+        else:
+            fit_kwargs = {**self.fit_kwargs}
+
+        if (
+            'cat_features' in fit_kwargs
+            and type(self.estimator).__name__ == 'CatBoostRegressor'
+        ):
+            cat_idx = np.array(fit_kwargs['cat_features'])
+            X_train = X_train.astype(object)
+            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
+            X_test = X_test.astype(object)
+            X_test[:, cat_idx] = X_test[:, cat_idx].astype(int)
+
+        return X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
 
     def create_sample_weights(
         self,
@@ -1043,7 +1086,7 @@ class ForecasterRecursive(ForecasterBase):
         ----------
         X_train : pandas DataFrame, pandas Index
             Dataframe created with the `create_train_X_y` method, first return, 
-            or the index of the dataframe.
+            or the index of the DataFrame.
 
         Returns
         -------

@@ -1307,10 +1307,13 @@ class ForecasterDirect(ForecasterBase):
         y: pd.Series,
         initial_train_size: int,
         exog: pd.Series | pd.DataFrame | None = None
-    ) -> tuple[pd.DataFrame, dict[int, pd.Series], pd.DataFrame, dict[int, pd.Series]]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray | None, dict[str, object]]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
-        predictions.
+        predictions. Uses `_create_train_X_y` to work directly with numpy arrays,
+        filters to step 1 only, and precomputes sample weights and fit kwargs
+        (including categorical feature configuration) so they are computed once
+        rather than per trial.
 
         Parameters
         ----------
@@ -1325,36 +1328,87 @@ class ForecasterDirect(ForecasterBase):
         
         Returns
         -------
-        X_train : pandas DataFrame
-            Predictor values used to train the model.
-        y_train : dict
-            Values of the time series related to each row of `X_train` for each 
-            step in the form {step: y_step_[i]}.
-        X_test : pandas DataFrame
-            Predictor values used to test the model.
-        y_test : dict
-            Values of the time series related to each row of `X_test` for each 
-            step in the form {step: y_step_[i]}.
+        X_train : numpy ndarray
+            Predictor values (step 1) used to train the model.
+        y_train : numpy ndarray
+            Target values related to each row of `X_train`.
+        X_test : numpy ndarray
+            Predictor values (step 1) used to test the model.
+        y_test : numpy ndarray
+            Target values related to each row of `X_test`.
+        sample_weight : numpy ndarray, None
+            Precomputed sample weights for training. `None` if no `weight_func`.
+        fit_kwargs : dict
+            Precomputed keyword arguments for `estimator.fit`, including
+            categorical feature configuration.
         
         """
 
         is_fitted = self.is_fitted
         self.is_fitted = False
-        X_train, y_train, *_ = self.create_train_X_y(
-            y    = y.iloc[: initial_train_size],
-            exog = exog.iloc[: initial_train_size] if exog is not None else None
-        )
+
+        (
+            X_train,
+            y_train,
+            train_index,
+            _,
+            categorical_features_names_in_,
+            _,
+            X_train_features_names_out_,
+            _,
+            _,
+            _
+        ) = self._create_train_X_y(
+                y    = y.iloc[:initial_train_size],
+                exog = exog.iloc[:initial_train_size] if exog is not None else None
+            )
 
         test_init = initial_train_size - self.window_size
         self.is_fitted = True
-        X_test, y_test, *_ = self.create_train_X_y(
-            y    = y.iloc[test_init:],
-            exog = exog.iloc[test_init:] if exog is not None else None
-        )
+
+        (
+            X_test,
+            y_test,
+            *_
+        ) = self._create_train_X_y(
+                y    = y.iloc[test_init:],
+                exog = exog.iloc[test_init:] if exog is not None else None
+            )
 
         self.is_fitted = is_fitted
 
-        return X_train, y_train, X_test, y_test
+        # NOTE: Only step 1 is optimized in one-step-ahead validation.
+        step = 1
+        X_train, y_train = self.filter_train_X_y_for_step(
+            step=step, X_train=X_train, y_train=y_train
+        )
+        X_test, y_test = self.filter_train_X_y_for_step(
+            step=step, X_train=X_test, y_train=y_test
+        )
+
+        sample_weight = self.create_sample_weights(X_train=train_index[step])
+
+        if self.categorical_features is not None:
+            fit_kwargs = configure_estimator_categorical_features(
+                             estimator                      = self.estimators_[step],
+                             categorical_features_names_in_ = categorical_features_names_in_,
+                             X_train_features_names_out_    = X_train_features_names_out_,
+                             fit_kwargs                     = {**self.fit_kwargs}
+                         )
+        else:
+            fit_kwargs = {**self.fit_kwargs}
+
+        if (
+            'cat_features' in fit_kwargs
+            and type(self.estimators_[step]).__name__ == 'CatBoostRegressor'
+        ):
+            cat_idx = np.array(fit_kwargs['cat_features'])
+            X_train = X_train.astype(object)
+            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
+            X_test = X_test.astype(object)
+            X_test[:, cat_idx] = X_test[:, cat_idx].astype(int)
+
+        return X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
 
     def create_sample_weights(
         self,

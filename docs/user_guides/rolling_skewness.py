@@ -29,6 +29,7 @@ class RollingSkewness():
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         
+        X = X[-self.window_sizes[0]:]
         X = X[~np.isnan(X)]
         if len(X) > 0:
             rolling_skewness = np.array([skew(X, bias=False)])
@@ -69,6 +70,8 @@ class RollingSkewnessMultiSeries():
         else:
             n_series = X.shape[1]  # Series (levels) to be predicted (present in last_window)
         
+        X = X[-self.window_sizes[0]:]
+
         n_stats = 1  # Only skewness is calculated
         rolling_skewness = np.full(
             shape=(n_series, n_stats), fill_value=np.nan, dtype=float

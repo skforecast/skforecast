@@ -432,10 +432,12 @@ def _evaluate_grid_hyperparameters(
                 X_train,
                 y_train,
                 X_test,
-                y_test
+                y_test,
+                sample_weight,
+                fit_kwargs
             ) = forecaster_search._train_test_split_one_step_ahead(
-                y=y, initial_train_size=cv.initial_train_size, exog=exog
-            )
+                    y=y, initial_train_size=cv.initial_train_size, exog=exog
+                )
 
         if show_progress:
             param_grid_tqdm = tqdm(param_grid, desc='params grid', position=1, leave=False)
@@ -464,12 +466,14 @@ def _evaluate_grid_hyperparameters(
                 else:
 
                     metric_values = _calculate_metrics_one_step_ahead(
-                                        forecaster = forecaster_search,
-                                        metrics    = metric,
-                                        X_train    = X_train,
-                                        y_train    = y_train,
-                                        X_test     = X_test,
-                                        y_test     = y_test
+                                        forecaster    = forecaster_search,
+                                        metrics       = metric,
+                                        X_train       = X_train,
+                                        y_train       = y_train,
+                                        X_test        = X_test,
+                                        y_test        = y_test,
+                                        sample_weight = sample_weight,
+                                        fit_kwargs    = fit_kwargs
                                     )
             except Exception as e:
                 warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
@@ -804,21 +808,32 @@ def bayesian_search_forecaster(
                     X_train,
                     y_train,
                     X_test,
-                    y_test
+                    y_test,
+                    sample_weight,
+                    fit_kwargs
                 ) = forecaster_search._train_test_split_one_step_ahead(
-                    y=y, initial_train_size=cv.initial_train_size, exog=exog
+                        y=y, initial_train_size=cv.initial_train_size, exog=exog
+                    )
+                
+                _cached_split[lags_key] = (
+                    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
                 )
-                _cached_split[lags_key] = (X_train, y_train, X_test, y_test)
+
             else:
-                X_train, y_train, X_test, y_test = _cached_split[lags_key]
+
+                (
+                    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+                ) = _cached_split[lags_key]
 
             metrics = _calculate_metrics_one_step_ahead(
-                          forecaster = forecaster_search,
-                          metrics    = metric,
-                          X_train    = X_train,
-                          y_train    = y_train,
-                          X_test     = X_test,
-                          y_test     = y_test
+                          forecaster    = forecaster_search,
+                          metrics       = metric,
+                          X_train       = X_train,
+                          y_train       = y_train,
+                          X_test        = X_test,
+                          y_test        = y_test,
+                          sample_weight = sample_weight,
+                          fit_kwargs    = fit_kwargs
                       )
 
             # Store all metrics in the trial using optuna's user_attrs mechanism.
