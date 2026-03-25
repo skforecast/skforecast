@@ -360,6 +360,7 @@ def test_create_train_X_y_output_when_lags_3_steps_1_and_exog_is_None(level, exp
                              [ 0.87038828,  0.52223297,  0.17407766,  0.87038828,  0.52223297, 0.17407766],
                              [ 1.21854359,  0.87038828,  0.52223297,  1.21854359,  0.87038828, 0.52223297]], 
                             dtype=float),
+        None,
         {1: np.array(expected_y_values, dtype=float)
         },
         {1: pd.RangeIndex(start=3, stop=10, step=1)},
@@ -379,16 +380,16 @@ def test_create_train_X_y_output_when_lags_3_steps_1_and_exog_is_None(level, exp
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    assert results[1] is None
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
@@ -397,6 +398,7 @@ def test_create_train_X_y_output_when_lags_3_steps_1_and_exog_is_None(level, exp
     assert results[9] == expected[9]
     assert results[10] == expected[10]
     assert results[11] == expected[11]
+    assert results[12] == expected[12]
 
 
 @pytest.mark.parametrize("level, expected_y_values", 
@@ -425,6 +427,7 @@ def test_create_train_X_y_output_when_interspersed_lags_steps_2_and_exog_None(le
                              [5., 3., 105., 103.],
                              [6., 4., 106., 104.],
                              [7., 5., 107., 105.]], dtype=float),
+        None,
         {1: np.array(expected_y_values[0], dtype=float),
          2: np.array(expected_y_values[1], dtype=float)
         },
@@ -448,16 +451,16 @@ def test_create_train_X_y_output_when_interspersed_lags_steps_2_and_exog_None(le
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    assert results[1] is None
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
@@ -466,6 +469,7 @@ def test_create_train_X_y_output_when_interspersed_lags_steps_2_and_exog_None(le
     assert results[9] == expected[9]
     assert results[10] == expected[10]
     assert results[11] == expected[11]
+    assert results[12] == expected[12]
 
 
 @pytest.mark.parametrize("level, expected_y_values", 
@@ -493,6 +497,7 @@ def test_create_train_X_y_output_when_lags_dict_steps_2_and_exog_None(level, exp
                              [5., 4., 3., 105., 101.],
                              [6., 5., 4., 106., 102.],
                              [7., 6., 5., 107., 103.]], dtype=float),
+        None,
         {1: np.array(expected_y_values[0], dtype=float),
          2: np.array(expected_y_values[1], dtype=float)
         },
@@ -516,16 +521,16 @@ def test_create_train_X_y_output_when_lags_dict_steps_2_and_exog_None(level, exp
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    assert results[1] is None
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
@@ -534,6 +539,7 @@ def test_create_train_X_y_output_when_lags_dict_steps_2_and_exog_None(level, exp
     assert results[9] == expected[9]
     assert results[10] == expected[10]
     assert results[11] == expected[11]
+    assert results[12] == expected[12]
 
 
 @pytest.mark.parametrize("level, expected_y_values", 
@@ -563,6 +569,7 @@ def test_create_train_X_y_output_when_lags_dict_with_None_steps_2_and_exog_None(
                              [5., 4., 3.],
                              [6., 5., 4.],
                              [7., 6., 5.]], dtype=float),
+        None,
         {1: np.array(expected_y_values[0], dtype=float),
          2: np.array(expected_y_values[1], dtype=float)
         },
@@ -586,16 +593,16 @@ def test_create_train_X_y_output_when_lags_dict_with_None_steps_2_and_exog_None(
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    assert results[1] is None
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
@@ -604,6 +611,7 @@ def test_create_train_X_y_output_when_lags_dict_with_None_steps_2_and_exog_None(
     assert results[9] == expected[9]
     assert results[10] == expected[10]
     assert results[11] == expected[11]
+    assert results[12] == expected[12]
 
 
 @pytest.mark.parametrize("level, expected_y_values", 
@@ -627,10 +635,17 @@ def test_create_train_X_y_output_when_lags_dict_steps_2_and_exog(level, expected
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[4., 3., 2., 104., 100., 1005., 1006.],
-                  [5., 4., 3., 105., 101., 1006., 1007.],
-                  [6., 5., 4., 106., 102., 1007., 1008.],
-                  [7., 6., 5., 107., 103., 1008., 1009.]], dtype=float),
+        np.array([[4., 3., 2., 104., 100.],
+                  [5., 4., 3., 105., 101.],
+                  [6., 5., 4., 106., 102.],
+                  [7., 6., 5., 107., 103.]],
+                  dtype=float),
+        np.array([[1005.],
+                  [1006.],
+                  [1007.],
+                  [1008.],
+                  [1009.]],
+                  dtype=float),
         {1: np.array(expected_y_values[0], dtype=float),
          2: np.array(expected_y_values[1], dtype=float)
         },
@@ -655,26 +670,27 @@ def test_create_train_X_y_output_when_lags_dict_steps_2_and_exog(level, expected
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize("dtype", 
@@ -696,12 +712,18 @@ def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_series_of_float_in
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 105.],
-                             [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 106.],
-                             [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 107.],
-                             [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 108.],
-                             [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 109.]], 
-                             dtype=float),
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                  dtype=float),
+        np.array([[105.],
+                  [106.],
+                  [107.],
+                  [108.],
+                  [109.]],
+                  dtype=float),
         {1: np.array([5., 6., 7., 8., 9.], dtype=float)
         },
         {1: pd.RangeIndex(start=5, stop=10, step=1)},
@@ -723,26 +745,27 @@ def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_series_of_float_in
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize("dtype", 
@@ -763,11 +786,17 @@ def test_create_train_X_y_output_when_lags_5_steps_2_and_exog_series_of_float_in
     results = forecaster._create_train_X_y(series=series, exog=exog)
  
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 105., 106.],
-                             [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 106., 107.],
-                             [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 107., 108.],
-                             [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 108., 109.]], 
-                             dtype=float),
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.]],
+                  dtype=float),
+        np.array([[105.],
+                  [106.],
+                  [107.],
+                  [108.],
+                  [109.]],
+                  dtype=float),
         {1: np.array([5., 6., 7., 8.], dtype=float),
          2: np.array([6., 7., 8., 9.], dtype=float)
         },
@@ -793,26 +822,27 @@ def test_create_train_X_y_output_when_lags_5_steps_2_and_exog_series_of_float_in
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize("datetime_index", 
@@ -846,12 +876,18 @@ def test_create_train_X_y_when_steps_1_and_exog_series_float_int_no_window_size(
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 105.],
-                             [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 106.],
-                             [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 107.],
-                             [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 108.],
-                             [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 109.]], 
-                             dtype=float),
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                  dtype=float),
+        np.array([[105.],
+                  [106.],
+                  [107.],
+                  [108.],
+                  [109.]],
+                  dtype=float),
         {1: np.array([5., 6., 7., 8., 9.], dtype=float)
         },
         {1: expected_index},
@@ -873,26 +909,27 @@ def test_create_train_X_y_when_steps_1_and_exog_series_float_int_no_window_size(
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize("datetime_index", 
@@ -928,11 +965,17 @@ def test_create_train_X_y_when_steps_2_and_exog_series_float_int_no_window_size(
     results = forecaster._create_train_X_y(series=series, exog=exog)
  
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 105., 106.],
-                             [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 106., 107.],
-                             [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 107., 108.],
-                             [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 108., 109.]], 
-                             dtype=float),
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.]],
+                  dtype=float),
+        np.array([[105.],
+                  [106.],
+                  [107.],
+                  [108.],
+                  [109.]],
+                  dtype=float),
         {1: np.array([5., 6., 7., 8.], dtype=float),
          2: np.array([6., 7., 8., 9.], dtype=float)
         },
@@ -958,26 +1001,27 @@ def test_create_train_X_y_when_steps_2_and_exog_series_float_int_no_window_size(
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize("dtype", 
@@ -1000,12 +1044,18 @@ def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_float_int(dtype)
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 105., 1005.],
-                             [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 106., 1006.],
-                             [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 107., 1007.],
-                             [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 108., 1008.],
-                             [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 109., 1009.]], 
-                             dtype=float),
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                  dtype=float),
+        np.array([[105., 1005.],
+                  [106., 1006.],
+                  [107., 1007.],
+                  [108., 1008.],
+                  [109., 1009.]],
+                  dtype=float),
         {1: np.array([55., 56., 57., 58., 59.], dtype=float)
         },
         {1: pd.RangeIndex(start=5, stop=10, step=1)},
@@ -1027,26 +1077,27 @@ def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_float_int(dtype)
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize("dtype", 
@@ -1068,10 +1119,16 @@ def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_float_int(dtype)
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 105., 1005., 106., 1006., 107., 1007.],
-                             [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 106., 1006., 107., 1007., 108., 1008.],
-                             [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 107., 1007., 108., 1008., 109., 1009.]],
-                            dtype=float),
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.]],
+                  dtype=float),
+        np.array([[105., 1005.],
+                  [106., 1006.],
+                  [107., 1007.],
+                  [108., 1008.],
+                  [109., 1009.]],
+                  dtype=float),
         {1: np.array([55., 56., 57.], dtype=float),
          2: np.array([56., 57., 58.], dtype=float),
          3: np.array([57., 58., 59.], dtype=float)
@@ -1105,26 +1162,27 @@ def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_float_int(dtype)
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize(
@@ -1153,11 +1211,17 @@ def test_create_train_X_y_output_when_steps_1_and_exog_series_of_bool_str(
 
     ev = expected_exog_val
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., ev],
-                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., ev],
-                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., ev],
-                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., ev],
-                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., ev]], 
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                  dtype=float),
+        np.array([[ev],
+                  [ev],
+                  [ev],
+                  [ev],
+                  [ev]],
                   dtype=float),
         {1: np.array([5., 6., 7., 8., 9.], dtype=float)
         },
@@ -1180,26 +1244,27 @@ def test_create_train_X_y_output_when_steps_1_and_exog_series_of_bool_str(
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize(
@@ -1228,10 +1293,16 @@ def test_create_train_X_y_output_when_steps_2_and_exog_series_of_bool_str(
  
     ev = expected_exog_val
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., ev, ev],
-                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., ev, ev],
-                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., ev, ev],
-                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., ev, ev]], 
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.]],
+                  dtype=float),
+        np.array([[ev],
+                  [ev],
+                  [ev],
+                  [ev],
+                  [ev]],
                   dtype=float),
         {1: np.array([5., 6., 7., 8.], dtype=float),
          2: np.array([6., 7., 8., 9.], dtype=float)
@@ -1258,26 +1329,27 @@ def test_create_train_X_y_output_when_steps_2_and_exog_series_of_bool_str(
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize(
@@ -1306,11 +1378,17 @@ def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_bool_str(
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., ev1, ev2],
-                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., ev1, ev2],
-                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., ev1, ev2],
-                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., ev1, ev2],
-                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., ev1, ev2]], 
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                  dtype=float),
+        np.array([[ev1, ev2],
+                  [ev1, ev2],
+                  [ev1, ev2],
+                  [ev1, ev2],
+                  [ev1, ev2]],
                   dtype=float),
         {1: np.array([55., 56., 57., 58., 59.], dtype=float)
         },
@@ -1333,26 +1411,27 @@ def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_bool_str(
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize(
@@ -1381,9 +1460,15 @@ def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_bool_str(
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., ev1, ev2, ev1, ev2, ev1, ev2],
-                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., ev1, ev2, ev1, ev2, ev1, ev2],
-                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., ev1, ev2, ev1, ev2, ev1, ev2]],
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.]],
+                  dtype=float),
+        np.array([[ev1, ev2],
+                  [ev1, ev2],
+                  [ev1, ev2],
+                  [ev1, ev2],
+                  [ev1, ev2]],
                   dtype=float),
         {1: np.array([55., 56., 57.], dtype=float),
          2: np.array([56., 57., 58.], dtype=float),
@@ -1418,26 +1503,27 @@ def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_bool_str(
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize(
@@ -1468,11 +1554,17 @@ def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_is_series_of_categ
         expected_dtype_out = np.float64
 
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 5.],
-                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 6.],
-                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 7.],
-                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 8.],
-                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 9.]], 
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                  dtype=float),
+        np.array([[5.],
+                  [6.],
+                  [7.],
+                  [8.],
+                  [9.]],
                   dtype=float),
         {1: np.array([5., 6., 7., 8., 9.], dtype=float)
         },
@@ -1495,26 +1587,27 @@ def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_is_series_of_categ
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
     if categorical_features is not None:
         assert len(forecaster.categorical_encoder.categories_) == 1
         np.testing.assert_array_equal(
@@ -1538,10 +1631,16 @@ def test_create_train_X_y_output_when_lags_5_steps_2_and_exog_is_series_of_categ
     results = forecaster._create_train_X_y(series=series, exog=exog)
  
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 5., 6.],
-                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 6., 7.],
-                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 7., 8.],
-                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 8., 9.]], 
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.]],
+                  dtype=float),
+        np.array([[5.],
+                  [6.],
+                  [7.],
+                  [8.],
+                  [9.]],
                   dtype=float),
         {1: np.array([5., 6., 7., 8.], dtype=float),
          2: np.array([6., 7., 8., 9.], dtype=float)
@@ -1568,26 +1667,27 @@ def test_create_train_X_y_output_when_lags_5_steps_2_and_exog_is_series_of_categ
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize(
@@ -1611,29 +1711,38 @@ def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_is_dataframe_of_ca
     )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
+    expected_X_autoreg = np.array(
+        [[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+         [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+         [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+         [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+         [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+         dtype=float)
+
     if categorical_features is None:
         expected_cat_names = None
         expected_dtype_out = {'exog_1': exog['exog_1'].dtype, 'exog_2': exog['exog_2'].dtype}
-        expected_X = np.array(
-            [[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 5., 105.],
-             [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 6., 106.],
-             [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 7., 107.],
-             [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 8., 108.],
-             [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 9., 109.]], 
+        expected_X_exog = np.array(
+            [[5., 105.],
+             [6., 106.],
+             [7., 107.],
+             [8., 108.],
+             [9., 109.]],
              dtype=float)
     else:
         expected_cat_names = ['exog_1', 'exog_2']
         expected_dtype_out = {'exog_1': np.float64, 'exog_2': np.float64}
-        expected_X = np.array(
-            [[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 5., 5.],
-             [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 6., 6.],
-             [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 7., 7.],
-             [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 8., 8.],
-             [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 9., 9.]], 
+        expected_X_exog = np.array(
+            [[5., 5.],
+             [6., 6.],
+             [7., 7.],
+             [8., 8.],
+             [9., 9.]],
              dtype=float)
 
     expected = (
-        expected_X,
+        expected_X_autoreg,
+        expected_X_exog,
         {1: np.array([55., 56., 57., 58., 59.], dtype=float)
         },
         {1: pd.RangeIndex(start=5, stop=10, step=1)},
@@ -1655,26 +1764,27 @@ def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_is_dataframe_of_ca
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
     if categorical_features is not None:
         assert len(forecaster.categorical_encoder.categories_) == 2
         np.testing.assert_array_equal(
@@ -1704,9 +1814,15 @@ def test_create_train_X_y_output_when_lags_5_steps_3_and_exog_is_dataframe_of_ca
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 5., 5., 6., 6., 7., 7.],
-                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 6., 6., 7., 7., 8., 8.],
-                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 7., 7., 8., 8., 9., 9.]],
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.]],
+                  dtype=float),
+        np.array([[5., 5.],
+                  [6., 6.],
+                  [7., 7.],
+                  [8., 8.],
+                  [9., 9.]],
                   dtype=float),
         {1: np.array([55., 56., 57.], dtype=float),
          2: np.array([56., 57., 58.], dtype=float),
@@ -1741,26 +1857,27 @@ def test_create_train_X_y_output_when_lags_5_steps_3_and_exog_is_dataframe_of_ca
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize(
@@ -1800,12 +1917,18 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
 
     if categorical_features is None:
         expected = (
-            np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 105., 1005., 105., 15.],
-                      [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 106., 1006., 106., 16.],
-                      [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 107., 1007., 107., 17.],
-                      [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 108., 1008., 108., 18.],
-                      [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 109., 1009., 109., 19.]],
-                     dtype=float),
+            np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                      [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                      [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                      [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                      [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                      dtype=float),
+            np.array([[105., 1005., 105., 15.],
+                      [106., 1006., 106., 16.],
+                      [107., 1007., 107., 17.],
+                      [108., 1008., 108., 18.],
+                      [109., 1009., 109., 19.]],
+                      dtype=float),
             {1: np.array([5., 6., 7., 8., 9.], dtype=float)},
             {1: pd.RangeIndex(start=5, stop=10, step=1)},
             ['l1', 'l2'],
@@ -1822,12 +1945,18 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
         )
     elif categorical_features == 'auto':
         expected = (
-            np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 105., 1005., 5., 15.],
-                      [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 106., 1006., 6., 16.],
-                      [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 107., 1007., 7., 17.],
-                      [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 108., 1008., 8., 18.],
-                      [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 109., 1009., 9., 19.]],
-                     dtype=float),
+            np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                      [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                      [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                      [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                      [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                      dtype=float),
+            np.array([[105., 1005., 5., 15.],
+                      [106., 1006., 6., 16.],
+                      [107., 1007., 7., 17.],
+                      [108., 1008., 8., 18.],
+                      [109., 1009., 9., 19.]],
+                      dtype=float),
             {1: np.array([5., 6., 7., 8., 9.], dtype=float)},
             {1: pd.RangeIndex(start=5, stop=10, step=1)},
             ['l1', 'l2'],
@@ -1844,12 +1973,18 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
         )
     else:
         expected = (
-            np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 105., 1005., 5., 5.],
-                      [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 106., 1006., 6., 6.],
-                      [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 107., 1007., 7., 7.],
-                      [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 108., 1008., 8., 8.],
-                      [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 109., 1009., 9., 9.]],
-                     dtype=float),
+            np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                      [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                      [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                      [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                      [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                      dtype=float),
+            np.array([[105., 1005., 5., 5.],
+                      [106., 1006., 6., 6.],
+                      [107., 1007., 7., 7.],
+                      [108., 1008., 8., 8.],
+                      [109., 1009., 9., 9.]],
+                      dtype=float),
             {1: np.array([5., 6., 7., 8., 9.], dtype=float)},
             {1: pd.RangeIndex(start=5, stop=10, step=1)},
             ['l1', 'l2'],
@@ -1870,26 +2005,27 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
     if categorical_features == 'auto':
         assert len(forecaster.categorical_encoder.categories_) == 1
         np.testing.assert_array_equal(
@@ -1925,9 +2061,15 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
     )
     results = forecaster._create_train_X_y(series=series, exog=exog)        
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 105., 1005., 5., 106., 1006., 6., 107., 1007., 7.],
-                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 106., 1006., 6., 107., 1007., 7., 108., 1008., 8.],
-                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 107., 1007., 7., 108., 1008., 8., 109., 1009., 9.]],
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.]],
+                  dtype=float),
+        np.array([[105., 1005., 5.],
+                  [106., 1006., 6.],
+                  [107., 1007., 7.],
+                  [108., 1008., 8.],
+                  [109., 1009., 9.]],
                   dtype=float),
         {1: np.array([5., 6., 7.], dtype=float),
          2: np.array([6., 7., 8.], dtype=float),
@@ -1962,26 +2104,27 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize("transformer_series", 
@@ -2017,6 +2160,7 @@ def test_create_train_X_y_output_when_steps_1_and_transformer_series(transformer
                   [ 1.21854359,  0.87038828,  0.52223297,  0.17407766, -0.17407766,
                     1.21854359,  0.87038828,  0.52223297,  0.17407766, -0.17407766]],
                  dtype=float),
+        None,
         {1: np.array([0.17407766, 0.52223297, 0.87038828, 
                       1.21854359, 1.5666989])
         },
@@ -2039,16 +2183,16 @@ def test_create_train_X_y_output_when_steps_1_and_transformer_series(transformer
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    assert results[1] is None
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
@@ -2057,6 +2201,7 @@ def test_create_train_X_y_output_when_steps_1_and_transformer_series(transformer
     assert results[9] == expected[9]
     assert results[10] == expected[10]
     assert results[11] == expected[11]
+    assert results[12] == expected[12]
 
 
 @pytest.mark.parametrize("level, expected_y_values", 
@@ -2086,6 +2231,7 @@ def test_create_train_X_y_when_exog_None_and_transformer_exog_is_not_None(level,
                              [6., 5., 4., 106., 105., 104.],
                              [7., 6., 5., 107., 106., 105.],
                              [8., 7., 6., 108., 107., 106.]], dtype=float),
+        None,
         {1: np.array(expected_y_values, dtype=float)
         },
         {1: pd.RangeIndex(start=3, stop=10, step=1)},
@@ -2105,16 +2251,16 @@ def test_create_train_X_y_when_exog_None_and_transformer_exog_is_not_None(level,
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    assert results[1] is None
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
@@ -2123,6 +2269,7 @@ def test_create_train_X_y_when_exog_None_and_transformer_exog_is_not_None(level,
     assert results[9] == expected[9]
     assert results[10] == expected[10]
     assert results[11] == expected[11]
+    assert results[12] == expected[12]
 
 
 @pytest.mark.parametrize("transformer_series", 
@@ -2160,22 +2307,17 @@ def test_create_train_X_y_when_transformer_series_and_transformer_exog(transform
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[-0.17407766, -0.52223297, -0.87038828, -1.21854359, -1.5666989 ,
-                   -0.17407766, -0.52223297, -0.87038828, -1.21854359, -1.5666989 ,
-                   -0.04719331,  0.        ,   1.        ,-0.81862236,  1.        ,
-                    0.        ],
-                  [ 0.17407766, -0.17407766, -0.52223297, -0.87038828, -1.21854359,
-                    0.17407766, -0.17407766, -0.52223297, -0.87038828, -1.21854359,
-                   -0.81862236,  1.        ,  0.        ,  2.03112731,  0.        ,
-                    1.        ],
-                  [ 0.52223297,  0.17407766, -0.17407766, -0.52223297, -0.87038828,
-                    0.52223297,  0.17407766, -0.17407766, -0.52223297, -0.87038828,
-                    2.03112731,  0.        ,  1.        ,  0.22507577,  1.        ,
-                    0.        ],
-                  [ 0.87038828,  0.52223297,  0.17407766, -0.17407766, -0.52223297,
-                    0.87038828,  0.52223297,  0.17407766, -0.17407766, -0.52223297,
-                    0.22507577,  1.        ,  0.        , -0.84584926,  0.        ,
-                    1.        ]]),
+        np.array([[-0.17407766, -0.52223297, -0.87038828, -1.21854359, -1.5666989, -0.17407766, -0.52223297, -0.87038828, -1.21854359, -1.5666989],
+                  [0.17407766, -0.17407766, -0.52223297, -0.87038828, -1.21854359, 0.17407766, -0.17407766, -0.52223297, -0.87038828, -1.21854359],
+                  [0.52223297, 0.17407766, -0.17407766, -0.52223297, -0.87038828, 0.52223297, 0.17407766, -0.17407766, -0.52223297, -0.87038828],
+                  [0.87038828, 0.52223297, 0.17407766, -0.17407766, -0.52223297, 0.87038828, 0.52223297, 0.17407766, -0.17407766, -0.52223297]],
+                  dtype=float),
+        np.array([[-0.04719331, 0., 1.],
+                  [-0.81862236, 1., 0.],
+                  [2.03112731, 0., 1.],
+                  [0.22507577, 1., 0.],
+                  [-0.84584926, 0., 1.]],
+                  dtype=float),
         {1: np.array([0.17407766, 0.52223297, 0.87038828, 1.21854359]),
          2: np.array([0.52223297, 0.87038828, 1.21854359, 1.5666989])
         },
@@ -2202,26 +2344,27 @@ def test_create_train_X_y_when_transformer_series_and_transformer_exog(transform
     forecaster.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
     
 
 @pytest.mark.parametrize("fit_forecaster", 
@@ -2285,24 +2428,25 @@ def test_create_train_X_y_output_when_differentiation_is_1_steps_3(fit_forecaste
     forecaster_2.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(output_1[0], output_2[0])
-    assert output_1[1].keys() == output_2[1].keys()
-    for key in output_1[1]: 
-        np.testing.assert_array_almost_equal(output_1[1][key], output_2[1][key])
-    assert isinstance(output_1[2], dict)
+    np.testing.assert_array_almost_equal(output_1[1], output_2[1])
     assert output_1[2].keys() == output_2[2].keys()
-    for key in output_1[2]:
-        pd.testing.assert_index_equal(output_1[2][key], output_2[2][key])
-    assert output_1[3] == output_2[3]
+    for key in output_1[2]: 
+        np.testing.assert_array_almost_equal(output_1[2][key], output_2[2][key])
+    assert isinstance(output_1[3], dict)
+    assert output_1[3].keys() == output_2[3].keys()
+    for key in output_1[3]:
+        pd.testing.assert_index_equal(output_1[3][key], output_2[3][key])
     assert output_1[4] == output_2[4]
     assert output_1[5] == output_2[5]
     assert output_1[6] == output_2[6]
     assert output_1[7] == output_2[7]
     assert output_1[8] == output_2[8]
     assert output_1[9] == output_2[9]
-    for k in output_1[10].keys():
-        assert output_1[10][k] == output_2[10][k]
+    assert output_1[10] == output_2[10]
     for k in output_1[11].keys():
         assert output_1[11][k] == output_2[11][k]
+    for k in output_1[12].keys():
+        assert output_1[12][k] == output_2[12][k]
 
 
 def test_create_train_X_y_output_when_differentiation_is_2():
@@ -2360,24 +2504,25 @@ def test_create_train_X_y_output_when_differentiation_is_2():
     forecaster_2.X_train_window_features_names_out_ is None
 
     np.testing.assert_array_almost_equal(output_1[0], output_2[0])
-    assert output_1[1].keys() == output_2[1].keys()
-    for key in output_1[1]: 
-        np.testing.assert_array_almost_equal(output_1[1][key], output_2[1][key])
-    assert isinstance(output_1[2], dict)
+    np.testing.assert_array_almost_equal(output_1[1], output_2[1])
     assert output_1[2].keys() == output_2[2].keys()
-    for key in output_1[2]:
-        pd.testing.assert_index_equal(output_1[2][key], output_2[2][key])
-    assert output_1[3] == output_2[3]
+    for key in output_1[2]: 
+        np.testing.assert_array_almost_equal(output_1[2][key], output_2[2][key])
+    assert isinstance(output_1[3], dict)
+    assert output_1[3].keys() == output_2[3].keys()
+    for key in output_1[3]:
+        pd.testing.assert_index_equal(output_1[3][key], output_2[3][key])
     assert output_1[4] == output_2[4]
     assert output_1[5] == output_2[5]
     assert output_1[6] == output_2[6]
     assert output_1[7] == output_2[7]
     assert output_1[8] == output_2[8]
     assert output_1[9] == output_2[9]
-    for k in output_1[10].keys():
-        assert output_1[10][k] == output_2[10][k]
+    assert output_1[10] == output_2[10]
     for k in output_1[11].keys():
         assert output_1[11][k] == output_2[11][k]
+    for k in output_1[12].keys():
+        assert output_1[12][k] == output_2[12][k]
 
 
 def test_create_train_X_y_output_when_window_features_and_exog_steps_1():
@@ -2405,16 +2550,26 @@ def test_create_train_X_y_output_when_window_features_and_exog_steps_1():
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[5., 4., 3., 2., 1., 3., 3., 15., 55., 54., 53., 52., 51., 53., 53., 315., 106.],
-                             [6., 5., 4., 3., 2., 4., 4., 21., 56., 55., 54., 53., 52., 54., 54., 321., 107.],
-                             [7., 6., 5., 4., 3., 5., 5., 27., 57., 56., 55., 54., 53., 55., 55., 327., 108.],
-                             [8., 7., 6., 5., 4., 6., 6., 33., 58., 57., 56., 55., 54., 56., 56., 333., 109.],
-                             [9., 8., 7., 6., 5., 7., 7., 39., 59., 58., 57., 56., 55., 57., 57., 339., 110.],
-                             [10., 9., 8., 7., 6., 8., 8., 45., 60., 59., 58., 57., 56., 58., 58., 345., 111.],
-                             [11., 10., 9., 8., 7., 9., 9., 51., 61., 60., 59., 58., 57., 59., 59., 351., 112.],
-                             [12., 11., 10., 9., 8., 10., 10., 57., 62., 61., 60., 59., 58., 60., 60., 357., 113.],
-                             [13., 12., 11., 10., 9., 11., 11., 63., 63., 62., 61., 60., 59., 61., 61., 363., 114.]],
-                             dtype=float),
+        np.array([[5., 4., 3., 2., 1., 3., 3., 15., 55., 54., 53., 52., 51., 53., 53., 315.],
+                  [6., 5., 4., 3., 2., 4., 4., 21., 56., 55., 54., 53., 52., 54., 54., 321.],
+                  [7., 6., 5., 4., 3., 5., 5., 27., 57., 56., 55., 54., 53., 55., 55., 327.],
+                  [8., 7., 6., 5., 4., 6., 6., 33., 58., 57., 56., 55., 54., 56., 56., 333.],
+                  [9., 8., 7., 6., 5., 7., 7., 39., 59., 58., 57., 56., 55., 57., 57., 339.],
+                  [10., 9., 8., 7., 6., 8., 8., 45., 60., 59., 58., 57., 56., 58., 58., 345.],
+                  [11., 10., 9., 8., 7., 9., 9., 51., 61., 60., 59., 58., 57., 59., 59., 351.],
+                  [12., 11., 10., 9., 8., 10., 10., 57., 62., 61., 60., 59., 58., 60., 60., 357.],
+                  [13., 12., 11., 10., 9., 11., 11., 63., 63., 62., 61., 60., 59., 61., 61., 363.]],
+                  dtype=float),
+        np.array([[106.],
+                  [107.],
+                  [108.],
+                  [109.],
+                  [110.],
+                  [111.],
+                  [112.],
+                  [113.],
+                  [114.]],
+                  dtype=float),
         {1: np.array([6., 7., 8., 9., 10., 11., 12., 13., 14.], dtype=float)
         },
         {1: pd.date_range('2000-01-07', periods=9, freq='D')},
@@ -2442,26 +2597,27 @@ def test_create_train_X_y_output_when_window_features_and_exog_steps_1():
     ]
     
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 def test_create_train_X_y_output_when_window_features_and_exog_steps_2():
@@ -2489,15 +2645,25 @@ def test_create_train_X_y_output_when_window_features_and_exog_steps_2():
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[5., 4., 3., 2., 1., 3., 3., 15., 55., 54., 53., 52., 51., 53., 53., 315., 106., 107.],
-                             [6., 5., 4., 3., 2., 4., 4., 21., 56., 55., 54., 53., 52., 54., 54., 321., 107., 108.],
-                             [7., 6., 5., 4., 3., 5., 5., 27., 57., 56., 55., 54., 53., 55., 55., 327., 108., 109.],
-                             [8., 7., 6., 5., 4., 6., 6., 33., 58., 57., 56., 55., 54., 56., 56., 333., 109., 110.],
-                             [9., 8., 7., 6., 5., 7., 7., 39., 59., 58., 57., 56., 55., 57., 57., 339., 110., 111.],
-                             [10., 9., 8., 7., 6., 8., 8., 45., 60., 59., 58., 57., 56., 58., 58., 345., 111., 112.],
-                             [11., 10., 9., 8., 7., 9., 9., 51., 61., 60., 59., 58., 57., 59., 59., 351., 112., 113.],
-                             [12., 11., 10., 9., 8., 10., 10., 57., 62., 61., 60., 59., 58., 60., 60., 357., 113., 114.]],
-                             dtype=float),
+        np.array([[5., 4., 3., 2., 1., 3., 3., 15., 55., 54., 53., 52., 51., 53., 53., 315.],
+                  [6., 5., 4., 3., 2., 4., 4., 21., 56., 55., 54., 53., 52., 54., 54., 321.],
+                  [7., 6., 5., 4., 3., 5., 5., 27., 57., 56., 55., 54., 53., 55., 55., 327.],
+                  [8., 7., 6., 5., 4., 6., 6., 33., 58., 57., 56., 55., 54., 56., 56., 333.],
+                  [9., 8., 7., 6., 5., 7., 7., 39., 59., 58., 57., 56., 55., 57., 57., 339.],
+                  [10., 9., 8., 7., 6., 8., 8., 45., 60., 59., 58., 57., 56., 58., 58., 345.],
+                  [11., 10., 9., 8., 7., 9., 9., 51., 61., 60., 59., 58., 57., 59., 59., 351.],
+                  [12., 11., 10., 9., 8., 10., 10., 57., 62., 61., 60., 59., 58., 60., 60., 357.]],
+                  dtype=float),
+        np.array([[106.],
+                  [107.],
+                  [108.],
+                  [109.],
+                  [110.],
+                  [111.],
+                  [112.],
+                  [113.],
+                  [114.]],
+                  dtype=float),
         {1: np.array([6., 7., 8., 9., 10., 11., 12., 13.], dtype=float),
          2: np.array([7., 8., 9., 10., 11., 12., 13., 14.], dtype=float)
         },
@@ -2529,26 +2695,27 @@ def test_create_train_X_y_output_when_window_features_and_exog_steps_2():
     ]
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 def test_create_train_X_y_output_when_two_window_features_and_exog_steps_2():
@@ -2575,15 +2742,25 @@ def test_create_train_X_y_output_when_two_window_features_and_exog_steps_2():
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[5., 4., 3., 2., 1., 3., 3., 15., 55., 54., 53., 52., 51., 53., 53., 315., 106., 107.],
-                             [6., 5., 4., 3., 2., 4., 4., 21., 56., 55., 54., 53., 52., 54., 54., 321., 107., 108.],
-                             [7., 6., 5., 4., 3., 5., 5., 27., 57., 56., 55., 54., 53., 55., 55., 327., 108., 109.],
-                             [8., 7., 6., 5., 4., 6., 6., 33., 58., 57., 56., 55., 54., 56., 56., 333., 109., 110.],
-                             [9., 8., 7., 6., 5., 7., 7., 39., 59., 58., 57., 56., 55., 57., 57., 339., 110., 111.],
-                             [10., 9., 8., 7., 6., 8., 8., 45., 60., 59., 58., 57., 56., 58., 58., 345., 111., 112.],
-                             [11., 10., 9., 8., 7., 9., 9., 51., 61., 60., 59., 58., 57., 59., 59., 351., 112., 113.],
-                             [12., 11., 10., 9., 8., 10., 10., 57., 62., 61., 60., 59., 58., 60., 60., 357., 113., 114.]],
-                             dtype=float),
+        np.array([[5., 4., 3., 2., 1., 3., 3., 15., 55., 54., 53., 52., 51., 53., 53., 315.],
+                  [6., 5., 4., 3., 2., 4., 4., 21., 56., 55., 54., 53., 52., 54., 54., 321.],
+                  [7., 6., 5., 4., 3., 5., 5., 27., 57., 56., 55., 54., 53., 55., 55., 327.],
+                  [8., 7., 6., 5., 4., 6., 6., 33., 58., 57., 56., 55., 54., 56., 56., 333.],
+                  [9., 8., 7., 6., 5., 7., 7., 39., 59., 58., 57., 56., 55., 57., 57., 339.],
+                  [10., 9., 8., 7., 6., 8., 8., 45., 60., 59., 58., 57., 56., 58., 58., 345.],
+                  [11., 10., 9., 8., 7., 9., 9., 51., 61., 60., 59., 58., 57., 59., 59., 351.],
+                  [12., 11., 10., 9., 8., 10., 10., 57., 62., 61., 60., 59., 58., 60., 60., 357.]],
+                  dtype=float),
+        np.array([[106.],
+                  [107.],
+                  [108.],
+                  [109.],
+                  [110.],
+                  [111.],
+                  [112.],
+                  [113.],
+                  [114.]],
+                  dtype=float),
         {1: np.array([6., 7., 8., 9., 10., 11., 12., 13.], dtype=float),
          2: np.array([7., 8., 9., 10., 11., 12., 13., 14.], dtype=float)
         },
@@ -2615,26 +2792,27 @@ def test_create_train_X_y_output_when_two_window_features_and_exog_steps_2():
     ]
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 def test_create_train_X_y_output_when_window_features_lags_None_and_exog():
@@ -2662,16 +2840,26 @@ def test_create_train_X_y_output_when_window_features_lags_None_and_exog():
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[3., 3., 15., 53., 53., 315., 106.],
-                             [4., 4., 21., 54., 54., 321., 107.],
-                             [5., 5., 27., 55., 55., 327., 108.],
-                             [6., 6., 33., 56., 56., 333., 109.],
-                             [7., 7., 39., 57., 57., 339., 110.],
-                             [8., 8., 45., 58., 58., 345., 111.],
-                             [9., 9., 51., 59., 59., 351., 112.],
-                             [10., 10., 57., 60., 60., 357., 113.],
-                             [11., 11., 63., 61., 61., 363., 114.]],
-                             dtype=float),
+        np.array([[3., 3., 15., 53., 53., 315.],
+                  [4., 4., 21., 54., 54., 321.],
+                  [5., 5., 27., 55., 55., 327.],
+                  [6., 6., 33., 56., 56., 333.],
+                  [7., 7., 39., 57., 57., 339.],
+                  [8., 8., 45., 58., 58., 345.],
+                  [9., 9., 51., 59., 59., 351.],
+                  [10., 10., 57., 60., 60., 357.],
+                  [11., 11., 63., 61., 61., 363.]],
+                  dtype=float),
+        np.array([[106.],
+                  [107.],
+                  [108.],
+                  [109.],
+                  [110.],
+                  [111.],
+                  [112.],
+                  [113.],
+                  [114.]],
+                  dtype=float),
         {1: np.array([6., 7., 8., 9., 10., 11., 12., 13., 14.], dtype=float)
         },
         {1: pd.date_range('2000-01-07', periods=9, freq='D')},
@@ -2697,26 +2885,27 @@ def test_create_train_X_y_output_when_window_features_lags_None_and_exog():
     ]
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff():
@@ -2760,15 +2949,14 @@ def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff
     results = forecaster._create_train_X_y(series=series, exog=exog)
     
     expected = (
-        np.array([[-1.56436158, -0.14173746, -0.89489489, -0.27035108,  
-                   -1.56436158, -0.14173746, -0.89489489, -0.27035108,
-                    0.04040264,  0.        ,  1.        ],
-                  [ 1.8635851 , -0.04199628, -0.83943662,  0.62469472, 
-                    1.8635851 , -0.04199628, -0.83943662,  0.62469472, 
-                   -1.32578962,  0.        ,  1.        ],
-                  [-0.24672817, -0.49870587, -0.83943662,  0.75068358,  
-                   -0.24672817, -0.49870587, -0.83943662,  0.75068358,
-                    1.12752513,  0.        ,  1.        ]]),
+        np.array([[-1.56436158, -0.14173746, -0.89489489, -0.27035108, -1.56436158, -0.14173746, -0.89489489, -0.27035108],
+                  [1.8635851, -0.04199628, -0.83943662, 0.62469472, 1.8635851, -0.04199628, -0.83943662, 0.62469472],
+                  [-0.24672817, -0.49870587, -0.83943662, 0.75068358, -0.24672817, -0.49870587, -0.83943662, 0.75068358]],
+                  dtype=float),
+        np.array([[0.04040264, 0., 1.],
+                  [-1.32578962, 0., 1.],
+                  [1.12752513, 0., 1.]],
+                  dtype=float),
         {1: np.array([1.8635851, -0.24672817, -4.60909217])
         },
         {1: pd.date_range('2000-01-08', periods=3, freq='D')},
@@ -2794,26 +2982,27 @@ def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff
     ]
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff_steps_2():
@@ -2857,15 +3046,15 @@ def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff
     results = forecaster._create_train_X_y(series=series, exog=exog)
     
     expected = (
-        np.array([[ 1.16539688,  0.09974117, -0.5       , -0.06299443,  
-                     1.16539688,  0.09974117, -0.5       , -0.06299443,
-                     1.69816032,  0.        ,  1.        ,  0.04040264,  0.        ,  1.        ],
-                  [-0.3989647 , -0.04199628, -0.5       , -0.24147863, 
-                   -0.3989647 , -0.04199628, -0.5       , -0.24147863, 
-                    0.04040264,  0.        ,  1.        , -1.32578962,  0.        ,  1.        ],
-                  [ 1.46462041, -0.08399257, -0.39784946,  0.38321609,  
-                    1.46462041, -0.08399257, -0.39784946,  0.38321609,
-                   -1.32578962,  0.        ,  1.        ,  1.12752513,  0.        ,  1.        ]]),
+        np.array([[1.16539688, 0.09974117, -0.5, -0.06299443, 1.16539688, 0.09974117, -0.5, -0.06299443],
+                  [-0.3989647, -0.04199628, -0.5, -0.24147863, -0.3989647, -0.04199628, -0.5, -0.24147863],
+                  [1.46462041, -0.08399257, -0.39784946, 0.38321609, 1.46462041, -0.08399257, -0.39784946, 0.38321609]],
+                  dtype=float),
+        np.array([[1.69816032, 0., 1.],
+                  [0.04040264, 0., 1.],
+                  [-1.32578962, 0., 1.],
+                  [1.12752513, 0., 1.]],
+                  dtype=float),
         {1: np.array([-0.3989647, 1.46462041, 1.21789224]),
          2: np.array([1.46462041, 1.21789224, -3.39119993])
         },
@@ -2899,26 +3088,27 @@ def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff
     ]
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
 
 
 @pytest.mark.parametrize(
@@ -2945,11 +3135,18 @@ def test_create_train_X_y_output_when_exog_is_series_of_string_category(categori
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 5.],
-                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 6.],
-                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 7.],
-                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 8.],
-                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 9.]], dtype=float),
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                  dtype=float),
+        np.array([[5.],
+                  [6.],
+                  [7.],
+                  [8.],
+                  [9.]],
+                  dtype=float),
         {1: np.array([5., 6., 7., 8., 9.], dtype=float)},
         {1: pd.RangeIndex(start=5, stop=10, step=1)},
         ['l1', 'l2'],
@@ -2970,26 +3167,27 @@ def test_create_train_X_y_output_when_exog_is_series_of_string_category(categori
     forecaster.X_train_direct_exog_names_out_ == ['exog_step_1']
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
     assert len(forecaster.categorical_encoder.categories_) == 1
     np.testing.assert_array_equal(
         forecaster.categorical_encoder.categories_[0],
@@ -3020,11 +3218,18 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_string_category(categ
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 5., 5.],
-                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 6., 6.],
-                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 7., 7.],
-                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 8., 8.],
-                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 9., 9.]], dtype=float),
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                  dtype=float),
+        np.array([[5., 5.],
+                  [6., 6.],
+                  [7., 7.],
+                  [8., 8.],
+                  [9., 9.]],
+                  dtype=float),
         {1: np.array([5., 6., 7., 8., 9.], dtype=float)},
         {1: pd.RangeIndex(start=5, stop=10, step=1)},
         ['l1', 'l2'],
@@ -3045,26 +3250,27 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_string_category(categ
     forecaster.X_train_direct_exog_names_out_ == ['exog_step_1', 'exog_2_step_1']
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
     assert len(forecaster.categorical_encoder.categories_) == 2
     np.testing.assert_array_equal(
         forecaster.categorical_encoder.categories_[0],
@@ -3101,11 +3307,18 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_float_int_string_cate
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 105., 1005., 5.],
-                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 106., 1006., 6.],
-                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 107., 1007., 7.],
-                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 108., 1008., 8.],
-                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 109., 1009., 9.]], dtype=float),
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                  dtype=float),
+        np.array([[105., 1005., 5.],
+                  [106., 1006., 6.],
+                  [107., 1007., 7.],
+                  [108., 1008., 8.],
+                  [109., 1009., 9.]],
+                  dtype=float),
         {1: np.array([5., 6., 7., 8., 9.], dtype=float)},
         {1: pd.RangeIndex(start=5, stop=10, step=1)},
         ['l1', 'l2'],
@@ -3130,26 +3343,27 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_float_int_string_cate
     ]
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
     assert len(forecaster.categorical_encoder.categories_) == 1
     np.testing.assert_array_equal(
         forecaster.categorical_encoder.categories_[0],
@@ -3183,11 +3397,18 @@ def test_create_train_X_y_output_when_is_fitted_uses_transform_not_fit_transform
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., 105., 5.],
-                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51., 106., 6.],
-                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52., 107., 7.],
-                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., 108., 8.],
-                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., 109., 9.]], dtype=float),
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                  dtype=float),
+        np.array([[105., 5.],
+                  [106., 6.],
+                  [107., 7.],
+                  [108., 8.],
+                  [109., 9.]],
+                  dtype=float),
         {1: np.array([5., 6., 7., 8., 9.], dtype=float)},
         {1: pd.DatetimeIndex(['2000-01-06', '2000-01-07', '2000-01-08',
                               '2000-01-09', '2000-01-10'], freq='D')},
@@ -3212,26 +3433,27 @@ def test_create_train_X_y_output_when_is_fitted_uses_transform_not_fit_transform
     ]
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
     assert len(forecaster.categorical_encoder.categories_) == 1
     np.testing.assert_array_equal(
         forecaster.categorical_encoder.categories_[0],
@@ -3281,13 +3503,18 @@ def test_create_train_X_y_output_when_transformer_exog_is_make_column_transforme
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
-        np.array(
-            [[4., 3., 2., 1., 0., 54., 53., 52., 51., 50., -0.06706325, 2.],
-             [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.,  2.03670162, 0.],
-             [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.,  0.20853914, 1.],
-             [7., 6., 5., 4., 3., 57., 56., 55., 54., 53., -0.5861144 , 2.],
-             [8., 7., 6., 5., 4., 58., 57., 56., 55., 54., -0.9443975 , 2.]]
-        ),
+        np.array([[4., 3., 2., 1., 0., 54., 53., 52., 51., 50.],
+                  [5., 4., 3., 2., 1., 55., 54., 53., 52., 51.],
+                  [6., 5., 4., 3., 2., 56., 55., 54., 53., 52.],
+                  [7., 6., 5., 4., 3., 57., 56., 55., 54., 53.],
+                  [8., 7., 6., 5., 4., 58., 57., 56., 55., 54.]],
+                  dtype=float),
+        np.array([[-0.06706325, 2.],
+                  [2.03670162, 0.],
+                  [0.20853914, 1.],
+                  [-0.5861144, 2.],
+                  [-0.9443975, 2.]],
+                  dtype=float),
         {1: np.array([5., 6., 7., 8., 9.], dtype=float)},
         {1: pd.DatetimeIndex(['1990-01-06', '1990-01-07', '1990-01-08',
                               '1990-01-09', '1990-01-10'], freq='D')},
@@ -3312,23 +3539,24 @@ def test_create_train_X_y_output_when_transformer_exog_is_make_column_transforme
     ]
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert isinstance(results[1], dict)
-    assert all(isinstance(x, np.ndarray) for x in results[1].values())
-    assert results[1].keys() == expected[1].keys()
-    for key in expected[1]: 
-        np.testing.assert_array_almost_equal(results[1][key], expected[1][key])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
     assert isinstance(results[2], dict)
+    assert all(isinstance(x, np.ndarray) for x in results[2].values())
     assert results[2].keys() == expected[2].keys()
-    for key in expected[2]:
-        pd.testing.assert_index_equal(results[2][key], expected[2][key])
-    assert results[3] == expected[3]
+    for key in expected[2]: 
+        np.testing.assert_array_almost_equal(results[2][key], expected[2][key])
+    assert isinstance(results[3], dict)
+    assert results[3].keys() == expected[3].keys()
+    for key in expected[3]:
+        pd.testing.assert_index_equal(results[3][key], expected[3][key])
     assert results[4] == expected[4]
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
     assert results[8] == expected[8]
     assert results[9] == expected[9]
-    for k in results[10].keys():
-        assert results[10][k] == expected[10][k]
+    assert results[10] == expected[10]
     for k in results[11].keys():
         assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        assert results[12][k] == expected[12][k]
