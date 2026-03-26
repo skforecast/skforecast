@@ -4,7 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.foundational._foundational_model import Chronos2Adapter
+from skforecast.foundational._adapters import Chronos2Adapter
 
 
 # Fixtures
@@ -114,8 +114,8 @@ def test_Chronos2Adapter_fit_raises_TypeError_when_series_is_invalid_type():
     """
     adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
     err_msg = re.escape(
-        "`series` must be a pd.Series, a wide pd.DataFrame, or a "
-        f"dict[str, pd.Series]. Got {type(np.array([1, 2, 3]))}."
+        "`series` must be a pd.Series, a wide pd.DataFrame (one column "
+        f"per series), or a dict[str, pd.Series]. Got {type(np.array([1, 2, 3]))}."
     )
     with pytest.raises(TypeError, match=err_msg):
         adapter.fit(series=np.array([1, 2, 3]))

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from skforecast.foundational import ForecasterFoundational, FoundationalModel
-from skforecast.foundational._foundational_model import Chronos2Adapter
+from skforecast.foundational._adapters import Chronos2Adapter
 
 # Fixtures
 from .fixtures_forecaster_foundational import make_forecaster, FakePipeline

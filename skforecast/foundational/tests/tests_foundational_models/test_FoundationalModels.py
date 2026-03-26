@@ -4,12 +4,13 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.foundational._foundational_model import (
+from skforecast.foundational._adapters import (
     Chronos2Adapter,
-    FoundationalModel,
+    TimesFM25Adapter,
     _resolve_adapter,
     _ADAPTER_REGISTRY,
 )
+from skforecast.foundational._foundational_model import FoundationalModel
 
 from ..tests_forecaster_foundational.fixtures_forecaster_foundational import (
     FakePipeline,
@@ -558,6 +559,24 @@ def test_ADAPTER_REGISTRY_contains_chronos_key():
     """
     assert "autogluon/chronos" in _ADAPTER_REGISTRY
     assert _ADAPTER_REGISTRY["autogluon/chronos"] is Chronos2Adapter
+
+
+def test_resolve_adapter_returns_TimesFM25Adapter_for_timesfm_prefix():
+    """
+    Test that _resolve_adapter returns TimesFM25Adapter for any model ID
+    starting with 'google/timesfm'.
+    """
+    assert _resolve_adapter("google/timesfm-2.5-200m-pytorch") is TimesFM25Adapter
+    assert _resolve_adapter("google/timesfm-2.5-200m-flax") is TimesFM25Adapter
+
+
+def test_ADAPTER_REGISTRY_contains_timesfm_key():
+    """
+    Test that _ADAPTER_REGISTRY has the 'google/timesfm' prefix mapped
+    to TimesFM25Adapter.
+    """
+    assert "google/timesfm" in _ADAPTER_REGISTRY
+    assert _ADAPTER_REGISTRY["google/timesfm"] is TimesFM25Adapter
 
 
 # Tests Chronos2Adapter.get_params
