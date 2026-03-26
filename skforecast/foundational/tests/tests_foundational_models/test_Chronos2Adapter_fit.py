@@ -42,22 +42,20 @@ def test_Chronos2Adapter_fit_returns_self():
     assert result is adapter
 
 
-def test_Chronos2Adapter_fit_stores_full_history_when_no_context_length():
+def test_Chronos2Adapter_init_raises_ValueError_when_context_length_is_None():
     """
-    Test that fit stores the entire series when context_length is None.
+    Test that Chronos2Adapter raises ValueError when context_length is None.
     """
-    adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
-    adapter.fit(series=y)
-    pd.testing.assert_series_equal(adapter._history, y)
+    with pytest.raises(ValueError, match="`context_length` must be a positive integer"):
+        Chronos2Adapter(model_id="autogluon/chronos-2-small", context_length=None)
 
 
-def test_Chronos2Adapter_fit_stores_exog_when_no_context_length():
+def test_Chronos2Adapter_init_raises_ValueError_when_context_length_not_positive():
     """
-    Test that fit stores the entire exog when context_length is None.
+    Test that Chronos2Adapter raises ValueError when context_length <= 0.
     """
-    adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
-    adapter.fit(series=y, exog=exog)
-    pd.testing.assert_frame_equal(adapter._history_exog, exog)
+    with pytest.raises(ValueError, match="`context_length` must be a positive integer"):
+        Chronos2Adapter(model_id="autogluon/chronos-2-small", context_length=0)
 
 
 def test_Chronos2Adapter_fit_stores_none_when_no_exog():

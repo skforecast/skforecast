@@ -61,15 +61,6 @@ def test_init_window_size_uses_context_length_when_set():
     assert forecaster.window_size == 128
 
 
-def test_init_window_size_defaults_to_1_when_context_length_is_None():
-    """
-    window_size falls back to 1 when adapter.context_length is None.
-    """
-    estimator = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
-    forecaster = ForecasterFoundational(estimator=estimator)
-    assert forecaster.window_size == 1
-
-
 def test_init_default_attributes_before_fit():
     """
     All fit-time attributes are initialised to their 'unfitted' defaults.
@@ -88,6 +79,17 @@ def test_init_default_attributes_before_fit():
     assert forecaster.exog_type_in_ is None
     assert forecaster.is_fitted is False
     assert forecaster.fit_date is None
+
+
+def test_init_context_length_attribute_set_from_estimator():
+    """
+    context_length attribute is set from estimator.context_length.
+    """
+    estimator = FoundationalModel(
+        "autogluon/chronos-2-small", context_length=128, pipeline=FakePipeline()
+    )
+    forecaster = ForecasterFoundational(estimator=estimator)
+    assert forecaster.context_length == 128
 
 
 def test_init_forecaster_id_default_is_None():
@@ -134,3 +136,13 @@ def test_init_skforecast_tags():
     assert tags["supports_lags"] is False
     assert tags["supports_probabilistic"] is True
     assert "quantile_native" in tags["probabilistic_methods"]
+
+
+def test_init_model_id_attribute_set_from_estimator():
+    """
+    model_id attribute mirrors estimator.model_id.
+    """
+    estimator = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    forecaster = ForecasterFoundational(estimator=estimator)
+    assert forecaster.model_id == "autogluon/chronos-2-small"
+    assert forecaster.model_id == estimator.model_id

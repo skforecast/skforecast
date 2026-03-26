@@ -321,14 +321,14 @@ def test_Chronos2Adapter_predict_correct_steps_sent_to_pipeline():
 def test_Chronos2Adapter_predict_correct_quantile_levels_sent_to_pipeline():
     """
     Test that the quantile_levels passed to the pipeline match the requested quantiles.
-    When quantiles=None, default levels [0.1, 0.5, 0.9] are sent.
+    When quantiles=None, only the median [0.5] is sent (point forecast).
     """
     pipeline = FakePipeline()
     adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small", pipeline=pipeline)
     adapter.fit(series=y)
 
     adapter.predict(steps=3)
-    assert pipeline.last_quantile_levels == [0.1, 0.5, 0.9]
+    assert pipeline.last_quantile_levels == [0.5]
 
     custom_quantiles = [0.05, 0.25, 0.75, 0.95]
     adapter.predict(steps=3, quantiles=custom_quantiles)

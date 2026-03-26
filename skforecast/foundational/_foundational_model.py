@@ -25,11 +25,12 @@ class Chronos2Adapter:
     model_id : str
         HuggingFace model ID, e.g. "autogluon/chronos-2-small".
     context_length : int, default 2048
-        Maximum number of historical observations to use as context. Only the
-        last `context_length` observations are stored at fit time. Defaults
-        to 2048, which matches the context window of all current Chronos-2
-        variants. Set to None to pass the full history (the model will
-        truncate internally), at the cost of higher memory usage.
+        Maximum number of historical observations to use as context. At fit
+        time only the last `context_length` observations are stored. At
+        predict time, if `last_window` is longer than `context_length` it is
+        trimmed to this length; if it is shorter, all available observations
+        are used as-is. Defaults to 2048, which matches the context window of
+        all current Chronos-2 variants. Must be a positive integer.
     pipeline : BaseChronosPipeline, optional
         Pre-loaded pipeline instance. If None, the pipeline is loaded lazily on
         the first call to `predict`.
@@ -48,7 +49,7 @@ class Chronos2Adapter:
         model_id: str,
         *,
         pipeline: Any | None = None,
-        context_length: int | None = 2048,
+        context_length: int = 2048,
         predict_kwargs: dict[str, Any] | None = None,
         device_map: str | None = None,
         torch_dtype: Any | None = None,
@@ -66,13 +67,14 @@ class Chronos2Adapter:
             loaded lazily on the first call to `predict`.
         context_length : int, default 2048
             Maximum number of historical observations to retain as context.
-            At `fit` time only the last `context_length` observations
-            of `series` (and `exog`) are stored. At `predict` time any
-            `last_window` longer than `context_length` is trimmed to
-            this length before inference. Defaults to 2048, which matches
-            the context window of all current Chronos-2 variants. Set to
-            `None` to pass the full history (the model will truncate
-            internally), at the cost of higher memory usage.
+            At `fit` time only the last `context_length` observations of
+            `series` (and `exog`) are stored. At `predict` time, if
+            `last_window` is longer than `context_length` it is trimmed to
+            this length before inference; if it is shorter, all available
+            observations are passed as-is and the model handles reduced
+            context gracefully. Defaults to 2048, which matches the context
+            window of all current Chronos-2 variants. Must be a positive
+            integer.
         predict_kwargs : dict, optional
             Additional keyword arguments forwarded verbatim to the
             pipeline's `predict_quantiles` method.
@@ -88,6 +90,11 @@ class Chronos2Adapter:
             the batch when predicting in multi-series mode. Forwarded
             directly to `predict_quantiles`. Ignored in single-series mode.
         """
+
+        if not isinstance(context_length, int) or context_length < 1:
+            raise ValueError(
+                f"`context_length` must be a positive integer. Got {context_length!r}."
+            )
 
         self.model_id        = model_id
         self._pipeline       = pipeline
@@ -108,8 +115,8 @@ class Chronos2Adapter:
         Returns
         -------
         dict
-            Keys: ``model_id``, ``cross_learning``, ``context_length``,
-            ``device_map``, ``torch_dtype``, ``predict_kwargs``.
+            Keys: `model_id`, `cross_learning`, `context_length`,
+            `device_map`, `torch_dtype`, `predict_kwargs`.
         """
         return {
             'model_id':       self.model_id,
@@ -128,8 +135,8 @@ class Chronos2Adapter:
         Parameters
         ----------
         **params :
-            Valid keys: ``model_id``, ``cross_learning``, ``context_length``,
-            ``device_map``, ``torch_dtype``, ``predict_kwargs``.
+            Valid keys: `model_id`, `cross_learning`, `context_length`,
+            `device_map`, `torch_dtype`, `predict_kwargs`.
 
         Returns
         -------
@@ -151,6 +158,12 @@ class Chronos2Adapter:
         for key, value in params.items():
             if key == 'predict_kwargs':
                 self.predict_kwargs = value or {}
+            elif key == 'context_length':
+                if not isinstance(value, int) or value < 1:
+                    raise ValueError(
+                        f"`context_length` must be a positive integer. Got {value!r}."
+                    )
+                self.context_length = value
             else:
                 setattr(self, key, value)
         return self
@@ -366,16 +379,12 @@ class Chronos2Adapter:
             
             check_y(series, series_id="`series`")
             self._is_multiseries = False
-            if self.context_length is not None:
-                self._history = series.iloc[-self.context_length :].copy()
-                self._history_exog = (
-                    exog.iloc[-self.context_length :].copy()
-                    if exog is not None
-                    else None
-                )
-            else:
-                self._history = series.copy()
-                self._history_exog = exog.copy() if exog is not None else None
+            self._history = series.iloc[-self.context_length :].copy()
+            self._history_exog = (
+                exog.iloc[-self.context_length :].copy()
+                if exog is not None
+                else None
+            )
     
         # multi-series path
         elif isinstance(series, (pd.DataFrame, dict)):
@@ -401,22 +410,18 @@ class Chronos2Adapter:
             series_names = list(series_dict.keys())
             exog_dict = self._normalize_exog_to_dict(exog, series_names)
 
-            if self.context_length is not None:
-                self._history = {
-                    name: s.iloc[-self.context_length :].copy()
-                    for name, s in series_dict.items()
-                }
-                self._history_exog = {
-                    name: (
-                        e.iloc[-self.context_length :].copy()
-                        if e is not None
-                        else None
-                    )
-                    for name, e in exog_dict.items()
-                }
-            else:
-                self._history = {name: s.copy() for name, s in series_dict.items()}
-                self._history_exog = exog_dict
+            self._history = {
+                name: series.iloc[-self.context_length :].copy()
+                for name, series in series_dict.items()
+            }
+            self._history_exog = {
+                name: (
+                    exog.iloc[-self.context_length :].copy()
+                    if exog is not None
+                    else None
+                )
+                for name, exog in exog_dict.items()
+            }
 
             self._is_multiseries = True
         else:
@@ -506,8 +511,8 @@ class Chronos2Adapter:
 
         future_exog_dict = self._normalize_exog_to_dict(exog, series_names)
 
-        # Context_length trimming (only when last_window is provided
-        if last_window is not None and self.context_length is not None:
+        # Trim to context_length when last_window is provided (backtesting)
+        if last_window is not None:
             history_dict = {
                 name: s.iloc[-self.context_length :]
                 for name, s in history_dict.items()
@@ -611,10 +616,13 @@ class Chronos2Adapter:
             Quantile levels to return, e.g. `[0.1, 0.5, 0.9]`. If None,
             returns a point forecast (median, i.e. the 0.5 quantile).
         last_window : pd.Series, pd.DataFrame, dict, or None
-            Override the stored history with this window. Used by backtesting
-            to pass the appropriate context window per fold. Based on the type
-            of `last_window`, the output is generated via the single-series or
-            multi-series path.
+            Override the stored history with this window. When provided,
+            replaces the history stored at fit time. Typically supplied by
+            backtesting to pass the appropriate context per fold. If longer
+            than `context_length`, only the last `context_length` observations
+            are used; if shorter, all available observations are passed as-is.
+            Based on the type of `last_window`, the output is generated via
+            the single-series or multi-series path.
 
             - `pd.Series`: single-series mode.
             - Wide `pd.DataFrame` or `dict[str, pd.Series]`: multi-series mode.
@@ -670,8 +678,8 @@ class Chronos2Adapter:
             last_window_exog if last_window is not None else self._history_exog
         )
 
-        # When last_window is provided (backtesting), still trim to context_length.
-        if last_window is not None and self.context_length is not None:
+        # Trim to context_length when last_window is provided (backtesting).
+        if last_window is not None:
             history = history.iloc[-self.context_length :]
             if past_exog is not None:
                 past_exog = past_exog.iloc[-self.context_length :]
@@ -741,6 +749,20 @@ class FoundationalModel:
         Valid keys depend on the adapter selected by `model`; see the
         corresponding adapter class for the full parameter list.
 
+    Attributes
+    ----------
+    context_length : int
+        Maximum number of historical observations used as context. Mirrors
+        `adapter.context_length`. Updated automatically when `set_params`
+        is called.
+    model_id : str
+        HuggingFace model ID. Mirrors `adapter.model_id`. Updated
+        automatically when `set_params` is called.
+    adapter : object
+        The underlying adapter instance, instantiated automatically based on
+        the `model` prefix. The concrete type depends on the model — e.g.
+        `Chronos2Adapter` for `autogluon/chronos-*` models.
+
     Notes
     -----
     Each adapter imports its own backend library lazily (i.e. inside the
@@ -753,8 +775,6 @@ class FoundationalModel:
     def __init__(
         self,
         model: str,
-        *,
-        cross_learning: bool = False,
         **kwargs: Any,
     ) -> None:
         """
@@ -764,19 +784,15 @@ class FoundationalModel:
         ----------
         model : str
             HuggingFace model ID, e.g. "autogluon/chronos-2-small".
-        cross_learning : bool, default False
-            If `True`, Chronos-2 shares information across all series in
-            the batch when predicting in multi-series mode. Ignored in
-            single-series mode.
         **kwargs :
             Additional keyword arguments forwarded to the underlying adapter.
             Valid keys depend on the adapter selected by `model`; see the
             corresponding adapter class for the full parameter list.
         """
         adapter_cls = _resolve_adapter(model)
-        self.adapter = adapter_cls(
-            model_id=model, cross_learning=cross_learning, **kwargs
-        )
+        self.adapter = adapter_cls(model_id=model, **kwargs)
+        self.context_length = self.adapter.context_length
+        self.model_id       = self.adapter.model_id
 
     @property
     def is_fitted(self) -> bool:
@@ -823,7 +839,7 @@ class FoundationalModel:
 
         Returns
         -------
-        self : FoundationalModels
+        self : FoundationalModel
         """
 
         self.adapter.fit(series=series, exog=exog)
@@ -894,11 +910,11 @@ class FoundationalModel:
         """
         Get parameters for this estimator (sklearn-compatible).
 
-        Required so that ``sklearn.base.clone`` can create an unfitted copy
-        of this object, which is used internally by ``deepcopy_forecaster``
+        Required so that `sklearn.base.clone` can create an unfitted copy
+        of this object, which is used internally by `deepcopy_forecaster`
         during backtesting. The pre-loaded pipeline is intentionally excluded
         so that clones are created without copying heavy model weights; the
-        pipeline is reloaded lazily on the first ``predict`` call.
+        pipeline is reloaded lazily on the first `predict` call.
 
         Parameters
         ----------
@@ -924,8 +940,8 @@ class FoundationalModel:
         ----------
         **params :
             Estimator parameters forwarded to the underlying adapter's
-            ``set_params``. Use ``model`` to change the model ID (mapped
-            to ``model_id`` on the adapter). All other keys are
+            `set_params`. Use `model` to change the model ID (mapped
+            to `model_id` on the adapter). All other keys are
             adapter-specific.
 
         Returns
@@ -939,5 +955,7 @@ class FoundationalModel:
         try:
             self.adapter.set_params(**params)
         except ValueError as exc:
-            raise ValueError(str(exc).replace("Chronos2Adapter", "FoundationalModel")) from exc
+            raise ValueError(str(exc).replace(type(self.adapter).__name__, "FoundationalModel")) from exc
+        self.context_length = self.adapter.context_length
+        self.model_id       = self.adapter.model_id
         return self

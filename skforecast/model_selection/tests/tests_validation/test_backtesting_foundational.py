@@ -11,6 +11,7 @@ from sklearn.linear_model import Ridge
 from skforecast.recursive import ForecasterRecursive
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection import backtesting_foundational
+from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures — reuse FakePipeline and series fixtures from foundational tests
 from ....foundational.tests.tests_forecaster_foundational.fixtures_forecaster_foundational import (
@@ -1009,3 +1010,35 @@ def test_output_backtesting_foundational_multiseries_exog():
     assert s1_mae == pytest.approx(43.0)
     assert s2_mae == pytest.approx(93.0)
     assert backtest_predictions.shape == (24, 3)
+
+
+# ===========================================================================
+# IgnoredArgumentWarning
+# ===========================================================================
+
+def test_backtesting_foundational_warns_IgnoredArgumentWarning_when_refit_True():
+    """
+    Test that an IgnoredArgumentWarning is raised when refit=True is passed,
+    because foundational models are zero-shot and do not use refit.
+    """
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(
+        steps=3,
+        initial_train_size=38,
+        refit=True,
+        fixed_train_size=False,
+        verbose=False,
+    )
+    with patch(
+        "skforecast.model_selection._validation.deepcopy_forecaster",
+        side_effect=deepcopy,
+    ):
+        with pytest.warns(IgnoredArgumentWarning, match="`refit` has no effect"):
+            backtesting_foundational(
+                forecaster=forecaster,
+                series=y,
+                cv=cv,
+                metric="mean_absolute_error",
+                show_progress=False,
+            )
+

@@ -18,13 +18,7 @@ def test_set_params_ValueError_when_invalid_key():
     Raise ValueError when an invalid parameter key is provided.
     """
     forecaster = make_forecaster()
-
-    allowed = {'context_length', 'predict_kwargs', 'device_map', 'torch_dtype', 'cross_learning'}
-    err_msg = re.escape(
-        f"Invalid parameter(s): {{'bad_param'}}. "
-        f"Allowed parameters are: {allowed}."
-    )
-    with pytest.raises(ValueError, match=err_msg):
+    with pytest.raises(ValueError, match="Invalid parameter"):
         forecaster.set_params({"bad_param": 42})
 
 
@@ -44,17 +38,6 @@ def test_set_params_updates_window_size_when_context_length_changes():
     forecaster = make_forecaster()
     forecaster.set_params({"context_length": 64})
     assert forecaster.window_size == 64
-
-
-def test_set_params_window_size_becomes_1_when_context_length_set_to_None():
-    """
-    window_size falls back to 1 when context_length is set to None.
-    """
-    forecaster = make_forecaster(context_length=128)
-    assert forecaster.window_size == 128
-
-    forecaster.set_params({"context_length": None})
-    assert forecaster.window_size == 1
 
 
 def test_set_params_updates_cross_learning():
@@ -108,6 +91,15 @@ def test_set_params_clears_training_metadata():
     assert forecaster.exog_in_ is False
     assert forecaster.exog_names_in_ is None
     assert forecaster.exog_type_in_ is None
+
+
+def test_set_params_updates_context_length_attribute_on_forecaster():
+    """
+    set_params updates the context_length attribute on the forecaster.
+    """
+    forecaster = make_forecaster()
+    forecaster.set_params({"context_length": 256})
+    assert forecaster.context_length == 256
 
 
 def test_set_params_device_map_resets_pipeline():

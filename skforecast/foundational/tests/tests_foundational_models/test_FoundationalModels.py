@@ -99,6 +99,36 @@ def test_FoundationalModels_is_fitted_is_true_after_fit():
     assert m.is_fitted is True
 
 
+def test_FoundationalModels_init_context_length_attribute_default():
+    """
+    context_length attribute mirrors adapter default (2048).
+    """
+    m = FoundationalModel("autogluon/chronos-2-small")
+    assert m.context_length == 2048
+    assert m.context_length == m.adapter.context_length
+
+
+def test_FoundationalModels_init_context_length_attribute_when_set():
+    """
+    context_length attribute reflects the value passed at construction.
+    """
+    m = FoundationalModel("autogluon/chronos-2-small", context_length=128)
+    assert m.context_length == 128
+    assert m.context_length == m.adapter.context_length
+
+
+def test_FoundationalModels_set_params_updates_context_length_attribute():
+    """
+    set_params keeps context_length attribute in sync with the adapter.
+    """
+    m = FoundationalModel("autogluon/chronos-2-small", context_length=512)
+    assert m.context_length == 512
+
+    m.set_params(context_length=256)
+    assert m.context_length == 256
+    assert m.adapter.context_length == 256
+
+
 # Tests FoundationalModels.fit
 # ==============================================================================
 def test_FoundationalModels_fit_returns_self():
@@ -460,6 +490,26 @@ def test_FoundationalModels_set_params_invalid_key_raises_ValueError():
     err_msg = re.escape("Invalid parameter")
     with pytest.raises(ValueError, match=err_msg):
         m.set_params(invalid_param=True)
+
+
+def test_FoundationalModels_init_model_id_attribute():
+    """
+    model_id attribute mirrors adapter.model_id at construction.
+    """
+    m = FoundationalModel("autogluon/chronos-2-small")
+    assert m.model_id == "autogluon/chronos-2-small"
+    assert m.model_id == m.adapter.model_id
+
+
+def test_FoundationalModels_set_params_updates_model_id_attribute():
+    """
+    set_params keeps model_id attribute in sync with the adapter.
+    """
+    m = FoundationalModel("autogluon/chronos-2-small")
+    assert m.model_id == "autogluon/chronos-2-small"
+    m.set_params(model_id="autogluon/chronos-2-tiny")
+    assert m.model_id == "autogluon/chronos-2-tiny"
+    assert m.adapter.model_id == "autogluon/chronos-2-tiny"
 
 
 # Tests _resolve_adapter / _ADAPTER_REGISTRY

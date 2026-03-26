@@ -135,7 +135,7 @@ class FakePipeline:
         return [arr] * len(inputs), [mean_arr] * len(inputs)
 
 
-def make_forecaster(context_length: int | None = None, **kwargs) -> "ForecasterFoundational":
+def make_forecaster(context_length: int = 2048, **kwargs) -> "ForecasterFoundational":
     """
     Return a ``ForecasterFoundational`` backed by a ``FakePipeline``.
 

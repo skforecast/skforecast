@@ -50,9 +50,21 @@ class ForecasterFoundational:
     ----------
     estimator : FoundationalModel
         The `FoundationalModel` instance provided by the user.
+    context_length : int
+        Maximum number of historical observations used as context. Mirrors
+        `estimator.context_length`. Updated when `set_params` is called.
+    model_id : str
+        HuggingFace model ID. Mirrors `estimator.model_id`. Updated when
+        `set_params` is called.
     window_size : int
-        Number of historical observations used as context. Set to
-        `estimator.adapter.context_length` if specified, otherwise 1.
+        Number of historical observations provided to the model as context in
+        each backtesting fold. Always equals `context_length`. Unlike ML
+        forecasters where `window_size` is the strict minimum required to build
+        features, here it represents the *desired* context size: backtesting
+        passes up to `context_length` observations per fold so the model
+        receives as much history as possible. When fewer observations are
+        available (e.g. early folds), all available data is passed and the
+        model handles shorter input gracefully.
     last_window_ : None
         Intentionally `None` — `ForecasterFoundational` never stores training
         data directly; the adapter's internal `_history` is used instead.
@@ -125,14 +137,9 @@ class ForecasterFoundational:
         self.skforecast_version = __version__
         self.python_version     = sys.version.split(" ")[0]
 
-        # TODO: añadir el atributo context_length en este forecaster y en el FoundationalModel
-        # windows_size = 1
-        # Explicarlo bien en la docstring.
-        self.window_size = (
-            estimator.adapter.context_length
-            if estimator.adapter.context_length is not None
-            else 1
-        )
+        self.context_length  = estimator.context_length
+        self.model_id        = estimator.model_id
+        self.window_size     = estimator.context_length
 
         self.__skforecast_tags__ = {
             "library": "skforecast",
@@ -205,9 +212,8 @@ class ForecasterFoundational:
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Model: {self.estimator.adapter.model_id} \n"
-            f"Context length: {self.estimator.adapter.context_length} \n"
-            f"Cross learning: {self.estimator.adapter.cross_learning} \n"
+            f"Model: {self.model_id} \n"
+            f"Context length: {self.context_length} \n"
             f"{series_label}: {series_repr} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
@@ -262,8 +268,8 @@ class ForecasterFoundational:
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Model:</strong> {self.estimator.adapter.model_id}</li>
-                    <li><strong>Context length:</strong> {self.estimator.adapter.context_length}</li>
+                    <li><strong>Model:</strong> {self.model_id}</li>
+                    <li><strong>Context length:</strong> {self.context_length}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>{series_label_html}:</strong> {series_value_html}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
@@ -291,8 +297,7 @@ class ForecasterFoundational:
             <details>
                 <summary>Model Parameters</summary>
                 <ul>
-                    <li><strong>cross_learning:</strong> {self.estimator.adapter.cross_learning}</li>
-                    <li><strong>predict_kwargs:</strong> {self.estimator.adapter.predict_kwargs}</li>
+                    {''.join(f'<li><strong>{k}:</strong> {v}</li>' for k, v in self.estimator.adapter.get_params().items() if k != 'model_id')}
                 </ul>
             </details>
             <p>
@@ -486,9 +491,13 @@ class ForecasterFoundational:
             `future_covariates` in Chronos-2. Must cover exactly `steps` steps
             for each series.
         last_window : pandas Series, pandas DataFrame, dict, default None
-            Context override for backtesting. In single-series mode pass a
+            Context override for backtesting. When provided, replaces the
+            history stored at fit time. In single-series mode pass a
             `pd.Series`; in multi-series mode pass a wide `pd.DataFrame` or a
-            `dict[str, pd.Series]`.
+            `dict[str, pd.Series]`. If longer than `context_length`, only the
+            last `context_length` observations are used. If shorter, all
+            available observations are passed as-is and the model handles the
+            reduced context gracefully.
         last_window_exog : pandas Series, pandas DataFrame, dict, default None
             Historical exogenous variables aligned to `last_window`. Maps to
             `past_covariates` in Chronos-2.
@@ -755,7 +764,7 @@ class ForecasterFoundational:
 
     def set_params(self, params: dict) -> None:
         """
-        Set new values to the parameters of the underlying adapter.
+        Set new values to the parameters of the underlying estimator.
 
         After calling this method, the forecaster is reset to an unfitted state.
         The `fit` method must be called before prediction.
@@ -763,10 +772,9 @@ class ForecasterFoundational:
         Parameters
         ----------
         params : dict
-            Parameter names and their new values. Valid keys correspond to
-            init parameters of `Chronos2Adapter`: `context_length`,
-            `predict_kwargs`, `device_map`, `torch_dtype`,
-            `cross_learning`.
+            Parameter names and their new values. Valid keys depend on the
+            underlying adapter. See the adapter's `set_params` for the
+            full list of accepted parameters.
 
         Returns
         -------
@@ -774,27 +782,11 @@ class ForecasterFoundational:
 
         """
 
-        allowed = {'context_length', 'predict_kwargs', 'device_map', 'torch_dtype', 'cross_learning'}
-        invalid = set(params.keys()) - allowed
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s): {invalid}. "
-                f"Allowed parameters are: {allowed}."
-            )
+        self.estimator.set_params(**params)
 
-        # If device or dtype changes, the cached pipeline must be reloaded.
-        pipeline_params = {'device_map', 'torch_dtype'}
-        if params.keys() & pipeline_params:
-            self.estimator.adapter._pipeline = None
-
-        for key, value in params.items():
-            setattr(self.estimator.adapter, key, value)
-
-        self.window_size = (
-            self.estimator.adapter.context_length
-            if self.estimator.adapter.context_length is not None
-            else 1
-        )
+        self.context_length = self.estimator.context_length
+        self.model_id       = self.estimator.model_id
+        self.window_size    = self.estimator.context_length
 
         self.is_fitted        = False
         self.fit_date         = None

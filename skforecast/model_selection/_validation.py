@@ -2253,8 +2253,8 @@ def _backtesting_foundational(
     forecaster : ForecasterFoundational
         Forecaster model.
     series : pandas Series, pandas DataFrame, or dict
-        Training time series. A single ``pd.Series`` runs in single-series
-        mode; a wide ``pd.DataFrame`` or ``dict[str, pd.Series]`` runs in
+        Training time series. A single `pd.Series` runs in single-series
+        mode; a wide `pd.DataFrame` or `dict[str, pd.Series]` runs in
         multi-series mode.
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data
@@ -2280,12 +2280,12 @@ def _backtesting_foundational(
         time range of `series` including the forecast horizon of each fold.
     interval : list, tuple, default None
         Confidence of the prediction interval estimated. Sequence of two
-        percentiles to compute (e.g. ``[10, 90]`` for an 80 % interval).
-        Cannot be provided together with ``quantiles``.
+        percentiles to compute (e.g. `[10, 90]` for an 80 % interval).
+        Cannot be provided together with `quantiles`.
     quantiles : list, default None
         Sequence of quantile levels (between 0 and 1 inclusive) to estimate
-        (e.g. ``[0.1, 0.5, 0.9]``). Cannot be provided together with
-        ``interval``.
+        (e.g. `[0.1, 0.5, 0.9]`). Cannot be provided together with
+        `interval`.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used
         for backtesting.
@@ -2339,12 +2339,6 @@ def _backtesting_foundational(
     if fixed_train_size is True:
         fixed_train_size = False
         cv.set_params({'fixed_train_size': False})
-    else:
-        warnings.warn(
-            "`fixed_train_size` has no effect on `ForecasterFoundational`. Foundational models "
-            "are zero-shot and do not learn from training data.",
-            IgnoredArgumentWarning
-        )
 
     if not isinstance(metric, list):
         metrics = [
@@ -2574,10 +2568,10 @@ def backtesting_foundational(
     forecaster : ForecasterFoundational
         Forecaster model.
     series : pandas Series, pandas DataFrame, or dict
-        Training time series. A single ``pd.Series`` runs in single-series
-        mode. A wide ``pd.DataFrame``, a long-format ``pd.DataFrame`` with a
-        MultiIndex (series IDs in the first level, ``DatetimeIndex`` in the
-        second), or a ``dict[str, pd.Series]`` runs in multi-series mode.
+        Training time series. A single `pd.Series` runs in single-series
+        mode. A wide `pd.DataFrame`, a long-format `pd.DataFrame` with a
+        MultiIndex (series IDs in the first level, `DatetimeIndex` in the
+        second), or a `dict[str, pd.Series]` runs in multi-series mode.
         Long-format DataFrames are normalised internally to a dict before
         processing.
     cv : TimeSeriesFold
@@ -2608,18 +2602,18 @@ def backtesting_foundational(
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `series` and should be aligned so that
-        ``series[i]`` is regressed on ``exog[i]``. Must also cover the
+        `series[i]` is regressed on `exog[i]`. Must also cover the
         forecast horizon of each fold.
     interval : list, tuple, default None
         Confidence of the prediction interval estimated. Sequence of two
         percentiles to compute, which must be between 0 and 100 inclusive.
         For example, an 80 % interval should be specified as
-        ``interval = [10, 90]``. Cannot be provided together with
-        ``quantiles``.
+        `interval = [10, 90]`. Cannot be provided together with
+        `quantiles`.
     quantiles : list, default None
         Sequence of quantile levels (between 0 and 1 inclusive) to estimate.
-        For example, ``quantiles = [0.1, 0.5, 0.9]``. Cannot be provided
-        together with ``interval``.
+        For example, `quantiles = [0.1, 0.5, 0.9]`. Cannot be provided
+        together with `interval`.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used
         for backtesting.
@@ -2639,22 +2633,22 @@ def backtesting_foundational(
         Value of predictions. The DataFrame includes the following columns:
 
         - fold: Indicates the fold number where the prediction was made.
-        - pred: Predicted values (when ``interval`` and ``quantiles`` are
-        ``None``, or when ``interval`` is provided).
+        - pred: Predicted values (when `interval` and `quantiles` are
+        `None`, or when `interval` is provided).
 
-        If ``interval`` is provided, additional columns are included:
+        If `interval` is provided, additional columns are included:
 
         - lower_bound: lower bound of the interval.
         - upper_bound: upper bound of the interval.
 
-        If ``quantiles`` is provided, one column per quantile is included
-        (e.g. ``q_0.1``, ``q_0.5``, ``q_0.9``).
+        If `quantiles` is provided, one column per quantile is included
+        (e.g. `q_0.1`, `q_0.5`, `q_0.9`).
 
-        In multi-series mode, a ``level`` column identifies the series.
+        In multi-series mode, a `level` column identifies the series.
 
-        Depending on the relation between ``steps`` and ``fold_stride``, the
-        output may include repeated indexes (if ``fold_stride < steps``) or
-        gaps (if ``fold_stride > steps``). See Notes below for more details.
+        Depending on the relation between `steps` and `fold_stride`, the
+        output may include repeated indexes (if `fold_stride < steps`) or
+        gaps (if `fold_stride > steps`). See Notes below for more details.
 
     Notes
     -----
