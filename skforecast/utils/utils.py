@@ -2622,7 +2622,7 @@ def _build_predict_function(
         if len(cat_indices) > 0:
             def predict_fn(X):
                 X_obj = X.astype(object)
-                X_obj[:, cat_indices] = X_obj[:, cat_indices].astype(int)
+                X_obj[:, cat_indices] = np.nan_to_num(X[:, cat_indices], nan=-1).astype(int)
                 return estimator.predict(X_obj).ravel()
 
             return predict_fn

@@ -507,7 +507,8 @@ def test_predict_output_when_categorical_features_native_implementation_HistGrad
                                           ),
                      lags               = 5,
                      transformer_series = None,
-                     transformer_exog   = transformer_exog
+                     transformer_exog   = transformer_exog,
+                     categorical_features = None
                  )
     forecaster.fit(series=series_dict_range, exog=df_exog)
     predictions = forecaster.predict(steps=10, exog=exog_predict)

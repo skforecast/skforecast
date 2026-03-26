@@ -387,6 +387,7 @@ class ForecasterRnn(ForecasterBase):
             "supports_window_features": False,
             "supports_transformer_series": True,
             "supports_transformer_exog": True,
+            "supports_categorical_features": False,
             "supports_weight_func": False,
             "supports_series_weights": False,
             "supports_differentiation": False,
