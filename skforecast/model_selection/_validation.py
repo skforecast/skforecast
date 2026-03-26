@@ -2324,19 +2324,27 @@ def _backtesting_foundational(
     })
 
     refit = cv.refit
+    fixed_train_size = cv.fixed_train_size
     overlapping_folds = cv.overlapping_folds
 
-    if refit:
+    if refit is not False:
         warnings.warn(
             "`refit` has no effect on `ForecasterFoundational`. Foundational models "
-            "are zero-shot and do not learn from training data, so re-fitting the "
-            "forecaster in each fold only updates the internal history cache, which "
-            "is immediately overridden by `last_window` during prediction. "
-            "`refit` has been set to `False` to avoid unnecessary overhead.",
+            "are zero-shot and do not learn from training data.",
             IgnoredArgumentWarning
         )
         refit = False
         cv.set_params({'refit': False})
+
+    if fixed_train_size is True:
+        fixed_train_size = False
+        cv.set_params({'fixed_train_size': False})
+    else:
+        warnings.warn(
+            "`fixed_train_size` has no effect on `ForecasterFoundational`. Foundational models "
+            "are zero-shot and do not learn from training data.",
+            IgnoredArgumentWarning
+        )
 
     if not isinstance(metric, list):
         metrics = [

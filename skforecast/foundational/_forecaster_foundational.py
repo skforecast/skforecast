@@ -125,6 +125,9 @@ class ForecasterFoundational:
         self.skforecast_version = __version__
         self.python_version     = sys.version.split(" ")[0]
 
+        # TODO: añadir el atributo context_length en este forecaster y en el FoundationalModel
+        # windows_size = 1
+        # Explicarlo bien en la docstring.
         self.window_size = (
             estimator.adapter.context_length
             if estimator.adapter.context_length is not None
@@ -160,6 +163,7 @@ class ForecasterFoundational:
             "supports_window_features": False,
             "supports_transformer_series": False,
             "supports_transformer_exog": False,
+            "supports_categorical_features": True,
             "supports_weight_func": False,
             "supports_differentiation": False,
 
