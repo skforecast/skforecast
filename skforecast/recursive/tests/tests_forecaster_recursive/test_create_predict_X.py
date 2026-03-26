@@ -212,9 +212,17 @@ def test_create_predict_X_when_with_transform_y_and_transform_exog_df():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_when_categorical_features_native_implementation_HistGradientBoostingRegressor():
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_create_predict_X_when_categorical_features_native_implementation_HistGradientBoostingRegressor(categorical_features):
     """
     Test create_predict_X when using HistGradientBoostingRegressor and categorical variables.
+    Native implementation of categorical features in HistGradientBoostingRegressor
+    should return the same predictions as the one obtained when using the Forecaster
+    to encode the categorical features.
     """
     df_exog = pd.DataFrame(
         {'exog_1': exog_categorical,
@@ -285,10 +293,34 @@ def test_create_predict_X_when_categorical_features_native_implementation_HistGr
     
     pd.testing.assert_frame_equal(results, expected)
 
+    # Categorical features managed by the forecaster
+    forecaster_2 = ForecasterRecursive(
+                       estimator            = HistGradientBoostingRegressor(
+                                                  random_state = 123
+                                              ),
+                       lags                 = 5,
+                       transformer_y        = None,
+                       transformer_exog     = None,
+                       categorical_features = categorical_features
+                   )
+    forecaster_2.fit(y=y_categorical, exog=df_exog)
+    pred_native = forecaster.predict(steps=10, exog=exog_predict)
+    pred_managed = forecaster_2.predict(steps=10, exog=exog_predict)
 
-def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
+    pd.testing.assert_series_equal(pred_native, pred_managed)
+
+
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor(categorical_features):
     """
     Test create_predict_X when using LGBMRegressor and categorical variables.
+    Native implementation of categorical features in LGBMRegressor
+    should return the same predictions as the one obtained when using the Forecaster
+    to encode the categorical features.
     """
     df_exog = pd.DataFrame(
         {'exog_1': exog_categorical,
@@ -359,6 +391,20 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
     ).astype({'exog_2': 'category', 'exog_3': 'category'})
     
     pd.testing.assert_frame_equal(results, expected)
+
+    # Categorical features managed by the forecaster
+    forecaster_2 = ForecasterRecursive(
+                       estimator            = LGBMRegressor(verbose=-1, random_state=123),
+                       lags                 = 5,
+                       transformer_y        = None,
+                       transformer_exog     = None,
+                       categorical_features = categorical_features
+                   )
+    forecaster_2.fit(y=y_categorical, exog=df_exog)
+    pred_native = forecaster.predict(steps=10, exog=exog_predict)
+    pred_managed = forecaster_2.predict(steps=10, exog=exog_predict)
+
+    pd.testing.assert_series_equal(pred_native, pred_managed)
 
 
 @pytest.mark.parametrize(

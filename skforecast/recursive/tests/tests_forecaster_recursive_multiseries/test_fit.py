@@ -848,7 +848,7 @@ def test_fit_configures_estimator_categorical_features(estimator, check_fn):
     })
 
     forecaster = ForecasterRecursiveMultiSeries(
-        estimator=estimator, lags=3, encoding='ordinal',
+        estimator=estimator, lags=3, encoding='ordinal_category',
         transformer_series=None, categorical_features='auto'
     )
     forecaster.fit(series=series, exog=exog, suppress_warnings=True)
@@ -858,8 +858,10 @@ def test_fit_configures_estimator_categorical_features(estimator, check_fn):
     assert 'exog_cat' in forecaster.X_train_features_names_out_
 
     if check_fn is not None:
+        # With ordinal_category, _level_skforecast is also treated as categorical
         cat_idx = [
-            forecaster.X_train_features_names_out_.index('exog_cat')
+            forecaster.X_train_features_names_out_.index('exog_cat'),
+            forecaster.X_train_features_names_out_.index('_level_skforecast')
         ]
         n_features = len(forecaster.X_train_features_names_out_)
         assert check_fn(forecaster.estimator, cat_idx, n_features)

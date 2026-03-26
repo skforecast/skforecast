@@ -1943,7 +1943,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             and type(self.estimator).__name__ == 'CatBoostRegressor'
         ):
             cat_cols = [X_train_features_names_out_[i] for i in fit_kwargs['cat_features']]
-            X_train_estimator[cat_cols] = X_train_estimator[cat_cols].fillna(-1).astype(int)
+            X_train_estimator[cat_cols] = (
+                X_train_estimator[cat_cols]
+                .apply(lambda x: x.cat.codes if hasattr(x.dtype, 'categories') else x)
+                .fillna(-1)
+                .astype(int)
+            )
 
         if sample_weight is not None:
             self.estimator.fit(
