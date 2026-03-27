@@ -2245,8 +2245,11 @@ def _backtesting_foundational(
     """
     Backtesting of ForecasterFoundational.
 
-    A copy of the original forecaster is created so that it is not modified
-    during the process.
+    The original forecaster is used directly (no copy): refit is always
+    disabled for foundational models and every fold passes `last_window`
+    explicitly, so `self._history` is never modified during the fold loop.
+    The only state change is the initial `fit` call that stores the training
+    context window.
 
     Parameters
     ----------
@@ -2307,7 +2310,6 @@ def _backtesting_foundational(
 
     """
 
-    forecaster = deepcopy_forecaster(forecaster)
     cv = deepcopy(cv)
 
     is_multiseries, series_names, series_norm = _check_preprocess_series_type(series)
@@ -2560,8 +2562,12 @@ def backtesting_foundational(
     """
     Backtesting of ForecasterFoundational.
 
-    A copy of the original forecaster is created so that it is not modified
-    during the process.
+    The original forecaster is modified in-place (fitted on the initial
+    training slice) but its loaded model weights are preserved across the
+    entire backtesting run. Since foundational models are zero-shot, refit
+    is always disabled and per-fold predictions receive `last_window`
+    explicitly, so the stored context is not consulted or modified during
+    the fold loop.
 
     Parameters
     ----------
