@@ -899,10 +899,24 @@ class TimesFM25Adapter:
             import timesfm
         except ImportError as exc:
             raise ImportError(
-                "timesfm[torch] is required for TimesFM25Adapter. "
-                "Install it with `pip install timesfm[torch]`."
+                "timesfm is required for TimesFM25Adapter. "
+                "Install it with `pip install git+https://github.com/google-research/timesfm.git`."
             ) from exc
-        self._model = timesfm.TimesFM_2p5_200M_torch.from_pretrained(self.model_id)
+
+        # Workaround for a compatibility issue between huggingface_hub and
+        # timesfm: huggingface_hub's `from_pretrained` passes `proxies` and
+        # `resume_download` to `_from_pretrained`, but timesfm's
+        # `_from_pretrained` does not declare them as explicit parameters, so
+        # they fall into **model_kwargs and are forwarded to __init__, raising
+        # a TypeError. A local subclass overrides `_from_pretrained` to absorb
+        # those kwargs without modifying any global state.
+        class _TimesFMCompat(timesfm.TimesFM_2p5_200M_torch):
+            @classmethod
+            def _from_pretrained(cls, *, proxies=None, resume_download=None, **kwargs):  # type: ignore[override]
+                return super()._from_pretrained(**kwargs)
+
+        self._model = _TimesFMCompat.from_pretrained(self.model_id)
+
         self._model.compile(
             timesfm.ForecastConfig(
                 max_context=self.context_length,
