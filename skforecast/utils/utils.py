@@ -208,20 +208,17 @@ def initialize_window_features(
                 max_window_sizes.append(max(window_sizes))
 
             features_names = wf.features_names
-            if not isinstance(features_names, (str, list)):
+            if not isinstance(features_names, list):
                 raise TypeError(
-                    f"Attribute `features_names` of {wf_name} must be a str or "
-                    f"a list of strings. Got {type(features_names)}." + link_to_docs
+                    f"Attribute `features_names` of {wf_name} must be a list "
+                    f"of strings. Got {type(features_names)}." + link_to_docs
                 )
-            if isinstance(features_names, str):
-                window_features_names.append(features_names)
-            else:
-                if not all(isinstance(fn, str) for fn in features_names):
-                    raise TypeError(
-                        f"If argument `features_names` is a list, all elements "
-                        f"must be strings. Got {features_names} from {wf_name}." + link_to_docs
-                    )
-                window_features_names.extend(features_names)
+            if not all(isinstance(fn, str) for fn in features_names):
+                raise TypeError(
+                    f"If argument `features_names` is a list, all elements "
+                    f"must be strings. Got {features_names} from {wf_name}." + link_to_docs
+                )
+            window_features_names.extend(features_names)
 
         max_size_window_features = max(max_window_sizes)
         if len(set(window_features_names)) != len(window_features_names):

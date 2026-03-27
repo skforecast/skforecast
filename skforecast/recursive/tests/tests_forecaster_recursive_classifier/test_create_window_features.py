@@ -53,7 +53,7 @@ def test_create_window_features_TypeError_when_transform_batch_not_pandas():
     Test TypeError is raised when `transform_batch` does not return 
     a pandas DataFrame.
     """
-    wf = WindowFeatureNoPandas(window_sizes=5, features_names='feature_1')
+    wf = WindowFeatureNoPandas(window_sizes=5, features_names=['feature_1'])
     y = pd.Series(np.array([1, 2, 3, 1, 2, 3, 1, 2, 3, 1], dtype=int))
     train_index = pd.RangeIndex(start=5, stop=10, step=1)
 
@@ -73,7 +73,7 @@ def test_create_window_features_ValueError_when_transform_batch_not_correct_leng
     Test ValueError is raised when `transform_batch` does not return
     a DataFrame with the correct length.
     """
-    wf = WindowFeatureNoCorrectLength(window_sizes=5, features_names='feature_1')
+    wf = WindowFeatureNoCorrectLength(window_sizes=5, features_names=['feature_1'])
     y = pd.Series(np.array([1, 2, 3, 1, 2, 3, 1, 2, 3, 1], dtype=int))
     train_index = pd.RangeIndex(start=5, stop=10, step=1)
 
@@ -94,7 +94,7 @@ def test_create_window_features_ValueError_when_transform_batch_not_correct_inde
     Test ValueError is raised when `transform_batch` does not return
     a DataFrame with the correct index.
     """
-    wf = WindowFeatureNoCorrectIndex(window_sizes=5, features_names='feature_1')
+    wf = WindowFeatureNoCorrectIndex(window_sizes=5, features_names=['feature_1'])
     y_datetime = pd.Series(
         np.array([1, 2, 3, 1, 2, 3, 1, 2, 3, 1], dtype=int), 
         index=pd.date_range(start='2020-01-01', periods=10)
