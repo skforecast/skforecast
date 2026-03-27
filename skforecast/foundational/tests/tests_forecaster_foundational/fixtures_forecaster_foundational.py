@@ -43,10 +43,18 @@ exog_lw = pd.DataFrame(
     index=y_lw.index,
 )
 
-# Future exog for the forecast horizon (5 steps)
+# Future exog for the forecast horizon (5 steps).
+# Aligned to start one ME period after y ends (2024-02-29 + ME = 2024-03-31).
 exog_predict = pd.DataFrame(
     {"feat_a": np.arange(70, 75, dtype=float)},
-    index=pd.date_range("2024-07-31", periods=5, freq="ME"),
+    index=pd.date_range("2024-03-31", periods=5, freq="ME"),
+)
+
+# Future exog for tests that use last_window=y_lw.
+# y_lw ends at 2025-10-31, so expected exog start = 2025-11-30.
+exog_predict_lw = pd.DataFrame(
+    {"feat_a": np.arange(70, 75, dtype=float)},
+    index=pd.date_range("2025-11-30", periods=5, freq="ME"),
 )
 
 # Wide-format DataFrame with two series (DatetimeIndex)
@@ -92,13 +100,14 @@ df_exog = pd.DataFrame(
     index=y.index,
 )
 
-# Future multi-column exog (5 steps)
+# Future multi-column exog (5 steps).
+# Aligned to start one ME period after y ends (2024-02-29 + ME = 2024-03-31).
 df_exog_predict = pd.DataFrame(
     {
         "feat_a": np.arange(70, 75, dtype=float),
         "feat_b": np.arange(70, 75, dtype=float) * 2,
     },
-    index=pd.date_range("2024-07-31", periods=5, freq="ME"),
+    index=pd.date_range("2024-03-31", periods=5, freq="ME"),
 )
 
 

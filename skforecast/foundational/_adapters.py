@@ -46,6 +46,8 @@ class Chronos2Adapter:
         `predict_quantiles` method.
     """
 
+    allow_exogenous: bool = True
+
     def __init__(
         self,
         model_id: str,
@@ -760,13 +762,14 @@ class TimesFM25Adapter:
     """
 
     SUPPORTED_QUANTILES: list[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    allow_exogenous: bool = False
 
     def __init__(
         self,
         model_id: str,
         *,
         model: Any | None = None,
-        context_length: int = 2048,
+        context_length: int = 512,
         max_horizon: int = 512,
         forecast_config_kwargs: dict[str, Any] | None = None,
     ) -> None:
@@ -780,7 +783,7 @@ class TimesFM25Adapter:
         model : any, optional
             Pre-loaded and compiled TimesFM model instance. If `None`, the
             model is loaded and compiled lazily on the first `predict` call.
-        context_length : int, default 2048
+        context_length : int, default 512
             Maximum number of historical observations to retain as context.
             At `fit` time only the last `context_length` observations of
             `series` are stored. At `predict` time, if `last_window` is
@@ -953,12 +956,20 @@ class TimesFM25Adapter:
               series names.
         exog : ignored
             Accepted for API compatibility. Covariate support is not yet
-            implemented; this parameter is silently ignored.
+            implemented. Issues an `IgnoredArgumentWarning` if not `None`.
 
         Returns
         -------
         self : TimesFM25Adapter
         """
+
+        if exog is not None:
+            warnings.warn(
+                "TimesFM25Adapter does not currently support covariates. "
+                "`exog` is ignored.",
+                IgnoredArgumentWarning,
+                stacklevel=2,
+            )
 
         # single-series path
         if isinstance(series, pd.Series):
@@ -1234,10 +1245,545 @@ class TimesFM25Adapter:
         )
 
 
+class MoiraiAdapter:
+    """
+    Adapter for Salesforce Moirai-2 foundational models.
+
+    Parameters
+    ----------
+    model_id : str
+        HuggingFace model ID, e.g. `"Salesforce/moirai-2.0-R-small"`.
+        Must be a `Salesforce/moirai-2.0-R-{small,base,large}` variant.
+    module : any, optional
+        Pre-loaded `Moirai2Module` instance. If `None`, the module is
+        loaded lazily on the first call to `predict`.
+    context_length : int, default 2048
+        Maximum number of historical observations to use as context. At fit
+        time only the last `context_length` observations are stored. At
+        predict time, if `last_window` is longer than `context_length`
+        it is trimmed to this length; if it is shorter, all available
+        observations are used as-is. Must be a positive integer.
+
+    Notes
+    -----
+    Moirai-2 supports only the fixed quantile levels
+    `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. Requesting any
+    other level raises a `ValueError`.
+
+    Covariate support via the high-level `Moirai2Forecast.predict()` API
+    is not functional: the padding/truncation loop inside `predict()`
+    clips every list-valued field — including `feat_dynamic_real` — to
+    `context_length`, discarding the future portion that future
+    covariates require. Passing `exog` or `last_window_exog` issues an
+    `IgnoredArgumentWarning` and the values are discarded.
+    """
+
+    SUPPORTED_QUANTILES: list[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    allow_exogenous: bool = False
+
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        module: Any | None = None,
+        context_length: int = 2048,
+    ) -> None:
+        """
+        Initialise the adapter.
+
+        Parameters
+        ----------
+        model_id : str
+            HuggingFace model ID, e.g. `"Salesforce/moirai-2.0-R-small"`.
+        module : any, optional
+            Pre-loaded `Moirai2Module` instance. If `None`, the module
+            is loaded lazily on the first call to `predict`.
+        context_length : int, default 2048
+            Maximum number of historical observations to retain as context.
+            At `fit` time only the last `context_length` observations of
+            `series` are stored. At `predict` time, if `last_window`
+            is longer than `context_length` it is trimmed to this length;
+            if it is shorter, all available observations are passed as-is.
+            Must be a positive integer.
+        """
+
+        if not isinstance(context_length, int) or context_length < 1:
+            raise ValueError(
+                f"`context_length` must be a positive integer. "
+                f"Got {context_length!r}."
+            )
+
+        self.model_id        = model_id
+        self._module         = module
+        self.context_length  = context_length
+        self._forecast_obj   = None
+        self._history        = None
+        self._is_fitted      = False
+        self._is_multiseries = False
+
+    def get_params(self) -> dict:
+        """
+        Return the adapter's constructor parameters.
+
+        Returns
+        -------
+        dict
+            Keys: `model_id`, `context_length`.
+        """
+        return {
+            'model_id':       self.model_id,
+            'context_length': self.context_length,
+        }
+
+    def set_params(self, **params) -> MoiraiAdapter:
+        """
+        Set adapter parameters. Resets the module and forecast object when
+        `model_id` or `context_length` changes.
+
+        Parameters
+        ----------
+        **params :
+            Valid keys: `model_id`, `context_length`.
+
+        Returns
+        -------
+        self : MoiraiAdapter
+        """
+        valid = {'model_id', 'context_length'}
+        invalid = set(params) - valid
+        if invalid:
+            raise ValueError(
+                f"Invalid parameter(s) for MoiraiAdapter: {sorted(invalid)}. "
+                f"Valid parameters are: {sorted(valid)}."
+            )
+        if params.keys() & {'model_id', 'context_length'}:
+            self._module = None
+            self._forecast_obj = None
+        for key, value in params.items():
+            if key == 'context_length':
+                if not isinstance(value, int) or value < 1:
+                    raise ValueError(
+                        f"`context_length` must be a positive integer. "
+                        f"Got {value!r}."
+                    )
+                self.context_length = value
+            else:
+                setattr(self, key, value)
+        return self
+
+    def _load_module(self) -> None:
+        """
+        Load the `Moirai2Module` into `self._module` if not already set.
+
+        The module is imported lazily from `uni2ts` and instantiated via
+        `Moirai2Module.from_pretrained`, then set to evaluation mode.
+        This method is a no-op when `self._module` is already populated.
+
+        Raises
+        ------
+        ImportError
+            If `uni2ts` is not installed.
+        """
+
+        if self._module is not None:
+            return
+        try:
+            from uni2ts.model.moirai2 import Moirai2Module
+        except ImportError as exc:
+            raise ImportError(
+                "uni2ts is required for MoiraiAdapter. "
+                "Install it with `pip install uni2ts`."
+            ) from exc
+        self._module = Moirai2Module.from_pretrained(self.model_id)
+        self._module.eval()
+
+    def _ensure_forecast_obj(self) -> None:
+        """
+        Build the `Moirai2Forecast` inference wrapper if not already set.
+
+        Calls `_load_module` then wraps `self._module` in a
+        `Moirai2Forecast` with `prediction_length=1` (overridden
+        per-call via `hparams_context`) and sets it to evaluation mode.
+        This method is a no-op when `self._forecast_obj` is already
+        populated.
+
+        Raises
+        ------
+        ImportError
+            If `uni2ts` is not installed.
+        """
+
+        if self._forecast_obj is not None:
+            return
+        self._load_module()
+        from uni2ts.model.moirai2 import Moirai2Forecast
+
+        self._forecast_obj = Moirai2Forecast(
+            module=self._module,
+            prediction_length=1,
+            context_length=self.context_length,
+            target_dim=1,
+            feat_dynamic_real_dim=0,
+            past_feat_dynamic_real_dim=0,
+        ).eval()
+
+    def fit(
+        self,
+        series: pd.Series | pd.DataFrame | dict[str, pd.Series],
+        exog: (
+            pd.Series
+            | pd.DataFrame
+            | dict[str, pd.DataFrame | pd.Series | None]
+            | None
+        ) = None,
+    ) -> MoiraiAdapter:
+        """
+        Store the training series as context.
+
+        No model training occurs since Moirai-2 is a zero-shot inference
+        model.
+
+        Parameters
+        ----------
+        series : pd.Series, pd.DataFrame, or dict of pd.Series
+            Training time series.
+
+            - `pd.Series`: single-series mode.
+            - Wide `pd.DataFrame` (each column = one series): multi-series
+              mode.
+            - `dict[str, pd.Series]`: multi-series mode; keys become the
+              series names.
+        exog : ignored
+            Accepted for API compatibility. Covariate support is not
+            implemented. Issues an `IgnoredArgumentWarning` if not `None`.
+
+        Returns
+        -------
+        self : MoiraiAdapter
+        """
+
+        if exog is not None:
+            warnings.warn(
+                "MoiraiAdapter does not support covariates. "
+                "`exog` is ignored.",
+                IgnoredArgumentWarning,
+                stacklevel=2,
+            )
+
+        # single-series path
+        if isinstance(series, pd.Series):
+            check_y(series, series_id="`series`")
+            self._is_multiseries = False
+            self._history = series.iloc[-self.context_length :].copy()
+
+        # multi-series path
+        elif isinstance(series, (pd.DataFrame, dict)):
+            if isinstance(series, pd.DataFrame):
+                series_dict: dict[str, pd.Series] = {
+                    col: series[col] for col in series.columns
+                }
+            else:
+                series_dict = series
+
+            if not series_dict:
+                raise ValueError("`series` must contain at least one series.")
+
+            for name, s in series_dict.items():
+                if not isinstance(s, pd.Series):
+                    raise TypeError(
+                        f"All values in `series` must be pd.Series. "
+                        f"Got {type(s)} for series '{name}'."
+                    )
+                check_y(s, series_id=f"'{name}'")
+
+            self._history = {
+                name: s.iloc[-self.context_length :].copy()
+                for name, s in series_dict.items()
+            }
+            self._is_multiseries = True
+
+        else:
+            raise TypeError(
+                "`series` must be a pd.Series, a wide pd.DataFrame (one column "
+                "per series), or a dict[str, pd.Series]. "
+                f"Got {type(series)}. "
+                "To use a long-format DataFrame, pass it to "
+                "`ForecasterFoundational`, which converts it automatically "
+                "before calling this adapter."
+            )
+
+        self._is_fitted = True
+        return self
+
+    def _run_inference(
+        self,
+        inputs_list: list[np.ndarray],
+        steps: int,
+    ) -> np.ndarray:
+        """
+        Run batched inference with `Moirai2Forecast`.
+
+        Parameters
+        ----------
+        inputs_list : list of np.ndarray
+            List of 2-D arrays with shape `(T, 1)`, one per series.
+            Each array holds `float64` values.
+        steps : int
+            Forecast horizon.
+
+        Returns
+        -------
+        np.ndarray
+            Array of shape `(n_series, 9, steps)` containing quantile
+            forecasts for the 9 fixed levels in `SUPPORTED_QUANTILES`
+            order.
+        """
+
+        self._ensure_forecast_obj()
+        with self._forecast_obj.hparams_context(prediction_length=steps):
+            raw = self._forecast_obj.predict(inputs_list)
+        return raw
+
+    def _predict_multiseries(
+        self,
+        steps: int,
+        quantiles: list[float] | None,
+        last_window: pd.DataFrame | dict[str, pd.Series] | None,
+    ) -> pd.DataFrame:
+        """
+        Internal multi-series prediction logic.
+
+        Parameters
+        ----------
+        steps : int
+            Forecast horizon.
+        quantiles : list of float or None
+            Quantile levels to return from `SUPPORTED_QUANTILES`. If
+            `None`, a point forecast (median, q=0.5) is produced.
+        last_window : pd.DataFrame, dict, or None
+            Override stored history. Wide DataFrame (column per series) or
+            `dict[str, pd.Series]`.
+
+        Returns
+        -------
+        pd.DataFrame
+            Long-format DataFrame. For point forecasts, columns are
+            `["level", "pred"]`. For quantile forecasts, columns are
+            `["level", "q_0.1", "q_0.5", ...]`. The index repeats the
+            forecast timestamps once per series (`n_steps x n_series`
+            rows total); the `level` column identifies the series.
+        """
+
+        if last_window is not None:
+            if isinstance(last_window, pd.DataFrame):
+                history_dict: dict[str, pd.Series] = {
+                    col: last_window[col] for col in last_window.columns
+                }
+            elif isinstance(last_window, dict):
+                history_dict = last_window
+            else:
+                raise TypeError(
+                    "`last_window` must be a wide pd.DataFrame or a "
+                    f"dict[str, pd.Series] in multi-series mode. "
+                    f"Got {type(last_window)}."
+                )
+        else:
+            history_dict = self._history
+
+        series_names = list(history_dict.keys())
+
+        # Trim to context_length when last_window is provided (backtesting)
+        if last_window is not None:
+            history_dict = {
+                name: s.iloc[-self.context_length :]
+                for name, s in history_dict.items()
+            }
+
+        # Build batched input list: each array is (T, 1) float64
+        inputs_list = [
+            history_dict[name].to_numpy(dtype=float).reshape(-1, 1)
+            for name in series_names
+        ]
+
+        raw = self._run_inference(inputs_list, steps)
+
+        n_series = len(series_names)
+        forecast_index = expand_index(
+            history_dict[series_names[0]].index, steps=steps
+        )
+        long_index = np.repeat(forecast_index, n_series)
+        level_col  = np.tile(series_names, steps)
+
+        quantile_levels = list(quantiles) if quantiles is not None else [0.5]
+        q_indices = [
+            next(
+                i for i, sq in enumerate(self.SUPPORTED_QUANTILES)
+                if abs(q - sq) < 1e-9
+            )
+            for q in quantile_levels
+        ]
+
+        # preds_per_series[i]: (steps, n_q)
+        preds_per_series = [raw[i][q_indices, :].T for i in range(n_series)]
+
+        if quantiles is None:
+            # quantile_levels == [0.5], so index 0 is the median
+            point_matrix = np.column_stack(
+                [preds_per_series[i][:, 0] for i in range(n_series)]
+            )
+            return pd.DataFrame(
+                {"level": level_col, "pred": point_matrix.ravel()},
+                index=long_index,
+            )
+
+        q_columns = [f"q_{q}" for q in quantile_levels]
+        data_dict: dict[str, np.ndarray] = {"level": level_col}
+        for j, col in enumerate(q_columns):
+            q_matrix = np.column_stack(
+                [preds_per_series[i][:, j] for i in range(n_series)]
+            )
+            data_dict[col] = q_matrix.ravel()
+        return pd.DataFrame(data_dict, index=long_index)
+
+    def predict(
+        self,
+        steps: int,
+        exog: (
+            pd.Series
+            | pd.DataFrame
+            | dict[str, pd.DataFrame | pd.Series | None]
+            | None
+        ) = None,
+        quantiles: list[float] | tuple[float] | None = None,
+        last_window: (
+            pd.Series | pd.DataFrame | dict[str, pd.Series] | None
+        ) = None,
+        last_window_exog: (
+            pd.Series
+            | pd.DataFrame
+            | dict[str, pd.DataFrame | pd.Series | None]
+            | None
+        ) = None,
+    ) -> pd.Series | pd.DataFrame:
+        """
+        Generate predictions using Moirai-2.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        exog : ignored
+            Accepted for API compatibility. Issues an
+            `IgnoredArgumentWarning` if not `None`.
+        quantiles : list of float, optional
+            Quantile levels to return. Must be a subset of
+            `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. If
+            `None`, returns a point forecast (median, q=0.5).
+        last_window : pd.Series, pd.DataFrame, dict, or None
+            Override the stored history with this window. Typically
+            supplied by backtesting to pass the appropriate context per
+            fold. If longer than `context_length`, only the last
+            `context_length` observations are used; if shorter, all
+            available observations are passed as-is.
+
+            - `pd.Series`: single-series mode.
+            - Wide `pd.DataFrame` or `dict[str, pd.Series]`:
+              multi-series mode.
+        last_window_exog : ignored
+            Accepted for API compatibility. Issues an
+            `IgnoredArgumentWarning` if not `None`.
+
+        Returns
+        -------
+        pd.Series
+            Point forecast when `quantiles` is `None` and input is a
+            single series.
+        pd.DataFrame
+            Single-series with quantiles: columns are `q_0.1`,
+            `q_0.5`, etc. Multi-series point forecast: long format with
+            columns `["level", "pred"]`. Multi-series quantile forecast:
+            long format with columns `["level", "q_0.1", "q_0.5", ...]`.
+            In both multi-series cases the index repeats each forecast
+            timestamp once per series (`n_steps x n_series` rows total).
+
+        Raises
+        ------
+        ValueError
+            If a requested quantile level is not in `SUPPORTED_QUANTILES`.
+        """
+
+        if not self._is_fitted and last_window is None:
+            raise ValueError(
+                "Call `fit` before `predict`, or pass `last_window`."
+            )
+        if not isinstance(steps, (int, np.integer)) or steps < 1:
+            raise ValueError("`steps` must be a positive integer.")
+
+        if quantiles is not None:
+            quantile_list = list(quantiles)
+            for q in quantile_list:
+                if not any(abs(q - sq) < 1e-9 for sq in self.SUPPORTED_QUANTILES):
+                    raise ValueError(
+                        f"Moirai-2 only supports quantile levels "
+                        f"{self.SUPPORTED_QUANTILES}. Got {q!r}. "
+                        f"Quantile interpolation is not supported."
+                    )
+        else:
+            quantile_list = None
+
+        if exog is not None or last_window_exog is not None:
+            warnings.warn(
+                "MoiraiAdapter does not support covariates. "
+                "`exog` and `last_window_exog` are ignored.",
+                IgnoredArgumentWarning,
+                stacklevel=2,
+            )
+
+        if self._is_multiseries or isinstance(last_window, (pd.DataFrame, dict)):
+            return self._predict_multiseries(
+                steps       = steps,
+                quantiles   = quantile_list,
+                last_window = last_window,
+            )
+
+        # single-series path
+        history = last_window if last_window is not None else self._history
+
+        # Trim to context_length when last_window is provided (backtesting)
+        if last_window is not None:
+            history = history.iloc[-self.context_length :]
+
+        inputs_list = [history.to_numpy(dtype=float).reshape(-1, 1)]
+
+        raw = self._run_inference(inputs_list, steps)
+
+        quantile_levels = quantile_list if quantile_list is not None else [0.5]
+        q_indices = [
+            next(
+                i for i, sq in enumerate(self.SUPPORTED_QUANTILES)
+                if abs(q - sq) < 1e-9
+            )
+            for q in quantile_levels
+        ]
+        result = raw[0][q_indices, :].T  # (steps, n_q)
+
+        forecast_index = expand_index(history.index, steps=steps)
+
+        if quantile_list is None:
+            return pd.Series(
+                data  = result[:, 0],
+                index = forecast_index,
+                name  = history.name,
+            )
+
+        columns = [f"q_{q}" for q in quantile_list]
+        return pd.DataFrame(result, index=forecast_index, columns=columns)
+
+
 _ADAPTER_REGISTRY: dict[str, type] = {
     "autogluon/chronos": Chronos2Adapter,
     "google/timesfm":    TimesFM25Adapter,
-    # "amazon/moirai": MoiraiAdapter,
+    "Salesforce/moirai": MoiraiAdapter,
     # "ibm/TTM": TTMAdapter,
 }
 

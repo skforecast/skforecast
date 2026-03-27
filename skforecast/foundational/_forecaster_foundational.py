@@ -8,11 +8,13 @@
 from __future__ import annotations
 import sys
 import textwrap
+import warnings
 from copy import copy
 import pandas as pd
 from sklearn.exceptions import NotFittedError
 
 from .. import __version__
+from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     check_y,
     check_exog,
@@ -20,7 +22,7 @@ from ..utils import (
     get_style_repr_html,
 )
 from ._foundational_model import FoundationalModel
-from ._utils import _check_preprocess_series_type, _check_preprocess_exog_type
+from ._utils import _check_preprocess_series_type, _check_preprocess_exog_type, _validate_exog_predict
 
 
 class ForecasterFoundational:
@@ -372,6 +374,15 @@ class ForecasterFoundational:
 
         is_multiseries, series_names, series = _check_preprocess_series_type(series)
 
+        if exog is not None and not self.estimator.allow_exogenous:
+            warnings.warn(
+                f"The model '{self.estimator.model_id}' does not support "
+                f"exogenous variables. `exog` will be ignored.",
+                IgnoredArgumentWarning,
+                stacklevel=2,
+            )
+            exog = None
+
         if not is_multiseries:
             check_y(y=series)
             if exog is not None:
@@ -513,11 +524,23 @@ class ForecasterFoundational:
 
         """
 
-        if not self.is_fitted and last_window is None:
+        if not self.is_fitted:
             raise NotFittedError(
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `predict()`."
             )
+
+        exog = _validate_exog_predict(
+            exog=exog,
+            steps=steps,
+            last_window=last_window,
+            exog_names_in_=self.exog_names_in_,
+            exog_in_=self.exog_in_,
+            index_freq_=self.index_freq_,
+            is_multiseries=self._is_multiseries,
+            training_range_=self.training_range_,
+            series_names_in_=self.series_names_in_,
+        )
 
         is_multi = self._is_multiseries or isinstance(
             last_window, (pd.DataFrame, dict)
@@ -526,9 +549,6 @@ class ForecasterFoundational:
         if is_multi:
             exog = _check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
             last_window_exog = _check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
-          
-            if exog is not None and isinstance(exog, (pd.Series, pd.DataFrame)):
-                exog = exog.iloc[:steps]
             predictions = self.estimator.predict(
                 steps=steps,
                 exog=exog,
@@ -542,8 +562,6 @@ class ForecasterFoundational:
                 predictions = predictions[predictions["level"].isin(levels)]
             return predictions
         else:
-            if exog is not None:
-                exog = exog.iloc[:steps]
             predictions = self.estimator.predict(
                 steps=steps,
                 exog=exog,
@@ -607,11 +625,23 @@ class ForecasterFoundational:
 
         """
 
-        if not self.is_fitted and last_window is None:
+        if not self.is_fitted:
             raise NotFittedError(
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `predict_interval()`."
             )
+
+        exog = _validate_exog_predict(
+            exog=exog,
+            steps=steps,
+            last_window=last_window,
+            exog_names_in_=self.exog_names_in_,
+            exog_in_=self.exog_in_,
+            index_freq_=self.index_freq_,
+            is_multiseries=self._is_multiseries,
+            training_range_=self.training_range_,
+            series_names_in_=self.series_names_in_,
+        )
 
         if isinstance(interval, (int, float)):
             check_interval(alpha=interval, alpha_literal='interval')
@@ -641,8 +671,6 @@ class ForecasterFoundational:
         if is_multi:
             exog = _check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
             last_window_exog = _check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
-            if exog is not None and isinstance(exog, (pd.Series, pd.DataFrame)):
-                exog = exog.iloc[:steps]
             df = self.estimator.predict(
                 steps=steps,
                 exog=exog,
@@ -661,8 +689,6 @@ class ForecasterFoundational:
             result['upper_bound'] = df[f'q_{upper_q}']
             return result
         else:
-            if exog is not None:
-                exog = exog.iloc[:steps]
             df = self.estimator.predict(
                 steps=steps,
                 exog=exog,
@@ -724,11 +750,23 @@ class ForecasterFoundational:
 
         """
 
-        if not self.is_fitted and last_window is None:
+        if not self.is_fitted:
             raise NotFittedError(
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `predict_quantiles()`."
             )
+
+        exog = _validate_exog_predict(
+            exog=exog,
+            steps=steps,
+            last_window=last_window,
+            exog_names_in_=self.exog_names_in_,
+            exog_in_=self.exog_in_,
+            index_freq_=self.index_freq_,
+            is_multiseries=self._is_multiseries,
+            training_range_=self.training_range_,
+            series_names_in_=self.series_names_in_,
+        )
 
         is_multi = self._is_multiseries or isinstance(
             last_window, (pd.DataFrame, dict)
@@ -737,8 +775,6 @@ class ForecasterFoundational:
         if is_multi:
             exog = _check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
             last_window_exog = _check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
-            if exog is not None and isinstance(exog, (pd.Series, pd.DataFrame)):
-                exog = exog.iloc[:steps]
             predictions = self.estimator.predict(
                 steps=steps,
                 exog=exog,
@@ -752,8 +788,6 @@ class ForecasterFoundational:
                 predictions = predictions[predictions["level"].isin(levels)]
             return predictions
         else:
-            if exog is not None:
-                exog = exog.iloc[:steps]
             return self.estimator.predict(
                 steps=steps,
                 exog=exog,

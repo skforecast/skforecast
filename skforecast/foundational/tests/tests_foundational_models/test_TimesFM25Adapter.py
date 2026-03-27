@@ -106,7 +106,14 @@ def test_TimesFM25Adapter_init_default_params():
     assert adapter._is_multiseries is False
 
 
-def test_TimesFM25Adapter_init_raises_ValueError_when_context_length_not_positive():
+def test_TimesFM25Adapter_allow_exogenous_is_False():
+    """
+    allow_exogenous class attribute is False (covariates not supported).
+    """
+    assert TimesFM25Adapter.allow_exogenous is False
+    assert make_adapter().allow_exogenous is False
+
+
     """
     Test that __init__ raises ValueError when context_length <= 0.
     """
@@ -384,13 +391,15 @@ def test_TimesFM25Adapter_fit_multiseries_trims_each_series_to_context_length():
         assert len(s) == context_length, f"Series '{name}' not trimmed"
 
 
-def test_TimesFM25Adapter_fit_ignores_exog_silently():
+def test_TimesFM25Adapter_fit_issues_IgnoredArgumentWarning_for_exog():
     """
-    Test that passing exog to fit does not raise and is silently ignored.
+    Test that passing exog to fit issues an IgnoredArgumentWarning and completes
+    successfully.
     """
     exog = pd.DataFrame({"feat": np.arange(50, dtype=float)}, index=y.index)
     adapter = make_adapter()
-    adapter.fit(series=y, exog=exog)
+    with pytest.warns(IgnoredArgumentWarning, match="TimesFM25Adapter does not currently support covariates"):
+        adapter.fit(series=y, exog=exog)
     assert adapter._is_fitted is True
 
 

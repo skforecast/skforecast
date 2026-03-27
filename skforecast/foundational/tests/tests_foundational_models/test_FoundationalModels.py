@@ -61,6 +61,14 @@ def test_FoundationalModels_init_creates_Chronos2Adapter():
     assert isinstance(m.adapter, Chronos2Adapter)
 
 
+def test_Chronos2Adapter_allow_exogenous_is_True():
+    """
+    Chronos2Adapter.allow_exogenous class attribute is True (exog supported).
+    """
+    assert Chronos2Adapter.allow_exogenous is True
+    assert FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline()).adapter.allow_exogenous is True
+
+
 def test_FoundationalModels_init_model_id_stored_in_adapter():
     """
     Test that the model_id string is forwarded to the adapter.
@@ -98,6 +106,22 @@ def test_FoundationalModels_is_fitted_is_true_after_fit():
     m = FoundationalModel("autogluon/chronos-2-small")
     m.fit(series=y)
     assert m.is_fitted is True
+
+
+def test_FoundationalModels_allow_exogenous_is_True_for_chronos():
+    """
+    allow_exogenous property is True for Chronos-2 (exogenous variables supported).
+    """
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    assert m.allow_exogenous is True
+
+
+def test_FoundationalModels_allow_exogenous_delegates_to_adapter():
+    """
+    allow_exogenous property delegates to the underlying adapter's class attribute.
+    """
+    m = FoundationalModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    assert m.allow_exogenous is m.adapter.allow_exogenous
 
 
 def test_FoundationalModels_init_context_length_attribute_default():

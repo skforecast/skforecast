@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.exceptions import NotFittedError
 
 from skforecast.foundational import ForecasterFoundational
 
@@ -224,15 +225,12 @@ class TestPredictMultiSeries:
         assert isinstance(result, pd.DataFrame)
         assert list(result.columns) == ["level", "pred"]
 
-    def test_unfitted_with_last_window_dataframe_does_not_raise(self):
-        """last_window bypasses the is_fitted check in multi-series mode.
-
-        isinstance(last_window, (pd.DataFrame, dict)) is sufficient to route
-        through the multi-series path; no manual state patching is needed.
-        """
+    def test_unfitted_with_last_window_raises_not_fitted_error(self):
+        """predict() raises NotFittedError even when last_window is provided
+        and the forecaster has not been fitted."""
         forecaster = make_forecaster()
-        result = forecaster.predict(steps=3, last_window=lw_df)
-        assert isinstance(result, pd.DataFrame)
+        with pytest.raises(NotFittedError):
+            forecaster.predict(steps=3, last_window=lw_df)
 
 
 # ===========================================================================

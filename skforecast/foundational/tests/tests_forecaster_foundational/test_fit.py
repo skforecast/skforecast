@@ -380,3 +380,38 @@ def test_fit_long_format_exog_missing_series_issues_MissingExogWarning():
         with pytest.warns(MissingExogWarning, match="series_2"):
             forecaster.fit(series=series_long, exog=exog_partial)
 
+
+def test_fit_issues_IgnoredArgumentWarning_when_adapter_does_not_support_exog():
+    """
+    fit() issues IgnoredArgumentWarning and sets exog_in_=False when the
+    underlying adapter has allow_exogenous=False.
+    """
+    forecaster = make_forecaster()  # Chronos2Adapter (allow_exogenous=True)
+    # Force allow_exogenous to False to simulate a non-exog adapter
+    forecaster.estimator.adapter.allow_exogenous = False
+
+    with pytest.warns(
+        IgnoredArgumentWarning,
+        match="does not support exogenous variables",
+    ):
+        forecaster.fit(series=y, exog=exog)
+
+    assert forecaster.exog_in_ is False
+    assert forecaster.exog_names_in_ is None
+    assert forecaster.exog_type_in_ is None
+
+
+def test_fit_exog_accepted_when_adapter_supports_exog():
+    """
+    fit() stores exog metadata normally when allow_exogenous=True (default for
+    Chronos2Adapter).
+    """
+    forecaster = make_forecaster()
+    assert forecaster.estimator.allow_exogenous is True
+
+    forecaster.fit(series=y, exog=exog)
+
+    assert forecaster.exog_in_ is True
+    assert forecaster.exog_names_in_ == ["feat_a"]
+
+

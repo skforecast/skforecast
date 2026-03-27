@@ -15,6 +15,7 @@ from .fixtures_forecaster_foundational import (
     exog,
     exog_lw,
     exog_predict,
+    exog_predict_lw,
     df_exog,
     df_exog_predict,
 )
@@ -105,14 +106,14 @@ def test_predict_quantiles_NotFittedError_when_not_fitted_and_no_last_window():
         forecaster.predict_quantiles(steps=5)
 
 
-def test_predict_quantiles_with_last_window_bypasses_is_fitted():
+def test_predict_quantiles_with_last_window_raises_if_not_fitted():
     """
-    predict_quantiles() with last_window works even when is_fitted=False.
+    predict_quantiles() raises NotFittedError even when last_window is provided
+    and the forecaster has not been fitted.
     """
     forecaster = make_forecaster()
-    result = forecaster.predict_quantiles(steps=3, last_window=y)
-    assert isinstance(result, pd.DataFrame)
-    assert len(result) == 3
+    with pytest.raises(NotFittedError):
+        forecaster.predict_quantiles(steps=3, last_window=y)
 
 
 def test_predict_quantiles_single_quantile():
@@ -145,7 +146,7 @@ def test_predict_quantiles_with_last_window_and_last_window_exog():
     forecaster.fit(series=y, exog=exog)
     result = forecaster.predict_quantiles(
         steps=3,
-        exog=exog_predict.iloc[:3],
+        exog=exog_predict_lw.iloc[:3],
         last_window=y_lw,
         last_window_exog=exog_lw,
     )
@@ -215,7 +216,7 @@ def test_predict_quantiles_exog_trimmed_to_steps():
     forecaster.fit(series=y, exog=exog)
     long_exog = pd.DataFrame(
         {"feat_a": np.arange(70, 80, dtype=float)},
-        index=pd.date_range("2024-07-31", periods=10, freq="ME"),
+        index=pd.date_range("2024-03-31", periods=10, freq="ME"),
     )
     # steps=5 means only the first 5 rows of long_exog (10 rows) should be used
     result = forecaster.predict_quantiles(steps=5, exog=long_exog)

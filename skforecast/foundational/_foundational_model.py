@@ -86,6 +86,18 @@ class FoundationalModel:
         """
         return self.adapter._is_fitted
 
+    @property
+    def allow_exogenous(self) -> bool:
+        """
+        Whether the underlying adapter supports exogenous variables.
+
+        Returns
+        -------
+        bool
+            `True` if the adapter accepts and uses `exog`; `False` if it
+            ignores covariates (e.g. TimesFM 2.5, Moirai-2).
+        """
+        return self.adapter.allow_exogenous
 
     def fit(
         self,
