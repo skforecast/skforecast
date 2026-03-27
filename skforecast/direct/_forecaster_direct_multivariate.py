@@ -1542,6 +1542,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         """
 
+        # TODO: Review for categoricas and bug in OneStepAhead
+
         span_index = series.index
 
         fold = [

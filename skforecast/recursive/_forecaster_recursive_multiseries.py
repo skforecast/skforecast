@@ -509,7 +509,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                categories    = 'auto',
                                sparse_output = False,
                                drop          = None,
-                               dtype         = float
+                               dtype         = int
                            )
         else:
             self.encoder = OrdinalEncoder(
@@ -1283,15 +1283,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if self.encoding == 'onehot':
             n_levels = len(self.encoding_mapping_)
             encoding_col_names = list(self.encoding_mapping_.keys())
-            encoded_values = np.eye(n_levels, dtype=float)[encoded_values]
-            for i, col_name in enumerate(encoding_col_names):
-                X_train[col_name] = encoded_values[:, i]
-            del encoded_values
+            encoded_values = pd.DataFrame(
+                                 data    = np.eye(n_levels, dtype=int)[encoded_values],
+                                 columns = encoding_col_names,
+                                 index   = train_index,
+                                 copy    = False
+                             )
+            X_train = [X_train, encoded_values]
         else:
             if self.encoding == 'ordinal_category':
                 X_train['_level_skforecast'] = pd.Categorical(encoded_values)
             else:
                 X_train['_level_skforecast'] = encoded_values
+            X_train = [X_train]
 
         y_train = pd.Series(
             data=y_train, index=train_index, name='y', copy=False
@@ -1332,7 +1336,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                    inverse_transform = False
                                )
 
-                if not X_train_exog.index.equals(X_train.index):
+                if not X_train_exog.index.equals(train_index):
                     raise ValueError(
                         "Different index for `series` and `exog` after transformation. "
                         "They must be equal to ensure the correct alignment of values."
@@ -1372,9 +1376,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 if self.categorical_features is None:
                     check_exog_dtypes(X_train_exog, call_check_exog=False)
                 
+                X_train.append(X_train_exog)
                 X_train_exog_names_out_ = X_train_exog.columns.to_list()
                 exog_dtypes_out_ = get_exog_dtypes(exog=X_train_exog)
-                X_train = pd.concat([X_train, X_train_exog], axis=1, copy=False)
+            
+        if len(X_train) > 1:
+            X_train = pd.concat(X_train, axis=1, copy=False)
+        else:
+            X_train = X_train[0]
 
         if y_train.isna().to_numpy().any():
             mask = y_train.notna().to_numpy()
@@ -2486,7 +2495,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             levels_encoded_shape = 0
 
         features_shape = n_autoreg + levels_encoded_shape + n_exog
-        # TODO: Review order C or F
         features = np.full(
             shape=(n_levels, features_shape), fill_value=np.nan, order='F', dtype=float
         )
@@ -2636,7 +2644,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         features_shape = n_autoreg + levels_encoded_shape + n_exog
         features = np.full(
-            shape=(n_samples, features_shape), fill_value=np.nan, order='C', dtype=float
+            shape=(n_samples, features_shape), fill_value=np.nan, order='F', dtype=float
         )
         if self.encoding is not None:
             features[:, n_autoreg: n_autoreg + levels_encoded_shape] = levels_encoded

@@ -142,20 +142,20 @@ def test_create_train_X_y_output_when_series_and_exog_is_None():
     results = forecaster._create_train_X_y(series=series)
     expected = (
         pd.DataFrame(
-            data = np.array([[-0.5, -1. , -1.5, 1., 0.],
-                             [ 0. , -0.5, -1. , 1., 0.],
-                             [ 0.5,  0. , -0.5, 1., 0.],
-                             [ 1. ,  0.5,  0. , 1., 0.],
-                             [-0.5, -1. , -1.5, 0., 1.],
-                             [ 0. , -0.5, -1. , 0., 1.],
-                             [ 0.5,  0. , -0.5, 0., 1.],
-                             [ 1. ,  0.5,  0. , 0., 1.]]),
+            data = np.array([[-0.5, -1. , -1.5, 1, 0],
+                             [ 0. , -0.5, -1. , 1, 0],
+                             [ 0.5,  0. , -0.5, 1, 0],
+                             [ 1. ,  0.5,  0. , 1, 0],
+                             [-0.5, -1. , -1.5, 0, 1],
+                             [ 0. , -0.5, -1. , 0, 1],
+                             [ 0.5,  0. , -0.5, 0, 1],
+                             [ 1. ,  0.5,  0. , 0, 1]]),
             index   = pd.DatetimeIndex([
                 "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07",
                 "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07"
             ]),
             columns = ['lag_1', 'lag_2', 'lag_3', '1', '2']
-        ),
+        ).astype({'1': int, '2': int}),
         pd.Series(
             data  = np.array([0., 0.5, 1., 1.5, 0., 0.5, 1., 1.5]),
             index   = pd.DatetimeIndex([
@@ -323,7 +323,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_float_int(
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        '1', '2', 'exog']
-        ).astype({'exog': dtype}),
+        ).astype({'1': int, '2': int, 'exog': dtype}),
         pd.Series(
             data  = np.array([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
@@ -645,8 +645,8 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_bool_str(e
             ]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ).assign(
-            l1   = [1.] * 5 + [0.] * 5, 
-            l2   = [0.] * 5 + [1.] * 5,
+            l1   = [1] * 5 + [0] * 5, 
+            l2   = [0] * 5 + [1] * 5,
             **exog_assign
         ).astype(exog_astype),
         pd.Series(
@@ -821,8 +821,8 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_category(c
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ).assign(
-            l1   = [1.] * 5 + [0.] * 5, 
-            l2   = [0.] * 5 + [1.] * 5,
+            l1   = [1] * 5 + [0] * 5, 
+            l2   = [0] * 5 + [1] * 5,
             exog = exog_values
         ),
         pd.Series(
@@ -928,8 +928,8 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_categor
             ]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ).assign(
-            l1     = [1.] * 5 + [0.] * 5, 
-            l2     = [0.] * 5 + [1.] * 5,
+            l1     = [1] * 5 + [0] * 5, 
+            l2     = [0] * 5 + [1] * 5,
             exog_1 = exog_1_values,
             exog_2 = exog_2_values
         ),
@@ -1036,7 +1036,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_float_i
                        'l1', 'l2', 'exog_1', 'exog_2']
         ).assign(
             exog_3 = exog_3_values, 
-        ).astype({'exog_1': float, 'exog_2': int}),
+        ).astype({'l1': int, 'l2': int, 'exog_1': float, 'exog_2': int}),
         pd.Series(
             data  = np.array([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
@@ -1120,8 +1120,8 @@ def test_create_train_X_y_output_when_exog_is_series_of_string_category(categori
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ).assign(
-            l1   = [1.] * 5 + [0.] * 5,
-            l2   = [0.] * 5 + [1.] * 5,
+            l1   = [1] * 5 + [0] * 5,
+            l2   = [0] * 5 + [1] * 5,
             exog = [0.0, 1.0, 2.0, 3.0, 4.0] * 2
         ),
         pd.Series(
@@ -1208,8 +1208,8 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_string_category(categ
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ).assign(
-            l1     = [1.] * 5 + [0.] * 5,
-            l2     = [0.] * 5 + [1.] * 5,
+            l1     = [1] * 5 + [0] * 5,
+            l2     = [0] * 5 + [1] * 5,
             exog_1 = [0.0, 1.0, 2.0, 3.0, 4.0] * 2,
             exog_2 = [0.0, 1.0, 2.0, 3.0, 4.0] * 2
         ),
@@ -1305,7 +1305,7 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_float_int_string_cate
                        'l1', 'l2', 'exog_1', 'exog_2']
         ).assign(
             exog_3 = [0.0, 1.0, 2.0, 3.0, 4.0] * 2,
-        ).astype({'exog_1': float, 'exog_2': int}),
+        ).astype({'l1': int, 'l2': int, 'exog_1': float, 'exog_2': int}),
         pd.Series(
             data  = np.array([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
@@ -1485,7 +1485,7 @@ def test_create_train_X_y_output_when_series_10_and_transformer_series_is_Standa
                        [ 1.21854359,  0.87038828,  0.52223297,  0.17407766, -0.17407766, 0.,  1.]]),
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'l1', 'l2']
-        ),
+        ).astype({'l1': int, 'l2': int}),
         pd.Series(
             data  = np.array([0.17407766, 0.52223297, 0.87038828, 1.21854359, 1.5666989 ,
                               0.17407766, 0.52223297, 0.87038828, 1.21854359, 1.5666989 ]),
@@ -1564,7 +1564,7 @@ def test_create_train_X_y_output_when_exog_is_None_and_transformer_exog_is_not_N
                              [5.0, 4.0, 3.0, 0., 1.]]),
             index   = pd.Index([3, 4, 5, 6, 3, 4, 5, 6]),
             columns = ['lag_1', 'lag_2', 'lag_3', '1', '2']
-        ),
+        ).astype({'1': int, '2': int}),
         pd.Series(
             data  = np.array([3., 4., 5., 6., 3., 4., 5., 6.]),
             index = pd.Index([3, 4, 5, 6, 3, 4, 5, 6]),
@@ -1666,7 +1666,7 @@ def test_create_train_X_y_output_when_transformer_series_and_transformer_exog(tr
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', '1', '2', 
                        'exog_1', 'exog_2_a', 'exog_2_b']
-        ),
+        ).astype({'1': int, '2': int}),
         pd.Series(
             data  = np.array([-0.52223297, -0.17407766,  0.17407766,  0.52223297,  0.87038828,
                                1.21854359,  1.5666989 , -0.52223297, -0.17407766,  0.17407766,
@@ -1769,7 +1769,7 @@ def test_create_train_X_y_output_when_series_different_length_and_exog_is_datafr
                        'l1', 'l2', 'exog_1', 'exog_2']
         ).assign(exog_3 = [0.0, 1.0, 2.0, 3.0, 4.0, 
                           2.0, 3.0, 4.0]
-        ).astype({'exog_1': float, 'exog_2': int}),
+        ).astype({'l1': int, 'l2': int, 'exog_1': float, 'exog_2': int}),
         pd.Series(
             data  = np.array([5, 6, 7, 8, 9, 7, 8, 9]),
             index   = pd.Index(
@@ -1895,7 +1895,7 @@ def test_create_train_X_y_output_when_transformer_series_and_transformer_exog_wi
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', 'l1', 'l2', 'l3',
                        'exog_1', 'exog_2_a', 'exog_2_b']
-        ),
+        ).astype({'l1': int, 'l2': int, 'l3': int}),
         pd.Series(
             data  = np.array([-0.5222329678670935, -0.17407765595569785, 0.17407765595569785, 0.5222329678670935, 0.8703882797784892, 1.2185435916898848, 1.5666989036012806, 
                               -0.2182178902359924, 0.2182178902359924, 0.6546536707079772, 1.091089451179962, 1.5275252316519468, 
@@ -1981,7 +1981,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_y_train():
             index   = pd.Index([6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        'l1', 'l2', 'exog']
-        ),
+        ).astype({'l1': int, 'l2': int}),
         pd.Series(
             data  = np.array([6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index([6, 7, 8, 9, 5, 6, 7, 8, 9]),
@@ -2079,7 +2079,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_y_train_datetime()
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        'l1', 'l2', 'exog']
-        ),
+        ).astype({'l1': int, 'l2': int}),
         pd.Series(
             data  = np.array([6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index(
@@ -2171,7 +2171,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_T
             index   = pd.Index([9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        'l1', 'l2', 'exog']
-        ),
+        ).astype({'l1': int, 'l2': int}),
         pd.Series(
             data  = np.array([9, 5, 6, 7, 8, 9]),
             index = pd.Index([9, 5, 6, 7, 8, 9]),
@@ -2277,7 +2277,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_T
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        'l1', 'l2', 'exog']
-        ),
+        ).astype({'l1': int, 'l2': int}),
         pd.Series(
             data  = np.array([9, 5, 6, 7, 8, 9]),
             index = pd.Index(
@@ -2372,7 +2372,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_F
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        'l1', 'l2', 'exog']
-        ),
+        ).astype({'l1': int, 'l2': int}),
         pd.Series(
             data  = np.array([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
@@ -2471,7 +2471,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_F
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        'l1', 'l2', 'exog']
-        ),
+        ).astype({'l1': int, 'l2': int}),
         pd.Series(
             data  = np.array([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index(
@@ -2611,8 +2611,7 @@ def test_create_train_X_y_output_series_dict_and_exog_dict():
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', 'l1', 'l2', 'l3', 
                        'exog_1', 'exog_2']
-        ).astype({'lag_1': float, 'lag_2': float, 'lag_3': float, 'l1': float, 
-                  'l2': float, 'l3': float, 'exog_1': float, 'exog_2': float}
+        ).astype({'l1': int, 'l2': int, 'l3': int, 'exog_1': float, 'exog_2': float}
         ),
         pd.Series(
             data  = np.array([4., 5., 6., 7., 8., 9., 18., 19., 23., 24.]),
@@ -3261,9 +3260,7 @@ def test_create_train_X_y_output_series_dict_and_exog_dict_window_features():
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', 'roll_mean_3', 'roll_median_3', 'roll_sum_4',
                        'l1', 'l2', 'l3', 'exog_1', 'exog_2']
-        ).astype({'lag_1': float, 'lag_2': float, 'lag_3': float, 
-                  'roll_mean_3': float, 'roll_median_3': float, 'roll_sum_4': float, 
-                  'l1': float, 'l2': float, 'l3': float, 'exog_1': float, 'exog_2': float}
+        ).astype({'l1': int, 'l2': int, 'l3': int, 'exog_1': float, 'exog_2': float}
         ),
         pd.Series(
             data  = np.array([4., 5., 6., 7., 8., 9., 19., 24.]),
