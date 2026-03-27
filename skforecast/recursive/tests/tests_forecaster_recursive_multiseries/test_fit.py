@@ -1,5 +1,6 @@
 # Unit test fit ForecasterRecursiveMultiSeries
 # ==============================================================================
+import re
 import pytest
 from pytest import approx
 import numpy as np
@@ -12,6 +13,8 @@ from sklearn.preprocessing import OneHotEncoder
 from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
+
+from skforecast.exceptions import MissingExogWarning
 from skforecast.preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
@@ -130,6 +133,7 @@ def test_forecaster_series_exog_features_stored():
         'exog_2_a': np.dtype(float), 
         'exog_2_b': np.dtype(float)
     }
+    categorical_features_names_in_ = []
     X_train_series_names_in_ = ['l1', 'l2']
     X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
     X_train_exog_names_out_ = ['exog_1', 'exog_2_a', 'exog_2_b']
@@ -144,7 +148,7 @@ def test_forecaster_series_exog_features_stored():
     assert forecaster.exog_names_in_ == exog_names_in_
     assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
     assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
-    assert forecaster.categorical_features_names_in_ == []
+    assert forecaster.categorical_features_names_in_ == categorical_features_names_in_
     assert forecaster.X_train_series_names_in_ == X_train_series_names_in_
     assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
@@ -166,7 +170,17 @@ def test_forecaster_series_not_matching_exog_features_stored():
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, window_features=rolling, transformer_exog=transformer_exog
     )
-    forecaster.fit(series=series_dict_range, exog=exog_dict_no_match)
+
+    warn_msg = re.escape(
+        "No exogenous variables were found in `exog` that match the "
+        "series IDs provided in `series`. As a result, no exogenous "
+        "variables are included in the training matrices. Please "
+        "review the series IDs in `exog` and ensure they match the "
+        "following IDs: ['l1', 'l2']. The forecaster will be "
+        "trained without exogenous variables."
+    )
+    with pytest.warns(MissingExogWarning, match = warn_msg):
+        forecaster.fit(series=series_dict_range, exog=exog_dict_no_match)
 
     series_names_in_ = ['l1', 'l2']
     exog_in_ = False
@@ -174,6 +188,7 @@ def test_forecaster_series_not_matching_exog_features_stored():
     exog_names_in_ = None
     exog_dtypes_in_ = None
     exog_dtypes_out_ = None
+    categorical_features_names_in_ = None
     X_train_series_names_in_ = ['l1', 'l2']
     X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
     X_train_exog_names_out_ = None
@@ -187,7 +202,7 @@ def test_forecaster_series_not_matching_exog_features_stored():
     assert forecaster.exog_names_in_ == exog_names_in_
     assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
     assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
-    assert forecaster.categorical_features_names_in_ == []
+    assert forecaster.categorical_features_names_in_ == categorical_features_names_in_
     assert forecaster.X_train_series_names_in_ == X_train_series_names_in_
     assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_

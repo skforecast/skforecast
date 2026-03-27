@@ -61,8 +61,8 @@ def test_create_window_features_TypeError_when_transform_batch_not_pandas():
         LinearRegression(), lags=5, window_features=wf
     )
     err_msg = re.escape(
-        ("The method `transform_batch` of WindowFeatureNoPandas "
-         "must return a pandas DataFrame.")
+        "The method `transform_batch` of WindowFeatureNoPandas "
+        "must return a pandas DataFrame."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster._create_window_features(y=y, train_index=train_index)
@@ -81,9 +81,9 @@ def test_create_window_features_ValueError_when_transform_batch_not_correct_leng
         LinearRegression(), lags=5, window_features=wf
     )
     err_msg = re.escape(
-        ("The method `transform_batch` of WindowFeatureNoCorrectLength "
-         "must return a DataFrame with the same number of rows as "
-         "the input time series - `window_size`: 5.")
+        "The method `transform_batch` of WindowFeatureNoCorrectLength "
+        "must return a DataFrame with the same number of rows as "
+        "the input time series - `window_size`: 5."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_window_features(y=y, train_index=train_index)
@@ -104,9 +104,9 @@ def test_create_window_features_ValueError_when_transform_batch_not_correct_inde
         LinearRegression(), lags=5, window_features=wf
     )
     err_msg = re.escape(
-        ("The method `transform_batch` of WindowFeatureNoCorrectIndex "
-         "must return a DataFrame with the same index as "
-         "the input time series - `window_size`.")
+        "The method `transform_batch` of WindowFeatureNoCorrectIndex "
+        "must return a DataFrame with the same index as "
+        "the input time series - `window_size`."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_window_features(y=y_datetime, train_index=train_index)
