@@ -5,8 +5,12 @@ import pytest
 import numpy as np
 import pandas as pd
 from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
+from catboost import CatBoostRegressor
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
+from sklearn.compose import make_column_transformer, make_column_selector
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error
 from scipy.stats import norm
 
@@ -88,8 +92,7 @@ def test_backtesting_forecaster_multiseries_TypeError_when_forecaster_not_a_fore
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_not_refit(forecaster, n_jobs):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
-    without refit with mocked 
-    (mocked done in Skforecast v0.5.0).
+    without refit with mocked (mocked done in Skforecast v0.5.0).
     """
     cv = TimeSeriesFold(
             initial_train_size = len(series_dict_range['l1']) - 12,
@@ -4748,5 +4751,326 @@ def test_output_backtesting_forecaster_ForecasterDirectMultiVariate_fold_stride_
     ).astype({'fold': int})
     expected_predictions.insert(0, 'level', np.tile(['l1'], len(expected_predictions)))
                                    
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+# ******************************************************************************
+# * Categorical features                                                       *
+# ******************************************************************************
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_no_refit_categorical_features_auto_with_mocked():
+    """
+    Test output of backtesting_forecaster_multiseries in
+    ForecasterRecursiveMultiSeries with no refit,
+    categorical_features='auto', transformer_exog with StandardScaler for
+    numeric columns, and exog with string and numeric columns.
+    Estimator is HistGradientBoostingRegressor.
+    """
+    rng = np.random.default_rng(42)
+    exog_cat = pd.DataFrame({
+        'exog_num_1': rng.random(50),
+        'exog_num_2': rng.random(50),
+        'exog_cat_1': ['a', 'b', 'c'] * 16 + ['a', 'b'],
+        'exog_cat_2': pd.Categorical(['X', 'Y'] * 25)
+    })
+
+    transformer_exog = make_column_transformer(
+                           (StandardScaler(), make_column_selector(dtype_include=np.number)),
+                           remainder='passthrough',
+                           verbose_feature_names_out=False,
+                       ).set_output(transform='pandas')
+
+    expected_metric = pd.DataFrame(
+        data    = [['l1', 0.24365815227401977],
+                   ['l2', 0.19527980897358788]],
+        columns = ['levels', 'mean_absolute_error']
+    )
+    expected_predictions = pd.DataFrame({
+        'l1': np.array([
+            0.4585004, 0.55136151, 0.56366294, 0.70218157,
+            0.60312407, 0.51909777, 0.45212952, 0.46178819,
+            0.52327531, 0.48410623, 0.39759812, 0.55023856,
+        ]),
+        'l2': np.array([
+            0.36939255, 0.58356746, 0.55363474, 0.59851332,
+            0.47777808, 0.38234516, 0.53561326, 0.65388352,
+            0.57183009, 0.4324733, 0.48820272, 0.58954394,
+        ])},
+        index=pd.RangeIndex(start=38, stop=50, step=1)
+    )
+    expected_predictions.insert(1, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+    expected_predictions = expected_df_to_long_format(
+        expected_predictions, method='backtesting-predict'
+    )
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = HistGradientBoostingRegressor(random_state=123),
+                     lags                 = 3,
+                     encoding             = 'ordinal',
+                     transformer_series   = None,
+                     transformer_exog     = transformer_exog,
+                     categorical_features = 'auto'
+                 )
+
+    cv = TimeSeriesFold(
+            steps                 = 4,
+            initial_train_size    = len(series_dict_range['l1']) - 12,
+            window_size           = None,
+            differentiation       = None,
+            refit                 = False,
+            fixed_train_size      = True,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = False,
+        )
+    metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                               forecaster            = forecaster,
+                                               series                = series_dict_range,
+                                               cv                    = cv,
+                                               levels                = None,
+                                               metric                = 'mean_absolute_error',
+                                               add_aggregated_metric = False,
+                                               exog                  = exog_cat,
+                                               verbose               = False
+                                           )
+
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_no_refit_categorical_features_auto_with_mocked():
+    """
+    Test output of backtesting_forecaster_multiseries in
+    ForecasterDirectMultiVariate with no refit,
+    categorical_features='auto', transformer_exog with StandardScaler for
+    numeric columns, and exog with string and numeric columns.
+    Estimator is CatBoostRegressor.
+    """
+    rng = np.random.default_rng(42)
+    exog_cat = pd.DataFrame({
+        'exog_num_1': rng.random(50),
+        'exog_num_2': rng.random(50),
+        'exog_cat_1': ['a', 'b', 'c'] * 16 + ['a', 'b'],
+        'exog_cat_2': pd.Categorical(['X', 'Y'] * 25)
+    })
+
+    transformer_exog = make_column_transformer(
+                           (StandardScaler(), make_column_selector(dtype_include=np.number)),
+                           remainder='passthrough',
+                           verbose_feature_names_out=False,
+                       ).set_output(transform='pandas')
+
+    expected_metric = pd.DataFrame(
+        data    = [['l1', 0.23700085444331465]],
+        columns = ['levels', 'mean_absolute_error']
+    )
+    expected_predictions = pd.DataFrame({
+        'l1': np.array([
+            0.47568264, 0.47802318, 0.53233797, 0.64214284,
+            0.56794786, 0.48509545, 0.52069729, 0.44968413,
+            0.41865123, 0.4266115, 0.45018425, 0.43771902,
+        ])},
+        index=pd.RangeIndex(start=38, stop=50, step=1)
+    )
+    expected_predictions.insert(1, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+    expected_predictions = expected_df_to_long_format(
+        expected_predictions, method='backtesting-predict'
+    )
+
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator            = CatBoostRegressor(
+                         random_state=123, silent=True, allow_writing_files=False
+                     ),
+                     level                = 'l1',
+                     lags                 = 3,
+                     steps                = 4,
+                     transformer_series   = None,
+                     transformer_exog     = transformer_exog,
+                     categorical_features = 'auto'
+                 )
+
+    cv = TimeSeriesFold(
+            steps                 = 4,
+            initial_train_size    = len(series_wide_range) - 12,
+            window_size           = None,
+            differentiation       = None,
+            refit                 = False,
+            fixed_train_size      = True,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = False,
+        )
+    metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                               forecaster            = forecaster,
+                                               series                = series_wide_range,
+                                               cv                    = cv,
+                                               levels                = 'l1',
+                                               metric                = 'mean_absolute_error',
+                                               add_aggregated_metric = False,
+                                               exog                  = exog_cat,
+                                               verbose               = False
+                                           )
+
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_categorical_features_auto_with_mocked():
+    """
+    Test output of backtesting_forecaster_multiseries in
+    ForecasterRecursiveMultiSeries with refit,
+    categorical_features='auto', transformer_exog with StandardScaler for
+    numeric columns, and exog with string and numeric columns.
+    Estimator is XGBRegressor.
+    """
+    rng = np.random.default_rng(42)
+    exog_cat = pd.DataFrame({
+        'exog_num_1': rng.random(50),
+        'exog_num_2': rng.random(50),
+        'exog_cat_1': ['a', 'b', 'c'] * 16 + ['a', 'b'],
+        'exog_cat_2': pd.Categorical(['X', 'Y'] * 25)
+    })
+
+    transformer_exog = make_column_transformer(
+                           (StandardScaler(), make_column_selector(dtype_include=np.number)),
+                           remainder='passthrough',
+                           verbose_feature_names_out=False,
+                       ).set_output(transform='pandas')
+
+    expected_metric = pd.DataFrame(
+        data    = [['l1', 0.2819866076310523],
+                   ['l2', 0.26503932731196717]],
+        columns = ['levels', 'mean_absolute_error']
+    )
+    expected_predictions = pd.DataFrame({
+        'l1': np.array([
+            0.47535372, 0.72084892, 0.08306736, 0.38158172,
+            0.73890454, 0.2905409, 0.43967831, 0.49131632,
+            0.44075468, 0.38727483, 0.54208934, 0.62550145,
+        ]),
+        'l2': np.array([
+            0.57998526, 0.39582357, 0.26319486, 0.41999069,
+            0.65244019, 0.58832878, 0.20413074, 0.56300819,
+            0.4344615, 0.53283393, 0.5713653, 0.49293163,
+        ])},
+        index=pd.RangeIndex(start=38, stop=50, step=1)
+    )
+    expected_predictions.insert(1, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+    expected_predictions = expected_df_to_long_format(
+        expected_predictions, method='backtesting-predict'
+    )
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = XGBRegressor(random_state=123, verbosity=0),
+                     lags                 = 3,
+                     encoding             = 'ordinal',
+                     transformer_series   = None,
+                     transformer_exog     = transformer_exog,
+                     categorical_features = 'auto'
+                 )
+
+    cv = TimeSeriesFold(
+            steps                 = 4,
+            initial_train_size    = len(series_dict_range['l1']) - 12,
+            window_size           = None,
+            differentiation       = None,
+            refit                 = True,
+            fixed_train_size      = False,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = False,
+        )
+
+    metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                               forecaster            = forecaster,
+                                               series                = series_dict_range,
+                                               cv                    = cv,
+                                               levels                = None,
+                                               metric                = 'mean_absolute_error',
+                                               add_aggregated_metric = False,
+                                               exog                  = exog_cat,
+                                               verbose               = False,
+                                               suppress_warnings     = True
+                                           )
+
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_refit_categorical_features_auto_with_mocked():
+    """
+    Test output of backtesting_forecaster_multiseries in
+    ForecasterDirectMultiVariate with refit,
+    categorical_features='auto', transformer_exog with StandardScaler for
+    numeric columns, and exog with string and numeric columns.
+    Estimator is LGBMRegressor.
+    """
+    rng = np.random.default_rng(42)
+    exog_cat = pd.DataFrame({
+        'exog_num_1': rng.random(50),
+        'exog_num_2': rng.random(50),
+        'exog_cat_1': ['a', 'b', 'c'] * 16 + ['a', 'b'],
+        'exog_cat_2': pd.Categorical(['X', 'Y'] * 25)
+    })
+
+    transformer_exog = make_column_transformer(
+                           (StandardScaler(), make_column_selector(dtype_include=np.number)),
+                           remainder='passthrough',
+                           verbose_feature_names_out=False,
+                       ).set_output(transform='pandas')
+
+    expected_metric = pd.DataFrame(
+        data    = [['l1', 0.21879851179885978]],
+        columns = ['levels', 'mean_absolute_error']
+    )
+    expected_predictions = pd.DataFrame({
+        'l1': np.array([
+            0.48800043, 0.48053, 0.47137008, 0.48606641,
+            0.50533821, 0.50396381, 0.50131059, 0.49276926,
+            0.55077197, 0.47710173, 0.52735778, 0.45638077,
+        ])},
+        index=pd.RangeIndex(start=38, stop=50, step=1)
+    )
+    expected_predictions.insert(1, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+    expected_predictions = expected_df_to_long_format(
+        expected_predictions, method='backtesting-predict'
+    )
+
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator            = LGBMRegressor(random_state=123, verbose=-1),
+                     level                = 'l1',
+                     lags                 = 3,
+                     steps                = 4,
+                     transformer_series   = None,
+                     transformer_exog     = transformer_exog,
+                     categorical_features = 'auto'
+                 )
+
+    cv = TimeSeriesFold(
+            steps                 = 4,
+            initial_train_size    = len(series_wide_range) - 12,
+            window_size           = None,
+            differentiation       = None,
+            refit                 = True,
+            fixed_train_size      = False,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = False,
+        )
+    metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                               forecaster            = forecaster,
+                                               series                = series_wide_range,
+                                               cv                    = cv,
+                                               levels                = 'l1',
+                                               metric                = 'mean_absolute_error',
+                                               add_aggregated_metric = False,
+                                               exog                  = exog_cat,
+                                               verbose               = False
+                                           )
+
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)

@@ -718,7 +718,7 @@ def reshape_exog_long_to_dict(
 
     if consolidate_dtypes and nans_introduced:
         new_dtypes = {col: float for col in cols_float_dtype}
-        exog_dict = {k: v.astype(new_dtypes) for k, v in exog_dict.items()}
+        exog_dict = {k: v.astype(new_dtypes, copy=False) for k, v in exog_dict.items()}
 
     if drop_all_nan_cols:
         exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}
@@ -2551,7 +2551,7 @@ class QuantileBinner:
         
         bin_indices = np.searchsorted(
             self.internal_edges_, X, side='right'
-        ).astype(self.dtype)
+        ).astype(self.dtype, copy=False)
 
         return bin_indices
 

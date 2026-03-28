@@ -29,8 +29,7 @@ from ..utils import (
     transform_numpy,
     transform_dataframe,
     get_style_repr_html,
-    manage_warnings,
-    initialize_estimator
+    manage_warnings
 )
 
 
@@ -69,8 +68,6 @@ class ForecasterStats():
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : object, list of objects
-        **Deprecated**, alias for `estimator`.
     fit_kwargs : Ignored
         Not used, present here for API consistency by convention.
     
@@ -182,11 +179,10 @@ class ForecasterStats():
     
     def __init__(
         self,
-        estimator: object | list[object] = None,
+        estimator: object | list[object],
         transformer_y: object | None = None,
         transformer_exog: object | None = None,
         forecaster_id: str | int | None = None,
-        regressor: object = None,
         fit_kwargs: Any = None,
     ) -> None:
         
@@ -200,9 +196,6 @@ class ForecasterStats():
             'aeon.forecasting.stats._ets.ETS',
             'sktime.forecasting.arima._pmdarima.ARIMA'
         )
-
-        # TODO: Remove 0.21. Handle deprecated 'regressor' argument
-        estimator = initialize_estimator(estimator, regressor)
         
         if not isinstance(estimator, list):
             estimator = [estimator]
@@ -224,7 +217,7 @@ class ForecasterStats():
         # TODO: Evaluate if include 'aggregate' parameter for multiple estimators, it
         # aggregates predictions from all estimators.
         self.estimators              = estimator
-        self.estimators_             = [copy(est) for est in self.estimators]
+        self.estimators_             = [clone(est) for est in self.estimators]
         self.estimator_ids           = self._generate_ids(self.estimators)
         self.estimator_types         = estimator_types
         self.estimator_names_        = [None] * len(self.estimators)
@@ -333,6 +326,7 @@ class ForecasterStats():
             "supports_window_features": False,
             "supports_transformer_series": True,
             "supports_transformer_exog": True,
+            "supports_categorical_features": False,
             "supports_weight_func": False,
             "supports_differentiation": False,
 
@@ -341,37 +335,6 @@ class ForecasterStats():
             "probabilistic_methods": ["distribution"],
             "handles_binned_residuals": False
         }
-
-    def __setstate__(self, state: dict) -> None:
-        """
-        Custom __setstate__ to ensure backward compatibility when unpickling
-        Forecaster objects created with older versions of skforecast.
-
-        Parameters
-        ----------
-        state : dict
-            The state dictionary from the pickled object.
-
-        Returns
-        -------
-        None
-
-        """
-
-        # Migration: 'regressor' renamed to 'estimator' in version 0.18.0
-        if 'regressor' in state and 'estimator' not in state:
-            state['estimator'] = state.pop('regressor')
-
-        self.__dict__.update(state)
-
-    @property
-    def regressor(self):
-        warnings.warn(
-            "The `regressor` attribute is deprecated and will be removed in future "
-            "versions. Use `estimator` instead.",
-            FutureWarning
-        )
-        return self.estimators
 
     def _generate_ids(self, estimators: list) -> list[str]:
         """
@@ -675,7 +638,7 @@ class ForecasterStats():
         
         """
 
-        self.estimators_             = [copy(est) for est in self.estimators]
+        self.estimators_             = [clone(est) for est in self.estimators]
         self.estimator_names_        = [None] * len(self.estimators)
         self.estimator_params_       = None
         self.last_window_            = None

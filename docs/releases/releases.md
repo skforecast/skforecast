@@ -10,20 +10,62 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.22.0 <small>In development</small> { id="0.22.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span> New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Significantly reduced memory consumption and improved training speed in direct Forecasters (<code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>) when using exogenous variables. Memory usage is reduced by up to **90%** and fit times improve by **1.2x–3.8x** in large-scale scenarios, enabling training with more steps and exogenous features without running into memory limitations.
+
++ <span class="badge text-bg-api-change">API Change</span> The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
+
++ <span class="badge text-bg-danger">Fix</span> Minor bug fixes, see details in the "Fixed" section below.
+
+
+**Added**
+
++ New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
+
+
+**Changed**
+
++ The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
+
++ Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
+
++ Significantly reduced memory consumption and improved training speed in direct Forecasters (<code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>) when using exogenous variables. Memory usage is reduced by up to 90% and fit times improve by 1.2x–3.8x in large-scale scenarios, enabling training with more steps and exogenous features without running into memory limitations.
+
+
+**Fixed**
+
++ Fixed an issue in <code>[backtesting_forecaster_multiseries]</code> where the `tqdm` progress bar completed during data preparation instead of tracking the actual fold computation, giving the false impression that backtesting had finished.
+
++ Fixed an issue in <code>[ForecasterRecursiveClassifier]</code> where the lags were not correctly passed as categorical features when using categorical exogenous variables.
+
++ Fixed an issue in the hyperparameter search when using a <code>[OneStepAheadFold]</code> validation. During training, the forecaster arguments `sample_weight` and `fit_kwargs` were not set correctly.
+
+
 ## 0.21.0 <small>Mar 13, 2026</small> { id="0.21.0" }
 
 The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span> Added **AI context files** (`llms.txt`, `llms-full.txt`) following the [llmstxt.org](https://llmstxt.org) spec, IDE integration for GitHub Copilot, Claude Code, Cursor, and Aider, and 12 modular workflow skills so that AI coding assistants can generate accurate, up-to-date skforecast code. [User guide](../quick-start/ai-assisted-forecasting.md)
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized internal prediction loops in `_recursive_predict` and `_recursive_predict_bootstrapping` for <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>. Changes include vectorized lag indexing for non-contiguous lags (~50% faster with 15-20 lags), pre-computation of loop-invariant values, and reduced redundant operations. These improvements result in faster `predict` methods calls, especially in scenarios with many lags and bootstrap iterations.
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized and refactored Bayesian search functions (<code>bayesian_search_forecaster</code>, <code>bayesian_search_forecaster_multiseries</code>). Key improvements include: better default TPE sampler configuration (`multivariate=True`, `group=True`, `consider_endpoints=True`) for more effective hyperparameter optimization, caching of train/test splits in `OneStepAheadFold` to avoid redundant computation when the same lag configuration is evaluated multiple times, default `n_trials` increased from 10 to 20, and `kwargs_create_study`/`kwargs_study_optimize` defaults changed from `{}` to `None`. Additionally, the `return_best` refit summary message is now controlled by the `verbose` parameter across all search functions.
 
-+ <span class="badge text-bg-api-change">API Change</span> <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> now return the full optuna `Study` object as the second element of the tuple instead of `best_trial`. The best trial is still accessible via `study.best_trial`. This enables access to all optimization trials, optuna visualizations, and study resumption.
-
 + <span class="badge text-bg-enhancement">Enhancement</span> <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> results DataFrame now includes a `trial_number` column, allowing users to correlate result rows with specific optuna trials via `study.trials[trial_number]`.
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> now return the full optuna `Study` object as the second element of the tuple instead of `best_trial`. The best trial is still accessible via `study.best_trial`. This enables access to all optimization trials, optuna visualizations, and study resumption.
 
 
 **Added**
+
++ Added machine-readable AI context files (`llms.txt`, `llms-full.txt`) following the [llmstxt.org](https://llmstxt.org) spec, automatic IDE integration (`.github/copilot-instructions.md`, `AGENTS.md`), 12 workflow skills in `skills/`, and a generation script (`tools/ai/generate_ai_context_files.py`) to keep all derived files in sync. [User guide](../quick-start/ai-assisted-forecasting.md)
 
 + Added <code>[TimeSeriesSplitter]</code> class to the experimental module. This class provides a flexible way to split time series data into training and testing sets while respecting temporal order and allowing for various configurations of train/test sizes, gaps, and strides ([#1117](https://github.com/skforecast/skforecast/pull/1117)).
 
@@ -34,9 +76,9 @@ The main changes in this release are:
 
 + Optimized and refactored Bayesian search functions (`bayesian_search_forecaster`, `bayesian_search_forecaster_multiseries`). Key improvements include: better default TPE sampler configuration (`multivariate=True`, `group=True`, `consider_endpoints=True`) for more effective hyperparameter optimization, caching of train/test splits in `OneStepAheadFold` to avoid redundant computation when the same lag configuration is evaluated multiple times, default `n_trials` increased from 10 to 20, and `kwargs_create_study`/`kwargs_study_optimize` defaults changed from `{}` to `None`. Additionally, the `return_best` refit summary message is now controlled by the `verbose` parameter across all search functions.
 
-+ <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> now return the full optuna `Study` object as the second element of the tuple instead of `best_trial`. The best trial is still accessible via `study.best_trial`.
-
 + <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> results DataFrame now includes a `trial_number` column, allowing users to correlate result rows with specific optuna trials via `study.trials[trial_number]`.
+
++ <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> now return the full optuna `Study` object as the second element of the tuple instead of `best_trial`. The best trial is still accessible via `study.best_trial`.
 
 + `kwargs_read_csv` has been renamed to `kwargs_read` in the `fetch_dataset` function. The new name reflects that the keyword arguments are passed to both `pd.read_csv` and `pd.read_parquet`, depending on the dataset file type.
 

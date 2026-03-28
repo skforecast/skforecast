@@ -17,14 +17,8 @@ from sklearn.pipeline import Pipeline
 from tqdm.auto import tqdm
 
 from ..exceptions import IgnoredArgumentWarning, OneStepAheadValidationWarning
-from ..metrics import add_y_train_argument, _get_metric
+from ..metrics import add_y_train_argument, any_metric_needs_y_train, _get_metric
 from ..utils import check_interval, date_to_index_position
-
-
-# TODO: Hay cálculos que se pueden simplificar para evitar calcular y_train en 
-# TODAS las funciones de métricas usando if ignore_y_train: cuando ninguna métrica lo 
-# necesita. esto también se puede hacer en el backtesting single seires, que tiene
-# la lógica en la propia funcion. Analiza bien.
 
 
 def initialize_lags_grid(
@@ -724,14 +718,17 @@ def select_n_jobs_backtesting(
 def _calculate_metrics_one_step_ahead(
     forecaster: object,
     metrics: list,
-    X_train: pd.DataFrame,
-    y_train: pd.Series | dict[int, pd.Series],
-    X_test: pd.DataFrame,
-    y_test: pd.Series | dict[int, pd.Series]
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    sample_weight: np.ndarray | None,
+    fit_kwargs: dict[str, object]
 ) -> list:
     """
     Calculate metrics when predictions are one-step-ahead. When forecaster is
-    of type ForecasterDirect only the estimator for step 1 is used.
+    of type ForecasterDirect only the estimator for step 1 is used. Data is
+    expected as numpy arrays already filtered and ready for fitting.
 
     Parameters
     ----------
@@ -739,14 +736,19 @@ def _calculate_metrics_one_step_ahead(
         Forecaster model.
     metrics : list
         List of metrics.
-    X_train : pandas DataFrame
+    X_train : numpy ndarray
         Predictor values used to train the model.
-    y_train : pandas Series, dict
+    y_train : numpy ndarray
         Target values related to each row of `X_train`.
-    X_test : pandas DataFrame
+    X_test : numpy ndarray
         Predictor values used to test the model.
-    y_test : pandas Series, dict
+    y_test : numpy ndarray
         Target values related to each row of `X_test`.
+    sample_weight : numpy ndarray, None
+        Precomputed sample weights for training. `None` if no weight function
+        is defined.
+    fit_kwargs : dict
+        Precomputed keyword arguments for `estimator.fit`. Can be empty dict.
 
     Returns
     -------
@@ -755,43 +757,47 @@ def _calculate_metrics_one_step_ahead(
     
     """
 
+    needs_y_train = any_metric_needs_y_train(metrics)
+
     if type(forecaster).__name__ == 'ForecasterDirect':
-
-        step = 1  # Only the model for step 1 is optimized.
-        X_train, y_train = forecaster.filter_train_X_y_for_step(
-                               step    = step,
-                               X_train = X_train,
-                               y_train = y_train
-                           )
-        X_test, y_test = forecaster.filter_train_X_y_for_step(
-                             step    = step,  
-                             X_train = X_test,
-                             y_train = y_test
-                         )
-        forecaster.estimators_[step].fit(X_train, y_train)
-        y_pred = forecaster.estimators_[step].predict(X_test)
-
+        # NOTE: Only step 1 is optimized in one-step-ahead validation.
+        estimator = forecaster.estimators_[1]
     else:
-        forecaster.estimator.fit(X_train, y_train)
-        y_pred = forecaster.estimator.predict(X_test)
+        estimator = forecaster.estimator
 
-    y_true = y_test.to_numpy()
-    y_pred = y_pred.ravel()
-    y_train = y_train.to_numpy()
+    if sample_weight is not None:
+        estimator.fit(
+            X             = X_train,
+            y             = y_train,
+            sample_weight = sample_weight,
+            **fit_kwargs
+        )
+    else:
+        estimator.fit(X=X_train, y=y_train, **fit_kwargs)
+
+    y_true = y_test
+    y_pred = estimator.predict(X_test).ravel()
+
+    if not needs_y_train:
+        y_train = None
 
     if forecaster.differentiation is not None:
         y_true = forecaster.differentiator.inverse_transform_next_window(y_true)
         y_pred = forecaster.differentiator.inverse_transform_next_window(y_pred)
-        y_train = forecaster.differentiator.inverse_transform_training(y_train)
+        if needs_y_train:
+            y_train = forecaster.differentiator.inverse_transform_training(y_train)
 
     if forecaster.transformer_y is not None:
         y_true = forecaster.transformer_y.inverse_transform(y_true.reshape(-1, 1))
         y_pred = forecaster.transformer_y.inverse_transform(y_pred.reshape(-1, 1))
-        y_train = forecaster.transformer_y.inverse_transform(y_train.reshape(-1, 1))
+        if needs_y_train:
+            y_train = forecaster.transformer_y.inverse_transform(y_train.reshape(-1, 1))
 
     y_true = y_true.ravel()
     y_pred = y_pred.ravel()
-    y_train = y_train.ravel()
+    if needs_y_train:
+        y_train = y_train.ravel()
+    
     metric_values = [
         m(y_true=y_true, y_pred=y_pred, y_train=y_train) for m in metrics
     ]
@@ -1106,25 +1112,8 @@ def _calculate_metrics_backtesting_multiseries(
     # if not isinstance(add_aggregated_metric, bool):
     #     raise TypeError("`add_aggregated_metric` must be a boolean.")
     
-    # TODO: review list of metric that do not need y_train
-    metrics_no_y_train = [
-        # Regression metrics
-        "mean_squared_error",
-        "mean_absolute_error",
-        "mean_absolute_percentage_error",
-        "mean_squared_log_error",
-        "median_absolute_error",
-        "symmetric_mean_absolute_percentage_error",
-
-        # Classification metrics
-        "accuracy_score",
-        "balanced_accuracy_score",
-        "f1_score",
-        "precision_score",
-        "recall_score"
-    ]
     metric_names = [m.__name__ for m in metrics]
-    ignore_y_train = all(name in metrics_no_y_train for name in metric_names)
+    needs_y_train = any_metric_needs_y_train(metrics)
 
     levels_in_predictions = predictions.index.get_level_values('level').unique()
 
@@ -1147,31 +1136,32 @@ def _calculate_metrics_backtesting_multiseries(
         how         = "inner",
     ).dropna(axis=0, how="any")
 
-    train_indexes = []
-    for i, fold in enumerate(folds):
-        fit_fold = fold[-1]
-        if i == 0 or fit_fold:
-            train_iloc_start = fold[1][0]
-            train_iloc_end = fold[1][1]
-            train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
-    
-    train_indexes = np.unique(np.concatenate(train_indexes))
-    train_indexes = span_index[train_indexes]
-    train_indexes = pd.MultiIndex.from_product([
-        levels_in_predictions,
-        train_indexes,
-    ])
-    series_train = series.loc[series.index.isin(train_indexes)]
-    # NOTE: Exclude first window_size observations used to create predictors
-    series_train = series_train[series_train.groupby(level="level").cumcount() >= window_size]
-    
+    if needs_y_train:
+        train_indexes = []
+        for i, fold in enumerate(folds):
+            fit_fold = fold[-1]
+            if i == 0 or fit_fold:
+                train_iloc_start = fold[1][0]
+                train_iloc_end = fold[1][1]
+                train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
+        
+        train_indexes = np.unique(np.concatenate(train_indexes))
+        train_indexes = span_index[train_indexes]
+        train_indexes = pd.MultiIndex.from_product([
+            levels_in_predictions,
+            train_indexes,
+        ])
+        series_train = series.loc[series.index.isin(train_indexes)]
+        # NOTE: Exclude first window_size observations used to create predictors
+        series_train = series_train[series_train.groupby(level="level").cumcount() >= window_size]
+        series_train_grouped = (
+            series_train
+            .reset_index(level="level")
+            .groupby(by="level", sort=False, as_index=False)
+        )
+
     y_true_y_pred_grouped = (
         y_true_y_pred
-        .reset_index(level="level")
-        .groupby(by="level", sort=False, as_index=False)
-    )
-    series_train_grouped = (
-        series_train
         .reset_index(level="level")
         .groupby(by="level", sort=False, as_index=False)
     )
@@ -1181,7 +1171,7 @@ def _calculate_metrics_backtesting_multiseries(
             group = y_true_y_pred_grouped.get_group(level)
             y_true = group['y_true']
             y_pred = group['y_pred']
-            if not ignore_y_train:
+            if needs_y_train:
                 # NOTE: y_train includes the intercepted NaNs
                 y_train = series_train_grouped.get_group(level)['y_true']
             else:
@@ -1238,16 +1228,19 @@ def _calculate_metrics_backtesting_multiseries(
 
         y_true = y_true_y_pred.loc[:, 'y_true'].droplevel("level")
         y_pred = y_true_y_pred.loc[:, 'y_pred'].droplevel("level")
-        y_train = series_train.loc[:, 'y_true'].droplevel("level")
-        if any(name in scaled_metrics for name in metric_names):
-            series_train_list = [
-                group['y_true'] 
-                for _, group in series_train.groupby('level', sort=False)
-            ]
-            
+        if needs_y_train:
+            y_train = series_train.loc[:, 'y_true'].droplevel("level")
+            if any(name in scaled_metrics for name in metric_names):
+                series_train_list = [
+                    group['y_true'] 
+                    for _, group in series_train.groupby('level', sort=False)
+                ]
+        else:
+            y_train = None
+
         pooled = []
         for m, m_name in zip(metrics, metric_names):
-            if m_name in scaled_metrics:
+            if needs_y_train and m_name in scaled_metrics:
                 pooled.append(
                     m(y_true=y_true, y_pred=y_pred, y_train=series_train_list)
                 )
@@ -1274,12 +1267,15 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     y_train: pd.Series | dict[int, pd.Series],
     X_test: pd.DataFrame,
     y_test: pd.Series | dict[int, pd.Series],
-    X_train_encoding: pd.Series,
-    X_test_encoding: pd.Series,
+    X_train_encoding: pd.Series | pd.Index,
+    X_test_encoding: pd.Series | pd.Index,
     levels: list[str],
     metrics: list[str | Callable],
-    add_aggregated_metric: bool = True
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+    add_aggregated_metric: bool = True,
+    sample_weight: np.ndarray | None = None,
+    fit_kwargs: dict[str, object] | None = None,
+    return_predictions: bool = True
+) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """   
     One-step-ahead predictions and metrics for each level and also for all levels
     aggregated using average, weighted average or pooling.
@@ -1306,10 +1302,12 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         Test matrix.
     y_test : pandas Series, dict
         Target values of the test set.
-    X_train_encoding : pandas Series
-        Series identifiers for each row of `X_train`.
-    X_test_encoding : pandas Series
-        Series identifiers for each row of `X_test`.
+    X_train_encoding : pandas Series, pandas Index
+        ForecasterRecursiveMultiSeries: series identifiers for each row of `X_train`.
+        ForecasterDirectMultiVariate: Index of the training observations for step 1.
+    X_test_encoding : pandas Series, pandas Index
+        ForecasterRecursiveMultiSeries: series identifiers for each row of `X_test`.
+        ForecasterDirectMultiVariate: Index of the test observations for step 1.
     levels : list
         Levels to calculate the metrics.
     metrics : list
@@ -1323,13 +1321,23 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         predicted values of each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
+    sample_weight : numpy ndarray, default None
+        Precomputed sample weights for training. `None` if no weight function
+        is defined.
+    fit_kwargs : dict, default None
+        Precomputed keyword arguments for `estimator.fit`. Can be empty dict
+        or `None`.
+    return_predictions : bool, default True
+        If `True`, return the predictions DataFrame. If `False`, return `None`
+        instead of predictions to avoid unnecessary computation.
 
     Returns
     -------
     metrics_levels : pandas DataFrame
         Value(s) of the metric(s).
-    predictions : pandas DataFrame
-        Value of predictions for each level.
+    predictions : pandas DataFrame, None
+        Value of predictions for each level. `None` if `return_predictions`
+        is `False`.
     
     """
 
@@ -1371,6 +1379,9 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     #         f"`add_aggregated_metric` must be a boolean. Got: {type(add_aggregated_metric)}"
     #     )
 
+    if fit_kwargs is None:
+        fit_kwargs = {}
+
     metrics = [
         _get_metric(metric=m)
         if isinstance(m, str)
@@ -1378,78 +1389,158 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         for m in metrics
     ]
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metrics]
-
-    # TODO: review list of metric that do not need y_train
-    metrics_no_y_train = [
-        # Regression metrics
-        "mean_squared_error",
-        "mean_absolute_error",
-        "mean_absolute_percentage_error",
-        "mean_squared_log_error",
-        "median_absolute_error",
-        "symmetric_mean_absolute_percentage_error",
-
-        # Classification metrics
-        "accuracy_score",
-        "balanced_accuracy_score",
-        "f1_score",
-        "precision_score",
-        "recall_score"
-    ]
-    ignore_y_train = all(name in metrics_no_y_train for name in metric_names)
+    needs_y_train = any_metric_needs_y_train(metrics)
 
     if isinstance(series[levels[0]].index, pd.DatetimeIndex):
         freq = series[levels[0]].index.freq
     else:
         freq = series[levels[0]].index.step
 
+    # ForecasterDirectMultiVariate path (numpy)
+    # X_train_encoding and X_test_encoding are pandas Index objects.
     if type(forecaster).__name__ == 'ForecasterDirectMultiVariate':
+        
+        # NOTE: Only step 1 is optimized in one-step-ahead validation.
         step = 1
-        X_train, y_train = forecaster.filter_train_X_y_for_step(
-                               step    = step,
-                               X_train = X_train,
-                               y_train = y_train
-                           )
-        X_test, y_test = forecaster.filter_train_X_y_for_step(
-                             step    = step,  
-                             X_train = X_test,
-                             y_train = y_test
-                         )                 
-        forecaster.estimators_[step].fit(X_train, y_train)
-        pred = forecaster.estimators_[step].predict(X_test)
+        estimator = forecaster.estimators_[step]
+        level = forecaster.level
+        test_index = X_test_encoding
+
+        if sample_weight is not None:
+            estimator.fit(
+                X=X_train, y=y_train,
+                sample_weight=sample_weight, **fit_kwargs
+            )
+        else:
+            estimator.fit(X=X_train, y=y_train, **fit_kwargs)
+
+        y_true = y_test
+        y_pred = estimator.predict(X_test).ravel()
+
+        if needs_y_train:
+            y_train_metric = y_train.copy()
+        else:
+            y_train_metric = None
+
+        if forecaster.differentiation is not None:
+            differentiator = forecaster.differentiator_[level]
+            if differentiator is not None:
+                y_true = differentiator.inverse_transform_next_window(y_true)
+                y_pred = differentiator.inverse_transform_next_window(y_pred)
+                if needs_y_train:
+                    y_train_metric = differentiator.inverse_transform_training(
+                        y_train_metric
+                    )
+
+        if forecaster.transformer_series is not None:
+            transformer = forecaster.transformer_series_[level]
+            y_true = transformer.inverse_transform(
+                y_true.reshape(-1, 1)
+            ).ravel()
+            y_pred = transformer.inverse_transform(
+                y_pred.reshape(-1, 1)
+            ).ravel()
+            if needs_y_train:
+                y_train_metric = transformer.inverse_transform(
+                    y_train_metric.reshape(-1, 1)
+                ).ravel()
+
+        metrics_level = [
+            m(y_true=y_true, y_pred=y_pred, y_train=y_train_metric)
+            for m in metrics
+        ]
+
+        metrics_levels = pd.DataFrame(
+            data=[metrics_level], columns=metric_names
+        )
+        metrics_levels.insert(0, 'levels', [level])
+
+        if return_predictions:
+            predictions = pd.DataFrame({level: y_pred}, index=test_index)
+            predictions.index.name = None
+            if isinstance(test_index, pd.DatetimeIndex):
+                predictions = predictions.asfreq(freq)
+            else:
+                predictions = predictions.reindex(
+                    pd.RangeIndex(
+                        start=min(test_index),
+                        stop=max(test_index) + 1,
+                        step=freq
+                    )
+                )
+        else:
+            predictions = None
+
+        return metrics_levels, predictions
+
+    # ForecasterRecursiveMultiSeries path (pandas)
+    # X_train_encoding and X_test_encoding are series identifiers for each row 
+    # of X_train and X_test, respectively.
+    if (
+        'cat_features' in fit_kwargs
+        and type(forecaster.estimator).__name__ == 'CatBoostRegressor'
+    ):
+        # NOTE: CatBoost requires integer values (not float) for categorical features
+        # when X is passed as a DataFrame. Categorical columns may have:
+        #   - Categorical dtype: from ordinal_category encoding (_level_skforecast).
+        #     Converted via .cat.codes (NaN -> -1 by default).
+        #   - float dtype with NaN: from OrdinalEncoder applied to exog categoricals
+        #     (encoded_missing_value=np.nan). NaN is filled with -1 before casting.
+        # NOTE: Copies of X_train and X_test are needed because the cast to int
+        # mutates the DataFrame in place. Without copies, the original DataFrames
+        # (generated once by `_train_test_split_one_step_ahead`) would be corrupted
+        # for subsequent iterations of the hyperparameter search.
+        X_train = X_train.copy()
+        X_test = X_test.copy()
+        cat_cols = [X_train.columns[i] for i in fit_kwargs['cat_features']]
+        for df in (X_train, X_test):
+            for col in cat_cols:
+                if hasattr(df[col].dtype, 'categories'):
+                    df[col] = df[col].cat.codes.astype(int)
+                else:
+                    df[col] = df[col].fillna(-1).astype(int)
+
+    if sample_weight is not None:
+        forecaster.estimator.fit(
+            X             = X_train,
+            y             = y_train,
+            sample_weight = sample_weight,
+            **fit_kwargs
+        )
     else:
-        forecaster.estimator.fit(X_train, y_train)
-        pred = forecaster.estimator.predict(X_test)
+        forecaster.estimator.fit(X=X_train, y=y_train, **fit_kwargs)
 
     predictions_per_level = pd.DataFrame(
         {
             'y_true': y_test,
-            'y_pred': pred,
+            'y_pred': forecaster.estimator.predict(X_test),
             '_level_skforecast': X_test_encoding,
         },
         index=y_test.index,
     ).groupby('_level_skforecast')
     predictions_per_level = {key: group for key, group in predictions_per_level}
 
-    y_train_per_level = pd.DataFrame(
-        {"y_train": y_train, "_level_skforecast": X_train_encoding},
-        index=y_train.index,
-    ).groupby("_level_skforecast")
+    if needs_y_train:
+        
+        y_train_per_level = pd.DataFrame(
+            {"y_train": y_train, "_level_skforecast": X_train_encoding},
+            index=y_train.index,
+        ).groupby("_level_skforecast")
 
-    # NOTE: Interleaved Nan values were excluded fom y_train. They are restored
-    if isinstance(series[levels[0]].index, pd.DatetimeIndex):
-        y_train_per_level = {
-            key: group.asfreq(freq) for key, group in y_train_per_level
-        }
-    else:
-        y_train_per_level = {
-            key: group.reindex(
-                pd.RangeIndex(
-                    start=min(group.index), stop=max(group.index) + 1, step=freq
+        # NOTE: Interleaved Nan values were excluded fom y_train. They are restored
+        if isinstance(series[levels[0]].index, pd.DatetimeIndex):
+            y_train_per_level = {
+                key: group.asfreq(freq) for key, group in y_train_per_level
+            }
+        else:
+            y_train_per_level = {
+                key: group.reindex(
+                    pd.RangeIndex(
+                        start=min(group.index), stop=max(group.index) + 1, step=freq
+                    )
                 )
-            )
-            for key, group in y_train_per_level
-        }
+                for key, group in y_train_per_level
+            }
 
     if forecaster.differentiation is not None:
         for level in predictions_per_level:
@@ -1465,11 +1556,12 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
                         predictions_per_level[level]["y_pred"].to_numpy()
                     )   
                 )
-                y_train_per_level[level]["y_train"] = (
-                    differentiator.inverse_transform_training(
-                        y_train_per_level[level]["y_train"].to_numpy()
+                if needs_y_train:
+                    y_train_per_level[level]["y_train"] = (
+                        differentiator.inverse_transform_training(
+                            y_train_per_level[level]["y_train"].to_numpy()
+                        )
                     )
-                )
 
     if forecaster.transformer_series is not None:
         for level in predictions_per_level:
@@ -1480,16 +1572,17 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             predictions_per_level[level]["y_pred"] = transformer.inverse_transform(
                 predictions_per_level[level][["y_pred"]]
             )
-            y_train_per_level[level]["y_train"] = transformer.inverse_transform(
-                y_train_per_level[level][["y_train"]]
-            )
+            if needs_y_train:
+                y_train_per_level[level]["y_train"] = transformer.inverse_transform(
+                    y_train_per_level[level][["y_train"]]
+                )
 
     metrics_levels = []
     for level in levels:
         if level in predictions_per_level:
             y_true = predictions_per_level[level].loc[:, 'y_true']
             y_pred = predictions_per_level[level].loc[:, 'y_pred']
-            if not ignore_y_train:
+            if needs_y_train:
                 y_train = y_train_per_level[level].loc[:, 'y_train']
             else:
                 y_train = None
@@ -1540,28 +1633,39 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
 
         # aggregation: pooling
         scaled_metrics = ['mean_absolute_scaled_error', 'root_mean_squared_scaled_error']
-        if any(name in scaled_metrics for name in metric_names):
-            list_y_train_by_level = [
-                v['y_train'].to_numpy()
-                for k, v in y_train_per_level.items()
-                if k in predictions_per_level
-            ]
         predictions_pooled = pd.concat(predictions_per_level.values())
-        y_train_pooled = pd.concat(
-            [v for k, v in y_train_per_level.items() if k in predictions_per_level]
-        )
+        if needs_y_train:
+            y_train_pooled = pd.concat(
+                [v for k, v in y_train_per_level.items() if k in predictions_per_level]
+            )
+            if any(name in scaled_metrics for name in metric_names):
+                list_y_train_by_level = [
+                    v['y_train'].to_numpy()
+                    for k, v in y_train_per_level.items()
+                    if k in predictions_per_level
+                ]
+        else:
+            y_train_pooled = None
 
         pooled = []
         y_true = predictions_pooled['y_true']
         y_pred = predictions_pooled['y_pred']
         for m, m_name in zip(metrics, metric_names):
-            if m_name in scaled_metrics:
+            if needs_y_train and m_name in scaled_metrics:
                 pooled.append(
                     m(y_true=y_true, y_pred=y_pred, y_train=list_y_train_by_level)
                 )
             else:
                 pooled.append(
-                    m(y_true=y_true, y_pred=y_pred, y_train=y_train_pooled["y_train"])
+                    m(
+                        y_true=y_true,
+                        y_pred=y_pred,
+                        y_train=(
+                            y_train_pooled["y_train"]
+                            if y_train_pooled is not None
+                            else None
+                        ),
+                    )
                 )
         pooled = pd.DataFrame([pooled], columns=metric_names)
         pooled['levels'] = 'pooling'
@@ -1571,20 +1675,23 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             axis=0, ignore_index=True
         )
 
-    predictions = (
-        pd.concat(predictions_per_level.values())
-        .loc[:, ["y_pred", "_level_skforecast"]]
-        .pivot(columns="_level_skforecast", values="y_pred")
-        .rename_axis(columns=None, index=None)
-    )
-    if isinstance(X_test.index, pd.DatetimeIndex):
-        predictions = predictions.asfreq(freq)
-    else:
-        predictions = predictions.reindex(
-            pd.RangeIndex(
-                start=min(X_test.index), stop=max(X_test.index) + 1, step=freq
-            )
+    if return_predictions:
+        predictions = (
+            pd.concat(predictions_per_level.values())
+            .loc[:, ["y_pred", "_level_skforecast"]]
+            .pivot(columns="_level_skforecast", values="y_pred")
+            .rename_axis(columns=None, index=None)
         )
+        if isinstance(X_test.index, pd.DatetimeIndex):
+            predictions = predictions.asfreq(freq)
+        else:
+            predictions = predictions.reindex(
+                pd.RangeIndex(
+                    start=min(X_test.index), stop=max(X_test.index) + 1, step=freq
+                )
+            )
+    else:
+        predictions = None
 
     return metrics_levels, predictions
 

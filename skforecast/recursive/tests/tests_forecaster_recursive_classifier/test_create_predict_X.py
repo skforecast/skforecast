@@ -211,14 +211,14 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
             [
                 [1.0, 2.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.12062867],
                 [1.0, 1.0, 2.0, 0.0, 1.0, 1.0, 1.0, 0.8263408],
-                [1.0, 1.0, 1.0, 2.0, 0.0, 2.0, 2.0, 0.60306013],
-                [1.0, 1.0, 1.0, 1.0, 2.0, 3.0, 3.0, 0.54506801],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 4.0, 4.0, 0.34276383],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.30412079],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.41702221],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 0.68130077],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 3.0, 3.0, 0.87545684],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 4.0, 4.0, 0.51042234],
+                [0.0, 1.0, 1.0, 2.0, 0.0, 2.0, 2.0, 0.60306013],
+                [0.0, 0.0, 1.0, 1.0, 2.0, 3.0, 3.0, 0.54506801],
+                [1.0, 0.0, 0.0, 1.0, 1.0, 4.0, 4.0, 0.34276383],
+                [1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.30412079],
+                [2.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.41702221],
+                [2.0, 2.0, 1.0, 1.0, 0.0, 2.0, 2.0, 0.68130077],
+                [1.0, 2.0, 2.0, 1.0, 1.0, 3.0, 3.0, 0.87545684],
+                [1.0, 1.0, 2.0, 2.0, 1.0, 4.0, 4.0, 0.51042234],
             ]
         ),
         index=pd.RangeIndex(start=50, stop=60, step=1),
@@ -232,13 +232,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
             "exog_3",
             "exog_1",
         ],
-    )
-    for col in ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']:
-        expected[col] = pd.Categorical(
-                            values     = expected[col],
-                            categories = forecaster.class_codes_,
-                            ordered    = False
-                        )
+    ).astype({'exog_2': int, 'exog_3': int})
 
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -293,14 +287,14 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
             [
                 [1.0, 2.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.12062867],
                 [1.0, 1.0, 2.0, 0.0, 1.0, 1.0, 1.0, 0.8263408],
-                [1.0, 1.0, 1.0, 2.0, 0.0, 2.0, 2.0, 0.60306013],
-                [1.0, 1.0, 1.0, 1.0, 2.0, 3.0, 3.0, 0.54506801],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 4.0, 4.0, 0.34276383],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.30412079],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.41702221],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 0.68130077],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 3.0, 3.0, 0.87545684],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 4.0, 4.0, 0.51042234],
+                [0.0, 1.0, 1.0, 2.0, 0.0, 2.0, 2.0, 0.60306013],
+                [1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 3.0, 0.54506801],
+                [1.0, 1.0, 0.0, 1.0, 1.0, 4.0, 4.0, 0.34276383],
+                [0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.30412079],
+                [0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.41702221],
+                [1.0, 0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 0.68130077],
+                [1.0, 1.0, 0.0, 0.0, 1.0, 3.0, 3.0, 0.87545684],
+                [0.0, 1.0, 1.0, 0.0, 0.0, 4.0, 4.0, 0.51042234],
             ]
         ),
         index=pd.RangeIndex(start=50, stop=60, step=1),
@@ -314,13 +308,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
             "exog_3",
             "exog_1",
         ],
-    )
-    for col in ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']:
-        expected[col] = pd.Categorical(
-                            values     = expected[col],
-                            categories = forecaster.class_codes_,
-                            ordered    = False
-                        )
+    ).astype({'exog_2': int, 'exog_3': int})
 
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -404,22 +392,6 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
             "exog_1",
         ],
     )
-    for col in ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']:
-        expected[col] = pd.Categorical(
-                            values     = expected[col],
-                            categories = forecaster.class_codes_,
-                            ordered    = False
-                        )
-    expected['exog_2'] = pd.Categorical(
-                             values     = expected['exog_2'],
-                             categories = [0, 1, 2, 3, 4],
-                             ordered    = False
-                         )
-    expected['exog_3'] = pd.Categorical(
-                             values     = expected['exog_3'],
-                             categories = [0, 1, 2, 3, 4],
-                             ordered    = False
-                         )
 
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -493,11 +465,193 @@ def test_create_predict_X_output_when_window_features(steps):
             "exog",
         ],
     )
-    for col in ['lag_1', 'lag_2', 'lag_3']:
-        expected[col] = pd.Categorical(
-                            values     = expected[col],
-                            categories = forecaster.class_codes_,
-                            ordered    = False
-                        )
 
     pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_create_predict_X_when_categorical_features_auto_and_explicit_no_transformer_exog(
+    categorical_features,
+):
+    """
+    Test create_predict_X when using internal categorical encoding
+    (`categorical_features='auto'` and explicit list) without `transformer_exog`.
+    """
+    df_exog = pd.DataFrame({
+        'exog_1': exog.to_numpy(),
+        'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+        'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)
+    })
+
+    exog_pred = df_exog.iloc[:10, :].copy()
+    exog_pred.index = pd.RangeIndex(start=50, stop=60)
+
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator            = LogisticRegression(),
+                     lags                 = 5,
+                     transformer_exog     = None,
+                     categorical_features = categorical_features
+                 )
+    forecaster.fit(y=y, exog=df_exog)
+    predictions = forecaster.create_predict_X(steps=10, exog=exog_pred)
+
+    expected = pd.DataFrame(
+        data=np.array([
+            [1., 2., 0., 1., 1., 0.12062867, 0., 0.],
+            [1., 1., 2., 0., 1., 0.8263408 , 1., 1.],
+            [1., 1., 1., 2., 0., 0.60306013, 2., 2.],
+            [1., 1., 1., 1., 2., 0.54506801, 3., 3.],
+            [1., 1., 1., 1., 1., 0.34276383, 4., 4.],
+            [1., 1., 1., 1., 1., 0.30412079, 0., 0.],
+            [1., 1., 1., 1., 1., 0.41702221, 1., 1.],
+            [1., 1., 1., 1., 1., 0.68130077, 2., 2.],
+            [1., 1., 1., 1., 1., 0.87545684, 3., 3.],
+            [1., 1., 1., 1., 1., 0.51042234, 4., 4.],
+        ]),
+        columns=['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5',
+                 'exog_1', 'exog_2', 'exog_3'],
+        index=pd.RangeIndex(start=50, stop=60, step=1)
+    )
+
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_create_predict_X_when_categorical_features_auto_with_transformer_exog():
+    """
+    Test create_predict_X when using internal categorical encoding
+    (`categorical_features='auto'`) together with `transformer_exog`
+    (StandardScaler on numeric columns).
+    """
+    df_exog = pd.DataFrame({
+        'exog_1': exog.to_numpy(),
+        'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+        'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)
+    })
+
+    exog_pred = df_exog.iloc[:10, :].copy()
+    exog_pred.index = pd.RangeIndex(start=50, stop=60)
+
+    transformer_exog = make_column_transformer(
+                           (StandardScaler(), make_column_selector(dtype_include=np.number)),
+                           remainder='passthrough',
+                           verbose_feature_names_out=False,
+                       ).set_output(transform='pandas')
+
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator            = LogisticRegression(),
+                     lags                 = 5,
+                     transformer_exog     = transformer_exog,
+                     categorical_features = 'auto'
+                 )
+    forecaster.fit(y=y, exog=df_exog)
+
+    warn_msg = re.escape(
+        "The output matrix is in the transformed scale due to the "
+        "inclusion of transformations (`transformer_exog`) in the Forecaster. "
+        "As a result, any predictions generated using this matrix will also "
+        "be in the transformed scale. Please refer to the documentation "
+        "for more details: "
+        "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html"
+    )
+    with pytest.warns(DataTransformationWarning, match=warn_msg):
+        predictions = forecaster.create_predict_X(steps=10, exog=exog_pred)
+
+    expected = pd.DataFrame(
+        data=np.array([
+            [ 1.        ,  2.        ,  0.        ,  1.        ,  1.        ,
+             -1.47636391,  0.        ,  0.        ],
+            [ 1.        ,  1.        ,  2.        ,  0.        ,  1.        ,
+              1.26277054,  1.        ,  1.        ],
+            [ 1.        ,  1.        ,  1.        ,  2.        ,  0.        ,
+              0.3961342 ,  2.        ,  2.        ],
+            [ 1.        ,  1.        ,  1.        ,  1.        ,  2.        ,
+              0.17104495,  3.        ,  3.        ],
+            [ 1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+             -0.61417373,  4.        ,  4.        ],
+            [ 1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+             -0.76416192,  0.        ,  0.        ],
+            [ 2.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+             -0.325949  ,  1.        ,  1.        ],
+            [ 2.        ,  2.        ,  1.        ,  1.        ,  1.        ,
+              0.69981558,  2.        ,  2.        ],
+            [ 0.        ,  2.        ,  2.        ,  1.        ,  1.        ,
+              1.45340838,  3.        ,  3.        ],
+            [ 1.        ,  0.        ,  2.        ,  2.        ,  1.        ,
+              0.03657206,  4.        ,  4.        ],
+        ]),
+        columns=['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5',
+                 'exog_1', 'exog_2', 'exog_3'],
+        index=pd.RangeIndex(start=50, stop=60, step=1)
+    )
+
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_create_predict_X_when_window_features_and_lags_None():
+    """
+    Test the output of create_predict_X when using window_features and exog
+    with datetime index and lags=None.
+    """
+    rolling = RollingFeaturesClassification(
+        stats=['proportion', 'entropy'], window_sizes=[3, 5]
+    )
+    forecaster = ForecasterRecursiveClassifier(
+        LGBMClassifier(verbose=-1, random_state=123),
+        lags=None,
+        window_features=rolling
+    )
+    forecaster.fit(y=y_dt, exog=exog_dt)
+    predictions = forecaster.create_predict_X(steps=10, exog=exog_dt_predict)
+
+    expected = pd.DataFrame(
+        data=np.array([
+            [0.33333333, 0.33333333, 0.33333333, 1.37095059, 0.12062867],
+            [0.        , 0.33333333, 0.66666667, 1.52192809, 0.8263408 ],
+            [0.        , 0.66666667, 0.33333333, 1.52192809, 0.60306013],
+            [0.        , 0.66666667, 0.33333333, 0.97095059, 0.54506801],
+            [0.        , 1.        , 0.        , 0.72192809, 0.34276383],
+            [0.        , 0.66666667, 0.33333333, 0.97095059, 0.30412079],
+            [0.        , 0.33333333, 0.66666667, 0.97095059, 0.41702221],
+            [0.        , 0.33333333, 0.66666667, 0.97095059, 0.68130077],
+            [0.        , 0.66666667, 0.33333333, 0.97095059, 0.87545684],
+            [0.        , 1.        , 0.        , 0.97095059, 0.51042234],
+        ]),
+        index=pd.date_range('2020-02-20', periods=10),
+        columns=[
+            'roll_proportion_3_class_0',
+            'roll_proportion_3_class_1',
+            'roll_proportion_3_class_2',
+            'roll_entropy_5',
+            'exog',
+        ],
+    )
+
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_create_predict_X_same_predictions_as_predict():
+    """
+    Test create_predict_X matrix returns the same predictions as predict method
+    when mapping encoded predictions back through classes_.
+    """
+    rolling = RollingFeaturesClassification(
+        stats=['proportion', 'entropy'], window_sizes=[3, 5]
+    )
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator        = LogisticRegression(),
+                     lags             = [1, 5],
+                     window_features  = rolling,
+                     transformer_exog = None,
+                 )
+    forecaster.fit(y=y_dt, exog=exog_dt)
+    X_predict = forecaster.create_predict_X(steps=10, exog=exog_dt_predict)
+    preds_encoded = forecaster.estimator.predict(X_predict)
+    results = np.array(forecaster.classes_)[preds_encoded.astype(int)]
+
+    expected = forecaster.predict(steps=10, exog=exog_dt_predict).to_numpy()
+
+    np.testing.assert_array_equal(results, expected)

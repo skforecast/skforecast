@@ -208,20 +208,17 @@ def initialize_window_features(
                 max_window_sizes.append(max(window_sizes))
 
             features_names = wf.features_names
-            if not isinstance(features_names, (str, list)):
+            if not isinstance(features_names, list):
                 raise TypeError(
-                    f"Attribute `features_names` of {wf_name} must be a str or "
-                    f"a list of strings. Got {type(features_names)}." + link_to_docs
+                    f"Attribute `features_names` of {wf_name} must be a list "
+                    f"of strings. Got {type(features_names)}." + link_to_docs
                 )
-            if isinstance(features_names, str):
-                window_features_names.append(features_names)
-            else:
-                if not all(isinstance(fn, str) for fn in features_names):
-                    raise TypeError(
-                        f"If argument `features_names` is a list, all elements "
-                        f"must be strings. Got {features_names} from {wf_name}." + link_to_docs
-                    )
-                window_features_names.extend(features_names)
+            if not all(isinstance(fn, str) for fn in features_names):
+                raise TypeError(
+                    f"If argument `features_names` is a list, all elements "
+                    f"must be strings. Got {features_names} from {wf_name}." + link_to_docs
+                )
+            window_features_names.extend(features_names)
 
         max_size_window_features = max(max_window_sizes)
         if len(set(window_features_names)) != len(window_features_names):
@@ -504,6 +501,130 @@ def check_select_fit_kwargs(
         fit_kwargs = {
             k: v for k, v in fit_kwargs.items() if k in fit_params
         }
+
+    return fit_kwargs
+
+
+def configure_estimator_categorical_features(
+    estimator: object,
+    categorical_features_names_in_: list[str] | None,
+    X_train_features_names_out_: list[str],
+    fit_kwargs: dict[str, object]
+) -> dict[str, object]:
+    """
+    Configure native categorical feature support for the estimator. Returns
+    updated `fit_kwargs` with the appropriate arguments for the estimator.
+    For estimators that require configuration via `set_params` (XGBoost,
+    HistGradientBoosting), the estimator is modified in-place.
+
+    Supported estimators: LGBMRegressor/LGBMClassifier,
+    CatBoostRegressor/CatBoostClassifier, XGBRegressor/XGBClassifier,
+    HistGradientBoostingRegressor/HistGradientBoostingClassifier (sklearn).
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator object. If the estimator is a Pipeline, the last step is
+        used.
+    categorical_features_names_in_ : list, None
+        Names of the categorical features. If `None` or empty, any previously
+        set categorical configuration on the estimator is reset.
+    X_train_features_names_out_ : list
+        Names of all features in `X_train`, in column order.
+    fit_kwargs : dict
+        Dictionary with the arguments to pass to the `fit` method of the
+        estimator. This dictionary is updated in-place and returned.
+
+    Returns
+    -------
+    fit_kwargs : dict
+        Updated dictionary with the categorical feature arguments added for
+        the estimator's `fit` method.
+
+    """
+
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+
+    estimator_name = type(estimator).__name__
+    module = type(estimator).__module__.split('.')[0]
+
+    if not categorical_features_names_in_:
+        # Reset any previously set categorical params (from a prior fit call)
+        if module == 'xgboost':
+            estimator.set_params(feature_types=None, enable_categorical=False)
+        elif module == 'sklearn' and estimator_name in (
+            'HistGradientBoostingRegressor', 'HistGradientBoostingClassifier'
+        ):
+            estimator.set_params(categorical_features='from_dtype')
+        return fit_kwargs
+
+    cat_indices = [
+        X_train_features_names_out_.index(name)
+        for name in categorical_features_names_in_
+    ]
+
+    if module == 'lightgbm':
+        # LGBMRegressor.fit() accepts `categorical_feature` as a list of
+        # int indices when X is a numpy array.
+        if 'categorical_feature' in fit_kwargs:
+            warnings.warn(
+                "The `categorical_feature` argument in `fit_kwargs` is being "
+                "overridden by the values detected from `categorical_features`. "
+                f"Overridden value: {fit_kwargs['categorical_feature']}.",
+                IgnoredArgumentWarning
+            )
+        fit_kwargs['categorical_feature'] = cat_indices
+
+    # NOTE: https://github.com/catboost/catboost/issues/3064
+    elif module == 'catboost':
+        # CatBoostRegressor.fit() accepts `cat_features` as a list of int
+        # indices.
+        if 'cat_features' in fit_kwargs:
+            warnings.warn(
+                "The `cat_features` argument in `fit_kwargs` is being "
+                "overridden by the values detected from `categorical_features`. "
+                f"Overridden value: {fit_kwargs['cat_features']}.",
+                IgnoredArgumentWarning
+            )
+        fit_kwargs['cat_features'] = cat_indices
+
+    elif module == 'xgboost':
+        # XGBRegressor requires `feature_types` and `enable_categorical=True`
+        # set via set_params (they are constructor params, not fit params).
+        prev_feature_types = estimator.get_params().get('feature_types')
+        prev_enable_categorical = estimator.get_params().get('enable_categorical')
+        set_cat_indices = set(cat_indices)
+        feature_types = [
+            'c' if i in set_cat_indices else 'q'
+            for i in range(len(X_train_features_names_out_))
+        ]
+        estimator.set_params(
+            feature_types=feature_types, enable_categorical=True
+        )
+        if prev_feature_types is not None:
+            warnings.warn(
+                "The estimator's `feature_types` and `enable_categorical` "
+                "parameters have been set to handle categorical features. "
+                f"Previous values: feature_types={prev_feature_types}, "
+                f"enable_categorical={prev_enable_categorical}.",
+                IgnoredArgumentWarning
+            )
+
+    elif module == 'sklearn' and estimator_name in (
+        'HistGradientBoostingRegressor', 'HistGradientBoostingClassifier'
+    ):
+        # HistGradientBoosting accepts `categorical_features` as a
+        # list of int indices via set_params (constructor param).
+        prev_categorical = estimator.get_params().get('categorical_features')
+        estimator.set_params(categorical_features=cat_indices)
+        if prev_categorical not in (None, 'from_dtype'):
+            warnings.warn(
+                "The estimator's `categorical_features` parameter has been "
+                "set to handle categorical features. Previous value: "
+                f"`categorical_features={prev_categorical}`.",
+                IgnoredArgumentWarning
+            )
 
     return fit_kwargs
 
@@ -2425,6 +2546,12 @@ def _build_predict_function(
     - ``RandomForestRegressor`` (per-tree ``tree_.predict``)
     - ``DecisionTreeRegressor`` (``tree_.predict``)
 
+    For ``CatBoostRegressor`` with categorical features, the categorical column
+    indices are resolved once at build time and the array is cast to ``object``
+    dtype with those columns converted to ``int`` before each prediction call.
+    CatBoost requires integer values (not float) for categorical features when
+    the input is a numpy array.
+
     For any other estimator the standard ``estimator.predict`` method is used.
 
     Parameters
@@ -2483,6 +2610,19 @@ def _build_predict_function(
             return tree_.predict(X.astype(np.float32))[:, 0]
 
         return predict_fn
+
+    if estimator_name == 'CatBoostRegressor':
+        # CatBoost requires integer values (not float) for categorical features
+        # when X is a numpy array. This requires casting the array to object
+        # dtype and converting the categorical columns to int before each prediction call.
+        cat_indices = np.array(estimator.get_cat_feature_indices())
+        if len(cat_indices) > 0:
+            def predict_fn(X):
+                X_obj = X.astype(object)
+                X_obj[:, cat_indices] = np.nan_to_num(X[:, cat_indices], nan=-1).astype(int)
+                return estimator.predict(X_obj).ravel()
+
+            return predict_fn
 
     # Generic fallback
     def predict_fn(X):
@@ -3217,49 +3357,6 @@ def show_versions(
     else:
         print(vers_info)
         return None
-
-
-# TODO: Remove regressor in 0.21.0
-def initialize_estimator(
-    estimator: object | None = None,
-    regressor: object | None = None
-) -> None:
-    """
-    Helper to handle the deprecation of 'regressor' in favor of 'estimator'.
-    Returns the valid estimator object.
-
-    Parameters
-    ----------
-    estimator : estimator or pipeline compatible with the scikit-learn API, default None
-        An instance of an estimator or pipeline compatible with the scikit-learn API.
-    regressor : estimator or pipeline compatible with the scikit-learn API, default None
-        Deprecated. An instance of an estimator or pipeline compatible with the
-        scikit-learn API.
-
-    Returns
-    -------
-    estimator : estimator or pipeline compatible with the scikit-learn API
-        The valid estimator object.
-    
-    """
-    
-    if regressor is not None:
-        warnings.warn(
-            "The `regressor` argument is deprecated and will be removed in a future "
-            "version. Please use `estimator` instead.",
-            FutureWarning,
-            stacklevel=3  # Important: to point to the user's code
-        )
-        if estimator is not None:
-            raise ValueError(
-                "Both `estimator` and `regressor` were provided. Use only `estimator`."
-            )
-        return regressor
-    
-    if estimator is None:
-        raise TypeError("__init__() missing 1 required positional argument: 'estimator'")
-    
-    return estimator
 
 
 def deepcopy_forecaster(
