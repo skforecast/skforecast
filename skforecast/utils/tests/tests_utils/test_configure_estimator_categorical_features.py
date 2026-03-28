@@ -233,14 +233,14 @@ def test_xgboost_warning_when_previous_params_differ_from_defaults():
     Test that an IgnoredArgumentWarning is raised for XGBoost when previous
     feature_types was not None or enable_categorical was not True.
     """
-    estimator = XGBRegressor(enable_categorical=False)
+    estimator = XGBRegressor(enable_categorical=True, feature_types=['q', 'q'])
     features = ['lag_1', 'cat_a']
 
     warn_msg = re.escape(
         "The estimator's `feature_types` and `enable_categorical` "
         "parameters have been set to handle categorical features. "
-        "Previous values: feature_types=None, "
-        "enable_categorical=False."
+        "Previous values: feature_types=['q', 'q'], "
+        "enable_categorical=True."
     )
     with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
         configure_estimator_categorical_features(
