@@ -1549,13 +1549,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return X_train, y_train
 
-    # TODO: Review for categoricas and bug in OneStepAhead
     def _train_test_split_one_step_ahead(
         self,
         series: dict[str, pd.Series],
         initial_train_size: int,
         exog: dict[str, pd.DataFrame | None] | None = None
-    ) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
+    ) -> tuple[
+        pd.DataFrame, 
+        pd.Series, 
+        pd.DataFrame, 
+        pd.Series,
+        pd.Series, 
+        pd.Series, 
+        np.ndarray | None, 
+        dict[str, object]
+    ]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
         predictions.
@@ -1585,6 +1593,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Series identifiers for each row of `X_train`.
         X_test_encoding : pandas Series
             Series identifiers for each row of `X_test`.
+        sample_weight : numpy ndarray, None
+            Precomputed sample weights for training. `None` if no weight function
+            is defined.
+        fit_kwargs : dict
+            Precomputed keyword arguments for `estimator.fit`, including
+            categorical feature configuration.
         
         """
 
@@ -1635,13 +1649,20 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         forecaster_state = (self.is_fitted, self.series_names_in_, self.exog_names_in_)
 
         self.is_fitted = False
-        X_train, y_train, _, series_names_in_, _, exog_names_in_, *_ = (
-            self._create_train_X_y(
+        (
+            X_train, 
+            y_train, 
+            _, 
+            series_names_in_, 
+            _,
+            exog_names_in_, 
+            categorical_features_names_in_, 
+            *_
+        ) = self._create_train_X_y(
                 series            = series_train,
                 exog              = exog_train,
                 store_last_window = False
             )
-        )
         
         self.series_names_in_ = series_names_in_
         if exog is not None:
@@ -1655,6 +1676,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                              )
         
         self.is_fitted, self.series_names_in_, self.exog_names_in_ = forecaster_state
+
+        sample_weight = self.create_sample_weights(
+                            series_names_in_ = series_names_in_,
+                            X_train          = X_train
+                        )
 
         if self.encoding in ["ordinal", "ordinal_category"]:
             X_train_encoding = self.encoder.inverse_transform(
@@ -1687,8 +1713,33 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         X_test_encoding = pd.Series(
             data=X_test_encoding, index=X_test.index
         ).fillna("_unknown_level")
-        
-        return X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding
+
+        X_train_features_names_out_ = X_train.columns.to_list()
+        if self.categorical_features is not None:
+            all_categorical_names = (
+                list(categorical_features_names_in_) if categorical_features_names_in_ else []
+            )
+            if self.encoding == 'ordinal_category':
+                all_categorical_names.append('_level_skforecast')
+            fit_kwargs = configure_estimator_categorical_features(
+                             estimator                      = self.estimator,
+                             categorical_features_names_in_ = all_categorical_names,
+                             X_train_features_names_out_    = X_train_features_names_out_,
+                             fit_kwargs                     = {**self.fit_kwargs}
+                         )
+        else:
+            fit_kwargs = {**self.fit_kwargs}
+
+        return (
+            X_train, 
+            y_train, 
+            X_test, 
+            y_test,
+            X_train_encoding, 
+            X_test_encoding,
+            sample_weight, 
+            fit_kwargs
+        )
     
     def _weight_func_all_1(
         self, 
@@ -1985,20 +2036,22 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             fit_kwargs = {**self.fit_kwargs}
 
-        # NOTE: CatBoost requires integer values (not float) for categorical features
-        # when X is passed as a DataFrame. This requires casting the categorical
-        # columns to int.
+        # NOTE: CatBoost requires integer values (not float) for categorical features.
+        # When X is passed as a DataFrame. Categorical columns may have:
+        #   - Categorical dtype: from ordinal_category encoding (_level_skforecast).
+        #     Converted via .cat.codes (NaN -> -1 by default).
+        #   - float dtype with NaN: from OrdinalEncoder applied to exog categoricals
+        #     (encoded_missing_value=np.nan). NaN is filled with -1 before casting.
         if (
             'cat_features' in fit_kwargs
             and type(self.estimator).__name__ == 'CatBoostRegressor'
         ):
             cat_cols = [X_train_features_names_out_[i] for i in fit_kwargs['cat_features']]
-            X_train_estimator[cat_cols] = (
-                X_train_estimator[cat_cols]
-                .apply(lambda x: x.cat.codes if hasattr(x.dtype, 'categories') else x)
-                .fillna(-1)
-                .astype(int)
-            )
+            for col in cat_cols:
+                if hasattr(X_train_estimator[col].dtype, 'categories'):
+                    X_train_estimator[col] = X_train_estimator[col].cat.codes.astype(int)
+                else:
+                    X_train_estimator[col] = X_train_estimator[col].fillna(-1).astype(int)
 
         if sample_weight is not None:
             self.estimator.fit(

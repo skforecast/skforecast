@@ -436,8 +436,8 @@ def _evaluate_grid_hyperparameters(
                 sample_weight,
                 fit_kwargs
             ) = forecaster_search._train_test_split_one_step_ahead(
-                    y=y, initial_train_size=cv.initial_train_size, exog=exog
-                )
+                y=y, initial_train_size=cv.initial_train_size, exog=exog
+            )
 
         if show_progress:
             param_grid_tqdm = tqdm(param_grid, desc='params grid', position=1, leave=False)
@@ -812,8 +812,8 @@ def bayesian_search_forecaster(
                     sample_weight,
                     fit_kwargs
                 ) = forecaster_search._train_test_split_one_step_ahead(
-                        y=y, initial_train_size=cv.initial_train_size, exog=exog
-                    )
+                    y=y, initial_train_size=cv.initial_train_size, exog=exog
+                )
                 
                 _cached_split[lags_key] = (
                     X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
@@ -1431,7 +1431,9 @@ def _evaluate_grid_hyperparameters_multiseries(
                 X_test,
                 y_test,
                 X_train_encoding,
-                X_test_encoding
+                X_test_encoding,
+                sample_weight,
+                fit_kwargs
             ) = forecaster_search._train_test_split_one_step_ahead(
                 series=series, exog=exog, initial_train_size=cv.initial_train_size
             )
@@ -1476,8 +1478,12 @@ def _evaluate_grid_hyperparameters_multiseries(
                         X_test_encoding       = X_test_encoding,
                         levels                = levels,
                         metrics               = metric,
-                        add_aggregated_metric = add_aggregated_metric
+                        add_aggregated_metric = add_aggregated_metric,
+                        sample_weight         = sample_weight,
+                        fit_kwargs            = fit_kwargs,
+                        return_predictions    = False
                     )
+            
             except Exception as e:
                 warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
                 continue
@@ -1896,17 +1902,21 @@ def bayesian_search_forecaster_multiseries(
                     X_test,
                     y_test,
                     X_train_encoding,
-                    X_test_encoding
+                    X_test_encoding,
+                    sample_weight,
+                    fit_kwargs
                 ) = forecaster_search._train_test_split_one_step_ahead(
                     series=series, exog=exog, initial_train_size=cv.initial_train_size,
                 )
                 _cached_split[lags_key] = (
-                    X_train, y_train, X_test, y_test,
-                    X_train_encoding, X_test_encoding
+                    X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding,
+                    sample_weight, fit_kwargs
                 )
             else:
                 (
-                    X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding
+                    X_train, y_train, X_test, y_test,
+                    X_train_encoding, X_test_encoding,
+                    sample_weight, fit_kwargs
                 ) = _cached_split[lags_key]
 
             metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
@@ -1920,7 +1930,10 @@ def bayesian_search_forecaster_multiseries(
                              X_test_encoding       = X_test_encoding,
                              levels                = levels,
                              metrics               = metric,
-                             add_aggregated_metric = add_aggregated_metric
+                             add_aggregated_metric = add_aggregated_metric,
+                             sample_weight         = sample_weight,
+                             fit_kwargs            = fit_kwargs,
+                             return_predictions    = False
                          )
 
             if add_aggregated_metric:

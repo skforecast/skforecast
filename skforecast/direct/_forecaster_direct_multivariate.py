@@ -46,12 +46,12 @@ from ..utils import (
     transform_numpy,
     transform_dataframe,
     select_n_jobs_fit_forecaster,
+    configure_estimator_categorical_features,
     manage_warnings,
     get_style_repr_html,
     _build_predict_function,
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
-from ..model_selection._utils import _extract_data_folds_multiseries
 
 
 class ForecasterDirectMultiVariate(ForecasterBase):
@@ -1501,16 +1501,21 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         initial_train_size: int,
         exog: pd.Series | pd.DataFrame | None = None
     ) -> tuple[
-        pd.DataFrame, 
-        dict[int, pd.Series], 
-        pd.DataFrame, 
-        dict[int, pd.Series], 
-        pd.Series, 
-        pd.Series
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        pd.Index,
+        pd.Index,
+        np.ndarray | None,
+        dict[str, object]
     ]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
-        predictions.
+        predictions. Uses `_create_train_X_y` to work directly with numpy arrays,
+        filters to step 1 only, and precomputes sample weights and fit kwargs
+        (including categorical feature configuration) so they are computed once
+        rather than per trial.
         
         Parameters
         ----------
@@ -1525,77 +1530,116 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         Returns
         -------
-        X_train : pandas DataFrame
-            Predictor values used to train the model.
-        y_train : dict
-            Values of the time series related to each row of `X_train` for each 
-            step in the form {step: y_step_[i]}.
-        X_test : pandas DataFrame
-            Predictor values used to test the model.
-        y_test : dict
-            Values of the time series related to each row of `X_test` for each 
-            step in the form {step: y_step_[i]}.
-        X_train_encoding : pandas Series
-            Series identifiers for each row of `X_train`.
-        X_test_encoding : pandas Series
-            Series identifiers for each row of `X_test`.
+        X_train : numpy ndarray
+            Predictor values (step 1) used to train the model.
+        y_train : numpy ndarray
+            Target values related to each row of `X_train`.
+        X_test : numpy ndarray
+            Predictor values (step 1) used to test the model.
+        y_test : numpy ndarray
+            Target values related to each row of `X_test`.
+        train_index : pandas Index
+            Index of the training observations for step 1.
+        test_index : pandas Index
+            Index of the test observations for step 1.
+        sample_weight : numpy ndarray, None
+            Precomputed sample weights for training. `None` if no `weight_func`.
+        fit_kwargs : dict
+            Precomputed keyword arguments for `estimator.fit`, including
+            categorical feature configuration.
         
         """
 
-        # TODO: Review for categoricas and bug in OneStepAhead
-
-        span_index = series.index
-
-        fold = [
-            0,
-            [0, initial_train_size],
-            [initial_train_size - self.window_size, initial_train_size],
-            [initial_train_size - self.window_size, len(span_index)],
-            [0, 0],  # Dummy value
-            True
-        ]
-        data_fold = _extract_data_folds_multiseries(
-                        series             = series,
-                        folds              = [fold],
-                        span_index         = span_index,
-                        window_size        = self.window_size,
-                        exog               = exog,
-                        dropna_last_window = self.dropna_from_series,
-                        externally_fitted  = False
-                    )
-        series_train, _, levels_last_window, exog_train, exog_test, _ = next(data_fold)
-
-        start_test_idx = initial_train_size - self.window_size
-        series_test = series.iloc[start_test_idx:, :]
-        series_test = series_test.loc[:, levels_last_window]
-        series_test = series_test.dropna(axis=1, how='all')
-       
-        _is_fitted = self.is_fitted
+        is_fitted = self.is_fitted
         _series_names_in_ = self.series_names_in_
         _exog_names_in_ = self.exog_names_in_
 
         self.is_fitted = False
-        X_train, y_train = self.create_train_X_y(
-            series = series_train,
-            exog   = exog_train,
-        )
-        self.series_names_in_ = list(series_train.columns)
-        if exog is not None:
-            self.exog_names_in_ = list(exog_train.columns) if isinstance(exog_train, pd.DataFrame) else [exog_train.name]
+
+        (
+            X_train_autoreg,
+            X_train_exog,
+            y_train,
+            train_index,
+            _,
+            _,
+            _,
+            categorical_features_names_in_,
+            _,
+            X_train_features_names_out_,
+            _,
+            _,
+            _,
+        ) = self._create_train_X_y(
+                series = series.iloc[:initial_train_size],
+                exog   = exog.iloc[:initial_train_size] if exog is not None else None
+            )
+
+        test_init = initial_train_size - self.window_size
         self.is_fitted = True
 
-        X_test, y_test = self.create_train_X_y(
-            series = series_test,
-            exog   = exog_test,
-        )
-        self.is_fitted = _is_fitted
+        (
+            X_test_autoreg,
+            X_test_exog,
+            y_test,
+            test_index,
+            *_
+        ) = self._create_train_X_y(
+                series = series.iloc[test_init:],
+                exog   = exog.iloc[test_init:] if exog is not None else None
+            )
+
+        self.is_fitted = is_fitted
         self.series_names_in_ = _series_names_in_
         self.exog_names_in_ = _exog_names_in_
 
-        X_train_encoding = pd.Series(self.level, index=X_train.index)
-        X_test_encoding = pd.Series(self.level, index=X_test.index)
+        # NOTE: Only step 1 is optimized in one-step-ahead validation.
+        step = 1
+        X_train, y_train = self._create_train_X_y_step(
+                               X_train_autoreg = X_train_autoreg,
+                               X_train_exog    = X_train_exog,
+                               y_train         = y_train,
+                               step            = step,
+                           )
+        X_test, y_test = self._create_train_X_y_step(
+                             X_train_autoreg = X_test_autoreg,
+                             X_train_exog    = X_test_exog,
+                             y_train         = y_test,
+                             step            = step,
+                         )
 
-        return X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding
+        sample_weight = self.create_sample_weights(X_train=train_index[step])
+
+        if self.categorical_features is not None:
+            fit_kwargs = configure_estimator_categorical_features(
+                             estimator                      = self.estimators_[step],
+                             categorical_features_names_in_ = categorical_features_names_in_,
+                             X_train_features_names_out_    = X_train_features_names_out_,
+                             fit_kwargs                     = {**self.fit_kwargs}
+                         )
+        else:
+            fit_kwargs = {**self.fit_kwargs}
+
+        if (
+            'cat_features' in fit_kwargs
+            and type(self.estimators_[step]).__name__ == 'CatBoostRegressor'
+        ):
+            cat_idx = np.array(fit_kwargs['cat_features'])
+            X_train = X_train.astype(object)
+            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
+            X_test = X_test.astype(object)
+            X_test[:, cat_idx] = X_test[:, cat_idx].astype(int)
+
+        return (
+            X_train, 
+            y_train,
+            X_test, 
+            y_test,
+            train_index[step], 
+            test_index[step],
+            sample_weight, 
+            fit_kwargs
+        )
 
     def create_sample_weights(
         self,
