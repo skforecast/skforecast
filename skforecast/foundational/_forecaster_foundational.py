@@ -22,7 +22,13 @@ from ..utils import (
     get_style_repr_html,
 )
 from ._foundational_model import FoundationalModel
-from ._utils import _check_preprocess_series_type, _check_preprocess_exog_type, _validate_exog_predict
+from ._utils import (
+    check_preprocess_series_type,
+    check_preprocess_exog_type,
+    validate_exog_fit,
+    validate_last_window_exog,
+    validate_exog_predict,
+)
 
 
 class ForecasterFoundational:
@@ -121,18 +127,19 @@ class ForecasterFoundational:
                 f"Got {type(estimator)}."
             )
 
-        self.estimator          = estimator
-        self.forecaster_id      = forecaster_id
-        self.last_window_       = None
-        self.index_type_        = None
-        self.index_freq_        = None
-        self.training_range_    = None
-        self.series_name_in_    = None # Only used in single-series mode; `None` in multi-series mode.
-        self.series_names_in_   = None
-        self._is_multiseries    = False
-        self.exog_in_           = False
-        self.exog_names_in_     = None
-        self.exog_type_in_      = None
+        self.estimator                = estimator
+        self.forecaster_id            = forecaster_id
+        self.last_window_             = None
+        self.index_type_              = None
+        self.index_freq_              = None
+        self.training_range_          = None
+        self.series_name_in_          = None # Only used in single-series mode; `None` in multi-series mode.
+        self.series_names_in_         = None
+        self._is_multiseries          = False
+        self.exog_in_                 = False
+        self.exog_names_in_           = None
+        self.exog_names_in_per_series_ = None
+        self.exog_type_in_            = None
         self.is_fitted          = False
         self.fit_date           = None
         self.creation_date      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
@@ -359,20 +366,21 @@ class ForecasterFoundational:
 
         """
 
-        self.last_window_     = None
-        self.index_type_      = None
-        self.index_freq_      = None
-        self.training_range_  = None
-        self.series_name_in_  = None
-        self.series_names_in_ = None
-        self._is_multiseries  = False
-        self.exog_in_         = False
-        self.exog_names_in_   = None
-        self.exog_type_in_    = None
-        self.is_fitted        = False
-        self.fit_date         = None
+        self.last_window_             = None
+        self.index_type_              = None
+        self.index_freq_              = None
+        self.training_range_          = None
+        self.series_name_in_          = None
+        self.series_names_in_         = None
+        self._is_multiseries          = False
+        self.exog_in_                 = False
+        self.exog_names_in_           = None
+        self.exog_names_in_per_series_ = None
+        self.exog_type_in_            = None
+        self.is_fitted                = False
+        self.fit_date                 = None
 
-        is_multiseries, series_names, series = _check_preprocess_series_type(series)
+        is_multiseries, series_names, series = check_preprocess_series_type(series)
 
         if exog is not None and not self.estimator.allow_exogenous:
             warnings.warn(
@@ -387,19 +395,14 @@ class ForecasterFoundational:
             check_y(y=series)
             if exog is not None:
                 check_exog(exog=exog)
-                if len(exog) != len(series):
-                    raise ValueError(
-                        f"`exog` must have same number of samples as `series`. "
-                        f"length `exog`: ({len(exog)}), "
-                        f"length `series`: ({len(series)})"
-                    )
+                self.exog_names_in_per_series_ = validate_exog_fit(
+                    series=series, exog=exog, is_multiseries=False
+                )
                 self.exog_in_       = True
                 self.exog_type_in_  = type(exog)
-                self.exog_names_in_ = (
-                    exog.columns.to_list()
-                    if isinstance(exog, pd.DataFrame)
-                    else [exog.name]
-                )
+                self.exog_names_in_ = list(
+                    self.exog_names_in_per_series_.values()
+                )[0]
             self.estimator.fit(series=series, exog=exog)
             self.series_name_in_  = series_names[0]
             self.series_names_in_ = series_names
@@ -417,27 +420,19 @@ class ForecasterFoundational:
         else:
             if exog is not None:
                 self.exog_type_in_ = type(exog)  # capture original type before normalisation
-                exog = _check_preprocess_exog_type(exog, series_names_in_=series_names)
-                self.exog_in_      = True
-                if isinstance(exog, dict):
-                    all_names: list[str] = []
-                    for e in exog.values():
-                        if e is not None:
-                            cols = (
-                                e.columns.to_list()
-                                if isinstance(e, pd.DataFrame)
-                                else [e.name]
-                            )
-                            for c in cols:
-                                if c not in all_names:
-                                    all_names.append(c)
-                    self.exog_names_in_ = all_names
-                else:
-                    self.exog_names_in_ = (
-                        exog.columns.to_list()
-                        if isinstance(exog, pd.DataFrame)
-                        else [exog.name]
-                    )
+                exog = check_preprocess_exog_type(exog, series_names_in_=series_names)
+                self.exog_names_in_per_series_ = validate_exog_fit(
+                    series=series, exog=exog, is_multiseries=True
+                )
+                self.exog_in_ = True
+                # exog_names_in_ is the union of all per-series column names
+                all_names: list[str] = []
+                for cols in self.exog_names_in_per_series_.values():
+                    if cols is not None:
+                        for c in cols:
+                            if c not in all_names:
+                                all_names.append(c)
+                self.exog_names_in_ = all_names
 
             self.estimator.fit(series=series, exog=exog)
             self._is_multiseries  = True
@@ -530,7 +525,7 @@ class ForecasterFoundational:
                 "arguments before using `predict()`."
             )
 
-        exog = _validate_exog_predict(
+        exog = validate_exog_predict(
             exog=exog,
             steps=steps,
             last_window=last_window,
@@ -540,15 +535,22 @@ class ForecasterFoundational:
             is_multiseries=self._is_multiseries,
             training_range_=self.training_range_,
             series_names_in_=self.series_names_in_,
+            exog_names_in_per_series_=self.exog_names_in_per_series_,
         )
 
         is_multi = self._is_multiseries or isinstance(
             last_window, (pd.DataFrame, dict)
         )
 
+        validate_last_window_exog(
+            last_window_exog=last_window_exog,
+            last_window=last_window,
+            exog_in_=self.exog_in_,
+        )
+
         if is_multi:
-            exog = _check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
-            last_window_exog = _check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
+            exog = check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
+            last_window_exog = check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
             predictions = self.estimator.predict(
                 steps=steps,
                 exog=exog,
@@ -631,7 +633,7 @@ class ForecasterFoundational:
                 "arguments before using `predict_interval()`."
             )
 
-        exog = _validate_exog_predict(
+        exog = validate_exog_predict(
             exog=exog,
             steps=steps,
             last_window=last_window,
@@ -641,6 +643,17 @@ class ForecasterFoundational:
             is_multiseries=self._is_multiseries,
             training_range_=self.training_range_,
             series_names_in_=self.series_names_in_,
+            exog_names_in_per_series_=self.exog_names_in_per_series_,
+        )
+
+        is_multi = self._is_multiseries or isinstance(
+            last_window, (pd.DataFrame, dict)
+        )
+
+        validate_last_window_exog(
+            last_window_exog=last_window_exog,
+            last_window=last_window,
+            exog_in_=self.exog_in_,
         )
 
         if isinstance(interval, (int, float)):
@@ -664,13 +677,9 @@ class ForecasterFoundational:
         # Always include the median (0.5) so 'pred' is the central forecast.
         quantiles = sorted({lower_q, 0.5, upper_q})
 
-        is_multi = self._is_multiseries or isinstance(
-            last_window, (pd.DataFrame, dict)
-        )
-
         if is_multi:
-            exog = _check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
-            last_window_exog = _check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
+            exog = check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
+            last_window_exog = check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
             df = self.estimator.predict(
                 steps=steps,
                 exog=exog,
@@ -756,7 +765,7 @@ class ForecasterFoundational:
                 "arguments before using `predict_quantiles()`."
             )
 
-        exog = _validate_exog_predict(
+        exog = validate_exog_predict(
             exog=exog,
             steps=steps,
             last_window=last_window,
@@ -766,15 +775,22 @@ class ForecasterFoundational:
             is_multiseries=self._is_multiseries,
             training_range_=self.training_range_,
             series_names_in_=self.series_names_in_,
+            exog_names_in_per_series_=self.exog_names_in_per_series_,
         )
 
         is_multi = self._is_multiseries or isinstance(
             last_window, (pd.DataFrame, dict)
         )
 
+        validate_last_window_exog(
+            last_window_exog=last_window_exog,
+            last_window=last_window,
+            exog_in_=self.exog_in_,
+        )
+
         if is_multi:
-            exog = _check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
-            last_window_exog = _check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
+            exog = check_preprocess_exog_type(exog, series_names_in_=self.series_names_in_)
+            last_window_exog = check_preprocess_exog_type(last_window_exog, series_names_in_=self.series_names_in_)
             predictions = self.estimator.predict(
                 steps=steps,
                 exog=exog,
@@ -832,8 +848,9 @@ class ForecasterFoundational:
         self.series_names_in_ = None
         self._is_multiseries  = False
         self.exog_in_         = False
-        self.exog_names_in_   = None
-        self.exog_type_in_    = None
+        self.exog_names_in_            = None
+        self.exog_names_in_per_series_  = None
+        self.exog_type_in_             = None
 
     def summary(self) -> None:
         """
