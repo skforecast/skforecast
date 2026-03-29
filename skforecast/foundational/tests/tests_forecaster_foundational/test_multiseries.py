@@ -142,7 +142,8 @@ class TestFitMultiSeries:
 
     def test_fit_multiseries_broadcast_exog_stores_metadata(self):
         forecaster = make_forecaster()
-        forecaster.fit(series=series_df, exog=future_exog_df.iloc[:50])
+        broadcast_exog = pd.DataFrame({"feat_a": np.arange(50, dtype=float)}, index=INDEX)
+        forecaster.fit(series=series_df, exog=broadcast_exog)
         assert forecaster.exog_in_ is True
         assert forecaster.exog_names_in_ == ["feat_a"]
 

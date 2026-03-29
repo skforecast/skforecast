@@ -881,14 +881,16 @@ class TimesFM25Adapter:
 
     def _load_model(self) -> None:
         """
-        Load and compile the TimesFM 2.5 model into `self._model` if not
-        already set.
+        Load (but do not compile) the TimesFM 2.5 model into `self._model`
+        if not already set.
 
         The model is imported lazily from `timesfm` and loaded via
-        `TimesFM_2p5_200M_torch.from_pretrained`, then compiled with a
-        `ForecastConfig` derived from `context_length`, `max_horizon`
-        and `forecast_config_kwargs`. This method is a no-op when
-        `self._model` is already populated.
+        `TimesFM_2p5_200M_torch.from_pretrained`. Compilation is deferred to
+        `_ensure_compiled`, which is called from `predict` with the actual
+        forecast horizon so that the compiled decode graph is sized exactly
+        for the requested number of steps rather than the (much larger)
+        `max_horizon` ceiling. This method is a no-op when `self._model` is
+        already populated.
 
         Raises
         ------
@@ -920,10 +922,42 @@ class TimesFM25Adapter:
 
         self._model = _TimesFMCompat.from_pretrained(self.model_id)
 
+    def _ensure_compiled(self, steps: int) -> None:
+        """
+        Compile the model for the given forecast horizon if not already
+        compiled for at least `steps` steps.
+
+        This is separated from `_load_model` so that compilation uses the
+        *actual* number of requested forecast steps rather than `max_horizon`.
+        TimesFM's compiled decode always runs ``forecast_config.max_horizon``
+        autoregressive decode iterations regardless of the requested horizon;
+        the true horizon is only used to *slice* the output afterwards. When
+        the compiled `max_horizon` is large (e.g. the default 512) but
+        `steps` is small (e.g. 12), the model performs up to
+        ``(max_horizon - 1) // output_patch_len`` unnecessary extra transformer
+        forward passes per inference call. Compiling here with
+        ``max_horizon = steps`` reduces those wasted passes to zero for the
+        typical backtesting case where `steps` is constant across folds.
+
+        If the model was already compiled for a horizon ``>= steps`` (e.g. a
+        pre-compiled model passed via the `model` constructor argument), this
+        method is a no-op.
+
+        Parameters
+        ----------
+        steps : int
+            The forecast horizon that the model must support.
+        """
+
+        fc = getattr(self._model, 'forecast_config', None)
+        if fc is not None and steps <= fc.max_horizon:
+            return
+
+        import timesfm
         self._model.compile(
             timesfm.ForecastConfig(
                 max_context=self.context_length,
-                max_horizon=self.max_horizon,
+                max_horizon=steps,
                 **self.forecast_config_kwargs,
             )
         )
@@ -1205,6 +1239,8 @@ class TimesFM25Adapter:
                 f"`steps` ({steps}) exceeds `max_horizon` ({self.max_horizon}). "
                 f"Recreate the adapter with `max_horizon >= {steps}`."
             )
+
+        self._ensure_compiled(steps)
 
         if self._is_multiseries or isinstance(last_window, (pd.DataFrame, dict)):
             return self._predict_multiseries(

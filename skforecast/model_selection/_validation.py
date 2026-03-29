@@ -30,7 +30,7 @@ from ..utils import (
     manage_warnings,
     deepcopy_forecaster
 )
-from ..foundational._utils import _check_preprocess_series_type
+from ..foundational._utils import check_preprocess_series_type
 
 
 def _prepare_fold_data(
@@ -2312,7 +2312,7 @@ def _backtesting_foundational(
 
     cv = deepcopy(cv)
 
-    is_multiseries, series_names, series_norm = _check_preprocess_series_type(series)
+    is_multiseries, series_names, series_norm = check_preprocess_series_type(series)
 
     if levels is not None and is_multiseries:
         levels = [levels] if isinstance(levels, str) else list(levels)
@@ -2679,7 +2679,7 @@ def backtesting_foundational(
             "the `model_selection` module."
         )
 
-    _, _, series_norm = _check_preprocess_series_type(series)
+    _, _, series_norm = check_preprocess_series_type(series)
 
     if interval is not None and quantiles is not None:
         raise ValueError(

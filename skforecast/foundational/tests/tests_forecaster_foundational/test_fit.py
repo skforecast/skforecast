@@ -163,9 +163,8 @@ def test_fit_ValueError_when_len_exog_differs_from_len_y():
     exog_short = exog.iloc[:10]
 
     err_msg = re.escape(
-        f"`exog` must have same number of samples as `series`. "
-        f"length `exog`: ({len(exog_short)}), "
-        f"length `series`: ({len(y)})"
+        f"`exog` must have the same number of observations as `series`. "
+        f"Got len(`exog`) = {len(exog_short)}, len(`series`) = {len(y)}."
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.fit(series=y, exog=exog_short)

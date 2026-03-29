@@ -55,12 +55,21 @@ class FakeTimesFM25Model:
         index 9 = 0.9).
 
     Records last call arguments for inspection.
+
+    ``forecast_config`` is pre-set to a fake object with ``max_horizon=16384``
+    to simulate an already-compiled model. This prevents ``_ensure_compiled``
+    from attempting to ``import timesfm`` (which is not installed in the test
+    environment) and allows all prediction tests to run without the real library.
     """
+
+    class _FakeForecastConfig:
+        max_horizon: int = 16384
 
     def __init__(self):
         self.last_horizon = None
         self.last_inputs = None
-        self.forecast_config = None
+        # Simulate a pre-compiled model so that _ensure_compiled is a no-op.
+        self.forecast_config = self._FakeForecastConfig()
 
     @classmethod
     def from_pretrained(cls, model_id):
@@ -843,3 +852,105 @@ def test_TimesFM25Adapter_predict_multiseries_trims_last_window_to_context_lengt
     adapter.predict(steps=3, last_window=lw)
     for arr in fake_model.last_inputs:
         assert len(arr) == context_length
+
+
+# Tests TimesFM25Adapter._ensure_compiled
+# ==============================================================================
+def test_TimesFM25Adapter_ensure_compiled_calls_compile_with_actual_steps():
+    """
+    _ensure_compiled must compile the model with max_horizon equal to the
+    requested steps, not to the adapter's max_horizon ceiling.  This is the
+    key fix for backtesting performance: TimesFM always runs max_horizon
+    autoregressive decode iterations internally, so compiling for the actual
+    steps avoids unnecessary extra forward passes.
+    """
+
+    class _TrackingModel(FakeTimesFM25Model):
+        """Records arguments passed to compile()."""
+        def __init__(self):
+            super().__init__()
+            self.compile_calls = []
+            # Reset to None so _ensure_compiled actually fires.
+            self.forecast_config = None
+
+        def compile(self, forecast_config):
+            self.compile_calls.append(forecast_config)
+            self.forecast_config = forecast_config
+
+    tracking_model = _TrackingModel()
+    adapter = TimesFM25Adapter(
+        model_id="google/timesfm-2.5-200m-pytorch",
+        model=tracking_model,
+        context_length=128,
+        max_horizon=512,
+    )
+    adapter.fit(series=y)
+
+    # Manually call _ensure_compiled with steps=12 (far below max_horizon=512).
+    # A fake ForecastConfig stand-in is needed for the second assert:
+    # after the call, forecast_config.max_horizon must equal 12 (padded by
+    # TimesFM's compile to the next output_patch multiple), NOT 512.
+    # Since timesfm is not installed we invoke _ensure_compiled via a monkey-
+    # patched path that records the argument without importing timesfm.
+    recorded = []
+
+    class _MockForecastConfig:
+        def __init__(self, **kwargs):
+            self.max_horizon = kwargs.get("max_horizon")
+
+    import types as _types
+    import sys as _sys
+    mock_timesfm = _types.ModuleType("timesfm")
+    mock_timesfm.ForecastConfig = _MockForecastConfig
+    original = _sys.modules.get("timesfm")
+    _sys.modules["timesfm"] = mock_timesfm
+    try:
+        adapter._ensure_compiled(steps=12)
+    finally:
+        if original is None:
+            del _sys.modules["timesfm"]
+        else:
+            _sys.modules["timesfm"] = original
+
+    assert len(tracking_model.compile_calls) == 1
+    compiled_config = tracking_model.compile_calls[0]
+    assert compiled_config.max_horizon == 12, (
+        f"Expected max_horizon=12 (actual steps), got {compiled_config.max_horizon}. "
+        "TimesFM always decodes max_horizon steps internally, so compiling for the "
+        "actual steps is essential to avoid unnecessary autoregressive forward passes."
+    )
+
+
+def test_TimesFM25Adapter_ensure_compiled_is_noop_when_already_compiled_for_steps():
+    """
+    _ensure_compiled must be a no-op if the model is already compiled for a
+    horizon >= steps, to avoid redundant recompilation.
+    """
+
+    class _TrackingModel(FakeTimesFM25Model):
+        def __init__(self):
+            super().__init__()
+            self.compile_calls = 0
+
+        def compile(self, forecast_config):
+            self.compile_calls += 1
+            self.forecast_config = forecast_config
+
+    tracking_model = _TrackingModel()
+    # Pre-set forecast_config with max_horizon=100 (already compiled).
+    tracking_model.forecast_config = type('_FC', (), {'max_horizon': 100})()
+
+    adapter = TimesFM25Adapter(
+        model_id="google/timesfm-2.5-200m-pytorch",
+        model=tracking_model,
+    )
+
+    # Requesting steps <= 100 must not trigger recompilation.
+    adapter._ensure_compiled(steps=12)
+    adapter._ensure_compiled(steps=50)
+    adapter._ensure_compiled(steps=100)
+
+    assert tracking_model.compile_calls == 0, (
+        "compile() must not be called when the model is already compiled for "
+        "a sufficient horizon."
+    )
