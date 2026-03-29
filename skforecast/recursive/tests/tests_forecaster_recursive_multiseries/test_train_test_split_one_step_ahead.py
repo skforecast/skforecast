@@ -1443,3 +1443,149 @@ def test_train_test_split_one_step_ahead_when_weight_func_is_dict():
          2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
     )
     np.testing.assert_array_equal(sample_weight, expected_weights)
+
+
+def test_train_test_split_one_step_ahead_encoding_onehot_with_3_series():
+    """
+    Test _train_test_split_one_step_ahead with onehot encoding and 3 series.
+    Verify that X_train_encoding and X_test_encoding correctly recover the
+    series name for every row, including the third series.
+    """
+    series_3 = pd.DataFrame(
+        {
+            'series_1': np.arange(20, dtype=float),
+            'series_2': np.arange(50, 70, dtype=float),
+            'series_3': np.arange(100, 120, dtype=float),
+        },
+        index=pd.date_range('2020-01-01', periods=20),
+    ).to_dict(orient='series')
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding='onehot'
+    )
+
+    (
+        X_train, y_train, X_test, y_test,
+        X_train_encoding, X_test_encoding,
+        sample_weight, fit_kwargs
+    ) = forecaster._train_test_split_one_step_ahead(
+            series=series_3, initial_train_size=15
+        )
+
+    # Verify all 3 series are present in encoding
+    assert set(X_train_encoding.unique()) == {'series_1', 'series_2', 'series_3'}
+    assert set(X_test_encoding.unique()) == {'series_1', 'series_2', 'series_3'}
+
+    # Verify encoding length matches X_train/X_test rows
+    assert len(X_train_encoding) == X_train.shape[0]
+    assert len(X_test_encoding) == X_test.shape[0]
+
+    # Verify one-hot columns are consistent with encoding:
+    # for each row, the active one-hot column name must match the encoding value
+    encoding_keys = ['series_1', 'series_2', 'series_3']
+    onehot_train = X_train[encoding_keys].to_numpy()
+    for i in range(len(X_train)):
+        active_idx = np.flatnonzero(onehot_train[i] == 1)
+        assert len(active_idx) == 1
+        assert X_train_encoding.iloc[i] == encoding_keys[active_idx[0]]
+
+    onehot_test = X_test[encoding_keys].to_numpy()
+    for i in range(len(X_test)):
+        active_idx = np.flatnonzero(onehot_test[i] == 1)
+        assert len(active_idx) == 1
+        assert X_test_encoding.iloc[i] == encoding_keys[active_idx[0]]
+
+
+def test_train_test_split_one_step_ahead_encoding_onehot_with_5_series_and_exog():
+    """
+    Test _train_test_split_one_step_ahead with onehot encoding, 5 series,
+    and exogenous variables. Verify that encoding extraction is correct
+    when one-hot columns are interleaved with exog columns.
+    """
+    n_obs = 30
+    series_5 = pd.DataFrame(
+        {f'series_{i}': np.arange(i * 100, i * 100 + n_obs, dtype=float)
+         for i in range(1, 6)},
+        index=pd.date_range('2020-01-01', periods=n_obs),
+    ).to_dict(orient='series')
+    exog_5 = pd.DataFrame(
+        {'exog_1': np.arange(n_obs, dtype=float)},
+        index=pd.date_range('2020-01-01', periods=n_obs),
+    )
+    exog_5 = {f'series_{i}': exog_5 for i in range(1, 6)}
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding='onehot'
+    )
+
+    (
+        X_train, y_train, X_test, y_test,
+        X_train_encoding, X_test_encoding,
+        sample_weight, fit_kwargs
+    ) = forecaster._train_test_split_one_step_ahead(
+            series=series_5, exog=exog_5, initial_train_size=20
+        )
+
+    expected_series = {f'series_{i}' for i in range(1, 6)}
+    assert set(X_train_encoding.unique()) == expected_series
+    assert set(X_test_encoding.unique()) == expected_series
+
+    # Each series block should have the same number of rows in train
+    train_counts = X_train_encoding.value_counts()
+    assert train_counts.nunique() == 1  # all series have same count
+
+    # Verify consistency: encoding label matches the onehot column that is 1
+    encoding_keys = [f'series_{i}' for i in range(1, 6)]
+    for i in range(len(X_train)):
+        row_onehot = X_train.iloc[i][encoding_keys].to_numpy()
+        active_idx = np.flatnonzero(row_onehot == 1)
+        assert len(active_idx) == 1
+        assert X_train_encoding.iloc[i] == encoding_keys[active_idx[0]]
+
+
+def test_train_test_split_one_step_ahead_encoding_onehot_with_window_features():
+    """
+    Test _train_test_split_one_step_ahead with onehot encoding and
+    window_features. Verify that encoding extraction is not confused by
+    additional window feature columns.
+    """
+    series_20 = pd.DataFrame(
+        {
+            'series_1': np.arange(20, dtype=float),
+            'series_2': np.arange(50, 70, dtype=float),
+            'series_3': np.arange(100, 120, dtype=float),
+        },
+        index=pd.date_range('2020-01-01', periods=20),
+    ).to_dict(orient='series')
+
+    rolling = RollingFeatures(stats=['mean', 'std'], window_sizes=3)
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, window_features=rolling, encoding='onehot'
+    )
+
+    (
+        X_train, y_train, X_test, y_test,
+        X_train_encoding, X_test_encoding,
+        sample_weight, fit_kwargs
+    ) = forecaster._train_test_split_one_step_ahead(
+            series=series_20, initial_train_size=15
+        )
+
+    assert set(X_train_encoding.unique()) == {'series_1', 'series_2', 'series_3'}
+    assert set(X_test_encoding.unique()) == {'series_1', 'series_2', 'series_3'}
+
+    # Columns should include lags, window features, and one-hot columns
+    assert 'roll_mean_3' in X_train.columns
+    assert 'roll_std_3' in X_train.columns
+    assert 'series_1' in X_train.columns
+    assert 'series_2' in X_train.columns
+    assert 'series_3' in X_train.columns
+
+    # Verify encoding matches one-hot columns
+    encoding_keys = ['series_1', 'series_2', 'series_3']
+    onehot_arr = X_train[encoding_keys].to_numpy()
+    for i in range(len(X_train)):
+        active_idx = np.flatnonzero(onehot_arr[i] == 1)
+        assert len(active_idx) == 1
+        assert X_train_encoding.iloc[i] == encoding_keys[active_idx[0]]
