@@ -318,15 +318,15 @@ class ForecasterRnn(ForecasterBase):
             )
         
         self.n_series_in = self.estimator.get_layer('series_input').output.shape[-1]
-        self.n_levels_out = self.estimator.get_layer('output_dense_td_layer').output.shape[-1]
-        self.exog_in_ = True if "exog_input" in self.layers_names else False
+        self.n_levels_out = self.estimator.get_layer('output_dense_layer').output.shape[-1]
+        self.exog_in_ = True if 'exog_input' in self.layers_names else False
         if self.exog_in_:
             self.n_exog_in = self.estimator.get_layer('exog_input').output.shape[-1]
         else:
             self.n_exog_in = None
-            # NOTE: This is needed because the Reshape layer changes the output 
-            # shape in _create_and_compile_model_no_exog
-            self.n_levels_out = int(self.n_levels_out / self.max_step)
+        # Both architectures (with and without exog) use Dense(n_levels * steps)
+        # + Reshape, so division by max_step is always needed.
+        self.n_levels_out = int(self.n_levels_out / self.max_step)
 
         if not len(self.levels) == self.n_levels_out:
             raise ValueError(
