@@ -40,7 +40,9 @@ from ..utils import (
     check_preprocess_series,
     check_preprocess_exog_multiseries,
     manage_warnings,
-    deepcopy_forecaster
+    deepcopy_forecaster,
+    _get_estimator_categorical_set_params,
+    _restore_estimator_categorical_set_params
 )
 
 
@@ -816,14 +818,19 @@ def bayesian_search_forecaster(
                 )
                 
                 _cached_split[lags_key] = (
-                    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+                    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs,
+                    _get_estimator_categorical_set_params(forecaster_search)
                 )
 
             else:
 
                 (
-                    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+                    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs,
+                    _estimator_cat_params
                 ) = _cached_split[lags_key]
+                _restore_estimator_categorical_set_params(
+                    forecaster_search, _estimator_cat_params
+                )
 
             metrics = _calculate_metrics_one_step_ahead(
                           forecaster    = forecaster_search,
@@ -1910,14 +1917,19 @@ def bayesian_search_forecaster_multiseries(
                 )
                 _cached_split[lags_key] = (
                     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding,
-                    sample_weight, fit_kwargs
+                    sample_weight, fit_kwargs,
+                    _get_estimator_categorical_set_params(forecaster_search)
                 )
             else:
                 (
                     X_train, y_train, X_test, y_test,
                     X_train_encoding, X_test_encoding,
-                    sample_weight, fit_kwargs
+                    sample_weight, fit_kwargs,
+                    _estimator_cat_params
                 ) = _cached_split[lags_key]
+                _restore_estimator_categorical_set_params(
+                    forecaster_search, _estimator_cat_params
+                )
 
             metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
                              forecaster            = forecaster_search,

@@ -629,6 +629,92 @@ def configure_estimator_categorical_features(
     return fit_kwargs
 
 
+def _get_estimator_categorical_set_params(
+    forecaster: object
+) -> dict[str, object]:
+    """
+    Return the current values of the estimator-level params that
+    `configure_estimator_categorical_features` sets via `set_params` for
+    XGBoost and HistGradientBoosting estimators.  For all other estimators an
+    empty dict is returned so callers can treat this as a no-op.
+
+    The function selects the estimator object that is actually mutated by
+    `configure_estimator_categorical_features`:
+    * `ForecasterDirect` and `ForecasterDirectMultiVariate` store
+      per-step clones in `estimators_[1]`.
+    * All other forecasters expose the shared template via `estimator`.
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster whose estimator params should be captured.
+
+    Returns
+    -------
+    params : dict
+        XGBoost: `{'feature_types': ..., 'enable_categorical': ...}`
+        HistGradientBoosting: `{'categorical_features': ...}`
+        Others: `{}`
+
+    """
+
+    if type(forecaster).__name__ in ('ForecasterDirect', 'ForecasterDirectMultiVariate'):
+        estimator = forecaster.estimators_[1]
+    else:
+        estimator = forecaster.estimator
+
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+
+    module = type(estimator).__module__.split('.')[0]
+    estimator_name = type(estimator).__name__
+
+    if module == 'xgboost':
+        p = estimator.get_params()
+        return {
+            'feature_types': p.get('feature_types'),
+            'enable_categorical': p.get('enable_categorical', False),
+        }
+    elif module == 'sklearn' and estimator_name in (
+        'HistGradientBoostingRegressor', 'HistGradientBoostingClassifier'
+    ):
+        p = estimator.get_params()
+        return {'categorical_features': p.get('categorical_features')}
+
+    return {}
+
+
+def _restore_estimator_categorical_set_params(
+    forecaster: object,
+    params: dict[str, object]
+) -> None:
+    """
+    Restore the estimator-level params previously captured by
+    `_get_estimator_categorical_set_params`.  No-op when `params` is empty.
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster whose estimator params should be restored.
+    params : dict
+        Dict previously returned by `_get_estimator_categorical_set_params`.
+
+    """
+
+    if not params:
+        return
+
+    if type(forecaster).__name__ in ('ForecasterDirect', 'ForecasterDirectMultiVariate'):
+        estimator = forecaster.estimators_[1]
+    else:
+        estimator = forecaster.estimator
+
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+
+    estimator.set_params(**params)
+
+
 def check_y(
     y: Any,
     series_id: str = "`y`"
@@ -2537,22 +2623,22 @@ def _build_predict_function(
     function takes a 2D numpy array `X` of shape `(n_samples, n_features)` and
     returns predictions as a 1D numpy array of shape `(n_samples,)`.
 
-    Fast prediction paths (bypassing sklearn's ``predict`` overhead) are used
+    Fast prediction paths (bypassing sklearn's `predict` overhead) are used
     for the following estimator types:
 
-    - Linear models inheriting from sklearn's ``LinearModel`` (``np.dot``)
-    - ``LGBMRegressor`` (``booster_.predict``)
-    - ``XGBRegressor`` (``get_booster().inplace_predict``)
-    - ``RandomForestRegressor`` (per-tree ``tree_.predict``)
-    - ``DecisionTreeRegressor`` (``tree_.predict``)
+    - Linear models inheriting from sklearn's `LinearModel` (`np.dot`)
+    - `LGBMRegressor` (`booster_.predict`)
+    - `XGBRegressor` (`get_booster().inplace_predict`)
+    - `RandomForestRegressor` (per-tree `tree_.predict`)
+    - `DecisionTreeRegressor` (`tree_.predict`)
 
-    For ``CatBoostRegressor`` with categorical features, the categorical column
-    indices are resolved once at build time and the array is cast to ``object``
-    dtype with those columns converted to ``int`` before each prediction call.
+    For `CatBoostRegressor` with categorical features, the categorical column
+    indices are resolved once at build time and the array is cast to `object`
+    dtype with those columns converted to `int` before each prediction call.
     CatBoost requires integer values (not float) for categorical features when
     the input is a numpy array.
 
-    For any other estimator the standard ``estimator.predict`` method is used.
+    For any other estimator the standard `estimator.predict` method is used.
 
     Parameters
     ----------
@@ -2562,8 +2648,8 @@ def _build_predict_function(
     Returns
     -------
     predict_fn : callable
-        A function ``predict_fn(X) -> np.ndarray`` where ``X`` has shape
-        ``(n_samples, n_features)`` and the output has shape ``(n_samples,)``.
+        A function `predict_fn(X) -> np.ndarray` where `X` has shape
+        `(n_samples, n_features)` and the output has shape `(n_samples,)`.
     """
 
     estimator_name = type(estimator).__name__
