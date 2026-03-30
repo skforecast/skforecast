@@ -21,6 +21,7 @@ from skforecast.exceptions import OneStepAheadValidationWarning
 from skforecast.metrics import mean_absolute_scaled_error
 from sklearn.metrics import mean_absolute_percentage_error
 from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
 import optuna
 from optuna.samplers import TPESampler
 from tqdm import tqdm
@@ -2705,3 +2706,114 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirect
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
+
+
+def test_bayesian_search_forecaster_multiseries_xgboost_categorical_no_ValueError_on_cache_hit():
+    """
+    Test that bayesian_search_forecaster_multiseries does not raise a ValueError
+    when XGBRegressor with categorical features is used and the search space
+    includes multiple lag combinations with OneStepAheadFold (cache hit scenario).
+
+    Root cause: `configure_estimator_categorical_features` sets `feature_types` on
+    the estimator via `set_params` (persistent mutation). When a cached split is
+    reused the estimator's `feature_types` must be restored to match the cached
+    X_train column count, otherwise XGBoost raises:
+      ValueError: feature types must have the same length as the number of
+                  data columns, expected <N>, got <M>
+    """
+    # np.random.seed(123); s1 = np.random.rand(50); s2 = np.random.rand(50)
+    s1 = np.array([0.69646919, 0.28613933, 0.22685145, 0.55131477, 0.71946897,
+                   0.42310646, 0.9807642 , 0.68482974, 0.4809319 , 0.39211752,
+                   0.34317802, 0.72904971, 0.43857224, 0.0596779 , 0.39804426,
+                   0.73799541, 0.18249173, 0.17545176, 0.53155137, 0.53182759,
+                   0.63440096, 0.84943179, 0.72445532, 0.61102351, 0.72244338,
+                   0.32295891, 0.36178866, 0.22826323, 0.29371405, 0.63097612,
+                   0.09210494, 0.43370117, 0.43086276, 0.4936851 , 0.42583029,
+                   0.31226122, 0.42635131, 0.89338916, 0.94416002, 0.50183668,
+                   0.62395295, 0.1156184 , 0.31728548, 0.41482621, 0.86630916,
+                   0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453])
+    s2 = np.array([0.12062867, 0.8263408 , 0.60306013, 0.54506801, 0.34276383,
+                   0.30412079, 0.41702221, 0.68130077, 0.87545684, 0.51042234,
+                   0.66931378, 0.58593655, 0.6249035 , 0.67468905, 0.84234244,
+                   0.08319499, 0.76368284, 0.24366637, 0.19422296, 0.57245696,
+                   0.09571252, 0.88532683, 0.62724897, 0.72341636, 0.01612921,
+                   0.59443188, 0.55678519, 0.15895964, 0.15307052, 0.69552953,
+                   0.31876643, 0.6919703 , 0.55438325, 0.38895057, 0.92513249,
+                   0.84167   , 0.35739757, 0.04359146, 0.30476807, 0.39818568,
+                   0.70495883, 0.99535848, 0.35591487, 0.76254781, 0.59317692,
+                   0.6917018 , 0.15112745, 0.39887629, 0.2408559 , 0.34345601])
+    series_local = pd.DataFrame({'s1': s1, 's2': s2})
+
+    # Hardcoded categorical exog with three levels ('f', 'g', 'h')
+    exog_local = pd.DataFrame({
+        'cat_feat': pd.Categorical(
+            ['f', 'f', 'g', 'h', 'g', 'g', 'g', 'g', 'g', 'g', 'g', 'h', 'g', 'g',
+             'g', 'f', 'f', 'g', 'g', 'g', 'h', 'f', 'g', 'g', 'f', 'h', 'h', 'h',
+             'g', 'f', 'f', 'h', 'g', 'h', 'g', 'h', 'g', 'h', 'g', 'h', 'g', 'h',
+             'f', 'g', 'h', 'h', 'g', 'f', 'f', 'g']
+        )
+    })
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=XGBRegressor(n_estimators=10, random_state=123, verbosity=0),
+        lags=3
+    )
+    forecaster.categorical_features = ['cat_feat']
+
+    cv = OneStepAheadFold(initial_train_size=35)
+
+    def search_space(trial):
+        return {
+            'lags': trial.suggest_categorical('lags', [[1, 2, 3], [1, 2, 3, 4, 5]]),
+            'n_estimators': trial.suggest_int('n_estimators', 5, 10),
+        }
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        results, _ = bayesian_search_forecaster_multiseries(
+            forecaster   = forecaster,
+            series       = series_local,
+            exog         = exog_local,
+            cv           = cv,
+            search_space = search_space,
+            metric       = 'mean_absolute_error',
+            n_trials     = 6,
+            random_state = 123,
+            return_best  = False,
+            verbose      = False,
+            show_progress = False
+        )
+
+    expected_results = pd.DataFrame({
+        'levels': [['s1', 's2']] * 6,
+        'lags': [
+            np.array([1, 2, 3, 4, 5]),
+            np.array([1, 2, 3]),
+            np.array([1, 2, 3]),
+            np.array([1, 2, 3]),
+            np.array([1, 2, 3]),
+            np.array([1, 2, 3]),
+        ],
+        'params': [
+            {'n_estimators': 7},
+            {'n_estimators': 7},
+            {'n_estimators': 7},
+            {'n_estimators': 6},
+            {'n_estimators': 6},
+            {'n_estimators': 9},
+        ],
+        'mean_absolute_error__weighted_average': [
+            0.232613, 0.243916, 0.243916, 0.244897, 0.244897, 0.246239
+        ],
+        'mean_absolute_error__average': [
+            0.232613, 0.243916, 0.243916, 0.244897, 0.244897, 0.246239
+        ],
+        'mean_absolute_error__pooling': [
+            0.232613, 0.243916, 0.243916, 0.244897, 0.244897, 0.246239
+        ],
+        'n_estimators': [7, 7, 7, 6, 6, 9],
+    }, index=pd.RangeIndex(start=0, stop=6, step=1))
+
+    pd.testing.assert_frame_equal(
+        results.drop(columns=['trial_number']), expected_results, atol=1e-4
+    )
