@@ -733,7 +733,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 'margin-left: 4px; font-weight: bold; letter-spacing: 0.03em;">CAT</span>'
             )
             exog_names_in_ = ', '.join(
-                f'{html.escape(name)}{_cat_badge}' if name in cat_set else html.escape(name)
+                f'{html.escape(str(name))}{_cat_badge}' if name in cat_set else html.escape(str(name))
                 for name in exog_items
             )
         
@@ -762,9 +762,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             </details>
             <details>
                 <summary>Exogenous Variables</summary>
-                <ul>
-                    {exog_names_in_}
-                </ul>
+                <p style="margin: 0.2em 0 0.2em 1.5em;">{exog_names_in_}</p>
             </details>
             <details>
                 <summary>Data Transformations</summary>
