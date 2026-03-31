@@ -17,7 +17,7 @@ from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model._base import LinearModel
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
+from sklearn.preprocessing import OrdinalEncoder
 from sklearn.svm._base import BaseLibSVM
 
 from .. import __version__
@@ -199,8 +199,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         - If None, no column is created to identify the series. Internally, the
         series are identified as an integer from 0 to n_series - 1, but no column
         is created in the training matrices.
-    encoder : sklearn.preprocessing
-        Scikit-learn preprocessing encoder used to encode the series.
     encoding_mapping_ : dict
         Mapping of the encoding used to identify the different series.
     transformer_series : transformer (preprocessor), dict
@@ -407,7 +405,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         self.estimator                          = clone(estimator)
         self.encoding                           = encoding
-        self.encoder                            = None
         self.encoding_mapping_                  = {}
         self.transformer_series                 = transformer_series
         self.transformer_series_                = None
@@ -503,19 +500,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 f"Argument `encoding` must be one of the following values: 'ordinal', "
                 f"'ordinal_category', 'onehot' or None. Got '{self.encoding}'."
             )
-
-        if self.encoding == 'onehot':
-            self.encoder = OneHotEncoder(
-                               categories    = 'auto',
-                               sparse_output = False,
-                               drop          = None,
-                               dtype         = int
-                           )
-        else:
-            self.encoder = OrdinalEncoder(
-                               categories = 'auto',
-                               dtype      = float
-                           )
 
         if self.transformer_series is None and isinstance(estimator, (LinearModel, BaseLibSVM)):
             warnings.warn(
@@ -1224,11 +1208,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             if n > 0:
                 total_rows += n
 
-        # Fit encoder on series names and build encoding mapping
+        # Build encoding mapping (sorted alphabetically for consistency)
         if not self.is_fitted:
-            names_arr = np.array(series_names_in_).reshape(-1, 1)
-            self.encoder.fit(names_arr)
-            for i, level in enumerate(self.encoder.categories_[0]):
+            for i, level in enumerate(sorted(series_names_in_)):
                 self.encoding_mapping_[str(level)] = i
 
         X_train = np.empty((total_rows, n_autoreg_cols), order='C', dtype=float)
@@ -1682,30 +1664,29 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                             X_train          = X_train
                         )
 
-        if self.encoding in ["ordinal", "ordinal_category"]:
-            X_train_encoding = self.encoder.inverse_transform(
-                X_train[["_level_skforecast"]]
-            ).ravel()
-            X_test_encoding = self.encoder.inverse_transform(
-                X_test[["_level_skforecast"]]
-            ).ravel()
-        elif self.encoding == 'onehot':
-            encoding_keys = self.encoding_mapping_.keys()
-            X_train_encoding = self.encoder.inverse_transform(
-                X_train.loc[:, encoding_keys]
-            ).ravel()
-            X_test_encoding = self.encoder.inverse_transform(
-                X_test.loc[:, encoding_keys]
-            ).ravel()
+        if self.encoding == 'onehot':
+            encoding_keys = list(self.encoding_mapping_.keys())
+            keys_arr = np.array(encoding_keys)
+            # Dot product with range recovers the column index of the active
+            # one-hot column (faster than argmax for large arrays).
+            level_indices = np.arange(len(encoding_keys))
+            X_train_encoding = keys_arr[
+                X_train[encoding_keys].to_numpy() @ level_indices
+            ]
+            X_test_encoding = keys_arr[
+                X_test[encoding_keys].to_numpy() @ level_indices
+            ]
         else:
-            X_train_encoding = self.encoder.inverse_transform(
-                X_train[["_level_skforecast"]]
-            ).ravel()
-            X_test_encoding = self.encoder.inverse_transform(
-                X_test[["_level_skforecast"]]
-            ).ravel()
-            X_train = X_train.drop(columns="_level_skforecast")
-            X_test = X_test.drop(columns="_level_skforecast")
+            reverse_mapping = {v: k for k, v in self.encoding_mapping_.items()}
+            X_train_encoding = (
+                X_train["_level_skforecast"].map(reverse_mapping).to_numpy()
+            )
+            X_test_encoding = (
+                X_test["_level_skforecast"].map(reverse_mapping).to_numpy()
+            )
+            if self.encoding is None:
+                X_train = X_train.drop(columns="_level_skforecast")
+                X_test = X_test.drop(columns="_level_skforecast")
         
         X_train_encoding = pd.Series(
             data=X_train_encoding, index=X_train.index

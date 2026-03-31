@@ -22,6 +22,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-api-change">API Change</span> The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
 
++ <span class="badge text-bg-api-change">API Change</span> Unified the RNN model architecture in <code>[create_and_compile_model]</code>. The previous exog path (`RepeatVector` + `TimeDistributed`) shared weights across prediction steps, preventing the model from learning step-specific exogenous effects. The new architecture (`Flatten` + `Dense` + `Reshape`) is used for both paths and provides independent weights per step. **Breaking change**: models serialized with previous versions must be retrained.
+
 + <span class="badge text-bg-danger">Fix</span> Minor bug fixes, see details in the "Fixed" section below.
 
 
@@ -33,6 +35,8 @@ The main changes in this release are:
 **Changed**
 
 + The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
+
++ Unified the RNN model architecture in <code>[create_and_compile_model]</code> for both exogenous and non-exogenous cases. The previous exog path used `RepeatVector` + `TimeDistributed`, which shared weights across all prediction steps and prevented the model from learning step-specific exogenous effects. The new architecture uses `Flatten` + `Dense` + `Reshape` for both paths, giving the model independent weights per prediction step. **This is a breaking change**: models serialized with previous versions are incompatible and must be retrained. The internal layer name `output_dense_td_layer` has been renamed to `output_dense_layer`.
 
 + Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
 

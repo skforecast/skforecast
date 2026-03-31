@@ -46,7 +46,7 @@ def test_ForecasterRnn_init_basic_and_attr_types():
     assert forecaster.encoding is None
     assert forecaster.differentiation is None
     assert forecaster.layers_names == [
-        'series_input', 'lstm_1', 'dense_1', 'output_dense_td_layer', 'reshape'
+        'series_input', 'lstm_1', 'dense_1', 'output_dense_layer', 'reshape'
     ]
     np.testing.assert_array_almost_equal(forecaster.lags, np.array([1, 2, 3]))
     assert forecaster.window_size == forecaster.max_lag
