@@ -26,6 +26,10 @@ The main changes in this release are:
 
 + <span class="badge text-bg-danger">Fix</span> Minor bug fixes, see details in the "Fixed" section below.
 
+!!! warning "Serialized models incompatibility"
+
+    Forecasters that were serialized with previous versions of skforecast are **not compatible** with version 0.22.0 due to internal changes in all Forecasters (new `categorical_features` parameter, changes in attributes, and an optimized training pipeline). Forecasters must be **retrained** after upgrading.
+
 
 **Added**
 

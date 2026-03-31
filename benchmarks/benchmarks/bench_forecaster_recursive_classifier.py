@@ -87,13 +87,13 @@ def run_benchmark_ForecasterRecursiveClassifier(output_dir):
     y_values = y.to_numpy()
 
     forecaster = ForecasterRecursiveClassifier(
-        estimator=DummyClassifier(strategy='constant', constant=1),
+        estimator=DummyClassifier(strategy='constant', constant='a'),
         lags=50,
         transformer_exog=StandardScaler(),
     )
 
     def ForecasterRecursiveClassifier__create_lags(forecaster, y):
-        forecaster._create_lags(y=y, X_as_pandas=False, train_index=None)
+        forecaster._create_lags(y=y)
 
     def ForecasterRecursiveClassifier__create_train_X_y(forecaster, y, exog):
         forecaster._create_train_X_y(y=y, exog=exog)
