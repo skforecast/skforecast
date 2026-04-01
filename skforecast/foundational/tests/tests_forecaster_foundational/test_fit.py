@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from skforecast.foundational import ForecasterFoundational
-from skforecast.exceptions import InputTypeWarning, IgnoredArgumentWarning, MissingExogWarning
+from skforecast.exceptions import InputTypeWarning, IgnoredArgumentWarning, MissingExogWarning, MissingValuesWarning
 
 # Fixtures
 from .fixtures_forecaster_foundational import (
@@ -155,19 +155,48 @@ def test_fit_exog_metadata_stored_for_DataFrame_exog():
     assert forecaster.exog_type_in_ == pd.DataFrame
 
 
-def test_fit_ValueError_when_len_exog_differs_from_len_y():
+def test_fit_ValueError_when_len_exog_differs_from_len_y_RangeIndex():
     """
-    Raise ValueError when exog and y have different lengths.
+    Raise ValueError when exog and y have different lengths and a RangeIndex is used.
+
+    With a RangeIndex, `align_exog_to_series` is a no-op, so the length
+    mismatch is caught by `validate_exog_fit`.
     """
     forecaster = make_forecaster()
-    exog_short = exog.iloc[:10]
+    y_range_named = y_range.rename("y")
+    exog_short_range = pd.DataFrame(
+        {"feat_a": np.arange(10, dtype=float)},
+        index=pd.RangeIndex(10),
+    )
 
     err_msg = re.escape(
         f"`exog` must have the same number of observations as `series`. "
-        f"Got len(`exog`) = {len(exog_short)}, len(`series`) = {len(y)}."
+        f"Got len(`exog`) = 10, len(`series`) = {len(y_range_named)}."
     )
     with pytest.raises(ValueError, match=err_msg):
+        forecaster.fit(series=y_range_named, exog=exog_short_range)
+
+
+def test_fit_MissingValuesWarning_when_short_DatetimeIndex_exog_reindexed():
+    """
+    When a partial DatetimeIndex exog is shorter than the series, it is
+    reindexed to the full series index (NaN-filled) and a MissingValuesWarning
+    is issued instead of raising a ValueError.
+    """
+    forecaster = make_forecaster()
+    exog_short = exog.iloc[:10]  # 10 of 50 dates
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
         forecaster.fit(series=y, exog=exog_short)
+
+    assert forecaster.is_fitted
+    missing_warnings = [
+        warning for warning in w
+        if issubclass(warning.category, MissingValuesWarning)
+    ]
+    assert len(missing_warnings) == 1
+    assert "40" in str(missing_warnings[0].message)  # 50 - 10 = 40 missing
 
 
 def test_fit_resets_state_on_refit():

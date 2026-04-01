@@ -230,6 +230,110 @@ def assert_aligned(
         )
 
 
+def align_exog_to_series(
+    series: pd.Series | pd.DataFrame | dict[str, pd.Series],
+    exog: (
+        pd.Series
+        | pd.DataFrame
+        | dict[str, pd.Series | pd.DataFrame | None]
+        | None
+    ),
+    is_multiseries: bool,
+) -> pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame | None] | None:
+    """
+    Align `exog` to the index of `series` by reindexing, filling any missing
+    positions with NaN.
+
+    Only acts when `series` has a `DatetimeIndex`. For `RangeIndex` inputs
+    the function is a no-op and returns `exog` unchanged.
+
+    When `exog` is a broadcast ``pd.Series`` or ``pd.DataFrame`` and `series`
+    is a ``dict`` with heterogeneous end dates, the broadcast exog is expanded
+    to a per-series ``dict`` so that each series gets its own correctly aligned
+    copy.
+
+    Parameters
+    ----------
+    series : pd.Series, pd.DataFrame, or dict of pd.Series
+        Training time series. The index of each series is the reference.
+    exog : pd.Series, pd.DataFrame, dict, or None
+        Exogenous variables to align.
+    is_multiseries : bool
+        Whether the forecaster is operating in multi-series mode.
+
+    Returns
+    -------
+    pd.Series, pd.DataFrame, dict, or None
+        Exog reindexed to each series index. Positions not present in the
+        original `exog` are filled with NaN and a ``MissingValuesWarning``
+        is issued.
+    """
+
+    if exog is None:
+        return None
+
+    def _reindex_one(
+        e: pd.Series | pd.DataFrame,
+        target_index: pd.DatetimeIndex,
+        label: str,
+    ) -> pd.Series | pd.DataFrame:
+        """Reindex a single exog to `target_index`, warn if NaN is introduced."""
+        if e.index.equals(target_index):
+            return e
+        n_missing = int((~target_index.isin(e.index)).sum())
+        aligned = e.reindex(target_index)
+        if n_missing > 0:
+            warnings.warn(
+                f"`align_exog_to_series`: `exog`{label} has been reindexed to "
+                f"match the `series` index. {n_missing} out of "
+                f"{len(target_index)} positions have been filled with NaN.",
+                MissingValuesWarning,
+                stacklevel=2,
+            )
+        return aligned
+
+    if not is_multiseries:
+        # Single-series: series is pd.Series
+        if not isinstance(series.index, pd.DatetimeIndex):
+            return exog
+        return _reindex_one(exog, series.index, "")
+
+    # Multi-series: build series dict for index lookup
+    if isinstance(series, pd.DataFrame):
+        series_dict: dict[str, pd.Series] = {
+            col: series[col] for col in series.columns
+        }
+    else:
+        series_dict = series
+
+    first_series = next(iter(series_dict.values()))
+    if not isinstance(first_series.index, pd.DatetimeIndex):
+        return exog
+
+    if isinstance(exog, dict):
+        # Per-series exog: reindex each entry to its corresponding series index
+        return {
+            name: (
+                _reindex_one(e, series_dict[name].index, f" for series '{name}'")
+                if (e is not None and name in series_dict)
+                else e
+            )
+            for name, e in exog.items()
+        }
+    else:
+        # Broadcast exog (pd.Series or pd.DataFrame)
+        if isinstance(series, pd.DataFrame):
+            # All columns share the same index — reindex once, keep same type
+            return _reindex_one(exog, series.index, "")
+        else:
+            # dict series with potentially heterogeneous end dates:
+            # expand broadcast to per-series dict
+            return {
+                name: _reindex_one(exog, s.index, f" for series '{name}'")
+                for name, s in series_dict.items()
+            }
+
+
 def validate_exog_fit(
     series: pd.Series | pd.DataFrame | dict[str, pd.Series],
     exog: (

@@ -25,6 +25,7 @@ from ._foundational_model import FoundationalModel
 from ._utils import (
     check_preprocess_series_type,
     check_preprocess_exog_type,
+    align_exog_to_series,
     validate_exog_fit,
     validate_last_window_exog,
     validate_exog_predict,
@@ -395,6 +396,9 @@ class ForecasterFoundational:
             check_y(y=series)
             if exog is not None:
                 check_exog(exog=exog)
+                exog = align_exog_to_series(
+                    series=series, exog=exog, is_multiseries=False
+                )
                 self.exog_names_in_per_series_ = validate_exog_fit(
                     series=series, exog=exog, is_multiseries=False
                 )
@@ -421,6 +425,9 @@ class ForecasterFoundational:
             if exog is not None:
                 self.exog_type_in_ = type(exog)  # capture original type before normalisation
                 exog = check_preprocess_exog_type(exog, series_names_in_=series_names)
+                exog = align_exog_to_series(
+                    series=series, exog=exog, is_multiseries=True
+                )
                 self.exog_names_in_per_series_ = validate_exog_fit(
                     series=series, exog=exog, is_multiseries=True
                 )

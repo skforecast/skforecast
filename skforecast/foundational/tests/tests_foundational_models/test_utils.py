@@ -9,6 +9,7 @@ import pandas as pd
 from skforecast.foundational._utils import (
     check_preprocess_series_type,
     check_preprocess_exog_type,
+    align_exog_to_series,
     validate_exog_fit,
     validate_last_window_exog,
     validate_exog_predict,
@@ -17,6 +18,7 @@ from skforecast.exceptions import (
     IgnoredArgumentWarning,
     InputTypeWarning,
     MissingExogWarning,
+    MissingValuesWarning,
 )
 
 
@@ -630,3 +632,292 @@ def test_validate_exog_predict_per_series_correct_columns_passes():
     assert set(result.keys()) == {"A", "B"}
     assert list(result["A"].columns) == ["x"]
     assert list(result["B"].columns) == ["wind"]
+
+
+# ===========================================================================
+# align_exog_to_series
+# ===========================================================================
+
+
+def test_align_exog_to_series_none_returns_none_single():
+    """
+    exog=None → returns None regardless of series type (single-series).
+    """
+    s = pd.Series([1.0, 2.0, 3.0], index=pd.date_range("2020-01-01", periods=3, freq="D"), name="y")
+    assert align_exog_to_series(series=s, exog=None, is_multiseries=False) is None
+
+
+def test_align_exog_to_series_none_returns_none_multiseries():
+    """
+    exog=None → returns None regardless of series type (multi-series).
+    """
+    idx = pd.date_range("2020-01-01", periods=3, freq="D")
+    series = {"A": pd.Series([1.0, 2.0, 3.0], index=idx, name="A")}
+    assert align_exog_to_series(series=series, exog=None, is_multiseries=True) is None
+
+
+def test_align_exog_to_series_single_rangeindex_is_noop():
+    """
+    Single-series with RangeIndex → exog returned unchanged (same object).
+    """
+    series = pd.Series([1.0, 2.0, 3.0], name="y")
+    exog = pd.Series([10.0, 20.0, 30.0], name="x")
+    result = align_exog_to_series(series=series, exog=exog, is_multiseries=False)
+    assert result is exog
+
+
+def test_align_exog_to_series_single_already_aligned_returns_same_object():
+    """
+    Single-series with DatetimeIndex, exog already has the same index →
+    the same exog object is returned without copying.
+    """
+    idx = pd.date_range("2020-01-01", periods=4, freq="D")
+    series = pd.Series(np.ones(4), index=idx, name="y")
+    exog = pd.DataFrame({"x": np.ones(4)}, index=idx)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = align_exog_to_series(series=series, exog=exog, is_multiseries=False)
+    assert result is exog
+    assert not any(issubclass(warning.category, MissingValuesWarning) for warning in w)
+
+
+def test_align_exog_to_series_single_exog_longer_clipped_to_series():
+    """
+    Single-series: exog covers a superset of the series index → after reindex
+    the result has exactly the series index (extra dates dropped).
+    """
+    idx_series = pd.date_range("2020-01-02", periods=3, freq="D")
+    idx_exog   = pd.date_range("2020-01-01", periods=5, freq="D")  # 1 extra on each side
+    series = pd.Series(np.ones(3), index=idx_series, name="y")
+    exog = pd.DataFrame({"x": np.arange(5, dtype=float)}, index=idx_exog)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = align_exog_to_series(series=series, exog=exog, is_multiseries=False)
+    assert list(result.index) == list(idx_series)
+    assert not any(issubclass(warning.category, MissingValuesWarning) for warning in w)
+
+
+def test_align_exog_to_series_single_missing_dates_fills_nan_and_warns():
+    """
+    Single-series: exog is missing some dates that the series covers → those
+    positions are NaN and a MissingValuesWarning is issued.
+    """
+    idx_series = pd.date_range("2020-01-01", periods=5, freq="D")
+    # exog only covers 3 of the 5 dates
+    idx_exog = idx_series[[0, 1, 4]]
+    series = pd.Series(np.ones(5), index=idx_series, name="y")
+    exog = pd.DataFrame({"x": [1.0, 2.0, 5.0]}, index=idx_exog)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = align_exog_to_series(series=series, exog=exog, is_multiseries=False)
+    missing_warnings = [warning for warning in w if issubclass(warning.category, MissingValuesWarning)]
+    assert len(missing_warnings) == 1
+    assert list(result.index) == list(idx_series)
+    assert result["x"].isna().sum() == 2
+    assert pd.notna(result.loc[idx_series[0], "x"])
+    assert pd.notna(result.loc[idx_series[1], "x"])
+    assert pd.isna(result.loc[idx_series[2], "x"])
+    assert pd.isna(result.loc[idx_series[3], "x"])
+    assert pd.notna(result.loc[idx_series[4], "x"])
+
+
+def test_align_exog_to_series_single_warning_message_contains_counts():
+    """
+    MissingValuesWarning message must report the number of missing positions
+    and the total length of the series.
+    """
+    idx_series = pd.date_range("2020-01-01", periods=5, freq="D")
+    idx_exog = idx_series[[0, 1, 2]]  # 2 missing
+    series = pd.Series(np.ones(5), index=idx_series, name="y")
+    exog = pd.Series([1.0, 2.0, 3.0], index=idx_exog, name="x")
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        align_exog_to_series(series=series, exog=exog, is_multiseries=False)
+    msg = str(w[0].message)
+    assert "2" in msg   # n_missing
+    assert "5" in msg   # total len
+
+
+def test_align_exog_to_series_single_series_is_pd_series_input():
+    """
+    exog can be a pd.Series (not only a DataFrame) for single-series mode.
+    """
+    idx_series = pd.date_range("2020-01-01", periods=4, freq="D")
+    idx_exog   = idx_series[[0, 1, 3]]  # missing index[2]
+    series = pd.Series(np.ones(4), index=idx_series, name="y")
+    exog = pd.Series([10.0, 20.0, 40.0], index=idx_exog, name="x")
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = align_exog_to_series(series=series, exog=exog, is_multiseries=False)
+    assert isinstance(result, pd.Series)
+    assert list(result.index) == list(idx_series)
+    assert pd.isna(result.iloc[2])
+    assert len([warning for warning in w if issubclass(warning.category, MissingValuesWarning)]) == 1
+
+
+def test_align_exog_to_series_multiseries_rangeindex_is_noop():
+    """
+    Multi-series: when the dict series has a RangeIndex, exog is returned unchanged.
+    """
+    series = {
+        "A": pd.Series([1.0, 2.0, 3.0], name="A"),
+    }
+    exog = pd.DataFrame({"x": [1.0, 2.0, 3.0]})
+    result = align_exog_to_series(series=series, exog=exog, is_multiseries=True)
+    assert result is exog
+
+
+def test_align_exog_to_series_multiseries_dict_exog_already_aligned_noop():
+    """
+    Multi-series dict exog: each entry already matches its series index →
+    same objects returned, no warnings.
+    """
+    idx = pd.date_range("2020-01-01", periods=3, freq="D")
+    series = {
+        "A": pd.Series(np.ones(3), index=idx, name="A"),
+        "B": pd.Series(np.ones(3), index=idx, name="B"),
+    }
+    exog_a = pd.DataFrame({"x": np.ones(3)}, index=idx)
+    exog_b = pd.DataFrame({"x": np.ones(3)}, index=idx)
+    exog = {"A": exog_a, "B": exog_b}
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = align_exog_to_series(series=series, exog=exog, is_multiseries=True)
+    assert result["A"] is exog_a
+    assert result["B"] is exog_b
+    assert not any(issubclass(warning.category, MissingValuesWarning) for warning in w)
+
+
+def test_align_exog_to_series_multiseries_dict_exog_missing_dates_warns_per_series():
+    """
+    Multi-series dict exog: when one series entry has missing dates, a
+    MissingValuesWarning is issued (once per series with missing data).
+    """
+    idx = pd.date_range("2020-01-01", periods=5, freq="D")
+    series = {
+        "A": pd.Series(np.ones(5), index=idx, name="A"),
+        "B": pd.Series(np.ones(5), index=idx, name="B"),
+    }
+    exog = {
+        "A": pd.DataFrame({"x": np.ones(5)}, index=idx),          # fully aligned
+        "B": pd.DataFrame({"x": np.ones(3)}, index=idx[:3]),       # missing 2 dates
+    }
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = align_exog_to_series(series=series, exog=exog, is_multiseries=True)
+    missing_warnings = [warning for warning in w if issubclass(warning.category, MissingValuesWarning)]
+    assert len(missing_warnings) == 1
+    assert result["A"] is exog["A"]
+    assert result["B"]["x"].isna().sum() == 2
+
+
+def test_align_exog_to_series_multiseries_dict_exog_none_entry_passed_through():
+    """
+    Multi-series dict exog: None entries (no exog for that series) pass through
+    unchanged.
+    """
+    idx = pd.date_range("2020-01-01", periods=3, freq="D")
+    series = {
+        "A": pd.Series(np.ones(3), index=idx, name="A"),
+        "B": pd.Series(np.ones(3), index=idx, name="B"),
+    }
+    exog = {"A": pd.DataFrame({"x": np.ones(3)}, index=idx), "B": None}
+    result = align_exog_to_series(series=series, exog=exog, is_multiseries=True)
+    assert result["B"] is None
+
+
+def test_align_exog_to_series_multiseries_broadcast_dataframe_series_reindexed():
+    """
+    Multi-series with broadcast DataFrame exog and a wide DataFrame for series:
+    exog is reindexed once to series.index; missing positions are NaN.
+    """
+    idx_series = pd.date_range("2020-01-01", periods=5, freq="D")
+    idx_exog   = pd.date_range("2020-01-01", periods=3, freq="D")  # missing last 2
+    series = pd.DataFrame(
+        {"A": np.ones(5), "B": np.ones(5)}, index=idx_series
+    )
+    exog = pd.DataFrame({"feat": [1.0, 2.0, 3.0]}, index=idx_exog)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = align_exog_to_series(series=series, exog=exog, is_multiseries=True)
+    assert isinstance(result, pd.DataFrame)
+    assert list(result.index) == list(idx_series)
+    assert result["feat"].isna().sum() == 2
+    assert len([warning for warning in w if issubclass(warning.category, MissingValuesWarning)]) == 1
+
+
+def test_align_exog_to_series_multiseries_broadcast_dict_series_expands_to_dict():
+    """
+    Multi-series with broadcast DataFrame exog and dict series: broadcast exog
+    is expanded to a per-series dict so each entry is reindexed independently.
+    """
+    idx_common = pd.date_range("2020-01-01", periods=4, freq="D")
+    series = {
+        "A": pd.Series(np.ones(4), index=idx_common, name="A"),
+        "B": pd.Series(np.ones(4), index=idx_common, name="B"),
+    }
+    exog = pd.DataFrame({"x": [1.0, 2.0, 3.0, 4.0]}, index=idx_common)
+    result = align_exog_to_series(series=series, exog=exog, is_multiseries=True)
+    assert isinstance(result, dict)
+    assert set(result.keys()) == {"A", "B"}
+    pd.testing.assert_frame_equal(result["A"], exog.reindex(idx_common))
+    pd.testing.assert_frame_equal(result["B"], exog.reindex(idx_common))
+
+
+def test_align_exog_to_series_multiseries_broadcast_dict_series_heterogeneous_end_dates():
+    """
+    Multi-series broadcast exog with dict series that have different end dates:
+    each per-series entry is reindexed to its own (shorter) index, filling NaN
+    for the dates the exog has but the series doesn't, and issuing no warning
+    because the series index is the target (no dates in the series that are
+    missing from the exog).
+    """
+    idx_full  = pd.date_range("2020-01-01", periods=5, freq="D")
+    idx_short = pd.date_range("2020-01-01", periods=3, freq="D")
+    series = {
+        "A": pd.Series(np.ones(5), index=idx_full,  name="A"),
+        "B": pd.Series(np.ones(3), index=idx_short, name="B"),
+    }
+    # exog covers all 5 days
+    exog = pd.DataFrame({"x": np.arange(5, dtype=float)}, index=idx_full)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = align_exog_to_series(series=series, exog=exog, is_multiseries=True)
+    assert isinstance(result, dict)
+    assert list(result["A"].index) == list(idx_full)
+    assert list(result["B"].index) == list(idx_short)
+    # No MissingValuesWarning: exog covers all series dates
+    assert not any(issubclass(warning.category, MissingValuesWarning) for warning in w)
+
+
+def test_align_exog_to_series_multiseries_broadcast_dict_series_shorter_exog_warns():
+    """
+    Multi-series broadcast exog with dict series: when broadcast exog does not
+    cover all dates in a series, NaN is introduced and a MissingValuesWarning
+    per affected series is issued.
+    """
+    idx_full  = pd.date_range("2020-01-01", periods=5, freq="D")
+    idx_exog  = pd.date_range("2020-01-01", periods=3, freq="D")  # missing last 2
+    series = {
+        "A": pd.Series(np.ones(5), index=idx_full, name="A"),
+        "B": pd.Series(np.ones(5), index=idx_full, name="B"),
+    }
+    exog = pd.DataFrame({"x": [1.0, 2.0, 3.0]}, index=idx_exog)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = align_exog_to_series(series=series, exog=exog, is_multiseries=True)
+    missing_warnings = [warning for warning in w if issubclass(warning.category, MissingValuesWarning)]
+    assert len(missing_warnings) == 2  # one per series
+    assert result["A"]["x"].isna().sum() == 2
+    assert result["B"]["x"].isna().sum() == 2
+
+
+def test_align_exog_to_series_multiseries_dataframe_series_rangeindex_is_noop():
+    """
+    Multi-series with wide DataFrame series that has a RangeIndex → exog
+    returned unchanged.
+    """
+    series = pd.DataFrame({"A": [1.0, 2.0, 3.0], "B": [4.0, 5.0, 6.0]})
+    exog = pd.DataFrame({"x": [1.0, 2.0, 3.0]})
+    result = align_exog_to_series(series=series, exog=exog, is_multiseries=True)
+    assert result is exog

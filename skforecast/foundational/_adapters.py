@@ -558,11 +558,18 @@ class Chronos2Adapter:
             decoded.append(q_arr.squeeze(0))
 
         # Build shared long-format index and level column
-        #  index = [t0, t0, t1, t1, …] (each timestamp repeated n_series times)
-        #  level = [s1, s2, s1, s2, …] (series names tiled for each step)
+        #  index = [t0_s0, t0_s1, t1_s0, t1_s1, …] — per-series future timestamps
+        #  level = [s0, s1, s0, s1, …] (series names tiled for each step)
         n_series = len(series_names)
-        forecast_index = expand_index(history_dict[series_names[0]].index, steps=steps)
-        long_index = np.repeat(forecast_index, n_series)
+        per_series_forecast_indices = [
+            expand_index(history_dict[name].index, steps=steps)
+            for name in series_names
+        ]
+        long_index = np.array([
+            per_series_forecast_indices[j][i]
+            for i in range(steps)
+            for j in range(n_series)
+        ])
         level_col = np.tile(series_names, steps)
 
         if quantiles is None:
@@ -737,10 +744,10 @@ class TimesFM25Adapter:
         observations are used as-is. Must be a positive integer. Defaults to
         512. TimesFM 2.5 supports up to 16 384.
     max_horizon : int, default 512
-        Maximum forecast horizon baked into the compiled decode function.
-        A `ValueError` is raised if `predict` is called with
-        `steps > max_horizon`; recreate the adapter with a larger value in
-        that case. Must be a positive integer.
+        Initial forecast horizon baked into the compiled decode function.
+        If `predict` is called with `steps > max_horizon`, `max_horizon` is
+        updated automatically and the model is recompiled transparently.
+        Must be a positive integer.
     forecast_config_kwargs : dict, optional
         Additional keyword arguments forwarded verbatim to
         `timesfm.ForecastConfig` at compile time. Supported keys:
@@ -791,9 +798,10 @@ class TimesFM25Adapter:
             if it is shorter, all available observations are passed as-is.
             Must be a positive integer.
         max_horizon : int, default 512
-            Maximum forecast horizon baked into the compiled decode function.
-            A `ValueError` is raised at predict time if
-            `steps > max_horizon`. Must be a positive integer.
+            Initial forecast horizon baked into the compiled decode function.
+            If `predict` is called with `steps > max_horizon`, `max_horizon`
+            is updated automatically and the model is recompiled
+            transparently. Must be a positive integer.
         forecast_config_kwargs : dict, optional
             Additional keyword arguments forwarded verbatim to
             `timesfm.ForecastConfig` at compile time.
@@ -1118,8 +1126,15 @@ class TimesFM25Adapter:
         # quantile_forecast: (n_series, steps, 10)  — idx 0 = mean, 1-9 = q0.1-q0.9
 
         n_series = len(series_names)
-        forecast_index = expand_index(history_dict[series_names[0]].index, steps=steps)
-        long_index = np.repeat(forecast_index, n_series)
+        per_series_forecast_indices = [
+            expand_index(history_dict[name].index, steps=steps)
+            for name in series_names
+        ]
+        long_index = np.array([
+            per_series_forecast_indices[j][i]
+            for i in range(steps)
+            for j in range(n_series)
+        ])
         level_col  = np.tile(series_names, steps)
 
         pf = np.asarray(point_forecast)[:n_series]   # (n_series, steps)
@@ -1164,7 +1179,8 @@ class TimesFM25Adapter:
         Parameters
         ----------
         steps : int
-            Number of steps ahead to forecast. Must not exceed `max_horizon`.
+            Number of steps ahead to forecast. If `steps` exceeds `max_horizon`,
+            `max_horizon` is updated automatically and the model is recompiled.
         exog : ignored
             Accepted for API compatibility. Issues an
             `IgnoredArgumentWarning` if not `None`.
@@ -1201,8 +1217,7 @@ class TimesFM25Adapter:
         Raises
         ------
         ValueError
-            If `steps > max_horizon` or a requested quantile level is not
-            in `SUPPORTED_QUANTILES`.
+            If a requested quantile level is not in `SUPPORTED_QUANTILES`.
         """
 
         if not self._is_fitted and last_window is None:
@@ -1235,10 +1250,7 @@ class TimesFM25Adapter:
         self._load_model()
 
         if steps > self.max_horizon:
-            raise ValueError(
-                f"`steps` ({steps}) exceeds `max_horizon` ({self.max_horizon}). "
-                f"Recreate the adapter with `max_horizon >= {steps}`."
-            )
+            self.max_horizon = steps
 
         self._ensure_compiled(steps)
 
@@ -1644,10 +1656,15 @@ class MoiraiAdapter:
         raw = self._run_inference(inputs_list, steps)
 
         n_series = len(series_names)
-        forecast_index = expand_index(
-            history_dict[series_names[0]].index, steps=steps
-        )
-        long_index = np.repeat(forecast_index, n_series)
+        per_series_forecast_indices = [
+            expand_index(history_dict[name].index, steps=steps)
+            for name in series_names
+        ]
+        long_index = np.array([
+            per_series_forecast_indices[j][i]
+            for i in range(steps)
+            for j in range(n_series)
+        ])
         level_col  = np.tile(series_names, steps)
 
         quantile_levels = list(quantiles) if quantiles is not None else [0.5]
