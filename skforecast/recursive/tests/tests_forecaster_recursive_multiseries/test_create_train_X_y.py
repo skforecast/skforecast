@@ -1962,7 +1962,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_y_train():
         "NaNs detected in `y_train`. They have been dropped because the "
         "target variable cannot have NaN values. Same rows have been "
         "dropped from `X_train` to maintain alignment. This is caused by "
-        "series with interspersed NaNs."
+        "interspersed NaNs in `series`."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):    
         results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -2055,7 +2055,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_y_train_datetime()
         "NaNs detected in `y_train`. They have been dropped because the "
         "target variable cannot have NaN values. Same rows have been "
         "dropped from `X_train` to maintain alignment. This is caused by "
-        "series with interspersed NaNs."
+        "interspersed NaNs in `series`."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):    
         results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -2155,7 +2155,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_T
         "NaNs detected in `X_train`. They have been dropped. If "
         "you want to keep them, set `forecaster.dropna_from_series = False`. " 
         "Same rows have been removed from `y_train` to maintain alignment. "
-        "This caused by series with interspersed NaNs."
+        "This is caused by interspersed NaNs in `series` or `exog`."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):    
         results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -2256,7 +2256,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_T
         "NaNs detected in `X_train`. They have been dropped. If "
         "you want to keep them, set `forecaster.dropna_from_series = False`. " 
         "Same rows have been removed from `y_train` to maintain alignment. "
-        "This caused by series with interspersed NaNs."
+        "This is caused by interspersed NaNs in `series` or `exog`."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):    
         results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -2552,7 +2552,8 @@ def test_ValueError_create_train_X_series_DataFrame_exog_dict_and_empty_X_train_
     
     error_msg = re.escape(
         "All samples have been removed due to NaNs. Set "
-        "`forecaster.dropna_from_series = False` or review `exog` values."
+        "`forecaster.dropna_from_series = False` or review `series` "
+        "and `exog` values."
     )
     with pytest.raises(ValueError, match = error_msg):
         forecaster._create_train_X_y(series=series, exog=exog_dict)

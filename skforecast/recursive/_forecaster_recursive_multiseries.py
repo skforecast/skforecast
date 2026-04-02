@@ -149,9 +149,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         - If `None`, no differencing is applied.
     dropna_from_series : bool, default False
         Determine whether NaN detected in the training matrices will be dropped.
+        Relevant when `series` or `exog` contain interspersed NaN values.
 
-        - If `True`, drop NaNs in X_train and same rows in y_train.
-        - If `False`, leave NaNs in X_train and warn the user.
+        - If `True`, drop NaNs in `X_train` and same rows in `y_train`.
+        - If `False`, leave NaNs in `X_train` and warn the user.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the estimator.
     binner_kwargs : dict, default None
@@ -1375,7 +1376,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 "NaNs detected in `y_train`. They have been dropped because the "
                 "target variable cannot have NaN values. Same rows have been "
                 "dropped from `X_train` to maintain alignment. This is caused by "
-                "series with interspersed NaNs.",
+                "interspersed NaNs in `series`.",
                 MissingValuesWarning
             )
 
@@ -1388,7 +1389,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     "NaNs detected in `X_train`. They have been dropped. If "
                     "you want to keep them, set `forecaster.dropna_from_series = False`. "
                     "Same rows have been removed from `y_train` to maintain alignment. "
-                    "This caused by series with interspersed NaNs.",
+                    "This is caused by interspersed NaNs in `series` or `exog`.",
                     MissingValuesWarning
                 )
         else:
@@ -1403,7 +1404,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if X_train.empty:
             raise ValueError(
                 "All samples have been removed due to NaNs. Set "
-                "`forecaster.dropna_from_series = False` or review `exog` values."
+                "`forecaster.dropna_from_series = False` or review `series` "
+                "and `exog` values."
             )
         
         if self.encoding == 'onehot':

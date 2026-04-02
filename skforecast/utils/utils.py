@@ -717,7 +717,8 @@ def _restore_estimator_categorical_set_params(
 
 def check_y(
     y: Any,
-    series_id: str = "`y`"
+    series_id: str = "`y`",
+    allow_nan: bool = False
 ) -> None:
     """
     Raise Exception if `y` is not pandas Series or if it has missing values.
@@ -728,6 +729,8 @@ def check_y(
         Time series values.
     series_id : str, default '`y`'
         Identifier of the series used in the warning message.
+    allow_nan : bool, default False
+        If `True`, skip the check for missing values.
     
     Returns
     -------
@@ -741,8 +744,9 @@ def check_y(
             f"Found {type(y)}."
         )
         
-    if y.isna().to_numpy().any():
-        raise ValueError(f"{series_id} has missing values.")
+    if not allow_nan:
+        if y.isna().to_numpy().any():
+            raise ValueError(f"{series_id} has missing values.")
     
     return
 

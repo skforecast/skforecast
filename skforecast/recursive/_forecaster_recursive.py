@@ -20,7 +20,11 @@ from sklearn.preprocessing import OrdinalEncoder
 
 from .. import __version__
 from ..base import ForecasterBase
-from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
+from ..exceptions import (
+    DataTransformationWarning, 
+    MissingValuesWarning, 
+    ResidualsUsageWarning
+)
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -97,6 +101,12 @@ class ForecasterRecursive(ForecasterBase):
         of times the differencing operation is applied to a time series. Differencing
         involves computing the differences between consecutive data points in the series.
         Before returning a prediction, the differencing operation is reversed.
+    dropna_from_series : bool, default False
+        Determine whether NaN detected in the training matrices will be dropped.
+        Relevant when `y` or `exog` contain interspersed NaN values.
+
+        - If `True`, drop NaNs in `X_train` and same rows in `y_train`.
+        - If `False`, leave NaNs in `X_train` and warn the user.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the estimator.
     binner_kwargs : dict, default None
@@ -156,6 +166,8 @@ class ForecasterRecursive(ForecasterBase):
         the value of the `differentiation` parameter.
     differentiator : TimeSeriesDifferentiator
         Skforecast object used to differentiate the time series.
+    dropna_from_series : bool
+        Determine whether NaN detected in the training matrices will be dropped.
     last_window_ : pandas DataFrame
         This window represents the most recent data observed by the predictor
         during its training phase. It contains the values needed to predict the
@@ -268,6 +280,7 @@ class ForecasterRecursive(ForecasterBase):
         categorical_features: str | list[str] | None = 'auto',
         weight_func: Callable | None = None,
         differentiation: int | None = None,
+        dropna_from_series: bool = False,
         fit_kwargs: dict[str, object] | None = None,
         binner_kwargs: dict[str, object] | None = None,
         forecaster_id: str | int | None = None
@@ -282,6 +295,7 @@ class ForecasterRecursive(ForecasterBase):
         self.differentiation                    = differentiation
         self.differentiation_max                = None
         self.differentiator                     = None
+        self.dropna_from_series                 = dropna_from_series
         self.last_window_                       = None
         self.index_type_                        = None
         self.index_freq_                        = None
@@ -402,7 +416,7 @@ class ForecasterRecursive(ForecasterBase):
             "allowed_input_types_series": ["pandas.Series"],
             "supports_exog": True,
             "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
-            "handles_missing_values_series": False, 
+            "handles_missing_values_series": True, 
             "handles_missing_values_exog": True, 
 
             "supports_lags": True,
@@ -742,10 +756,17 @@ class ForecasterRecursive(ForecasterBase):
             Type of each exogenous variable/s used in training after the transformation
             applied by `transformer_exog`. If `transformer_exog` is not used, it 
             is equal to `exog_dtypes_in_`.
+
+        Notes
+        -----
+        If `y` or `exog` contain interspersed NaN values, rows where `y_train`
+        is NaN are always removed. Rows where `X_train` contains NaN (from
+        lagged NaN in `y` or from NaN in `exog`) are removed only if
+        `dropna_from_series=True`; otherwise a warning is issued.
         
         """
 
-        check_y(y=y)
+        check_y(y=y, allow_nan=True)
         y = input_to_frame(data=y, input_name='y')
 
         if len(y) <= self.window_size:
@@ -846,7 +867,6 @@ class ForecasterRecursive(ForecasterBase):
                             )
                         )
 
-            check_exog(exog=exog, allow_nan=False)
             if self.categorical_features is None:
                 check_exog_dtypes(exog, call_check_exog=False)
             
@@ -904,6 +924,50 @@ class ForecasterRecursive(ForecasterBase):
             X_train = X_train[0]
         else:
             X_train = np.concatenate(X_train, axis=1)
+
+        # --- NaN row filtering (interspersed NaN support) ---
+        if np.isnan(y_train).any():
+            mask = ~np.isnan(y_train)
+            y_train = y_train[mask]
+            X_train = X_train[mask]
+            train_index = train_index[mask]
+            warnings.warn(
+                "NaNs detected in `y_train`. They have been dropped because the "
+                "target variable cannot have NaN values. Same rows have been "
+                "dropped from `X_train` to maintain alignment. This is caused by "
+                "interspersed NaNs in `y`.",
+                MissingValuesWarning
+            )
+
+        if self.dropna_from_series:
+            nan_rows = pd.isna(X_train).any(axis=1)
+            if nan_rows.any():
+                mask = ~nan_rows
+                X_train = X_train[mask]
+                y_train = y_train[mask]
+                train_index = train_index[mask]
+                warnings.warn(
+                    "NaNs detected in `X_train`. They have been dropped. If "
+                    "you want to keep them, set `forecaster.dropna_from_series = False`. "
+                    "Same rows have been removed from `y_train` to maintain alignment. "
+                    "This is caused by interspersed NaNs in `y` or `exog`.",
+                    MissingValuesWarning
+                )
+        else:
+            if pd.isna(X_train).any():
+                warnings.warn(
+                    "NaNs detected in `X_train`. Some estimators do not allow "
+                    "NaN values during training. If you want to drop them, "
+                    "set `forecaster.dropna_from_series = True`.",
+                    MissingValuesWarning
+                )
+
+        if len(y_train) == 0:
+            raise ValueError(
+                "All samples have been removed due to NaNs. Set "
+                "`forecaster.dropna_from_series = False` or review `y` and "
+                "`exog` values."
+            )
 
         return (
             X_train,
@@ -2701,7 +2765,7 @@ class ForecasterRecursive(ForecasterBase):
                 "arguments before using `set_in_sample_residuals()`."
             )
         
-        check_y(y=y)
+        check_y(y=y, allow_nan=True)
         y_index_range = check_extract_values_and_index(
             data=y, data_label='`y`', return_values=False
         )[1][[0, -1]]

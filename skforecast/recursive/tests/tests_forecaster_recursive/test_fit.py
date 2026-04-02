@@ -1,5 +1,6 @@
 # Unit test fit ForecasterRecursive
 # ==============================================================================
+import re
 import pytest
 from pytest import approx
 import numpy as np
@@ -12,6 +13,7 @@ from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
 from skforecast.preprocessing import RollingFeatures
 from skforecast.recursive import ForecasterRecursive
+from skforecast.exceptions import MissingValuesWarning
 
 # Fixtures
 from .fixtures_forecaster_recursive import y
@@ -457,3 +459,63 @@ def test_fit_no_categoricals_with_supported_estimators(estimator):
 
     assert forecaster.is_fitted
     assert forecaster.categorical_features_names_in_ is None
+
+
+def test_fit_with_interspersed_NaN_and_dropna_from_series_True():
+    """
+    Test fit works correctly with interspersed NaN in y and
+    dropna_from_series=True. Estimator: LinearRegression.
+    """
+
+    y_nan = pd.Series(
+        data = [1.0, 2.0, np.nan, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+        name = 'y'
+    )
+    forecaster = ForecasterRecursive(
+                     estimator          = LinearRegression(),
+                     lags               = 3,
+                     dropna_from_series = True
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. They have been dropped."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        forecaster.fit(y=y_nan)
+
+    assert forecaster.is_fitted
+    assert not np.isnan(forecaster.last_window_.to_numpy()).any()
+    predictions = forecaster.predict(steps=3)
+    assert len(predictions) == 3
+    assert not predictions.isna().any()
+
+
+def test_fit_with_interspersed_NaN_and_dropna_from_series_False():
+    """
+    Test fit works correctly with interspersed NaN in y and
+    dropna_from_series=False. Estimator: HistGradientBoostingRegressor
+    (supports NaN natively).
+    """
+
+    y_nan = pd.Series(
+        data = [1.0, 2.0, np.nan, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+        name = 'y'
+    )
+    forecaster = ForecasterRecursive(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     lags               = 3,
+                     dropna_from_series = False
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. Some estimators do not allow "
+        "NaN values during training."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        forecaster.fit(y=y_nan)
+
+    assert forecaster.is_fitted
+    assert not np.isnan(forecaster.last_window_.to_numpy()).any()
+    predictions = forecaster.predict(steps=3)
+    assert len(predictions) == 3
+    assert not predictions.isna().any()
