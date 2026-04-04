@@ -743,21 +743,19 @@ def test_check_backtesting_input_TypeError_when_boolean_arguments_not_bool(boole
 
 
 @pytest.mark.parametrize("int_argument, value",
-                         [('n_boot', 2.2), 
-                          ('n_boot', -2),
-                          ('random_state', 'not_int'),  
-                          ('random_state', -3)], 
+                         [('random_state', 'not_int'),
+                          ('random_state', -3)],
                          ids = lambda argument: f'{argument}')
 def test_check_backtesting_input_TypeError_when_integer_args_not_int_or_greater_than_0(int_argument, value):
     """
-    Test TypeError is raised in check_backtesting_input when integer arguments 
+    Test TypeError is raised in check_backtesting_input when integer arguments
     are not int or are greater than 0.
     """
     forecaster = ForecasterRecursive(
                      estimator = Ridge(random_state=123),
                      lags      = 2
                  )
-    
+
     cv = TimeSeriesFold(
              steps                 = 3,
              initial_train_size    = len(y) - 12,
@@ -766,10 +764,10 @@ def test_check_backtesting_input_TypeError_when_integer_args_not_int_or_greater_
              gap                   = 0,
              allow_incomplete_fold = True
          )
-    
+
     integer_arguments = {'n_boot': 500, 'random_state': 123}
     integer_arguments[int_argument] = value
-    
+
     err_msg = re.escape(f"`{int_argument}` must be an integer greater than 0. Got {value}.")
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(
@@ -783,6 +781,76 @@ def test_check_backtesting_input_TypeError_when_integer_args_not_int_or_greater_
             show_progress           = False,
             suppress_warnings       = False,
             **integer_arguments
+        )
+
+
+def test_check_backtesting_input_TypeError_when_n_boot_not_int():
+    """
+    Test TypeError is raised in check_backtesting_input when n_boot is not an integer.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator = Ridge(random_state=123),
+                     lags      = 2
+                 )
+
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = len(y) - 12,
+             refit                 = False,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+
+    err_msg = re.escape(f"`n_boot` must be an integer greater than 0. Got {type(2.2)}.")
+    with pytest.raises(TypeError, match = err_msg):
+        check_backtesting_input(
+            forecaster              = forecaster,
+            cv                      = cv,
+            metric                  = 'mean_absolute_error',
+            y                       = y,
+            interval                = None,
+            alpha                   = None,
+            n_boot                  = 2.2,
+            random_state            = 123,
+            use_in_sample_residuals = True,
+            show_progress           = False,
+            suppress_warnings       = False,
+        )
+
+
+def test_check_backtesting_input_ValueError_when_n_boot_less_than_1():
+    """
+    Test ValueError is raised in check_backtesting_input when n_boot < 1.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator = Ridge(random_state=123),
+                     lags      = 2
+                 )
+
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = len(y) - 12,
+             refit                 = False,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+
+    err_msg = re.escape("`n_boot` must be an integer greater than 0. Got -2.")
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster              = forecaster,
+            cv                      = cv,
+            metric                  = 'mean_absolute_error',
+            y                       = y,
+            interval                = None,
+            alpha                   = None,
+            n_boot                  = -2,
+            random_state            = 123,
+            use_in_sample_residuals = True,
+            show_progress           = False,
+            suppress_warnings       = False,
         )
 
 
