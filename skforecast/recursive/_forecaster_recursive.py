@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 from typing import Callable
+import html
 import warnings
 import sys
 import numpy as np
@@ -487,19 +488,19 @@ class ForecasterRecursive(ForecasterBase):
         style, unique_id = get_style_repr_html(self.is_fitted)
 
         if self.exog_names_in_ is None:
-            exog_names_in_ = '<li>None</li>'
+            exog_names_in_ = 'None'
         else:
             cat_set = set(self.categorical_features_names_in_ or [])
             exog_items = self.exog_names_in_
             if len(exog_items) > 50:
                 exog_items = exog_items[:25] + ['...'] + exog_items[-25:]
             _cat_badge = (
-                '<span style="background-color: #FFA726; color: white; '
-                'border-radius: 3px; padding: 1px 5px; font-size: 0.8em; '
-                'margin-left: 4px;">categorical</span>'
+                '<span title="categorical" style="background-color: #FFA726; color: white; '
+                'border-radius: 3px; padding: 1px 5px; font-size: 0.75em; '
+                'margin-left: 4px; font-weight: bold; letter-spacing: 0.03em;">CAT</span>'
             )
-            exog_names_in_ = '\n                    '.join(
-                f'<li>{name}{_cat_badge}</li>' if name in cat_set else f'<li>{name}</li>'
+            exog_names_in_ = ', '.join(
+                f'{html.escape(str(name))}{_cat_badge}' if name in cat_set else html.escape(str(name))
                 for name in exog_items
             )
 
@@ -527,9 +528,7 @@ class ForecasterRecursive(ForecasterBase):
             </details>
             <details>
                 <summary>Exogenous Variables</summary>
-                <ul>
-                    {exog_names_in_}
-                </ul>
+                <p style="margin: 0.2em 0 0.2em 1.5em;">{exog_names_in_}</p>
             </details>
             <details>
                 <summary>Data Transformations</summary>
