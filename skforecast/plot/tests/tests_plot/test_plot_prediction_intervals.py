@@ -11,10 +11,10 @@ from skforecast.plot import plot_prediction_intervals
 def _make_fixtures(steps: int = 24, seed: int = 123):
     """
     Return a tuple of (predictions, y_true, target_variable) suitable for
-    ``plot_prediction_intervals``.
+    `plot_prediction_intervals`.
 
-    ``y_true`` is built so its index ends at the same timestamp as
-    ``predictions``, guaranteeing overlap for the ``.loc`` slice inside the
+    `y_true` is built so its index ends at the same timestamp as
+    `predictions`, guaranteeing overlap for the `.loc` slice inside the
     function.
     """
     rng = np.random.default_rng(seed)

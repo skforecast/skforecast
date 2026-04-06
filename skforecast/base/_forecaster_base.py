@@ -9,7 +9,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 import textwrap
-import warnings
 import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
@@ -18,7 +17,7 @@ from sklearn.pipeline import Pipeline
 class ForecasterBase(ABC):
     """
     Base class for all forecasters in skforecast. All forecasters should specify
-    all the parameters that can be set at the class level in their ``__init__``.     
+    all the parameters that can be set at the class level in their `__init__`.     
     """
 
     def _preprocess_repr(

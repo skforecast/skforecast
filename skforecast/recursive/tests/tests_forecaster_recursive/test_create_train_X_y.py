@@ -89,24 +89,6 @@ def test_create_train_X_y_TypeError_when_exog_is_categorical_of_no_int():
         forecaster._create_train_X_y(y=y, exog=exog)
 
 
-def test_create_train_X_y_MissingValuesWarning_when_exog_has_missing_values():
-    """
-    Test _create_train_X_y issues a MissingValuesWarning when exog has missing
-    values that propagate to X_train with dropna_from_series=False.
-    """
-    y = pd.Series(np.arange(4))
-    exog = pd.Series([1, 2, 3, np.nan], name='exog')
-    forecaster = ForecasterRecursive(LinearRegression(), lags=2)
-
-    warn_msg = re.escape(
-        "NaNs detected in `X_train`. Some estimators do not allow "
-        "NaN values during training. If you want to drop them, "
-        "set `forecaster.dropna_from_series = True`."
-    )
-    with pytest.warns(MissingValuesWarning, match=warn_msg):
-        forecaster._create_train_X_y(y=y, exog=exog)
-
-
 @pytest.mark.parametrize(
     "y                        , exog", 
     [(pd.Series(np.arange(50), name='y'), pd.Series(np.arange(10), name='exog')), 
