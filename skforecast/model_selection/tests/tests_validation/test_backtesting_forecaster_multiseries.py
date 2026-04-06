@@ -15,6 +15,7 @@ from sklearn.metrics import mean_absolute_error
 from scipy.stats import norm
 
 from skforecast.exceptions import IgnoredArgumentWarning
+from skforecast.exceptions import MissingValuesWarning
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
@@ -5071,6 +5072,142 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                exog                  = exog_cat,
                                                verbose               = False
                                            )
+
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+# ******************************************************************************
+# * Test backtesting ForecasterDirectMultiVariate with NaN values              *
+# ******************************************************************************
+
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_no_refit_y_with_NaN_dropna_False():
+    """
+    Test output of backtesting_forecaster_multiseries for
+    ForecasterDirectMultiVariate with refit=False, series containing NaN
+    values, and dropna_from_series=False.
+    """
+
+    series_nan = series_wide_range.copy()
+    series_nan.loc[5, 'l1'] = np.nan
+    series_nan.loc[15, 'l1'] = np.nan
+    series_nan.loc[25, 'l1'] = np.nan
+    series_nan.loc[10, 'l2'] = np.nan
+    series_nan.loc[20, 'l2'] = np.nan
+    series_nan.loc[30, 'l2'] = np.nan
+
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     level              = 'l1',
+                     lags               = 3,
+                     steps              = 4,
+                     transformer_series = None,
+                     dropna_from_series = False,
+                 )
+    cv = TimeSeriesFold(
+             steps              = 4,
+             initial_train_size = len(series_nan) - 12,
+             refit              = False,
+             fixed_train_size   = True,
+         )
+
+    with pytest.warns(MissingValuesWarning):
+        metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                                   forecaster            = forecaster,
+                                                   series                = series_nan,
+                                                   cv                    = cv,
+                                                   levels                = 'l1',
+                                                   metric                = 'mean_absolute_error',
+                                                   add_aggregated_metric = False,
+                                                   exog                  = None,
+                                                   verbose               = False,
+                                               )
+
+    expected_metric = pd.DataFrame(
+        data    = [['l1', 0.21312112322701152]],
+        columns = ['levels', 'mean_absolute_error'],
+    )
+    expected_predictions = pd.DataFrame({
+        'l1': np.array([
+            0.4873087227586208, 0.4790654968965517,
+            0.4689579913793103, 0.483105697,
+            0.4873087227586208, 0.4790654968965517,
+            0.4689579913793103, 0.483105697,
+            0.4873087227586208, 0.4790654968965517,
+            0.4689579913793103, 0.483105697,
+        ])},
+        index = pd.RangeIndex(start=38, stop=50, step=1),
+    )
+    expected_predictions.insert(1, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+    expected_predictions = expected_df_to_long_format(
+        expected_predictions, method='backtesting-predict'
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_refit_y_with_NaN_dropna_True():
+    """
+    Test output of backtesting_forecaster_multiseries for
+    ForecasterDirectMultiVariate with refit=True, series containing NaN
+    values, and dropna_from_series=True.
+    """
+
+    series_nan = series_wide_range.copy()
+    series_nan.loc[5, 'l1'] = np.nan
+    series_nan.loc[15, 'l1'] = np.nan
+    series_nan.loc[25, 'l1'] = np.nan
+    series_nan.loc[10, 'l2'] = np.nan
+    series_nan.loc[20, 'l2'] = np.nan
+    series_nan.loc[30, 'l2'] = np.nan
+
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     level              = 'l1',
+                     lags               = 3,
+                     steps              = 4,
+                     transformer_series = None,
+                     dropna_from_series = True,
+                 )
+    cv = TimeSeriesFold(
+             steps              = 4,
+             initial_train_size = len(series_nan) - 12,
+             refit              = True,
+             fixed_train_size   = False,
+         )
+
+    with pytest.warns(MissingValuesWarning):
+        metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                                   forecaster            = forecaster,
+                                                   series                = series_nan,
+                                                   cv                    = cv,
+                                                   levels                = 'l1',
+                                                   metric                = 'mean_absolute_error',
+                                                   add_aggregated_metric = False,
+                                                   exog                  = None,
+                                                   verbose               = False,
+                                               )
+
+    expected_metric = pd.DataFrame(
+        data    = [['l1', 0.20841431023260296]],
+        columns = ['levels', 'mean_absolute_error'],
+    )
+    expected_predictions = pd.DataFrame({
+        'l1': np.array([
+            0.4947006199999999, 0.5126037609090908,
+            0.511231816923077, 0.5019408742857142,
+            0.5345245686666666, 0.5602919026666665,
+            0.5652560252941177, 0.511818905,
+            0.5040295810526316, 0.5197927147368421,
+            0.5392091276190477, 0.5028007504545454,
+        ])},
+        index = pd.RangeIndex(start=38, stop=50, step=1),
+    )
+    expected_predictions.insert(1, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+    expected_predictions = expected_df_to_long_format(
+        expected_predictions, method='backtesting-predict'
+    )
 
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)

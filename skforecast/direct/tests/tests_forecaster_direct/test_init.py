@@ -206,6 +206,24 @@ def test_init_categorical_features_correctly_stored(categorical_features):
     assert isinstance(forecaster.categorical_encoder, OrdinalEncoder)
 
 
+@pytest.mark.parametrize(
+    'dropna_from_series',
+    [True, False],
+    ids=lambda d: f'dropna_from_series: {d}'
+)
+def test_init_dropna_from_series_attribute_correctly_stored(dropna_from_series):
+    """
+    Test dropna_from_series is correctly stored when True or False.
+    """
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(),
+        steps=3,
+        lags=5,
+        dropna_from_series=dropna_from_series
+    )
+    assert forecaster.dropna_from_series == dropna_from_series
+
+
 def test_init_binner_is_created_when_binner_kwargs_is_None():
     """
     Test binner is initialized with the default kwargs.

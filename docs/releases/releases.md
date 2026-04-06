@@ -16,6 +16,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
 
++ <span class="badge text-bg-feature">Feature</span> New `dropna_from_series` parameter in <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in <code>[ForecasterRecursiveMultiSeries]</code>.
+
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Significantly reduced memory consumption and improved training speed in direct Forecasters (<code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>) when using exogenous variables. Memory usage is reduced by up to **90%** and fit times improve by **1.2x–3.8x** in large-scale scenarios, enabling training with more steps and exogenous features without running into memory limitations.
@@ -28,12 +30,14 @@ The main changes in this release are:
 
 !!! warning "Serialized models incompatibility"
 
-    Forecasters that were serialized with previous versions of skforecast are **not compatible** with version 0.22.0 due to internal changes in all Forecasters (new `categorical_features` parameter, changes in attributes, and an optimized training pipeline). Forecasters must be **retrained** after upgrading.
+    Forecasters that were serialized with previous versions of skforecast are **not compatible** with version 0.22.0 due to internal changes in all Forecasters (new parameters, changes in attributes, and an optimized training pipeline). Forecasters must be **retrained** after upgrading.
 
 
 **Added**
 
 + New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
+
++ New `dropna_from_series` parameter in <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in <code>[ForecasterRecursiveMultiSeries]</code>.
 
 
 **Changed**
