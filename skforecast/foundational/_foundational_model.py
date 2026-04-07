@@ -68,8 +68,8 @@ class FoundationalModel:
             Valid keys depend on the adapter selected by `model`; see the
             corresponding adapter class for the full parameter list.
         """
-        adapter_cls = _resolve_adapter(model)
-        self.adapter = adapter_cls(model_id=model, **kwargs)
+        adapter_cls         = _resolve_adapter(model)
+        self.adapter        = adapter_cls(model_id=model, **kwargs)
         self.context_length = self.adapter.context_length
         self.model_id       = self.adapter.model_id
 

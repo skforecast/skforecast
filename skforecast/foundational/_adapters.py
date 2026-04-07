@@ -18,6 +18,10 @@ from ..exceptions import IgnoredArgumentWarning
 from ..utils import check_y, expand_index
 
 
+# TODO: en todos los check_y añadir allow_nan = True
+# TODO: mover allow_exogenous dentro del init
+# TODO: simplificar los imputs: que el foundational model convierta todo a dict (se una o multiples series), el adapter no nevcesita gestionar formatos
+
 class Chronos2Adapter:
     """
     Adapter for Amazon Chronos-2 foundational models.
