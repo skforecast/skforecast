@@ -128,28 +128,27 @@ class ForecasterFoundational:
                 f"Got {type(estimator)}."
             )
 
-        self.estimator                = estimator
-        self.forecaster_id            = forecaster_id
-        self.last_window_             = None
-        self.index_type_              = None
-        self.index_freq_              = None
-        self.training_range_          = None
-        self.series_name_in_          = None # Only used in single-series mode; `None` in multi-series mode.
-        self.series_names_in_         = None
-        self._is_multiseries          = False
-        self.exog_in_                 = False
-        self.exog_names_in_           = None
+        self.estimator                 = estimator
+        self.forecaster_id             = forecaster_id
+        self.last_window_              = None
+        self.index_type_               = None
+        self.index_freq_               = None
+        self.training_range_           = None
+        self.series_name_in_           = None # Only used in single-series mode; `None` in multi-series mode.
+        self.series_names_in_          = None
+        self._is_multiseries           = False
+        self.exog_in_                  = False
+        self.exog_names_in_            = None
         self.exog_names_in_per_series_ = None
-        self.exog_type_in_            = None
-        self.is_fitted          = False
-        self.fit_date           = None
-        self.creation_date      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.skforecast_version = __version__
-        self.python_version     = sys.version.split(" ")[0]
-
-        self.context_length  = estimator.context_length
-        self.model_id        = estimator.model_id
-        self.window_size     = estimator.context_length
+        self.exog_type_in_             = None
+        self.is_fitted                 = False
+        self.fit_date                  = None
+        self.creation_date             = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
+        self.skforecast_version        = __version__
+        self.python_version            = sys.version.split(" ")[0]
+        self.context_length            = estimator.context_length
+        self.model_id                  = estimator.model_id
+        self.window_size               = estimator.context_length
 
         self.__skforecast_tags__ = {
             "library": "skforecast",
@@ -367,19 +366,19 @@ class ForecasterFoundational:
 
         """
 
-        self.last_window_             = None
-        self.index_type_              = None
-        self.index_freq_              = None
-        self.training_range_          = None
-        self.series_name_in_          = None
-        self.series_names_in_         = None
-        self._is_multiseries          = False
-        self.exog_in_                 = False
-        self.exog_names_in_           = None
+        self.last_window_              = None
+        self.index_type_               = None
+        self.index_freq_               = None
+        self.training_range_           = None
+        self.series_name_in_           = None
+        self.series_names_in_          = None
+        self._is_multiseries           = False
+        self.exog_in_                  = False
+        self.exog_names_in_            = None
         self.exog_names_in_per_series_ = None
-        self.exog_type_in_            = None
-        self.is_fitted                = False
-        self.fit_date                 = None
+        self.exog_type_in_             = None
+        self.is_fitted                 = False
+        self.fit_date                  = None
 
         is_multiseries, series_names, series = check_preprocess_series_type(series)
 
