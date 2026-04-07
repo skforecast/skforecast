@@ -238,7 +238,6 @@ class ForecasterDirect(ForecasterBase):
         with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
         `random_state` and `dtype`. Argument `method` is passed internally to the
         function `numpy.percentile`.
-        **New in version 0.15.0**
     n_jobs : int, 'auto', default `'auto'`
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -377,7 +376,6 @@ class ForecasterDirect(ForecasterBase):
         `transformer_y` is not `None`, residuals are stored in the transformed 
         scale. If `differentiation` is not `None`, residuals are stored after 
         differentiation. 
-        **New in version 0.15.0**
     out_sample_residuals_ : numpy ndarray
         Residuals of the model when predicting non-training data. Only stored up to
         10_000 values. Use `set_out_sample_residuals()` method to set values. If 
@@ -391,18 +389,13 @@ class ForecasterDirect(ForecasterBase):
         `transformer_y` is not `None`, residuals are stored in the transformed 
         scale. If `differentiation` is not `None`, residuals are stored after 
         differentiation. 
-        **New in version 0.15.0**
     binner : skforecast.preprocessing.QuantileBinner
         `QuantileBinner` used to discretize residuals into k bins according 
         to the predicted values associated with each residual.
-        **New in version 0.15.0**
-    binner_intervals_ : dict
         Intervals used to discretize residuals into k bins according to the predicted
         values associated with each residual.
-        **New in version 0.15.0**
     binner_kwargs : dict
         Additional arguments to pass to the `QuantileBinner`.
-        **New in version 0.15.0**
     filter_train_X_y_index_cache_ : dict
         Cache storing column indices for each forecasting step to speed up the 
         creation of training matrices during backtesting. The cache uses step 
@@ -1840,7 +1833,6 @@ class ForecasterDirect(ForecasterBase):
         The number of residuals stored per bin is limited to 
         `10_000 // self.binner.n_bins_`. The total number of residuals stored is
         `10_000`.
-        **New in version 0.15.0**
 
         Parameters
         ----------

@@ -323,7 +323,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         If `transformer_series` is not `None`, residuals are stored in the 
         transformed scale. If `differentiation` is not `None`, residuals are 
         stored after differentiation. 
-        **New in version 0.15.0**
     out_sample_residuals_ : dict
         Residuals of the model when predicting non-training data. Only stored up 
         to 10_000 values per series in the form `{series: residuals}`. Use 
@@ -337,19 +336,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         If `transformer_series` is not `None`, residuals are stored in the 
         transformed scale. If `differentiation` is not `None`, residuals are 
         stored after differentiation. 
-        **New in version 0.15.0**
     binner : dict
         Dictionary of `skforecast.preprocessing.QuantileBinner` used to discretize
         residuals of each series into k bins according to the predicted values 
         associated with each residual. In the form `{series: binner}`.
-        **New in version 0.15.0**
     binner_intervals_ : dict
         Intervals used to discretize residuals into k bins according to the predicted
         values associated with each residual. In the form `{series: binner_intervals_}`.
-        **New in version 0.15.0**
     binner_kwargs : dict
         Additional arguments to pass to the `QuantileBinner`.
-        **New in version 0.15.0**
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -2137,7 +2132,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         The number of residuals stored per bin is limited to 
         `10_000 // self.binner.n_bins_`. The total number of residuals stored is
         `10_000`.
-        **New in version 0.15.0**
 
         Parameters
         ----------

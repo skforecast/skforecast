@@ -10,6 +10,7 @@ os.environ["KERAS_BACKEND"] = "torch"
 import keras
 from skforecast.deep_learning import create_and_compile_model
 from skforecast.deep_learning import ForecasterRnn
+from skforecast.exceptions import ResidualsUsageWarning
 
 # Fixtures
 np.random.seed(123)
@@ -356,3 +357,160 @@ def test_out_sample_residuals_and_in_sample_residuals_equivalence():
         np.testing.assert_array_almost_equal(
             forecaster.in_sample_residuals_[k], forecaster.out_sample_residuals_[k]
         )
+
+
+def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence():
+    """
+    Test out sample residuals by bin are equivalent to in-sample residuals by bin
+    when training data and training predictions are passed.
+    """
+    forecaster = ForecasterRnn(
+        estimator=model, levels=["l1", "l2"], lags=3
+    )
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+    X_train, exog_train, y_train, _ = forecaster.create_train_X_y(series=series, exog=exog)
+    y_pred_train = forecaster.estimator.predict(
+        x=X_train if exog_train is None else [X_train, exog_train], verbose=0
+    )
+
+    y_true = []
+    y_pred = []
+    for i, step in enumerate(forecaster.steps):
+        y_true.append(y_train[:, i, :])
+        y_pred.append(y_pred_train[:, i, :])
+    
+    y_true = np.concatenate(y_true)
+    y_pred = np.concatenate(y_pred)
+    y_true_dict = {}
+    y_pred_dict = {}
+    for i, level in enumerate(forecaster.levels):
+        y_true_dict[level] = forecaster.transformer_series_[level].inverse_transform(
+            y_true[:, i].reshape(-1, 1)
+        ).ravel()
+        y_pred_dict[level] = forecaster.transformer_series_[level].inverse_transform(
+            y_pred[:, i].reshape(-1, 1)
+        ).ravel()
+
+    forecaster.set_out_sample_residuals(y_true=y_true_dict, y_pred=y_pred_dict)
+
+    assert (
+        forecaster.in_sample_residuals_by_bin_.keys()
+        == forecaster.out_sample_residuals_by_bin_.keys()
+    )
+    for level in forecaster.in_sample_residuals_by_bin_.keys():
+        assert (
+            forecaster.in_sample_residuals_by_bin_[level].keys()
+            == forecaster.out_sample_residuals_by_bin_[level].keys()
+        )
+        for k in forecaster.out_sample_residuals_by_bin_[level].keys():
+            np.testing.assert_array_almost_equal(
+                forecaster.in_sample_residuals_by_bin_[level][k],
+                forecaster.out_sample_residuals_by_bin_[level][k]
+            )
+
+
+def test_set_out_sample_residuals_stores_binned_residuals():
+    """
+    Test that set_out_sample_residuals populates out_sample_residuals_by_bin_.
+    """
+    rng = np.random.default_rng(123)
+    y_true = {
+        'l1': pd.Series(rng.normal(loc=10, scale=10, size=1000)),
+        'l2': pd.Series(rng.normal(loc=10, scale=10, size=1000))
+    }
+    y_pred = {
+        'l1': pd.Series(rng.normal(loc=10, scale=10, size=1000)),
+        'l2': pd.Series(rng.normal(loc=10, scale=10, size=1000))
+    }
+
+    forecaster = ForecasterRnn(
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3, transformer_series=None
+    )
+    forecaster.fit(series=series)
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+    assert isinstance(forecaster.out_sample_residuals_by_bin_, dict)
+    for level in ['l1', 'l2']:
+        assert level in forecaster.out_sample_residuals_by_bin_
+        assert isinstance(forecaster.out_sample_residuals_by_bin_[level], dict)
+        assert len(forecaster.out_sample_residuals_by_bin_[level]) > 0
+
+
+def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000_per_bin():
+    """
+    Test length residuals stored per bin when total length is greater than 10_000.
+    """
+    rng = np.random.default_rng(123)
+    y_true = {
+        'l1': pd.Series(rng.normal(loc=10, scale=10, size=50_000)),
+        'l2': pd.Series(rng.normal(loc=10, scale=10, size=50_000))
+    }
+    y_pred = {
+        'l1': pd.Series(rng.normal(loc=10, scale=10, size=50_000)),
+        'l2': pd.Series(rng.normal(loc=10, scale=10, size=50_000))
+    }
+
+    forecaster = ForecasterRnn(
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3
+    )
+    forecaster.fit(series=series)
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+    n_bins = forecaster.binner_kwargs['n_bins']
+    max_per_bin = 10_000 // n_bins
+    for level in ['l1', 'l2']:
+        for v in forecaster.out_sample_residuals_by_bin_[level].values():
+            assert len(v) <= max_per_bin
+
+
+def test_set_out_sample_residuals_append_new_residuals_per_bin():
+    """
+    Test that set_out_sample_residuals with append=True correctly appends
+    residuals per bin until the per-bin limit (10_000 // n_bins) is reached.
+    """
+    rng = np.random.default_rng(12345)
+    y_true = {
+        'l1': pd.Series(rng.normal(loc=10, scale=1, size=500)),
+        'l2': pd.Series(rng.normal(loc=10, scale=1, size=500))
+    }
+    y_pred = {
+        'l1': pd.Series(rng.normal(loc=10, scale=1, size=500)),
+        'l2': pd.Series(rng.normal(loc=10, scale=1, size=500))
+    }
+
+    forecaster = ForecasterRnn(
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3,
+        transformer_series=None, binner_kwargs={'n_bins': 2}
+    )
+    forecaster.fit(series=series)
+
+    max_per_bin = 10_000 // 2  # 5_000
+    # Append residuals multiple times
+    for i in range(1, 15):
+        forecaster.set_out_sample_residuals(
+            y_true=y_true, y_pred=y_pred, append=True
+        )
+        for level in ['l1', 'l2']:
+            for v in forecaster.out_sample_residuals_by_bin_[level].values():
+                assert len(v) <= max_per_bin
+
+
+def test_set_out_sample_residuals_when_there_are_no_residuals_for_some_bins():
+    """
+    Test that set_out_sample_residuals raises ResidualsUsageWarning when some
+    bins have no residuals and fills them with a random sample.
+    """
+    rng = np.random.default_rng(12345)
+    forecaster = ForecasterRnn(
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3,
+        transformer_series=None, binner_kwargs={'n_bins': 10}
+    )
+    forecaster.fit(series=series)
+
+    # Use very few predictions that won't cover all bins
+    y_true = {'l1': pd.Series(rng.normal(loc=0, scale=0.01, size=5))}
+    y_pred = {'l1': pd.Series(rng.normal(loc=0, scale=0.01, size=5))}
+
+    warn_msg = re.escape("have no out of sample residuals")
+    with pytest.warns(ResidualsUsageWarning, match=warn_msg):
+        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)

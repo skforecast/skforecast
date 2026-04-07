@@ -439,12 +439,6 @@ def check_backtesting_input(
                     f"`interval_method` must be 'bootstrapping' or 'conformal'. "
                     f"Got {interval_method}."
                 )
-        elif forecaster_name == 'ForecasterRnn':
-            if use_binned_residuals:
-                raise ValueError(
-                    "`use_binned_residuals` is not supported for ForecasterRnn. "
-                    "Set `use_binned_residuals=False`."
-                )
         else:
             if forecaster_name == 'ForecasterRecursiveClassifier':
                 raise ValueError(
