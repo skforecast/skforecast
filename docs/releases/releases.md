@@ -14,17 +14,17 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
++ <span class="badge text-bg-feature">Feature</span> New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (`LightGBM`, `CatBoost`, `XGBoost`, `HistGradientBoostingRegressor`).
 
-+ <span class="badge text-bg-feature">Feature</span> New `dropna_from_series` parameter in <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in <code>[ForecasterRecursiveMultiSeries]</code>.
++ <span class="badge text-bg-feature">Feature</span> New `dropna_from_series` parameter in the <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in the <code>[ForecasterRecursiveMultiSeries]</code>.
+
++ <span class="badge text-bg-feature">Feature</span> [Binned residuals](../user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRnn]</code>. 
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Significantly reduced memory consumption and improved training speed in direct Forecasters (<code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>) when using exogenous variables. Memory usage is reduced by up to **90%** and fit times improve by **1.2x–3.8x** in large-scale scenarios, enabling training with more steps and exogenous features without running into memory limitations.
 
 + <span class="badge text-bg-api-change">API Change</span> The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
-
-+ <span class="badge text-bg-api-change">API Change</span> Unified the RNN model architecture in <code>[create_and_compile_model]</code>. The previous exog path (`RepeatVector` + `TimeDistributed`) shared weights across prediction steps, preventing the model from learning step-specific exogenous effects. The new architecture (`Flatten` + `Dense` + `Reshape`) is used for both paths and provides independent weights per step. **Breaking change**: models serialized with previous versions must be retrained.
 
 + <span class="badge text-bg-danger">Fix</span> Minor bug fixes, see details in the "Fixed" section below.
 
@@ -35,16 +35,16 @@ The main changes in this release are:
 
 **Added**
 
-+ New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
++ New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (`LightGBM`, `CatBoost`, `XGBoost`, `HistGradientBoostingRegressor`).
 
-+ New `dropna_from_series` parameter in <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in <code>[ForecasterRecursiveMultiSeries]</code>.
++ New `dropna_from_series` parameter in the <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in the <code>[ForecasterRecursiveMultiSeries]</code>.
+
++ [Binned residuals](../user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRnn]</code>. 
 
 
 **Changed**
 
 + The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
-
-+ Unified the RNN model architecture in <code>[create_and_compile_model]</code> for both exogenous and non-exogenous cases. The previous exog path used `RepeatVector` + `TimeDistributed`, which shared weights across all prediction steps and prevented the model from learning step-specific exogenous effects. The new architecture uses `Flatten` + `Dense` + `Reshape` for both paths, giving the model independent weights per prediction step. **This is a breaking change**: models serialized with previous versions are incompatible and must be retrained. The internal layer name `output_dense_td_layer` has been renamed to `output_dense_layer`.
 
 + Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
 
