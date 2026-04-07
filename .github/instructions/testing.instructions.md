@@ -160,14 +160,26 @@ assert np.isclose(result, expected_value)
 
 ## Expected Values
 
-- **Hardcoded expected values**: Always compare results against a pre-computed expected value, not a dynamically computed one. The expected values should be hardcoded `np.array([...])` or `pd.Series(...)` / `pd.DataFrame(...)`.
+- **Hardcoded expected values**: Always compare results against a pre-computed expected value, not a dynamically computed one. The expected values should be hardcoded `np.array([...])` or `pd.Series(...)` / `pd.DataFrame(...)`.  
 - Build the full expected object (DataFrame, Series, array) with correct `index`, `columns`, `name`, and `dtype` to match the output exactly.
+- **Column order matters**: When building expected DataFrames, the column order must exactly match the actual output. For example, if the function returns `['fold', 'pred']`, the expected DataFrame must use that same order — not `['pred', 'fold']`. `pd.testing.assert_frame_equal` checks column order by default.
 - For tuple outputs (like `_create_train_X_y`), check each element separately:
   ```python
   pd.testing.assert_frame_equal(results[0], expected[0])
   pd.testing.assert_series_equal(results[1], expected[1])
   assert isinstance(results[2], type(None))
   ```
+
+### Generating expected values
+
+To obtain the hardcoded expected values for a new test:
+
+1. Write a temporary script (e.g., `dev/gen_expected.py`) that runs the exact same code the test will execute — same forecaster, same data, same parameters.
+2. Print the results with full precision: use `repr()` for floats and `np.set_printoptions(precision=16)` for arrays.
+3. Copy the printed values into the test as hardcoded literals.
+4. Delete the temporary script after the test passes.
+
+Never commit the generation script; it is only a development aid.
 
 ## Testing Errors and Warnings
 

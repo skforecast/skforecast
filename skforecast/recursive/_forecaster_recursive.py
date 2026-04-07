@@ -1007,6 +1007,13 @@ class ForecasterRecursive(ForecasterBase):
             Training values (predictors).
         y_train : pandas Series
             Values of the time series related to each row of `X_train`.
+
+        Notes
+        -----
+        If `y` or `exog` contain interspersed NaN values, rows where `y_train`
+        is NaN are always removed. Rows where `X_train` contains NaN (from
+        lagged NaN in `y` or from NaN in `exog`) are removed only if
+        `dropna_from_series=True`; otherwise a warning is issued.
         
         """
 
@@ -1014,12 +1021,12 @@ class ForecasterRecursive(ForecasterBase):
             X_train,
             y_train,
             train_index,
-            exog_names_in_,
-            categorical_features_names_in_,
-            X_train_window_features_names_out_,
-            X_train_exog_names_out_,
+            _,
+            _,
+            _,
+            _,
             X_train_features_names_out_,
-            exog_dtypes_in_,
+            _,
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
 

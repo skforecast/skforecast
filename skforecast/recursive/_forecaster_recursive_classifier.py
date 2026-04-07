@@ -18,7 +18,7 @@ from sklearn.base import clone
 
 import skforecast
 from ..base import ForecasterBase
-from ..exceptions import DataTransformationWarning
+from ..exceptions import DataTransformationWarning, MissingValuesWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -90,6 +90,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         index. For example, a function that assigns a lower weight to certain dates.
         Ignored if `estimator` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
+    dropna_from_series : bool, default False
+        Determine whether NaN detected in the training matrices will be dropped.
+        Relevant when `y` or `exog` contain interspersed NaN values.
+
+        - If `True`, drop NaNs in `X_train` and same rows in `y_train`.
+        - If `False`, leave NaNs in `X_train` and warn the user.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the estimator.
     forecaster_id : str, int, default None
@@ -150,6 +156,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         method. The resulting `sample_weight` cannot have negative values.
     source_code_weight_func : str
         Source code of the custom function used to create weights.
+    dropna_from_series : bool
+        Determine whether NaN detected in the training matrices will be dropped.
     last_window_ : pandas DataFrame
         This window represents the most recent data observed by the predictor
         during its training phase. It contains the values needed to predict the
@@ -254,6 +262,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         transformer_exog: object | None = None,
         categorical_features: str | list[str] | None = 'auto',
         weight_func: Callable | None = None,
+        dropna_from_series: bool = False,
         fit_kwargs: dict[str, object] | None = None,
         forecaster_id: str | int | None = None
     ) -> None:
@@ -263,6 +272,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.categorical_features               = categorical_features
         self.weight_func                        = weight_func
         self.source_code_weight_func            = None
+        self.dropna_from_series                 = dropna_from_series
         self.last_window_                       = None
         self.index_type_                        = None
         self.index_freq_                        = None
@@ -394,7 +404,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             "allowed_input_types_series": ["pandas.Series"],
             "supports_exog": True,
             "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
-            "handles_missing_values_series": False, 
+            "handles_missing_values_series": True, 
             "handles_missing_values_exog": True, 
 
             "supports_lags": True,
@@ -449,6 +459,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             f"Categorical features: {self.categorical_features} \n"
             f"Transformer for exog: {self.transformer_exog} \n"
             f"Weight function included: {True if self.weight_func is not None else False} \n"
+            f"Drop NaN from series: {self.dropna_from_series} \n"
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
@@ -496,6 +507,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
                     <li><strong>Categorical features:</strong> {self.categorical_features}</li>
                     <li><strong>Weight function included:</strong> {self.weight_func is not None}</li>
+                    <li><strong>Drop NaN from series:</strong> {self.dropna_from_series}</li>
                     <li><strong>Creation date:</strong> {self.creation_date}</li>
                     <li><strong>Last fit date:</strong> {self.fit_date}</li>
                     <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
@@ -747,9 +759,16 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             next step immediately after the training data. These values are stored
             in the original scale of the time series before undergoing any transformation.
 
+        Notes
+        -----
+        If `y` or `exog` contain interspersed NaN values, rows where `y_train`
+        is NaN are always removed. Rows where `X_train` contains NaN (from
+        lagged NaN in `y` or from NaN in `exog`) are removed only if
+        `dropna_from_series=True`; otherwise a warning is issued.
+
         """
 
-        check_y(y=y)
+        check_y(y=y, allow_nan=True)
         y = input_to_frame(data=y, input_name='y')
 
         if len(y) <= self.window_size:
@@ -764,10 +783,18 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
         y_values, y_index = check_extract_values_and_index(data=y, data_label='`y`')
 
+        nan_mask = pd.isna(y_values)
+        y_values_clean = y_values[~nan_mask] if nan_mask.any() else y_values
+        if len(y_values_clean) == 0:
+            raise ValueError(
+                "All values in `y` are NaN. A valid time series with at "
+                "least some non-NaN values is required for training."
+            )
+
         if np.issubdtype(y_values.dtype, np.floating):
-            not_allowed = np.mod(y_values, 1) != 0
+            not_allowed = np.mod(y_values_clean, 1) != 0
             if np.any(not_allowed):
-                examples = ", ".join(map(str, np.unique(y_values[not_allowed])[:5]))
+                examples = ", ".join(map(str, np.unique(y_values_clean[not_allowed])[:5]))
                 raise ValueError(
                     f"Invalid target for classification: targets must be discrete "
                     f"class labels (strings, integers or floats with decimals "
@@ -779,12 +806,22 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         fit_transformer = False if self.is_fitted else True
         if fit_transformer:
             encoding_mapping_ = {}
-            y_encoded = self.encoder.fit_transform(y_values.reshape(-1, 1)).ravel()
+            y_encoded_clean = self.encoder.fit_transform(
+                y_values_clean.reshape(-1, 1)
+            ).ravel()
             for i, cat in enumerate(self.encoder.categories_[0]):
                 encoding_mapping_[cat] = i
         else:
             encoding_mapping_ = self.encoding_mapping_
-            y_encoded = self.encoder.transform(y_values.reshape(-1, 1)).ravel()
+            y_encoded_clean = self.encoder.transform(
+                y_values_clean.reshape(-1, 1)
+            ).ravel()
+
+        if nan_mask.any():
+            y_encoded = np.full(len(y_values), np.nan)
+            y_encoded[~nan_mask] = y_encoded_clean
+        else:
+            y_encoded = y_encoded_clean
 
         classes = list(encoding_mapping_.keys())
         class_codes = list(encoding_mapping_.values())
@@ -927,6 +964,50 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         else:
             X_train = np.concatenate(X_train, axis=1)
 
+        # --- NaN row filtering (interspersed NaN support) ---
+        if np.isnan(y_train).any():
+            mask = ~np.isnan(y_train)
+            y_train = y_train[mask]
+            X_train = X_train[mask]
+            train_index = train_index[mask]
+            warnings.warn(
+                "NaNs detected in `y_train`. They have been dropped because the "
+                "target variable cannot have NaN values. Same rows have been "
+                "dropped from `X_train` to maintain alignment. This is caused by "
+                "interspersed NaNs in `y`.",
+                MissingValuesWarning
+            )
+
+        if self.dropna_from_series:
+            nan_rows = pd.isna(X_train).any(axis=1)
+            if nan_rows.any():
+                mask = ~nan_rows
+                X_train = X_train[mask]
+                y_train = y_train[mask]
+                train_index = train_index[mask]
+                warnings.warn(
+                    "NaNs detected in `X_train`. They have been dropped. If "
+                    "you want to keep them, set `forecaster.dropna_from_series = False`. "
+                    "Same rows have been removed from `y_train` to maintain alignment. "
+                    "This is caused by interspersed NaNs in `y` or `exog`.",
+                    MissingValuesWarning
+                )
+        else:
+            if pd.isna(X_train).any():
+                warnings.warn(
+                    "NaNs detected in `X_train`. Some estimators do not allow "
+                    "NaN values during training. If you want to drop them, "
+                    "set `forecaster.dropna_from_series = True`.",
+                    MissingValuesWarning
+                )
+
+        if len(y_train) == 0:
+            raise ValueError(
+                "All samples have been removed due to NaNs. Set "
+                "`forecaster.dropna_from_series = False` or review `y` and "
+                "`exog` values."
+            )
+
         last_window_ = None
         if store_last_window:
             last_window_ = pd.DataFrame(
@@ -1002,6 +1083,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         both autoregressive and exogenous categorical indices.
         Related attributes: `categorical_encoder` (`OrdinalEncoder`), 
         `categorical_features_names_in_`.
+
+        **Handling Missing Values**
+        If `y` or `exog` contain interspersed NaN values, rows where `y_train`
+        is NaN are always removed. Rows where `X_train` contains NaN (from
+        lagged NaN in `y` or from NaN in `exog`) are removed only if
+        `dropna_from_series=True`; otherwise a warning is issued.
         
         """
 
@@ -1009,15 +1096,15 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             X_train,
             y_train,
             train_index,
-            y_encoding_info_,
-            exog_names_in_,
-            categorical_features_names_in_,
-            X_train_window_features_names_out_,
-            X_train_exog_names_out_,
+            _,
+            _,
+            _,
+            _,
+            _,
             X_train_features_names_out_,
-            exog_dtypes_in_,
+            _,
             exog_dtypes_out_,
-            last_window_
+            _
         ) = self._create_train_X_y(y=y, exog=exog)
 
         X_train = pd.DataFrame(
@@ -1472,8 +1559,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         valid_classes = set(self.encoding_mapping_.keys())
         unique_values = set(last_window_values)
+        # NaN values are not class labels; exclude them from validation
+        unique_values = {v for v in unique_values if not pd.isna(v)}
         invalid_values = unique_values - valid_classes
-        
+
         if invalid_values:
             invalid_list = sorted(list(invalid_values))[:5]
             valid_list = sorted(list(valid_classes))[:10]
@@ -1489,9 +1578,18 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         # NOTE: Transform class labels to encoded values (same encoding used in 
         # training). This ensures that lag features will have the same numerical 
         # representation as during training.
-        last_window_values = self.encoder.transform(
-            last_window_values.reshape(-1, 1)
-        ).ravel()
+        nan_mask_lw = pd.isna(last_window_values)
+        if nan_mask_lw.any():
+            lw_clean = last_window_values[~nan_mask_lw]
+            lw_encoded_clean = self.encoder.transform(
+                lw_clean.reshape(-1, 1)
+            ).ravel()
+            last_window_values = np.full(len(last_window_values), np.nan)
+            last_window_values[~nan_mask_lw] = lw_encoded_clean
+        else:
+            last_window_values = self.encoder.transform(
+                last_window_values.reshape(-1, 1)
+            ).ravel()
 
         if exog is not None:
 

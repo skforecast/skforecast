@@ -16,7 +16,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
 
-+ <span class="badge text-bg-feature">Feature</span> New `dropna_from_series` parameter in <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in <code>[ForecasterRecursiveMultiSeries]</code>.
++ <span class="badge text-bg-feature">Feature</span> New `dropna_from_series` parameter in <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in <code>[ForecasterRecursiveMultiSeries]</code>.
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
 
@@ -37,7 +37,7 @@ The main changes in this release are:
 
 + New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
 
-+ New `dropna_from_series` parameter in <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in <code>[ForecasterRecursiveMultiSeries]</code>.
++ New `dropna_from_series` parameter in <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in <code>[ForecasterRecursiveMultiSeries]</code>.
 
 
 **Changed**

@@ -32,6 +32,7 @@ def test_repr_and_repr_html():
     assert "Feature encoding:" in result_repr
     assert "Training range: None" in result_repr
     assert "Last fit date: None" in result_repr
+    assert "Drop NaN from series:" in result_repr
     
     # Test _repr_html_
     result_html = forecaster._repr_html_()
@@ -46,6 +47,7 @@ def test_repr_and_repr_html():
     assert "General Information" in result_html
     assert "Classification Information" in result_html
     assert "API Reference" in result_html or "User Guide" in result_html
+    assert "Drop NaN from series:" in result_html
     assert "Not fitted" in result_html or "None" in result_html
     
     # Test 2: Forecaster with custom lags

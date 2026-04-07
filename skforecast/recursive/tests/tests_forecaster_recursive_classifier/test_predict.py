@@ -18,6 +18,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from lightgbm import LGBMClassifier
 
 from skforecast.preprocessing import RollingFeaturesClassification
+from skforecast.exceptions import MissingValuesWarning
 from skforecast.recursive import ForecasterRecursiveClassifier
 
 # Fixtures
@@ -354,4 +355,83 @@ def test_predict_output_when_window_features(steps):
                    name = 'pred'
                )
     
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_last_window_stored_has_NaN():
+    """
+    Test predict output when the stored last_window_ contains NaN values.
+    Estimator: HistGradientBoostingClassifier (supports NaN natively).
+    """
+    y_nan = pd.Series(
+        data  = [1, 2, 1, 2, 1, 2, 1, np.nan, 2, 1],
+        name  = 'y',
+        dtype = float
+    )
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator          = HistGradientBoostingClassifier(random_state=123),
+                     lags               = 3,
+                     dropna_from_series = True
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. They have been dropped. If "
+        "you want to keep them, set `forecaster.dropna_from_series = False`. "
+        "Same rows have been removed from `y_train` to maintain alignment. "
+        "This is caused by interspersed NaNs in `y` or `exog`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        forecaster.fit(y=y_nan)
+
+    assert forecaster.last_window_.isna().any().any()
+
+    warn_msg = re.escape(
+        "`last_window` has missing values."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        predictions = forecaster.predict(steps=3)
+
+    expected = pd.Series(
+                   data  = np.array([1.0, 1.0, 1.0]),
+                   index = pd.RangeIndex(start=10, stop=13, step=1),
+                   name  = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_last_window_argument_has_NaN():
+    """
+    Test predict output when a custom last_window with NaN values is passed
+    to the predict method. Estimator: HistGradientBoostingClassifier.
+    """
+    y_clean = pd.Series(
+        data  = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2],
+        name  = 'y',
+        dtype = float
+    )
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator          = HistGradientBoostingClassifier(random_state=123),
+                     lags               = 3,
+                     dropna_from_series = False
+                 )
+    forecaster.fit(y=y_clean)
+
+    last_window_nan = pd.Series(
+        data  = [np.nan, 1.0, 2.0],
+        index = pd.RangeIndex(start=17, stop=20)
+    )
+
+    warn_msg = re.escape(
+        "`last_window` has missing values."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        predictions = forecaster.predict(steps=3, last_window=last_window_nan)
+
+    expected = pd.Series(
+                   data  = np.array([2.0, 2.0, 2.0]),
+                   index = pd.RangeIndex(start=20, stop=23, step=1),
+                   name  = 'pred'
+               )
+
     pd.testing.assert_series_equal(predictions, expected)

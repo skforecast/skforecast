@@ -1666,3 +1666,283 @@ def test_create_train_X_y_output_when_window_features_lags_None_and_exog_store_l
     for k in results[10].keys():
         assert results[10][k] == expected[10][k]
     pd.testing.assert_frame_equal(results[11], expected[11])
+
+
+def test_create_train_X_y_MissingValuesWarning_and_output_when_NaN_in_X_train_and_dropna_from_series_True():
+    """
+    Test MissingValuesWarning is raised and NaN rows are dropped from X_train
+    when dropna_from_series=True and NaN in y and exog propagate into X_train.
+    """
+    y = pd.Series(
+        data  = [1, 2, np.nan, 1, 2, 1, 2, 1],
+        index = pd.RangeIndex(start=0, stop=8),
+        name  = 'y',
+        dtype = float
+    )
+    exog = pd.DataFrame(
+        {'exog_1': [10., 20., 30., 40., 50., 60., 70., 80.],
+         'exog_2': [100., 200., 300., 400., np.nan, 600., 700., 800.]},
+        index = pd.RangeIndex(start=0, stop=8)
+    )
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator          = LogisticRegression(),
+                     lags               = 3,
+                     dropna_from_series = True
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. They have been dropped. If "
+        "you want to keep them, set `forecaster.dropna_from_series = False`. "
+        "Same rows have been removed from `y_train` to maintain alignment. "
+        "This is caused by interspersed NaNs in `y` or `exog`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = forecaster._create_train_X_y(y=y, exog=exog)
+
+    # NaN at index 2 in y propagates into lags for rows 3, 4, 5
+    # NaN from exog_2 at index 4 adds another NaN row
+    # After dropping y_train NaN and X_train NaN rows,
+    # only rows at index 6 and 7 survive
+    expected = (
+        np.array([[  0.,   1.,   0.,  70., 700.],
+                  [  1.,   0.,   1.,  80., 800.]]),
+        np.array([1., 0.]),
+        pd.Index([6, 7], dtype='int64'),
+        {
+            'classes_': [1.0, 2.0],
+            'class_codes_': [0, 1],
+            'n_classes_': 2,
+            'encoding_mapping_': {1.0: 0, 2.0: 1}
+        },
+        ['exog_1', 'exog_2'],
+        [],
+        None,
+        ['exog_1', 'exog_2'],
+        ['lag_1', 'lag_2', 'lag_3', 'exog_1', 'exog_2'],
+        {'exog_1': np.dtype('float64'), 'exog_2': np.dtype('float64')},
+        {'exog_1': np.dtype('float64'), 'exog_2': np.dtype('float64')},
+        pd.DataFrame(
+            data  = {'y': [1.0, 2.0, 1.0]},
+            index = pd.RangeIndex(start=5, stop=8, step=1)
+        )
+    )
+
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
+    pd.testing.assert_index_equal(results[2], expected[2])
+    for k in results[3].keys():
+        assert results[3][k] == expected[3][k]
+    assert results[4] == expected[4]
+    assert results[5] == expected[5]
+    assert results[6] is None
+    assert results[7] == expected[7]
+    assert results[8] == expected[8]
+    for k in results[9].keys():
+        assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
+    pd.testing.assert_frame_equal(results[11], expected[11])
+
+
+def test_create_train_X_y_MissingValuesWarning_and_output_when_NaN_in_X_train_and_dropna_from_series_False():
+    """
+    Test MissingValuesWarning is raised and NaN rows are kept in X_train
+    when dropna_from_series=False and NaN in y and exog propagate into X_train.
+    """
+    y = pd.Series(
+        data  = [1, 2, np.nan, 1, 2, 1, 2, 1],
+        index = pd.RangeIndex(start=0, stop=8),
+        name  = 'y',
+        dtype = float
+    )
+    exog = pd.Series(
+        data  = [10., 20., 30., 40., np.nan, 60., 70., 80.],
+        index = pd.RangeIndex(start=0, stop=8),
+        name  = 'exog'
+    )
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator          = LogisticRegression(),
+                     lags               = 3,
+                     dropna_from_series = False
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. Some estimators do not allow "
+        "NaN values during training. If you want to drop them, "
+        "set `forecaster.dropna_from_series = True`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = forecaster._create_train_X_y(y=y, exog=exog)
+
+    # NaN from y at index 2 in lag columns + NaN from exog at index 4
+    # y_train NaN row (index 2 encoded as NaN) is dropped,
+    # but X_train NaN rows are kept since dropna_from_series=False
+    expected = (
+        np.array([[np.nan,  1.,  0., 40.],
+                  [ 0., np.nan,  1., np.nan],
+                  [ 1.,  0., np.nan, 60.],
+                  [ 0.,  1.,  0., 70.],
+                  [ 1.,  0.,  1., 80.]]),
+        np.array([0., 1., 0., 1., 0.]),
+        pd.RangeIndex(start=3, stop=8, step=1),
+        {
+            'classes_': [1.0, 2.0],
+            'class_codes_': [0, 1],
+            'n_classes_': 2,
+            'encoding_mapping_': {1.0: 0, 2.0: 1}
+        },
+        ['exog'],
+        [],
+        None,
+        ['exog'],
+        ['lag_1', 'lag_2', 'lag_3', 'exog'],
+        {'exog': np.dtype('float64')},
+        {'exog': np.dtype('float64')},
+        pd.DataFrame(
+            data  = {'y': [1.0, 2.0, 1.0]},
+            index = pd.RangeIndex(start=5, stop=8, step=1)
+        )
+    )
+
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
+    pd.testing.assert_index_equal(results[2], expected[2])
+    for k in results[3].keys():
+        assert results[3][k] == expected[3][k]
+    assert results[4] == expected[4]
+    assert results[5] == expected[5]
+    assert results[6] is None
+    assert results[7] == expected[7]
+    assert results[8] == expected[8]
+    for k in results[9].keys():
+        assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
+    pd.testing.assert_frame_equal(results[11], expected[11])
+
+
+def test_create_train_X_y_MissingValuesWarning_when_y_has_NaN_in_target_position():
+    """
+    Test MissingValuesWarning is raised when y has NaN that ends up in y_train
+    only (last position). Affected rows are dropped from X_train and y_train.
+    """
+    y = pd.Series(
+        data  = [1, 2, 1, 2, 1, 2, 1, np.nan],
+        index = pd.RangeIndex(start=0, stop=8),
+        name  = 'y',
+        dtype = float
+    )
+    exog = pd.Series(
+        data  = [10., 20., 30., 40., 50., 60., 70., 80.],
+        index = pd.RangeIndex(start=0, stop=8),
+        name  = 'exog'
+    )
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator          = LogisticRegression(),
+                     lags               = 3,
+                     dropna_from_series = False
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `y_train`. They have been dropped because the "
+        "target variable cannot have NaN values. Same rows have been "
+        "dropped from `X_train` to maintain alignment. This is caused by "
+        "interspersed NaNs in `y`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = forecaster._create_train_X_y(y=y, exog=exog)
+
+    # NaN at index 7 ends up in y_train (target) → row at index 7 dropped
+    # No NaN in X_train lags since NaN is only in last position
+    expected = (
+        np.array([[0., 1., 0., 40.],
+                  [1., 0., 1., 50.],
+                  [0., 1., 0., 60.],
+                  [1., 0., 1., 70.]]),
+        np.array([1., 0., 1., 0.]),
+        pd.Index([3, 4, 5, 6], dtype='int64'),
+        {
+            'classes_': [1.0, 2.0],
+            'class_codes_': [0, 1],
+            'n_classes_': 2,
+            'encoding_mapping_': {1.0: 0, 2.0: 1}
+        },
+        ['exog'],
+        [],
+        None,
+        ['exog'],
+        ['lag_1', 'lag_2', 'lag_3', 'exog'],
+        {'exog': np.dtype('float64')},
+        {'exog': np.dtype('float64')},
+        pd.DataFrame(
+            data  = {'y': [2.0, 1.0, np.nan]},
+            index = pd.RangeIndex(start=5, stop=8, step=1)
+        )
+    )
+
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[1], expected[1])
+    pd.testing.assert_index_equal(results[2], expected[2])
+    for k in results[3].keys():
+        assert results[3][k] == expected[3][k]
+    assert results[4] == expected[4]
+    assert results[5] == expected[5]
+    assert results[6] is None
+    assert results[7] == expected[7]
+    assert results[8] == expected[8]
+    for k in results[9].keys():
+        assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
+    pd.testing.assert_frame_equal(results[11], expected[11])
+
+
+def test_create_train_X_y_ValueError_when_all_values_in_y_are_NaN():
+    """
+    Test ValueError is raised when all values in y are NaN.
+    """
+    y = pd.Series(
+        data  = [np.nan, np.nan, np.nan, np.nan, np.nan],
+        index = pd.RangeIndex(start=0, stop=5),
+        name  = 'y',
+        dtype = float
+    )
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator          = LogisticRegression(),
+                     lags               = 2,
+                     dropna_from_series = True
+                 )
+
+    err_msg = re.escape(
+        "All values in `y` are NaN. A valid time series with at "
+        "least some non-NaN values is required for training."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster._create_train_X_y(y=y)
+
+
+def test_create_train_X_y_ValueError_when_all_samples_removed_due_to_NaN():
+    """
+    Test ValueError is raised when all y_train samples are NaN after encoding.
+    y has valid values at the start (passes early validation) but all positions
+    in y_train are NaN, so all rows are dropped.
+    """
+    y = pd.Series(
+        data  = [1, 2, np.nan, np.nan, np.nan],
+        index = pd.RangeIndex(start=0, stop=5),
+        name  = 'y',
+        dtype = float
+    )
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator          = LogisticRegression(),
+                     lags               = 2,
+                     dropna_from_series = True
+                 )
+
+    err_msg = re.escape(
+        "All samples have been removed due to NaNs. Set "
+        "`forecaster.dropna_from_series = False` or review `y` and "
+        "`exog` values."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster._create_train_X_y(y=y)
