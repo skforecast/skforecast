@@ -1478,7 +1478,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         # when X is passed as a DataFrame. Categorical columns may have:
         #   - Categorical dtype: from ordinal_category encoding (_level_skforecast).
         #     Converted via .cat.codes (NaN -> -1 by default).
-        #   - float dtype with NaN: from OrdinalEncoder applied to exog categoricals
+        #   - float dtype with NaN: from OrdinalEncoder applied to categorical exogs
         #     (encoded_missing_value=np.nan). NaN is filled with -1 before casting.
         # NOTE: Copies of X_train and X_test are needed because the cast to int
         # mutates the DataFrame in place. Without copies, the original DataFrames

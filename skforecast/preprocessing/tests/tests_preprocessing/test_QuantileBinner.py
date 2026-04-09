@@ -186,6 +186,7 @@ def test_QuantileBinner_is_equivalent_to_KBinsDiscretizer():
             strategy="quantile",
             dtype=np.float64,
             random_state=789654,
+            quantile_method='linear',
         )
         binner_2 = QuantileBinner(
             n_bins=n_bins,

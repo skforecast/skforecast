@@ -613,7 +613,7 @@ def test_check_predict_input_TypeError_when_last_window_index_frequency_is_not_i
     """
     """
     last_window = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq='D'))
-    index_freq_ = 'Y'
+    index_freq_ = 'YE'
     _, last_window_index = check_extract_values_and_index(
         data=last_window, data_label='`last_window`', ignore_freq=False, return_values=False
     )
