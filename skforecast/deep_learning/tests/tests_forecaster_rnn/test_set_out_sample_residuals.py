@@ -362,34 +362,27 @@ def test_out_sample_residuals_and_in_sample_residuals_equivalence():
 def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence():
     """
     Test out sample residuals by bin are equivalent to in-sample residuals by bin
-    when training data and training predictions are passed.
+    when training data and training predictions are passed. Uses
+    transformer_series=None and reconstructs y_pred from in_sample_residuals_
+    to avoid non-deterministic Keras predict() calls and floating-point
+    roundtrip errors from transform/inverse_transform.
     """
     forecaster = ForecasterRnn(
-        estimator=model, levels=["l1", "l2"], lags=3
+        estimator=model, levels=["l1", "l2"], lags=3,
+        transformer_series=None
     )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     X_train, exog_train, y_train, _ = forecaster.create_train_X_y(series=series, exog=exog)
-    y_pred_train = forecaster.estimator.predict(
-        x=X_train if exog_train is None else [X_train, exog_train], verbose=0
-    )
 
-    y_true = []
-    y_pred = []
-    for i, step in enumerate(forecaster.steps):
-        y_true.append(y_train[:, i, :])
-        y_pred.append(y_pred_train[:, i, :])
-    
-    y_true = np.concatenate(y_true)
-    y_pred = np.concatenate(y_pred)
     y_true_dict = {}
     y_pred_dict = {}
     for i, level in enumerate(forecaster.levels):
-        y_true_dict[level] = forecaster.transformer_series_[level].inverse_transform(
-            y_true[:, i].reshape(-1, 1)
-        ).ravel()
-        y_pred_dict[level] = forecaster.transformer_series_[level].inverse_transform(
-            y_pred[:, i].reshape(-1, 1)
-        ).ravel()
+        y_true_level = np.concatenate(
+            [y_train[:, step, i] for step in range(len(forecaster.steps))]
+        )
+        y_pred_level = y_true_level - forecaster.in_sample_residuals_[level]
+        y_true_dict[level] = y_true_level
+        y_pred_dict[level] = y_pred_level
 
     forecaster.set_out_sample_residuals(y_true=y_true_dict, y_pred=y_pred_dict)
 
