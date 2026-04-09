@@ -75,22 +75,6 @@ X_train = pd.DataFrame(
           )
 
 
-def test_create_sample_weights_output():
-    """
-    Test sample_weights creation.
-    """
-    forecaster = ForecasterRecursive(
-                     lags        = 3,
-                     estimator   = LinearRegression(),
-                     weight_func = custom_weights
-                 )
-
-    expected = np.array([1, 0, 0, 1, 1, 1, 1])
-    results = forecaster.create_sample_weights(X_train=X_train)
-
-    assert np.array_equal(results, expected)
-
-
 def test_create_sample_weights_exceptions_when_weights_has_nan():
     """
     Test sample_weights exception when weights contains NaNs.
@@ -137,3 +121,24 @@ def test_create_sample_weights_exceptions_when_weights_all_zeros():
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.create_sample_weights(X_train=X_train)
+
+
+@pytest.mark.parametrize(
+    "X_train",
+    [X_train, X_train.index],
+    ids=lambda X_tr: f'X_train: {type(X_tr)}'
+)
+def test_create_sample_weights_output(X_train):
+    """
+    Test sample_weights creation.
+    """
+    forecaster = ForecasterRecursive(
+                     lags        = 3,
+                     estimator   = LinearRegression(),
+                     weight_func = custom_weights
+                 )
+
+    expected = np.array([1, 0, 0, 1, 1, 1, 1])
+    results = forecaster.create_sample_weights(X_train=X_train)
+
+    assert np.array_equal(results, expected)

@@ -22,7 +22,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 from .. import __version__
 from ..base import ForecasterBase
-from ..exceptions import DataTransformationWarning
+from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     check_exog,
     check_interval,
@@ -39,13 +39,13 @@ from ..utils import (
     input_to_frame,
     prepare_levels_multiseries,
     prepare_steps_direct,
-    set_skforecast_warnings,
+    manage_warnings,
     transform_dataframe,
     transform_numpy,
     transform_series,
-    check_optional_dependency,
-    initialize_estimator
+    check_optional_dependency
 )
+from ..preprocessing import QuantileBinner
 
 # TODO: Review in skforecast 0.21.0
 try:
@@ -67,7 +67,6 @@ except ImportError as e:
 
 # TODO. Include window features
 # TODO. Include differentiation
-# TODO. Include binner residuals
 class ForecasterRnn(ForecasterBase):
     """
     This class turns any estimator compatible with the Keras API into a
@@ -78,7 +77,7 @@ class ForecasterRnn(ForecasterBase):
     Parameters
     ----------
     estimator : estimator or pipeline compatible with the Keras API
-        An instance of a estimator or pipeline compatible with the Keras API.
+        An instance of an estimator or pipeline compatible with the Keras API.
     levels : str, list
         Name of one or more time series to be predicted. This determine the series
         the forecaster will be handling. If `None`, all series used during training
@@ -104,15 +103,20 @@ class ForecasterRnn(ForecasterBase):
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the estimator.
+    binner_kwargs : dict, default None
+        Additional arguments to pass to the `QuantileBinner` used to discretize 
+        the residuals into k bins according to the predicted values associated 
+        with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
+        `random_state` and `dtype`. Argument `method` is passed internally to the
+        function `numpy.percentile`.
+        **New in version 0.22.0**
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
-    regressor : estimator or pipeline compatible with the Keras API
-        **Deprecated**, alias for `estimator`.
     
     Attributes
     ----------
     estimator : estimator or pipeline compatible with the Keras API
-        An instance of a estimator or pipeline compatible with the Keras API.
+        An instance of an estimator or pipeline compatible with the Keras API.
         An instance of this estimator is trained for each step. All of them
         are stored in `self.estimators_`.
     levels : str, list
@@ -192,14 +196,40 @@ class ForecasterRnn(ForecasterBase):
         Additional arguments to be passed to the `fit` method of the estimator.
     in_sample_residuals_ : dict
         Residuals of the model when predicting training data. Only stored up 
-        to 10_000 values per step in the form `{step: residuals}`. If 
+        to 10_000 values per level in the form `{level: residuals}`. If 
         `transformer_series` is not `None`, residuals are stored in the 
         transformed scale.
+    in_sample_residuals_by_bin_ : dict
+        In-sample residuals binned according to the predicted value each residual
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_` per level in the form `{level: residuals}`.
+        If `transformer_series` is not `None`, residuals are stored in the 
+        transformed scale.
+        **New in version 0.22.0**
     out_sample_residuals_ : dict
         Residuals of the model when predicting non-training data. Only stored up 
-        to 10_000 values per step in the form `{step: residuals}`. Use 
+        to 10_000 values per level in the form `{level: residuals}`. Use 
         `set_out_sample_residuals()` method to set values. If `transformer_series` 
         is not `None`, residuals are stored in the transformed scale.
+    out_sample_residuals_by_bin_ : dict
+        Out of sample residuals binned according to the predicted value each residual
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_` per level in the form `{level: residuals}`.
+        If `transformer_series` is not `None`, residuals are stored in the 
+        transformed scale.
+        **New in version 0.22.0**
+    binner : dict
+        Dictionary of `skforecast.preprocessing.QuantileBinner` used to discretize
+        residuals of each level into k bins according to the predicted values 
+        associated with each residual. In the form `{level: binner}`.
+        **New in version 0.22.0**
+    binner_intervals_ : dict
+        Intervals used to discretize residuals into k bins according to the predicted
+        values associated with each residual. In the form `{level: binner_intervals_}`.
+        **New in version 0.22.0**
+    binner_kwargs : dict
+        Additional arguments to pass to the `QuantileBinner`.
+        **New in version 0.22.0**
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -237,19 +267,19 @@ class ForecasterRnn(ForecasterBase):
 
     def __init__(
         self,
+        estimator: object,
         levels: str | list[str],
         lags: int | list[int] | np.ndarray[int] | range[int],
-        estimator: object = None,
         transformer_series: object | dict[str, object] | None = MinMaxScaler(
             feature_range=(0, 1)
         ),
         transformer_exog: object | None = MinMaxScaler(feature_range=(0, 1)),
         fit_kwargs: dict[str, object] | None = None,
-        forecaster_id: str | int | None = None,
-        regressor: object = None
+        binner_kwargs: dict[str, object] | None = None,
+        forecaster_id: str | int | None = None
     ) -> None:
         
-        self.estimator = deepcopy(initialize_estimator(estimator, regressor))
+        self.estimator = deepcopy(estimator)
         self.levels = None
         self.transformer_series = transformer_series
         self.transformer_series_ = None
@@ -267,23 +297,23 @@ class ForecasterRnn(ForecasterBase):
         self.X_train_dim_names_ = None
         self.y_train_dim_names_ = None
         self.history_ = None 
-        self.is_fitted = False
+        self.in_sample_residuals_ = None
+        self.out_sample_residuals_ = None
+        self.in_sample_residuals_by_bin_ = None
+        self.out_sample_residuals_by_bin_ = None
         self.creation_date = pd.Timestamp.today().strftime("%Y-%m-%d %H:%M:%S")
+        self.is_fitted = False
         self.fit_date = None
         self.keras_backend_ = None
         self.skforecast_version = __version__
         self.python_version = sys.version.split(" ")[0]
         self.forecaster_id = forecaster_id
-        self._probabilistic_mode = "no_binned"
+        self._probabilistic_mode = "binned"
 
         self.weight_func = None  # Ignored in this forecaster
         self.source_code_weight_func = None  # Ignored in this forecaster
         self.dropna_from_series = False  # Ignored in this forecaster
         self.encoding = None  # Ignored in this forecaster
-        self.in_sample_residuals_ = None  # Ignored in this forecaster
-        self.in_sample_residuals_by_bin_ = None  # Ignored in this forecaster
-        self.out_sample_residuals_ = None  # Ignored in this forecaster
-        self.out_sample_residuals_by_bin_ = None  # Ignored in this forecaster
         self.differentiation = None  # Ignored in this forecaster
         self.differentiation_max = None  # Ignored in this forecaster
         self.differentiator = None  # Ignored in this forecaster
@@ -295,6 +325,10 @@ class ForecasterRnn(ForecasterBase):
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(
             type(self).__name__, lags
+        )
+        self.lags_are_contiguous = (
+            self.lags is not None
+            and np.array_equal(self.lags, np.arange(1, self.max_lag + 1))
         )
         n_lags_estimator = layer_init.output.shape[1]
         if len(self.lags) != n_lags_estimator:
@@ -367,6 +401,15 @@ class ForecasterRnn(ForecasterBase):
         self.fit_kwargs = check_select_fit_kwargs(
             estimator=self.estimator, fit_kwargs=fit_kwargs
         )
+
+        self.binner = {}
+        self.binner_intervals_ = {}
+        self.binner_kwargs = binner_kwargs
+        if binner_kwargs is None:
+            self.binner_kwargs = {
+                'n_bins': 10, 'method': 'linear', 'subsample': 200000,
+                'random_state': 789654, 'dtype': np.float64
+            }
         
         self.__skforecast_tags__ = {
             "library": "skforecast",
@@ -387,6 +430,7 @@ class ForecasterRnn(ForecasterBase):
             "supports_window_features": False,
             "supports_transformer_series": True,
             "supports_transformer_exog": True,
+            "supports_categorical_features": False,
             "supports_weight_func": False,
             "supports_series_weights": False,
             "supports_differentiation": False,
@@ -394,7 +438,7 @@ class ForecasterRnn(ForecasterBase):
             "prediction_types": ["point", "interval"],
             "supports_probabilistic": True,
             "probabilistic_methods": ["conformal"],
-            "handles_binned_residuals": False
+            "handles_binned_residuals": True
         }
 
     def __repr__(self) -> str:
@@ -585,9 +629,14 @@ class ForecasterRnn(ForecasterBase):
         window_view = np.lib.stride_tricks.sliding_window_view(
             y[: len(y) - self.max_step], window_shape=self.window_size
         )
-        # Select only the rows we need and the specific lag columns
-        # Fancy indexing already creates a copy, no need for .astype(float, copy=True)
-        X_data = window_view[:n_rows, self.lags - 1]
+        # Select only the rows we need and the specific lag columns.
+        # RNN keeps chronological order (oldest lag first), so no reversal.
+        if self.lags_are_contiguous:
+            # Basic slice → view (no copy).
+            X_data = window_view[:n_rows, :len(self.lags)]
+        else:
+            # Non-contiguous lags require fancy indexing, which forces a copy.
+            X_data = window_view[:n_rows, self.lags - 1]
 
         # Use sliding_window_view for vectorized step creation
         y_view = np.lib.stride_tricks.sliding_window_view(
@@ -720,6 +769,7 @@ class ForecasterRnn(ForecasterBase):
                 transformer=self.transformer_series_[serie],
                 fit=fit_transformer,
                 inverse_transform=False,
+                force_single_column=True
             )
             X, y_steps = self._create_lags(x)
             X_train.append(X)
@@ -858,6 +908,7 @@ class ForecasterRnn(ForecasterBase):
             exog_dtypes_out_
         )
     
+    @manage_warnings
     def create_train_X_y(
         self,
         series: pd.DataFrame,
@@ -895,8 +946,6 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         output = self._create_train_X_y(series=series, exog=exog)
 
         X_train = output[0]
@@ -904,10 +953,9 @@ class ForecasterRnn(ForecasterBase):
         y_train = output[2]
         dimension_names = output[3]
         
-        set_skforecast_warnings(suppress_warnings, action='default')
-
         return X_train, exog_train, y_train, dimension_names
 
+    @manage_warnings
     def fit(
         self,
         series: pd.DataFrame,
@@ -950,8 +998,6 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action="ignore")
-
         # Reset values in case the forecaster has already been fitted.
         self.last_window_ = None
         self.index_type_ = None
@@ -966,6 +1012,11 @@ class ForecasterRnn(ForecasterBase):
         self.y_train_dim_names_ = None
         self.exog_train_dim_names_ = None
         self.in_sample_residuals_ = None
+        self.in_sample_residuals_by_bin_ = None
+        self.out_sample_residuals_ = None
+        self.out_sample_residuals_by_bin_ = None
+        self.binner = {}
+        self.binner_intervals_ = {}
         self.is_fitted = False
         self.fit_date = None
         self.keras_backend_ = keras.backend.backend()
@@ -1035,33 +1086,38 @@ class ForecasterRnn(ForecasterBase):
                 **self.fit_kwargs,
             )
 
-        # TODO: Include binning in the forecaster
         self.in_sample_residuals_ = {}
-        if store_in_sample_residuals:
+        self.in_sample_residuals_by_bin_ = {}
+        if self._probabilistic_mode is not False:
 
             # NOTE: Convert to numpy array if using torch backend
             if self.keras_backend_ == "torch":
                 y_train = y_train.detach().cpu().numpy()
 
-            residuals = y_train - self.estimator.predict(
+            y_pred_train = self.estimator.predict(
                 x=X_train if exog_train is None else [X_train, exog_train], verbose=0
             )
 
-            residuals = np.concatenate(
-                [residuals[:, i, :] for i, step in enumerate(self.steps)]
-            )
-
-            rng = np.random.default_rng(seed=random_state)
+            range_steps = range(len(self.steps))
             for i, level in enumerate(self.levels):
-                residuals_level = residuals[:, i]
-                if len(residuals_level) > 10_000:
-                    residuals_level = residuals_level[
-                        rng.integers(low=0, high=len(residuals_level), size=10_000)
-                    ]
-                self.in_sample_residuals_[level] = residuals_level
-        else:
+                y_true_level = np.concatenate(
+                    [y_train[:, step, i] for step in range_steps]
+                )
+                y_pred_level = np.concatenate(
+                    [y_pred_train[:, step, i] for step in range_steps]
+                )
+                self._binning_in_sample_residuals(
+                    level                     = level,
+                    y_true                    = y_true_level,
+                    y_pred                    = y_pred_level,
+                    store_in_sample_residuals = store_in_sample_residuals,
+                    random_state              = random_state
+                )
+
+        if not store_in_sample_residuals:
             for level in self.levels:
                 self.in_sample_residuals_[level] = None
+                self.in_sample_residuals_by_bin_[level] = None
         
         self.series_names_in_ = series_names_in_
         self.X_train_series_names_in_ = series_names_in_
@@ -1093,7 +1149,82 @@ class ForecasterRnn(ForecasterBase):
         if store_last_window:
             self.last_window_ = series.iloc[-self.max_lag :, :].copy()
 
-        set_skforecast_warnings(suppress_warnings, action="default")
+    def _binning_in_sample_residuals(
+        self,
+        level: str,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        store_in_sample_residuals: bool = False,
+        random_state: int = 123
+    ) -> None:
+        """
+        Bin residuals according to the predicted value each residual is
+        associated with. First a `skforecast.preprocessing.QuantileBinner` object
+        is fitted to the predicted values. Then, residuals are binned according
+        to the predicted value each residual is associated with. Residuals are
+        stored in the forecaster object as `in_sample_residuals_` and
+        `in_sample_residuals_by_bin_`.
+
+        `y_true` and `y_pred` assumed to be transformed according to the
+        attribute `transformer_series`. The number of residuals stored per bin 
+        is limited to `10_000 // self.binner.n_bins_`. The total number of 
+        residuals stored is `10_000`.
+        **New in version 0.22.0**
+
+        Parameters
+        ----------
+        level : str
+            Name of the series (level) to store the residuals.
+        y_true : numpy ndarray
+            True values of the time series.
+        y_pred : numpy ndarray
+            Predicted values of the time series.
+        store_in_sample_residuals : bool, default False
+            If `True`, in-sample residuals will be stored in the forecaster object
+            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+            attributes).
+            If `False`, only the intervals of the bins are stored.
+        random_state : int, default 123
+            Set a seed for the random generator so that the stored sample 
+            residuals are always deterministic.
+
+        Returns
+        -------
+        None
+        
+        """
+        
+        residuals = y_true - y_pred
+
+        if self._probabilistic_mode == "binned":
+            self.binner[level] = QuantileBinner(**self.binner_kwargs)
+            self.binner[level].fit(y_pred)
+            self.binner_intervals_[level] = self.binner[level].intervals_
+
+        if store_in_sample_residuals:
+            rng = np.random.default_rng(seed=random_state)
+            if self._probabilistic_mode == "binned":
+                bins = self.binner[level].transform(y_pred).astype(int)
+                max_sample = 10_000 // self.binner[level].n_bins_
+                
+                self.in_sample_residuals_by_bin_[level] = {}
+                for b in range(self.binner[level].n_bins_):
+                    bin_residuals = residuals[bins == b]
+                    if len(bin_residuals) == 0:
+                        continue
+                    if len(bin_residuals) > max_sample:
+                        bin_residuals = bin_residuals[
+                            rng.integers(low=0, high=len(bin_residuals), size=max_sample)
+                        ]
+                    self.in_sample_residuals_by_bin_[level][b] = bin_residuals
+            else:
+                self.in_sample_residuals_by_bin_[level] = None
+
+            if len(residuals) > 10_000:
+                residuals = residuals[
+                    rng.integers(low=0, high=len(residuals), size=10_000)
+                ]
+            self.in_sample_residuals_[level] = residuals
 
     def _create_predict_inputs(
         self,
@@ -1103,6 +1234,7 @@ class ForecasterRnn(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None,
         predict_probabilistic: bool = False,
         use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = True,
         check_inputs: bool = True
     ) -> tuple[list[np.ndarray], dict[str, dict], list[int], list[str], pd.Index]:
         """
@@ -1140,6 +1272,10 @@ class ForecasterRnn(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
+        use_binned_residuals : bool, default True
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
         check_inputs : bool, default True
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
@@ -1199,9 +1335,9 @@ class ForecasterRnn(ForecasterBase):
                     use_in_sample_residuals      = use_in_sample_residuals,
                     in_sample_residuals_         = self.in_sample_residuals_,
                     out_sample_residuals_        = self.out_sample_residuals_,
-                    use_binned_residuals         = False,
-                    in_sample_residuals_by_bin_  = None,
-                    out_sample_residuals_by_bin_ = None,
+                    use_binned_residuals         = use_binned_residuals,
+                    in_sample_residuals_by_bin_  = self.in_sample_residuals_by_bin_,
+                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_,
                     levels                       = self.levels
                 )
 
@@ -1278,6 +1414,7 @@ class ForecasterRnn(ForecasterBase):
 
         return X, X_predict_dimension_names, steps, levels, prediction_index
 
+    @manage_warnings
     def create_predict_X(
         self,
         steps: int | list[int] | None = None,
@@ -1331,8 +1468,6 @@ class ForecasterRnn(ForecasterBase):
         
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         (
             X,
             X_predict_dimension_names,
@@ -1377,10 +1512,9 @@ class ForecasterRnn(ForecasterBase):
                 DataTransformationWarning
             )
         
-        set_skforecast_warnings(suppress_warnings, action='default')
-
         return X_predict, exog_predict
 
+    @manage_warnings
     def predict(
         self,
         steps: int | list[int] | None = None,
@@ -1432,8 +1566,6 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action="ignore")
-
         (
             X,
             _,
@@ -1473,10 +1605,8 @@ class ForecasterRnn(ForecasterBase):
         )
         predictions = predictions[predictions['level'].isin(levels)]
 
-        set_skforecast_warnings(suppress_warnings, action="default")
-
         return predictions
-    
+
     def _predict_interval_conformal(
         self,
         steps: int | list[int] | None = None,
@@ -1484,7 +1614,8 @@ class ForecasterRnn(ForecasterBase):
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         nominal_coverage: float = 0.95,
-        use_in_sample_residuals: bool = True
+        use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = True
     ) -> pd.DataFrame:
         """
         Generate prediction intervals using the conformal prediction 
@@ -1522,6 +1653,10 @@ class ForecasterRnn(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
+        use_binned_residuals : bool, default True
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
 
         Returns
         -------
@@ -1551,13 +1686,16 @@ class ForecasterRnn(ForecasterBase):
                 last_window             = last_window,
                 exog                    = exog,
                 predict_probabilistic   = True,
-                use_in_sample_residuals = use_in_sample_residuals
+                use_in_sample_residuals = use_in_sample_residuals,
+                use_binned_residuals    = use_binned_residuals
             )
 
         if use_in_sample_residuals:
             residuals = self.in_sample_residuals_
+            residuals_by_bin = self.in_sample_residuals_by_bin_
         else:
             residuals = self.out_sample_residuals_
+            residuals_by_bin = self.out_sample_residuals_by_bin_
 
         predictions = self.estimator.predict(
             X[0] if not self.exog_in_ else X, verbose=0
@@ -1575,9 +1713,22 @@ class ForecasterRnn(ForecasterBase):
             # NOTE: The correction factor is calculated only for the levels
             # included in the levels to predict.
             if level in levels:
-                correction_factor[:, i] = np.quantile(
-                    np.abs(residuals[level]), nominal_coverage
-                )
+                if use_binned_residuals:
+                    correction_factor_by_bin = {
+                        k: np.quantile(np.abs(v), nominal_coverage)
+                        for k, v in residuals_by_bin[level].items()
+                    }
+                    replace_func = np.vectorize(
+                        lambda x: correction_factor_by_bin[x]
+                    )
+                    predictions_bin = self.binner[level].transform(
+                        predictions[:, i]
+                    )
+                    correction_factor[:, i] = replace_func(predictions_bin)
+                else:
+                    correction_factor[:, i] = np.quantile(
+                        np.abs(residuals[level]), nominal_coverage
+                    )
             else:
                 correction_factor[:, i] = 0.
 
@@ -1637,6 +1788,7 @@ class ForecasterRnn(ForecasterBase):
 
         return predictions
 
+    @manage_warnings
     def predict_interval(
         self,
         steps: int | list[int] | None = None,
@@ -1646,9 +1798,9 @@ class ForecasterRnn(ForecasterBase):
         method: str = 'conformal',
         interval: float | list[float] | tuple[float] = [5, 95],
         use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = True,
         suppress_warnings: bool = False,
         n_boot: Any = None,
-        use_binned_residuals: Any = None,
         random_state: Any = None,
     ) -> pd.DataFrame:
         """
@@ -1698,13 +1850,15 @@ class ForecasterRnn(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
+        use_binned_residuals : bool, default True
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
         n_boot : Ignored
-            Not used, present here for API consistency by convention.
-        use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
         random_state : Ignored
             Not used, present here for API consistency by convention.
@@ -1723,8 +1877,6 @@ class ForecasterRnn(ForecasterBase):
     
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-
         if method == "conformal":
 
             if isinstance(interval, (list, tuple)):
@@ -1740,15 +1892,14 @@ class ForecasterRnn(ForecasterBase):
                               last_window             = last_window,
                               exog                    = exog,
                               nominal_coverage        = nominal_coverage,
-                              use_in_sample_residuals = use_in_sample_residuals
+                              use_in_sample_residuals = use_in_sample_residuals,
+                              use_binned_residuals    = use_binned_residuals
                           )
         else:
             raise ValueError(
                 f"Invalid `method` '{method}'. Only 'conformal' is available."
             )
         
-        set_skforecast_warnings(suppress_warnings, action='default')
-
         return predictions
 
     def plot_history(
@@ -1913,6 +2064,7 @@ class ForecasterRnn(ForecasterBase):
 
         pass
 
+    @manage_warnings
     def set_in_sample_residuals(
         self,
         series: pd.DataFrame,
@@ -1930,6 +2082,12 @@ class ForecasterRnn(ForecasterBase):
 
         + `in_sample_residuals_`: Dictionary containing a numpy ndarray with the
         residuals for each series in the form `{series: residuals}`.
+        + `binner_intervals_`: intervals used to bin the residuals are calculated
+        using the quantiles of the predicted values.
+        + `in_sample_residuals_by_bin_`: residuals are binned according to the
+        predicted value they are associated with and stored in a dictionary, where
+        the keys are the intervals of the predicted values and the values are
+        the residuals associated with that range.
 
         A total of 10_000 residuals are stored in the attribute `in_sample_residuals_`.
         If the number of residuals is greater than 10_000, a random sample of
@@ -1954,8 +2112,6 @@ class ForecasterRnn(ForecasterBase):
         None
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         if not self.is_fitted:
             raise NotFittedError(
@@ -2003,25 +2159,28 @@ class ForecasterRnn(ForecasterBase):
                 f"    Current output  : {X_train_features_names_out_}"
             )
         
-        # TODO: Include binning in the forecaster
+        # Binning in-sample residuals
         self.in_sample_residuals_ = {}
-        residuals = y_train - self.estimator.predict(
+        self.in_sample_residuals_by_bin_ = {}
+        y_pred_train = self.estimator.predict(
             x=X_train if exog_train is None else [X_train, exog_train], verbose=0
         )
-        residuals = np.concatenate(
-            [residuals[:, i, :] for i, step in enumerate(self.steps)]
-        )
 
-        rng = np.random.default_rng(seed=random_state)
+        range_steps = range(len(self.steps))
         for i, level in enumerate(self.levels):
-            residuals_level = residuals[:, i]
-            if len(residuals_level) > 10_000:
-                residuals_level = residuals_level[
-                    rng.integers(low=0, high=len(residuals_level), size=10_000)
-                ]
-            self.in_sample_residuals_[level] = residuals_level
-
-        set_skforecast_warnings(suppress_warnings, action='default')
+            y_true_level = np.concatenate(
+                [y_train[:, step, i] for step in range_steps]
+            )
+            y_pred_level = np.concatenate(
+                [y_pred_train[:, step, i] for step in range_steps]
+            )
+            self._binning_in_sample_residuals(
+                level                     = level,
+                y_true                    = y_true_level,
+                y_pred                    = y_pred_level,
+                store_in_sample_residuals = True,
+                random_state              = random_state
+            )
 
     def set_out_sample_residuals(
         self,
@@ -2122,6 +2281,8 @@ class ForecasterRnn(ForecasterBase):
         
         if self.out_sample_residuals_ is None:
             self.out_sample_residuals_ = {level: None for level in self.levels}
+        if self.out_sample_residuals_by_bin_ is None:
+            self.out_sample_residuals_by_bin_ = {level: None for level in self.levels}
         
         rng = np.random.default_rng(seed=random_state)
         for level in series_to_update:
@@ -2150,7 +2311,11 @@ class ForecasterRnn(ForecasterBase):
             data = pd.DataFrame(
                 {'prediction': y_pred_level, 'residuals': y_true_level - y_pred_level}
             ).dropna()
+            y_pred_level = data['prediction'].to_numpy()
             residuals = data['residuals'].to_numpy()
+
+            data['bin'] = self.binner[level].transform(y_pred_level).astype(int)
+            residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
 
             out_sample_residuals = self.out_sample_residuals_.get(level, np.array([]))
             out_sample_residuals = (
@@ -2158,10 +2323,54 @@ class ForecasterRnn(ForecasterBase):
                 if out_sample_residuals is None
                 else out_sample_residuals
             )
+            out_sample_residuals_by_bin = (
+                {} 
+                if self.out_sample_residuals_by_bin_[level] is None
+                else self.out_sample_residuals_by_bin_[level]
+            )
             if append:
                 out_sample_residuals = np.concatenate([out_sample_residuals, residuals])
+                for k, v in residuals_by_bin.items():
+                    if k in out_sample_residuals_by_bin:
+                        out_sample_residuals_by_bin[k] = np.concatenate(
+                            (out_sample_residuals_by_bin[k], v)
+                        )
+                    else:
+                        out_sample_residuals_by_bin[k] = v
             else:
                 out_sample_residuals = residuals
+                out_sample_residuals_by_bin = residuals_by_bin
+
+            max_samples = 10_000 // self.binner[level].n_bins_
+            for k, v in out_sample_residuals_by_bin.items():
+                if len(v) > max_samples:
+                    sample = rng.choice(a=v, size=max_samples, replace=False)
+                    out_sample_residuals_by_bin[k] = sample
+
+            for k in self.binner_intervals_.get(level, {}).keys():
+                if k not in out_sample_residuals_by_bin:
+                    out_sample_residuals_by_bin[k] = np.array([])
+
+            empty_bins = [
+                k for k, v in out_sample_residuals_by_bin.items() 
+                if v.size == 0
+            ]
+            if empty_bins:
+                warnings.warn(
+                    f"The following bins of level '{level}' have no out of sample "
+                    f"residuals: {empty_bins}. No predicted values fall in the "
+                    f"interval "
+                    f"{[self.binner_intervals_[level][bin] for bin in empty_bins]}. "
+                    f"Empty bins will be filled with a random sample of residuals.", 
+                    ResidualsUsageWarning
+                )
+                empty_bin_size = min(max_samples, len(out_sample_residuals))
+                for k in empty_bins:
+                    out_sample_residuals_by_bin[k] = rng.choice(
+                        a       = out_sample_residuals,
+                        size    = empty_bin_size,
+                        replace = False
+                    )
 
             if len(out_sample_residuals) > 10_000:
                 out_sample_residuals = rng.choice(
@@ -2171,3 +2380,4 @@ class ForecasterRnn(ForecasterBase):
                 )
 
             self.out_sample_residuals_[level] = out_sample_residuals
+            self.out_sample_residuals_by_bin_[level] = out_sample_residuals_by_bin

@@ -29,7 +29,7 @@ def test_recursive_predict_bootstrapping_output_with_residuals_zero():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     
@@ -74,7 +74,7 @@ def test_recursive_predict_bootstrapping_output_with_residuals_last_step():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     
@@ -120,7 +120,7 @@ def test_recursive_predict_bootstrapping_output_with_residuals():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     
@@ -167,7 +167,7 @@ def test_recursive_predict_bootstrapping_output_with_residuals_binned():
                  )
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     
@@ -222,7 +222,7 @@ def test_recursive_predict_bootstrapping_multiple_boot_samples_different_residua
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3)
     )
     
@@ -295,7 +295,7 @@ def test_recursive_predict_bootstrapping_with_exog():
         'exog_2': np.arange(200, 203, dtype=float)
     })
     
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3, exog=exog_pred)
     )
     
@@ -344,7 +344,7 @@ def test_recursive_predict_bootstrapping_with_window_features():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3)
     )
     
@@ -393,7 +393,7 @@ def test_recursive_predict_bootstrapping_with_window_features_LGBMRegressor():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3)
     )
     
@@ -445,7 +445,7 @@ def test_recursive_predict_bootstrapping_with_window_features_XGBRegressor():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3)
     )
     
@@ -496,7 +496,7 @@ def test_recursive_predict_bootstrapping_binned_residuals_multiple_boots():
                  )
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
 
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3)
     )
     
@@ -549,7 +549,7 @@ def test_recursive_predict_bootstrapping_single_level():
     forecaster.fit(series=series_2)
 
     # Only predict for level '1'
-    last_window, exog_values_dict, levels, _ = (
+    last_window, exog_values_dict, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3, levels=['1'])
     )
     

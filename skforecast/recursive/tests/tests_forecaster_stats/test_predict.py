@@ -5,7 +5,7 @@ import pytest
 import platform
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.stats import Sarimax, Arar, Ets
+from skforecast.stats import Sarimax, Arar, Ets, Arima
 from skforecast.recursive import ForecasterStats
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
@@ -26,6 +26,36 @@ from .fixtures_forecaster_stats import df_exog_predict
 from .fixtures_forecaster_stats import df_exog_datetime
 from .fixtures_forecaster_stats import df_exog_lw_datetime
 from .fixtures_forecaster_stats import df_exog_lw_predict_datetime
+
+
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": Sarimax(order=(1, 0, 1))},
+        {"estimator": Sarimax(order=(1, 0, 1)),
+         "transformer_y": StandardScaler(), "transformer_exog": StandardScaler()},
+    ],
+    ids=["base", "transformers"]
+)
+def test_predict_does_not_modify_y_exog(forecaster_kwargs):
+    """
+    Test forecaster.predict does not modify y, exog or exog_predict.
+    """
+    y_local = y.copy()
+    exog_local = exog.copy()
+    exog_predict_local = exog_predict.copy()
+
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+    exog_predict_copy = exog_predict_local.copy()
+
+    forecaster = ForecasterStats(**forecaster_kwargs)
+    forecaster.fit(y=y_local, exog=exog_local)
+    _ = forecaster.predict(steps=5, exog=exog_predict_local)
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
+    pd.testing.assert_series_equal(exog_predict_local, exog_predict_copy)
 
 
 def test_predict_NotFittedError_when_fitted_is_False():
@@ -554,3 +584,22 @@ def test_predict_output_ForecasterStats_with_multiple_estimators(estimator, expe
     )
 
     pd.testing.assert_series_equal(predictions, expected_results)
+
+
+def test_predict_output_ForecasterStats_skforecast_Arima():
+    """
+    Test predict output of ForecasterStats using skforecast Arima estimator.
+    """
+    forecaster = ForecasterStats(
+                     estimator=Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
+                 )
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=5)
+
+    expected = pd.Series(
+                   data  = [0.6192376, 0.6093831, 0.60478761, 0.60264456, 0.60164519],
+                   index = pd.RangeIndex(start=50, stop=55, step=1),
+                   name  = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected, atol=1e-4)

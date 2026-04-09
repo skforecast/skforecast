@@ -7,13 +7,15 @@
 
 from __future__ import annotations
 from copy import copy, deepcopy
+from functools import wraps
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
 import inspect
+from packaging.requirements import Requirement
 from pathlib import Path
 import platform
 import sys
-from typing import Any, Callable
+from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
 import joblib
@@ -37,18 +39,24 @@ from ..exceptions import (
     InputTypeWarning
 )
 
+# Type variables for the manage_warnings decorator. ParamSpec preserves the
+# decorated function's parameter signature, and TypeVar preserves its return
+# type, so that type checkers see the original signatures through the wrapper.
+P = ParamSpec('P')
+R = TypeVar('R')
+
 optional_dependencies = {
     'stats': [
-        'statsmodels>=0.12, <0.15'
+        'statsmodels>=0.13, <0.15'
     ],
     'deeplearning': [
         'keras>=3.0, <4.0',
-        'matplotlib>=3.3, <3.11',
+        'matplotlib>=3.7, <3.11',
     ],
     'plotting': [
-        'matplotlib>=3.3, <3.11', 
-        'seaborn>=0.11, <0.14', 
-        'statsmodels>=0.12, <0.15'
+        'matplotlib>=3.7, <3.11', 
+        'seaborn>=0.12, <0.14', 
+        'statsmodels>=0.13, <0.15'
     ]
 }
 
@@ -200,20 +208,17 @@ def initialize_window_features(
                 max_window_sizes.append(max(window_sizes))
 
             features_names = wf.features_names
-            if not isinstance(features_names, (str, list)):
+            if not isinstance(features_names, list):
                 raise TypeError(
-                    f"Attribute `features_names` of {wf_name} must be a str or "
-                    f"a list of strings. Got {type(features_names)}." + link_to_docs
+                    f"Attribute `features_names` of {wf_name} must be a list "
+                    f"of strings. Got {type(features_names)}." + link_to_docs
                 )
-            if isinstance(features_names, str):
-                window_features_names.append(features_names)
-            else:
-                if not all(isinstance(fn, str) for fn in features_names):
-                    raise TypeError(
-                        f"If argument `features_names` is a list, all elements "
-                        f"must be strings. Got {features_names} from {wf_name}." + link_to_docs
-                    )
-                window_features_names.extend(features_names)
+            if not all(isinstance(fn, str) for fn in features_names):
+                raise TypeError(
+                    f"If argument `features_names` is a list, all elements "
+                    f"must be strings. Got {features_names} from {wf_name}." + link_to_docs
+                )
+            window_features_names.extend(features_names)
 
         max_size_window_features = max(max_window_sizes)
         if len(set(window_features_names)) != len(window_features_names):
@@ -500,9 +505,220 @@ def check_select_fit_kwargs(
     return fit_kwargs
 
 
+def configure_estimator_categorical_features(
+    estimator: object,
+    categorical_features_names_in_: list[str] | None,
+    X_train_features_names_out_: list[str],
+    fit_kwargs: dict[str, object]
+) -> dict[str, object]:
+    """
+    Configure native categorical feature support for the estimator. Returns
+    updated `fit_kwargs` with the appropriate arguments for the estimator.
+    For estimators that require configuration via `set_params` (XGBoost,
+    HistGradientBoosting), the estimator is modified in-place.
+
+    Supported estimators: LGBMRegressor/LGBMClassifier,
+    CatBoostRegressor/CatBoostClassifier, XGBRegressor/XGBClassifier,
+    HistGradientBoostingRegressor/HistGradientBoostingClassifier (sklearn).
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator object. If the estimator is a Pipeline, the last step is
+        used.
+    categorical_features_names_in_ : list, None
+        Names of the categorical features. If `None` or empty, any previously
+        set categorical configuration on the estimator is reset.
+    X_train_features_names_out_ : list
+        Names of all features in `X_train`, in column order.
+    fit_kwargs : dict
+        Dictionary with the arguments to pass to the `fit` method of the
+        estimator. This dictionary is updated in-place and returned.
+
+    Returns
+    -------
+    fit_kwargs : dict
+        Updated dictionary with the categorical feature arguments added for
+        the estimator's `fit` method.
+
+    """
+
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+
+    estimator_name = type(estimator).__name__
+    module = type(estimator).__module__.split('.')[0]
+
+    if not categorical_features_names_in_:
+        # Reset any previously set categorical params (from a prior fit call)
+        if module == 'xgboost':
+            estimator.set_params(feature_types=None, enable_categorical=False)
+        elif module == 'sklearn' and estimator_name in (
+            'HistGradientBoostingRegressor', 'HistGradientBoostingClassifier'
+        ):
+            estimator.set_params(categorical_features='from_dtype')
+        return fit_kwargs
+
+    cat_indices = [
+        X_train_features_names_out_.index(name)
+        for name in categorical_features_names_in_
+    ]
+
+    if module == 'lightgbm':
+        # LGBMRegressor.fit() accepts `categorical_feature` as a list of
+        # int indices when X is a numpy array.
+        if 'categorical_feature' in fit_kwargs:
+            warnings.warn(
+                "The `categorical_feature` argument in `fit_kwargs` is being "
+                "overridden by the values detected from `categorical_features`. "
+                f"Overridden value: {fit_kwargs['categorical_feature']}.",
+                IgnoredArgumentWarning
+            )
+        fit_kwargs['categorical_feature'] = cat_indices
+
+    # NOTE: https://github.com/catboost/catboost/issues/3064
+    elif module == 'catboost':
+        # CatBoostRegressor.fit() accepts `cat_features` as a list of int
+        # indices.
+        if 'cat_features' in fit_kwargs:
+            warnings.warn(
+                "The `cat_features` argument in `fit_kwargs` is being "
+                "overridden by the values detected from `categorical_features`. "
+                f"Overridden value: {fit_kwargs['cat_features']}.",
+                IgnoredArgumentWarning
+            )
+        fit_kwargs['cat_features'] = cat_indices
+
+    elif module == 'xgboost':
+        # XGBRegressor requires `feature_types` and `enable_categorical=True`
+        # set via set_params (they are constructor params, not fit params).
+        prev_feature_types = estimator.get_params().get('feature_types')
+        prev_enable_categorical = estimator.get_params().get('enable_categorical')
+        set_cat_indices = set(cat_indices)
+        feature_types = [
+            'c' if i in set_cat_indices else 'q'
+            for i in range(len(X_train_features_names_out_))
+        ]
+        estimator.set_params(
+            feature_types=feature_types, enable_categorical=True
+        )
+        if prev_feature_types is not None:
+            warnings.warn(
+                "The estimator's `feature_types` and `enable_categorical` "
+                "parameters have been set to handle categorical features. "
+                f"Previous values: feature_types={prev_feature_types}, "
+                f"enable_categorical={prev_enable_categorical}.",
+                IgnoredArgumentWarning
+            )
+
+    elif module == 'sklearn' and estimator_name in (
+        'HistGradientBoostingRegressor', 'HistGradientBoostingClassifier'
+    ):
+        # HistGradientBoosting accepts `categorical_features` as a
+        # list of int indices via set_params (constructor param).
+        prev_categorical = estimator.get_params().get('categorical_features')
+        estimator.set_params(categorical_features=cat_indices)
+        if prev_categorical not in (None, 'from_dtype'):
+            warnings.warn(
+                "The estimator's `categorical_features` parameter has been "
+                "set to handle categorical features. Previous value: "
+                f"`categorical_features={prev_categorical}`.",
+                IgnoredArgumentWarning
+            )
+
+    return fit_kwargs
+
+
+def _get_estimator_categorical_set_params(
+    forecaster: object
+) -> dict[str, object]:
+    """
+    Return the current values of the estimator-level params that
+    `configure_estimator_categorical_features` sets via `set_params` for
+    XGBoost and HistGradientBoosting estimators.  For all other estimators an
+    empty dict is returned so callers can treat this as a no-op.
+
+    The function selects the estimator object that is actually mutated by
+    `configure_estimator_categorical_features`:
+    * `ForecasterDirect` and `ForecasterDirectMultiVariate` store
+      per-step clones in `estimators_[1]`.
+    * All other forecasters expose the shared template via `estimator`.
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster whose estimator params should be captured.
+
+    Returns
+    -------
+    params : dict
+        XGBoost: `{'feature_types': ..., 'enable_categorical': ...}`
+        HistGradientBoosting: `{'categorical_features': ...}`
+        Others: `{}`
+
+    """
+
+    if type(forecaster).__name__ in ('ForecasterDirect', 'ForecasterDirectMultiVariate'):
+        estimator = forecaster.estimators_[1]
+    else:
+        estimator = forecaster.estimator
+
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+
+    module = type(estimator).__module__.split('.')[0]
+    estimator_name = type(estimator).__name__
+
+    if module == 'xgboost':
+        p = estimator.get_params()
+        return {
+            'feature_types': p.get('feature_types'),
+            'enable_categorical': p.get('enable_categorical', False),
+        }
+    elif module == 'sklearn' and estimator_name in (
+        'HistGradientBoostingRegressor', 'HistGradientBoostingClassifier'
+    ):
+        p = estimator.get_params()
+        return {'categorical_features': p.get('categorical_features')}
+
+    return {}
+
+
+def _restore_estimator_categorical_set_params(
+    forecaster: object,
+    params: dict[str, object]
+) -> None:
+    """
+    Restore the estimator-level params previously captured by
+    `_get_estimator_categorical_set_params`.  No-op when `params` is empty.
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster whose estimator params should be restored.
+    params : dict
+        Dict previously returned by `_get_estimator_categorical_set_params`.
+
+    """
+
+    if not params:
+        return
+
+    if type(forecaster).__name__ in ('ForecasterDirect', 'ForecasterDirectMultiVariate'):
+        estimator = forecaster.estimators_[1]
+    else:
+        estimator = forecaster.estimator
+
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+
+    estimator.set_params(**params)
+
+
 def check_y(
     y: Any,
-    series_id: str = "`y`"
+    series_id: str = "`y`",
+    allow_nan: bool = False
 ) -> None:
     """
     Raise Exception if `y` is not pandas Series or if it has missing values.
@@ -513,6 +729,8 @@ def check_y(
         Time series values.
     series_id : str, default '`y`'
         Identifier of the series used in the warning message.
+    allow_nan : bool, default False
+        If `True`, skip the check for missing values.
     
     Returns
     -------
@@ -526,8 +744,9 @@ def check_y(
             f"Found {type(y)}."
         )
         
-    if y.isna().to_numpy().any():
-        raise ValueError(f"{series_id} has missing values.")
+    if not allow_nan:
+        if y.isna().to_numpy().any():
+            raise ValueError(f"{series_id} has missing values.")
     
     return
 
@@ -612,7 +831,7 @@ def check_exog_dtypes(
     Raise Exception if `exog` has categorical columns with non integer values.
     This is needed when using machine learning estimators that allow categorical
     features.
-    Issue a Warning if `exog` has columns that are not `init`, `float`, or `category`.
+    Issue a Warning if `exog` has columns that are not `int`, `float`, or `category`.
     
     Parameters
     ----------
@@ -640,7 +859,11 @@ def check_exog_dtypes(
         has_invalid_dtype = False
         for dtype in unique_dtypes:
             if isinstance(dtype, pd.CategoricalDtype):
-                if not np.issubdtype(dtype.categories.dtype, np.integer):
+                try:
+                    is_integer = np.issubdtype(dtype.categories.dtype, np.integer)
+                except TypeError:
+                    is_integer = False
+                if not is_integer:
                     raise TypeError(
                         "Categorical dtypes in exog must contain only integer values. "
                         "See skforecast docs for more info about how to include "
@@ -670,7 +893,11 @@ def check_exog_dtypes(
             )
 
         if isinstance(exog.dtype, pd.CategoricalDtype):
-            if not np.issubdtype(exog.cat.categories.dtype, np.integer):
+            try:
+                is_integer = np.issubdtype(exog.cat.categories.dtype, np.integer)
+            except TypeError:
+                is_integer = False
+            if not is_integer:
                 raise TypeError(
                     "Categorical dtypes in exog must contain only integer values. "
                     "See skforecast docs for more info about how to include "
@@ -1008,6 +1235,12 @@ def check_predict_input(
             raise TypeError(
                 f"Expected frequency of type {index_freq_} for `last_window`. "
                 f"Got {last_window_index.freq}."
+            )
+    else:
+        if not last_window_index.step == index_freq_:
+            raise TypeError(
+                f"Expected step of type {index_freq_} for `last_window`. "
+                f"Got {last_window_index.step}."
             )
 
     # Checks exog
@@ -1681,8 +1914,9 @@ def expand_index(
                         )
         elif isinstance(index, pd.RangeIndex):
             new_index = pd.RangeIndex(
-                            start = index[-1] + 1,
-                            stop  = index[-1] + 1 + steps
+                            start = index[-1] + index.step,
+                            stop  = index[-1] + index.step + steps * index.step,
+                            step  = index.step
                         )
         else:
             raise TypeError(
@@ -1701,7 +1935,8 @@ def transform_numpy(
     array: np.ndarray,
     transformer: object | None,
     fit: bool = False,
-    inverse_transform: bool = False
+    inverse_transform: bool = False,
+    force_single_column: bool = False
 ) -> np.ndarray:
     """
     Transform raw values of a numpy ndarray with a scikit-learn alike 
@@ -1722,6 +1957,9 @@ def transform_numpy(
     inverse_transform : bool, default False
         Transform back the data to the original representation. This is not available
         when using transformers of class scikit-learn ColumnTransformers.
+    force_single_column : bool, default False
+        If `True`, raise an error if the transformer generates more than one
+        column. This ensures that the output array is always 1D or single-column.
 
     Returns
     -------
@@ -1756,12 +1994,7 @@ def transform_numpy(
             message="X does not have valid feature names", 
             category=UserWarning
         )
-        if not inverse_transform:
-            if fit:
-                array_transformed = transformer.fit_transform(array)
-            else:
-                array_transformed = transformer.transform(array)
-        else:
+        if inverse_transform:
             # Vectorized inverse transformation for 2D arrays with multiple columns.
             # Reshape to single column, transform, and reshape back.
             # This is faster than applying the transformer column by column.
@@ -1769,6 +2002,10 @@ def transform_numpy(
                 array = array.reshape(-1, 1)
                 reshaped_for_inverse = True
             array_transformed = transformer.inverse_transform(array)
+        elif fit:
+            array_transformed = transformer.fit_transform(array)
+        else:
+            array_transformed = transformer.transform(array)
 
     if hasattr(array_transformed, 'toarray'):
         # If the returned values are in sparse matrix format, it is converted to dense
@@ -1776,6 +2013,15 @@ def transform_numpy(
 
     if isinstance(array_transformed, (pd.Series, pd.DataFrame)):
         array_transformed = array_transformed.to_numpy()
+
+    if force_single_column and array_transformed.ndim > 1 and array_transformed.shape[1] > 1:
+        raise ValueError(
+            f"`transformer_y` and `transformer_series` must return a single column. "
+            f"The transformer generated {array_transformed.shape[1]} columns. "
+            f"Transformers that expand target series into multiple feature "
+            f"columns are not supported; use `window_features` or pass "
+            f"those features through `exog` instead."
+        )
 
     # Reshape back to original shape only if we reshaped for inverse_transform
     if reshaped_for_inverse:
@@ -1791,7 +2037,8 @@ def transform_series(
     series: pd.Series,
     transformer: object | None,
     fit: bool = False,
-    inverse_transform: bool = False
+    inverse_transform: bool = False,
+    force_single_column: bool = False
 ) -> pd.Series | pd.DataFrame:
     """
     Transform raw values of pandas Series with a scikit-learn alike 
@@ -1812,6 +2059,9 @@ def transform_series(
     inverse_transform : bool, default False
         Transform back the data to the original representation. This is not available
         when using transformers of class scikit-learn ColumnTransformers.
+    force_single_column : bool, default False
+        If `True`, raise an error if the transformer generates more than one
+        column. This ensures that the output is always a pandas Series.
 
     Returns
     -------
@@ -1829,17 +2079,12 @@ def transform_series(
     if transformer is None:
         return series
 
-    if series.name is None:
-        series.name = 'no_name'
-        
-    data = series.to_frame()
-
-    if fit and hasattr(transformer, 'fit'):
-        transformer.fit(data)
+    series_name = series.name if series.name is not None else 'no_name'
+    data = series.to_frame(name=series_name)
 
     # If argument feature_names_in_ exits, is overwritten to allow using the 
     # transformer on other series than those that were passed during fit.
-    if hasattr(transformer, 'feature_names_in_') and transformer.feature_names_in_[0] != data.columns[0]:
+    if not fit and hasattr(transformer, 'feature_names_in_') and transformer.feature_names_in_[0] != data.columns[0]:
         transformer = deepcopy(transformer)
         transformer.feature_names_in_ = np.array([data.columns[0]], dtype=object)
 
@@ -1847,6 +2092,8 @@ def transform_series(
         warnings.simplefilter("ignore", category=UserWarning)
         if inverse_transform:
             values_transformed = transformer.inverse_transform(data)
+        elif fit:
+            values_transformed = transformer.fit_transform(data)
         else:
             values_transformed = transformer.transform(data)   
 
@@ -1863,10 +2110,25 @@ def transform_series(
     elif isinstance(values_transformed, pd.DataFrame) and values_transformed.shape[1] == 1:
         series_transformed = values_transformed.squeeze()
     else:
+        if force_single_column:
+            raise ValueError(
+                f"`transformer_y` and `transformer_series` must return a single column. "
+                f"The transformer generated {values_transformed.shape[1]} columns. "
+                f"Transformers that expand target series into multiple feature "
+                f"columns are not supported; use `window_features` or pass "
+                f"those features through `exog` instead."
+            )
+        if hasattr(transformer, 'get_feature_names_out'):
+            feature_names_out = transformer.get_feature_names_out()
+            if len(feature_names_out) != values_transformed.shape[1]:
+                feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
+        else:
+            feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
+
         series_transformed = pd.DataFrame(
                                  data    = values_transformed,
                                  index   = data.index,
-                                 columns = transformer.get_feature_names_out()
+                                 columns = feature_names_out
                              )
 
     return series_transformed
@@ -1876,7 +2138,8 @@ def transform_dataframe(
     df: pd.DataFrame,
     transformer: object | None,
     fit: bool = False,
-    inverse_transform: bool = False
+    inverse_transform: bool = False,
+    force_single_column: bool = False
 ) -> pd.DataFrame:
     """
     Transform raw values of pandas DataFrame with a scikit-learn alike 
@@ -1897,6 +2160,9 @@ def transform_dataframe(
     inverse_transform : bool, default False
         Transform back the data to the original representation. This is not available
         when using transformers of class scikit-learn ColumnTransformers.
+    force_single_column : bool, default False
+        If `True`, raise an error if the transformer generates more than one
+        column. This ensures that the output DataFrame has a single column.
 
     Returns
     -------
@@ -1918,34 +2184,96 @@ def transform_dataframe(
             "`inverse_transform` is not available when using ColumnTransformers."
         )
  
-    if not inverse_transform:
-        if fit:
-            values_transformed = transformer.fit_transform(df)
-        else:
-            values_transformed = transformer.transform(df)
-    else:
+    if inverse_transform:
         values_transformed = transformer.inverse_transform(df)
+    elif fit:
+        values_transformed = transformer.fit_transform(df)
+    else:
+        values_transformed = transformer.transform(df)
 
     if hasattr(values_transformed, 'toarray'):
         # If the returned values are in sparse matrix format, it is converted to dense
         values_transformed = values_transformed.toarray()
 
-    if hasattr(transformer, 'get_feature_names_out'):
-        feature_names_out = transformer.get_feature_names_out()
-    elif hasattr(transformer, 'categories_'):   
-        feature_names_out = transformer.categories_
+    if isinstance(values_transformed, pd.DataFrame):
+        df_transformed = values_transformed
     else:
-        feature_names_out = df.columns
+        values_transformed = np.asarray(values_transformed)
+        if values_transformed.ndim == 1:
+            values_transformed = values_transformed.reshape(-1, 1)
 
-    df_transformed = pd.DataFrame(
-                         data    = values_transformed,
-                         index   = df.index,
-                         columns = feature_names_out
-                     )
+        feature_names_out = (
+            transformer.get_feature_names_out()
+            if hasattr(transformer, 'get_feature_names_out')
+            else df.columns
+        )
+        if len(feature_names_out) != values_transformed.shape[1]:
+            feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
+
+        df_transformed = pd.DataFrame(
+                             data    = values_transformed,
+                             index   = df.index,
+                             columns = feature_names_out
+                         )
+
+    if force_single_column and df_transformed.shape[1] > 1:
+        raise ValueError(
+            f"`transformer_y` and `transformer_series` must return a single column. "
+            f"The transformer generated {df_transformed.shape[1]} columns. "
+            f"Transformers that expand target series into multiple feature "
+            f"columns are not supported; use `window_features` or pass "
+            f"those features through `exog` instead."
+        )
 
     return df_transformed
 
 
+def manage_warnings(func: Callable[P, R]) -> Callable[P, R]:
+    """
+    Decorator that safely manages skforecast warning suppression using
+    `warnings.catch_warnings()` context manager. If the decorated function
+    receives a `suppress_warnings=True` keyword argument, all skforecast
+    warnings are suppressed within its execution scope. Warning filter state
+    is automatically saved and restored, making this safe for nested calls
+    and exception scenarios.
+
+    By using `warnings.catch_warnings()`, the filter state is saved on entry and 
+    restored on exit — even if an exception is raised — so nested decorated 
+    functions never interfere with each other's suppression settings.
+
+    The decorator's type signature uses module-level type variables:
+
+    - `P` (`ParamSpec`): Captures the full parameter specification
+      (positional and keyword arguments) of the decorated function, so that
+      type checkers preserve the original call signature through the wrapper.
+    - `R` (`TypeVar`): Captures the return type of the decorated function,
+      ensuring the wrapper advertises the same return type.
+
+    Parameters
+    ----------
+    func : Callable[P, R]
+        The function to decorate. Expected to accept a `suppress_warnings`
+        keyword argument.
+
+    Returns
+    -------
+    Callable[P, R]
+        The wrapped function with safe warning management.
+
+    """
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        suppress = kwargs.get('suppress_warnings', False)
+        with warnings.catch_warnings():
+            if suppress:
+                for category in warn_skforecast_categories:
+                    warnings.filterwarnings('ignore', category=category)
+            return func(*args, **kwargs)
+    return wrapper
+
+
+@manage_warnings
 def save_forecaster(
     forecaster: object, 
     file_name: str,
@@ -1979,8 +2307,6 @@ def save_forecaster(
 
     """
 
-    set_skforecast_warnings(suppress_warnings, action='ignore')
-    
     file_name = Path(file_name).with_suffix('.joblib')
 
     # Save forecaster
@@ -2024,9 +2350,8 @@ def save_forecaster(
     if verbose:
         forecaster.summary()
 
-    set_skforecast_warnings(suppress_warnings, action='default')
 
-
+@manage_warnings
 def load_forecaster(
     file_name: str,
     verbose: bool = True,
@@ -2055,8 +2380,6 @@ def load_forecaster(
     
     """
 
-    set_skforecast_warnings(suppress_warnings, action='ignore')
-
     forecaster = joblib.load(filename=Path(file_name))
     forecaster_v = forecaster.skforecast_version
 
@@ -2072,8 +2395,6 @@ def load_forecaster(
 
     if verbose:
         forecaster.summary()
-        
-    set_skforecast_warnings(suppress_warnings, action='default')
 
     return forecaster
 
@@ -2097,15 +2418,22 @@ def _find_optional_dependency(
     -------
     extra: str
         Name of the extra extension where the optional dependency is needed.
-    package_version: srt
+    package_version: str
         Name and versions of the dependency.
 
     """
 
     for extra, packages in optional_dependencies.items():
-        package_version = [package for package in packages if package_name in package]
+        package_version = [
+            package for package in packages
+            if Requirement(package).name == package_name
+        ]
         if package_version:
             return extra, package_version[0]
+
+    raise ValueError(
+        f"'{package_name}' is not listed in optional_dependencies."
+    )
 
 
 def check_optional_dependency(
@@ -2134,7 +2462,7 @@ def check_optional_dependency(
                 f"skforecast installation. Please run: `pip install \"{package_version}\"` to install it."
                 f"\n\nAlternately, you can install it by running `pip install skforecast[{extra}]`"
             )
-        except Exception:
+        except ValueError:
             msg = f"\n'{package_name}' is needed but not installed. Please install it."
         
         raise ImportError(msg)
@@ -2220,7 +2548,7 @@ def select_n_jobs_fit_forecaster(
     forecaster_name : str
         Forecaster name.
     estimator : estimator or pipeline compatible with the scikit-learn API
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of an estimator or pipeline compatible with the scikit-learn API.
 
     Returns
     -------
@@ -2289,6 +2617,108 @@ def set_cpu_gpu_device(
             pass
 
     return original_device
+
+
+def _build_predict_function(
+    estimator: object,
+) -> callable:
+    """
+    Build an optimized predict callable for a fitted estimator. The returned
+    function takes a 2D numpy array `X` of shape `(n_samples, n_features)` and
+    returns predictions as a 1D numpy array of shape `(n_samples,)`.
+
+    Fast prediction paths (bypassing sklearn's `predict` overhead) are used
+    for the following estimator types:
+
+    - Linear models inheriting from sklearn's `LinearModel` (`np.dot`)
+    - `LGBMRegressor` (`booster_.predict`)
+    - `XGBRegressor` (`get_booster().inplace_predict`)
+    - `RandomForestRegressor` (per-tree `tree_.predict`)
+    - `DecisionTreeRegressor` (`tree_.predict`)
+
+    For `CatBoostRegressor` with categorical features, the categorical column
+    indices are resolved once at build time and the array is cast to `object`
+    dtype with those columns converted to `int` before each prediction call.
+    CatBoost requires integer values (not float) for categorical features when
+    the input is a numpy array.
+
+    For any other estimator the standard `estimator.predict` method is used.
+
+    Parameters
+    ----------
+    estimator : object
+        A fitted scikit-learn compatible estimator.
+
+    Returns
+    -------
+    predict_fn : callable
+        A function `predict_fn(X) -> np.ndarray` where `X` has shape
+        `(n_samples, n_features)` and the output has shape `(n_samples,)`.
+    """
+
+    estimator_name = type(estimator).__name__
+
+    if isinstance(estimator, LinearModel):
+        coef = estimator.coef_
+        intercept = estimator.intercept_
+
+        def predict_fn(X):
+            return np.dot(X, coef) + intercept
+
+        return predict_fn
+
+    if estimator_name == 'LGBMRegressor':
+        booster = estimator.booster_
+
+        def predict_fn(X):
+            return booster.predict(X)
+
+        return predict_fn
+
+    if estimator_name == 'XGBRegressor':
+        booster = estimator.get_booster()
+
+        def predict_fn(X):
+            return booster.inplace_predict(X)
+
+        return predict_fn
+
+    if estimator_name == 'RandomForestRegressor':
+        trees = estimator.estimators_
+
+        def predict_fn(X):
+            X_f32 = X.astype(np.float32)
+            preds = [tree.tree_.predict(X_f32)[:, 0] for tree in trees]
+            return np.mean(preds, axis=0)
+
+        return predict_fn
+
+    if estimator_name == 'DecisionTreeRegressor':
+        tree_ = estimator.tree_
+
+        def predict_fn(X):
+            return tree_.predict(X.astype(np.float32))[:, 0]
+
+        return predict_fn
+
+    if estimator_name == 'CatBoostRegressor':
+        # CatBoost requires integer values (not float) for categorical features
+        # when X is a numpy array. This requires casting the array to object
+        # dtype and converting the categorical columns to int before each prediction call.
+        cat_indices = np.array(estimator.get_cat_feature_indices())
+        if len(cat_indices) > 0:
+            def predict_fn(X):
+                X_obj = X.astype(object)
+                X_obj[:, cat_indices] = np.nan_to_num(X[:, cat_indices], nan=-1).astype(int)
+                return estimator.predict(X_obj).ravel()
+
+            return predict_fn
+
+    # Generic fallback
+    def predict_fn(X):
+        return estimator.predict(X).ravel()
+
+    return predict_fn
 
 
 def check_preprocess_series(
@@ -2852,34 +3282,6 @@ def prepare_steps_direct(
     return steps_direct
 
 
-def set_skforecast_warnings(
-    suppress_warnings: bool,
-    action: str = 'default'
-) -> None:
-    """
-    Set skforecast warnings action.
-
-    Parameters
-    ----------
-    suppress_warnings : bool
-        If `True`, skforecast warnings will be suppressed. If `False`, skforecast
-        warnings will be shown as default. See 
-        skforecast.exceptions.warn_skforecast_categories for more information.
-    action : str, default `'default'`
-        Action to be taken when a warning is raised. See the warnings module
-        for more information.
-
-    Returns
-    -------
-    None
-    
-    """
-
-    if suppress_warnings:
-        for category in warn_skforecast_categories:
-            warnings.filterwarnings(action, category=category)
-
-
 def get_style_repr_html(
     is_fitted: bool = False
 ) -> tuple[str, str]:
@@ -3047,44 +3449,105 @@ def show_versions(
         return None
 
 
-# TODO: Remove regressor in 0.21.0
-def initialize_estimator(
-    estimator: object | None = None,
-    regressor: object | None = None
-) -> None:
+def deepcopy_forecaster(
+    forecaster: object,
+    include_in_sample_residuals: bool = False,
+    include_out_sample_residuals: bool = False,
+    include_last_window: bool = False,
+) -> object:
     """
-    Helper to handle the deprecation of 'regressor' in favor of 'estimator'.
-    Returns the valid estimator object.
+    Create a lightweight deep copy of a forecaster by temporarily
+    replacing heavy fitted attributes with lightweight placeholders
+    before copying.
+
+    Estimators are always replaced with unfitted clones (same
+    hyperparameters) to avoid copying expensive fitted state (e.g.,
+    tree structures, model weights). For sklearn-compatible estimators
+    `sklearn.base.clone` is used; for statistical models
+    (`ForecasterStats`) `copy.copy` is used instead. Additional
+    heavy attributes (residuals and last window) can be optionally
+    included via parameters.
 
     Parameters
     ----------
-    estimator : estimator or pipeline compatible with the scikit-learn API, default None
-        An instance of a estimator or pipeline compatible with the scikit-learn API.
-    regressor : estimator or pipeline compatible with the scikit-learn API, default None
-        Deprecated. An instance of a estimator or pipeline compatible with the
-        scikit-learn API.
+    forecaster : object
+        Forecaster object to copy. Can be any skforecast forecaster:
+        `ForecasterRecursive`, `ForecasterDirect`, `ForecasterRecursiveMultiSeries`, 
+        `ForecasterDirectMultiVariate` or `ForecasterStats`.
+    include_in_sample_residuals : bool, default `False`
+        If `True`, `in_sample_residuals_` and `in_sample_residuals_by_bin_` are 
+        preserved in the copy. These are recomputed during `fit()`, so they can 
+        safely be excluded when the copy will be re-fitted.
+    include_out_sample_residuals : bool, default `False`
+        If `True`, `out_sample_residuals_` and `out_sample_residuals_by_bin_` are 
+        preserved in the copy. These are user-provided via `set_out_sample_residuals()`
+        and are NOT recomputed during `fit()`, so they must be included when the 
+        copy needs them for prediction intervals with `use_in_sample_residuals=False`.
+    include_last_window : bool, default `False`
+        If `True`, `last_window_` is preserved in the copy. For most forecasters 
+        this stores only the last `window_size` observations (small), but for
+        `ForecasterStats` it contains ALL training data.
 
     Returns
     -------
-    estimator : estimator or pipeline compatible with the scikit-learn API
-        The valid estimator object.
-    
+    forecaster_copy : object
+        Lightweight deep copy of the forecaster with unfitted estimator(s) and 
+        optionally without residuals and last window.
+
     """
-    
-    if regressor is not None:
-        warnings.warn(
-            "The `regressor` argument is deprecated and will be removed in a future "
-            "version. Please use `estimator` instead.",
-            FutureWarning,
-            stacklevel=3  # Important: to point to the user's code
-        )
-        if estimator is not None:
-            raise ValueError(
-                "Both `estimator` and `regressor` were provided. Use only `estimator`."
-            )
-        return regressor
-    
-    if estimator is None:
-        raise TypeError("__init__() missing 1 required positional argument: 'estimator'")
-    
-    return estimator
+
+    # Save references to heavy attributes before replacing them
+    saved = {}
+
+    # 1. Replace fitted estimator with unfitted clone (same hyperparameters)
+    if hasattr(forecaster, 'estimator') and forecaster.estimator is not None:
+        saved['estimator'] = forecaster.estimator
+        if type(forecaster).__name__ == 'ForecasterRnn':
+            forecaster.estimator = deepcopy(forecaster.estimator)
+        else:
+            forecaster.estimator = clone(forecaster.estimator)
+
+    # 2. Replace fitted estimators collection
+    if hasattr(forecaster, 'estimators_') and forecaster.estimators_ is not None:
+        saved['estimators_'] = forecaster.estimators_
+        if isinstance(forecaster.estimators_, dict):
+            # ForecasterDirect, ForecasterDirectMultiVariate: dict of fitted estimators
+            forecaster.estimators_ = {
+                step: clone(forecaster.estimator)
+                for step in forecaster.estimators_
+            }
+        elif isinstance(forecaster.estimators_, list):
+            # ForecasterStats: list of fitted stats models
+            forecaster.estimators_ = [
+                clone(est) for est in forecaster.estimators
+            ]
+
+    # 3. Optionally replace residuals with None
+    _residual_attrs = []
+    if not include_in_sample_residuals:
+        _residual_attrs += ['in_sample_residuals_', 'in_sample_residuals_by_bin_']
+    if not include_out_sample_residuals:
+        _residual_attrs += ['out_sample_residuals_', 'out_sample_residuals_by_bin_']
+
+    for attr in _residual_attrs:
+        if hasattr(forecaster, attr) and getattr(forecaster, attr) is not None:
+            saved[attr] = getattr(forecaster, attr)
+            setattr(forecaster, attr, None)
+
+    # 4. Optionally replace last_window_ with None
+    if (
+        not include_last_window
+        and hasattr(forecaster, 'last_window_')
+        and forecaster.last_window_ is not None
+    ):
+        saved['last_window_'] = forecaster.last_window_
+        forecaster.last_window_ = None
+
+    # Perform the (now lightweight) deep copy
+    forecaster_copy = deepcopy(forecaster)
+
+    # Restore original heavy attributes on the original forecaster
+    for attr, value in saved.items():
+        setattr(forecaster, attr, value)
+
+    return forecaster_copy

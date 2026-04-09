@@ -22,7 +22,7 @@ def test_direct_predict_output_when_estimator_is_LinearRegression():
         estimator=LinearRegression(), lags=5, steps=5
     )
     forecaster.fit(y=y_categorical)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.5531936 , 0.48305122, 0.44981279, 0.4134158 , 0.41986132])
@@ -38,7 +38,7 @@ def test_direct_predict_output_when_estimator_is_LinearRegression_with_exog():
         estimator=LinearRegression(), lags=5, steps=5
     )
     forecaster.fit(y=y_categorical, exog=exog_categorical)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict_categorical)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict_categorical)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.65818211, 0.42775674, 0.43971937, 0.39334849, 0.49343381])
@@ -54,7 +54,7 @@ def test_direct_predict_output_when_estimator_is_LGBMRegressor():
         estimator=LGBMRegressor(verbose=-1, random_state=123), lags=5, steps=5
     )
     forecaster.fit(y=y_categorical)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.53160297, 0.53912094, 0.43082739, 0.44087501, 0.39199316])
@@ -70,7 +70,7 @@ def test_direct_predict_output_when_estimator_is_LGBMRegressor_with_exog():
         estimator=LGBMRegressor(verbose=-1, random_state=123), lags=5, steps=5
     )
     forecaster.fit(y=y_categorical, exog=exog_categorical)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict_categorical)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict_categorical)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.56249088, 0.52088404, 0.41589238, 0.45968771, 0.42306319])
@@ -88,7 +88,7 @@ def test_direct_predict_output_when_estimator_is_RandomForestRegressor():
         steps=5
     )
     forecaster.fit(y=y_categorical)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.58721155, 0.33402273, 0.47910935, 0.59901173, 0.40474317])
@@ -106,7 +106,7 @@ def test_direct_predict_output_when_estimator_is_RandomForestRegressor_with_exog
         steps=5
     )
     forecaster.fit(y=y_categorical, exog=exog_categorical)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict_categorical)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict_categorical)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.76957028, 0.25115545, 0.57398305, 0.54794638, 0.47204635])
@@ -124,7 +124,7 @@ def test_direct_predict_output_when_estimator_is_XGBRegressor():
         steps=5
     )
     forecaster.fit(y=y_categorical)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.71678525, 0.24216469, 0.50616848, 0.6219855 , 0.43826309])
@@ -142,7 +142,7 @@ def test_direct_predict_output_when_estimator_is_XGBRegressor_with_exog():
         steps=5
     )
     forecaster.fit(y=y_categorical, exog=exog_categorical)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict_categorical)
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=5, exog=exog_predict_categorical)
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.72550768, 0.25783226, 0.52587408, 0.56275314, 0.33653745])
@@ -159,7 +159,7 @@ def test_direct_predict_output_when_estimator_is_LinearRegression_with_list_step
         estimator=LinearRegression(), lags=5, steps=5
     )
     forecaster.fit(y=y_categorical)
-    Xs, _, steps, _ = forecaster._create_predict_inputs(steps=[1, 3, 5])
+    Xs, _, steps, _, _ = forecaster._create_predict_inputs(steps=[1, 3, 5])
     predictions = forecaster._direct_predict(steps=steps, Xs=Xs)
 
     expected = np.array([0.5531936 , 0.44981279, 0.41986132])

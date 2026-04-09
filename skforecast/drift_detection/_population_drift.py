@@ -499,7 +499,7 @@ class PopulationDriftDetector:
                 # This may not perfectly align with bins used in predict if new data
                 # extends the range, but it provides a reasonable approximation
                 # for efficiency.
-                bins_edges = np.histogram_bin_edges(ref.astype("float64"), bins='doane')
+                bins_edges = np.histogram_bin_edges(ref.astype("float64", copy=False), bins='doane')
                 ref_hist = np.histogram(ref, bins=bins_edges)[0] / len(ref)
 
                 self.ref_bins_edges_[feature] = bins_edges
@@ -825,9 +825,7 @@ class PopulationDriftDetector:
     def predict(self, X) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Predict drift in new data by comparing the estimated statistics to
-        reference thresholds. Two dataframes are returned, the first one with
-        detailed information of each chunk, the second only the total number
-        of chunks where drift have been detected.
+        reference thresholds.
 
         Parameters
         ----------
@@ -905,10 +903,6 @@ class PopulationDriftDetector:
         populated), attributes are aggregated into nested dictionaries keyed by
         detector names. For single-series, attributes remain unchanged.
 
-        Parameters
-        ----------
-        self
-
         Returns
         -------
         None
@@ -947,10 +941,6 @@ class PopulationDriftDetector:
         """
         Return a DataFrame with all computed thresholds per feature.
         For multi-series, returns thresholds per series_id and feature.
-
-        Parameters
-        ----------
-        self
 
         Returns
         -------

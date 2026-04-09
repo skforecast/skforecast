@@ -43,7 +43,7 @@ def test_TimeSeriesFold_split_ValueError_length_X_less_than_window_size_offset_D
 
     err_msg = re.escape(
         f"The length of `y` (5), must be greater than or equal "
-        f"to the window size ({cv.window_size}). This is because  "
+        f"to the window size ({cv.window_size}). This is because "
         f"the offset (forecaster.offset) is larger than the available "
         f"data. Try to decrease the size of the offset (forecaster.offset), "
         f"the number of `n_offsets` (forecaster.n_offsets) or increase the "

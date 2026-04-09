@@ -124,3 +124,62 @@ def test_fit_with_exog_and_validation_data():
     assert forecaster.keras_backend_ == "torch"
     assert forecaster.history_ is not None
     assert forecaster.exog_names_in_ == ["exog1", "exog2"]
+
+
+def test_fit_resets_out_sample_residuals_on_refit():
+    """
+    Test that out_sample_residuals_ and out_sample_residuals_by_bin_ are reset
+    to None when the forecaster is refitted.
+    """
+    forecaster = ForecasterRnn(estimator=model, levels=levels, lags=lags)
+    forecaster.fit(series)
+    forecaster.set_out_sample_residuals(
+        y_true={"1": np.array([1.0, 2.0, 3.0, 4.0, 5.0])},
+        y_pred={"1": np.array([0.0, 0.0, 0.0, 0.0, 0.0])},
+    )
+
+    assert forecaster.out_sample_residuals_ is not None
+    assert forecaster.out_sample_residuals_by_bin_ is not None
+
+    forecaster.fit(series)
+
+    assert forecaster.out_sample_residuals_ is None
+    assert forecaster.out_sample_residuals_by_bin_ is None
+
+
+def test_fit_populates_binner_and_binned_residuals():
+    """
+    Test that fit populates binner, binner_intervals_, and in_sample_residuals_by_bin_
+    when store_in_sample_residuals=True.
+    """
+    forecaster = ForecasterRnn(estimator=model, levels=levels, lags=lags)
+    forecaster.fit(series, store_in_sample_residuals=True)
+
+    assert isinstance(forecaster.binner, dict)
+    assert isinstance(forecaster.binner_intervals_, dict)
+    assert isinstance(forecaster.in_sample_residuals_by_bin_, dict)
+    for level in forecaster.levels:
+        assert level in forecaster.binner
+        assert level in forecaster.binner_intervals_
+        assert level in forecaster.in_sample_residuals_by_bin_
+        assert isinstance(forecaster.in_sample_residuals_by_bin_[level], dict)
+        assert len(forecaster.in_sample_residuals_by_bin_[level]) > 0
+
+
+def test_fit_store_in_sample_residuals_False_stores_None_for_residuals():
+    """
+    Test that fit with store_in_sample_residuals=False sets residuals to None per level
+    but still computes binner and binner_intervals_.
+    """
+    forecaster = ForecasterRnn(estimator=model, levels=levels, lags=lags)
+    forecaster.fit(series, store_in_sample_residuals=False)
+
+    assert isinstance(forecaster.binner, dict)
+    assert isinstance(forecaster.binner_intervals_, dict)
+    for level in forecaster.levels:
+        assert level in forecaster.binner
+        assert level in forecaster.binner_intervals_
+    # Residuals should be None per level
+    for level in forecaster.levels:
+        assert forecaster.in_sample_residuals_[level] is None
+        assert forecaster.in_sample_residuals_by_bin_[level] is None

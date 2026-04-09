@@ -1,408 +1,258 @@
-# Skforecast - GitHub Copilot Instructions
+<!-- AUTO-GENERATED FILE. DO NOT EDIT MANUALLY. -->
+<!-- Source: tools/ai/llms-base.txt + tools/ai/ai_context_header.md -->
+<!-- Regenerate with: python tools/ai/generate_ai_context_files.py -->
 
-This file provides context for GitHub Copilot to generate accurate and up-to-date code for the **skforecast** library.
+# Skforecast — Development Context
 
-## About Skforecast
+## For Contributors Working Inside This Repository
 
-Skforecast is a Python library (v0.20.1) for time series forecasting using machine learning and statistical models. It works with any estimator compatible with the scikit-learn API.
+### Testing
 
-**Repository**: https://github.com/skforecast/skforecast  
-**Documentation**: https://skforecast.org  
-**Python versions**: 3.10, 3.11, 3.12, 3.13, 3.14
+```bash
+pytest skforecast/recursive/tests/ -vv           # Run a specific module's tests
+pytest --cov=skforecast --cov-report=html         # Coverage report
+pytest -n auto                                    # Parallel execution (pytest-xdist)
+```
+
+Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
+
+### Code Style
+
+- NumPy-style docstrings
+- Type hints for function signatures
+- PEP 8 compliant (max line length 88, enforced by ruff)
+- Double quotes for strings (ruff `quote-style = "double"`)
+- Relative imports within package
+
+### Dependencies
+
+Core: numpy>=1.26, pandas>=2.1,<3.0, scikit-learn>=1.4, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
+Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 + seaborn>=0.12,<0.14 (plotting), keras>=3.0,<4.0 (deep learning)
+
+---
+
+# Skforecast — Complete API & Workflow Reference
+
+(The content below is the full `llms-base.txt` and applies to any user of skforecast)
+
+# Skforecast
+
+> Python library for time series forecasting using machine learning models
+
+This document is for skforecast v0.21.0+. If you are using an older version, check the documentation at skforecast.org.
+
+Skforecast is a Python library that simplifies time series forecasting using machine learning. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
+
+## Quick Info
+
+- Version: 0.21.0
+- License: BSD-3-Clause
+- Python: 3.10, 3.11, 3.12, 3.13, 3.14
+- Repository: https://github.com/skforecast/skforecast
+- Documentation: https://skforecast.org
+- PyPI: https://pypi.org/project/skforecast/
+
+## Installation
+
+```bash
+pip install skforecast
+```
+
+Optional dependencies:
+```bash
+pip install skforecast[stats]        # For ARIMA, SARIMAX, ETS models
+pip install skforecast[plotting]     # For visualization
+pip install skforecast[deeplearning] # For RNN/LSTM models
+```
 
 ## Project Structure
 
 ```
 skforecast/
-├── base/                    # ForecasterBase - parent class for all forecasters
-├── recursive/               # ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterRecursiveClassifier, ForecasterStats
+├── base/                    # ForecasterBase - abstract parent class for all forecasters
+├── recursive/               # ForecasterRecursive, ForecasterRecursiveMultiSeries,
+│                            # ForecasterRecursiveClassifier, ForecasterStats, ForecasterEquivalentDate
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
-├── stats/                   # Statistical model classes: Arima, Ets, Sarimax, Arar
-├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, DateTimeFeatureTransformer
-├── model_selection/         # Backtesting, grid/random/bayesian search, TimeSeriesFold
-├── feature_selection/       # Feature importance and selection tools
-├── metrics/                 # Custom metrics for time series
-├── utils/                   # Utility functions (check_*, initialize_*, transform_*)
+├── deep_learning/           # ForecasterRnn, create_and_compile_model
+├── stats/                   # Arima, Sarimax, Ets, Arar (sklearn-compatible wrappers)
+├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, DateTimeFeatureTransformer,
+│                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
+├── model_selection/         # backtesting_forecaster, grid/random/bayesian search, TimeSeriesFold
+├── feature_selection/       # select_features, select_features_multiseries
+├── metrics/                 # MASE, RMSSE, sMAPE, CRPS, coverage, pinball loss
+├── datasets/                # 30+ built-in datasets (fetch_dataset, load_demo_dataset)
+├── drift_detection/         # RangeDriftDetector, PopulationDriftDetector
+├── utils/                   # Shared validation and transformation functions
 ├── exceptions/              # Custom warnings and exceptions
-├── datasets/                # Sample datasets
-├── plot/                    # Plotting utilities
-├── deep_learning/           # ForecasterRnn (RNN/LSTM)
-├── drift_detection/         # Concept drift detection
-└── experimental/            # Experimental features
+├── plot/                    # plot_residuals, plot_prediction_intervals, plot_prediction_distribution,
+│                            # plot_multivariate_time_series_corr, set_dark_theme, backtesting_gif_creator
+└── experimental/            # Experimental features (API may change)
 ```
 
-## Detailed Project Architecture
+### Module Relationships
 
-```
-skforecast/
-├── base/                    # Abstract base class for all forecasters
-│   ├── _forecaster_base.py  # ForecasterBase with common interface:
-│   │                        #   - fit(), predict(), predict_interval()
-│   │                        #   - set_params(), get_feature_importances()
-│   │                        #   - Common attributes: is_fitted, last_window_, etc.
-│   └── __init__.py
-│
-├── recursive/               # Recursive (autoregressive) forecasters
-│   ├── _forecaster_recursive.py             # ForecasterRecursive
-│   │                                        #   Single series, uses predictions as inputs
-│   ├── _forecaster_recursive_multiseries.py # ForecasterRecursiveMultiSeries
-│   │                                        #   Global model for multiple series
-│   ├── _forecaster_recursive_classifier.py  # ForecasterRecursiveClassifier
-│   │                                        #   Classification-based approach
-│   ├── _forecaster_stats.py                 # ForecasterStats
-│   │                                        #   Wrapper for statistical models (ARIMA, ETS)
-│   ├── _forecaster_equivalent_date.py       # ForecasterEquivalentDate
-│   │                                        #   Baseline using equivalent past dates
-│   ├── tests/                               # Unit tests for recursive forecasters
-│   └── __init__.py
-│
-├── direct/                  # Direct multi-step forecasters (one model per horizon step)
-│   ├── _forecaster_direct.py           # ForecasterDirect
-│   │                                   #   Single series, trains n_steps models
-│   ├── _forecaster_direct_multivariate.py  # ForecasterDirectMultiVariate
-│   │                                       #   Multiple series as input features
-│   ├── tests/
-│   └── __init__.py
-│
-├── deep_learning/           # Neural network forecasters
-│   ├── _forecaster_rnn.py   # ForecasterRnn - RNN/LSTM/GRU forecaster
-│   ├── utils.py             # create_and_compile_model() helper function
-│   ├── tests/
-│   └── __init__.py
-│
-├── stats/                   # Statistical models (sklearn-compatible wrappers)
-│   ├── _arima.py            # Arima class (ARIMA + Auto-ARIMA when order=None)
-│   ├── _sarimax.py          # Sarimax class (SARIMAX with exogenous)
-│   ├── _ets.py              # Ets class (Exponential Smoothing)
-│   ├── _arar.py             # Arar class (Autoregressive AR)
-│   ├── _utils.py            # Shared utilities for stats models
-│   ├── arima/               # ARIMA internals and auto-selection
-│   │   └── _auto_arima.py   # Auto-ARIMA implementation
-│   ├── seasonal/            # Seasonal analysis utilities
-│   ├── transformations/     # Box-Cox and power transformations
-│   ├── tests/
-│   └── __init__.py
-│
-├── preprocessing/           # Data transformation and feature engineering
-│   ├── preprocessing.py     # All preprocessing classes:
-│   │   # - TimeSeriesDifferentiator: Apply/reverse differencing
-│   │   # - RollingFeatures: Rolling window statistics as features
-│   │   # - RollingFeaturesClassification: Rolling features for classifiers
-│   │   # - DateTimeFeatureTransformer: Extract datetime features
-│   │   # - QuantileBinner: Bin residuals for conformal prediction
-│   │   # - ConformalIntervalCalibrator: Calibrate prediction intervals
-│   │   # - reshape_series_wide_to_long(): Convert wide to long format
-│   │   # - reshape_series_long_to_dict(): Convert long to dict format
-│   │   # - reshape_exog_long_to_dict(): Convert exog long to dict
-│   │   # - reshape_series_exog_dict_to_long(): Convert dict to long
-│   ├── tests/
-│   └── __init__.py
-│
-├── model_selection/         # Model evaluation and hyperparameter optimization
-│   ├── _split.py            # Cross-validation splitters:
-│   │                        #   - TimeSeriesFold: Multi-step ahead CV
-│   │                        #   - OneStepAheadFold: Fast one-step CV
-│   ├── _validation.py       # Backtesting functions:
-│   │                        #   - backtesting_forecaster
-│   │                        #   - backtesting_forecaster_multiseries
-│   │                        #   - backtesting_stats
-│   ├── _search.py           # Hyperparameter search:
-│   │                        #   - grid_search_forecaster[_multiseries]
-│   │                        #   - random_search_forecaster[_multiseries]
-│   │                        #   - bayesian_search_forecaster[_multiseries]
-│   │                        #   - grid/random_search_stats
-│   ├── _utils.py            # Helper functions for model selection
-│   ├── tests/
-│   └── __init__.py
-│
-├── feature_selection/       # Feature importance and selection tools
-│   ├── feature_selection.py # Functions:
-│   │                        #   - select_features(): For single series
-│   │                        #   - select_features_multiseries(): For multi-series
-│   │                        #   Works with sklearn selectors (RFECV, etc.)
-│   ├── tests/
-│   └── __init__.py
-│
-├── metrics/                 # Time series specific evaluation metrics
-│   ├── metrics.py           # Metrics:
-│   │                        #   - mean_absolute_scaled_error (MASE)
-│   │                        #   - root_mean_squared_scaled_error (RMSSE)
-│   │                        #   - symmetric_mean_absolute_percentage_error (sMAPE)
-│   │                        #   - crps_from_predictions, crps_from_quantiles
-│   │                        #   - calculate_coverage
-│   ├── tests/
-│   └── __init__.py
-│
-├── drift_detection/         # Data drift monitoring for production
-│   ├── _range_drift.py      # RangeDriftDetector:
-│   │                        #   Lightweight, checks if values are in training range
-│   ├── _population_drift.py # PopulationDriftDetector:
-│   │                        #   Statistical tests (KS, Chi-Square, JS divergence)
-│   ├── tests/
-│   └── __init__.py
-│
-├── utils/                   # Shared utility functions used across all modules
-│   ├── utils.py             # Key functions:
-│   │   # Input validation: check_y, check_exog, check_interval, check_predict_input
-│   │   # Initialization: initialize_lags, initialize_window_features, initialize_weights
-│   │   # Transformation: transform_numpy, transform_dataframe, input_to_frame
-│   │   # Index manipulation: expand_index, date_to_index_position
-│   ├── tests/
-│   └── __init__.py
-│
-├── exceptions/              # Custom warnings and exceptions
-│   ├── exceptions.py        # Custom exceptions:
-│   │                        #   - DataTransformationWarning
-│   │                        #   - IgnoredArgumentWarning
-│   │                        #   - MissingValuesWarning
-│   │                        #   - ResidualsUsageWarning
-│   │                        #   - warn_skforecast_categories()
-│   ├── tests/
-│   └── __init__.py
-│
-├── datasets/                # Sample datasets for examples and testing
-│   ├── datasets.py          # fetch_dataset() function
-│   │                        # 30+ datasets: h2o, bike_sharing, store_sales, etc.
-│   ├── tests/
-│   └── __init__.py
-│
-├── plot/                    # Visualization utilities
-│   ├── plot.py              # Plotting functions for forecasts and diagnostics
-│   ├── tests/
-│   └── __init__.py
-│
-├── experimental/            # Experimental features (API may change without notice)
-│   ├── _experimental.py
-│   └── __init__.py
-│
-└── __init__.py              # Package version and top-level imports
-```
+- **Forecasters inheriting from `ForecasterBase`**: ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterRecursiveClassifier, ForecasterDirect, ForecasterDirectMultiVariate, ForecasterRnn
+- **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate
+- Statistical models in `stats/` are wrapped by `ForecasterStats` (in `recursive/`)
+- `model_selection/` functions work with all forecaster types
+- `preprocessing/` classes can be passed to forecasters via `transformer_y`, `transformer_exog`, `window_features`
 
-### Module Relationships and Dependencies
+## Core Forecasters
 
-```
-                              ┌─────────────────┐
-                              │  ForecasterBase │
-                              │     (base/)     │
-                              └────────┬────────┘
-                                       │ inherits
-        ┌──────────────────────────────┼──────────────────────────────┐
-        │                              │                              │
-        ▼                              ▼                              ▼
-┌───────────────┐            ┌─────────────────┐            ┌─────────────────┐
-│   recursive/  │            │     direct/     │            │ deep_learning/  │
-│ - Recursive   │            │ - Direct        │            │ - ForecasterRnn │
-│ - MultiSeries │            │ - MultiVariate  │            └─────────────────┘
-│ - Classifier  │            └─────────────────┘
-└───────────────┘
+| Forecaster | Use Case |
+|------------|----------|
+| ForecasterRecursive | Single series, recursive multi-step forecasting |
+| ForecasterDirect | Single series, direct multi-step forecasting |
+| ForecasterRecursiveMultiSeries | Multiple series forecasting (global model) |
+| ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
+| ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
+| ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
+| ForecasterRecursiveClassifier | Classification-based forecasting |
+| ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
 
-┌─────────────────────────────────────────────────────────────┐
-│           Standalone Forecasters (no inheritance)           │
-├─────────────────────────────────────────────────────────────┤
-│  ForecasterStats ─────► wraps stats/ models (Arima, ETS,   │
-│                         Sarimax, Arar)                      │
-│  ForecasterEquivalentDate ─► Baseline forecaster            │
-└─────────────────────────────────────────────────────────────┘
-
-        ┌─────────────────────────────────────────────────────────────┐
-        │                    Supporting Modules                        │
-        ├─────────────────────────────────────────────────────────────┤
-        │  preprocessing/  ──►  transformer_y, transformer_exog,      │
-        │                       window_features parameters             │
-        │  model_selection/ ──► backtesting, grid/bayesian search     │
-        │  feature_selection/ ► select_features for lag/exog selection│
-        │  metrics/         ──► Custom evaluation metrics              │
-        │  drift_detection/ ──► Production monitoring                  │
-        │  utils/           ──► Shared validation & transformation     │
-        │  exceptions/      ──► Custom warnings across all modules     │
-        └─────────────────────────────────────────────────────────────┘
-```
-
-### Key Design Patterns
-
-1. **Inheritance**: Most forecasters inherit from `ForecasterBase` (exceptions: `ForecasterStats`, `ForecasterEquivalentDate`)
-2. **Composition**: Statistical models (`stats/`) are wrapped by `ForecasterStats` for sklearn compatibility
-3. **Dependency Injection**: Transformers and estimators are passed to forecasters at initialization
-4. **Strategy Pattern**: Different forecasting strategies (recursive, direct) share common interface
-5. **Factory Pattern**: `create_and_compile_model()` for building RNN architectures
-
-## Correct Import Patterns
-
-Always use these import patterns - they reflect the current API:
+## Basic Usage Example
 
 ```python
-# ✅ CORRECT Forecaster imports (v0.20.1+)
-from skforecast.recursive import ForecasterRecursive
-from skforecast.recursive import ForecasterRecursiveMultiSeries
-from skforecast.recursive import ForecasterRecursiveClassifier
-from skforecast.recursive import ForecasterStats
-from skforecast.recursive import ForecasterEquivalentDate
-from skforecast.direct import ForecasterDirect
-from skforecast.direct import ForecasterDirectMultiVariate
-from skforecast.deep_learning import ForecasterRnn
-from skforecast.deep_learning import create_and_compile_model
-
-# Statistical models (used with ForecasterStats)
-from skforecast.stats import Arima, Ets, Sarimax, Arar
-
-# ❌ DEPRECATED imports - DO NOT USE
-# from skforecast.ForecasterAutoreg import ForecasterAutoreg  # OLD
-# from skforecast.ForecasterAutoregMultiSeries import ...     # OLD
-```
-
-```python
-# ✅ CORRECT Model Selection imports
-from skforecast.model_selection import backtesting_forecaster
-from skforecast.model_selection import backtesting_forecaster_multiseries
-from skforecast.model_selection import backtesting_stats
-from skforecast.model_selection import grid_search_forecaster
-from skforecast.model_selection import grid_search_forecaster_multiseries
-from skforecast.model_selection import grid_search_stats
-from skforecast.model_selection import random_search_forecaster
-from skforecast.model_selection import random_search_forecaster_multiseries
-from skforecast.model_selection import random_search_stats
-from skforecast.model_selection import bayesian_search_forecaster
-from skforecast.model_selection import bayesian_search_forecaster_multiseries
-from skforecast.model_selection import TimeSeriesFold
-from skforecast.model_selection import OneStepAheadFold
-```
-
-```python
-# ✅ CORRECT Preprocessing imports
-from skforecast.preprocessing import RollingFeatures
-from skforecast.preprocessing import RollingFeaturesClassification
-from skforecast.preprocessing import TimeSeriesDifferentiator
-from skforecast.preprocessing import DateTimeFeatureTransformer
-from skforecast.preprocessing import QuantileBinner
-from skforecast.preprocessing import ConformalIntervalCalibrator
-
-# Data reshaping utilities
-from skforecast.preprocessing import reshape_series_wide_to_long
-from skforecast.preprocessing import reshape_series_long_to_dict
-from skforecast.preprocessing import reshape_exog_long_to_dict
-from skforecast.preprocessing import reshape_series_exog_dict_to_long
-```
-
-```python
-# ✅ CORRECT Other imports
-from skforecast.feature_selection import select_features
-from skforecast.feature_selection import select_features_multiseries
-from skforecast.datasets import fetch_dataset
-from skforecast.metrics import mean_absolute_scaled_error
-from skforecast.metrics import root_mean_squared_scaled_error
-from skforecast.metrics import symmetric_mean_absolute_percentage_error
-from skforecast.metrics import crps_from_predictions
-from skforecast.metrics import crps_from_quantiles
-from skforecast.metrics import calculate_coverage
-from skforecast.drift_detection import RangeDriftDetector
-from skforecast.drift_detection import PopulationDriftDetector
-```
-
-## Core Forecasters API
-
-### ForecasterRecursive (Single Series)
-
-```python
+# Single series forecasting with ForecasterRecursive
+import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from skforecast.recursive import ForecasterRecursive
-from skforecast.preprocessing import RollingFeatures
+from skforecast.model_selection import backtesting_forecaster, TimeSeriesFold
 
+# Load data — y must be a pandas Series with DatetimeIndex and frequency set
+data = pd.read_csv('data.csv', index_col='date', parse_dates=True)
+data = data.asfreq('h')  # IMPORTANT: always set frequency before using skforecast
+
+# Create and train forecaster
 forecaster = ForecasterRecursive(
     estimator=RandomForestRegressor(n_estimators=100, random_state=123),
-    lags=24,                                    # int, list, or array
-    window_features=RollingFeatures(            # Optional rolling statistics
-        stats=['mean', 'std'],
-        window_sizes=7                          # int applies to all stats, or list with same length as stats
-    ),
-    transformer_y=None,                         # Optional transformer for y
-    transformer_exog=None,                      # Optional transformer for exog
-    differentiation=None,                       # Optional: int for differencing order
-    fit_kwargs=None                             # Optional: kwargs for estimator.fit()
+    lags=24  # Use last 24 observations as features
+)
+forecaster.fit(y=data['target'])
+
+# Predict next 10 steps
+predictions = forecaster.predict(steps=10)
+
+# Define cross-validation strategy for backtesting
+cv = TimeSeriesFold(
+    steps=10,
+    initial_train_size=len(data) - 100,
+    refit=False,
+    fixed_train_size=False
 )
 
-# Training
-forecaster.fit(y=y_train, exog=exog_train)
-
-# Prediction
-predictions = forecaster.predict(steps=10, exog=exog_test)
-
-# Prediction intervals
-predictions_interval = forecaster.predict_interval(
-    steps=10,
-    exog=exog_test,
-    interval=[10, 90],                          # 80% interval
-    method='bootstrapping',                     # or 'quantile_residuals', 'conformal'
-    n_boot=500
+# Backtesting for model evaluation
+metric, predictions_backtest = backtesting_forecaster(
+    forecaster=forecaster,
+    y=data['target'],
+    cv=cv,
+    metric='mean_absolute_error'
 )
 ```
 
-### ForecasterRecursiveMultiSeries (Multiple Series - Global Model)
+## Multi-Series Forecasting Example
 
 ```python
+# Multiple series with global model
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from lightgbm import LGBMRegressor
+
+# Data: DataFrame with multiple series as columns
+# series = pd.DataFrame({'series_1': [...], 'series_2': [...], ...})
 
 forecaster = ForecasterRecursiveMultiSeries(
     estimator=LGBMRegressor(n_estimators=100, random_state=123),
     lags=24,
-    encoding='ordinal',                         # 'ordinal', 'onehot', 'onehot_drop_first'
-    transformer_series=None,                    # Transformer or dict of transformers
-    transformer_exog=None,
-    differentiation=None,
-    window_features=None
+    encoding='ordinal'  # 'ordinal', 'ordinal_category', 'onehot', or None
 )
-
-# Training - series is a DataFrame with each column being a time series
-forecaster.fit(series=series_df, exog=exog_df)
+forecaster.fit(series=series)
 
 # Predict all series
-predictions = forecaster.predict(steps=10, exog=exog_test)
+predictions = forecaster.predict(steps=10)
 
 # Predict specific series
-predictions = forecaster.predict(steps=10, levels=['series_1', 'series_2'], exog=exog_test)
+predictions = forecaster.predict(steps=10, levels=['series_1', 'series_2'])
 ```
 
-### ForecasterDirect (Direct Multi-Step)
+## With Exogenous Variables
 
 ```python
-from skforecast.direct import ForecasterDirect
-
-forecaster = ForecasterDirect(
+forecaster = ForecasterRecursive(
     estimator=LGBMRegressor(),
-    lags=24,
-    steps=10,                                   # Must specify forecast horizon
-    transformer_y=None,
-    transformer_exog=None
+    lags=24
 )
 
+# Fit with exogenous variables
 forecaster.fit(y=y_train, exog=exog_train)
-predictions = forecaster.predict(exog=exog_test)  # steps already defined
+
+# Predict - exog must cover the forecast horizon
+predictions = forecaster.predict(steps=10, exog=exog_test)
 ```
 
-### ForecasterStats (Statistical Models)
+## Window Features (Rolling Statistics)
 
 ```python
-from skforecast.recursive import ForecasterStats
-from skforecast.stats import Arima, Ets, Sarimax, Arar
+from skforecast.preprocessing import RollingFeatures
 
-# ARIMA model (order=(p,d,q), seasonal_order=(P,D,Q), m=seasonal_period)
-arima_model = Arima(order=(1, 1, 1), seasonal_order=(1, 1, 1), m=12)
-forecaster = ForecasterStats(estimator=arima_model)
+# Create rolling features
+rolling_features = RollingFeatures(
+    stats=['mean', 'std', 'min', 'max'],
+    window_sizes=7  # int applies to all stats, or list with same length as stats
+)
 
-# Auto ARIMA (automatic order selection) - set order=None
-auto_arima = Arima(order=None, seasonal=True, m=12)
-forecaster = ForecasterStats(estimator=auto_arima)
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+    window_features=rolling_features
+)
+```
 
-# ETS model (Error-Trend-Seasonal)
-ets_model = Ets(error='add', trend='add', seasonal='add', seasonal_periods=12)
-forecaster = ForecasterStats(estimator=ets_model)
+## Prediction Intervals
 
-# ARAR model (Autoregressive AR with memory shortening)
-arar_model = Arar()
-forecaster = ForecasterStats(estimator=arar_model)
+```python
+# Predict with confidence intervals
+predictions = forecaster.predict_interval(
+    steps=10,
+    interval=[10, 90],  # 80% prediction interval
+    method='bootstrapping',  # or 'conformal'
+    n_boot=500
+)
+# Returns DataFrame with columns: pred, lower_bound, upper_bound
+```
 
-forecaster.fit(y=y_train)
-predictions = forecaster.predict(steps=10)
+## Backtesting
+
+Backtesting evaluates forecaster performance using time series cross-validation.
+
+```python
+from skforecast.model_selection import backtesting_forecaster, TimeSeriesFold
+
+# Define cross-validation strategy
+cv = TimeSeriesFold(
+    steps=10,
+    initial_train_size=len(data) - 100,
+    refit=False,
+    fixed_train_size=False
+)
+
+metric, predictions = backtesting_forecaster(
+    forecaster=forecaster,                      # Forecaster object to evaluate
+    y=data['target'],                           # Time series data (pandas Series with DatetimeIndex)
+    cv=cv,                                      # TimeSeriesFold with CV configuration
+    metric='mean_absolute_error',               # Metric(s): str, callable, or list
+    exog=exog,                                  # Exogenous variables (optional)
+    interval=[10, 90],                          # Prediction intervals as percentiles (optional)
+    interval_method='bootstrapping',            # 'bootstrapping' or 'conformal'
+    n_boot=250,                                 # Bootstrap iterations (only if method='bootstrapping')
+    use_in_sample_residuals=True,               # Use training residuals for intervals
+    use_binned_residuals=True,                  # Select residuals based on predicted values
+    random_state=123,                           # Seed for reproducibility
+    return_predictors=False,                    # Return predictor values used in each fold
+    n_jobs='auto',                              # Parallel jobs (-1 for all cores, 'auto' for automatic)
+    verbose=False,                              # Print fold information
+    show_progress=True,                         # Show progress bar
+    suppress_warnings=False                     # Suppress skforecast warnings
+)
 ```
 
 ## Cross-Validation Strategies
@@ -465,112 +315,16 @@ print(fold)
 - `TimeSeriesFold`: When you need to evaluate multi-step forecasting performance (realistic backtesting)
 - `OneStepAheadFold`: When you need fast hyperparameter tuning (less accurate but much faster)
 
-## Model Selection
+## Hyperparameter Tuning
 
-### Backtesting
-
-```python
-from skforecast.model_selection import backtesting_forecaster, TimeSeriesFold
-
-# Define cross-validation strategy
-cv = TimeSeriesFold(
-    steps=10,
-    initial_train_size=len(data) - 100,
-    refit=False,
-    fixed_train_size=False                      # Expanding window if False
-)
-
-metric, predictions = backtesting_forecaster(
-    forecaster=forecaster,                      # Forecaster object to evaluate
-    y=data['target'],                           # Time series data (pandas Series with DatetimeIndex)
-    cv=cv,                                      # TimeSeriesFold with CV configuration
-    metric='mean_absolute_error',               # Metric(s): str, callable, or list
-    exog=exog,                                  # Exogenous variables (optional)
-    interval=[10, 90],                          # Prediction intervals as percentiles (optional)
-    interval_method='bootstrapping',            # 'bootstrapping' or 'conformal'
-    n_boot=250,                                 # Bootstrap iterations (only if method='bootstrapping')
-    use_in_sample_residuals=True,               # Use training residuals for intervals
-    use_binned_residuals=True,                  # Select residuals based on predicted values
-    random_state=123,                           # Seed for reproducibility
-    return_predictors=False,                    # Return predictor values used in each fold
-    n_jobs='auto',                              # Parallel jobs (-1 for all cores, 'auto' for automatic)
-    verbose=False,                              # Print fold information
-    show_progress=True,                         # Show progress bar
-    suppress_warnings=False                     # Suppress skforecast warnings
-)
-```
-
-**Parameters explanation:**
-
-| Parameter | Description |
-|-----------|-------------|
-| `forecaster` | Forecaster object (ForecasterRecursive, ForecasterDirect, ForecasterEquivalentDate, ForecasterRecursiveClassifier) |
-| `y` | Training time series as pandas Series with DatetimeIndex |
-| `cv` | TimeSeriesFold object defining the cross-validation strategy |
-| `metric` | Metric(s) to evaluate: 'mean_squared_error', 'mean_absolute_error', 'mean_absolute_percentage_error', 'mean_squared_log_error', 'mean_absolute_scaled_error', 'root_mean_squared_scaled_error', or custom callable |
-| `exog` | Exogenous variables (pandas Series/DataFrame). Must cover the entire time period |
-| `interval` | Prediction intervals: float (0-1 for coverage), list/tuple of percentiles [10, 90], 'bootstrapping', or scipy.stats distribution |
-| `interval_method` | Method for intervals: 'bootstrapping' (resampling residuals) or 'conformal' (conformal prediction) |
-| `n_boot` | Number of bootstrap samples for interval estimation (default 250) |
-| `use_in_sample_residuals` | If True, use training residuals; if False, use out-of-sample residuals (must be set with `set_out_sample_residuals()`) |
-| `use_binned_residuals` | If True, select residuals based on predicted value bins for better interval calibration |
-| `random_state` | Seed for reproducible results |
-| `return_predictors` | If True, return DataFrame with predictor values used in each fold |
-| `n_jobs` | Parallel jobs: -1 (all cores), 'auto' (automatic selection), or specific int |
-| `verbose` | Print information about folds and training/validation sets |
-| `show_progress` | Display progress bar during backtesting |
-| `suppress_warnings` | Suppress skforecast-specific warnings during execution |
-
-### Grid Search
+Three search strategies are available: `grid_search_forecaster`, `random_search_forecaster`, and `bayesian_search_forecaster` (Optuna-based). All accept `TimeSeriesFold` or `OneStepAheadFold`. Multi-series variants: `grid_search_forecaster_multiseries`, `random_search_forecaster_multiseries`, `bayesian_search_forecaster_multiseries`.
 
 ```python
-from skforecast.model_selection import TimeSeriesFold
-from skforecast.model_selection import grid_search_forecaster
+from skforecast.model_selection import bayesian_search_forecaster, TimeSeriesFold
 
-# Define cross-validation strategy
-cv = TimeSeriesFold(
-    steps=12,
-    initial_train_size=len(data) - 100,
-    refit=False
-)
+cv = TimeSeriesFold(steps=12, initial_train_size=len(data) - 100, refit=False)
 
-# Lags grid (different lag configurations to try)
-lags_grid = [3, 10, [1, 2, 3, 20]]
-
-# Estimator hyperparameters grid
-param_grid = {
-    'n_estimators': [50, 100],
-    'max_depth': [5, 10, 15]
-}
-
-results = grid_search_forecaster(
-    forecaster=forecaster,
-    y=data['target'],
-    exog=exog,
-    cv=cv,
-    lags_grid=lags_grid,
-    param_grid=param_grid,
-    metric='mean_squared_error',
-    return_best=True,
-    n_jobs='auto',
-    show_progress=True
-)
-```
-
-### Bayesian Search (Optuna-based)
-
-```python
-from skforecast.model_selection import TimeSeriesFold
-from skforecast.model_selection import bayesian_search_forecaster
-
-# Define cross-validation strategy
-cv = TimeSeriesFold(
-    steps=12,
-    initial_train_size=len(data) - 100,
-    refit=False
-)
-
-# NOTE: Search space function (lags can be included here for bayesian search)
+# Bayesian Search — lags can be included in search_space
 def search_space(trial):
     return {
         'lags': trial.suggest_categorical('lags', [3, 5, [1, 2, 3, 20]]),
@@ -582,7 +336,6 @@ def search_space(trial):
 results, best_trial = bayesian_search_forecaster(
     forecaster=forecaster,
     y=data['target'],
-    exog=exog,
     cv=cv,
     search_space=search_space,
     metric='mean_absolute_error',
@@ -590,111 +343,38 @@ results, best_trial = bayesian_search_forecaster(
     random_state=123,
     return_best=True,
     n_jobs='auto',
-    show_progress=True,
-    suppress_warnings=False,
-    output_file=None,
-    kwargs_create_study={},
-    kwargs_study_optimize={}
+    show_progress=True
 )
 ```
 
-### Bayesian Search Multi-Series
+## Statistical Models (ARIMA, ETS, ARAR)
+
+Statistical models are wrapped by `ForecasterStats` for a sklearn-compatible interface. Available models: `Arima`, `Sarimax`, `Ets`, `Arar`.
 
 ```python
-from skforecast.model_selection import TimeSeriesFold
-from skforecast.model_selection import bayesian_search_forecaster_multiseries
+from skforecast.recursive import ForecasterStats
+from skforecast.stats import Arima, Ets, Sarimax, Arar
 
-cv = TimeSeriesFold(
-    steps=12,
-    initial_train_size=len(series_df) - 100,
-    refit=False
-)
+# ARIMA model (order=(p,d,q), seasonal_order=(P,D,Q), m=seasonal_period)
+forecaster = ForecasterStats(estimator=Arima(order=(1, 1, 1), seasonal_order=(1, 1, 1), m=12))
+forecaster.fit(y=data['target'])
+predictions = forecaster.predict(steps=10)
 
-results, best_trial = bayesian_search_forecaster_multiseries(
-    forecaster=forecaster_multiseries,
-    series=series,  # Wide DataFrame, Long DataFrame, dict {series_id: pd.Series}
-    exog=exog,  # Wide DataFrame, Long DataFrame, dict {series_id: pd.Series or pd.DataFrame}
-    cv=cv,
-    search_space=search_space,
-    metric='mean_absolute_error',
-    n_trials=50,
-    return_best=True,
-    n_jobs='auto',
-    show_progress=True,
-    suppress_warnings=False,
-    output_file=None,
-    kwargs_create_study={},
-    kwargs_study_optimize={}
-)
-```
+# Auto ARIMA (automatic order selection) - set order=None
+forecaster = ForecasterStats(estimator=Arima(order=None, seasonal=True, m=12))
 
-## Preprocessing
-
-### RollingFeatures
-
-```python
-from skforecast.preprocessing import RollingFeatures
-
-rolling = RollingFeatures(
-    stats=['mean', 'std', 'min', 'max', 'sum'],
-    window_sizes=[7, 14, 30]
-)
-
-forecaster = ForecasterRecursive(
-    estimator=LGBMRegressor(),
-    lags=24,
-    window_features=rolling
-)
-```
-
-### TimeSeriesDifferentiator
-
-```python
-from skforecast.preprocessing import TimeSeriesDifferentiator
-
-# Automatic differencing in forecaster
-forecaster = ForecasterRecursive(
-    estimator=LGBMRegressor(),
-    lags=24,
-    differentiation=1                           # First-order differencing
-)
-
-# Manual differencing
-differentiator = TimeSeriesDifferentiator(order=1)
-y_diff = differentiator.fit_transform(y)
-y_original = differentiator.inverse_transform(y_diff)
-```
-
-### DateTimeFeatureTransformer
-
-```python
-from skforecast.preprocessing import DateTimeFeatureTransformer
-
-transformer = DateTimeFeatureTransformer(
-    features=['year', 'month', 'week', 'day_of_week', 'hour']
-)
-
-# Use with pandas DatetimeIndex
-exog = transformer.fit_transform(data.index)
+# ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None, Z=Auto)
+forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 ```
 
 ## Feature Selection
 
-Feature selection using sklearn selectors (RFECV, SelectFromModel, etc.) to identify the most relevant lags, window features, and exogenous variables.
+Use sklearn selectors (RFECV, SelectFromModel, etc.) to identify relevant lags, window features, and exogenous variables. Multi-series variant: `select_features_multiseries`.
 
 ```python
 from sklearn.feature_selection import RFECV
-from sklearn.ensemble import RandomForestRegressor
-from skforecast.recursive import ForecasterRecursive
 from skforecast.feature_selection import select_features
 
-# Create forecaster with many features
-forecaster = ForecasterRecursive(
-    estimator=RandomForestRegressor(n_estimators=100, random_state=123),
-    lags=24
-)
-
-# Feature selection for single series
 selected_lags, selected_window_features, selected_exog = select_features(
     forecaster=forecaster,
     selector=RFECV(estimator=RandomForestRegressor(), step=1, cv=3),
@@ -702,163 +382,154 @@ selected_lags, selected_window_features, selected_exog = select_features(
     exog=exog_train,
     select_only=None,              # 'autoreg', 'exog', or None (all features)
     force_inclusion=None,          # Features to always include (list or regex str)
-    subsample=0.5,                 # Proportion of data to use
+    subsample=0.5,
     random_state=123,
     verbose=True
 )
-
-# Update forecaster with selected features
 forecaster.set_lags(selected_lags)
-```
-
-### Feature Selection for Multi-Series
-
-```python
-from skforecast.recursive import ForecasterRecursiveMultiSeries
-from skforecast.feature_selection import select_features_multiseries
-
-forecaster = ForecasterRecursiveMultiSeries(
-    estimator=RandomForestRegressor(n_estimators=100, random_state=123),
-    lags=24
-)
-
-selected_lags, selected_window_features, selected_exog = select_features_multiseries(
-    forecaster=forecaster,
-    selector=RFECV(estimator=RandomForestRegressor(), step=1, cv=3),
-    series=series_df,
-    exog=exog_df,
-    select_only=None,              # 'autoreg', 'exog', or None (all features)
-    force_inclusion=None,          # Features to always include (list or regex str)
-    subsample=0.5,                 # Proportion of data to use
-    random_state=123,
-    verbose=True
-)
 ```
 
 ## Drift Detection
 
-Skforecast provides two drift detection tools for monitoring changes in data distribution during model deployment.
-
-### RangeDriftDetector
-
-Lightweight detector for out-of-range values based on training feature ranges. Suitable for real-time inference applications.
+Two drift detection tools for monitoring data distribution changes during deployment.
 
 ```python
-from skforecast.drift_detection import RangeDriftDetector
+from skforecast.drift_detection import RangeDriftDetector, PopulationDriftDetector
 
-# Initialize and fit the detector
+# RangeDriftDetector — lightweight, checks out-of-range values vs training ranges
 detector = RangeDriftDetector()
 detector.fit(series=y_train, exog=exog_train)
-
-# Check new data for out-of-range values
 flag_out_of_range, out_of_range_series, out_of_range_exog = detector.predict(
-    last_window=new_data,
-    exog=new_exog,
-    verbose=True,
-    suppress_warnings=False
-)
-```
-
-### PopulationDriftDetector
-
-Advanced detector using statistical tests (Kolmogorov-Smirnov, Chi-Square, Jensen-Shannon) to detect population drift between reference and new datasets.
-
-```python
-from skforecast.drift_detection import PopulationDriftDetector
-
-# Initialize the detector
-detector = PopulationDriftDetector(
-    chunk_size=100,                     # int, str (e.g., 'D', 'W'), or None
-    threshold=3,                        # Multiplier for std or quantile level
-    threshold_method='std',             # 'std' or 'quantile'
-    max_out_of_range_proportion=0.1     # Max allowed proportion out of range
+    last_window=new_data, exog=new_exog
 )
 
-# Fit with reference data
+# PopulationDriftDetector — statistical tests (KS, Chi-Square, Jensen-Shannon)
+detector = PopulationDriftDetector(chunk_size=100, threshold=3, threshold_method='std')
 detector.fit(X=reference_data)
-
-# Detect drift in new data
 results, summary = detector.predict(X=new_data)
 ```
 
-**Key Parameters:**
+## Key Classes and Imports
 
-| Parameter | Description |
-|-----------|-------------|
-| `chunk_size` | Size of chunks for sequential analysis: int (observations), str (time-based like 'D', 'W'), or None (entire dataset) |
-| `threshold` | Threshold for statistics. If `threshold_method='std'`: multiplier of std. If `threshold_method='quantile'`: quantile level (0-1) |
-| `threshold_method` | `'std'`: mean + threshold * std. `'quantile'`: empirical quantile with leave-one-chunk-out CV |
-| `max_out_of_range_proportion` | Maximum allowed proportion of out-of-range observations (0-1) |
-
-## Datasets
+**Note:** In versions prior to 0.14.0, `ForecasterRecursive` was named `ForecasterAutoreg` and `ForecasterRecursiveMultiSeries` was named `ForecasterAutoregMultiSeries`. Always use the current names shown below.
 
 ```python
+# Forecasters
+from skforecast.recursive import ForecasterRecursive
+from skforecast.recursive import ForecasterRecursiveMultiSeries
+from skforecast.recursive import ForecasterRecursiveClassifier
+from skforecast.recursive import ForecasterStats
+from skforecast.recursive import ForecasterEquivalentDate
+from skforecast.direct import ForecasterDirect
+from skforecast.direct import ForecasterDirectMultiVariate
+from skforecast.deep_learning import ForecasterRnn
+from skforecast.deep_learning import create_and_compile_model
+
+# Model Selection
+from skforecast.model_selection import backtesting_forecaster
+from skforecast.model_selection import backtesting_forecaster_multiseries
+from skforecast.model_selection import backtesting_stats
+from skforecast.model_selection import grid_search_forecaster
+from skforecast.model_selection import grid_search_forecaster_multiseries
+from skforecast.model_selection import random_search_forecaster
+from skforecast.model_selection import random_search_forecaster_multiseries
+from skforecast.model_selection import bayesian_search_forecaster
+from skforecast.model_selection import bayesian_search_forecaster_multiseries
+from skforecast.model_selection import grid_search_stats
+from skforecast.model_selection import random_search_stats
+from skforecast.model_selection import TimeSeriesFold
+from skforecast.model_selection import OneStepAheadFold
+
+# Preprocessing
+from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeaturesClassification
+from skforecast.preprocessing import TimeSeriesDifferentiator
+from skforecast.preprocessing import DateTimeFeatureTransformer
+from skforecast.preprocessing import create_datetime_features
+from skforecast.preprocessing import QuantileBinner
+from skforecast.preprocessing import ConformalIntervalCalibrator
+# Data reshaping utilities
+from skforecast.preprocessing import reshape_series_wide_to_long
+from skforecast.preprocessing import reshape_series_long_to_dict
+from skforecast.preprocessing import reshape_exog_long_to_dict
+from skforecast.preprocessing import reshape_series_exog_dict_to_long
+
+# Feature Selection
+from skforecast.feature_selection import select_features
+from skforecast.feature_selection import select_features_multiseries
+
+# Datasets
 from skforecast.datasets import fetch_dataset
-data = fetch_dataset(name='h2o')
+from skforecast.datasets import load_demo_dataset
+from skforecast.datasets import show_datasets_info
+
+# Metrics
+from skforecast.metrics import mean_absolute_scaled_error
+from skforecast.metrics import root_mean_squared_scaled_error
+from skforecast.metrics import symmetric_mean_absolute_percentage_error
+from skforecast.metrics import add_y_train_argument
+from skforecast.metrics import crps_from_predictions
+from skforecast.metrics import crps_from_quantiles
+from skforecast.metrics import calculate_coverage
+from skforecast.metrics import create_mean_pinball_loss
+
+# Statistical models (used with ForecasterStats)
+from skforecast.stats import Arima, Ets, Sarimax, Arar
+
+# Drift Detection
+from skforecast.drift_detection import RangeDriftDetector
+from skforecast.drift_detection import PopulationDriftDetector
+
+# Plotting
+from skforecast.plot import plot_residuals
+from skforecast.plot import plot_multivariate_time_series_corr
+from skforecast.plot import plot_prediction_distribution
+from skforecast.plot import plot_prediction_intervals
+from skforecast.plot import calculate_lag_autocorrelation
+from skforecast.plot import backtesting_gif_creator
+from skforecast.plot import set_dark_theme
+
+# Exceptions and Warnings
+from skforecast.exceptions import set_warnings_style
+from skforecast.exceptions import warn_skforecast_categories
 ```
 
-**Available datasets:**
+## Available Datasets
 
-| Dataset | Frequency | Description |
-|---------|-----------|-------------|
-| `h2o` | Monthly | Australian health system expenditure on corticosteroid drugs (1991-2008) |
-| `h2o_exog` | Monthly | Same as h2o with simulated exogenous variables |
-| `fuel_consumption` | Monthly | Monthly fuel consumption in Spain (1969-2022) |
-| `items_sales` | Daily | Simulated sales for 3 different items |
-| `air_quality_valencia` | Hourly | Air pollutant measures at Valencia city (2019-2023) |
-| `air_quality_valencia_no_missing` | Hourly | Same as above with imputed missing values |
-| `website_visits` | Daily | Daily visits to cienciadedatos.net website |
-| `bike_sharing` | Hourly | Bike share system usage in Washington D.C. (2011-2012) |
-| `bike_sharing_extended_features` | Hourly | Same as above with engineered features |
-| `australia_tourism` | Quarterly | Quarterly overnight trips in Australia (1998-2016) |
-| `uk_daily_flights` | Daily | Daily number of flights in UK (2019-2022) |
-| `wikipedia_visits` | Daily | Log daily page views for Peyton Manning Wikipedia page |
-| `vic_electricity` | 30min | Half-hourly electricity demand for Victoria, Australia |
-| `vic_electricity_classification` | Hourly | Electricity demand classified into low/medium/high |
-| `store_sales` | Daily | 913,000 sales transactions for 50 products in 10 stores (2013-2017) |
-| `bicimad` | Daily | Daily users of BiciMad bicycle rental in Madrid (2014-2022) |
-| `m4_daily` | Daily | Time series with daily frequency from M4 competition |
-| `m4_hourly` | Hourly | Time series with hourly frequency from M4 competition |
-| `ashrae_daily` | Daily | Daily energy consumption from ASHRAE competition |
-| `bdg2_daily` | Daily | Daily energy consumption from Building Data Genome Project 2 |
-| `bdg2_daily_sample` | Daily | Sample of two buildings from bdg2_daily |
-| `bdg2_hourly` | Hourly | Hourly energy consumption from Building Data Genome Project 2 |
-| `bdg2_hourly_sample` | Hourly | Sample of two buildings from bdg2_hourly |
-| `m5` | Daily | Daily sales data from M5 competition |
-| `ett_m1` | 15min | Electricity transformer data (2016-2018) |
-| `ett_m2` | 15min | Electricity transformer data from different station |
-| `ett_m2_extended` | 15min | Same as ett_m2 with calendar features |
-| `expenditures_australia` | Monthly | Monthly expenditure on cafes/restaurants in Victoria (1982-2024) |
-| `public_transport_madrid` | Daily | Daily public transport users in Madrid (2023-2024) |
-| `turbine_emission` | Hourly | Gas turbine sensor measures for emissions study (2011-2015) |
+30+ built-in datasets covering multiple frequencies (15min, 30min, hourly, daily, monthly, quarterly). Most commonly used:
 
-## Important Notes
+```python
+from skforecast.datasets import fetch_dataset, show_datasets_info
 
-1. **Data must have DatetimeIndex with frequency**: Always use `data.asfreq('h')` or similar
-2. **No NaN values**: Forecasters don't accept missing values by default
-3. **Exog for prediction**: Must cover the entire forecast horizon
-4. **Transformers**: Applied automatically during fit/predict
-5. **Differentiation**: Predictions are automatically inverse-transformed
+data = fetch_dataset(name='h2o')             # Monthly, single series
+data = fetch_dataset(name='items_sales')     # Daily, 3 series (multi-series)
+data = fetch_dataset(name='bike_sharing')    # Hourly, with exogenous variables
+data = fetch_dataset(name='store_sales')     # Daily, 50 products × 10 stores
+data = fetch_dataset(name='h2o_exog')        # Monthly, with exogenous variables
 
-## Code Style
-
-- Use NumPy-style docstrings
-- Type hints for function signatures
-- PEP 8 compliant (max line length 88)
-- Relative imports within package
-
-## Testing
-
-```bash
-pytest skforecast/recursive/tests/ -vv
-pytest --cov=skforecast --cov-report=html
+# See all available datasets
+show_datasets_info()
 ```
 
-## Dependencies
+## Tips for Best Results
 
-Core: numpy>=1.24, pandas>=1.5, scikit-learn>=1.2, scipy>=1.3.2, optuna>=2.10, joblib>=1.1, numba>=0.59, tqdm>=4.57, rich>=13.9
+1. **Always set frequency**: Use `data.asfreq('h')` or similar — skforecast requires a DatetimeIndex with frequency
+2. **Handle missing values**: Forecasters don't accept NaN by default
+3. **Scale data**: Use `transformer_y` for better model performance
+4. **Use backtesting**: Always validate with realistic train/test splits
+5. **Consider differentiation**: For non-stationary series, use `differentiation` parameter
+6. **Start simple**: Begin with ForecasterRecursive before trying complex models
 
-Optional:
-- stats: statsmodels>=0.12, <0.15
-- plotting: matplotlib>=3.3, seaborn>=0.11
-- deeplearning: keras>=3.0
+## Documentation
+
+- Quick Start: https://skforecast.org/latest/quick-start/quick-start-skforecast.html
+- User Guides: https://skforecast.org/latest/user_guides/table-of-contents.html
+- API Reference: https://skforecast.org/latest/api/forecasterrecursive.html
+- Examples: https://skforecast.org/latest/examples/examples_english.html
+- Release Notes: https://skforecast.org/latest/releases/releases.html
+
+## Citation
+
+```
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+```

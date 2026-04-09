@@ -2,9 +2,10 @@
 # ==============================================================================
 import re
 import pytest
-from skforecast.stats import Sarimax, Arima, Ets
-from skforecast.recursive import ForecasterStats
+from sklearn.base import clone
 from sklearn.linear_model import LinearRegression
+from skforecast.stats import Sarimax, Arima, Ets, Arar
+from skforecast.recursive import ForecasterStats
 
 
 def test_TypeError_when_estimator_is_not_valid_stats_model_single_estimator():
@@ -135,3 +136,21 @@ def test_fit_kwargs_is_ignored():
     )
     
     assert forecaster.fit_kwargs is None
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [Arima(order=(1, 1, 1)), Arar(), Ets(), Sarimax(order=(1, 0, 1))],
+    ids=lambda est: type(est).__name__,
+)
+def test_skforecast_stats_estimators_are_compatible_with_sklearn_clone(estimator):
+    """
+    Check that all skforecast stats estimators can be cloned with
+    sklearn.base.clone, which requires get_params() and set_params().
+    """
+
+    cloned = clone(estimator)
+
+    assert type(cloned) is type(estimator)
+    assert cloned.get_params() == estimator.get_params()
+    assert not cloned.is_fitted

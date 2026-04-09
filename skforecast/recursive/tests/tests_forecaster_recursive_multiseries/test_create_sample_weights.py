@@ -233,6 +233,16 @@ X_train_ordinal_category_diferent_length["_level_skforecast"] = (
 )
 
 
+def _short_id(dt):  # pragma: no cover
+    """Short identifier for parametrize ids."""
+    s = str(dt)
+    if len(s) <= 100:
+        return s
+    if hasattr(dt, 'shape'):
+        return f'{type(dt).__name__}{dt.shape}'
+    return s[:100]
+
+
 @pytest.mark.parametrize(
     "encoding, X_train",
     [
@@ -241,7 +251,7 @@ X_train_ordinal_category_diferent_length["_level_skforecast"] = (
         ("onehot", X_train_onehot),
         (None, X_train_ordinal)
     ],
-    ids=lambda dt: f"encoding, X_train: {dt}",
+    ids=_short_id,
 )
 def test_create_sample_weights_output_using_series_weights(encoding, X_train):
     """
@@ -274,7 +284,7 @@ def test_create_sample_weights_output_using_series_weights(encoding, X_train):
         ("onehot", X_train_onehot),
         (None, X_train_ordinal)
     ],
-    ids=lambda dt: f"encoding, X_train: {dt}",
+    ids=_short_id,
 )
 def test_create_sample_weights_output_using_weight_func(encoding, X_train):
     """
@@ -316,7 +326,7 @@ def test_create_sample_weights_output_using_weight_func(encoding, X_train):
             np.array([1, 0, 0, 0, 1, 1, 1, 3, 3, 3, 3, 2, 2, 2]),
         ),
     ],
-    ids=lambda values: f"levels: {values}",
+    ids=_short_id,
 )
 def test_create_sample_weights_output_using_weight_func_dict(weight_func, expected):
     """
@@ -353,7 +363,7 @@ def test_create_sample_weights_output_using_weight_func_dict(weight_func, expect
             np.array([1, 0, 0, 0, 1, 1, 1, 3, 2, 2, 2]),
         ),
     ],
-    ids=lambda values: f"levels: {values}",
+    ids=_short_id,
 )
 def test_create_sample_weights_output_using_weight_func_dict_different_series_lengths(
     weight_func, expected
@@ -385,7 +395,7 @@ def test_create_sample_weights_output_using_weight_func_dict_different_series_le
         ("onehot", X_train_onehot),
         (None, X_train_ordinal)
     ],
-    ids=lambda dt: f"encoding, X_train: {dt}",
+    ids=_short_id,
 )
 def test_create_sample_weights_output_using_series_weights_and_weight_func(
     encoding, X_train
@@ -419,7 +429,7 @@ def test_create_sample_weights_output_using_series_weights_and_weight_func(
         ("onehot", X_train_onehot_diferent_length),
         (None, X_train_ordinal_diferent_length)
     ],
-    ids=lambda dt: f"encoding, X_train: {dt}",
+    ids=_short_id,
 )
 def test_create_sample_weights_output_using_series_weights_and_weight_func_different_series_lengths(
     encoding, X_train
@@ -454,7 +464,7 @@ def test_create_sample_weights_output_using_series_weights_and_weight_func_diffe
         ("onehot", X_train_onehot),
         (None, X_train_ordinal)
     ],
-    ids=lambda dt: f"encoding, X_train: {dt}",
+    ids=_short_id,
 )
 def test_create_sample_weights_ValueError_when_weights_has_nan(encoding, X_train):
     """
@@ -484,7 +494,7 @@ def test_create_sample_weights_ValueError_when_weights_has_nan(encoding, X_train
         ("onehot", X_train_onehot),
         (None, X_train_ordinal)
     ],
-    ids=lambda dt: f"encoding, X_train: {dt}",
+    ids=_short_id,
 )
 def test_create_sample_weights_ValueError_when_weights_has_negative_values(
     encoding, X_train
@@ -516,7 +526,7 @@ def test_create_sample_weights_ValueError_when_weights_has_negative_values(
         ("onehot", X_train_onehot),
         (None, X_train_ordinal)
     ],
-    ids=lambda dt: f"encoding, X_train: {dt}",
+    ids=_short_id,
 )
 def test_create_sample_weights_ValueError_when_weights_all_zeros(encoding, X_train):
     """

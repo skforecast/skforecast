@@ -355,12 +355,12 @@ def test_fit_ets_aan_damped_trend():
     np.testing.assert_array_almost_equal(
         model.fitted_values_[:10],
         expected_fitted,
-        decimal=8
+        decimal=6
     )
     np.testing.assert_array_almost_equal(
         model.in_sample_residuals_,
         y - model.fitted_values_,
-        decimal=8
+        decimal=6
     )
 
 

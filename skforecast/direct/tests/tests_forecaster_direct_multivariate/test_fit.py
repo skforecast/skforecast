@@ -1,15 +1,22 @@
 # Unit test fit ForecasterDirectMultiVariate
 # ==============================================================================
+import re
 import pytest
 from pytest import approx
+from itertools import chain
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
+from catboost import CatBoostRegressor
+from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
 from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirectMultiVariate
+from skforecast.exceptions import MissingValuesWarning
 
 # Fixtures
 from .fixtures_forecaster_direct_multivariate import series as series_fixtures
@@ -21,6 +28,38 @@ transformer_exog = ColumnTransformer(
                        remainder = 'passthrough',
                        verbose_feature_names_out = False
                    )
+
+
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4)},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "window_features": RollingFeatures(stats=['mean'], window_sizes=4),
+         "transformer_series": StandardScaler(), "transformer_exog": StandardScaler(),
+         "differentiation": 1},
+    ],
+    ids=["base", "window_features", "transformers", "differentiation"]
+)
+def test_forecaster_fit_does_not_modify_series_exog(forecaster_kwargs):
+    """
+    Test forecaster.fit does not modify series and exog.
+    """
+    series_local = series_fixtures.copy()
+    exog_local = exog[['exog_1']].copy()
+    series_copy = series_local.copy()
+    exog_copy = exog_local.copy()
+
+    forecaster = ForecasterDirectMultiVariate(**forecaster_kwargs)
+    forecaster.fit(series=series_local, exog=exog_local)
+
+    pd.testing.assert_frame_equal(series_local, series_copy)
+    pd.testing.assert_frame_equal(exog_local, exog_copy)
 
 
 def test_forecaster_series_exog_features_stored():
@@ -60,6 +99,11 @@ def test_forecaster_series_exog_features_stored():
     X_train_features_names_out_ = [
         'l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_roll_ratio_min_max_4', 'l1_roll_median_4',
         'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_roll_ratio_min_max_4', 'l2_roll_median_4',
+        'exog_1', 'exog_2_a', 'exog_2_b', 
+    ]
+    X_train_direct_features_names_out_ = [
+        'l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_roll_ratio_min_max_4', 'l1_roll_median_4',
+        'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_roll_ratio_min_max_4', 'l2_roll_median_4',
         'exog_1_step_1', 'exog_2_a_step_1', 'exog_2_b_step_1', 
         'exog_1_step_2', 'exog_2_a_step_2', 'exog_2_b_step_2'
     ]
@@ -75,6 +119,8 @@ def test_forecaster_series_exog_features_stored():
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
     assert forecaster.X_train_direct_exog_names_out_ == X_train_direct_exog_names_out_
     assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
+    assert forecaster.X_train_direct_features_names_out_ == X_train_direct_features_names_out_
+    assert forecaster.categorical_features_names_in_ == []
 
 
 def test_fit_correct_dict_create_transformer_series():
@@ -415,3 +461,329 @@ def test_fit_last_window_stored_when_lags_dict_with_None(level):
     pd.testing.assert_frame_equal(forecaster.last_window_, expected)
     assert forecaster.series_names_in_ == ['l1', 'l2']
     assert forecaster.X_train_series_names_in_ == ['l1']
+
+
+def test_fit_resets_out_sample_residuals_on_refit():
+    """
+    Test that out_sample_residuals_ and out_sample_residuals_by_bin_ are reset
+    to None when the forecaster is refitted.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
+    )
+    forecaster.fit(series=series_fixtures)
+    forecaster.set_out_sample_residuals(
+        y_true={'l1': np.arange(1, 46, dtype=float)},
+        y_pred={'l1': np.zeros(45)},
+    )
+
+    assert forecaster.out_sample_residuals_ is not None
+    assert forecaster.out_sample_residuals_by_bin_ is not None
+
+    forecaster.fit(series=series_fixtures)
+
+    assert forecaster.out_sample_residuals_ is None
+    assert forecaster.out_sample_residuals_by_bin_ is None
+
+
+def custom_weights(index):  # pragma: no cover
+    """
+    Return 0 if index is between 20 and 40 else 1.
+    """
+    weights = np.where(
+                (index >= 20) & (index <= 40),
+                0,
+                1
+              )
+    
+    return weights
+
+
+def test_fit_model_coef_when_using_weight_func():
+    """
+    Check the value of the estimator coefs when using a `weight_func`.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator   = LinearRegression(),
+                     level       = 'l1',
+                     lags        = 5,
+                     steps       = 2,
+                     weight_func = custom_weights
+                 )
+    forecaster.fit(series=series_fixtures)
+    results_1 = forecaster.estimators_[1].coef_
+    results_2 = forecaster.estimators_[2].coef_
+    expected_1 = np.array([
+        -0.07798749, -0.12725508,  0.35291714,  0.31257354, -0.17962821,
+        -0.2411156 , -0.33348055,  0.39950299,  0.54651497, -0.01166156
+    ])
+    expected_2 = np.array([
+        -0.02370398,  0.36524827,  0.02372546, -0.25968417, -0.49530388,
+        -0.27695513,  0.35233664,  0.57568233, -0.09067347, -0.5731565
+    ])
+
+    np.testing.assert_almost_equal(results_1, expected_1)
+    np.testing.assert_almost_equal(results_2, expected_2)
+
+
+def test_fit_model_coef_when_not_using_weight_func():
+    """
+    Check the value of the estimator coefs when not using a `weight_func`.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator = LinearRegression(),
+                     level     = 'l1',
+                     lags      = 5,
+                     steps     = 2
+                 )
+    forecaster.fit(series=series_fixtures)
+    results_1 = forecaster.estimators_[1].coef_
+    results_2 = forecaster.estimators_[2].coef_
+    expected_1 = np.array([
+         0.09489197,  0.00139308,  0.17712709, -0.07425304, -0.30147832,
+        -0.25874708, -0.03541285,  0.32235909,  0.06700057, -0.16040817
+    ])
+    expected_2 = np.array([
+        -0.01427965,  0.19641192, -0.14719057, -0.19390091, -0.27612126,
+        -0.07905377,  0.30408338,  0.18286733, -0.09371034, -0.13316052
+    ])
+
+    np.testing.assert_almost_equal(results_1, expected_1)
+    np.testing.assert_almost_equal(results_2, expected_2)
+
+
+# ==============================================================================
+# Tests: fit with categorical features and configure_estimator_categorical_features
+# ==============================================================================
+@pytest.mark.parametrize(
+    "estimator, check_fn",
+    [
+        (
+            CatBoostRegressor(
+                iterations=10, random_seed=123, verbose=0,
+                allow_writing_files=False
+            ),
+            None
+        ),
+        (
+            LGBMRegressor(verbose=-1, random_state=123),
+            None
+        ),
+        (
+            XGBRegressor(random_state=123),
+            lambda est, cat_idx, n_features: (
+                est.get_params()['enable_categorical'] is True
+                and est.get_params()['feature_types'] == [
+                    'c' if i in cat_idx else 'q' for i in range(n_features)
+                ]
+            )
+        ),
+        (
+            HistGradientBoostingRegressor(random_state=123),
+            lambda est, cat_idx, n_features: (
+                est.get_params()['categorical_features'] == cat_idx
+            )
+        ),
+    ],
+    ids=['CatBoostRegressor', 'LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_fit_configures_estimator_categorical_features(estimator, check_fn):
+    """
+    Test that fit correctly configures native categorical feature support
+    for each supported estimator. Verifies that the individual step
+    estimators in estimators_ have the categorical params set.
+    """
+    series_cat = pd.DataFrame({
+        'l1': np.arange(20, dtype=float),
+        'l2': np.arange(100, 120, dtype=float)
+    })
+    exog_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float),
+        'exog_cat': pd.Categorical(range(20))
+    })
+
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=estimator, level='l1', lags=3, steps=2,
+        categorical_features='auto'
+    )
+    forecaster.fit(series=series_cat, exog=exog_cat)
+
+    assert forecaster.is_fitted
+    assert forecaster.categorical_features_names_in_ == ['exog_cat']
+    assert 'exog_cat' in forecaster.X_train_features_names_out_
+    assert 'exog_cat_step_1' in forecaster.X_train_direct_features_names_out_
+    assert 'exog_cat_step_2' in forecaster.X_train_direct_features_names_out_
+
+    if check_fn is not None:
+        # Step-specific feature names (without _step_N suffix)
+        n_lags = len(list(
+            chain(*[v for v in forecaster.lags_.values() if v is not None])
+        ))
+        n_wf = (
+            len(forecaster.X_train_window_features_names_out_)
+            if forecaster.window_features is not None else 0
+        )
+        step_features = forecaster.X_train_features_names_out_[:n_lags + n_wf]
+        step_features = step_features + forecaster.X_train_exog_names_out_
+        cat_idx = [step_features.index('exog_cat')]
+        n_features = len(step_features)
+        for step_est in forecaster.estimators_.values():
+            assert check_fn(step_est, cat_idx, n_features)
+
+    # fit_kwargs must not be mutated
+    assert forecaster.fit_kwargs == {}
+
+
+@pytest.mark.parametrize(
+    "estimator, param_name, default_value",
+    [
+        (
+            XGBRegressor(random_state=123),
+            'feature_types',
+            None
+        ),
+        (
+            HistGradientBoostingRegressor(random_state=123),
+            'categorical_features',
+            'from_dtype'
+        ),
+    ],
+    ids=['XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_fit_resets_estimator_categorical_params_on_refit_without_categoricals(
+    estimator, param_name, default_value
+):
+    """
+    Test that fitting with categorical features and then refitting without
+    categoricals resets the estimator's categorical parameters to their
+    default values (XGBoost: feature_types=None,
+    HistGradientBoosting: categorical_features='from_dtype').
+    """
+    series_cat = pd.DataFrame({
+        'l1': np.arange(20, dtype=float),
+        'l2': np.arange(100, 120, dtype=float)
+    })
+    exog_with_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float),
+        'exog_cat': pd.Categorical(['a', 'b'] * 10)
+    })
+    exog_no_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float)
+    })
+
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=estimator, level='l1', lags=3, steps=2,
+        categorical_features='auto'
+    )
+
+    # First fit — with categoricals
+    forecaster.fit(series=series_cat, exog=exog_with_cat)
+    assert forecaster.categorical_features_names_in_ == ['exog_cat']
+
+    # Second fit — without categoricals (auto detects no categories → [])
+    forecaster.fit(series=series_cat, exog=exog_no_cat)
+    assert forecaster.categorical_features_names_in_ == []
+    assert forecaster.estimators_[1].get_params()[param_name] == default_value
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        CatBoostRegressor(
+            iterations=10, random_seed=123, verbose=0,
+            allow_writing_files=False
+        ),
+        LGBMRegressor(verbose=-1, random_state=123),
+        XGBRegressor(random_state=123),
+        HistGradientBoostingRegressor(random_state=123),
+    ],
+    ids=['CatBoostRegressor', 'LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_fit_no_categoricals_with_supported_estimators(estimator):
+    """
+    Test that fit works correctly with supported estimators when
+    categorical_features=None (no categorical encoding).
+    """
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=estimator, level='l1', lags=3, steps=2,
+        categorical_features=None
+    )
+    forecaster.fit(series=series_fixtures, exog=exog[['exog_1']])
+
+    assert forecaster.is_fitted
+    assert forecaster.categorical_features_names_in_ is None
+
+
+def test_fit_with_interspersed_NaN_and_dropna_from_series_True():
+    """
+    Test fit works correctly with interspersed NaN in series and
+    dropna_from_series=True. Estimator: LinearRegression.
+    Also checks last_window_ has no NaN and predict returns valid output.
+    """
+
+    series_nan = pd.DataFrame(
+        {'l1': [1, 2, np.nan, 4, 5, 6, 7, 8, 9, 10],
+         'l2': np.arange(50, 60, dtype=float)},
+        index=pd.RangeIndex(start=0, stop=10),
+        dtype=float
+    )
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = LinearRegression(),
+                     level              = 'l1',
+                     lags               = 3,
+                     steps              = 2,
+                     transformer_series = None,
+                     dropna_from_series = True
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. They have been dropped. If "
+        "you want to keep them, set `forecaster.dropna_from_series = False`. "
+        "Same rows have been removed from `y_train` to maintain alignment. "
+        "This is caused by interspersed NaNs in `series` or `exog`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        forecaster.fit(series=series_nan)
+
+    assert forecaster.is_fitted
+    assert not np.isnan(forecaster.last_window_.to_numpy()).any()
+    predictions = forecaster.predict(steps=2)
+    assert len(predictions) == 2
+    assert not predictions.isna().any().any()
+
+
+def test_fit_with_interspersed_NaN_and_dropna_from_series_False():
+    """
+    Test fit works correctly with interspersed NaN in series and
+    dropna_from_series=False. Estimator: HistGradientBoostingRegressor
+    (supports NaN natively). Also checks last_window_ and predict output.
+    """
+
+    series_nan = pd.DataFrame(
+        {'l1': [1, 2, np.nan, 4, 5, 6, 7, 8, 9, 10],
+         'l2': np.arange(50, 60, dtype=float)},
+        index=pd.RangeIndex(start=0, stop=10),
+        dtype=float
+    )
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     level              = 'l1',
+                     lags               = 3,
+                     steps              = 2,
+                     transformer_series = None,
+                     dropna_from_series = False
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. Some estimators do not allow "
+        "NaN values during training. If you want to drop them, "
+        "set `forecaster.dropna_from_series = True`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        forecaster.fit(series=series_nan)
+
+    assert forecaster.is_fitted
+    assert not np.isnan(forecaster.last_window_.to_numpy()).any()
+    predictions = forecaster.predict(steps=2)
+    assert len(predictions) == 2
+    assert not predictions.isna().any().any()

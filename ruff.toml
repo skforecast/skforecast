@@ -7,5 +7,5 @@ max-doc-length = 88
 max-line-length = 88
 
 [format]
-quote-style = "single"
+quote-style = "double"
 docstring-code-format = false
