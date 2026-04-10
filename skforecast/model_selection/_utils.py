@@ -17,7 +17,7 @@ from sklearn.pipeline import Pipeline
 from tqdm.auto import tqdm
 
 from ..exceptions import IgnoredArgumentWarning, OneStepAheadValidationWarning
-from ..metrics import add_y_train_argument, any_metric_needs_y_train, _get_metric
+from ..metrics import add_y_train_argument, _any_metric_needs_y_train, _get_metric
 from ..utils import check_interval, date_to_index_position
 
 
@@ -751,7 +751,7 @@ def _calculate_metrics_one_step_ahead(
     
     """
 
-    needs_y_train = any_metric_needs_y_train(metrics)
+    needs_y_train = _any_metric_needs_y_train(metrics)
 
     if type(forecaster).__name__ == 'ForecasterDirect':
         # NOTE: Only step 1 is optimized in one-step-ahead validation.
@@ -1107,7 +1107,7 @@ def _calculate_metrics_backtesting_multiseries(
     #     raise TypeError("`add_aggregated_metric` must be a boolean.")
     
     metric_names = [m.__name__ for m in metrics]
-    needs_y_train = any_metric_needs_y_train(metrics)
+    needs_y_train = _any_metric_needs_y_train(metrics)
 
     levels_in_predictions = predictions.index.get_level_values('level').unique()
 
@@ -1383,7 +1383,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         for m in metrics
     ]
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metrics]
-    needs_y_train = any_metric_needs_y_train(metrics)
+    needs_y_train = _any_metric_needs_y_train(metrics)
 
     if isinstance(series[levels[0]].index, pd.DatetimeIndex):
         freq = series[levels[0]].index.freq

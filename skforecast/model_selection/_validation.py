@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed, cpu_count
 from tqdm.auto import tqdm
-from ..metrics import add_y_train_argument, any_metric_needs_y_train, _get_metric
+from ..metrics import add_y_train_argument, _any_metric_needs_y_train, _get_metric
 from ..exceptions import LongTrainingWarning, IgnoredArgumentWarning
 from ..model_selection._split import TimeSeriesFold
 from ..model_selection._utils import (
@@ -591,7 +591,7 @@ def _backtesting_forecaster(
 
     backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
 
-    if any_metric_needs_y_train(metrics):
+    if _any_metric_needs_y_train(metrics):
         train_indexes = []
         for i, fold in enumerate(folds):
             fit_fold = fold[-1]
@@ -2024,7 +2024,7 @@ def _backtesting_stats(
         estimator_names_ = [result[1] for result in results]
         backtest_predictions['estimator_params'] = np.concatenate(estimator_names_)
 
-    if any_metric_needs_y_train(metrics):
+    if _any_metric_needs_y_train(metrics):
         train_indexes = []
         for i, fold in enumerate(folds):
             fit_fold = fold[-1]
