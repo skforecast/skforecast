@@ -31,6 +31,29 @@ The most frequent LLM error. Old import paths no longer exist.
 | `ForecasterAutoregMultiVariate` | `ForecasterDirectMultiVariate` |
 | `ForecasterSarimax` | `ForecasterStats(estimator=Sarimax(...))` |
 
+## Removed Arguments
+
+| Removed (v0.22.0+) | Replacement |
+|---------------------|-------------|
+| `regressor=...` | `estimator=...` (in all Forecasters) |
+
+## Categorical Exogenous Variables
+
+```python
+# ❌ WRONG: setting categorical features directly on the estimator
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(categorical_feature=[0, 1]),
+    lags=24,
+)
+
+# ✅ CORRECT: use categorical_features parameter on the forecaster
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+    categorical_features='auto',  # or ['col_name_1', 'col_name_2']
+)
+```
+
 ## Data Issues
 
 ### "ValueError: The index of the series must be a DatetimeIndex with frequency"

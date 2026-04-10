@@ -3,7 +3,7 @@ name: feature-engineering
 description: >
   Creates features for time series forecasting: calendar features with
   feature_engine (DatetimeFeatures, CyclicalFeatures), rolling statistics
-  with RollingFeatures, differencing, sunlight features, and data scaling.
+  with RollingFeatures, differencing, and categorical exogenous variables.
   Use when the user wants to improve model accuracy through feature
   engineering or asks about exogenous variable creation.
 ---
@@ -30,7 +30,7 @@ sunlight features, differencing, or data scaling.
 | `CyclicalFeatures` | feature_engine | Encode cyclical features with sin/cos |
 | `RollingFeatures` | skforecast | Rolling window statistics (mean, std, min, max, etc.) |
 | `differentiation` param | skforecast | Make non-stationary series stationary |
-| `astral` | astral | Sunrise, sunset, daylight hours |
+
 
 ## Calendar Features with feature_engine
 
@@ -102,32 +102,6 @@ exog_calendar = cyclical_encoder.fit_transform(calendar_features)
 # Produces columns: month_sin, month_cos, week_sin, week_cos, ...
 ```
 
-## Sunlight Features
-
-Sunrise/sunset times can be powerful features for energy, transport, or
-activity-related series.
-
-```python
-from astral.sun import sun
-from astral import LocationInfo
-
-location = LocationInfo('Washington, D.C.', 'USA')
-sunrise_hour = [sun(location.observer, date=date)['sunrise'] for date in data.index]
-sunset_hour = [sun(location.observer, date=date)['sunset'] for date in data.index]
-
-# Round to the nearest hour
-sunrise_hour = pd.Series(sunrise_hour, index=data.index).dt.round('h').dt.hour
-sunset_hour = pd.Series(sunset_hour, index=data.index).dt.round('h').dt.hour
-
-sun_light_features = pd.DataFrame({
-    'sunrise_hour': sunrise_hour,
-    'sunset_hour': sunset_hour,
-})
-sun_light_features['daylight_hours'] = (
-    sun_light_features['sunset_hour'] - sun_light_features['sunrise_hour']
-)
-```
-
 ## Rolling Features (Window Statistics)
 
 ```python
@@ -185,29 +159,59 @@ forecaster.fit(y=y_train)
 predictions = forecaster.predict(steps=10)  # Auto inverse-transformed
 ```
 
-## Data Transformers (Scaling)
+## Categorical Exogenous Variables
+
+All ML forecasters include a `categorical_features` parameter (default `'auto'`)
+that automatically detects and encodes non-numeric exogenous columns using an
+internal `OrdinalEncoder` (into float codes, since numpy arrays are used internally).
+Native categorical support is configured automatically for LightGBM, CatBoost,
+XGBoost, and HistGradientBoostingRegressor.
 
 ```python
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-
-# Scale target variable — transformer applied automatically during fit/predict
 forecaster = ForecasterRecursive(
     estimator=LGBMRegressor(),
     lags=24,
-    transformer_y=StandardScaler(),
-    transformer_exog=StandardScaler(),
+    categorical_features='auto',  # Default — auto-detect non-numeric columns
 )
+```
 
-# For multi-series, different transformers per series
-from skforecast.recursive import ForecasterRecursiveMultiSeries
+**`categorical_features` options:**
+- `'auto'` (default): Auto-detect non-numeric columns after `transformer_exog`.
+- `list`: Explicit column names to treat as categorical (including numeric columns).
+- `None`: No internal categorical encoding.
 
-forecaster = ForecasterRecursiveMultiSeries(
+**Important:** When `categorical_features` is not `None`, do not set categorical
+features directly on the estimator or via `fit_kwargs`. The forecaster manages
+the configuration internally and overwrites estimator-level settings.
+
+**Choosing an encoding strategy:**
+
+| Method | API | Best for |
+|--------|-----|----------|
+| Built-in `categorical_features` | `categorical_features='auto'` or `list` | Gradient boosting (LightGBM, XGBoost, CatBoost, HistGBR) — simplest workflow |
+| One-hot / Ordinal encoding | `transformer_exog` | Linear models, SVMs, non-gradient-boosting trees |
+| Target encoding | Outside forecaster | High-cardinality features (applied manually to avoid leakage) |
+
+**Combining `transformer_exog` and `categorical_features`:**
+`transformer_exog` is applied **before** `categorical_features` detection. Scale
+numeric columns with `transformer_exog` while `categorical_features='auto'` handles
+the rest. Avoid applying both mechanisms to the same columns.
+
+```python
+from sklearn.compose import make_column_transformer
+from sklearn.preprocessing import StandardScaler
+
+transformer_exog = make_column_transformer(
+    (StandardScaler(), ['temp', 'hum']),
+    remainder='passthrough',
+    verbose_feature_names_out=False
+).set_output(transform='pandas')
+
+forecaster = ForecasterRecursive(
     estimator=LGBMRegressor(),
     lags=24,
-    transformer_series={
-        'series_1': StandardScaler(),
-        'series_2': MinMaxScaler(),
-    },
+    transformer_exog=transformer_exog,
+    categorical_features='auto',  # Detects remaining non-numeric columns
 )
 ```
 

@@ -45,6 +45,7 @@ forecaster = ForecasterRecursive(
     lags=24,
     window_features=rolling_features,
     transformer_y=None,          # e.g., StandardScaler() for scaling
+    categorical_features='auto', # Auto-detect and encode non-numeric exog columns
     differentiation=None,        # e.g., 1 for first-order differencing
 )
 
@@ -103,6 +104,7 @@ forecaster = ForecasterDirect(
     estimator=RandomForestRegressor(n_estimators=100, random_state=123),
     lags=24,
     steps=10,
+    categorical_features='auto',  # Auto-detect and encode non-numeric exog columns
 )
 forecaster.fit(y=y_train, exog=exog_train)
 predictions = forecaster.predict(exog=exog_test)
@@ -111,7 +113,7 @@ predictions = forecaster.predict(exog=exog_test)
 ## Common Mistakes
 
 1. **Missing frequency on index**: Always call `data.asfreq('h')` (or `'D'`, `'MS'`, etc.).
-2. **NaN in data**: Forecasters reject NaN by default. Impute missing values first.
+2. **NaN in data**: Forecasters reject NaN by default. Impute missing values first or use `dropna_from_series=True`.
 3. **Exog not covering forecast horizon**: The exogenous DataFrame for `predict()` must have rows for every future step.
 4. **Random train/test split**: Time series must be split chronologically, never shuffled.
 5. **Forgetting `store_in_sample_residuals=True`**: Required before calling `predict_interval()` with `method='bootstrapping'` on a standalone forecaster. During backtesting, residuals are computed automatically.
