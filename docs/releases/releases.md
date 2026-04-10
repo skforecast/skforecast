@@ -26,7 +26,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-api-change">API Change</span> The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
 
-+ <span class="badge text-bg-danger">Fix</span> Minor bug fixes, see details in the "Fixed" section below.
++ <span class="badge text-bg-danger">Fix</span> Fixed conformal prediction intervals with `differentiation`, categorical lags in <code>[ForecasterRecursiveClassifier]</code>, and other bug fixes. See details in the "Fixed" section below.
 
 !!! warning "Serialized models incompatibility"
 
@@ -58,6 +58,8 @@ The main changes in this release are:
 + Fixed an issue in <code>[ForecasterRecursiveClassifier]</code> where the lags were not correctly passed as categorical features when using categorical exogenous variables.
 
 + Fixed an issue in the hyperparameter search when using a <code>[OneStepAheadFold]</code> validation. During training, the forecaster arguments `sample_weight` and `fit_kwargs` were not set correctly.
+
++ Fixed an issue in conformal prediction intervals (`method='conformal'`) where the correction factor was incorrectly scaled when using `differentiation`. The inverse differentiation was applied to both the point predictions and the correction factor, causing the prediction intervals to grow too fast. Affected forecasters: <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. ([#1143](https://github.com/skforecast/skforecast/pull/1143))
 
 
 ## 0.21.0 <small>Mar 13, 2026</small> { id="0.21.0" }

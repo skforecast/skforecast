@@ -49,7 +49,8 @@ from ..utils import (
     get_style_repr_html,
     _build_predict_function,
     manage_warnings,
-    configure_estimator_categorical_features
+    configure_estimator_categorical_features,
+    scale_correction_factor_differentiation
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
@@ -2269,7 +2270,7 @@ class ForecasterDirect(ForecasterBase):
 
         predictions = self._direct_predict(steps=steps, Xs=Xs)
 
-        if self.differentiation is not None:
+        if differentiator is not None:
             predictions = differentiator.inverse_transform_next_window(predictions)
 
         predictions = transform_numpy(
@@ -2404,7 +2405,7 @@ class ForecasterDirect(ForecasterBase):
         boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
         boot_predictions = boot_predictions + sampled_residuals
 
-        if self.differentiation is not None:
+        if differentiator is not None:
             boot_predictions = (
                 differentiator.inverse_transform_next_window(boot_predictions)
             )
@@ -2523,22 +2524,13 @@ class ForecasterDirect(ForecasterBase):
         else:
             correction_factor = np.quantile(np.abs(residuals), nominal_coverage)
 
-        if self.differentiation is not None:
+        if differentiator is not None:
             predictions = differentiator.inverse_transform_next_window(predictions)
-            
-            # Since the inverse transform is a cumsum, the prediction interval needs to be 
-            # scaled according to the differentiation order. For d=1, the variance grows 
-            # linearly with h, so the interval grows with sqrt(h). For d > 1, we use the 
-            # square root of the accumulated variances of the MA(inf) representation.
-            import scipy.special
-            d = self.differentiation
-            steps_array = np.arange(1, len(predictions) + 1)
-            # The scaling factor is exactly the square root of the accumulated variances 
-            # of the MA(infinity) representation of the (1-B)^{-d} filter
-            scaling_factor = np.sqrt(
-                np.cumsum(scipy.special.comb(steps_array + d - 2, d - 1)**2)
+            correction_factor = scale_correction_factor_differentiation(
+                correction_factor     = correction_factor,
+                steps                 = len(predictions),
+                differentiation_order = self.differentiation
             )
-            correction_factor = correction_factor * scaling_factor
 
         lower_bound = predictions - correction_factor
         upper_bound = predictions + correction_factor
