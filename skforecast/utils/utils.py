@@ -21,6 +21,7 @@ import warnings
 import joblib
 import numpy as np
 import pandas as pd
+from scipy.special import comb
 from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
@@ -3551,3 +3552,50 @@ def deepcopy_forecaster(
         setattr(forecaster, attr, value)
 
     return forecaster_copy
+
+
+def scale_correction_factor_differentiation(
+    correction_factor: float | np.ndarray,
+    steps: int,
+    differentiation_order: int
+) -> np.ndarray:
+    """
+    Scale the conformal prediction correction factor to account for the
+    variance growth introduced by inverting the differentiation. When
+    differentiation of order `d` is reverted via cumulative sums, a constant
+    correction factor would accumulate linearly, producing intervals that
+    grow as `h` instead of the theoretically correct growth rate.
+
+    The scaling is derived from the MA(infinity) representation of the
+    inverse difference operator `(1-B)^{-d}`, whose coefficients are
+    `psi_j = comb(j + d - 1, d - 1)`. The correction factor at step `h`
+    is scaled by `sqrt(sum_{j=0}^{h-1} psi_j^2)`, which for `d=1`
+    simplifies to `sqrt(h)`.
+
+    Parameters
+    ----------
+    correction_factor : float, numpy ndarray
+        Correction factor from the conformal prediction method. Can be a
+        scalar (non-binned residuals) or a 1D array with one value per step
+        (binned residuals).
+    steps : int
+        Number of forecast steps.
+    differentiation_order : int
+        Order of differentiation applied to the series.
+
+    Returns
+    -------
+    correction_factor_scaled : numpy ndarray
+        Scaled correction factor with one value per step.
+
+    """
+
+    steps_array = np.arange(1, steps + 1)
+    scaling_factor = np.sqrt(
+        np.cumsum(
+            comb(steps_array + differentiation_order - 2, differentiation_order - 1)
+            ** 2
+        )
+    )
+
+    return correction_factor * scaling_factor

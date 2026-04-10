@@ -56,7 +56,8 @@ from ..utils import (
     manage_warnings,
     get_style_repr_html,
     set_cpu_gpu_device,
-    _build_predict_function
+    _build_predict_function,
+    scale_correction_factor_differentiation
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..model_selection._utils import _extract_data_folds_multiseries
@@ -3342,10 +3343,20 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         for i, level in enumerate(levels):
 
             if differentiators.get(level) is not None:
-                predictions[i, :, :] = (
+                # NOTE: Only the point predictions (column 0) need to be
+                # undifferenced. The bounds (columns 1, 2) are overwritten
+                # below with the correctly scaled correction factor.
+                predictions[i, :, 0] = (
                     differentiators[level]
-                    .inverse_transform_next_window(predictions[i, :, :])
+                    .inverse_transform_next_window(predictions[i, :, 0])
                 )
+                c_factor_scaled = scale_correction_factor_differentiation(
+                    correction_factor     = correction_factor[:, i],
+                    steps                 = steps,
+                    differentiation_order = differentiators[level].order
+                )
+                predictions[i, :, 1] = predictions[i, :, 0] - c_factor_scaled
+                predictions[i, :, 2] = predictions[i, :, 0] + c_factor_scaled
             
             transformer_level = self.transformer_series_.get(
                                     level,

@@ -49,7 +49,8 @@ from ..utils import (
     get_style_repr_html,
     _build_predict_function,
     manage_warnings,
-    configure_estimator_categorical_features
+    configure_estimator_categorical_features,
+    scale_correction_factor_differentiation
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
@@ -2269,7 +2270,7 @@ class ForecasterDirect(ForecasterBase):
 
         predictions = self._direct_predict(steps=steps, Xs=Xs)
 
-        if self.differentiation is not None:
+        if differentiator is not None:
             predictions = differentiator.inverse_transform_next_window(predictions)
 
         predictions = transform_numpy(
@@ -2404,7 +2405,7 @@ class ForecasterDirect(ForecasterBase):
         boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
         boot_predictions = boot_predictions + sampled_residuals
 
-        if self.differentiation is not None:
+        if differentiator is not None:
             boot_predictions = (
                 differentiator.inverse_transform_next_window(boot_predictions)
             )
@@ -2523,12 +2524,17 @@ class ForecasterDirect(ForecasterBase):
         else:
             correction_factor = np.quantile(np.abs(residuals), nominal_coverage)
 
+        if differentiator is not None:
+            predictions = differentiator.inverse_transform_next_window(predictions)
+            correction_factor = scale_correction_factor_differentiation(
+                correction_factor     = correction_factor,
+                steps                 = len(predictions),
+                differentiation_order = self.differentiation
+            )
+
         lower_bound = predictions - correction_factor
         upper_bound = predictions + correction_factor
         predictions = np.column_stack([predictions, lower_bound, upper_bound])
-
-        if self.differentiation is not None:
-            predictions = differentiator.inverse_transform_next_window(predictions)
         
         if self.transformer_y:
             predictions = transform_numpy(

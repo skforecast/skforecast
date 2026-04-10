@@ -47,7 +47,8 @@ from ..utils import (
     get_style_repr_html,
     set_cpu_gpu_device,
     _build_predict_function,
-    manage_warnings    
+    manage_warnings,
+    scale_correction_factor_differentiation
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
@@ -2234,13 +2235,18 @@ class ForecasterRecursive(ForecasterBase):
             correction_factor = replace_func(predictions_bin)
         else:
             correction_factor = np.quantile(np.abs(residuals), nominal_coverage)
-            
-        lower_bound = predictions - correction_factor
-        upper_bound = predictions + correction_factor
-        predictions = np.column_stack([predictions, lower_bound, upper_bound])
 
         if differentiator is not None:
             predictions = differentiator.inverse_transform_next_window(predictions)
+            correction_factor = scale_correction_factor_differentiation(
+                correction_factor     = correction_factor,
+                steps                 = len(predictions),
+                differentiation_order = self.differentiation
+            )
+
+        lower_bound = predictions - correction_factor
+        upper_bound = predictions + correction_factor
+        predictions = np.column_stack([predictions, lower_bound, upper_bound])
         
         if self.transformer_y:
             predictions = transform_numpy(
