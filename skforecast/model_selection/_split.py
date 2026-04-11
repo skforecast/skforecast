@@ -1043,7 +1043,7 @@ class TimeSeriesFold(BaseFold):
             
             if self.window_size is not None:
                 # NOTE: When window_size > test_iloc_start (e.g. a large
-                # context_length for ForecasterFoundational on a short series),
+                # context_length for ForecasterFoundation on a short series),
                 # this value is negative. Python range slicing silently clips
                 # negative start indices to 0, so the resulting last_window
                 # will contain all available history up to test_iloc_start

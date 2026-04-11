@@ -6,7 +6,7 @@ from ._validation import (
     backtesting_forecaster,
     backtesting_forecaster_multiseries,
     backtesting_stats,
-    backtesting_foundational
+    backtesting_foundation
 )
 from ._search import (
     grid_search_forecaster,

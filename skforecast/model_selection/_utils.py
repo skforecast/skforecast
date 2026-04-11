@@ -247,9 +247,9 @@ def check_backtesting_input(
         data_name = 'series'
         data_length = max([len(series[serie]) for serie in series])
 
-    elif forecaster_name == 'ForecasterFoundational':
+    elif forecaster_name == 'ForecasterFoundation':
         # NOTE: Input is pre-normalised by `_check_preprocess_series_type` in
-        # `backtesting_foundational` before `check_backtesting_input` is called,
+        # `backtesting_foundation` before `check_backtesting_input` is called,
         # so `series` is never a long-format MultiIndex DataFrame here.
         if not isinstance(series, (pd.Series, pd.DataFrame, dict)):
             raise TypeError(
@@ -263,7 +263,7 @@ def check_backtesting_input(
             data_length = len(series)
 
     if exog is not None:
-        if forecaster_name in (forecasters_multi_dict + ['ForecasterFoundational']):
+        if forecaster_name in (forecasters_multi_dict + ['ForecasterFoundation']):
             # NOTE: Checks are not need as they are done in the function 
             # `check_preprocess_exog_multiseries` / forecaster.fit() that is 
             # used before `check_backtesting_input` in the backtesting function.
@@ -325,8 +325,8 @@ def check_backtesting_input(
                                  method       = 'validation',
                                  date_literal = 'initial_train_size'
                              )
-        if forecaster_name == 'ForecasterFoundational':
-            # For ForecasterFoundational, window_size equals context_length which
+        if forecaster_name == 'ForecasterFoundation':
+            # For ForecasterFoundation, window_size equals context_length which
             # is the *maximum* context the model accepts, not a minimum required
             # training size. Only validate that initial_train_size is at least 1
             # and smaller than data_length.
@@ -368,7 +368,7 @@ def check_backtesting_input(
                     f"    steps: {steps}\n"
                 )
     else:
-        if forecaster_name in ['ForecasterStats', 'ForecasterFoundational', 'ForecasterEquivalentDate']:
+        if forecaster_name in ['ForecasterStats', 'ForecasterFoundation', 'ForecasterEquivalentDate']:
             raise ValueError(
                 f"When using {forecaster_name}, `initial_train_size` must be an "
                 f"integer smaller than the length of `{data_name}` ({data_length})."
@@ -705,7 +705,7 @@ def select_n_jobs_backtesting(
 
     forecaster_name = type(forecaster).__name__
 
-    if forecaster_name in ('ForecasterStats', 'ForecasterFoundational'):
+    if forecaster_name in ('ForecasterStats', 'ForecasterFoundation'):
         n_jobs = 1
         return n_jobs
 

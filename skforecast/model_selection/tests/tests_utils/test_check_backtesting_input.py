@@ -24,9 +24,9 @@ from skforecast.model_selection.tests.fixtures_model_selection_multiseries impor
     series_dict_range,
     series_dict_dt
 )
-from skforecast.foundational.tests.tests_forecaster_foundational.fixtures_forecaster_foundational import (
+from skforecast.foundation.tests.tests_forecaster_foundation.fixtures_forecaster_foundation import (
     make_forecaster,
-    y as y_foundational,
+    y as y_foundation,
 )
 
 
@@ -1081,16 +1081,16 @@ def test_check_backtesting_input_ValueError_when_Direct_forecaster_not_enough_st
         )
 
 
-def test_check_backtesting_input_ForecasterFoundational_no_error_when_initial_train_size_smaller_than_window_size():
+def test_check_backtesting_input_ForecasterFoundation_no_error_when_initial_train_size_smaller_than_window_size():
     """
     Test that check_backtesting_input does NOT raise an error for
-    ForecasterFoundational when initial_train_size is smaller than window_size
+    ForecasterFoundation when initial_train_size is smaller than window_size
     (context_length). Unlike ML forecasters, context_length is an upper bound,
     not a minimum required training size.
     """
-    # context_length=2048 >> len(y_foundational)=50, initial_train_size=38
+    # context_length=2048 >> len(y_foundation)=50, initial_train_size=38
     forecaster = make_forecaster(context_length=2048)
-    forecaster.fit(series=y_foundational)
+    forecaster.fit(series=y_foundation)
 
     cv = TimeSeriesFold(
              steps                 = 3,
@@ -1106,22 +1106,22 @@ def test_check_backtesting_input_ForecasterFoundational_no_error_when_initial_tr
         forecaster        = forecaster,
         cv                = cv,
         metric            = 'mean_absolute_error',
-        series            = y_foundational,
+        series            = y_foundation,
         show_progress     = False,
         suppress_warnings = False,
     )
 
 
-def test_check_backtesting_input_ForecasterFoundational_ValueError_when_initial_train_size_not_correct_value():
+def test_check_backtesting_input_ForecasterFoundation_ValueError_when_initial_train_size_not_correct_value():
     """
     Test ValueError is raised in check_backtesting_input for
-    ForecasterFoundational when initial_train_size >= data_length. The error
+    ForecasterFoundation when initial_train_size >= data_length. The error
     message uses ">0" instead of "window_size" as the lower bound.
     """
     forecaster = make_forecaster(context_length=2048)
-    forecaster.fit(series=y_foundational)
+    forecaster.fit(series=y_foundation)
 
-    data_length = len(y_foundational)
+    data_length = len(y_foundation)
 
     cv = TimeSeriesFold(
              steps                 = 3,
@@ -1143,7 +1143,7 @@ def test_check_backtesting_input_ForecasterFoundational_ValueError_when_initial_
             forecaster        = forecaster,
             cv                = cv,
             metric            = 'mean_absolute_error',
-            series            = y_foundational,
+            series            = y_foundation,
             show_progress     = False,
             suppress_warnings = False,
         )

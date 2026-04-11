@@ -2541,6 +2541,11 @@ def check_preprocess_series(
                 series_id: series.loc[series_id][first_col].rename(series_id)
                 for series_id in series.index.remove_unused_levels().levels[0]
             }
+            # TODO: See if this is faster and if this keeps the freq fol all series
+            # series_dict = {
+            #     sid: group[first_col].droplevel(0).rename(sid)
+            #     for sid, group in series.groupby(level=0, sort=False)
+            # }
         
         warnings.warn(
             "Passing a DataFrame (either wide or long format) as `series` requires "
@@ -3264,7 +3269,7 @@ def deepcopy_forecaster(
         Forecaster object to copy. Can be any skforecast forecaster:
         `ForecasterRecursive`, `ForecasterDirect`, `ForecasterRecursiveMultiSeries`,
         `ForecasterDirectMultiVariate`, `ForecasterStats` or
-        `ForecasterFoundational`.
+        `ForecasterFoundation`.
     include_in_sample_residuals : bool, default `False`
         If `True`, `in_sample_residuals_` and `in_sample_residuals_by_bin_` are 
         preserved in the copy. These are recomputed during `fit()`, so they can 

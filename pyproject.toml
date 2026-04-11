@@ -79,7 +79,7 @@ deeplearning = [
     "matplotlib>=3.7, <3.11",
 ]
 
-foundational = [
+foundation = [
     "chronos-forecasting >=2.0, <3.0",
 ]
 

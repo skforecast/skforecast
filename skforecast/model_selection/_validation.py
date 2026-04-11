@@ -30,7 +30,7 @@ from ..utils import (
     manage_warnings,
     deepcopy_forecaster
 )
-from ..foundational._utils import check_preprocess_series_type
+from ..foundation._utils import check_preprocess_series_foundation
 
 
 def _prepare_fold_data(
@@ -2228,7 +2228,7 @@ def backtesting_stats(
 
 
 @manage_warnings
-def _backtesting_foundational(
+def _backtesting_foundation(
     forecaster: object,
     series: pd.Series | pd.DataFrame | dict,
     cv: TimeSeriesFold,
@@ -2243,17 +2243,17 @@ def _backtesting_foundational(
     suppress_warnings: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Backtesting of ForecasterFoundational.
+    Backtesting of ForecasterFoundation.
 
     The original forecaster is used directly (no copy): refit is always
-    disabled for foundational models and every fold passes `last_window`
+    disabled for foundation models and every fold passes `last_window`
     explicitly, so `self._history` is never modified during the fold loop.
     The only state change is the initial `fit` call that stores the training
     context window.
 
     Parameters
     ----------
-    forecaster : ForecasterFoundational
+    forecaster : ForecasterFoundation
         Forecaster model.
     series : pandas Series, pandas DataFrame, or dict
         Training time series. A single `pd.Series` runs in single-series
@@ -2312,7 +2312,15 @@ def _backtesting_foundational(
 
     cv = deepcopy(cv)
 
-    is_multiseries, series_names, series_norm = check_preprocess_series_type(series)
+    series_dict, _ = check_preprocess_series_foundation(series)
+    series_names = list(series_dict.keys())
+    is_multiseries = len(series_names) > 1
+    # For slicing and passing to forecaster methods, use the original form:
+    # pd.Series for single-series, dict for multi-series.
+    if not is_multiseries:
+        series_norm = series_dict[series_names[0]]
+    else:
+        series_norm = series_dict
 
     if levels is not None and is_multiseries:
         levels = [levels] if isinstance(levels, str) else list(levels)
@@ -2331,7 +2339,7 @@ def _backtesting_foundational(
 
     if refit is not False:
         warnings.warn(
-            "`refit` has no effect on `ForecasterFoundational`. Foundational models "
+            "`refit` has no effect on `ForecasterFoundation`. Foundation models "
             "are zero-shot and do not learn from training data.",
             IgnoredArgumentWarning
         )
@@ -2356,11 +2364,7 @@ def _backtesting_foundational(
 
     # Reference series used for cv.split() and index extraction.
     if is_multiseries:
-        ref_series = (
-            series_norm.iloc[:, 0]
-            if isinstance(series_norm, pd.DataFrame)
-            else next(iter(series_norm.values()))
-        )
+        ref_series = next(iter(series_dict.values()))
     else:
         ref_series = series_norm
 
@@ -2451,6 +2455,11 @@ def _backtesting_foundational(
 
         if isinstance(pred, pd.Series):
             pred = pred.to_frame(name='pred')
+
+        # Single-series predictions include a redundant "level" column that
+        # is not needed in the backtesting output.
+        if not is_multiseries and "level" in pred.columns:
+            pred = pred.drop(columns=["level"])
 
         # Slice to actual test period (remove gap rows if gap > 0).
         test_index = ref_series.iloc[test_start:test_end].index
@@ -2545,7 +2554,7 @@ def _backtesting_foundational(
     return metrics_levels, backtest_predictions
 
 
-def backtesting_foundational(
+def backtesting_foundation(
     forecaster: object,
     series: pd.Series | pd.DataFrame | dict,
     cv: TimeSeriesFold,
@@ -2560,18 +2569,18 @@ def backtesting_foundational(
     suppress_warnings: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Backtesting of ForecasterFoundational.
+    Backtesting of ForecasterFoundation.
 
     The original forecaster is modified in-place (fitted on the initial
     training slice) but its loaded model weights are preserved across the
-    entire backtesting run. Since foundational models are zero-shot, refit
+    entire backtesting run. Since foundation models are zero-shot, refit
     is always disabled and per-fold predictions receive `last_window`
     explicitly, so the stored context is not consulted or modified during
     the fold loop.
 
     Parameters
     ----------
-    forecaster : ForecasterFoundational
+    forecaster : ForecasterFoundation
         Forecaster model.
     series : pandas Series, pandas DataFrame, or dict
         Training time series. A single `pd.Series` runs in single-series
@@ -2672,14 +2681,19 @@ def backtesting_foundational(
 
     """
 
-    if type(forecaster).__name__ != 'ForecasterFoundational':
+    if type(forecaster).__name__ != 'ForecasterFoundation':
         raise TypeError(
-            "`forecaster` must be of type `ForecasterFoundational`. For all "
+            "`forecaster` must be of type `ForecasterFoundation`. For all "
             "other types of forecasters use the other functions available in "
             "the `model_selection` module."
         )
 
-    _, _, series_norm = check_preprocess_series_type(series)
+    series_dict, _ = check_preprocess_series_foundation(series)
+    series_names = list(series_dict.keys())
+    if len(series_names) == 1:
+        series_norm = series_dict[series_names[0]]
+    else:
+        series_norm = series_dict
 
     if interval is not None and quantiles is not None:
         raise ValueError(
@@ -2709,7 +2723,7 @@ def backtesting_foundational(
         suppress_warnings      = suppress_warnings,
     )
 
-    metric_values, backtest_predictions = _backtesting_foundational(
+    metric_values, backtest_predictions = _backtesting_foundation(
         forecaster            = forecaster,
         series                = series_norm,
         cv                    = cv,

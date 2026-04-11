@@ -1,8 +1,8 @@
-# Role of `last_window` in `backtesting_foundational`
+# Role of `last_window` in `backtesting_foundation`
 
 ## Overview
 
-`last_window` is the **context slice of the series** passed to `ForecasterFoundational.predict()` on each backtesting fold. It replaces the internal history stored by `fit()`, giving the model the correct historical context anchored to each fold's test period.
+`last_window` is the **context slice of the series** passed to `ForecasterFoundation.predict()` on each backtesting fold. It replaces the internal history stored by `fit()`, giving the model the correct historical context anchored to each fold's test period.
 
 For a zero-shot model like Chronos-2, `fit()` only stores history — it does not train. **`last_window` is the sole input the model uses to generate predictions**, making its size and content critical to understand.
 
@@ -12,7 +12,7 @@ For a zero-shot model like Chronos-2, `fit()` only stores history — it does no
 
 ### Step 1 — `window_size` is set to `context_length`
 
-In `_backtesting_foundational`, the cross-validator is configured:
+In `_backtesting_foundation`, the cross-validator is configured:
 
 ```python
 cv.set_params({'window_size': forecaster.window_size, ...})
