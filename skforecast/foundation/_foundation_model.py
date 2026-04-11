@@ -24,7 +24,8 @@ from ._utils import (
 from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     check_preprocess_exog_multiseries,
-    align_series_and_exog_multiseries
+    align_series_and_exog_multiseries,
+    expand_index,
 )
 
 # TODO: en todos los check_y añadir allow_nan = True
@@ -174,7 +175,7 @@ class FoundationModel:
         self.exog_in_                   = False
         self.exog_names_in_             = None
         self.exog_names_in_per_series_  = None
-        self.is_multiple_series_       = False
+        self.is_multiple_series_        = False
         self.fit_date                   = None
 
         series_dict, series_indexes = check_preprocess_series_foundation(series)
@@ -223,6 +224,117 @@ class FoundationModel:
             self.index_freq_ = series_indexes[series_names_in_[0]].step
 
         return self
+
+    def _prepare_future_exog(
+        self,
+        exog: (
+            pd.Series
+            | pd.DataFrame
+            | dict[str, pd.DataFrame | pd.Series | None]
+            | None
+        ),
+        series_names: list[str],
+        steps: int,
+        last_window: pd.Series | pd.DataFrame | dict[str, pd.Series] | None,
+    ) -> dict[str, pd.DataFrame | pd.Series | None]:
+        """
+        Normalize, validate, and convert future exog to a per-series dict.
+
+        Encapsulates the full pipeline for the forecast-horizon covariates:
+        type coercion (long-format → dict), validation against training
+        metadata (if fitted), and broadcast/dict conversion.
+
+        Parameters
+        ----------
+        exog : pandas Series, pandas DataFrame, dict, or None
+            Future exogenous variables for the forecast horizon, in any
+            supported input format.
+        series_names : list
+            Series names that define the output dict keys.
+        steps : int
+            Number of steps ahead to forecast.
+        last_window : pandas Series, pandas DataFrame, dict, or None
+            Context override passed to predict. Used to determine the
+            reference end-timestamp for index alignment.
+
+        Returns
+        -------
+        future_exog_dict : dict
+            Per-series dict with exactly the keys in `series_names`.
+            Values are pandas DataFrame, pandas Series, or None.
+
+        """
+
+        exog = check_preprocess_exog_type(exog)
+
+        if self.is_fitted and self.exog_in_:
+            exog = validate_exog_predict(
+                exog                      = exog,
+                steps                     = steps,
+                last_window               = last_window,
+                exog_names_in_            = self.exog_names_in_,
+                exog_in_                  = self.exog_in_,
+                index_freq_               = self.index_freq_,
+                is_multiseries            = self.is_multiple_series_,
+                training_range_           = self.training_range_,
+                series_names_in_          = self.series_names_in_,
+                exog_names_in_per_series_ = self.exog_names_in_per_series_,
+            )
+
+        return normalize_exog_to_dict(exog, series_names)
+
+    def _prepare_past_exog(
+        self,
+        last_window_exog: (
+            pd.Series
+            | pd.DataFrame
+            | dict[str, pd.DataFrame | pd.Series | None]
+            | None
+        ),
+        last_window: pd.Series | pd.DataFrame | dict[str, pd.Series] | None,
+        series_names: list[str],
+    ) -> dict[str, pd.DataFrame | pd.Series | None]:
+        """
+        Normalize, validate, and convert past exog to a per-series dict.
+
+        When `last_window` is None the stored adapter history exog is
+        returned directly. Otherwise the full pipeline is applied: type
+        coercion (long-format → dict), validation against training
+        metadata (if fitted), and broadcast/dict conversion.
+
+        Parameters
+        ----------
+        last_window_exog : pandas Series, pandas DataFrame, dict, or None
+            Historical exogenous variables corresponding to `last_window`.
+        last_window : pandas Series, pandas DataFrame, dict, or None
+            Context override passed to predict. When None, stored
+            adapter history is used instead.
+        series_names : list
+            Series names that define the output dict keys.
+
+        Returns
+        -------
+        past_exog_dict : dict
+            Per-series dict with exactly the keys in `series_names`.
+            Values are pandas DataFrame, pandas Series, or None.
+
+        """
+
+        if last_window is None:
+            if self.adapter._history_exog is not None:
+                return self.adapter._history_exog
+            return {name: None for name in series_names}
+
+        last_window_exog = check_preprocess_exog_type(last_window_exog)
+
+        if self.is_fitted and self.exog_in_:
+            validate_last_window_exog(
+                last_window_exog = last_window_exog,
+                last_window      = last_window,
+                exog_in_         = self.exog_in_,
+            )
+
+        return normalize_exog_to_dict(last_window_exog, series_names)
 
     def predict(
         self,
@@ -273,6 +385,11 @@ class FoundationModel:
         
         """
 
+        if not self.is_fitted and last_window is None:
+            raise ValueError(
+                "Call `fit` before `predict`, or pass `last_window`."
+            )
+
         if not isinstance(steps, (int, np.integer)) or steps < 1:
             raise ValueError("`steps` must be a positive integer.")
 
@@ -283,36 +400,33 @@ class FoundationModel:
                         f"All quantiles must be between 0 and 1. Got {q}."
                     )
 
-        if not self.is_fitted and last_window is None:
-            raise ValueError(
-                "Call `fit` before `predict`, or pass `last_window`."
-            )
+        # Resolve history first — the series context is the primary input
+        # and must be established before processing exogenous variables.
+        if last_window is not None:
+            history_dict, _ = check_preprocess_series_foundation(last_window)
+            series_names = list(history_dict.keys())
+        else:
+            history_dict = self.adapter._history
+            series_names = list(history_dict.keys())
 
-        # Validate exog and last_window_exog against training metadata
-        # (only when fitted AND trained with exog — foundation models are
-        # zero-shot, so exog can be introduced at predict time without having
-        # been present during fit).
-        if self.is_fitted and self.exog_in_:
-            exog = validate_exog_predict(
-                exog                      = exog,
-                steps                     = steps,
-                last_window               = last_window,
-                exog_names_in_            = self.exog_names_in_,
-                exog_in_                  = self.exog_in_,
-                index_freq_               = self.index_freq_,
-                is_multiseries            = self.is_multiple_series_,
-                training_range_           = self.training_range_,
-                series_names_in_          = self.series_names_in_,
-                exog_names_in_per_series_ = self.exog_names_in_per_series_,
-            )
+        # Validate last_window index consistency with training data.
+        if last_window is not None and self.is_fitted:
+            ref_index = next(iter(history_dict.values())).index
+            if not isinstance(ref_index, self.index_type_):
+                raise TypeError(
+                    f"Expected index of type {self.index_type_.__name__} "
+                    f"for `last_window`. Got {type(ref_index).__name__}."
+                )
+            if isinstance(ref_index, pd.DatetimeIndex):
+                if ref_index.freq != self.index_freq_:
+                    raise TypeError(
+                        f"Expected frequency '{self.index_freq_}' for "
+                        f"`last_window` index. Got '{ref_index.freq}'."
+                    )
 
-            validate_last_window_exog(
-                last_window_exog = last_window_exog,
-                last_window      = last_window,
-                exog_in_         = self.exog_in_,
-            )
-
-        # Handle adapters that don't support exogenous variables
+        # Handle adapters that don't support exogenous variables.
+        # Must run before any exog validation so that unsupported exog is
+        # discarded early without triggering validation errors.
         if not self.allow_exogenous:
             has_exog = (
                 (exog is not None)
@@ -329,59 +443,77 @@ class FoundationModel:
                 exog = None
                 last_window_exog = None
 
-        # Normalize exog types (long-format DataFrame → dict)
-        exog = check_preprocess_exog_type(exog)
-        last_window_exog = check_preprocess_exog_type(last_window_exog)
+        # Prepare exog: normalize types, validate against training
+        # metadata, and convert to per-series dicts.
+        future_exog_dict = self._prepare_future_exog(
+                               exog         = exog,
+                               series_names = series_names,
+                               steps        = steps,
+                               last_window  = last_window,
+                           )
+        past_exog_dict = self._prepare_past_exog(
+                             last_window_exog = last_window_exog,
+                             last_window      = last_window,
+                             series_names     = series_names,
+                         )
 
-        # Resolve history
-        if last_window is not None:
-            history_dict, _ = check_preprocess_series_foundation(last_window)
-            series_names = list(history_dict.keys())
-        else:
-            history_dict = self.adapter._history
-            series_names = list(history_dict.keys())
-
-        # Trim history to context_length
+        # Trim history and past exog to context_length
         history_dict = {
             name: s.iloc[-self.context_length :]
             for name, s in history_dict.items()
         }
-
-        # Resolve past exog
-        if last_window is not None:
-            past_exog_dict = normalize_exog_to_dict(
-                                 last_window_exog, series_names
-                             )
-            past_exog_dict = {
-                name: (
-                    e.iloc[-self.context_length :] if e is not None else None
-                )
-                for name, e in past_exog_dict.items()
-            }
-        else:
-            history_exog = getattr(self.adapter, '_history_exog', None)
-            if history_exog is not None:
-                past_exog_dict = history_exog
-            else:
-                past_exog_dict = {name: None for name in series_names}
-
-        # Resolve future exog
-        future_exog_dict = normalize_exog_to_dict(exog, series_names)
+        past_exog_dict = {
+            name: (
+                e.iloc[-self.context_length :] if e is not None else None
+            )
+            for name, e in past_exog_dict.items()
+        }
 
         is_multiple_series = len(series_names) > 1
 
-        predictions = self.adapter.predict(
-                          steps              = steps,
-                          history_dict       = history_dict,
-                          past_exog_dict     = past_exog_dict,
-                          future_exog_dict   = future_exog_dict,
-                          quantiles          = quantiles,
-                          is_multiple_series = is_multiple_series,
-                      )
+        # Adapter returns dict[str, np.ndarray] with shape (steps, n_q)
+        raw_predictions = self.adapter.predict(
+                              steps              = steps,
+                              history_dict       = history_dict,
+                              past_exog_dict     = past_exog_dict,
+                              future_exog_dict   = future_exog_dict,
+                              quantiles          = quantiles,
+                              is_multiple_series = is_multiple_series,
+                          )
+
+        # TODO: THe output dataframe have freq? Maybe only when is one series?
+        # Build long-format DataFrame from raw predictions
+        per_series_indices = [
+            expand_index(history_dict[name].index, steps=steps)
+            for name in series_names
+        ]
+        long_index = np.column_stack(
+            [np.asarray(idx) for idx in per_series_indices]
+        ).ravel()
+        level_col = np.tile(series_names, steps)
+
+        if quantiles is None:
+            # Point forecast (median): single "pred" column
+            pred_matrix = np.column_stack([
+                raw_predictions[name][:, 0] for name in series_names
+            ])
+            predictions = pd.DataFrame(
+                {"level": level_col, "pred": pred_matrix.ravel()},
+                index=long_index,
+            )
+        else:
+            q_columns = [f"q_{q}" for q in quantiles]
+            data_dict: dict[str, np.ndarray] = {"level": level_col}
+            for j, col in enumerate(q_columns):
+                q_matrix = np.column_stack([
+                    raw_predictions[name][:, j] for name in series_names
+                ])
+                data_dict[col] = q_matrix.ravel()
+            predictions = pd.DataFrame(data_dict, index=long_index)
 
         return predictions
 
-    def get_params(self, deep: bool = True) -> dict:
+    def get_params(self, deep: Any = None) -> dict:
         """
         Get parameters for this estimator (sklearn-compatible).
 
@@ -393,8 +525,8 @@ class FoundationModel:
 
         Parameters
         ----------
-        deep : bool, default True
-            Ignored. Included for sklearn API compatibility.
+        deep : Ignored
+            Not used, present here for API consistency by convention.
 
         Returns
         -------
@@ -438,4 +570,3 @@ class FoundationModel:
         self.model_id       = self.adapter.model_id
 
         return self
-        

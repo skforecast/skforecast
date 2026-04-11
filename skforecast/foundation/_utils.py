@@ -14,7 +14,7 @@ from ..exceptions import (
     MissingExogWarning, 
     MissingValuesWarning
 )
-from ..utils import check_y, check_preprocess_series
+from ..utils import check_preprocess_series
 
 
 def check_preprocess_series_foundation(

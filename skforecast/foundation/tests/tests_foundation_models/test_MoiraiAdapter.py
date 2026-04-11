@@ -1,71 +1,23 @@
-# Unit tests MoiraiAdapter
+# Unit test MoiraiAdapter
 # ==============================================================================
-import warnings
+import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.foundation._adapters import MoiraiAdapter
-from .conftest import fit_adapter, predict_adapter
+from .fixtures_adapters import (
+    y, y_wide, y_dict,
+    FakeMoirai2Forecast,
+    prepare_fit_args, prepare_predict_args,
+)
 
 
-# Fixtures and helpers
+# Helpers
 # ==============================================================================
-_idx = pd.date_range("2020-01-01", periods=50, freq="ME")
-y = pd.Series(np.arange(50, dtype=float), index=_idx, name="sales")
-
-_idx_ms = pd.date_range("2020-01-01", periods=30, freq="ME")
-_ys1 = pd.Series(np.arange(30, dtype=float), index=_idx_ms, name="s1")
-_ys2 = pd.Series(np.arange(30, 60, dtype=float), index=_idx_ms, name="s2")
-_y_wide = pd.DataFrame({"s1": _ys1, "s2": _ys2})
-_y_dict = {"s1": _ys1.copy(), "s2": _ys2.copy()}
-
-
-class FakeMoirai2Forecast:
-    """
-    Fake Moirai2Forecast for testing without the uni2ts / torch dependency.
-
-    `predict(past_target)` returns `np.ndarray` of shape
-    `(n, 9, steps)` where `raw[i, q_idx, :]` equals `(q_idx + 1) / 10`
-    i.e. the same value as the corresponding quantile level.
-
-    Records the last call arguments for inspection.
-    """
-
-    def __init__(self):
-        self.last_inputs = None
-        self._last_steps = None
-
-    class _HparamsCtx:
-        """Context manager that sets prediction_length on the forecast object."""
-
-        def __init__(self, forecast_obj, prediction_length):
-            self._obj = forecast_obj
-            self._pl = prediction_length
-
-        def __enter__(self):
-            self._obj._last_steps = self._pl
-            return self._obj
-
-        def __exit__(self, *args):
-            pass
-
-    def hparams_context(self, prediction_length):
-        return self._HparamsCtx(self, prediction_length)
-
-    def predict(self, past_target):
-        self.last_inputs = past_target
-        n = len(past_target)
-        steps = self._last_steps
-        # q_idx i → value (i+1)/10  (0.1, 0.2, …, 0.9)
-        raw = np.zeros((n, 9, steps), dtype=float)
-        for q_idx in range(9):
-            raw[:, q_idx, :] = (q_idx + 1) / 10.0
-        return raw
-
-
 def make_adapter(**kwargs) -> MoiraiAdapter:
-    """Return a MoiraiAdapter pre-loaded with FakeMoirai2Forecast."""
+    """
+    Return a MoiraiAdapter pre-loaded with FakeMoirai2Forecast.
+    """
     adapter = MoiraiAdapter(
         model_id=kwargs.pop("model_id", "Salesforce/moirai-2.0-R-small"),
         **kwargs,
@@ -74,11 +26,13 @@ def make_adapter(**kwargs) -> MoiraiAdapter:
     return adapter
 
 
+# ==============================================================================
 # Tests MoiraiAdapter.__init__
 # ==============================================================================
 def test_MoiraiAdapter_init_default_params():
     """
-    Test that default parameter values are set correctly.
+    Test that default parameter values are set correctly and class-level
+    attributes are properly initialised.
     """
     adapter = MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small")
     assert adapter.model_id == "Salesforce/moirai-2.0-R-small"
@@ -88,22 +42,27 @@ def test_MoiraiAdapter_init_default_params():
     assert adapter._history is None
     assert adapter.is_fitted is False
     assert adapter.is_multiple_series_ is False
-
-
-def test_MoiraiAdapter_allow_exogenous_is_False():
-    """
-    allow_exogenous class attribute is False (covariates not supported).
-    """
     assert MoiraiAdapter.allow_exogenous is False
-    assert make_adapter().allow_exogenous is False
+    assert MoiraiAdapter.SUPPORTED_QUANTILES == [
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9
+    ]
 
 
-def test_MoiraiAdapter_init_custom_context_length():
+@pytest.mark.parametrize(
+    "context_length",
+    [0, -1, None],
+    ids=lambda cl: f"context_length={cl}",
+)
+def test_MoiraiAdapter_init_ValueError_when_context_length_invalid(context_length):
     """
-    Test that a custom context_length is stored correctly.
+    Test that __init__ raises ValueError for non-positive-integer
+    context_length values.
     """
-    adapter = MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small", context_length=512)
-    assert adapter.context_length == 512
+    with pytest.raises(ValueError, match=re.escape("`context_length` must be a positive integer")):
+        MoiraiAdapter(
+            model_id="Salesforce/moirai-2.0-R-small",
+            context_length=context_length,
+        )
 
 
 def test_MoiraiAdapter_init_custom_module_stored():
@@ -111,747 +70,362 @@ def test_MoiraiAdapter_init_custom_module_stored():
     Test that a pre-loaded module is stored in _module.
     """
     fake_module = object()
-    adapter = MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small", module=fake_module)
+    adapter = MoiraiAdapter(
+        model_id="Salesforce/moirai-2.0-R-small", module=fake_module
+    )
     assert adapter._module is fake_module
 
 
-def test_MoiraiAdapter_init_raises_ValueError_when_context_length_is_zero():
-    """
-    Test that __init__ raises ValueError when context_length is 0.
-    """
-    with pytest.raises(ValueError, match="`context_length` must be a positive integer"):
-        MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small", context_length=0)
-
-
-def test_MoiraiAdapter_init_raises_ValueError_when_context_length_is_negative():
-    """
-    Test that __init__ raises ValueError when context_length is negative.
-    """
-    with pytest.raises(ValueError, match="`context_length` must be a positive integer"):
-        MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small", context_length=-1)
-
-
-def test_MoiraiAdapter_init_raises_ValueError_when_context_length_is_None():
-    """
-    Test that __init__ raises ValueError when context_length is None.
-    """
-    with pytest.raises(ValueError, match="`context_length` must be a positive integer"):
-        MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small", context_length=None)
-
-
-def test_MoiraiAdapter_SUPPORTED_QUANTILES_has_nine_levels():
-    """
-    Test that SUPPORTED_QUANTILES contains the 9 expected levels.
-    """
-    expected = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    assert MoiraiAdapter.SUPPORTED_QUANTILES == expected
-
-
+# ==============================================================================
 # Tests MoiraiAdapter.get_params / set_params
 # ==============================================================================
-def test_MoiraiAdapter_get_params_returns_expected_keys():
+def test_MoiraiAdapter_get_params_returns_expected_keys_and_values():
     """
-    Test that get_params returns only the keys model_id and context_length.
-    """
-    adapter = MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small")
-    assert set(adapter.get_params().keys()) == {"model_id", "context_length"}
-
-
-def test_MoiraiAdapter_get_params_round_trip():
-    """
-    Test that get_params reflects the values set at construction.
+    Test that get_params returns all expected keys with correct values.
     """
     adapter = MoiraiAdapter(
         model_id="Salesforce/moirai-2.0-R-base", context_length=1024
     )
     params = adapter.get_params()
+    assert set(params.keys()) == {"model_id", "context_length"}
     assert params["model_id"] == "Salesforce/moirai-2.0-R-base"
     assert params["context_length"] == 1024
 
 
-def test_MoiraiAdapter_set_params_returns_self():
+@pytest.mark.parametrize(
+    "params, match",
+    [
+        ({"context_length": 0}, "`context_length` must be a positive integer"),
+        ({"unknown_param": 42}, "Invalid parameter"),
+    ],
+    ids=["context_length=0", "unknown_param"],
+)
+def test_MoiraiAdapter_set_params_ValueError_when_invalid(params, match):
     """
-    Test that set_params returns the adapter instance.
-    """
-    adapter = make_adapter()
-    result = adapter.set_params(context_length=512)
-    assert result is adapter
-
-
-def test_MoiraiAdapter_set_params_updates_context_length():
-    """
-    Test that set_params updates context_length.
-    """
-    adapter = make_adapter()
-    adapter.set_params(context_length=512)
-    assert adapter.context_length == 512
-
-
-def test_MoiraiAdapter_set_params_updates_model_id():
-    """
-    Test that set_params updates model_id.
+    Test that set_params raises ValueError for invalid values or unknown
+    parameter names.
     """
     adapter = make_adapter()
-    adapter.set_params(model_id="Salesforce/moirai-2.0-R-large")
-    assert adapter.model_id == "Salesforce/moirai-2.0-R-large"
-
-
-def test_MoiraiAdapter_set_params_resets_module_and_forecast_obj_on_model_id_change():
-    """
-    Test that set_params resets _module and _forecast_obj when model_id changes.
-    """
-    adapter = make_adapter()
-    adapter._module = object()
-    adapter.set_params(model_id="Salesforce/moirai-2.0-R-large")
-    assert adapter._module is None
-    assert adapter._forecast_obj is None
-
-
-def test_MoiraiAdapter_set_params_resets_module_and_forecast_obj_on_context_length_change():
-    """
-    Test that set_params resets _module and _forecast_obj when context_length changes.
-    """
-    adapter = make_adapter()
-    adapter._module = object()
-    adapter.set_params(context_length=256)
-    assert adapter._module is None
-    assert adapter._forecast_obj is None
-
-
-def test_MoiraiAdapter_set_params_raises_ValueError_on_invalid_context_length():
-    """
-    Test that set_params raises ValueError when context_length is invalid.
-    """
-    adapter = make_adapter()
-    with pytest.raises(ValueError, match="`context_length` must be a positive integer"):
-        adapter.set_params(context_length=0)
-
-
-def test_MoiraiAdapter_set_params_raises_ValueError_on_unknown_param():
-    """
-    Test that set_params raises ValueError for unrecognised parameter names.
-    """
-    adapter = make_adapter()
-    with pytest.raises(ValueError, match="Invalid parameter"):
-        adapter.set_params(unknown_param=42)
-
-
-# Tests MoiraiAdapter.fit
-# ==============================================================================
-def test_MoiraiAdapter_fit_sets_is_fitted():
-    """
-    Test that fit sets _is_fitted to True.
-    """
-    adapter = make_adapter()
-    assert adapter.is_fitted is False
-    fit_adapter(adapter, series=y)
-    assert adapter.is_fitted is True
-
-
-def test_MoiraiAdapter_fit_returns_self():
-    """
-    Test that fit returns the adapter instance.
-    """
-    adapter = make_adapter()
-    assert fit_adapter(adapter, series=y) is adapter
-
-
-def test_MoiraiAdapter_fit_stores_single_series_history():
-    """
-    Test that fit stores the series in _history for single-series mode.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    assert isinstance(adapter._history, dict)
-    pd.testing.assert_series_equal(next(iter(adapter._history.values())), y)
-
-
-def test_MoiraiAdapter_fit_trims_history_to_context_length():
-    """
-    Test that fit trims _history to the last context_length observations.
-    """
-    context_length = 20
-    adapter = make_adapter(context_length=context_length)
-    fit_adapter(adapter, series=y)
-    assert len(next(iter(adapter._history.values()))) == context_length
-    pd.testing.assert_series_equal(next(iter(adapter._history.values())), y.iloc[-context_length:])
-
-
-def test_MoiraiAdapter_fit_history_is_copy_not_view():
-    """
-    Test that _history is a copy, not a view of the input series.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    hist = next(iter(adapter._history.values()))
-    original_first = hist.iloc[0]
-    y.iloc[0] = 9999.0
-    assert hist.iloc[0] == original_first
-    y.iloc[0] = 0.0  # restore
-
-
-def test_MoiraiAdapter_fit_setsis_multiple_series__false_for_series():
-    """
-    Test that is_multiple_series_ is False after fitting on a pd.Series.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    assert adapter.is_multiple_series_ is False
-
-
-def test_MoiraiAdapter_fit_setsis_multiple_series__true_for_dataframe():
-    """
-    Test that is_multiple_series_ is True after fitting on a wide DataFrame.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    assert adapter.is_multiple_series_ is True
-
-
-def test_MoiraiAdapter_fit_setsis_multiple_series__true_for_dict():
-    """
-    Test that is_multiple_series_ is True after fitting on a dict of Series.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_dict)
-    assert adapter.is_multiple_series_ is True
-
-
-def test_MoiraiAdapter_fit_multiseries_stores_history_dict():
-    """
-    Test that fit stores a dict of Series as _history in multi-series mode.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    assert isinstance(adapter._history, dict)
-    assert set(adapter._history.keys()) == {"s1", "s2"}
-
-
-def test_MoiraiAdapter_fit_multiseries_trims_each_series_to_context_length():
-    """
-    Test that fit trims each series in _history to context_length in
-    multi-series mode.
-    """
-    context_length = 10
-    adapter = make_adapter(context_length=context_length)
-    fit_adapter(adapter, series=_y_wide)
-    for name, s in adapter._history.items():
-        assert len(s) == context_length, f"Series '{name}' not trimmed"
-
-
-def test_MoiraiAdapter_fit_issues_IgnoredArgumentWarning_for_exog():
-    """
-    Test that passing exog to fit issues an IgnoredArgumentWarning and completes
-    successfully.
-    """
-    exog = pd.DataFrame({"feat": np.arange(50, dtype=float)}, index=y.index)
-    adapter = make_adapter()
-    with pytest.warns(IgnoredArgumentWarning, match="MoiraiAdapter does not support covariates"):
-        fit_adapter(adapter, series=y, exog=exog)
-    assert adapter.is_fitted is True
-
-
-def test_MoiraiAdapter_fit_raises_TypeError_on_unsupported_series_type():
-    """
-    Test that fit raises TypeError when series is neither pd.Series,
-    pd.DataFrame nor dict.
-    """
-    adapter = make_adapter()
-    with pytest.raises(TypeError):
-        fit_adapter(adapter, series=np.arange(50))
-
-
-def test_MoiraiAdapter_fit_raises_ValueError_when_series_dict_is_empty():
-    """
-    Test that fit raises ValueError when an empty dict is passed.
-    """
-    adapter = make_adapter()
-    with pytest.raises(ValueError):
-        fit_adapter(adapter, series={})
-
-
-# Tests MoiraiAdapter.predict — error handling
-# ==============================================================================
+    with pytest.raises(ValueError, match=re.escape(match)):
+        adapter.set_params(**params)
 
 
 @pytest.mark.parametrize(
+    "param, value",
+    [
+        ("model_id", "Salesforce/moirai-2.0-R-large"),
+        ("context_length", 512),
+    ],
+    ids=lambda x: str(x),
+)
+def test_MoiraiAdapter_set_params_updates_and_resets_module(param, value):
+    """
+    Test that set_params updates the given parameter, resets _module and
+    _forecast_obj, and returns self.
+    """
+    adapter = make_adapter()
+    adapter._module = object()
+    result = adapter.set_params(**{param: value})
+    assert result is adapter
+    assert adapter._module is None
+    assert adapter._forecast_obj is None
+
+
+# ==============================================================================
+# Tests MoiraiAdapter.fit
+# ==============================================================================
+def test_MoiraiAdapter_fit_error_handling():
+    """
+    Test fit raises TypeError for unsupported series types and ValueError
+    for empty dict.
+    """
+    adapter = make_adapter()
+    with pytest.raises(TypeError):
+        prepare_fit_args(np.arange(50))
+    with pytest.raises(ValueError):
+        prepare_fit_args({})
+
+
+@pytest.mark.parametrize(
+    "context_length, expected_len",
+    [(10, 10), (20, 20), (50, 50), (100, 50)],
+    ids=lambda x: f"{x}",
+)
+def test_MoiraiAdapter_fit_output_single_series(context_length, expected_len):
+    """
+    Test fit on a single series: returns self, sets is_fitted=True,
+    is_multiple_series_=False, stores history trimmed to context_length,
+    and does not modify the input series.
+    """
+    adapter = make_adapter(context_length=context_length)
+    y_copy = y.copy()
+    sd, ed, ms = prepare_fit_args(y)
+    result = adapter.fit(
+        series_dict=sd, exog_dict=ed, is_multiple_series=ms
+    )
+
+    assert result is adapter
+    assert adapter.is_fitted is True
+    assert adapter.is_multiple_series_ is False
+    hist = next(iter(adapter._history.values()))
+    assert len(hist) == expected_len
+    pd.testing.assert_series_equal(hist, y.iloc[-expected_len:])
+    pd.testing.assert_series_equal(y, y_copy)
+
+
+@pytest.mark.parametrize(
+    "series_input",
+    [y_wide, y_dict],
+    ids=["wide_dataframe", "dict"],
+)
+def test_MoiraiAdapter_fit_output_multi_series(series_input):
+    """
+    Test fit on multi-series input: sets is_fitted=True,
+    is_multiple_series_=True, stores a dict of Series keyed by series names,
+    each trimmed to context_length.
+    """
+    context_length = 10
+    adapter = make_adapter(context_length=context_length)
+    sd, ed, ms = prepare_fit_args(series_input)
+    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+
+    assert adapter.is_fitted is True
+    assert adapter.is_multiple_series_ is True
+    assert set(adapter._history.keys()) == {"s1", "s2"}
+    for name, s in adapter._history.items():
+        assert isinstance(s, pd.Series)
+        assert len(s) == context_length
+
+
+def test_MoiraiAdapter_fit_exog_ignored_silently():
+    """
+    Test that passing exog to fit completes successfully (exog handling is
+    done upstream by FoundationModel).
+    """
+    exog_df = pd.DataFrame({"feat": np.arange(50, dtype=float)}, index=y.index)
+    adapter = make_adapter()
+    sd, ed, ms = prepare_fit_args(y, exog=exog_df)
+    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    assert adapter.is_fitted is True
+
+
+def test_MoiraiAdapter_fit_refitting_resets_is_multiple_series():
+    """
+    Test that re-fitting on a single Series after a multi-series fit resets
+    is_multiple_series_ to False.
+    """
+    adapter = make_adapter()
+    sd, ed, ms = prepare_fit_args(y_dict)
+    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    assert adapter.is_multiple_series_ is True
+
+    sd2, ed2, ms2 = prepare_fit_args(y)
+    adapter.fit(series_dict=sd2, exog_dict=ed2, is_multiple_series=ms2)
+    assert adapter.is_multiple_series_ is False
+
+
+# ==============================================================================
+# Tests MoiraiAdapter.predict — error handling
+# ==============================================================================
+@pytest.mark.parametrize(
     "bad_quantile",
     [0.05, 0.15, 0.25, 0.95, 1.1, -0.1],
-    ids=lambda x: f"q_{x}",
+    ids=lambda x: f"q={x}",
 )
-def test_MoiraiAdapter_predict_raises_ValueError_for_unsupported_quantile(bad_quantile):
+def test_MoiraiAdapter_predict_ValueError_for_unsupported_quantile(bad_quantile):
     """
-    Test predict raises ValueError for quantile levels not in SUPPORTED_QUANTILES.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    with pytest.raises(ValueError, match="Moirai-2 only supports quantile levels"):
-        predict_adapter(adapter, steps=3, quantiles=[0.5, bad_quantile])
-
-
-def test_MoiraiAdapter_predict_no_warning_when_exog_provided():
-    """
-    Test predict does not issue IgnoredArgumentWarning at adapter level
-    (handled by FoundationModel).
+    Test predict raises ValueError for quantile levels not in
+    SUPPORTED_QUANTILES.
     """
     adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        predict_adapter(adapter, steps=3, exog=pd.Series([1, 2, 3]))
-    assert not any(issubclass(w.category, IgnoredArgumentWarning) for w in caught)
+    sd, ed, ms = prepare_fit_args(y)
+    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+
+    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=3)
+    with pytest.raises(ValueError, match=re.escape("Moirai-2 only supports quantile levels")):
+        adapter.predict(
+            steps=3, history_dict=hd, past_exog_dict=ped,
+            future_exog_dict=fed, quantiles=[0.5, bad_quantile],
+            is_multiple_series=ms_p,
+        )
 
 
-def test_MoiraiAdapter_predict_no_warning_when_last_window_exog_provided():
-    """
-    Test predict does not issue IgnoredArgumentWarning at adapter level
-    (handled by FoundationModel).
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        predict_adapter(adapter, steps=3, last_window_exog=pd.Series([1, 2, 3]))
-    assert not any(issubclass(w.category, IgnoredArgumentWarning) for w in caught)
-
-
-# Tests MoiraiAdapter.predict — point forecast (quantiles=None)
 # ==============================================================================
-def test_MoiraiAdapter_predict_returns_dataframe_as_point_forecast():
-    """
-    Test predict returns a long-format DataFrame when quantiles is None.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    result = predict_adapter(adapter, steps=5)
-    assert isinstance(result, pd.DataFrame)
-    assert list(result.columns) == ["level", "pred"]
-
-
-def test_MoiraiAdapter_predict_series_correct_length():
-    """
-    Test the returned Series has exactly `steps` observations.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    assert len(predict_adapter(adapter, steps=12)) == 12
-
-
-def test_MoiraiAdapter_predict_level_column_has_series_name():
-    """
-    Test the level column contains the training series name.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    result = predict_adapter(adapter, steps=3)
-    assert (result["level"] == "sales").all()
-
-
-def test_MoiraiAdapter_predict_series_correct_index():
-    """
-    Test the returned Series index starts right after the last training date
-    and spans exactly `steps` periods with the same frequency.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    result = predict_adapter(adapter, steps=3)
-    expected_start = y.index[-1] + y.index.freq
-    expected_index = pd.date_range(start=expected_start, periods=3, freq=y.index.freq)
-    pd.testing.assert_index_equal(result.index, expected_index)
-
-
-def test_MoiraiAdapter_predict_point_forecast_values():
-    """
-    Test that point forecast (median, q=0.5) values equal 0.5.
-    FakeMoirai2Forecast sets raw[i, q_idx, :] = (q_idx + 1) / 10,
-    so q_idx=4 (q=0.5) gives 0.5.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    result = predict_adapter(adapter, steps=6)
-    np.testing.assert_array_almost_equal(result["pred"].to_numpy(), np.full(6, 0.5))
-
-
-def test_MoiraiAdapter_predict_passes_correct_steps_to_inference():
-    """
-    Test that the steps value is forwarded correctly to _run_inference.
-    """
-    fake_forecast = FakeMoirai2Forecast()
-    adapter = make_adapter()
-    adapter._forecast_obj = fake_forecast
-    fit_adapter(adapter, series=y)
-    predict_adapter(adapter, steps=7)
-    assert fake_forecast._last_steps == 7
-
-
-def test_MoiraiAdapter_predict_passes_single_input_to_model():
-    """
-    Test that exactly one input array is passed to predict in single-series mode.
-    """
-    fake_forecast = FakeMoirai2Forecast()
-    adapter = make_adapter()
-    adapter._forecast_obj = fake_forecast
-    fit_adapter(adapter, series=y)
-    predict_adapter(adapter, steps=5)
-    assert len(fake_forecast.last_inputs) == 1
-
-
-def test_MoiraiAdapter_predict_input_shape_is_T_by_1():
-    """
-    Test that the input array passed to predict has shape (T, 1).
-    """
-    fake_forecast = FakeMoirai2Forecast()
-    adapter = make_adapter()
-    adapter._forecast_obj = fake_forecast
-    fit_adapter(adapter, series=y)
-    predict_adapter(adapter, steps=5)
-    assert fake_forecast.last_inputs[0].shape == (len(y), 1)
-
-
-# Tests MoiraiAdapter.predict — quantile forecast
+# Tests MoiraiAdapter.predict — single series
 # ==============================================================================
-def test_MoiraiAdapter_predict_returns_dataframe_when_quantiles_provided():
+def test_MoiraiAdapter_predict_point_forecast_single_series():
     """
-    Test predict returns a pd.DataFrame when quantiles is specified.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    result = predict_adapter(adapter, steps=5, quantiles=[0.1, 0.5, 0.9])
-    assert isinstance(result, pd.DataFrame)
-
-
-def test_MoiraiAdapter_predict_dataframe_has_correct_columns():
-    """
-    Test that quantile DataFrame columns follow the q_<level> naming convention.
+    Test point forecast (quantiles=None) on a single series: returns dict
+    with one key, shape (steps, 1), values = 0.5 (FakeMoirai2Forecast
+    q_idx=4 → 0.5).
     """
     adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    result = predict_adapter(adapter, steps=5, quantiles=[0.1, 0.5, 0.9])
-    assert list(result.columns) == ["level", "q_0.1", "q_0.5", "q_0.9"]
+    sd, ed, ms = prepare_fit_args(y)
+    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+
+    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=6)
+    raw = adapter.predict(
+        steps=6, history_dict=hd, past_exog_dict=ped,
+        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+    )
+
+    assert list(raw.keys()) == ["sales"]
+    arr = raw["sales"]
+    assert arr.shape == (6, 1)
+    np.testing.assert_array_almost_equal(arr[:, 0], np.full(6, 0.5))
 
 
-def test_MoiraiAdapter_predict_dataframe_correct_length():
+def test_MoiraiAdapter_predict_quantile_forecast_single_series():
     """
-    Test that the quantile DataFrame has exactly `steps` rows.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    result = predict_adapter(adapter, steps=7, quantiles=[0.1, 0.5, 0.9])
-    assert len(result) == 7
-
-
-def test_MoiraiAdapter_predict_dataframe_correct_index():
-    """
-    Test quantile DataFrame index starts right after the last training date.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    result = predict_adapter(adapter, steps=4, quantiles=[0.1, 0.5, 0.9])
-    expected_start = y.index[-1] + y.index.freq
-    expected_index = pd.date_range(start=expected_start, periods=4, freq=y.index.freq)
-    pd.testing.assert_index_equal(result.index, expected_index)
-
-
-def test_MoiraiAdapter_predict_quantile_values_correct():
-    """
-    Test quantile DataFrame values match FakeMoirai2Forecast output.
-    FakeMoirai2Forecast sets raw[i, q_idx, :] = (q_idx + 1) / 10:
-      q_0.1 → q_idx=0 → 0.1; q_0.5 → q_idx=4 → 0.5; q_0.9 → q_idx=8 → 0.9.
+    Test quantile forecast on a single series: returns dict with correct
+    shape and values matching FakeMoirai2Forecast output.
     """
     quantiles = [0.1, 0.5, 0.9]
     adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    result = predict_adapter(adapter, steps=5, quantiles=quantiles)
-    for q_idx, q in enumerate([0.1, 0.5, 0.9]):
-        expected_val = [0.1, 0.5, 0.9][q_idx]
-        np.testing.assert_array_almost_equal(
-            result[f"q_{q}"].to_numpy(), np.full(5, expected_val)
-        )
+    sd, ed, ms = prepare_fit_args(y)
+    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+
+    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=5)
+    raw = adapter.predict(
+        steps=5, history_dict=hd, past_exog_dict=ped,
+        future_exog_dict=fed, quantiles=quantiles, is_multiple_series=ms_p,
+    )
+
+    arr = raw["sales"]
+    assert arr.shape == (5, 3)
+    for i, q in enumerate(quantiles):
+        np.testing.assert_array_almost_equal(arr[:, i], np.full(5, q))
 
 
 def test_MoiraiAdapter_predict_all_supported_quantiles():
     """
-    Test that all supported quantile levels are accepted without error and
-    produce correctly named columns.
+    Test that all 9 supported quantile levels are accepted without error.
     """
     adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    result = predict_adapter(adapter, steps=3, quantiles=MoiraiAdapter.SUPPORTED_QUANTILES)
-    expected_cols = ["level"] + [f"q_{q}" for q in MoiraiAdapter.SUPPORTED_QUANTILES]
-    assert list(result.columns) == expected_cols
+    sd, ed, ms = prepare_fit_args(y)
+    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+
+    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=3)
+    raw = adapter.predict(
+        steps=3, history_dict=hd, past_exog_dict=ped,
+        future_exog_dict=fed,
+        quantiles=MoiraiAdapter.SUPPORTED_QUANTILES,
+        is_multiple_series=ms_p,
+    )
+    assert raw["sales"].shape == (3, 9)
 
 
-# Tests MoiraiAdapter.predict — last_window behaviour
 # ==============================================================================
-def test_MoiraiAdapter_predict_uses_last_window_forecast_index():
-    """
-    Test that the forecast index follows from last_window's index, not
-    from stored history.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=y)
-    last_window = pd.Series(
-        np.arange(10, dtype=float),
-        index=pd.date_range("2025-01-01", periods=10, freq="ME"),
-        name="sales",
-    )
-    result = predict_adapter(adapter, steps=3, last_window=last_window)
-    expected_start = last_window.index[-1] + last_window.index.freq
-    expected_index = pd.date_range(start=expected_start, periods=3, freq=last_window.index.freq)
-    pd.testing.assert_index_equal(result.index, expected_index)
-
-
-def test_MoiraiAdapter_predict_trims_last_window_to_context_length():
-    """
-    Test that a last_window longer than context_length is trimmed to
-    context_length before inference.
-    """
-    context_length = 10
-    fake_forecast = FakeMoirai2Forecast()
-    adapter = make_adapter(context_length=context_length)
-    adapter._forecast_obj = fake_forecast
-    fit_adapter(adapter, series=y)
-    long_window = pd.Series(
-        np.arange(40, dtype=float),
-        index=pd.date_range("2023-01-01", periods=40, freq="ME"),
-        name="sales",
-    )
-    predict_adapter(adapter, steps=5, last_window=long_window)
-    assert fake_forecast.last_inputs[0].shape == (context_length, 1)
-
-
-def test_MoiraiAdapter_predict_without_fit_and_with_last_window():
-    """
-    Test that predict works without prior fit when last_window is provided.
-    """
-    adapter = make_adapter()
-    last_window = pd.Series(
-        np.arange(20, dtype=float),
-        index=pd.date_range("2020-01-01", periods=20, freq="ME"),
-        name="sales",
-    )
-    result = predict_adapter(adapter, steps=4, last_window=last_window)
-    assert isinstance(result, pd.DataFrame)
-    assert len(result) == 4
-
-
 # Tests MoiraiAdapter.predict — multi-series
 # ==============================================================================
-def test_MoiraiAdapter_predict_multiseries_point_returns_long_dataframe():
+@pytest.mark.parametrize(
+    "series_input",
+    [y_wide, y_dict],
+    ids=["wide_dataframe", "dict"],
+)
+def test_MoiraiAdapter_predict_point_forecast_multi_series(series_input):
     """
-    Test predict returns a long pd.DataFrame with columns
-    ["level", "pred"] for a multi-series point forecast.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    result = predict_adapter(adapter, steps=6)
-    assert isinstance(result, pd.DataFrame)
-    assert list(result.columns) == ["level", "pred"]
-
-
-def test_MoiraiAdapter_predict_multiseries_level_column_contains_series_names():
-    """
-    Test that the "level" column contains each series name.
+    Test point forecast on multi-series: returns dict with one array per
+    series, each of shape (steps, 1) with value 0.5.
     """
     adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    result = predict_adapter(adapter, steps=3)
-    assert set(result["level"].unique()) == {"s1", "s2"}
+    sd, ed, ms = prepare_fit_args(series_input)
+    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
 
-
-def test_MoiraiAdapter_predict_multiseries_point_correct_row_count():
-    """
-    Test that the multi-series point forecast has n_steps × n_series rows.
-    """
-    steps = 5
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    result = predict_adapter(adapter, steps=steps)
-    assert len(result) == steps * 2
-
-
-def test_MoiraiAdapter_predict_multiseries_point_correct_index():
-    """
-    Test that the multi-series point forecast index repeats each forecast
-    timestamp once per series.
-    """
-    steps = 4
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    result = predict_adapter(adapter, steps=steps)
-    expected_start = _y_wide.index[-1] + _y_wide.index.freq
-    forecast_ts = pd.date_range(
-        start=expected_start, periods=steps, freq=_y_wide.index.freq
-    )
-    expected_index = np.repeat(forecast_ts, 2)
-    np.testing.assert_array_equal(result.index, expected_index)
-
-
-def test_MoiraiAdapter_predict_multiseries_point_values_correct():
-    """
-    Test multi-series point forecast values (q=0.5 → 0.5 from fake model).
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    result = predict_adapter(adapter, steps=3)
-    np.testing.assert_array_almost_equal(
-        result["pred"].to_numpy(), np.full(6, 0.5)
+    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=5)
+    raw = adapter.predict(
+        steps=5, history_dict=hd, past_exog_dict=ped,
+        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
     )
 
-
-def test_MoiraiAdapter_predict_multiseries_from_dict():
-    """
-    Test multi-series point forecast works when history was fitted from a dict.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_dict)
-    result = predict_adapter(adapter, steps=4)
-    assert list(result.columns) == ["level", "pred"]
-    assert len(result) == 4 * 2
+    assert set(raw.keys()) == {"s1", "s2"}
+    for name in ["s1", "s2"]:
+        assert raw[name].shape == (5, 1)
+        np.testing.assert_array_almost_equal(raw[name][:, 0], np.full(5, 0.5))
 
 
-def test_MoiraiAdapter_predict_multiseries_quantile_columns():
+def test_MoiraiAdapter_predict_quantile_forecast_multi_series():
     """
-    Test that multi-series quantile forecast has ["level", q_columns] columns.
+    Test quantile forecast on multi-series: returns dict with one array per
+    series, each of shape (steps, n_quantiles) with correct values.
     """
     quantiles = [0.1, 0.5, 0.9]
     adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    result = predict_adapter(adapter, steps=3, quantiles=quantiles)
-    assert list(result.columns) == ["level", "q_0.1", "q_0.5", "q_0.9"]
+    sd, ed, ms = prepare_fit_args(y_dict)
+    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+
+    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=4)
+    raw = adapter.predict(
+        steps=4, history_dict=hd, past_exog_dict=ped,
+        future_exog_dict=fed, quantiles=quantiles, is_multiple_series=ms_p,
+    )
+
+    for name in ["s1", "s2"]:
+        assert raw[name].shape == (4, 3)
+        for i, q in enumerate(quantiles):
+            np.testing.assert_array_almost_equal(raw[name][:, i], np.full(4, q))
 
 
-def test_MoiraiAdapter_predict_multiseries_quantile_values_correct():
+# ==============================================================================
+# Tests MoiraiAdapter.predict — pipeline receives correct args
+# ==============================================================================
+def test_MoiraiAdapter_predict_model_receives_correct_args():
     """
-    Test multi-series quantile values match FakeMoirai2Forecast output.
-    """
-    quantiles = [0.1, 0.5, 0.9]
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    result = predict_adapter(adapter, steps=3, quantiles=quantiles)
-    for col, expected_val in zip(["q_0.1", "q_0.5", "q_0.9"], [0.1, 0.5, 0.9]):
-        np.testing.assert_array_almost_equal(
-            result[col].to_numpy(), np.full(6, expected_val)
-        )
-
-
-def test_MoiraiAdapter_predict_multiseries_passes_batched_inputs():
-    """
-    Test that all series are batched into a single predict call (one
-    array per series in inputs_list).
+    Test that the model's predict receives the correct number of inputs and
+    each input has shape (T, 1). Steps forwarded via hparams_context.
     """
     fake_forecast = FakeMoirai2Forecast()
     adapter = make_adapter()
     adapter._forecast_obj = fake_forecast
-    fit_adapter(adapter, series=_y_wide)
-    predict_adapter(adapter, steps=3)
+    sd, ed, ms = prepare_fit_args(y)
+    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+
+    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=7)
+    adapter.predict(
+        steps=7, history_dict=hd, past_exog_dict=ped,
+        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+    )
+    assert fake_forecast._last_steps == 7
+    assert len(fake_forecast.last_inputs) == 1
+    assert fake_forecast.last_inputs[0].shape == (len(y), 1)
+
+
+def test_MoiraiAdapter_predict_multiseries_batched_inputs():
+    """
+    Test that all series are batched into a single predict call (one array
+    per series in inputs_list) with shape (T, 1).
+    """
+    fake_forecast = FakeMoirai2Forecast()
+    adapter = make_adapter()
+    adapter._forecast_obj = fake_forecast
+    sd, ed, ms = prepare_fit_args(y_wide)
+    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+
+    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=3)
+    adapter.predict(
+        steps=3, history_dict=hd, past_exog_dict=ped,
+        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+    )
     assert len(fake_forecast.last_inputs) == 2
-
-
-def test_MoiraiAdapter_predict_multiseries_input_shape_is_T_by_1():
-    """
-    Test that each batched input array has shape (T, 1).
-    """
-    fake_forecast = FakeMoirai2Forecast()
-    adapter = make_adapter()
-    adapter._forecast_obj = fake_forecast
-    fit_adapter(adapter, series=_y_wide)
-    predict_adapter(adapter, steps=3)
     for arr in fake_forecast.last_inputs:
         assert arr.ndim == 2
         assert arr.shape[1] == 1
 
 
-def test_MoiraiAdapter_predict_multiseries_with_last_window_dict():
+def test_MoiraiAdapter_predict_context_length_trims_history():
     """
-    Test multi-series predict with last_window as a dict uses it as context.
+    Test that the history passed to the model is trimmed to context_length.
     """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    new_idx = pd.date_range("2025-06-01", periods=8, freq="ME")
-    lw = {
-        "s1": pd.Series(np.ones(8), index=new_idx, name="s1"),
-        "s2": pd.Series(np.ones(8) * 2, index=new_idx, name="s2"),
-    }
-    result = predict_adapter(adapter, steps=3, last_window=lw)
-    expected_start = new_idx[-1] + new_idx.freq
-    expected_ts = pd.date_range(start=expected_start, periods=3, freq=new_idx.freq)
-    expected_index = np.repeat(expected_ts, 2)
-    np.testing.assert_array_equal(result.index, expected_index)
-
-
-def test_MoiraiAdapter_predict_multiseries_with_last_window_wide_dataframe():
-    """
-    Test multi-series predict with last_window as a wide DataFrame.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    new_idx = pd.date_range("2025-06-01", periods=5, freq="ME")
-    lw = pd.DataFrame({"s1": np.ones(5), "s2": np.ones(5) * 2}, index=new_idx)
-    result = predict_adapter(adapter, steps=4, last_window=lw)
-    assert list(result.columns) == ["level", "pred"]
-    assert len(result) == 4 * 2
-
-
-def test_MoiraiAdapter_predict_multiseries_trims_last_window_to_context_length():
-    """
-    Test that a last_window longer than context_length is trimmed in
-    multi-series mode.
-    """
-    context_length = 5
+    context_length = 10
     fake_forecast = FakeMoirai2Forecast()
     adapter = make_adapter(context_length=context_length)
     adapter._forecast_obj = fake_forecast
-    fit_adapter(adapter, series=_y_wide)
-    long_idx = pd.date_range("2020-01-01", periods=20, freq="ME")
-    lw = {
-        "s1": pd.Series(np.ones(20), index=long_idx, name="s1"),
-        "s2": pd.Series(np.ones(20) * 2, index=long_idx, name="s2"),
-    }
-    predict_adapter(adapter, steps=3, last_window=lw)
-    for arr in fake_forecast.last_inputs:
-        assert arr.shape == (context_length, 1)
+    sd, ed, ms = prepare_fit_args(y)
+    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
 
-
-def test_MoiraiAdapter_predict_multiseries_level_order_tiles_series_names():
-    """
-    Test that within each timestep block the level order matches the series
-    order (np.tile behaviour: [s1, s2, s1, s2, …]).
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    result = predict_adapter(adapter, steps=3)
-    level_values = result["level"].tolist()
-    # steps=3, n_series=2 → [s1, s2, s1, s2, s1, s2]
-    assert level_values == ["s1", "s2", "s1", "s2", "s1", "s2"]
-
-
-def test_MoiraiAdapter_fit_multiseries_series_names_from_dataframe_columns():
-    """
-    Test that the keys of _history match the column names of the input DataFrame.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    assert list(adapter._history.keys()) == list(_y_wide.columns)
-
-
-def test_MoiraiAdapter_fit_multiseries_series_names_from_dict_keys():
-    """
-    Test that the keys of _history match the keys of the input dict.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_dict)
-    assert list(adapter._history.keys()) == list(_y_dict.keys())
-
-
-def test_MoiraiAdapter_fit_multiseries_refitting_single_series_resets_flag():
-    """
-    Test that re-fitting on a single Series after a multi-series fit resets
-    is_multiple_series_ to False and stores a Series in _history.
-    """
-    adapter = make_adapter()
-    fit_adapter(adapter, series=_y_wide)
-    assert adapter.is_multiple_series_ is True
-    fit_adapter(adapter, series=y)
-    assert adapter.is_multiple_series_ is False
-    assert isinstance(adapter._history, dict)
+    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=5)
+    adapter.predict(
+        steps=5, history_dict=hd, past_exog_dict=ped,
+        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+    )
+    assert fake_forecast.last_inputs[0].shape == (context_length, 1)

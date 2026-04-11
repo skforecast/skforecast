@@ -10,6 +10,7 @@ from skforecast.foundation._utils import (
     check_preprocess_series_foundation,
     check_preprocess_exog_type,
     align_exog_to_series,
+    normalize_exog_to_dict,
     validate_exog_fit,
     validate_last_window_exog,
     validate_exog_predict,
@@ -902,3 +903,58 @@ def test_align_exog_to_series_multiseries_dataframe_series_rangeindex_is_noop():
     exog = pd.DataFrame({"x": [1.0, 2.0, 3.0]})
     result = align_exog_to_series(series=series, exog=exog, is_multiseries=True)
     assert result is exog
+
+
+# ===========================================================================
+# normalize_exog_to_dict
+# ===========================================================================
+
+def test_normalize_exog_to_dict_none_maps_all_to_none():
+    """
+    Test that None exog maps every series name to None.
+    """
+    result = normalize_exog_to_dict(None, ["a", "b", "c"])
+    assert result == {"a": None, "b": None, "c": None}
+
+
+def test_normalize_exog_to_dict_dataframe_broadcast_to_all_series():
+    """
+    Test that a flat DataFrame is broadcast (same reference) to every series name.
+    """
+    df = pd.DataFrame({"feat": [1.0, 2.0, 3.0]})
+    result = normalize_exog_to_dict(df, ["s1", "s2"])
+    assert result["s1"] is df
+    assert result["s2"] is df
+
+
+def test_normalize_exog_to_dict_series_broadcast_to_all_series():
+    """
+    Test that a pandas Series is broadcast to every series name.
+    """
+    s = pd.Series([1.0, 2.0, 3.0], name="feat")
+    result = normalize_exog_to_dict(s, ["s1", "s2", "s3"])
+    assert all(v is s for v in result.values())
+    assert list(result.keys()) == ["s1", "s2", "s3"]
+
+
+def test_normalize_exog_to_dict_dict_keeps_per_series_values():
+    """
+    Test that a dict input keeps per-series values for keys present in
+    series_names.
+    """
+    df_a = pd.DataFrame({"feat": [1.0]})
+    df_b = pd.DataFrame({"feat": [2.0]})
+    result = normalize_exog_to_dict({"a": df_a, "b": df_b}, ["a", "b"])
+    assert result["a"] is df_a
+    assert result["b"] is df_b
+
+
+def test_normalize_exog_to_dict_dict_missing_key_gets_none():
+    """
+    Test that series names absent from the exog dict are mapped to None.
+    """
+    df_a = pd.DataFrame({"feat": [1.0]})
+    result = normalize_exog_to_dict({"a": df_a}, ["a", "b", "c"])
+    assert result["a"] is df_a
+    assert result["b"] is None
+    assert result["c"] is None
