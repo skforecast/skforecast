@@ -133,12 +133,13 @@ ForecasterEquivalentDate(
 
 ```python
 ForecasterRnn(
+    estimator=None,                    # Keras model (use create_and_compile_model)
     levels,                            # str | list[str] (required), target series names
     lags,                              # int | list[int] | np.ndarray | range (required)
-    estimator=None,                    # Keras model (use create_and_compile_model)
     transformer_series=MinMaxScaler(feature_range=(0, 1)),  # transformer | dict | None
     transformer_exog=MinMaxScaler(feature_range=(0, 1)),    # transformer | None
     fit_kwargs=None,                   # dict, extra kwargs passed to model.fit()
+    binner_kwargs=None,                # dict, kwargs for KBinsDiscretizer (binned residuals)
     forecaster_id=None,                # str | int, optional identifier
 )
 ```
@@ -373,9 +374,9 @@ forecaster.predict_interval(
     method='conformal',                 # only 'conformal' supported
     interval=[5, 95],                   # float | list[float] | tuple[float]
     use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
     suppress_warnings=False,            # bool
     n_boot=None,                        # Any, ignored (API compatibility)
-    use_binned_residuals=None,          # Any, ignored (API compatibility)
     random_state=None,                  # Any, ignored (API compatibility)
 ) -> pd.DataFrame
 

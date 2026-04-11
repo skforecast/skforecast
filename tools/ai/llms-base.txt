@@ -202,6 +202,52 @@ forecaster = ForecasterRecursive(
 )
 ```
 
+## Handling Missing Values
+
+All ML forecasters (ForecasterRecursive, ForecasterDirect, ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRecursiveClassifier) include a `dropna_from_series` parameter to control how NaN values in the training data are handled. Not applicable to ForecasterStats, ForecasterEquivalentDate, or ForecasterRnn.
+
+When `y`, `series`, or `exog` contain interspersed NaN values, the training matrices (`X_train`, `y_train`) will also contain NaNs. The `dropna_from_series` parameter determines what happens next.
+
+**`dropna_from_series` options:**
+- `False` (default): NaN rows are kept in the training matrices. A `MissingValuesWarning` is issued. Only use with NaN-tolerant estimators.
+- `True`: Rows containing NaN in `X_train` (and the corresponding rows in `y_train`) are dropped before fitting.
+
+**NaN-tolerant estimators** (support `dropna_from_series=False`):
+- LightGBM (`LGBMRegressor`, `LGBMClassifier`)
+- CatBoost (`CatBoostRegressor`, `CatBoostClassifier`)
+- HistGradientBoosting (`HistGradientBoostingRegressor`, `HistGradientBoostingClassifier`)
+- XGBoost (`XGBRegressor`, `XGBClassifier`) with `tree_method='hist'`
+
+**Choosing a strategy:**
+
+| Scenario | Recommended strategy |
+|:---------|:---------------------|
+| Using LightGBM, CatBoost, XGBoost (hist), or HistGradientBoosting | `dropna_from_series=False` — let the estimator handle NaNs. No data loss. |
+| Estimator does not support NaN (RandomForest, LinearRegression, SVR...) | `dropna_from_series=True` — drop incomplete rows before fitting. |
+| Few or small gaps in the series | `dropna_from_series=True` — simple and data loss is negligible. |
+| Large gaps, need to preserve all training data | Imputation + `weight_func` — fill NaNs and down-weight imputed observations. |
+| Multi-series with different lengths | `ForecasterRecursiveMultiSeries` with `dropna_from_series=True`. |
+
+```python
+from lightgbm import LGBMRegressor
+
+# NaN-tolerant estimator: keep all rows including NaN
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(random_state=123, verbose=-1),
+    lags=14,
+    dropna_from_series=False,  # Default — NaN rows kept for NaN-tolerant estimators
+)
+forecaster.fit(y=y_train, suppress_warnings=True)  # Suppress MissingValuesWarning
+
+# Non-NaN-tolerant estimator: drop rows with NaN
+forecaster = ForecasterRecursive(
+    estimator=RandomForestRegressor(random_state=123),
+    lags=14,
+    dropna_from_series=True,  # Drop NaN rows before fitting
+)
+forecaster.fit(y=y_train)
+```
+
 ## Window Features (Rolling Statistics)
 
 ```python
@@ -527,7 +573,7 @@ show_datasets_info()
 ## Tips for Best Results
 
 1. **Always set frequency**: Use `data.asfreq('h')` or similar — skforecast requires a DatetimeIndex with frequency
-2. **Handle missing values**: Forecasters don't accept NaN by default
+2. **Handle missing values**: Use `dropna_from_series=True` to drop NaN rows, or `dropna_from_series=False` (default) with NaN-tolerant estimators (LightGBM, CatBoost, HistGradientBoosting)
 3. **Scale data**: Use `transformer_y` for better model performance
 4. **Use backtesting**: Always validate with realistic train/test splits
 5. **Consider differentiation**: For non-stationary series, use `differentiation` parameter

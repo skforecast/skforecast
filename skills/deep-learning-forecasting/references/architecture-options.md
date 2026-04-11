@@ -232,6 +232,7 @@ predictions = forecaster.predict_interval(
     method='conformal',           # only valid method
     interval=[10, 90],
     use_in_sample_residuals=True,
+    use_binned_residuals=True,    # Better calibration with binned residuals
 )
 # NOTE: 'bootstrapping' is NOT supported for ForecasterRnn
 # NOTE: predict_quantiles() and predict_dist() are NOT available

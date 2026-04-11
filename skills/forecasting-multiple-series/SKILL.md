@@ -56,7 +56,7 @@ forecaster = ForecasterRecursiveMultiSeries(
     # differentiation={'series_1': 1, 'series_2': None},
     categorical_features='auto',  # Auto-detect and encode non-numeric exog columns
     differentiation=None,
-    dropna_from_series=False,     # Set True if individual series may have NaN
+    dropna_from_series=False,     # True to drop NaN rows; False to keep (NaN-tolerant estimators)
 )
 
 # 3. Train
@@ -107,6 +107,7 @@ forecaster = ForecasterDirectMultiVariate(
     lags=24,                  # Or dict: {'series_a': 12, 'series_b': 24}
     transformer_series=StandardScaler(),  # Default — set None to disable scaling
     categorical_features='auto',  # Auto-detect and encode non-numeric exog columns
+    dropna_from_series=False,     # True to drop NaN rows; False to keep (NaN-tolerant estimators)
 )
 forecaster.fit(series=series_df)
 predictions = forecaster.predict()

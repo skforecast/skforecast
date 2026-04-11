@@ -47,6 +47,7 @@ forecaster = ForecasterRecursive(
     transformer_y=None,          # e.g., StandardScaler() for scaling
     categorical_features='auto', # Auto-detect and encode non-numeric exog columns
     differentiation=None,        # e.g., 1 for first-order differencing
+    dropna_from_series=False,    # True to drop NaN rows; False to keep (NaN-tolerant estimators)
 )
 
 # 4. Train
@@ -113,7 +114,7 @@ predictions = forecaster.predict(exog=exog_test)
 ## Common Mistakes
 
 1. **Missing frequency on index**: Always call `data.asfreq('h')` (or `'D'`, `'MS'`, etc.).
-2. **NaN in data**: Forecasters reject NaN by default. Impute missing values first or use `dropna_from_series=True`.
+2. **NaN in data**: Forecasters reject NaN by default. Use `dropna_from_series=True` to drop incomplete rows, or keep `dropna_from_series=False` (default) with NaN-tolerant estimators (LightGBM, CatBoost, HistGradientBoosting, XGBoost hist). Alternatively, impute missing values first.
 3. **Exog not covering forecast horizon**: The exogenous DataFrame for `predict()` must have rows for every future step.
 4. **Random train/test split**: Time series must be split chronologically, never shuffled.
 5. **Forgetting `store_in_sample_residuals=True`**: Required before calling `predict_interval()` with `method='bootstrapping'` on a standalone forecaster. During backtesting, residuals are computed automatically.

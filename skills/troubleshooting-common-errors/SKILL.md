@@ -69,7 +69,22 @@ data = data.asfreq('QS')      # Quarterly start
 ### "ValueError: y contains NaN values"
 
 ```python
-# Fix: handle missing values before fitting
+# Fix 1 (recommended for NaN-tolerant estimators): keep NaN rows
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(verbose=-1),  # LightGBM handles NaN natively
+    lags=14,
+    dropna_from_series=False,  # Default — NaN rows kept in training matrices
+)
+forecaster.fit(y=data['target'], suppress_warnings=True)
+
+# Fix 2: drop rows with NaN from training matrices
+forecaster = ForecasterRecursive(
+    estimator=RandomForestRegressor(),
+    lags=14,
+    dropna_from_series=True,  # Drop NaN rows before fitting
+)
+
+# Fix 3: impute missing values before fitting
 data = data.ffill()                      # Forward fill
 data = data.interpolate(method='linear') # Linear interpolation
 ```
@@ -169,3 +184,28 @@ ets_model = Ets(model='AAA', m=12)
 | **Random Search** | `random_search_forecaster` | `random_search_forecaster_multiseries` | `random_search_stats` |
 | **Bayesian Search** | `bayesian_search_forecaster` | `bayesian_search_forecaster_multiseries` | N/A |
 | **Feature Selection** | `select_features` | `select_features_multiseries` | N/A |
+
+## Loading Serialized Forecasters from Older Versions
+
+Forecasters saved (pickled/joblib) with older skforecast versions may fail to load or behave unexpectedly after upgrading. Internal attributes, class structures, and default values change between releases.
+
+```python
+# ❌ Common error when loading a forecaster saved with an older version
+import joblib
+forecaster = joblib.load('forecaster_v0.13.pkl')
+# AttributeError: 'ForecasterRecursive' object has no attribute 'new_attribute'
+# or: ModuleNotFoundError: No module named 'skforecast.ForecasterAutoreg'
+
+# ✅ CORRECT: retrain the forecaster with the current version
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+)
+forecaster.fit(y=y_train)
+joblib.dump(forecaster, 'forecaster_v0.22.pkl')
+```
+
+**Best practices:**
+- Always retrain and re-save forecasters after upgrading skforecast.
+- Store training code (not just the serialized object) so models can be reproduced.
+- Pin skforecast version in `requirements.txt` for production deployments.
