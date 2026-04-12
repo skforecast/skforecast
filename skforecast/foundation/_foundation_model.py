@@ -31,7 +31,7 @@ from ..utils import (
 
 class FoundationModel:
     """
-    Lightweight user-facing interface for foundation time-series models.
+    Scikit-learn compatible interface for foundation time-series models.
 
     Currently supports Amazon Chronos-2, Google TimesFM 2.5 and Salesforce
     Moirai-2. For full skforecast ecosystem integration (backtesting, model
@@ -94,7 +94,7 @@ class FoundationModel:
     Each adapter imports its own backend library lazily (i.e. inside the
     method that first needs it) rather than at module level. This means
     that only the library required by the adapter you actually use needs to
-    be installed — other foundation-model backends remain optional.
+    be installed, other foundation-model backends remain optional.
 
     """
 
@@ -240,6 +240,8 @@ class FoundationModel:
 
         return self
 
+    # TODO: se tiene que verificar que para cada serie las exog the futuro son 
+    # las mismas que las del pasado. Si no lo son, rellenar con NaNs.
     def _prepare_future_exog(
         self,
         exog: (
@@ -296,6 +298,7 @@ class FoundationModel:
                 exog_names_in_per_series_ = self.exog_names_in_per_series_,
             )
 
+        # TODO: no es esto redundante con check_preprocess_exog_type? Se pueden unificar?
         return normalize_exog_to_dict(exog, series_names)
 
     def _prepare_past_exog(
@@ -349,6 +352,7 @@ class FoundationModel:
                 exog_in_         = self.exog_in_,
             )
 
+        # TODO: no es esto redundante con check_preprocess_exog_type? Se pueden unificar?
         return normalize_exog_to_dict(last_window_exog, series_names)
 
     def predict(
