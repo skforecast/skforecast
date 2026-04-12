@@ -241,6 +241,8 @@ class Chronos2Adapter:
                 )
                 for name, e in exog_dict.items()
             }
+        else:
+            self._history_exog = None
         
         self.is_fitted = True
         self.is_multiple_series_ = is_multiple_series
@@ -282,7 +284,7 @@ class Chronos2Adapter:
 
         Returns
         -------
-        dict numpy ndarray
+        predictions : dict[str, np.ndarray]
             Keys are series names. Each value is a 2-D array of shape
             `(steps, n_quantiles)`.
         
@@ -312,16 +314,16 @@ class Chronos2Adapter:
             **self.predict_kwargs,
         )
 
-        results: dict[str, np.ndarray] = {}
+        predictions: dict[str, np.ndarray] = {}
         for i, name in enumerate(series_names):
             q_arr = quantile_preds[i].squeeze(0)
             if hasattr(q_arr, "detach"):
                 q_arr = q_arr.detach().cpu().numpy()
             else:
                 q_arr = np.asarray(q_arr)
-            results[name] = q_arr
+            predictions[name] = q_arr
 
-        return results
+        return predictions
 
     def _load_pipeline(self) -> None:
         """
@@ -344,6 +346,7 @@ class Chronos2Adapter:
         `device_map` and `torch_dtype` stored at initialisation are
         forwarded to the constructor. This method is a no-op when
         `self._pipeline` is already populated.
+
         """
 
         if self._pipeline is not None:
@@ -383,6 +386,7 @@ class Chronos2Adapter:
         numpy ndarray
             A 1-D numpy array. Numeric/bool are cast to `float64`. Others keep their original
             dtype (typically `object` for string and categorical data).
+        
         """
 
         # Handle pandas Series first to correctly process nullable extension
@@ -397,6 +401,7 @@ class Chronos2Adapter:
         arr = np.asarray(col_data)
         if arr.dtype.kind in ("i", "u", "f", "b"):  # integer, unsigned int, float, bool
             return arr.astype(np.float64)
+        
         return arr
 
     def _build_chronos_input(
@@ -429,7 +434,7 @@ class Chronos2Adapter:
 
         Returns
         -------
-        dict
+        input_dict : dict
             Dictionary with mandatory key "target" (1-D `float64`
             `numpy ndarray`) and optional keys "past_covariates" and
             "future_covariates", each mapping column names to 1-D
@@ -559,6 +564,7 @@ class TimesFM25Adapter:
         forecast_config_kwargs : dict, default None
             Additional keyword arguments forwarded verbatim to
             `timesfm.ForecastConfig` at compile time.
+        
         """
 
         if not isinstance(context_length, int) or context_length < 1:
@@ -589,6 +595,7 @@ class TimesFM25Adapter:
         dict
             Keys: `model_id`, `context_length`, `max_horizon`,
             `forecast_config_kwargs`.
+        
         """
         return {
             'model_id':               self.model_id,
@@ -671,6 +678,7 @@ class TimesFM25Adapter:
         Returns
         -------
         self : TimesFM25Adapter
+
         """
 
         self.is_fitted = False
@@ -690,10 +698,10 @@ class TimesFM25Adapter:
         self,
         steps: int,
         history_dict: dict[str, pd.Series],
-        past_exog_dict: dict[str, pd.DataFrame | pd.Series | None],
-        future_exog_dict: dict[str, pd.DataFrame | pd.Series | None],
+        past_exog_dict: Any,
+        future_exog_dict: Any,
         quantiles: list[float] | tuple[float] | None,
-        is_multiple_series: bool,
+        is_multiple_series: Any,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the TimesFM 2.5 model.
@@ -709,18 +717,18 @@ class TimesFM25Adapter:
         history_dict : dict pandas Series
             Per-series context windows (already trimmed to
             `context_length`).
-        past_exog_dict : dict pandas DataFrame, pandas Series, or None
-            Per-series past covariates (ignored by TimesFM).
-        future_exog_dict : dict pandas DataFrame, pandas Series, or None
-            Per-series future covariates (ignored by TimesFM).
+        past_exog_dict : Any
+            Not used, present here for API consistency by convention.
+        future_exog_dict : Any
+            Not used, present here for API consistency by convention.
         quantiles : list of float or None
             Quantile levels. Must be a subset of `SUPPORTED_QUANTILES`.
-        is_multiple_series : bool
-            `True` when multiple series are provided.
+        is_multiple_series : Any
+            Not used, present here for API consistency by convention.
 
         Returns
         -------
-        dict numpy ndarray
+        predictions : dict[str, np.ndarray]
             Keys are series names. Each value is a 2-D array of shape
             `(steps, n_quantiles)`.
 
@@ -729,6 +737,7 @@ class TimesFM25Adapter:
         ValueError
             If a requested quantile level is not in `SUPPORTED_QUANTILES`
             or `steps` exceeds `max_horizon`.
+        
         """
 
         if quantiles is not None:
@@ -763,17 +772,17 @@ class TimesFM25Adapter:
         # point_forecast  : (n_series, steps)
         # quantile_forecast: (n_series, steps, 10)  — idx 0 = mean, 1-9 = q0.1-q0.9
 
-        results: dict[str, np.ndarray] = {}
+        predictions: dict[str, np.ndarray] = {}
         for i, name in enumerate(series_names):
             if quantile_list is None:
                 # Point forecast: shape (steps, 1)
-                results[name] = np.asarray(point_forecast[i]).reshape(-1, 1)
+                predictions[name] = np.asarray(point_forecast[i]).reshape(-1, 1)
             else:
                 q_indices = [round(q * 10) for q in quantile_list]
                 qf = np.asarray(quantile_forecast[i])
-                results[name] = qf[:, q_indices]  # (steps, n_quantiles)
+                predictions[name] = qf[:, q_indices]  # (steps, n_quantiles)
 
-        return results
+        return predictions
 
     def _load_model(self) -> None:
         """
@@ -913,6 +922,7 @@ class MoiraiAdapter:
     `context_length`, discarding the future portion that future
     covariates require. Passing `exog` or `last_window_exog` issues an
     `IgnoredArgumentWarning` and the values are discarded.
+
     """
 
     SUPPORTED_QUANTILES: list[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -942,6 +952,7 @@ class MoiraiAdapter:
             is longer than `context_length` it is trimmed to this length;
             if it is shorter, all available observations are passed as-is.
             Must be a positive integer.
+        
         """
 
         if not isinstance(context_length, int) or context_length < 1:
@@ -950,10 +961,10 @@ class MoiraiAdapter:
                 f"Got {context_length!r}."
             )
 
-        self.model_id        = model_id
-        self._module         = module
-        self.context_length  = context_length
-        self._forecast_obj   = None
+        self.model_id            = model_id
+        self._module             = module
+        self.context_length      = context_length
+        self._forecast_obj       = None
         self._history            = None
         self._history_exog       = None
         self.is_fitted           = False
@@ -986,7 +997,9 @@ class MoiraiAdapter:
         Returns
         -------
         self : MoiraiAdapter
+
         """
+
         valid = {'model_id', 'context_length'}
         invalid = set(params) - valid
         if invalid:
@@ -1058,7 +1071,7 @@ class MoiraiAdapter:
         past_exog_dict: Any,
         future_exog_dict: Any,
         quantiles: list[float] | tuple[float] | None,
-        is_multiple_series: bool,
+        is_multiple_series: Any,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using Moirai-2.
@@ -1080,12 +1093,12 @@ class MoiraiAdapter:
             Not used, present here for API consistency by convention.
         quantiles : list of float or None
             Quantile levels. Must be a subset of `SUPPORTED_QUANTILES`.
-        is_multiple_series : bool
-            `True` when multiple series are provided.
+        is_multiple_series : Any
+            Not used, present here for API consistency by convention.
 
         Returns
         -------
-        dict numpy ndarray
+        predictions : dict[str, np.ndarray]
             Keys are series names. Each value is a 2-D array of shape
             `(steps, n_quantiles)`.
 
@@ -1125,11 +1138,11 @@ class MoiraiAdapter:
 
         raw = self._run_inference(inputs_list, steps)
 
-        results: dict[str, np.ndarray] = {}
+        predictions: dict[str, np.ndarray] = {}
         for i, name in enumerate(series_names):
-            results[name] = raw[i][q_indices, :].T  # (steps, n_quantiles)
+            predictions[name] = raw[i][q_indices, :].T  # (steps, n_quantiles)
 
-        return results
+        return predictions
 
     def _load_module(self) -> None:
         """
@@ -1218,15 +1231,17 @@ class MoiraiAdapter:
 
         Returns
         -------
-        numpy ndarray
+        raw : numpy ndarray
             Array of shape `(n_series, 9, steps)` containing quantile
             forecasts for the 9 fixed levels in `SUPPORTED_QUANTILES`
             order.
+        
         """
 
         self._ensure_forecast_obj()
         with self._forecast_obj.hparams_context(prediction_length=steps):
             raw = self._forecast_obj.predict(inputs_list)
+        
         return raw
 
 

@@ -112,6 +112,69 @@ df_exog_predict = pd.DataFrame(
 
 
 # ---------------------------------------------------------------------------
+# Multi-series fixtures (used by predict / predict_interval / predict_quantiles)
+# ---------------------------------------------------------------------------
+
+MULTISERIES_INDEX = pd.date_range("2020-01-01", periods=50, freq="ME")
+
+# Wide DataFrame (two series, short names)
+series_df = pd.DataFrame(
+    {
+        "s1": np.arange(50, dtype=float),
+        "s2": np.arange(50, 100, dtype=float),
+    },
+    index=MULTISERIES_INDEX,
+)
+
+# Same data as a dict
+series_dict = {
+    "s1": pd.Series(np.arange(50, dtype=float), index=MULTISERIES_INDEX, name="s1"),
+    "s2": pd.Series(
+        np.arange(50, 100, dtype=float), index=MULTISERIES_INDEX, name="s2"
+    ),
+}
+
+# Exog dict (one entry per series)
+exog_dict = {
+    "s1": pd.DataFrame(
+        {"feat_a": np.arange(50, dtype=float)}, index=MULTISERIES_INDEX
+    ),
+    "s2": pd.DataFrame(
+        {"feat_a": np.arange(50, dtype=float) * 2}, index=MULTISERIES_INDEX
+    ),
+}
+
+# Future exog for predict (5 steps)
+FORECAST_INDEX = pd.date_range("2024-07-31", periods=5, freq="ME")
+future_exog_df = pd.DataFrame(
+    {"feat_a": np.arange(70, 75, dtype=float)},
+    index=FORECAST_INDEX,
+)
+future_exog_dict = {
+    "s1": pd.DataFrame(
+        {"feat_a": np.arange(70, 75, dtype=float)}, index=FORECAST_INDEX
+    ),
+    "s2": pd.DataFrame(
+        {"feat_a": np.arange(70, 75, dtype=float) * 2}, index=FORECAST_INDEX
+    ),
+}
+
+# Last-window override (as DataFrame and dict)
+LW_INDEX = pd.date_range("2024-03-31", periods=20, freq="ME")
+lw_df = pd.DataFrame(
+    {
+        "s1": np.arange(50, 70, dtype=float),
+        "s2": np.arange(100, 120, dtype=float),
+    },
+    index=LW_INDEX,
+)
+lw_dict = {
+    "s1": pd.Series(np.arange(50, 70, dtype=float), index=LW_INDEX, name="s1"),
+    "s2": pd.Series(np.arange(100, 120, dtype=float), index=LW_INDEX, name="s2"),
+}
+
+
+# ---------------------------------------------------------------------------
 # FakePipeline – avoids torch / chronos-forecasting dependency in tests
 # ---------------------------------------------------------------------------
 

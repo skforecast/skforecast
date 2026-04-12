@@ -2233,8 +2233,8 @@ def _backtesting_foundation(
     series: pd.Series | pd.DataFrame | dict,
     cv: TimeSeriesFold,
     metric: str | Callable | list[str | Callable],
-    add_aggregated_metric: bool = True,
     levels: str | list[str] | None = None,
+    add_aggregated_metric: bool = True,
     exog: pd.Series | pd.DataFrame | dict | None = None,
     interval: list[float] | tuple[float] | None = None,
     quantiles: list[float] | None = None,
@@ -2271,24 +2271,31 @@ def _backtesting_foundation(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and
         `y_train` (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
+    levels : str, list, default None
+        Time series to be predicted and evaluated. Only used in multi-series
+        mode. If `None`, all series seen at fit time are used.
     add_aggregated_metric : bool, default True
-        If `True`, and multiple series (multi-series mode) are predicted,
-        the aggregated metrics (average, weighted average and pooled) are
-        also returned.
-    levels : str, list of str, default None
-        Series to predict and evaluate. Only used in multi-series mode. If
-        `None`, all series seen at fit time are used.
+        If `True`, and multiple series (`levels`) are predicted, the aggregated
+        metrics (average, weighted average and pooled) are also returned.
+
+        - 'average': the average (arithmetic mean) of all levels.
+        - 'weighted_average': the average of the metrics weighted by the number of
+        predicted values of each level.
+        - 'pooling': the values of all levels are pooled and then the metric is
+        calculated.
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variable/s included as predictor/s. Must cover the full
         time range of `series` including the forecast horizon of each fold.
     interval : list, tuple, default None
         Confidence of the prediction interval estimated. Sequence of two
-        percentiles to compute (e.g. `[10, 90]` for an 80 % interval).
-        Cannot be provided together with `quantiles`.
+        percentiles to compute, which must be between 0 and 100 inclusive.
+        For example, an 80 % interval should be specified as
+        `interval = [10, 90]`. Cannot be provided together with
+        `quantiles`.
     quantiles : list, default None
-        Sequence of quantile levels (between 0 and 1 inclusive) to estimate
-        (e.g. `[0.1, 0.5, 0.9]`). Cannot be provided together with
-        `interval`.
+        Sequence of quantile levels (between 0 and 1 inclusive) to estimate.
+        For example, `quantiles = [0.1, 0.5, 0.9]`. Cannot be provided
+        together with `interval`.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used
         for backtesting.
@@ -2302,11 +2309,42 @@ def _backtesting_foundation(
 
     Returns
     -------
-    metric_values : pandas DataFrame
+    metrics_levels : pandas DataFrame
         Value(s) of the metric(s).
     backtest_predictions : pandas DataFrame
-        Value of predictions and (optionally) prediction intervals or
-        quantiles.
+        Value of predictions. The DataFrame includes the following columns:
+
+        - fold: Indicates the fold number where the prediction was made.
+        - pred: Predicted values (when `interval` and `quantiles` are
+        `None`, or when `interval` is provided).
+
+        If `interval` is provided, additional columns are included:
+
+        - lower_bound: lower bound of the interval.
+        - upper_bound: upper bound of the interval.
+
+        If `quantiles` is provided, one column per quantile is included
+        (e.g. `q_0.1`, `q_0.5`, `q_0.9`).
+
+        In multi-series mode, a `level` column identifies the series.
+
+        Depending on the relation between `steps` and `fold_stride`, the
+        output may include repeated indexes (if `fold_stride < steps`) or
+        gaps (if `fold_stride > steps`). See Notes below for more details.
+
+    Notes
+    -----
+    Note on `fold_stride` vs. `steps`:
+
+    - If `fold_stride == steps`, test sets are placed back-to-back without
+    overlap. Each observation appears only once in the output DataFrame, so
+    the index is unique.
+    - If `fold_stride < steps`, test sets overlap. Multiple forecasts are
+    generated for the same observations and, therefore, the output DataFrame
+    contains repeated indexes.
+    - If `fold_stride > steps`, there are gaps between consecutive test sets.
+    Some observations in the series will not have associated predictions, so
+    the output DataFrame has non-contiguous indexes.
 
     """
 
@@ -2553,14 +2591,14 @@ def _backtesting_foundation(
 
     return metrics_levels, backtest_predictions
 
-
+# TODO: Unificar interval con quantiles
 def backtesting_foundation(
     forecaster: object,
     series: pd.Series | pd.DataFrame | dict,
     cv: TimeSeriesFold,
     metric: str | Callable | list[str | Callable],
-    add_aggregated_metric: bool = True,
     levels: str | list[str] | None = None,
+    add_aggregated_metric: bool = True,
     exog: pd.Series | pd.DataFrame | dict | None = None,
     interval: list[float] | tuple[float] | None = None,
     quantiles: list[float] | None = None,
@@ -2601,19 +2639,18 @@ def backtesting_foundation(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and
         `y_train` (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
+    levels : str, list, default None
+        Time series to be predicted and evaluated. Only used in multi-series
+        mode. If `None`, all series seen at fit time are used.
     add_aggregated_metric : bool, default True
-        If `True`, and multiple series (multi-series mode) are predicted,
-        the aggregated metrics (average, weighted average and pooled) are
-        also returned.
+        If `True`, and multiple series (`levels`) are predicted, the aggregated
+        metrics (average, weighted average and pooled) are also returned.
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the
         number of predicted values of each level.
         - 'pooling': the values of all levels are pooled and then the metric
         is calculated.
-    levels : str, list of str, default None
-        Series to predict and evaluate. Only used in multi-series mode. If
-        `None`, all series seen at fit time are used.
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `series` and should be aligned so that
@@ -2642,7 +2679,7 @@ def backtesting_foundation(
 
     Returns
     -------
-    metric_values : pandas DataFrame
+    metrics_levels : pandas DataFrame
         Value(s) of the metric(s).
     backtest_predictions : pandas DataFrame
         Value of predictions. The DataFrame includes the following columns:
@@ -2723,13 +2760,13 @@ def backtesting_foundation(
         suppress_warnings      = suppress_warnings,
     )
 
-    metric_values, backtest_predictions = _backtesting_foundation(
+    metrics_levels, backtest_predictions = _backtesting_foundation(
         forecaster            = forecaster,
         series                = series_norm,
         cv                    = cv,
         metric                = metric,
-        add_aggregated_metric = add_aggregated_metric,
         levels                = levels,
+        add_aggregated_metric = add_aggregated_metric,
         exog                  = exog,
         interval              = interval,
         quantiles             = quantiles,
@@ -2738,4 +2775,4 @@ def backtesting_foundation(
         suppress_warnings     = suppress_warnings,
     )
 
-    return metric_values, backtest_predictions
+    return metrics_levels, backtest_predictions

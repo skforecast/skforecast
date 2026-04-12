@@ -28,16 +28,14 @@ from ..utils import (
     expand_index,
 )
 
-# TODO: en todos los check_y añadir allow_nan = True
-
 
 class FoundationModel:
     """
     Lightweight user-facing interface for foundation time-series models.
 
-    Currently supports Amazon Chronos-2 only. For full skforecast
-    ecosystem integration (backtesting, model selection, etc.) use
-    `ForecasterFoundation` instead.
+    Currently supports Amazon Chronos-2, Google TimesFM 2.5 and Salesforce
+    Moirai-2. For full skforecast ecosystem integration (backtesting, model
+    selection, etc.) use `ForecasterFoundation` instead.
 
     Parameters
     ----------
@@ -50,6 +48,10 @@ class FoundationModel:
 
     Attributes
     ----------
+    adapter : object
+        The underlying adapter instance, instantiated automatically based on
+        the `model` prefix. The concrete type depends on the model — e.g.
+        `Chronos2Adapter` for `autogluon/chronos-*` models.
     context_length : int
         Maximum number of historical observations used as context. Mirrors
         `adapter.context_length`. Updated automatically when `set_params`
@@ -57,10 +59,35 @@ class FoundationModel:
     model_id : str
         HuggingFace model ID. Mirrors `adapter.model_id`. Updated
         automatically when `set_params` is called.
-    adapter : object
-        The underlying adapter instance, instantiated automatically based on
-        the `model` prefix. The concrete type depends on the model — e.g.
-        `Chronos2Adapter` for `autogluon/chronos-*` models.
+    allow_exogenous : bool
+        Whether the underlying adapter supports exogenous variables.
+    index_type_ : type
+        Type of index of the input used in training.
+    index_freq_ : str
+        Frequency of Index of the input used in training.
+    training_range_ : dict
+        First and last values of index of the data used during training for
+        each series.
+    series_names_in_ : list
+        Names of the series (levels) provided by the user during training.
+    exog_in_ : bool
+        If the model has been trained using exogenous variable/s.
+    exog_names_in_ : list
+        Names of the exogenous variables used during training.
+    exog_names_in_per_series_ : dict
+        Names of the exogenous variables used during training for each series.
+    is_multiple_series_ : bool
+        Whether the model was fitted with multiple series.
+    creation_date : str
+        Date of creation.
+    is_fitted : bool
+        Tag to identify if the model has been fitted (trained).
+    fit_date : str
+        Date of last fit.
+    skforecast_version : str
+        Version of skforecast library used to create the model.
+    python_version : str
+        Version of python used to create the model.
 
     Notes
     -----
@@ -76,19 +103,6 @@ class FoundationModel:
         model: str,
         **kwargs: Any,
     ) -> None:
-        """
-        Initialise the FoundationModels interface.
-
-        Parameters
-        ----------
-        model : str
-            HuggingFace model ID, e.g. "autogluon/chronos-2-small".
-        **kwargs :
-            Additional keyword arguments forwarded to the underlying adapter.
-            Valid keys depend on the adapter selected by `model`; see the
-            corresponding adapter class for the full parameter list.
-        
-        """
 
         adapter_cls                    = _resolve_adapter(model)
         self.adapter                   = adapter_cls(model_id=model, **kwargs)
@@ -114,7 +128,7 @@ class FoundationModel:
 
         Returns
         -------
-        bool
+        is_fitted : bool
             `True` after `fit` has been called at least once,
             `False` otherwise.
         """
@@ -127,7 +141,7 @@ class FoundationModel:
 
         Returns
         -------
-        bool
+        allow_exogenous : bool
             `True` if the adapter accepts and uses `exog`; `False` if it
             ignores covariates (e.g. TimesFM 2.5, Moirai-2).
         """
@@ -148,19 +162,20 @@ class FoundationModel:
 
         Parameters
         ----------
-        series : pd.Series, pd.DataFrame, or dict of pd.Series
+        series : pandas Series, pandas DataFrame, dict
             Training time series.
 
-            - `pd.Series`: single-series mode.
-            - Wide `pd.DataFrame` (each column = one series): multi-series
-              mode.
-            - `dict[str, pd.Series]`: multi-series mode; keys are series
-              names.
-        exog : pd.Series, pd.DataFrame, dict, or None
+            - If `pandas Series`: single-series mode.
+            - If wide `pandas DataFrame` (each column = one series):
+            multi-series mode.
+            - If `dict[str, pandas Series]`: multi-series mode; keys are
+            series names.
+        exog : pandas Series, pandas DataFrame, dict, default None
             Historical exogenous variables aligned to `series`.
 
-            - `pd.Series` or `pd.DataFrame`: broadcast to all series.
-            - `dict[str, pd.DataFrame | pd.Series | None]`: per-series.
+            - If `pandas Series` or `pandas DataFrame`: broadcast to all
+            series.
+            - If `dict`: per-series exogenous variables.
 
         Returns
         -------
@@ -246,14 +261,14 @@ class FoundationModel:
 
         Parameters
         ----------
-        exog : pandas Series, pandas DataFrame, dict, or None
+        exog : pandas Series, pandas DataFrame, dict, None
             Future exogenous variables for the forecast horizon, in any
             supported input format.
         series_names : list
             Series names that define the output dict keys.
         steps : int
             Number of steps ahead to forecast.
-        last_window : pandas Series, pandas DataFrame, dict, or None
+        last_window : pandas Series, pandas DataFrame, dict, None
             Context override passed to predict. Used to determine the
             reference end-timestamp for index alignment.
 
@@ -304,9 +319,9 @@ class FoundationModel:
 
         Parameters
         ----------
-        last_window_exog : pandas Series, pandas DataFrame, dict, or None
+        last_window_exog : pandas Series, pandas DataFrame, dict, None
             Historical exogenous variables corresponding to `last_window`.
-        last_window : pandas Series, pandas DataFrame, dict, or None
+        last_window : pandas Series, pandas DataFrame, dict, None
             Context override passed to predict. When None, stored
             adapter history is used instead.
         series_names : list
@@ -355,29 +370,33 @@ class FoundationModel:
         ) = None,
     ) -> pd.DataFrame:
         """
-        Generate predictions.
+        Predict n steps ahead.
 
         Parameters
         ----------
         steps : int
             Number of steps ahead to forecast.
-        exog : pd.Series, pd.DataFrame, dict, or None
+        exog : pandas Series, pandas DataFrame, dict, default None
             Future known exogenous variables for the forecast horizon.
-            Broadcast or per-series dict; see `Chronos2Adapter.predict`.
-        quantiles : list of float, optional
-            Quantile levels to return, e.g. `[0.1, 0.5, 0.9]`. If None,
+
+            - If `pandas Series` or `pandas DataFrame`: broadcast to all
+            series.
+            - If `dict`: per-series exogenous variables.
+        quantiles : list, tuple, default None
+            Quantile levels to return, e.g. `[0.1, 0.5, 0.9]`. If `None`,
             returns a point forecast (median).
-        last_window : pd.Series, pd.DataFrame, dict, or None
+        last_window : pandas Series, pandas DataFrame, dict, default None
             Override the stored history with this window.
 
-            - `pd.Series`: single-series override.
-            - Wide `pd.DataFrame` or `dict[str, pd.Series]`: multi-series override.
-        last_window_exog : pd.Series, pd.DataFrame, dict, or None
+            - If `pandas Series`: single-series override.
+            - If wide `pandas DataFrame` or `dict[str, pandas Series]`:
+            multi-series override.
+        last_window_exog : pandas Series, pandas DataFrame, dict, default None
             Historical exog corresponding to `last_window`.
 
         Returns
         -------
-        predictions : pd.DataFrame
+        predictions : pandas DataFrame
             Always a long-format DataFrame. Point forecast: columns
             `["level", "pred"]`. Quantile forecast: columns
             `["level", "q_0.1", "q_0.5", ...]`. The index repeats each
@@ -457,17 +476,20 @@ class FoundationModel:
                              series_names     = series_names,
                          )
 
-        # Trim history and past exog to context_length
-        history_dict = {
-            name: s.iloc[-self.context_length :]
-            for name, s in history_dict.items()
-        }
-        past_exog_dict = {
-            name: (
-                e.iloc[-self.context_length :] if e is not None else None
-            )
-            for name, e in past_exog_dict.items()
-        }
+        # Trim history and past exog to context_length. Stored history
+        # is already trimmed in adapter.fit(), so only trim when the
+        # user provides a custom last_window.
+        if last_window is not None:
+            history_dict = {
+                name: s.iloc[-self.context_length :]
+                for name, s in history_dict.items()
+            }
+            past_exog_dict = {
+                name: (
+                    e.iloc[-self.context_length :] if e is not None else None
+                )
+                for name, e in past_exog_dict.items()
+            }
 
         is_multiple_series = len(series_names) > 1
 
@@ -481,16 +503,20 @@ class FoundationModel:
                               is_multiple_series = is_multiple_series,
                           )
 
-        # TODO: THe output dataframe have freq? Maybe only when is one series?
         # Build long-format DataFrame from raw predictions
         per_series_indices = [
             expand_index(history_dict[name].index, steps=steps)
             for name in series_names
         ]
-        long_index = np.column_stack(
-            [np.asarray(idx) for idx in per_series_indices]
-        ).ravel()
-        level_col = np.tile(series_names, steps)
+
+        if len(series_names) == 1:
+            long_index = per_series_indices[0]
+            level_col = np.repeat(series_names, steps)
+        else:
+            long_index = np.column_stack(
+                [np.asarray(idx) for idx in per_series_indices]
+            ).ravel()
+            level_col = np.tile(series_names, steps)
 
         if quantiles is None:
             # Point forecast (median): single "pred" column
@@ -517,21 +543,23 @@ class FoundationModel:
         """
         Get parameters for this estimator (sklearn-compatible).
 
-        Required so that `sklearn.base.clone` can create an unfitted copy
-        of this object, which is used internally by `deepcopy_forecaster`
-        during backtesting. The pre-loaded pipeline is intentionally excluded
-        so that clones are created without copying heavy model weights; the
-        pipeline is reloaded lazily on the first `predict` call.
-
         Parameters
         ----------
-        deep : Ignored
+        deep : Any, default None
             Not used, present here for API consistency by convention.
 
         Returns
         -------
         params : dict
             Parameter names mapped to their current values.
+
+        Notes
+        -----
+        Required so that `sklearn.base.clone` can create an unfitted copy
+        of this object, which is used internally by `deepcopy_forecaster`
+        during backtesting. The pre-loaded pipeline is intentionally excluded
+        so that clones are created without copying heavy model weights; the
+        pipeline is reloaded lazily on the first `predict` call.
         
         """
 
@@ -555,6 +583,7 @@ class FoundationModel:
         Returns
         -------
         self : FoundationModel
+            The same object with updated parameters.
 
         """
 

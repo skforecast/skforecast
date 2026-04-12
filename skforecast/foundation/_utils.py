@@ -22,25 +22,27 @@ def check_preprocess_series_foundation(
 ) -> tuple[dict[str, pd.Series], dict[str, pd.Index]]:
     """
     Normalize and validate any supported series format to
-    ``dict[str, pd.Series]``.
+    `dict[str, pandas Series]`.
 
-    A ``pd.Series`` is wrapped in a one-element dict keyed by its
-    ``.name`` (defaulting to ``'y'``) before being passed to
-    ``check_preprocess_series``. All other types are forwarded
+    A `pandas Series` is wrapped in a one-element dict keyed by its
+    `.name` (defaulting to `'y'`) before being passed to
+    `check_preprocess_series`. All other types are forwarded
     directly.
 
     Parameters
     ----------
-    series : pd.Series, pd.DataFrame, or dict of pd.Series
+    series : pandas Series, pandas DataFrame, dict
         Input to normalize and validate.
 
     Returns
     -------
-    series_dict : dict[str, pd.Series]
+    series_dict : dict
         Normalized and validated series.
-    series_indexes : dict[str, pd.Index]
+    series_indexes : dict
         Index of each series.
+    
     """
+
     if isinstance(series, pd.Series):
         name = series.name if series.name is not None else 'y'
         series = {name: series.rename(name)}
@@ -60,28 +62,31 @@ def normalize_exog_to_dict(
     """
     Normalize any supported exog format to a per-series dict.
 
-    This function is **idempotent**: a ``dict`` input is returned
-    immediately (with missing series keys filled as ``None``).
-    ``None`` is broadcast as ``{name: None for name in series_names}``.
-    A flat ``pd.Series`` or ``pd.DataFrame`` is broadcast identically
+    This function is **idempotent**: a `dict` input is returned
+    immediately (with missing series keys filled as `None`).
+    `None` is broadcast as `{name: None for name in series_names}`.
+    A flat `pandas Series` or `pandas DataFrame` is broadcast identically
     to every series.
 
     Parameters
     ----------
-    exog : pd.Series, pd.DataFrame, dict, or None
+    exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables to normalize.
-    series_names : list of str
+    series_names : list
         Series names that define the output keys.
 
     Returns
     -------
-    dict[str, pd.DataFrame | pd.Series | None]
-        Per-series exog dict with exactly the keys in ``series_names``.
+    exog_dict : dict
+        Per-series exog dict with exactly the keys in `series_names`.
+    
     """
+
     if exog is None:
         return {name: None for name in series_names}
     if isinstance(exog, dict):
         return {name: exog.get(name, None) for name in series_names}
+    
     # broadcast flat Series or wide DataFrame to every series
     return {name: exog for name in series_names}
 
@@ -93,34 +98,36 @@ def check_preprocess_exog_type(
     """
     Validate `exog` and normalise long-format MultiIndex DataFrames.
 
-    Flat-index `pd.Series` and wide `pd.DataFrame` are returned
-    unchanged — they are broadcast to all series by the adapter.  A
-    `dict` is returned unchanged.  A long-format `pd.Series` or
-    `pd.DataFrame` (MultiIndex, first level = series IDs, second level
-    = `DatetimeIndex`) is converted to a `dict[str, pd.DataFrame]`
+    Flat-index `pandas Series` and wide `pandas DataFrame` are returned
+    unchanged — they are broadcast to all series by the adapter. A
+    `dict` is returned unchanged. A long-format `pandas Series` or
+    `pandas DataFrame` (MultiIndex, first level = series IDs, second level
+    = `DatetimeIndex`) is converted to a `dict[str, pandas DataFrame]`
     and an `InputTypeWarning` is issued.
 
     Parameters
     ----------
-    exog : pd.Series, pd.DataFrame, dict, or None
+    exog : pandas Series, pandas DataFrame, dict, default None
         Input to validate and normalise.
-    series_names_in_ : list of str, optional
+    series_names_in_ : list, default None
         Series names seen at fit time. When provided, a
         `MissingExogWarning` is issued for any series that has no
         corresponding entry in a long-format `exog`.
 
     Returns
     -------
-    pd.Series, pd.DataFrame, dict, or None
+    exog : pandas Series, pandas DataFrame, dict, or None
         Normalised exog. Guaranteed NOT to be a long-format DataFrame.
 
     Raises
     ------
     TypeError
         If `exog` is a long-format DataFrame whose second MultiIndex level
-        is not a `pandas.DatetimeIndex`, or if `exog` is an unsupported
+        is not a `pandas DatetimeIndex`, or if `exog` is an unsupported
         type.
+    
     """
+
     if exog is None or isinstance(exog, dict):
         return exog
 
@@ -175,13 +182,29 @@ def check_preprocess_exog_type(
 
     raise TypeError(
         "`exog` must be a pandas Series, a pandas DataFrame, or a "
-        f"dict[str, pd.Series | pd.DataFrame | None]. Got {type(exog)}."
+        f"dict. Got {type(exog)}."
     )
 
 
-def col_names(e: pd.Series | pd.DataFrame) -> list[str]:
-    """Return column names of a DataFrame, or the name of a Series, as a list."""
-    return e.columns.to_list() if isinstance(e, pd.DataFrame) else [e.name]
+def col_names(exog: pd.Series | pd.DataFrame) -> list[str]:
+    """
+    Return column names of a DataFrame, or the name of a Series, as a list.
+
+    Parameters
+    ----------
+    exog : pandas Series, pandas DataFrame
+        Input object to extract column names from.
+
+    Returns
+    -------
+    names : list
+        Column names if `exog` is a DataFrame; the Series name (as a
+        single-element list) if `exog` is a Series.
+    """
+    if isinstance(exog, pd.DataFrame):
+        return exog.columns.to_list()
+    name = exog.name if exog.name is not None else 'y'
+    return [name]
 
 
 def assert_aligned(
@@ -191,8 +214,25 @@ def assert_aligned(
     ref_label: str,
 ) -> None:
     """
-    Assert that `target` and `ref` have the same length and, when `ref` uses
-    a `DatetimeIndex`, that their index values are identical.
+    Assert that `target` and `ref` have the same length and aligned indices.
+
+    When `ref` uses a `DatetimeIndex`, verifies that their index values
+    are identical.
+
+    Parameters
+    ----------
+    target : pandas Series, pandas DataFrame
+        The object to validate.
+    ref : pandas Series, pandas DataFrame
+        The reference object to compare against.
+    target_label : str
+        Human-readable label for `target`, used in error messages.
+    ref_label : str
+        Human-readable label for `ref`, used in error messages.
+
+    Returns
+    -------
+    None
 
     Raises
     ------
@@ -218,210 +258,6 @@ def assert_aligned(
         )
 
 
-def align_exog_to_series(
-    series: pd.Series | pd.DataFrame | dict[str, pd.Series],
-    exog: (
-        pd.Series
-        | pd.DataFrame
-        | dict[str, pd.Series | pd.DataFrame | None]
-        | None
-    ),
-    is_multiseries: bool,
-) -> pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame | None] | None:
-    """
-    Align `exog` to the index of `series` by reindexing, filling any missing
-    positions with NaN.
-
-    Only acts when `series` has a `DatetimeIndex`. For `RangeIndex` inputs
-    the function is a no-op and returns `exog` unchanged.
-
-    When `exog` is a broadcast ``pd.Series`` or ``pd.DataFrame`` and `series`
-    is a ``dict`` with heterogeneous end dates, the broadcast exog is expanded
-    to a per-series ``dict`` so that each series gets its own correctly aligned
-    copy.
-
-    Parameters
-    ----------
-    series : pd.Series, pd.DataFrame, or dict of pd.Series
-        Training time series. The index of each series is the reference.
-    exog : pd.Series, pd.DataFrame, dict, or None
-        Exogenous variables to align.
-    is_multiseries : bool
-        Whether the forecaster is operating in multi-series mode.
-
-    Returns
-    -------
-    pd.Series, pd.DataFrame, dict, or None
-        Exog reindexed to each series index. Positions not present in the
-        original `exog` are filled with NaN and a ``MissingValuesWarning``
-        is issued.
-    """
-
-    if exog is None:
-        return None
-
-    def _reindex_one(
-        e: pd.Series | pd.DataFrame,
-        target_index: pd.DatetimeIndex,
-        label: str,
-    ) -> pd.Series | pd.DataFrame:
-        """Reindex a single exog to `target_index`, warn if NaN is introduced."""
-        if e.index.equals(target_index):
-            return e
-        n_missing = int((~target_index.isin(e.index)).sum())
-        aligned = e.reindex(target_index)
-        if n_missing > 0:
-            warnings.warn(
-                f"`align_exog_to_series`: `exog`{label} has been reindexed to "
-                f"match the `series` index. {n_missing} out of "
-                f"{len(target_index)} positions have been filled with NaN.",
-                MissingValuesWarning,
-                stacklevel=2,
-            )
-        return aligned
-
-    if not is_multiseries:
-        # Single-series: series is pd.Series
-        if not isinstance(series.index, pd.DatetimeIndex):
-            return exog
-        return _reindex_one(exog, series.index, "")
-
-    # Multi-series: build series dict for index lookup
-    if isinstance(series, pd.DataFrame):
-        series_dict: dict[str, pd.Series] = {
-            col: series[col] for col in series.columns
-        }
-    else:
-        series_dict = series
-
-    first_series = next(iter(series_dict.values()))
-    if not isinstance(first_series.index, pd.DatetimeIndex):
-        return exog
-
-    if isinstance(exog, dict):
-        # Per-series exog: reindex each entry to its corresponding series index
-        return {
-            name: (
-                _reindex_one(e, series_dict[name].index, f" for series '{name}'")
-                if (e is not None and name in series_dict)
-                else e
-            )
-            for name, e in exog.items()
-        }
-    else:
-        # Broadcast exog (pd.Series or pd.DataFrame)
-        if isinstance(series, pd.DataFrame):
-            # All columns share the same index — reindex once, keep same type
-            return _reindex_one(exog, series.index, "")
-        else:
-            # dict series with potentially heterogeneous end dates:
-            # expand broadcast to per-series dict
-            return {
-                name: _reindex_one(exog, s.index, f" for series '{name}'")
-                for name, s in series_dict.items()
-            }
-
-
-def validate_exog_fit(
-    series: pd.Series | pd.DataFrame | dict[str, pd.Series],
-    exog: (
-        pd.Series
-        | pd.DataFrame
-        | dict[str, pd.Series | pd.DataFrame | None]
-        | None
-    ),
-    is_multiseries: bool,
-) -> dict[str, list[str] | None]:
-    """
-    Validate `exog` against `series` at fit time and return a per-series
-    column-name mapping.
-
-    For single-series mode checks that the length of `exog` matches `series`
-    and, when both have a `DatetimeIndex`, that their indices are identical.
-    For multi-series mode these checks are applied independently to each
-    (series, exog) pair. A `MissingExogWarning` is issued for any series
-    in `series` that has no corresponding entry in a dict `exog`.
-
-    Parameters
-    ----------
-    series : pd.Series, pd.DataFrame, or dict of pd.Series
-        Training time series. `pd.DataFrame` is treated as a wide-format
-        multi-series input (one column per series).
-    exog : pd.Series, pd.DataFrame, dict, or None
-        Historical exogenous variables. `None` is accepted and returns a
-        mapping of all series names to `None`.
-    is_multiseries : bool
-        Whether the forecaster is operating in multi-series mode.
-
-    Returns
-    -------
-    dict[str, list[str] | None]
-        Mapping of series name → list of exog column names seen at fit time,
-        or `None` if no exog was provided for that series.
-
-    Raises
-    ------
-    ValueError
-        If the length of `exog` (or any per-series value) does not match the
-        corresponding series length, or if their `DatetimeIndex` values differ.
-    """
-
-    if not is_multiseries:
-        series_name = series.name if series.name is not None else 'y'
-        if exog is None:
-            return {series_name: None}
-
-        assert_aligned(exog, series, "`exog`", "`series`")
-        return {series_name: col_names(exog)}
-
-    else:
-        # Normalise series to dict[str, pd.Series]
-        if isinstance(series, pd.DataFrame):
-            series_dict: dict[str, pd.Series] = {
-                col: series[col] for col in series.columns
-            }
-        else:
-            series_dict = series
-
-        if exog is None:
-            return {name: None for name in series_dict}
-
-        # Normalise exog: broadcast (pd.Series / pd.DataFrame) → expand to dict
-        if not isinstance(exog, dict):
-            exog_dict_for_val: dict[str, pd.Series | pd.DataFrame | None] = {
-                name: exog for name in series_dict
-            }
-        else:
-            exog_dict_for_val = exog
-
-        # Warn about series that have no exog entry in the dict
-        if isinstance(exog, dict):
-            missing = [
-                name
-                for name in series_dict
-                if name not in exog or exog[name] is None
-            ]
-            if missing:
-                warnings.warn(
-                    f"No `exog` for the following series: {missing}. "
-                    f"No exogenous variables will be stored for these series.",
-                    MissingExogWarning,
-                    stacklevel=4,
-                )
-
-        exog_names_per_series: dict[str, list[str] | None] = {}
-        for name, s in series_dict.items():
-            e = exog_dict_for_val.get(name, None)
-            if e is None:
-                exog_names_per_series[name] = None
-                continue
-
-            assert_aligned(e, s, f"`exog` for series '{name}'", f"series['{name}']")
-            exog_names_per_series[name] = col_names(e)
-
-        return exog_names_per_series
-
-
 def validate_last_window_exog(
     last_window_exog: (
         pd.Series
@@ -442,15 +278,22 @@ def validate_last_window_exog(
 
     Parameters
     ----------
-    last_window_exog : pd.Series, pd.DataFrame, dict, or None
+    last_window_exog : pandas Series, pandas DataFrame, dict, default None
         Historical exogenous variables for the context window.
-    last_window : pd.Series, pd.DataFrame, dict, or None
+    last_window : pandas Series, pandas DataFrame, dict, default None
         Context window override passed to the predict method.
     exog_in_ : bool
         Whether the forecaster was trained with exogenous variables.
 
+    Returns
+    -------
+    None
+
     Raises
     ------
+    TypeError
+        If `last_window_exog` is not a pandas Series, pandas DataFrame,
+        dict, or None.
     ValueError
         If `last_window_exog` length or `DatetimeIndex` does not match
         `last_window` for any series.
@@ -496,7 +339,11 @@ def validate_last_window_exog(
             # Broadcast: same exog for all context windows
             lwe_dict = {name: last_window_exog for name in lw_dict}
         else:
-            lwe_dict = {}
+            raise TypeError(
+                "`last_window_exog` must be a pandas Series, a pandas "
+                "DataFrame, a dict, or None. "
+                f"Got {type(last_window_exog)}."
+            )
 
         for name, lw in lw_dict.items():
             lwe = lwe_dict.get(name, None)
@@ -518,10 +365,10 @@ def validate_last_window_exog(
 
 
 def align_exog_single(
-    e: pd.Series | pd.DataFrame,
+    exog: pd.Series | pd.DataFrame,
     steps: int,
-    ref_end,
-    index_freq_,
+    ref_end: object,
+    index_freq_: object,
     label: str,
 ) -> pd.Series | pd.DataFrame:
     """
@@ -534,32 +381,31 @@ def align_exog_single(
 
     Parameters
     ----------
-    e : pd.Series or pd.DataFrame
+    exog : pandas Series, pandas DataFrame
         Exog to align.
     steps : int
         Forecast horizon.
-    ref_end : scalar
-        Last observed index value (last entry of `last_window` or training range).
-    index_freq_ : DateOffset, int, or None
+    ref_end : object
+        Last observed index value (last entry of `last_window` or training
+        range).
+    index_freq_ : DateOffset, int, default None
         Index frequency.
     label : str
-        Human-readable label for `e`, used in error and warning messages.
+        Human-readable label for `exog`, used in error and warning messages.
 
     Returns
     -------
-    pd.Series or pd.DataFrame
+    exog_aligned : pandas Series, pandas DataFrame
         Aligned exog with exactly `steps` rows.
     """
-    if isinstance(e.index, pd.DatetimeIndex) and index_freq_ is not None:
+    if isinstance(exog.index, pd.DatetimeIndex) and index_freq_ is not None:
         expected_idx = pd.date_range(
             start=ref_end + index_freq_, periods=steps, freq=index_freq_
         )
-        e_aligned = e.reindex(expected_idx)
-        has_nans = (
-            e_aligned.isnull().values.any()
-            if isinstance(e_aligned, pd.DataFrame)
-            else e_aligned.isnull().any()
-        )
+        exog_aligned = exog.reindex(expected_idx)
+        has_nans = exog_aligned.isnull().any()
+        if isinstance(exog_aligned, pd.DataFrame):
+            has_nans = has_nans.any()
         if has_nans:
             warnings.warn(
                 f"{label} has been reindexed to match the expected forecast "
@@ -567,23 +413,23 @@ def align_exog_single(
                 MissingValuesWarning,
                 stacklevel=4,
             )
-        return e_aligned
+        return exog_aligned
     else:
-        if len(e) < steps:
+        if len(exog) < steps:
             raise ValueError(
-                f"{label} must have at least {steps} values. Got {len(e)}."
+                f"{label} must have at least {steps} values. Got {len(exog)}."
             )
-        if isinstance(e.index, pd.RangeIndex) and index_freq_ is not None:
+        if isinstance(exog.index, pd.RangeIndex) and index_freq_ is not None:
             expected_start = ref_end + index_freq_
-            if e.index[0] != expected_start:
+            if exog.index[0] != expected_start:
                 raise ValueError(
                     f"To make predictions {label} must start one step ahead of "
                     "`last_window`.\n"
                     f"    `last_window` ends at: {ref_end}.\n"
-                    f"    {label} starts at: {e.index[0]}.\n"
+                    f"    {label} starts at: {exog.index[0]}.\n"
                     f"    Expected index: {expected_start}."
                 )
-        return e.iloc[:steps]
+        return exog.iloc[:steps]
 
 
 def validate_exog_predict(
@@ -599,10 +445,11 @@ def validate_exog_predict(
     exog_names_in_per_series_: dict[str, list[str] | None] | None = None,
 ) -> pd.Series | pd.DataFrame | None:
     """
-    Validate exog presence, column names, and align to the expected forecast horizon.
+    Validate exog presence, column names, and align to the expected forecast
+    horizon.
 
-    Handles both flat (`pd.Series` / `pd.DataFrame`) and dict-type exog
-    (multi-series mode).
+    Handles both flat (`pandas Series` / `pandas DataFrame`) and dict-type
+    exog (multi-series mode).
 
     Presence mismatches (exog provided but not trained with, or vice-versa)
     always raise a `ValueError`.
@@ -625,38 +472,40 @@ def validate_exog_predict(
 
     Parameters
     ----------
-    exog : pd.Series, pd.DataFrame, or None
+    exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables provided to a predict method.
     steps : int
         Number of steps to forecast.
-    last_window : pd.Series, pd.DataFrame, dict, or None
+    last_window : pandas Series, pandas DataFrame, dict, default None
         Context override passed to the same predict call. Used to determine
         the reference end-timestamp for index alignment.
-    exog_names_in_ : list of str
+    exog_names_in_ : list
         Names of the exogenous variables used during training.
     exog_in_ : bool
         Whether the forecaster was trained with exogenous variables.
-    index_freq_ : DateOffset or int
+    index_freq_ : DateOffset, int
         Frequency of the training index.
     is_multiseries : bool
         Whether the forecaster was trained in multi-series mode.
-    training_range_ : pandas Index or dict
+    training_range_ : dict
         Training range stored by the forecaster.
-    series_names_in_ : list of str
+    series_names_in_ : list
         Names of all series seen during training.
-    exog_names_in_per_series_ : dict[str, list[str] | None], optional
-        Per-series exog column names stored at fit time. When provided, column
-        validation for dict exog uses the series-specific expected columns
-        instead of the global union in `exog_names_in_`. Entries mapping to
-        `None` indicate that the series had no exog at fit time.
+    exog_names_in_per_series_ : dict, default None
+        Per-series exog column names stored at fit time. When provided,
+        column validation for dict exog uses the series-specific expected
+        columns instead of the global union in `exog_names_in_`. Entries
+        mapping to `None` indicate that the series had no exog at fit time.
 
     Returns
     -------
-    pd.Series, pd.DataFrame, dict, or None
+    exog : pandas Series, pandas DataFrame, dict, None
         The (possibly reindexed / NaN-filled) exog aligned to the forecast
         horizon. For dict exog, each per-series value is aligned
         independently and the dict is returned with updated values.
+    
     """
+
     # Presence checks (unrecoverable — always raise)
     if exog is None and exog_in_:
         raise ValueError(
@@ -680,8 +529,8 @@ def validate_exog_predict(
         ]
         if not_valid:
             raise TypeError(
-                "All values in the `exog` dict must be a pd.Series, a "
-                f"pd.DataFrame, or None. Invalid keys: {not_valid}."
+                "All values in the `exog` dict must be a pandas Series, a "
+                f"pandas DataFrame, or None. Invalid keys: {not_valid}."
             )
 
         missing_series = [n for n in series_names_in_ if n not in exog]
@@ -747,6 +596,13 @@ def validate_exog_predict(
                 f"Expected {exog_names_in_}. "
                 f"Got {exog.columns.to_list()}."
             )
+        extra_cols = set(exog.columns) - set(exog_names_in_)
+        if extra_cols:
+            raise ValueError(
+                f"`exog` contains columns not seen during training: "
+                f"{sorted(extra_cols)}. "
+                f"Expected columns: {exog_names_in_}."
+            )
     else:  # pd.Series
         if exog.name not in exog_names_in_:
             raise ValueError(
@@ -765,12 +621,8 @@ def validate_exog_predict(
         )
         if first_series is not None:
             ref_end = first_series.index[-1]
-        elif not is_multiseries:
-            ref_end = training_range_[1]
         else:
             ref_end = training_range_[series_names_in_[0]][1]
-    elif not is_multiseries:
-        ref_end = training_range_[1]
     else:
         ref_end = training_range_[series_names_in_[0]][1]
 

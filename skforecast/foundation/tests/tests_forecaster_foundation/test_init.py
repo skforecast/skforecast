@@ -16,48 +16,37 @@ from .fixtures_forecaster_foundation import make_forecaster, FakePipeline
 # Tests __init__
 # ==============================================================================
 
-def test_init_TypeError_when_estimator_is_not_FoundationModel():
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(), Chronos2Adapter(model_id="autogluon/chronos-2-small")],
+    ids=lambda e: f"estimator: {type(e).__name__}",
+)
+def test_init_TypeError_when_estimator_is_not_FoundationModel(estimator):
     """
     Raise TypeError if `estimator` is not a FoundationModel instance.
     """
     err_msg = re.escape(
         f"`estimator` must be a `FoundationModel` instance. "
-        f"Got {type(LinearRegression())}."
+        f"Got {type(estimator)}."
     )
     with pytest.raises(TypeError, match=err_msg):
-        ForecasterFoundation(estimator=LinearRegression())
+        ForecasterFoundation(estimator=estimator)
 
 
-def test_init_TypeError_when_estimator_is_plain_Chronos2Adapter():
+def test_init_estimator_derived_attributes_correctly_stored():
     """
-    Raise TypeError if `estimator` is a raw Chronos2Adapter (not FoundationModel).
-    """
-    adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
-    err_msg = re.escape(
-        f"`estimator` must be a `FoundationModel` instance. "
-        f"Got {type(adapter)}."
-    )
-    with pytest.raises(TypeError, match=err_msg):
-        ForecasterFoundation(estimator=adapter)
-
-
-def test_init_stores_estimator():
-    """
-    The estimator attribute must be the exact FoundationModel instance passed in.
-    """
-    estimator = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
-    forecaster = ForecasterFoundation(estimator=estimator)
-    assert forecaster.estimator is estimator
-
-
-def test_init_window_size_uses_context_length_when_set():
-    """
-    window_size is set to adapter.context_length when it is not None.
+    estimator, context_length, model_id, and window_size are correctly
+    derived from the FoundationModel instance.
     """
     estimator = FoundationModel(
         "autogluon/chronos-2-small", context_length=128, pipeline=FakePipeline()
     )
     forecaster = ForecasterFoundation(estimator=estimator)
+
+    assert forecaster.estimator is estimator
+    assert forecaster.context_length == 128
+    assert forecaster.model_id == "autogluon/chronos-2-small"
+    assert forecaster.model_id == estimator.model_id
     assert forecaster.window_size == 128
 
 
@@ -80,68 +69,42 @@ def test_init_default_attributes_before_fit():
     assert forecaster.fit_date is None
 
 
-def test_init_context_length_attribute_set_from_estimator():
+@pytest.mark.parametrize(
+    "forecaster_id, expected",
+    [(None, None), ("my_forecaster", "my_forecaster")],
+    ids=lambda v: f"forecaster_id={v}",
+)
+def test_init_forecaster_id_correctly_stored(forecaster_id, expected):
     """
-    context_length attribute is set from estimator.context_length.
+    forecaster_id is stored exactly as provided (or defaults to None).
     """
     estimator = FoundationModel(
-        "autogluon/chronos-2-small", context_length=128, pipeline=FakePipeline()
+        "autogluon/chronos-2-small", pipeline=FakePipeline()
     )
-    forecaster = ForecasterFoundation(estimator=estimator)
-    assert forecaster.context_length == 128
-
-
-def test_init_forecaster_id_default_is_None():
-    """
-    forecaster_id defaults to None when not provided.
-    """
-    forecaster = make_forecaster()
-    assert forecaster.forecaster_id is None
-
-
-def test_init_forecaster_id_stored_correctly():
-    """
-    forecaster_id is stored exactly as provided.
-    """
     forecaster = ForecasterFoundation(
-        estimator=FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline()),
-        forecaster_id="my_forecaster",
+        estimator=estimator, forecaster_id=forecaster_id
     )
-    assert forecaster.forecaster_id == "my_forecaster"
+    assert forecaster.forecaster_id == expected
 
 
-def test_init_metadata_attributes():
+def test_init_metadata_and_tags_correctly_stored():
     """
-    Metadata attributes (skforecast_version, python_version, creation_date) are set.
+    Metadata attributes (skforecast_version, python_version, creation_date)
+    and __skforecast_tags__ are set with expected keys and values.
     """
     from skforecast import __version__ as sfv
 
     forecaster = make_forecaster()
 
+    # Metadata
     assert forecaster.skforecast_version == sfv
     assert forecaster.python_version == sys.version.split(" ")[0]
     assert forecaster.creation_date is not None
 
-
-def test_init_skforecast_tags():
-    """
-    __skforecast_tags__ contains the expected keys and values.
-    """
-    forecaster = make_forecaster()
+    # Tags
     tags = forecaster.__skforecast_tags__
-
     assert tags["forecaster_name"] == "ForecasterFoundation"
     assert tags["supports_exog"] is True
     assert tags["supports_lags"] is False
     assert tags["supports_probabilistic"] is True
     assert "quantile_native" in tags["probabilistic_methods"]
-
-
-def test_init_model_id_attribute_set_from_estimator():
-    """
-    model_id attribute mirrors estimator.model_id.
-    """
-    estimator = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
-    forecaster = ForecasterFoundation(estimator=estimator)
-    assert forecaster.model_id == "autogluon/chronos-2-small"
-    assert forecaster.model_id == estimator.model_id
