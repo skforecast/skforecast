@@ -26,7 +26,7 @@ class Chronos2Adapter:
     context_length : int, default 2048
         Maximum number of historical observations to use as context. At fit
         time only the last `context_length` observations are stored. At
-        predict time, if `last_window` is longer than `context_length` it is
+        predict time, if `context` is longer than `context_length` it is
         trimmed to this length; if it is shorter, all available observations
         are used as-is. Defaults to 2048, which matches the context window of
         all current Chronos-2 variants. Must be a positive integer.
@@ -46,6 +46,10 @@ class Chronos2Adapter:
     ----------
     model_id : str
         HuggingFace model ID.
+    context_ : dict[str, pandas Series]
+        Stored training series after fitting.
+    context_exog_ : dict[str, pandas DataFrame or Series or None]
+        Stored historical exogenous variables after fitting.
     context_length : int
         Maximum number of historical observations used as context.
     predict_kwargs : dict
@@ -58,12 +62,10 @@ class Chronos2Adapter:
         Whether cross-series learning is enabled.
     is_fitted : bool
         Whether the adapter has been fitted.
-    is_multiple_series_ : bool
-        Whether the adapter was fitted with multiple series.
 
     """
 
-    allow_exogenous: bool = True
+    allow_exog: bool = True
 
     def __init__(
         self,
@@ -90,7 +92,7 @@ class Chronos2Adapter:
             Maximum number of historical observations to retain as context.
             At `fit` time only the last `context_length` observations of
             `series` (and `exog`) are stored. At `predict` time, if
-            `last_window` is longer than `context_length` it is trimmed to
+            `context` is longer than `context_length` it is trimmed to
             this length before inference; if it is shorter, all available
             observations are passed as-is and the model handles reduced
             context gracefully. Defaults to 2048, which matches the context
@@ -118,17 +120,17 @@ class Chronos2Adapter:
                 f"`context_length` must be a positive integer. Got {context_length!r}."
             )
 
-        self.model_id            = model_id
-        self._pipeline           = pipeline
-        self._history            = None
-        self._history_exog       = None
-        self.context_length      = context_length
-        self.predict_kwargs      = predict_kwargs or {}
-        self.device_map          = device_map
-        self.torch_dtype         = torch_dtype
-        self.cross_learning      = cross_learning
-        self.is_fitted           = False
-        self.is_multiple_series_ = False
+        # TODO: Ver qué atributos podemos sacar de dentro del adapter
+        self.model_id       = model_id
+        self._pipeline      = pipeline
+        self.context_       = None
+        self.context_exog_  = None
+        self.context_length = context_length
+        self.predict_kwargs = predict_kwargs or {}
+        self.device_map     = device_map
+        self.torch_dtype    = torch_dtype
+        self.cross_learning = cross_learning
+        self.is_fitted      = False
 
     def get_params(self) -> dict:
         """
@@ -198,9 +200,8 @@ class Chronos2Adapter:
 
     def fit(
         self,
-        series_dict: dict[str, pd.Series],
-        exog_dict: dict[str, pd.DataFrame | pd.Series | None],
-        is_multiple_series: bool,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None],
     ) -> Chronos2Adapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -211,12 +212,10 @@ class Chronos2Adapter:
 
         Parameters
         ----------
-        series_dict : dict pandas Series
+        context : dict pandas Series
             Normalized training series, one entry per series.
-        exog_dict : dict pandas DataFrame, pandas Series, or None
+        context_exog : dict pandas DataFrame, pandas Series, or None
             Per-series historical exogenous variables (past covariates).
-        is_multiple_series : bool
-            `True` when multiple series are provided.
 
         Returns
         -------
@@ -224,39 +223,19 @@ class Chronos2Adapter:
 
         """
 
-        self.is_fitted = False
-        self.is_multiple_series_ = False
-
-        self._history = {
-            name: s.iloc[-self.context_length :].copy()
-            for name, s in series_dict.items()
-        }
-
-        if exog_dict is not None:
-            self._history_exog = {
-                name: (
-                    e.iloc[-self.context_length :].copy()
-                    if e is not None
-                    else None
-                )
-                for name, e in exog_dict.items()
-            }
-        else:
-            self._history_exog = None
-        
+        self.context_ = context
+        self.context_exog_ = context_exog
         self.is_fitted = True
-        self.is_multiple_series_ = is_multiple_series
 
         return self
 
     def predict(
         self,
         steps: int,
-        history_dict: dict[str, pd.Series],
-        past_exog_dict: dict[str, pd.DataFrame | pd.Series | None],
-        future_exog_dict: dict[str, pd.DataFrame | pd.Series | None],
-        quantiles: list[float] | tuple[float] | None,
-        is_multiple_series: bool,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        exog: dict[str, pd.DataFrame | pd.Series | None],
+        quantiles: list[float] | tuple[float] | None
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the Chronos-2 pipeline.
@@ -269,18 +248,16 @@ class Chronos2Adapter:
         ----------
         steps : int
             Number of steps ahead to forecast.
-        history_dict : dict pandas Series
+        context : dict pandas Series
             Per-series context windows (already trimmed to
             `context_length`).
-        past_exog_dict : dict pandas DataFrame, pandas Series, or None
+        context_exog : dict pandas DataFrame, pandas Series, or None
             Per-series past covariates (already trimmed).
-        future_exog_dict : dict pandas DataFrame, pandas Series, or None
+        exog : dict pandas DataFrame, pandas Series, or None
             Per-series future covariates for the forecast horizon.
         quantiles : list of float or None
             Quantile levels to return. If `None`, a point forecast
             (median, quantile 0.5) is produced.
-        is_multiple_series : bool
-            `True` when multiple series are provided.
 
         Returns
         -------
@@ -294,28 +271,28 @@ class Chronos2Adapter:
         # instantiated and fitted without requiring Chronos-2 to be installed.
         self._load_pipeline()
 
+        series_names_in = list(context.keys())
         quantile_levels = list(quantiles) if quantiles is not None else [0.5]
-        series_names = list(history_dict.keys())
 
         inputs_list = [
             self._build_chronos_input(
-                target      = history_dict[name].to_numpy(),
-                past_exog   = past_exog_dict[name],
-                future_exog = future_exog_dict[name],
+                context      = context[name].to_numpy(),
+                context_exog = context_exog[name],
+                exog         = exog[name],
             )
-            for name in series_names
+            for name in series_names_in
         ]
 
         quantile_preds, _ = self._pipeline.predict_quantiles(
             inputs            = inputs_list,
             prediction_length = steps,
             quantile_levels   = quantile_levels,
-            cross_learning    = self.cross_learning if is_multiple_series else False,
+            cross_learning    = self.cross_learning if len(series_names_in) > 1 else False,
             **self.predict_kwargs,
         )
 
         predictions: dict[str, np.ndarray] = {}
-        for i, name in enumerate(series_names):
+        for i, name in enumerate(series_names_in):
             q_arr = quantile_preds[i].squeeze(0)
             if hasattr(q_arr, "detach"):
                 q_arr = q_arr.detach().cpu().numpy()
@@ -358,6 +335,7 @@ class Chronos2Adapter:
                 "chronos-forecasting >=2.0 is required. "
                 "Install it with `pip install chronos-forecasting`."
             ) from exc
+
         kwargs: dict[str, Any] = {}
         if self.device_map is not None:
             kwargs["device_map"] = self.device_map
@@ -406,26 +384,26 @@ class Chronos2Adapter:
 
     def _build_chronos_input(
         self,
-        target: np.ndarray,
-        past_exog: pd.DataFrame | pd.Series | None = None,
-        future_exog: pd.DataFrame | pd.Series | None = None,
+        context: np.ndarray,
+        context_exog: pd.DataFrame | pd.Series | None = None,
+        exog: pd.DataFrame | pd.Series | None = None,
     ) -> dict[str, Any]:
         """
         Build the input dict consumed by the pipeline's `predict_quantiles` method.
 
         Parameters
         ----------
-        target : numpy ndarray
+        context : numpy ndarray
             1-D array of observed time series values used as context. Must be
             castable to `float64`.
-        past_exog : pandas DataFrame, pandas Series, default None
+        context_exog : pandas DataFrame, pandas Series, default None
             Historical exogenous variables whose index is aligned to
-            `target`. Each column (or the single Series, referenced by
+            `context`. Each column (or the single Series, referenced by
             its name) becomes an entry in the returned
             "past_covariates" dict. Numeric and boolean columns are
             cast to `float64`; string and categorical columns are passed
             as-is and handled natively by Chronos-2.
-        future_exog : pandas DataFrame, pandas Series, default None
+        exog : pandas DataFrame, pandas Series, default None
             Future-known exogenous variables covering the forecast horizon.
             Must have exactly `prediction_length` rows. Each column
             becomes an entry in the returned "future_covariates" dict.
@@ -443,21 +421,21 @@ class Chronos2Adapter:
         
         """
 
-        input_dict = {"target": np.asarray(target, dtype=float)}
-        if past_exog is not None:
+        input_dict = {"target": np.asarray(context, dtype=float)}
+        if context_exog is not None:
             df = (
-                past_exog
-                if isinstance(past_exog, pd.DataFrame)
-                else past_exog.to_frame()
+                context_exog
+                if isinstance(context_exog, pd.DataFrame)
+                else context_exog.to_frame()
             )
             input_dict["past_covariates"] = {
                 col: Chronos2Adapter._to_covariate_array(df[col]) for col in df.columns
             }
-        if future_exog is not None:
+        if exog is not None:
             df = (
-                future_exog
-                if isinstance(future_exog, pd.DataFrame)
-                else future_exog.to_frame()
+                exog
+                if isinstance(exog, pd.DataFrame)
+                else exog.to_frame()
             )
             input_dict["future_covariates"] = {
                 col: Chronos2Adapter._to_covariate_array(df[col]) for col in df.columns
@@ -480,7 +458,7 @@ class TimesFM25Adapter:
     context_length : int, default 512
         Maximum number of historical observations to use as context. At fit
         time only the last `context_length` observations are stored. At
-        predict time, if `last_window` is longer than `context_length` it
+        predict time, if `context` is longer than `context_length` it
         is trimmed to this length; if it is shorter, all available
         observations are used as-is. Must be a positive integer. Defaults to
         512. TimesFM 2.5 supports up to 16 384.
@@ -511,8 +489,6 @@ class TimesFM25Adapter:
         Additional keyword arguments forwarded to `ForecastConfig`.
     is_fitted : bool
         Whether the adapter has been fitted.
-    is_multiple_series_ : bool
-        Whether the adapter was fitted with multiple series.
 
     Notes
     -----
@@ -521,13 +497,13 @@ class TimesFM25Adapter:
     other level raises a `ValueError`.
 
     Covariate support (via TimesFM's `forecast_with_covariates`) is not
-    yet implemented. Passing `exog` or `last_window_exog` issues an
+    yet implemented. Passing `exog` or `context_exog` issues an
     `IgnoredArgumentWarning` and the values are discarded.
 
     """
 
     SUPPORTED_QUANTILES: list[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    allow_exogenous: bool = False
+    allow_exog: bool = False
 
     def __init__(
         self,
@@ -551,7 +527,7 @@ class TimesFM25Adapter:
         context_length : int, default 512
             Maximum number of historical observations to retain as context.
             At `fit` time only the last `context_length` observations of
-            `series` are stored. At `predict` time, if `last_window` is
+            `series` are stored. At `predict` time, if `context` is
             longer than `context_length` it is trimmed to this length;
             if it is shorter, all available observations are passed as-is.
             Must be a positive integer.
@@ -578,13 +554,12 @@ class TimesFM25Adapter:
 
         self.model_id               = model_id
         self._model                 = model
+        self.context_               = None
+        self.context_exog_          = None
         self.context_length         = context_length
         self.max_horizon            = max_horizon
         self.forecast_config_kwargs = dict(forecast_config_kwargs) if forecast_config_kwargs else {}
-        self._history               = None
-        self._history_exog          = None
         self.is_fitted              = False
-        self.is_multiple_series_    = False
 
     def get_params(self) -> dict:
         """
@@ -654,26 +629,22 @@ class TimesFM25Adapter:
 
     def fit(
         self,
-        series_dict: dict[str, pd.Series],
-        exog_dict: dict[str, pd.DataFrame | pd.Series | None],
-        is_multiple_series: bool,
+        context: dict[str, pd.Series],
+        context_exog: Any,
     ) -> TimesFM25Adapter:
         """
-        Store the training series as context.
+        Store the training series.
+        No model training occurs since TimesFM 2.5 is a zero-shot inference model.
 
-        No model training occurs since TimesFM 2.5 is a zero-shot inference
-        model.  All input normalization and validation is performed upstream
-        by `FoundationModel`.
+        All input normalization and validation is performed upstream by
+        `FoundationModel`; this method receives canonical dicts only.
 
         Parameters
         ----------
-        series_dict : dict pandas Series
+        context : dict pandas Series
             Normalized training series, one entry per series.
-        exog_dict : dict pandas DataFrame, pandas Series, or None
-            Per-series exogenous variables (ignored — accepted for API
-            consistency).
-        is_multiple_series : bool
-            `True` when multiple series are provided.
+        context_exog : Any
+            Not used, present here for API consistency by convention.
 
         Returns
         -------
@@ -681,27 +652,18 @@ class TimesFM25Adapter:
 
         """
 
-        self.is_fitted = False
-        self.is_multiple_series_ = False
-
-        self._history = {
-            name: s.iloc[-self.context_length :].copy()
-            for name, s in series_dict.items()
-        }
-
+        self.context_ = context
         self.is_fitted = True
-        self.is_multiple_series_ = is_multiple_series
-
+        
         return self
 
     def predict(
         self,
         steps: int,
-        history_dict: dict[str, pd.Series],
-        past_exog_dict: Any,
-        future_exog_dict: Any,
+        context: dict[str, pd.Series],
+        context_exog: Any,
+        exog: Any,
         quantiles: list[float] | tuple[float] | None,
-        is_multiple_series: Any,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the TimesFM 2.5 model.
@@ -714,17 +676,15 @@ class TimesFM25Adapter:
         ----------
         steps : int
             Number of steps ahead to forecast.
-        history_dict : dict pandas Series
+        context : dict pandas Series
             Per-series context windows (already trimmed to
             `context_length`).
-        past_exog_dict : Any
-            Not used, present here for API consistency by convention.
-        future_exog_dict : Any
-            Not used, present here for API consistency by convention.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series past covariates (already trimmed).
+        exog : dict pandas DataFrame, pandas Series, or None
+            Per-series future covariates for the forecast horizon.
         quantiles : list of float or None
             Quantile levels. Must be a subset of `SUPPORTED_QUANTILES`.
-        is_multiple_series : Any
-            Not used, present here for API consistency by convention.
 
         Returns
         -------
@@ -760,9 +720,9 @@ class TimesFM25Adapter:
         self._load_model()
         self._ensure_compiled(steps)
 
-        series_names = list(history_dict.keys())
+        series_names_in = list(context.keys())
         inputs_list = [
-            history_dict[name].to_numpy() for name in series_names
+            context[name].to_numpy() for name in series_names_in
         ]
 
         point_forecast, quantile_forecast = self._model.forecast(
@@ -773,7 +733,7 @@ class TimesFM25Adapter:
         # quantile_forecast: (n_series, steps, 10)  — idx 0 = mean, 1-9 = q0.1-q0.9
 
         predictions: dict[str, np.ndarray] = {}
-        for i, name in enumerate(series_names):
+        for i, name in enumerate(series_names_in):
             if quantile_list is None:
                 # Point forecast: shape (steps, 1)
                 predictions[name] = np.asarray(point_forecast[i]).reshape(-1, 1)
@@ -873,8 +833,8 @@ class TimesFM25Adapter:
         import timesfm
         self._model.compile(
             timesfm.ForecastConfig(
-                max_context=self.context_length,
-                max_horizon=steps,
+                max_context = self.context_length,
+                max_horizon = steps,
                 **self.forecast_config_kwargs,
             )
         )
@@ -895,7 +855,7 @@ class MoiraiAdapter:
     context_length : int, default 2048
         Maximum number of historical observations to use as context. At fit
         time only the last `context_length` observations are stored. At
-        predict time, if `last_window` is longer than `context_length`
+        predict time, if `context` is longer than `context_length`
         it is trimmed to this length; if it is shorter, all available
         observations are used as-is. Must be a positive integer.
 
@@ -907,8 +867,6 @@ class MoiraiAdapter:
         Maximum number of historical observations used as context.
     is_fitted : bool
         Whether the adapter has been fitted.
-    is_multiple_series_ : bool
-        Whether the adapter was fitted with multiple series.
 
     Notes
     -----
@@ -920,13 +878,13 @@ class MoiraiAdapter:
     is not functional: the padding/truncation loop inside `predict()`
     clips every list-valued field — including `feat_dynamic_real` — to
     `context_length`, discarding the future portion that future
-    covariates require. Passing `exog` or `last_window_exog` issues an
+    covariates require. Passing `exog` or `context_exog` issues an
     `IgnoredArgumentWarning` and the values are discarded.
 
     """
 
     SUPPORTED_QUANTILES: list[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    allow_exogenous: bool = False
+    allow_exog: bool = False
 
     def __init__(
         self,
@@ -948,7 +906,7 @@ class MoiraiAdapter:
         context_length : int, default 2048
             Maximum number of historical observations to retain as context.
             At `fit` time only the last `context_length` observations of
-            `series` are stored. At `predict` time, if `last_window`
+            `series` are stored. At `predict` time, if `context`
             is longer than `context_length` it is trimmed to this length;
             if it is shorter, all available observations are passed as-is.
             Must be a positive integer.
@@ -961,14 +919,13 @@ class MoiraiAdapter:
                 f"Got {context_length!r}."
             )
 
-        self.model_id            = model_id
-        self._module             = module
-        self.context_length      = context_length
-        self._forecast_obj       = None
-        self._history            = None
-        self._history_exog       = None
-        self.is_fitted           = False
-        self.is_multiple_series_ = False
+        self.model_id       = model_id
+        self._module        = module
+        self.context_       = None
+        self.context_exog_  = None
+        self.context_length = context_length
+        self._forecast_obj  = None
+        self.is_fitted      = False
 
     def get_params(self) -> dict:
         """
@@ -1025,25 +982,22 @@ class MoiraiAdapter:
 
     def fit(
         self,
-        series_dict: dict[str, pd.Series],
-        exog_dict: Any,
-        is_multiple_series: bool,
+        context: dict[str, pd.Series],
+        context_exog: Any,
     ) -> MoiraiAdapter:
         """
-        Store the training series as context.
+        Store the training series.
+        No model training occurs since Moirai-2 is a zero-shot inference model.
 
-        No model training occurs since Moirai-2 is a zero-shot inference
-        model.  All input normalization and validation is performed upstream
-        by `FoundationModel`.
+        All input normalization and validation is performed upstream by
+        `FoundationModel`; this method receives canonical dicts only.
 
         Parameters
         ----------
-        series_dict : dict pandas Series
+        context : dict pandas Series
             Normalized training series, one entry per series.
-        exog_dict : Any
+        context_exog : Any
             Not used, present here for API consistency by convention.
-        is_multiple_series : bool
-            `True` when multiple series are provided.
 
         Returns
         -------
@@ -1051,27 +1005,18 @@ class MoiraiAdapter:
 
         """
 
-        self.is_fitted = False
-        self.is_multiple_series_ = False
-
-        self._history = {
-            name: s.iloc[-self.context_length :].copy()
-            for name, s in series_dict.items()
-        }
-
+        self.context_ = context
         self.is_fitted = True
-        self.is_multiple_series_ = is_multiple_series
 
         return self
 
     def predict(
         self,
         steps: int,
-        history_dict: dict[str, pd.Series],
-        past_exog_dict: Any,
-        future_exog_dict: Any,
+        context: dict[str, pd.Series],
+        context_exog: Any,
+        exog: Any,
         quantiles: list[float] | tuple[float] | None,
-        is_multiple_series: Any,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using Moirai-2.
@@ -1084,17 +1029,15 @@ class MoiraiAdapter:
         ----------
         steps : int
             Number of steps ahead to forecast.
-        history_dict : dict pandas Series
+        context : dict pandas Series
             Per-series context windows (already trimmed to
             `context_length`).
-        past_exog_dict : Any
+        context_exog : Any
             Not used, present here for API consistency by convention.
-        future_exog_dict : Any
+        exog : Any
             Not used, present here for API consistency by convention.
         quantiles : list of float or None
             Quantile levels. Must be a subset of `SUPPORTED_QUANTILES`.
-        is_multiple_series : Any
-            Not used, present here for API consistency by convention.
 
         Returns
         -------
@@ -1130,16 +1073,16 @@ class MoiraiAdapter:
             for q in quantile_levels
         ]
 
-        series_names = list(history_dict.keys())
+        series_names_in = list(context.keys())
         inputs_list = [
-            history_dict[name].to_numpy(dtype=float).reshape(-1, 1)
-            for name in series_names
+            context[name].to_numpy(dtype=float).reshape(-1, 1)
+            for name in series_names_in
         ]
 
         raw = self._run_inference(inputs_list, steps)
 
         predictions: dict[str, np.ndarray] = {}
-        for i, name in enumerate(series_names):
+        for i, name in enumerate(series_names_in):
             predictions[name] = raw[i][q_indices, :].T  # (steps, n_quantiles)
 
         return predictions
@@ -1277,5 +1220,3 @@ def _resolve_adapter(model_id: str) -> type:
         f"No adapter found for model '{model_id}'. "
         f"Registered prefixes: {list(_ADAPTER_REGISTRY)}."
     )
-
-

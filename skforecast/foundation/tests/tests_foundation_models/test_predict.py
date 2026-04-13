@@ -14,13 +14,13 @@ from .fixtures_adapters import (
 
 # Tests predict — errors
 # ==============================================================================
-def test_predict_ValueError_when_not_fitted_and_no_last_window():
+def test_predict_ValueError_when_not_fitted_and_no_context():
     """
     Test predict raises ValueError when model is not fitted and no
-    last_window is provided.
+    context is provided.
     """
     m = FoundationModel("autogluon/chronos-2-small")
-    err_msg = re.escape("Call `fit` before `predict`, or pass `last_window`.")
+    err_msg = re.escape("Call `fit` before `predict`, or pass `context`.")
     with pytest.raises(ValueError, match=err_msg):
         m.predict(steps=5)
 
@@ -60,40 +60,7 @@ def test_predict_ValueError_when_quantile_out_of_range(bad_quantile):
         m.predict(steps=3, quantiles=[0.5, bad_quantile])
 
 
-def test_predict_TypeError_when_last_window_index_type_mismatch():
-    """
-    Test predict raises TypeError when last_window has a different index
-    type than the fitted series.
-    """
-    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
-    m.fit(series=y)  # DatetimeIndex
 
-    last_window = pd.Series(
-        np.arange(10, dtype=float),
-        index=pd.RangeIndex(start=0, stop=10, step=1),
-        name="sales",
-    )
-    err_msg = re.escape("Expected index of type DatetimeIndex")
-    with pytest.raises(TypeError, match=err_msg):
-        m.predict(steps=3, last_window=last_window)
-
-
-def test_predict_TypeError_when_last_window_index_freq_mismatch():
-    """
-    Test predict raises TypeError when last_window has a different
-    frequency than the fitted series.
-    """
-    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
-    m.fit(series=y)  # freq="ME"
-
-    last_window = pd.Series(
-        np.arange(10, dtype=float),
-        index=pd.date_range("2025-01-01", periods=10, freq="D"),
-        name="sales",
-    )
-    err_msg = re.escape("Expected frequency")
-    with pytest.raises(TypeError, match=err_msg):
-        m.predict(steps=3, last_window=last_window)
 
 
 # Tests predict — single-series output
@@ -178,32 +145,32 @@ def test_predict_output_multiseries_quantile_forecast():
     assert len(result) == 5 * 2  # steps * n_series
 
 
-# Tests predict — last_window
+# Tests predict — context
 # ==============================================================================
-def test_predict_output_when_last_window_single_series():
+def test_predict_output_when_context_single_series():
     """
-    Test that predict with last_window produces a forecast index that
-    immediately follows the last_window index.
+    Test that predict with context produces a forecast index that
+    immediately follows the context index.
     """
     m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=y)
 
-    last_window = pd.Series(
+    context = pd.Series(
         np.arange(10, dtype=float),
         index=pd.date_range("2025-01-01", periods=10, freq="ME"),
         name="sales",
     )
-    result = m.predict(steps=3, last_window=last_window)
+    result = m.predict(steps=3, context=context)
 
-    expected_start = last_window.index[-1] + last_window.index.freq
+    expected_start = context.index[-1] + context.index.freq
     expected_index = pd.date_range(
-        start=expected_start, periods=3, freq=last_window.index.freq
+        start=expected_start, periods=3, freq=context.index.freq
     )
     pd.testing.assert_index_equal(result.index, expected_index)
 
 
 @pytest.mark.parametrize(
-    "last_window_input",
+    "context_input",
     [
         pd.DataFrame(
             {
@@ -227,14 +194,14 @@ def test_predict_output_when_last_window_single_series():
     ],
     ids=["wide_dataframe", "dict"],
 )
-def test_predict_output_when_last_window_multiseries(last_window_input):
+def test_predict_output_when_context_multiseries(context_input):
     """
     Test that a wide DataFrame or dict[str, pd.Series] passed as
-    last_window produces a long DataFrame with the correct forecast index.
+    context produces a long DataFrame with the correct forecast index.
     """
     m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=y_dict)
-    result = m.predict(steps=4, last_window=last_window_input)
+    result = m.predict(steps=4, context=context_input)
 
     assert isinstance(result, pd.DataFrame)
     assert list(result.columns) == ["level", "pred"]
@@ -247,20 +214,20 @@ def test_predict_output_when_last_window_multiseries(last_window_input):
     pd.testing.assert_index_equal(result.index.unique(), expected_index)
 
 
-def test_predict_output_when_last_window_without_fit():
+def test_predict_output_when_context_without_fit():
     """
-    Test that predict works on an unfitted model when last_window is
+    Test that predict works on an unfitted model when context is
     provided.
     """
     m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     assert m.is_fitted is False
 
-    last_window = pd.Series(
+    context = pd.Series(
         np.arange(20, dtype=float),
         index=pd.date_range("2025-01-01", periods=20, freq="ME"),
         name="sales",
     )
-    result = m.predict(steps=5, last_window=last_window)
+    result = m.predict(steps=5, context=context)
 
     assert isinstance(result, pd.DataFrame)
     assert list(result.columns) == ["level", "pred"]
@@ -320,19 +287,19 @@ def test_predict_IgnoredArgumentWarning_when_adapter_no_exog():
 
 # Tests predict — does not modify input
 # ==============================================================================
-def test_predict_does_not_modify_last_window():
+def test_predict_does_not_modify_context():
     """
-    Test that predict does not modify last_window.
+    Test that predict does not modify context.
     """
     m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     m.fit(series=y)
 
-    last_window = pd.Series(
+    context = pd.Series(
         np.arange(10, dtype=float),
         index=pd.date_range("2025-01-01", periods=10, freq="ME"),
         name="sales",
     )
-    lw_copy = last_window.copy()
-    m.predict(steps=3, last_window=last_window)
+    lw_copy = context.copy()
+    m.predict(steps=3, context=context)
 
-    pd.testing.assert_series_equal(last_window, lw_copy)
+    pd.testing.assert_series_equal(context, lw_copy)

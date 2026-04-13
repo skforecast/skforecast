@@ -10,7 +10,7 @@ from skforecast.foundation._adapters import TimesFM25Adapter
 from .fixtures_adapters import (
     y, y_wide, y_dict,
     FakeTimesFM25Model,
-    prepare_fit_args, prepare_predict_args,
+    prepare_fit_args, prepare_predict_args
 )
 
 
@@ -22,7 +22,7 @@ def make_adapter(**kwargs) -> TimesFM25Adapter:
     """
     defaults = dict(
         model_id="google/timesfm-2.5-200m-pytorch",
-        model=FakeTimesFM25Model(),
+        model=FakeTimesFM25Model()
     )
     defaults.update(kwargs)
     return TimesFM25Adapter(**defaults)
@@ -42,10 +42,9 @@ def test_TimesFM25Adapter_init_default_params():
     assert adapter.max_horizon == 512
     assert adapter.forecast_config_kwargs == {}
     assert adapter._model is None
-    assert adapter._history is None
+    assert adapter.context_ is None
     assert adapter.is_fitted is False
-    assert adapter.is_multiple_series_ is False
-    assert TimesFM25Adapter.allow_exogenous is False
+    assert TimesFM25Adapter.allow_exog is False
     assert TimesFM25Adapter.SUPPORTED_QUANTILES == [
         0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9
     ]
@@ -61,7 +60,7 @@ def test_TimesFM25Adapter_init_default_params():
         ("max_horizon", -1),
         ("max_horizon", None),
     ],
-    ids=lambda x: str(x),
+    ids=lambda x: str(x)
 )
 def test_TimesFM25Adapter_init_ValueError_when_invalid_params(param, value):
     """
@@ -81,7 +80,7 @@ def test_TimesFM25Adapter_init_forecast_config_kwargs_is_independent_copy():
     original = {"normalize_inputs": True}
     adapter = TimesFM25Adapter(
         model_id="google/timesfm-2.5-200m-pytorch",
-        forecast_config_kwargs=original,
+        forecast_config_kwargs=original
     )
     original["extra"] = "should_not_appear"
     assert "extra" not in adapter.forecast_config_kwargs
@@ -99,7 +98,7 @@ def test_TimesFM25Adapter_get_params_returns_expected_keys_and_values():
         model_id="google/timesfm-2.5-200m-pytorch",
         context_length=256,
         max_horizon=128,
-        forecast_config_kwargs={"normalize_inputs": True},
+        forecast_config_kwargs={"normalize_inputs": True}
     )
     params = adapter.get_params()
     assert set(params.keys()) == {
@@ -122,7 +121,7 @@ def test_TimesFM25Adapter_get_params_returns_expected_keys_and_values():
         ({"max_horizon": 0}, "`max_horizon` must be a positive integer"),
         ({"unknown_param": 42}, "Invalid parameter"),
     ],
-    ids=["context_length=-1", "max_horizon=0", "unknown_param"],
+    ids=["context_length=-1", "max_horizon=0", "unknown_param"]
 )
 def test_TimesFM25Adapter_set_params_ValueError_when_invalid(params, match):
     """
@@ -142,7 +141,7 @@ def test_TimesFM25Adapter_set_params_ValueError_when_invalid(params, match):
         ("max_horizon", 128),
         ("forecast_config_kwargs", {"normalize_inputs": True}),
     ],
-    ids=lambda x: str(x),
+    ids=lambda x: str(x)
 )
 def test_TimesFM25Adapter_set_params_updates_and_resets_model(param, value):
     """
@@ -171,25 +170,24 @@ def test_TimesFM25Adapter_fit_error_handling():
 @pytest.mark.parametrize(
     "context_length, expected_len",
     [(10, 10), (20, 20), (50, 50), (100, 50)],
-    ids=lambda x: f"{x}",
+    ids=lambda x: f"{x}"
 )
 def test_TimesFM25Adapter_fit_output_single_series(context_length, expected_len):
     """
     Test fit on a single series: returns self, sets is_fitted=True,
-    is_multiple_series_=False, stores history trimmed to context_length,
+    stores history trimmed to context_length,
     and does not modify the input series.
     """
     adapter = make_adapter(context_length=context_length)
     y_copy = y.copy()
-    sd, ed, ms = prepare_fit_args(y)
+    ctx, ctx_exog = prepare_fit_args(y, context_length=context_length)
     result = adapter.fit(
-        series_dict=sd, exog_dict=ed, is_multiple_series=ms
+        context=ctx, context_exog=ctx_exog
     )
 
     assert result is adapter
     assert adapter.is_fitted is True
-    assert adapter.is_multiple_series_ is False
-    hist = next(iter(adapter._history.values()))
+    hist = next(iter(adapter.context_.values()))
     assert len(hist) == expected_len
     pd.testing.assert_series_equal(hist, y.iloc[-expected_len:])
     pd.testing.assert_series_equal(y, y_copy)
@@ -198,23 +196,22 @@ def test_TimesFM25Adapter_fit_output_single_series(context_length, expected_len)
 @pytest.mark.parametrize(
     "series_input",
     [y_wide, y_dict],
-    ids=["wide_dataframe", "dict"],
+    ids=["wide_dataframe", "dict"]
 )
 def test_TimesFM25Adapter_fit_output_multi_series(series_input):
     """
     Test fit on multi-series input: sets is_fitted=True,
-    is_multiple_series_=True, stores a dict of Series keyed by series names,
+    stores a dict of Series keyed by series names,
     each trimmed to context_length.
     """
     context_length = 10
     adapter = make_adapter(context_length=context_length)
-    sd, ed, ms = prepare_fit_args(series_input)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(series_input, context_length=context_length)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
     assert adapter.is_fitted is True
-    assert adapter.is_multiple_series_ is True
-    assert set(adapter._history.keys()) == {"s1", "s2"}
-    for name, s in adapter._history.items():
+    assert set(adapter.context_.keys()) == {"s1", "s2"}
+    for name, s in adapter.context_.items():
         assert isinstance(s, pd.Series)
         assert len(s) == context_length
 
@@ -226,8 +223,8 @@ def test_TimesFM25Adapter_fit_exog_ignored_silently():
     """
     exog_df = pd.DataFrame({"feat": np.arange(50, dtype=float)}, index=y.index)
     adapter = make_adapter()
-    sd, ed, ms = prepare_fit_args(y, exog=exog_df)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y, exog=exog_df)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
     assert adapter.is_fitted is True
 
 
@@ -237,7 +234,7 @@ def test_TimesFM25Adapter_fit_exog_ignored_silently():
 @pytest.mark.parametrize(
     "bad_quantile",
     [0.05, 0.15, 0.25, 0.95, 1.1, -0.1],
-    ids=lambda x: f"q={x}",
+    ids=lambda x: f"q={x}"
 )
 def test_TimesFM25Adapter_predict_ValueError_for_unsupported_quantile(bad_quantile):
     """
@@ -245,15 +242,15 @@ def test_TimesFM25Adapter_predict_ValueError_for_unsupported_quantile(bad_quanti
     SUPPORTED_QUANTILES.
     """
     adapter = make_adapter()
-    sd, ed, ms = prepare_fit_args(y)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=3)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=3)
     with pytest.raises(ValueError, match=re.escape("TimesFM 2.5 only supports quantile levels")):
         adapter.predict(
-            steps=3, history_dict=hd, past_exog_dict=ped,
-            future_exog_dict=fed, quantiles=[0.5, bad_quantile],
-            is_multiple_series=ms_p,
+            steps=3, context=ctx_p, context_exog=ctx_exog_p,
+            exog=exog_p, quantiles=[0.5, bad_quantile],
+            
         )
 
 
@@ -262,15 +259,15 @@ def test_TimesFM25Adapter_predict_ValueError_when_steps_exceed_max_horizon():
     Test predict raises ValueError when steps > max_horizon.
     """
     adapter = make_adapter(max_horizon=10)
-    sd, ed, ms = prepare_fit_args(y)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=15)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=15)
     err_msg = re.escape("`steps` (15) exceeds `max_horizon` (10).")
     with pytest.raises(ValueError, match=err_msg):
         adapter.predict(
-            steps=15, history_dict=hd, past_exog_dict=ped,
-            future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+            steps=15, context=ctx_p, context_exog=ctx_exog_p,
+            exog=exog_p, quantiles=None
         )
 
 
@@ -283,13 +280,13 @@ def test_TimesFM25Adapter_predict_point_forecast_single_series():
     with one key, shape (steps, 1), values = 0.0 (FakeTimesFM25Model zeros).
     """
     adapter = make_adapter()
-    sd, ed, ms = prepare_fit_args(y)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=12)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=12)
     raw = adapter.predict(
-        steps=12, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+        steps=12, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
     )
 
     assert list(raw.keys()) == ["sales"]
@@ -306,13 +303,13 @@ def test_TimesFM25Adapter_predict_quantile_forecast_single_series():
     """
     quantiles = [0.1, 0.5, 0.9]
     adapter = make_adapter()
-    sd, ed, ms = prepare_fit_args(y)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=5)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=5)
     raw = adapter.predict(
-        steps=5, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=quantiles, is_multiple_series=ms_p,
+        steps=5, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=quantiles
     )
 
     arr = raw["sales"]
@@ -326,15 +323,15 @@ def test_TimesFM25Adapter_predict_all_supported_quantiles():
     Test that all 9 supported quantile levels are accepted without error.
     """
     adapter = make_adapter()
-    sd, ed, ms = prepare_fit_args(y)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=3)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=3)
     raw = adapter.predict(
-        steps=3, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed,
+        steps=3, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p,
         quantiles=TimesFM25Adapter.SUPPORTED_QUANTILES,
-        is_multiple_series=ms_p,
+        
     )
     assert raw["sales"].shape == (3, 9)
 
@@ -345,7 +342,7 @@ def test_TimesFM25Adapter_predict_all_supported_quantiles():
 @pytest.mark.parametrize(
     "series_input",
     [y_wide, y_dict],
-    ids=["wide_dataframe", "dict"],
+    ids=["wide_dataframe", "dict"]
 )
 def test_TimesFM25Adapter_predict_point_forecast_multi_series(series_input):
     """
@@ -353,13 +350,13 @@ def test_TimesFM25Adapter_predict_point_forecast_multi_series(series_input):
     series, each of shape (steps, 1) with value 0.0.
     """
     adapter = make_adapter()
-    sd, ed, ms = prepare_fit_args(series_input)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(series_input)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=5)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=5)
     raw = adapter.predict(
-        steps=5, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+        steps=5, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
     )
 
     assert set(raw.keys()) == {"s1", "s2"}
@@ -375,13 +372,13 @@ def test_TimesFM25Adapter_predict_quantile_forecast_multi_series():
     """
     quantiles = [0.1, 0.5, 0.9]
     adapter = make_adapter()
-    sd, ed, ms = prepare_fit_args(y_dict)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y_dict)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=4)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=4)
     raw = adapter.predict(
-        steps=4, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=quantiles, is_multiple_series=ms_p,
+        steps=4, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=quantiles
     )
 
     for name in ["s1", "s2"]:
@@ -400,13 +397,13 @@ def test_TimesFM25Adapter_predict_model_receives_correct_args():
     """
     fake_model = FakeTimesFM25Model()
     adapter = make_adapter(model=fake_model)
-    sd, ed, ms = prepare_fit_args(y)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=7)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=7)
     adapter.predict(
-        steps=7, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+        steps=7, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
     )
     assert fake_model.last_horizon == 7
     assert len(fake_model.last_inputs) == 1
@@ -419,13 +416,13 @@ def test_TimesFM25Adapter_predict_context_length_trims_history():
     context_length = 10
     fake_model = FakeTimesFM25Model()
     adapter = make_adapter(model=fake_model, context_length=context_length)
-    sd, ed, ms = prepare_fit_args(y)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y, context_length=context_length)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=5)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=5)
     adapter.predict(
-        steps=5, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+        steps=5, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
     )
     assert len(fake_model.last_inputs[0]) == context_length
 
@@ -460,7 +457,7 @@ def test_TimesFM25Adapter_ensure_compiled_calls_compile_with_actual_steps():
         model_id="google/timesfm-2.5-200m-pytorch",
         model=tracking_model,
         context_length=128,
-        max_horizon=512,
+        max_horizon=512
     )
 
     mock_timesfm = types.ModuleType("timesfm")
@@ -499,7 +496,7 @@ def test_TimesFM25Adapter_ensure_compiled_noop_when_already_compiled():
 
     adapter = TimesFM25Adapter(
         model_id="google/timesfm-2.5-200m-pytorch",
-        model=tracking_model,
+        model=tracking_model
     )
 
     adapter._ensure_compiled(steps=12)

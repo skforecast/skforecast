@@ -2247,7 +2247,7 @@ def _backtesting_foundation(
 
     The original forecaster is used directly (no copy): refit is always
     disabled for foundation models and every fold passes `last_window`
-    explicitly, so `self._history` is never modified during the fold loop.
+    explicitly, so `self.context_` is never modified during the fold loop.
     The only state change is the initial `fit` call that stores the training
     context window.
 

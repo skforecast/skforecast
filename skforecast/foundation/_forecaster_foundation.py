@@ -21,7 +21,8 @@ from ..utils import (
 )
 from ._foundation_model import FoundationModel
 
-
+# TODO: HAcer que context y history miren al del adapter
+# TODO: Añadir alias de context_ que sea last_window_, igual para context_exog_
 class ForecasterFoundation:
     """
     Forecaster that wraps a `FoundationModel` for full skforecast ecosystem
@@ -64,16 +65,16 @@ class ForecasterFoundation:
         receives as much history as possible. When fewer observations are
         available (e.g. early folds), all available data is passed and the
         model handles shorter input gracefully.
-    last_window_ : None
+    context_ : None
         Intentionally `None` — `ForecasterFoundation` never stores training
-        data directly; the adapter's internal `_history` is used instead.
+        data directly; the adapter's internal `context_` is used instead.
     index_type_ : type
         Type of index of the input used in training.
     index_freq_ : pandas DateOffset, int
         Frequency of the index of the input used in training. A
         `pandas.DateOffset` for `DatetimeIndex`; the `step` integer
         for `RangeIndex`.
-    training_range_ : dict
+    context_range_ : dict
         First and last values of index of the data used during training.
         A `dict` keyed by series name with `pandas.Index` values.
     series_names_in_ : list
@@ -121,10 +122,10 @@ class ForecasterFoundation:
         self.context_length            = estimator.context_length
         self.model_id                  = estimator.model_id
         self.window_size               = estimator.context_length
-        self.last_window_              = None
+        self.context_                  = None
         self.index_type_               = None
         self.index_freq_               = None
-        self.training_range_           = None
+        self.context_range_           = None
         self.series_names_in_          = None
         self.is_multiple_series_       = False
         self.exog_in_                  = False
@@ -194,11 +195,11 @@ class ForecasterFoundation:
                 )
 
         if self.is_fitted:
-            training_range_repr = {
-                k: v.to_list() for k, v in self.training_range_.items()
+            context_range_repr = {
+                k: v.to_list() for k, v in self.context_range_.items()
             }
         else:
-            training_range_repr = None
+            context_range_repr = None
 
         series_repr = self.series_names_in_
         series_label = "Series names"
@@ -212,7 +213,7 @@ class ForecasterFoundation:
             f"{series_label}: {series_repr} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
-            f"Training range: {training_range_repr} \n"
+            f"Context range: {context_range_repr} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
             f"Creation date: {self.creation_date} \n"
@@ -240,13 +241,13 @@ class ForecasterFoundation:
             exog_names_html = "".join(f"<li>{n}</li>" for n in names)
 
         if self.is_fitted:
-            training_range_html = "".join(
+            context_range_html = "".join(
                 f"<li><strong>{k}:</strong> {v.to_list()}</li>"
-                for k, v in self.training_range_.items()
+                for k, v in self.context_range_.items()
             )
-            training_range_html = f"<ul>{training_range_html}</ul>"
+            context_range_html = f"<ul>{context_range_html}</ul>"
         else:
-            training_range_html = "Not fitted"
+            context_range_html = "Not fitted"
 
         series_label_html = "Series names"
         series_value_html = str(self.series_names_in_)
@@ -278,7 +279,7 @@ class ForecasterFoundation:
             <details>
                 <summary>Training Information</summary>
                 <ul>
-                    <li><strong>Training range:</strong> {training_range_html}</li>
+                    <li><strong>Context range:</strong> {context_range_html}</li>
                     <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
                     <li><strong>Training index frequency:</strong> {self.index_freq_ if self.is_fitted else 'Not fitted'}</li>
                 </ul>
@@ -346,10 +347,10 @@ class ForecasterFoundation:
 
         """
 
-        self.last_window_              = None
+        self.context_              = None
         self.index_type_               = None
         self.index_freq_               = None
-        self.training_range_           = None
+        self.context_range_           = None
         self.series_names_in_          = None
         self.is_multiple_series_       = False
         self.exog_in_                  = False
@@ -359,7 +360,7 @@ class ForecasterFoundation:
         self.is_fitted                 = False
         self.fit_date                  = None
 
-        if exog is not None and not self.estimator.allow_exogenous:
+        if exog is not None and not self.estimator.allow_exog:
             warnings.warn(
                 f"The model '{self.estimator.model_id}' does not support "
                 f"exogenous variables. `exog` will be ignored.",
@@ -381,7 +382,7 @@ class ForecasterFoundation:
         
         self.is_fitted       = True
         self.fit_date        = self.estimator.fit_date
-        self.training_range_ = self.estimator.training_range_
+        self.context_range_ = self.estimator.context_range_
         self.index_type_     = self.estimator.index_type_
         self.index_freq_     = self.estimator.index_freq_
 
@@ -389,8 +390,8 @@ class ForecasterFoundation:
         self,
         steps: int,
         levels: str | list[str] | None = None,
-        last_window: pd.Series | pd.DataFrame | dict[str, pd.Series] | None = None,
-        last_window_exog: (
+        context: pd.Series | pd.DataFrame | dict[str, pd.Series] | None = None,
+        context_exog: (
             pd.Series
             | pd.DataFrame
             | dict[str, pd.DataFrame | pd.Series | None]
@@ -413,7 +414,7 @@ class ForecasterFoundation:
         levels : str, list, default None
             Series to predict. Only used in multi-series mode. If `None`,
             all series seen at fit time are predicted.
-        last_window : pandas Series, pandas DataFrame, dict, default None
+        context : pandas Series, pandas DataFrame, dict, default None
             Context override for backtesting. When provided, replaces the
             history stored at fit time. In single-series mode pass a
             `pd.Series`; in multi-series mode pass a wide `pd.DataFrame` or a
@@ -421,8 +422,8 @@ class ForecasterFoundation:
             last `context_length` observations are used. If shorter, all
             available observations are passed as-is and the model handles the
             reduced context gracefully.
-        last_window_exog : pandas Series, pandas DataFrame, dict, default None
-            Historical exogenous variables aligned to `last_window`. Maps to
+        context_exog : pandas Series, pandas DataFrame, dict, default None
+            Historical exogenous variables aligned to `context`. Maps to
             `past_covariates` in Chronos-2.
         exog : pandas Series, pandas DataFrame, dict, default None
             Future-known exogenous variables for the forecast horizon. Maps to
@@ -444,11 +445,11 @@ class ForecasterFoundation:
             )
 
         predictions = self.estimator.predict(
-                          steps            = steps,
-                          exog             = exog,
-                          quantiles        = None,
-                          last_window      = last_window,
-                          last_window_exog = last_window_exog,
+                          steps        = steps,
+                          context      = context,
+                          context_exog = context_exog,
+                          exog         = exog,
+                          quantiles    = None,
                       )
 
         if levels is not None:
@@ -462,8 +463,8 @@ class ForecasterFoundation:
         self,
         steps: int,
         levels: str | list[str] | None = None,
-        last_window: pd.Series | pd.DataFrame | dict[str, pd.Series] | None = None,
-        last_window_exog: (
+        context: pd.Series | pd.DataFrame | dict[str, pd.Series] | None = None,
+        context_exog: (
             pd.Series
             | pd.DataFrame
             | dict[str, pd.DataFrame | pd.Series | None]
@@ -490,10 +491,10 @@ class ForecasterFoundation:
         levels : str, list, default None
             Series to predict. Only used in multi-series mode. If `None`,
             all series seen at fit time are predicted.
-        last_window : pandas Series, pandas DataFrame, dict, default None
+        context : pandas Series, pandas DataFrame, dict, default None
             Context override for backtesting.
-        last_window_exog : pandas Series, pandas DataFrame, dict, default None
-            Historical exog aligned to `last_window`.
+        context_exog : pandas Series, pandas DataFrame, dict, default None
+            Historical exog aligned to `context`.
         exog : pandas Series, pandas DataFrame, dict, default None
             Future-known exogenous variables (`future_covariates`).
         interval : list, tuple, default [10, 90]
@@ -537,12 +538,12 @@ class ForecasterFoundation:
         quantiles = sorted({lower_q, 0.5, upper_q})
 
         predictions = self.predict_quantiles(
-                          steps            = steps,
-                          quantiles        = quantiles,
-                          levels           = levels,
-                          exog             = exog,
-                          last_window      = last_window,
-                          last_window_exog = last_window_exog,
+                          steps        = steps,
+                          levels       = levels,
+                          context      = context,
+                          context_exog = context_exog,
+                          exog         = exog,
+                          quantiles    = quantiles,
                       )
 
         predictions = predictions[['level', f'q_{0.5}', f'q_{lower_q}', f'q_{upper_q}']]
@@ -554,8 +555,8 @@ class ForecasterFoundation:
         self,
         steps: int,
         levels: str | list[str] | None = None,
-        last_window: pd.Series | pd.DataFrame | dict[str, pd.Series] | None = None,
-        last_window_exog: (
+        context: pd.Series | pd.DataFrame | dict[str, pd.Series] | None = None,
+        context_exog: (
             pd.Series
             | pd.DataFrame
             | dict[str, pd.DataFrame | pd.Series | None]
@@ -579,10 +580,10 @@ class ForecasterFoundation:
         levels : str, list, default None
             Series to predict. Only used in multi-series mode. If `None`,
             all series seen at fit time are predicted.
-        last_window : pandas Series, pandas DataFrame, dict, default None
+        context : pandas Series, pandas DataFrame, dict, default None
             Context override for backtesting.
-        last_window_exog : pandas Series, pandas DataFrame, dict, default None
-            Historical exog aligned to `last_window`.
+        context_exog : pandas Series, pandas DataFrame, dict, default None
+            Historical exog aligned to `context`.
         exog : pandas Series, pandas DataFrame, dict, default None
             Future-known exogenous variables (`future_covariates`).
         quantiles : list, tuple, default [0.1, 0.5, 0.9]
@@ -602,11 +603,11 @@ class ForecasterFoundation:
             )
 
         predictions = self.estimator.predict(
-                          steps            = steps,
-                          exog             = exog,
-                          quantiles        = list(quantiles),
-                          last_window      = last_window,
-                          last_window_exog = last_window_exog,
+                          steps        = steps,
+                          context      = context,
+                          context_exog = context_exog,
+                          exog         = exog,
+                          quantiles    = list(quantiles),
                       )
         
         if levels is not None:
@@ -640,10 +641,10 @@ class ForecasterFoundation:
         self.model_id       = self.estimator.model_id
         self.window_size    = self.estimator.context_length
 
-        self.last_window_              = None
+        self.context_                  = None
         self.index_type_               = None
         self.index_freq_               = None
-        self.training_range_           = None
+        self.context_range_           = None
         self.series_names_in_          = None
         self.is_multiple_series_       = False
         self.exog_in_                  = False

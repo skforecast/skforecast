@@ -93,10 +93,10 @@ def test_fit_MissingValuesWarning_when_short_DatetimeIndex_exog_reindexed():
 def test_fit_issues_IgnoredArgumentWarning_when_adapter_does_not_support_exog():
     """
     fit() issues IgnoredArgumentWarning and sets exog_in_=False when the
-    underlying adapter has allow_exogenous=False.
+    underlying adapter has allow_exog=False.
     """
     forecaster = make_forecaster()
-    forecaster.estimator.adapter.allow_exogenous = False
+    forecaster.estimator.adapter.allow_exog = False
 
     with pytest.warns(
         IgnoredArgumentWarning,
@@ -137,17 +137,17 @@ def test_fit_series_names_in_fallback_to_y_when_name_is_None():
     assert forecaster.series_names_in_ == ["y"]
 
 
-def test_fit_training_range_correctly_stored():
+def test_fit_context_range_correctly_stored():
     """
-    training_range_ is a dict with the first and last index values of each
+    context_range_ is a dict with the first and last index values of each
     training series.
     """
     forecaster = make_forecaster()
     forecaster.fit(series=y)
     expected = y.index[[0, -1]]
-    assert isinstance(forecaster.training_range_, dict)
-    assert set(forecaster.training_range_.keys()) == {"y"}
-    pd.testing.assert_index_equal(forecaster.training_range_["y"], expected)
+    assert isinstance(forecaster.context_range_, dict)
+    assert set(forecaster.context_range_.keys()) == {"y"}
+    pd.testing.assert_index_equal(forecaster.context_range_["y"], expected)
 
 
 @pytest.mark.parametrize(
@@ -198,11 +198,11 @@ def test_fit_exog_metadata_correctly_stored(
 
 def test_fit_exog_accepted_when_adapter_supports_exog():
     """
-    fit() stores exog metadata normally when allow_exogenous=True (default for
+    fit() stores exog metadata normally when allow_exog=True (default for
     Chronos2Adapter).
     """
     forecaster = make_forecaster()
-    assert forecaster.estimator.allow_exogenous is True
+    assert forecaster.estimator.allow_exog is True
     forecaster.fit(series=y, exog=exog)
     assert forecaster.exog_in_ is True
     assert forecaster.exog_names_in_ == ["feat_a"]
@@ -219,7 +219,7 @@ def test_fit_exog_accepted_when_adapter_supports_exog():
 def test_fit_output_when_multiseries(series):
     """
     fit() with a DataFrame or dict sets is_multiple_series_, is_fitted,
-    series_names_in_, index_type_, index_freq_, and training_range_ as dict.
+    series_names_in_, index_type_, index_freq_, and context_range_ as dict.
     """
     forecaster = make_forecaster()
     result = forecaster.fit(series=series)
@@ -230,8 +230,8 @@ def test_fit_output_when_multiseries(series):
     assert forecaster.series_names_in_ == ["s1", "s2"]
     assert forecaster.index_type_ == pd.DatetimeIndex
     assert forecaster.index_freq_ == MULTISERIES_INDEX.freq
-    assert isinstance(forecaster.training_range_, dict)
-    assert set(forecaster.training_range_.keys()) == {"s1", "s2"}
+    assert isinstance(forecaster.context_range_, dict)
+    assert set(forecaster.context_range_.keys()) == {"s1", "s2"}
 
 
 def test_fit_multiseries_exog_dict_stores_metadata():
@@ -320,7 +320,7 @@ def test_fit_long_format_dataframe_works():
     assert forecaster.series_names_in_ == ["series_1", "series_2"]
     assert forecaster.is_multiple_series_ is True
     assert forecaster.index_type_ == pd.DatetimeIndex
-    assert set(forecaster.training_range_.keys()) == {"series_1", "series_2"}
+    assert set(forecaster.context_range_.keys()) == {"series_1", "series_2"}
 
 
 def test_fit_long_format_issues_InputTypeWarning():

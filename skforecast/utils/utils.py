@@ -2810,12 +2810,13 @@ def check_preprocess_exog_multiseries(
 
 def align_series_and_exog_multiseries(
     series_dict: dict[str, pd.Series],
-    exog_dict: dict[str, pd.DataFrame] | None = None
+    exog_dict: dict[str, pd.DataFrame] | None = None,
+    trim_series_nan: bool = True,
 ) -> tuple[dict[str, pd.Series], dict[str, pd.DataFrame | None]]:
     """
     Align series and exog according to their index. If needed, reindexing is
     applied. Heading and trailing NaNs are removed from all series in 
-    `series_dict`.
+    `series_dict` when `trim_series_nan` is `True`.
 
     Parameters
     ----------
@@ -2823,6 +2824,10 @@ def align_series_and_exog_multiseries(
         Dictionary with the series used during training.
     exog_dict : dict, default None
         Dictionary with the exogenous variable/s used during training.
+    trim_series_nan : bool, default True
+        If `True`, leading and trailing NaNs are removed from each series
+        and exog is reindexed accordingly. If `False`, NaN trimming is
+        skipped and only exog reindexing is performed.
 
     Returns
     -------
@@ -2834,7 +2839,9 @@ def align_series_and_exog_multiseries(
     """
 
     for k in series_dict.keys():
-        if np.isnan(series_dict[k].iat[0]) or np.isnan(series_dict[k].iat[-1]):
+        if trim_series_nan and (
+            np.isnan(series_dict[k].iat[0]) or np.isnan(series_dict[k].iat[-1])
+        ):
             first_valid_index = series_dict[k].first_valid_index()
             last_valid_index = series_dict[k].last_valid_index()
             series_dict[k] = series_dict[k].loc[first_valid_index : last_valid_index]

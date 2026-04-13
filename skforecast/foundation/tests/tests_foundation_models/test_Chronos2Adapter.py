@@ -8,7 +8,7 @@ from skforecast.foundation._adapters import Chronos2Adapter
 from .fixtures_adapters import (
     y, exog, y_wide, y_dict, exog_shared,
     FakePipeline,
-    prepare_fit_args, prepare_predict_args,
+    prepare_fit_args, prepare_predict_args
 )
 
 
@@ -28,17 +28,16 @@ def test_Chronos2Adapter_init_default_params():
     assert adapter.torch_dtype is None
     assert adapter.cross_learning is False
     assert adapter._pipeline is None
-    assert adapter._history is None
-    assert adapter._history_exog is None
+    assert adapter.context_ is None
+    assert adapter.context_exog_ is None
     assert adapter.is_fitted is False
-    assert adapter.is_multiple_series_ is False
-    assert Chronos2Adapter.allow_exogenous is True
+    assert Chronos2Adapter.allow_exog is True
 
 
 @pytest.mark.parametrize(
     "context_length",
     [0, -1, None, 1.5, "not_int"],
-    ids=lambda cl: f"context_length={cl}",
+    ids=lambda cl: f"context_length={cl}"
 )
 def test_Chronos2Adapter_init_ValueError_when_context_length_invalid(context_length):
     """
@@ -59,7 +58,7 @@ def test_Chronos2Adapter_init_custom_params_stored():
         model_id="autogluon/chronos-2-small",
         context_length=512,
         cross_learning=True,
-        predict_kwargs={"temperature": 1.0},
+        predict_kwargs={"temperature": 1.0}
     )
     assert adapter.context_length == 512
     assert adapter.cross_learning is True
@@ -77,7 +76,7 @@ def test_Chronos2Adapter_get_params_returns_expected_keys_and_values():
     adapter = Chronos2Adapter(
         model_id="autogluon/chronos-2-small",
         context_length=512,
-        cross_learning=True,
+        cross_learning=True
     )
     params = adapter.get_params()
     assert set(params.keys()) == {
@@ -97,7 +96,7 @@ def test_Chronos2Adapter_get_params_returns_expected_keys_and_values():
         ({"context_length": -1}, "`context_length` must be a positive integer"),
         ({"unknown_param": 42}, "Invalid parameter"),
     ],
-    ids=["context_length=0", "context_length=-1", "unknown_param"],
+    ids=["context_length=0", "context_length=-1", "unknown_param"]
 )
 def test_Chronos2Adapter_set_params_ValueError_when_invalid(params, match):
     """
@@ -119,7 +118,7 @@ def test_Chronos2Adapter_set_params_ValueError_when_invalid(params, match):
         ("context_length", 128, False),
         ("predict_kwargs", {"temperature": 1.0}, False),
     ],
-    ids=lambda x: str(x),
+    ids=lambda x: str(x)
 )
 def test_Chronos2Adapter_set_params_updates_and_resets_pipeline(
     param, value, resets_pipeline
@@ -147,7 +146,7 @@ def test_Chronos2Adapter_set_params_predict_kwargs_none_normalises_to_empty_dict
     """
     adapter = Chronos2Adapter(
         model_id="autogluon/chronos-2-small",
-        predict_kwargs={"num_samples": 20},
+        predict_kwargs={"num_samples": 20}
     )
     adapter.set_params(predict_kwargs=None)
     assert adapter.predict_kwargs == {}
@@ -164,13 +163,13 @@ def test_Chronos2Adapter_fit_error_handling():
     adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
 
     with pytest.raises(TypeError):
-        series_dict, exog_dict, is_ms = prepare_fit_args(np.array([1, 2, 3]))
+        context, context_exog = prepare_fit_args(np.array([1, 2, 3]))
 
     with pytest.raises(ValueError):
-        series_dict, exog_dict, is_ms = prepare_fit_args({})
+        context, context_exog = prepare_fit_args({})
 
     with pytest.raises(TypeError, match=re.escape("all series must be a named pandas Series")):
-        series_dict, exog_dict, is_ms = prepare_fit_args(
+        context, context_exog = prepare_fit_args(
             {"s1": np.array([1.0, 2.0, 3.0])}
         )
 
@@ -178,27 +177,26 @@ def test_Chronos2Adapter_fit_error_handling():
 @pytest.mark.parametrize(
     "context_length, expected_len",
     [(10, 10), (25, 25), (50, 50), (100, 50)],
-    ids=lambda x: f"{x}",
+    ids=lambda x: f"{x}"
 )
 def test_Chronos2Adapter_fit_output_single_series(context_length, expected_len):
     """
     Test fit on a single series: returns self, sets is_fitted=True,
-    is_multiple_series_=False, stores history trimmed to context_length,
+    stores history trimmed to context_length,
     and does not modify the input series.
     """
     adapter = Chronos2Adapter(
         model_id="autogluon/chronos-2-small", context_length=context_length
     )
     y_copy = y.copy()
-    series_dict, exog_dict, is_ms = prepare_fit_args(y)
+    context, context_exog = prepare_fit_args(y, context_length=context_length)
     result = adapter.fit(
-        series_dict=series_dict, exog_dict=exog_dict, is_multiple_series=is_ms
+        context=context, context_exog=context_exog
     )
 
     assert result is adapter
     assert adapter.is_fitted is True
-    assert adapter.is_multiple_series_ is False
-    hist = next(iter(adapter._history.values()))
+    hist = next(iter(adapter.context_.values()))
     assert len(hist) == expected_len
     pd.testing.assert_series_equal(hist, y.iloc[-expected_len:])
     pd.testing.assert_series_equal(y, y_copy)
@@ -207,34 +205,33 @@ def test_Chronos2Adapter_fit_output_single_series(context_length, expected_len):
 @pytest.mark.parametrize(
     "series_input",
     [y_wide, y_dict],
-    ids=["wide_dataframe", "dict"],
+    ids=["wide_dataframe", "dict"]
 )
 def test_Chronos2Adapter_fit_output_multi_series(series_input):
     """
     Test fit on multi-series input (wide DataFrame or dict): sets is_fitted
-    and is_multiple_series_=True, stores a dict of Series keyed by series
+    and stores a dict of Series keyed by series
     names, each trimmed to context_length.
     """
     context_length = 10
     adapter = Chronos2Adapter(
         model_id="autogluon/chronos-2-small", context_length=context_length
     )
-    series_dict, exog_dict, is_ms = prepare_fit_args(series_input)
+    context, context_exog = prepare_fit_args(series_input, context_length=context_length)
     adapter.fit(
-        series_dict=series_dict, exog_dict=exog_dict, is_multiple_series=is_ms
+        context=context, context_exog=context_exog
     )
 
     assert adapter.is_fitted is True
-    assert adapter.is_multiple_series_ is True
-    assert set(adapter._history.keys()) == {"s1", "s2"}
-    for name, s in adapter._history.items():
+    assert set(adapter.context_.keys()) == {"s1", "s2"}
+    for name, s in adapter.context_.items():
         assert isinstance(s, pd.Series)
         assert len(s) == context_length
 
 
 def test_Chronos2Adapter_fit_exog_stored_and_trimmed():
     """
-    Test that exog is stored in _history_exog, trimmed to context_length,
+    Test that exog is stored in context_exog_, trimmed to context_length,
     and that None exog maps all series to None.
     """
     context_length = 15
@@ -243,20 +240,20 @@ def test_Chronos2Adapter_fit_exog_stored_and_trimmed():
     )
 
     # Fit with exog
-    series_dict, exog_dict, is_ms = prepare_fit_args(y, exog=exog)
+    context, context_exog = prepare_fit_args(y, exog=exog, context_length=context_length)
     adapter.fit(
-        series_dict=series_dict, exog_dict=exog_dict, is_multiple_series=is_ms
+        context=context, context_exog=context_exog
     )
-    hist_exog = next(iter(adapter._history_exog.values()))
+    hist_exog = next(iter(adapter.context_exog_.values()))
     assert len(hist_exog) == context_length
     pd.testing.assert_frame_equal(hist_exog, exog.iloc[-context_length:])
 
     # Fit without exog → all None
-    series_dict2, exog_dict2, is_ms2 = prepare_fit_args(y)
+    ctx2, ctx_exog2 = prepare_fit_args(y)
     adapter.fit(
-        series_dict=series_dict2, exog_dict=exog_dict2, is_multiple_series=is_ms2
+        context=ctx2, context_exog=ctx_exog2
     )
-    assert all(v is None for v in adapter._history_exog.values())
+    assert all(v is None for v in adapter.context_exog_.values())
 
 
 def test_Chronos2Adapter_fit_multiseries_exog_broadcast_and_per_series():
@@ -271,38 +268,23 @@ def test_Chronos2Adapter_fit_multiseries_exog_broadcast_and_per_series():
     )
 
     # Shared exog broadcast
-    series_dict, exog_dict, is_ms = prepare_fit_args(y_dict, exog=exog_shared)
+    context, context_exog = prepare_fit_args(y_dict, exog=exog_shared, context_length=context_length)
     adapter.fit(
-        series_dict=series_dict, exog_dict=exog_dict, is_multiple_series=is_ms
+        context=context, context_exog=context_exog
     )
     for name in y_dict:
-        assert adapter._history_exog[name] is not None
-        assert len(adapter._history_exog[name]) == context_length
+        assert adapter.context_exog_[name] is not None
+        assert len(adapter.context_exog_[name]) == context_length
 
     # Per-series exog dict: s1 has exog, s2 does not
-    series_dict2, exog_dict2, is_ms2 = prepare_fit_args(
+    ctx2, ctx_exog2 = prepare_fit_args(
         y_dict, exog={"s1": exog_shared.copy()}
     )
     adapter.fit(
-        series_dict=series_dict2, exog_dict=exog_dict2, is_multiple_series=is_ms2
+        context=ctx2, context_exog=ctx_exog2
     )
-    assert adapter._history_exog["s1"] is not None
-    assert adapter._history_exog["s2"] is None
-
-
-def test_Chronos2Adapter_fit_refitting_resets_is_multiple_series():
-    """
-    Test that re-fitting on a single Series after a multi-series fit resets
-    is_multiple_series_ to False.
-    """
-    adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
-    sd, ed, ms = prepare_fit_args(y_dict)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
-    assert adapter.is_multiple_series_ is True
-
-    sd2, ed2, ms2 = prepare_fit_args(y)
-    adapter.fit(series_dict=sd2, exog_dict=ed2, is_multiple_series=ms2)
-    assert adapter.is_multiple_series_ is False
+    assert adapter.context_exog_["s1"] is not None
+    assert adapter.context_exog_["s2"] is None
 
 
 # ==============================================================================
@@ -317,13 +299,13 @@ def test_Chronos2Adapter_predict_point_forecast_single_series():
     adapter = Chronos2Adapter(
         model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
     )
-    sd, ed, ms = prepare_fit_args(y)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=12)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=12)
     raw = adapter.predict(
-        steps=12, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+        steps=12, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
     )
 
     assert isinstance(raw, dict)
@@ -342,13 +324,13 @@ def test_Chronos2Adapter_predict_quantile_forecast_single_series():
     adapter = Chronos2Adapter(
         model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
     )
-    sd, ed, ms = prepare_fit_args(y)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=5)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=5)
     raw = adapter.predict(
-        steps=5, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=quantiles, is_multiple_series=ms_p,
+        steps=5, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=quantiles
     )
 
     arr = raw["sales"]
@@ -363,7 +345,7 @@ def test_Chronos2Adapter_predict_quantile_forecast_single_series():
 @pytest.mark.parametrize(
     "series_input",
     [y_wide, y_dict],
-    ids=["wide_dataframe", "dict"],
+    ids=["wide_dataframe", "dict"]
 )
 def test_Chronos2Adapter_predict_point_forecast_multi_series(series_input):
     """
@@ -373,13 +355,13 @@ def test_Chronos2Adapter_predict_point_forecast_multi_series(series_input):
     adapter = Chronos2Adapter(
         model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
     )
-    sd, ed, ms = prepare_fit_args(series_input)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(series_input)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=5)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=5)
     raw = adapter.predict(
-        steps=5, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+        steps=5, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
     )
 
     assert set(raw.keys()) == {"s1", "s2"}
@@ -397,13 +379,13 @@ def test_Chronos2Adapter_predict_quantile_forecast_multi_series():
     adapter = Chronos2Adapter(
         model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
     )
-    sd, ed, ms = prepare_fit_args(y_dict)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y_dict)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=4)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=4)
     raw = adapter.predict(
-        steps=4, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=quantiles, is_multiple_series=ms_p,
+        steps=4, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=quantiles
     )
 
     for name in ["s1", "s2"]:
@@ -424,14 +406,14 @@ def test_Chronos2Adapter_predict_pipeline_receives_correct_args():
     adapter = Chronos2Adapter(
         model_id="autogluon/chronos-2-small", pipeline=pipeline
     )
-    sd, ed, ms = prepare_fit_args(y)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
     # Point forecast → quantile_levels=[0.5], single input
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=9)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=9)
     adapter.predict(
-        steps=9, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+        steps=9, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
     )
     assert pipeline.last_prediction_length == 9
     assert pipeline.last_quantile_levels == [0.5]
@@ -440,9 +422,9 @@ def test_Chronos2Adapter_predict_pipeline_receives_correct_args():
 
     # Custom quantiles → forwarded
     adapter.predict(
-        steps=3, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=[0.05, 0.95],
-        is_multiple_series=ms_p,
+        steps=3, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=[0.05, 0.95],
+        
     )
     assert pipeline.last_quantile_levels == [0.05, 0.95]
 
@@ -458,14 +440,14 @@ def test_Chronos2Adapter_predict_cross_learning_forwarded_multiseries():
     adapter = Chronos2Adapter(
         model_id="autogluon/chronos-2-small",
         pipeline=pipeline,
-        cross_learning=True,
+        cross_learning=True
     )
-    sd, ed, ms = prepare_fit_args(y_dict)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=3)
+    ctx, ctx_exog = prepare_fit_args(y_dict)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=3)
     adapter.predict(
-        steps=3, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+        steps=3, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
     )
     assert pipeline.last_kwargs.get("cross_learning") is True
     assert len(pipeline.last_inputs) == 2
@@ -474,10 +456,10 @@ def test_Chronos2Adapter_predict_cross_learning_forwarded_multiseries():
     adapter2 = Chronos2Adapter(
         model_id="autogluon/chronos-2-small", pipeline=pipeline
     )
-    adapter2.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    adapter2.fit(context=ctx, context_exog=ctx_exog)
     adapter2.predict(
-        steps=3, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+        steps=3, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
     )
     assert pipeline.last_kwargs.get("cross_learning") is False
 
@@ -497,17 +479,17 @@ def test_Chronos2Adapter_predict_past_and_future_covariates_forwarded():
     )
 
     # Fit with exog → predict should pass past_covariates
-    sd, ed, ms = prepare_fit_args(y, exog=exog)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y, exog=exog)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
     future = pd.DataFrame(
         {"feat_a": np.arange(6, dtype=float)},
-        index=pd.date_range("2024-03-01", periods=6, freq="ME"),
+        index=pd.date_range("2024-03-01", periods=6, freq="ME")
     )
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=6, exog=future)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=6, exog=future)
     adapter.predict(
-        steps=6, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+        steps=6, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
     )
     assert "past_covariates" in pipeline.last_inputs[0]
     assert "future_covariates" in pipeline.last_inputs[0]
@@ -525,15 +507,15 @@ def test_Chronos2Adapter_predict_context_length_trims_history():
     adapter = Chronos2Adapter(
         model_id="autogluon/chronos-2-small",
         pipeline=pipeline,
-        context_length=context_length,
+        context_length=context_length
     )
-    sd, ed, ms = prepare_fit_args(y)
-    adapter.fit(series_dict=sd, exog_dict=ed, is_multiple_series=ms)
+    ctx, ctx_exog = prepare_fit_args(y, context_length=context_length)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
 
-    hd, ped, fed, ms_p = prepare_predict_args(adapter, steps=5)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=5)
     adapter.predict(
-        steps=5, history_dict=hd, past_exog_dict=ped,
-        future_exog_dict=fed, quantiles=None, is_multiple_series=ms_p,
+        steps=5, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
     )
     assert len(pipeline.last_inputs[0]["target"]) == context_length
 
@@ -553,7 +535,7 @@ def test_Chronos2Adapter_build_chronos_input_target_only():
     and converts integer target to float64.
     """
     int_target = np.arange(10, dtype=int)
-    result = _adapter_for_build._build_chronos_input(target=int_target)
+    result = _adapter_for_build._build_chronos_input(context=int_target)
     assert set(result.keys()) == {"target"}
     assert result["target"].dtype == np.float64
     np.testing.assert_array_equal(result["target"], int_target.astype(float))
@@ -567,21 +549,21 @@ def test_Chronos2Adapter_build_chronos_input_target_only():
                 {"feat_a": np.arange(30, dtype=float)}, index=_past_exog_idx
             ),
             None,
-            {"target", "past_covariates"},
+            {"target", "past_covariates"}
         ),
         (
             pd.Series(
                 np.arange(30, dtype=float), index=_past_exog_idx, name="feat_a"
             ),
             None,
-            {"target", "past_covariates"},
+            {"target", "past_covariates"}
         ),
         (
             None,
             pd.DataFrame(
                 {"feat_a": np.arange(12, dtype=float)}, index=_future_exog_idx
             ),
-            {"target", "future_covariates"},
+            {"target", "future_covariates"}
         ),
         (
             pd.DataFrame(
@@ -590,10 +572,10 @@ def test_Chronos2Adapter_build_chronos_input_target_only():
             pd.DataFrame(
                 {"feat_a": np.arange(12, dtype=float)}, index=_future_exog_idx
             ),
-            {"target", "past_covariates", "future_covariates"},
+            {"target", "past_covariates", "future_covariates"}
         ),
     ],
-    ids=["past_df", "past_series", "future_df", "both"],
+    ids=["past_df", "past_series", "future_df", "both"]
 )
 def test_Chronos2Adapter_build_chronos_input_with_covariates(
     past_exog, future_exog, expected_keys
@@ -603,7 +585,7 @@ def test_Chronos2Adapter_build_chronos_input_with_covariates(
     on which exog arguments are provided (DataFrame, Series, or None).
     """
     result = _adapter_for_build._build_chronos_input(
-        target=_target_30, past_exog=past_exog, future_exog=future_exog
+        context=_target_30, context_exog=past_exog, exog=future_exog
     )
     assert set(result.keys()) == expected_keys
     if "past_covariates" in result:
@@ -628,7 +610,7 @@ def test_Chronos2Adapter_build_chronos_input_with_covariates(
         "int→float64", "float→float64", "bool→float64",
         "nullable_int→float64", "nullable_float→float64", "nullable_bool→float64",
         "string→object", "categorical→object",
-    ],
+    ]
 )
 def test_Chronos2Adapter_build_chronos_input_dtype_handling(
     col_data, expected_dtype_kind
@@ -647,7 +629,7 @@ def test_Chronos2Adapter_build_chronos_input_dtype_handling(
         df = pd.DataFrame({"feat": col_data.values}, index=_past_exog_idx)
 
     result = _adapter_for_build._build_chronos_input(
-        target=_target_30, past_exog=df
+        context=_target_30, context_exog=df
     )
     arr = result["past_covariates"]["feat"]
     assert arr.dtype.kind in expected_dtype_kind, (
@@ -671,10 +653,10 @@ def test_Chronos2Adapter_build_chronos_input_mixed_numeric_and_categorical():
             "temperature": np.arange(30, dtype=int),
             "weather": rng.choice(["sunny", "cloudy", "rainy"], size=30),
         },
-        index=_past_exog_idx,
+        index=_past_exog_idx
     )
     result = _adapter_for_build._build_chronos_input(
-        target=_target_30, past_exog=mixed_exog
+        context=_target_30, context_exog=mixed_exog
     )
     assert result["past_covariates"]["temperature"].dtype == np.float64
     assert result["past_covariates"]["weather"].dtype.kind in ("U", "O")

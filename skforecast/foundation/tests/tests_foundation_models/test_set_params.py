@@ -8,15 +8,15 @@ from .fixtures_adapters import FakePipeline
 
 # Tests set_params
 # ==============================================================================
-def test_set_params_model_translates_to_model_id_and_resets_pipeline():
+def test_set_params_model_id_resets_pipeline():
     """
-    Test that set_params(model=...) translates to model_id on the adapter
+    Test that set_params(model_id=...) updates model_id on the adapter
     and resets the cached pipeline.
     """
     m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
     assert m.adapter._pipeline is not None
 
-    m.set_params(model="autogluon/chronos-2-large")
+    m.set_params(model_id="autogluon/chronos-2-large")
 
     assert m.adapter.model_id == "autogluon/chronos-2-large"
     assert m.model_id == "autogluon/chronos-2-large"

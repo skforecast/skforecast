@@ -92,9 +92,9 @@ class FakeTimesFM25Model:
     """
     Fake TimesFM 2.5 model for testing without torch/timesfm.
 
-    ``forecast()`` returns zeros as point forecast and ``i/10`` at index ``i``
-    for quantile forecast. Pre-sets ``forecast_config`` with
-    ``max_horizon=16384`` to prevent ``_ensure_compiled`` from importing
+    `forecast()` returns zeros as point forecast and `i/10` at index `i`
+    for quantile forecast. Pre-sets `forecast_config` with
+    `max_horizon=16384` to prevent `_ensure_compiled` from importing
     timesfm.
     """
 
@@ -132,8 +132,8 @@ class FakeMoirai2Forecast:
     """
     Fake Moirai2Forecast for testing without uni2ts/torch.
 
-    ``predict()`` returns shape ``(n, 9, steps)`` where
-    ``raw[i, q_idx, :]`` equals ``(q_idx + 1) / 10``.
+    `predict()` returns shape `(n, 9, steps)` where
+    `raw[i, q_idx, :]` equals `(q_idx + 1) / 10`.
     """
 
     def __init__(self):
@@ -167,55 +167,69 @@ class FakeMoirai2Forecast:
 
 # Helper: prepare dicts for adapter.fit()
 # ==============================================================================
-def prepare_fit_args(series, exog=None):
+def prepare_fit_args(series, exog=None, context_length=None):
     """
     Convert user-facing series/exog into the dict-based API that adapters
-    expect. Returns (series_dict, exog_dict, is_multiple_series).
+    expect. Returns (context, context_exog).
+
+    When `context_length` is provided the series and exog are trimmed to
+    that many trailing observations, mimicking the trimming that
+    `FoundationModel._check_preprocess_context` performs upstream.
     """
-    series_dict, _ = check_preprocess_series_foundation(series)
-    series_names = list(series_dict.keys())
-    exog_dict = normalize_exog_to_dict(exog, series_names)
-    is_multiple_series = len(series_names) > 1
-    return series_dict, exog_dict, is_multiple_series
+    context, _ = check_preprocess_series_foundation(series)
+    series_names = list(context.keys())
+    context_exog = normalize_exog_to_dict(exog, series_names)
+
+    if context_length is not None:
+        context = {
+            name: s.iloc[-context_length:]
+            for name, s in context.items()
+        }
+        context_exog = {
+            name: (
+                e.iloc[-context_length:] if e is not None else None
+            )
+            for name, e in context_exog.items()
+        }
+
+    return context, context_exog
 
 
-def prepare_predict_args(adapter, steps, last_window=None, last_window_exog=None,
+def prepare_predict_args(adapter, steps, context=None, context_exog=None,
                          exog=None):
     """
     Convert user-facing predict args into the dict-based API that adapters
-    expect. Returns (history_dict, past_exog_dict, future_exog_dict,
-    is_multiple_series).
+    expect. Returns (context, context_exog, exog).
     """
-    if last_window is not None:
-        lw_dict, _ = check_preprocess_series_foundation(last_window)
+    if context is not None:
+        lw_dict, _ = check_preprocess_series_foundation(context)
         series_names = list(lw_dict.keys())
     else:
         lw_dict = None
-        series_names = list(adapter._history.keys())
+        series_names = list(adapter.context_.keys())
 
     if lw_dict is not None:
-        history_dict = {
+        ctx = {
             name: s.iloc[-adapter.context_length :]
             for name, s in lw_dict.items()
         }
     else:
-        history_dict = adapter._history
+        ctx = adapter.context_
 
     if lw_dict is not None:
-        past_exog_dict = normalize_exog_to_dict(last_window_exog, series_names)
-        past_exog_dict = {
+        ctx_exog = normalize_exog_to_dict(context_exog, series_names)
+        ctx_exog = {
             name: (
                 e.iloc[-adapter.context_length :] if e is not None else None
             )
-            for name, e in past_exog_dict.items()
+            for name, e in ctx_exog.items()
         }
     else:
-        if adapter._history_exog is not None:
-            past_exog_dict = adapter._history_exog
+        if adapter.context_exog_ is not None:
+            ctx_exog = adapter.context_exog_
         else:
-            past_exog_dict = {name: None for name in series_names}
+            ctx_exog = {name: None for name in series_names}
 
-    future_exog_dict = normalize_exog_to_dict(exog, series_names)
-    is_multiple_series = len(series_names) > 1
+    future_exog = normalize_exog_to_dict(exog, series_names)
 
-    return history_dict, past_exog_dict, future_exog_dict, is_multiple_series
+    return ctx, ctx_exog, future_exog

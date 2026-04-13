@@ -28,7 +28,7 @@ from .fixtures_forecaster_foundation import (
 def test_predict_quantiles_NotFittedError_when_not_fitted():
     """
     Raise NotFittedError when forecaster is not fitted, regardless of whether
-    last_window is provided.
+    context is provided.
     """
     forecaster = make_forecaster()
 
@@ -40,7 +40,7 @@ def test_predict_quantiles_NotFittedError_when_not_fitted():
         forecaster.predict_quantiles(steps=5)
 
     with pytest.raises(NotFittedError):
-        forecaster.predict_quantiles(steps=3, last_window=y)
+        forecaster.predict_quantiles(steps=3, context=y)
 
 
 # Tests predict_quantiles — single series basic output
@@ -166,12 +166,12 @@ def test_predict_quantiles_dict_input():
     assert len(result) == 10
 
 
-# Tests predict_quantiles — last_window and exog
+# Tests predict_quantiles — context and exog
 # ==============================================================================
 
-def test_predict_quantiles_with_last_window_and_exog():
+def test_predict_quantiles_with_context_and_exog():
     """
-    predict_quantiles() with last_window, last_window_exog, and exog returns
+    predict_quantiles() with context, context_exog, and exog returns
     the correct output. Exog longer than steps is trimmed automatically.
     """
     forecaster = make_forecaster()
@@ -182,12 +182,12 @@ def test_predict_quantiles_with_last_window_and_exog():
     assert len(result) == 5
     assert "q_0.5" in result.columns
 
-    # With last_window + last_window_exog
+    # With context + context_exog
     result_lw = forecaster.predict_quantiles(
         steps=3,
         exog=exog_predict_lw.iloc[:3],
-        last_window=y_lw,
-        last_window_exog=exog_lw,
+        context=y_lw,
+        context_exog=exog_lw,
     )
     assert len(result_lw) == 3
     assert isinstance(result_lw, pd.DataFrame)
@@ -200,11 +200,11 @@ def test_predict_quantiles_with_last_window_and_exog():
     result_trimmed = forecaster.predict_quantiles(steps=5, exog=long_exog)
     assert len(result_trimmed) == 5
 
-    # last_window index and values (no exog)
+    # context index and values (no exog)
     forecaster_no_exog = make_forecaster()
     forecaster_no_exog.fit(series=y)
     result_idx = forecaster_no_exog.predict_quantiles(
-        steps=4, quantiles=[0.1, 0.5, 0.9], last_window=y_lw
+        steps=4, quantiles=[0.1, 0.5, 0.9], context=y_lw
     )
     expected_index = pd.date_range(
         start=y_lw.index[-1] + y_lw.index.freq,
@@ -217,12 +217,12 @@ def test_predict_quantiles_with_last_window_and_exog():
     np.testing.assert_array_almost_equal(result_idx["q_0.9"].values, [0.9] * 4)
 
 
-def test_predict_quantiles_with_last_window_multiseries():
+def test_predict_quantiles_with_context_multiseries():
     """
-    predict_quantiles() with multi-series last_window (dict) returns
+    predict_quantiles() with multi-series context (dict) returns
     correct output.
     """
     forecaster = make_forecaster()
     forecaster.fit(series=series_df)
-    result = forecaster.predict_quantiles(steps=5, last_window=lw_dict)
+    result = forecaster.predict_quantiles(steps=5, context=lw_dict)
     assert "level" in result.columns

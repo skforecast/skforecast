@@ -27,7 +27,7 @@ from .fixtures_forecaster_foundation import (
 def test_predict_interval_NotFittedError_when_not_fitted():
     """
     Raise NotFittedError when forecaster is not fitted, regardless of whether
-    last_window is provided.
+    context is provided.
     """
     forecaster = make_forecaster()
 
@@ -39,7 +39,7 @@ def test_predict_interval_NotFittedError_when_not_fitted():
         forecaster.predict_interval(steps=5)
 
     with pytest.raises(NotFittedError):
-        forecaster.predict_interval(steps=3, last_window=y)
+        forecaster.predict_interval(steps=3, context=y)
 
 
 @pytest.mark.parametrize(
@@ -160,12 +160,12 @@ def test_predict_interval_with_levels_filter():
     assert set(result_str["level"].unique()) == {"s1"}
 
 
-# Tests predict_interval — last_window and exog
+# Tests predict_interval — context and exog
 # ==============================================================================
 
-def test_predict_interval_with_last_window_and_exog():
+def test_predict_interval_with_context_and_exog():
     """
-    predict_interval() with last_window, last_window_exog, and exog returns
+    predict_interval() with context, context_exog, and exog returns
     the correct output. Exog longer than steps is trimmed automatically.
     """
     forecaster = make_forecaster()
@@ -176,12 +176,12 @@ def test_predict_interval_with_last_window_and_exog():
     assert len(result) == 5
     assert list(result.columns) == ["level", "pred", "lower_bound", "upper_bound"]
 
-    # With last_window + last_window_exog
+    # With context + context_exog
     result_lw = forecaster.predict_interval(
         steps=3,
         exog=exog_predict_lw.iloc[:3],
-        last_window=y_lw,
-        last_window_exog=exog_lw,
+        context=y_lw,
+        context_exog=exog_lw,
     )
     assert len(result_lw) == 3
 
@@ -193,11 +193,11 @@ def test_predict_interval_with_last_window_and_exog():
     result_trimmed = forecaster.predict_interval(steps=5, exog=long_exog)
     assert len(result_trimmed) == 5
 
-    # last_window index and values (no exog)
+    # context index and values (no exog)
     forecaster_no_exog = make_forecaster()
     forecaster_no_exog.fit(series=y)
     result_idx = forecaster_no_exog.predict_interval(
-        steps=4, interval=[10, 90], last_window=y_lw
+        steps=4, interval=[10, 90], context=y_lw
     )
     expected_index = pd.date_range(
         start=y_lw.index[-1] + y_lw.index.freq,
@@ -208,11 +208,11 @@ def test_predict_interval_with_last_window_and_exog():
     np.testing.assert_array_almost_equal(result_idx["pred"].values, [0.5] * 4)
 
 
-def test_predict_interval_with_last_window_multiseries():
+def test_predict_interval_with_context_multiseries():
     """
-    predict_interval() with multi-series last_window returns correct output.
+    predict_interval() with multi-series context returns correct output.
     """
     forecaster = make_forecaster()
     forecaster.fit(series=series_df)
-    result = forecaster.predict_interval(steps=5, last_window=lw_df)
+    result = forecaster.predict_interval(steps=5, context=lw_df)
     assert list(result.columns) == ["level", "pred", "lower_bound", "upper_bound"]

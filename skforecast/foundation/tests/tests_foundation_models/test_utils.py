@@ -10,7 +10,7 @@ from skforecast.foundation._utils import (
     check_preprocess_series_foundation,
     check_preprocess_exog_type,
     normalize_exog_to_dict,
-    validate_last_window_exog,
+    validate_context_exog,
     validate_exog_predict,
 )
 from skforecast.exceptions import (
@@ -225,25 +225,25 @@ def test_check_preprocess_exog_type_invalid_type_raises_TypeError():
 
 
 # ===========================================================================
-# validate_last_window_exog
+# validate_context_exog
 # ===========================================================================
 
 
-def test_validate_last_window_exog_none_last_window_returns_immediately():
+def test_validate_context_exog_none_context_returns_immediately():
     """
-    _validate_last_window_exog: last_window=None means no validation is needed.
+    _validate_context_exog: context=None means no validation is needed.
     """
     # Should not raise or warn
-    validate_last_window_exog(
-        last_window_exog=pd.Series([1.0, 2.0], name="x"),
-        last_window=None,
+    validate_context_exog(
+        context_exog=pd.Series([1.0, 2.0], name="x"),
+        context=None,
         exog_in_=True,
     )
 
 
-def test_validate_last_window_exog_exog_in_none_warns_IgnoredArgumentWarning():
+def test_validate_context_exog_exog_in_none_warns_IgnoredArgumentWarning():
     """
-    _validate_last_window_exog: when exog_in_=True and last_window_exog=None,
+    _validate_context_exog: when exog_in_=True and context_exog=None,
     an IgnoredArgumentWarning must be issued (improvement A).
     """
     idx = pd.date_range("2020-01-01", periods=3, freq="D")
@@ -251,51 +251,51 @@ def test_validate_last_window_exog_exog_in_none_warns_IgnoredArgumentWarning():
 
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        validate_last_window_exog(
-            last_window_exog=None,
-            last_window=lw,
+        validate_context_exog(
+            context_exog=None,
+            context=lw,
             exog_in_=True,
         )
 
     assert any(issubclass(warning.category, IgnoredArgumentWarning) for warning in w)
 
 
-def test_validate_last_window_exog_single_length_mismatch_raises_ValueError():
+def test_validate_context_exog_single_length_mismatch_raises_ValueError():
     """
-    _validate_last_window_exog single-series: length mismatch raises ValueError.
+    _validate_context_exog single-series: length mismatch raises ValueError.
     """
     idx = pd.date_range("2020-01-01", periods=5, freq="D")
     lw   = pd.Series(np.ones(5), index=idx, name="y")
     lwe  = pd.DataFrame({"x": np.ones(3)}, index=idx[:3])
 
     with pytest.raises(ValueError, match="same number of observations"):
-        validate_last_window_exog(
-            last_window_exog=lwe,
-            last_window=lw,
+        validate_context_exog(
+            context_exog=lwe,
+            context=lw,
             exog_in_=True,
         )
 
 
-def test_validate_last_window_exog_single_datetimeindex_mismatch_raises_ValueError():
+def test_validate_context_exog_single_datetimeindex_mismatch_raises_ValueError():
     """
-    _validate_last_window_exog single-series: DatetimeIndex mismatch raises ValueError.
+    _validate_context_exog single-series: DatetimeIndex mismatch raises ValueError.
     """
     idx_lw  = pd.date_range("2020-01-01", periods=5, freq="D")
     idx_lwe = pd.date_range("2020-01-02", periods=5, freq="D")
     lw  = pd.Series(np.ones(5), index=idx_lw,  name="y")
     lwe = pd.DataFrame({"x": np.ones(5)}, index=idx_lwe)
 
-    with pytest.raises(ValueError, match="index of `last_window_exog`.*aligned"):
-        validate_last_window_exog(
-            last_window_exog=lwe,
-            last_window=lw,
+    with pytest.raises(ValueError, match="index of `context_exog`.*aligned"):
+        validate_context_exog(
+            context_exog=lwe,
+            context=lw,
             exog_in_=True,
         )
 
 
-def test_validate_last_window_exog_multi_length_mismatch_raises_ValueError():
+def test_validate_context_exog_multi_length_mismatch_raises_ValueError():
     """
-    _validate_last_window_exog multi-series dict: length mismatch for one series
+    _validate_context_exog multi-series dict: length mismatch for one series
     raises ValueError.
     """
     idx = pd.date_range("2020-01-01", periods=5, freq="D")
@@ -309,16 +309,16 @@ def test_validate_last_window_exog_multi_length_mismatch_raises_ValueError():
     }
 
     with pytest.raises(ValueError, match="series 'B'.*same number"):
-        validate_last_window_exog(
-            last_window_exog=lwe,
-            last_window=lw,
+        validate_context_exog(
+            context_exog=lwe,
+            context=lw,
             exog_in_=True,
         )
 
 
-def test_validate_last_window_exog_multi_missing_series_warns_MissingExogWarning():
+def test_validate_context_exog_multi_missing_series_warns_MissingExogWarning():
     """
-    _validate_last_window_exog multi-series dict: absent series in last_window_exog
+    _validate_context_exog multi-series dict: absent series in context_exog
     triggers a MissingExogWarning.
     """
     idx = pd.date_range("2020-01-01", periods=5, freq="D")
@@ -330,9 +330,9 @@ def test_validate_last_window_exog_multi_missing_series_warns_MissingExogWarning
 
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        validate_last_window_exog(
-            last_window_exog=lwe,
-            last_window=lw,
+        validate_context_exog(
+            context_exog=lwe,
+            context=lw,
             exog_in_=True,
         )
 
@@ -344,20 +344,20 @@ def test_validate_last_window_exog_multi_missing_series_warns_MissingExogWarning
 # ===========================================================================
 
 
-def _make_validate_predict_kwargs(exog, steps=3, last_window_end=9):
+def _make_validate_predict_kwargs(exog, steps=3, context_end=9):
     """
     Build a minimal kwargs dict for validate_exog_predict using a RangeIndex.
-    training_range_ is set so the reference end-point is last_window_end.
+    context_range_ is set so the reference end-point is context_end.
     """
     return dict(
         exog=exog,
         steps=steps,
-        last_window=None,
+        context=None,
         exog_names_in_=["x"],
         exog_in_=True,
         index_freq_=1,
         is_multiseries=False,
-        training_range_={"y": pd.RangeIndex(start=0, stop=last_window_end + 1, step=1)[[0, -1]]},
+        context_range_={"y": pd.RangeIndex(start=0, stop=context_end + 1, step=1)[[0, -1]]},
         series_names_in_=["y"],
     )
 
@@ -365,9 +365,9 @@ def _make_validate_predict_kwargs(exog, steps=3, last_window_end=9):
 def test_validate_exog_predict_rangeindex_wrong_start_raises_ValueError():
     """
     _validate_exog_predict: RangeIndex exog that does not start immediately after
-    last_window must raise ValueError.
+    context must raise ValueError.
     """
-    # last_window_end = 9, so expected start = 10; exog starts at 15
+    # context_end = 9, so expected start = 10; exog starts at 15
     exog = pd.Series(
         np.ones(3),
         index=pd.RangeIndex(start=15, stop=18, step=1),
@@ -408,12 +408,12 @@ def test_validate_exog_predict_per_series_wrong_column_raises_ValueError():
         validate_exog_predict(
             exog=exog,
             steps=3,
-            last_window=None,
+            context=None,
             exog_names_in_=["x"],
             exog_in_=True,
             index_freq_=pd.tseries.frequencies.to_offset("D"),
             is_multiseries=True,
-            training_range_={"A": pd.DatetimeIndex(["2019-12-29", "2019-12-31"])},
+            context_range_={"A": pd.DatetimeIndex(["2019-12-29", "2019-12-31"])},
             series_names_in_=["A"],
             exog_names_in_per_series_={"A": ["x"]},
         )
@@ -433,12 +433,12 @@ def test_validate_exog_predict_per_series_correct_columns_passes():
     result = validate_exog_predict(
         exog=exog,
         steps=3,
-        last_window=None,
+        context=None,
         exog_names_in_=["x", "wind"],
         exog_in_=True,
         index_freq_=pd.tseries.frequencies.to_offset("D"),
         is_multiseries=True,
-        training_range_={
+        context_range_={
             "A": pd.DatetimeIndex([idx_train_end - pd.Timedelta(days=2), idx_train_end]),
             "B": pd.DatetimeIndex([idx_train_end - pd.Timedelta(days=2), idx_train_end]),
         },

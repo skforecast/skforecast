@@ -11,7 +11,7 @@ from skforecast.foundation._foundation_model import FoundationModel
 def test_init_output_when_default_params():
     """
     Test that FoundationModel creates the correct adapter with default
-    attribute values: adapter type, model_id, context_length, allow_exogenous,
+    attribute values: adapter type, model_id, context_length, allow_exog,
     is_fitted, and metadata attributes.
     """
     m = FoundationModel("autogluon/chronos-2-small")
@@ -21,13 +21,13 @@ def test_init_output_when_default_params():
     assert m.model_id == m.adapter.model_id
     assert m.context_length == 2048
     assert m.context_length == m.adapter.context_length
-    assert m.allow_exogenous is True
-    assert m.allow_exogenous is m.adapter.allow_exogenous
+    assert m.allow_exog is True
+    assert m.allow_exog is m.adapter.allow_exog
     assert m.is_fitted is False
     assert m.is_multiple_series_ is False
     assert m.index_type_ is None
     assert m.index_freq_ is None
-    assert m.training_range_ is None
+    assert m.context_range_ is None
     assert m.series_names_in_ is None
     assert m.exog_in_ is False
     assert m.exog_names_in_ is None

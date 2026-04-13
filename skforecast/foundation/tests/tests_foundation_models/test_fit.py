@@ -29,7 +29,7 @@ def test_fit_TypeError_when_series_is_invalid_type():
 def test_fit_output_when_single_series():
     """
     Test fit on a single series: returns self, is_fitted=True,
-    adapter._history populated, and all metadata attributes are
+    adapter.context_ populated, and all metadata attributes are
     correctly stored.
     """
     m = FoundationModel("autogluon/chronos-2-small")
@@ -41,15 +41,15 @@ def test_fit_output_when_single_series():
     assert m.series_names_in_ == ["sales"]
 
     # Adapter history
-    assert isinstance(m.adapter._history, dict)
-    assert len(next(iter(m.adapter._history.values()))) == len(y)
+    assert isinstance(m.adapter.context_, dict)
+    assert len(next(iter(m.adapter.context_.values()))) == len(y)
 
     # Index metadata
     assert m.index_type_ is pd.DatetimeIndex
     assert m.index_freq_ == y.index.freq
-    assert "sales" in m.training_range_
+    assert "sales" in m.context_range_
     pd.testing.assert_index_equal(
-        m.training_range_["sales"],
+        m.context_range_["sales"],
         y.index[[0, -1]],
     )
 
@@ -95,8 +95,8 @@ def test_fit_output_when_multi_series(series_input):
     assert m.is_fitted is True
     assert m.is_multiple_series_ is True
     assert m.series_names_in_ == ["s1", "s2"]
-    assert isinstance(m.adapter._history, dict)
-    assert list(m.adapter._history.keys()) == ["s1", "s2"]
+    assert isinstance(m.adapter.context_, dict)
+    assert list(m.adapter.context_.keys()) == ["s1", "s2"]
 
 
 # Tests fit — does not modify input

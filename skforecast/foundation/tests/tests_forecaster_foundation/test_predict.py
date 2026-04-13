@@ -31,7 +31,7 @@ from .fixtures_forecaster_foundation import (
 def test_predict_NotFittedError_when_not_fitted():
     """
     Raise NotFittedError when forecaster is not fitted, regardless of whether
-    last_window is provided.
+    context is provided.
     """
     forecaster = make_forecaster()
 
@@ -43,7 +43,7 @@ def test_predict_NotFittedError_when_not_fitted():
         forecaster.predict(steps=5)
 
     with pytest.raises(NotFittedError):
-        forecaster.predict(steps=3, last_window=y)
+        forecaster.predict(steps=3, context=y)
 
 
 # Tests predict — single series basic output
@@ -111,18 +111,18 @@ def test_predict_with_levels_filter(levels, expected_levels, expected_len):
     assert len(result) == expected_len
 
 
-# Tests predict — last_window
+# Tests predict — context
 # ==============================================================================
 
-def test_predict_output_when_last_window_provided():
+def test_predict_output_when_context_provided():
     """
-    When last_window is provided, predict() uses it as context. The forecast
-    index starts from last_window.index[-1] + freq. context_length trimming
+    When context is provided, predict() uses it as context. The forecast
+    index starts from context.index[-1] + freq. context_length trimming
     must not affect the output index or values.
     """
     forecaster = make_forecaster()
     forecaster.fit(series=y)
-    predictions = forecaster.predict(steps=4, last_window=y_lw)
+    predictions = forecaster.predict(steps=4, context=y_lw)
 
     expected_index = pd.date_range(
         start=y_lw.index[-1] + y_lw.index.freq,
@@ -137,7 +137,7 @@ def test_predict_output_when_last_window_provided():
     # context_length trimming must not change output
     forecaster_short = make_forecaster(context_length=10)
     forecaster_short.fit(series=y)
-    predictions_short = forecaster_short.predict(steps=4, last_window=y_lw)
+    predictions_short = forecaster_short.predict(steps=4, context=y_lw)
     pd.testing.assert_index_equal(predictions_short.index, expected_index)
     np.testing.assert_array_almost_equal(
         predictions_short["pred"].values, [0.5] * 4
@@ -145,38 +145,38 @@ def test_predict_output_when_last_window_provided():
 
 
 @pytest.mark.parametrize(
-    "last_window",
+    "context",
     [lw_df, lw_dict],
     ids=["DataFrame", "dict"],
 )
-def test_predict_with_last_window_multiseries(last_window):
+def test_predict_with_context_multiseries(context):
     """
-    predict() with multi-series last_window (DataFrame or dict) returns
+    predict() with multi-series context (DataFrame or dict) returns
     a DataFrame with correct columns.
     """
     forecaster = make_forecaster()
     forecaster.fit(series=series_df)
-    result = forecaster.predict(steps=5, last_window=last_window)
+    result = forecaster.predict(steps=5, context=context)
     assert isinstance(result, pd.DataFrame)
     assert list(result.columns) == ["level", "pred"]
 
 
-def test_predict_unfitted_with_last_window_raises_not_fitted_error():
+def test_predict_unfitted_with_context_raises_not_fitted_error():
     """
-    predict() raises NotFittedError even when last_window is provided
+    predict() raises NotFittedError even when context is provided
     and the forecaster has not been fitted.
     """
     forecaster = make_forecaster()
     with pytest.raises(NotFittedError):
-        forecaster.predict(steps=3, last_window=lw_df)
+        forecaster.predict(steps=3, context=lw_df)
 
 
 # Tests predict — exog
 # ==============================================================================
 
-def test_predict_with_exog_and_last_window_exog():
+def test_predict_with_exog_and_context_exog():
     """
-    predict() accepts exog and last_window_exog, returning the correct output.
+    predict() accepts exog and context_exog, returning the correct output.
     Exog longer than steps is trimmed automatically.
     """
     forecaster = make_forecaster()
@@ -186,12 +186,12 @@ def test_predict_with_exog_and_last_window_exog():
     predictions = forecaster.predict(steps=5, exog=exog_predict)
     assert len(predictions) == 5
 
-    # With last_window + last_window_exog
+    # With context + context_exog
     predictions_lw = forecaster.predict(
         steps=3,
         exog=exog_predict_lw.iloc[:3],
-        last_window=y_lw,
-        last_window_exog=exog_lw,
+        context=y_lw,
+        context_exog=exog_lw,
     )
     assert len(predictions_lw) == 3
     assert isinstance(predictions_lw, pd.DataFrame)

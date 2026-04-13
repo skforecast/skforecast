@@ -258,29 +258,29 @@ def assert_aligned(
         )
 
 
-def validate_last_window_exog(
-    last_window_exog: (
+def validate_context_exog(
+    context_exog: (
         pd.Series
         | pd.DataFrame
         | dict[str, pd.DataFrame | pd.Series | None]
         | None
     ),
-    last_window: pd.Series | pd.DataFrame | dict[str, pd.Series] | None,
+    context: pd.Series | pd.DataFrame | dict[str, pd.Series] | None,
     exog_in_: bool,
 ) -> None:
     """
-    Validate `last_window_exog` against `last_window` at predict time.
+    Validate `context_exog` against `context` at predict time.
 
     Checks that the historical exogenous variables provided for a backtesting
     window are properly aligned with the corresponding context window. Issues a
-    warning when the forecaster was trained with exog but `last_window_exog`
+    warning when the forecaster was trained with exog but `context_exog`
     is `None`. Raises when lengths or `DatetimeIndex` values do not match.
 
     Parameters
     ----------
-    last_window_exog : pandas Series, pandas DataFrame, dict, default None
+    context_exog : pandas Series, pandas DataFrame, dict, default None
         Historical exogenous variables for the context window.
-    last_window : pandas Series, pandas DataFrame, dict, default None
+    context : pandas Series, pandas DataFrame, dict, default None
         Context window override passed to the predict method.
     exog_in_ : bool
         Whether the forecaster was trained with exogenous variables.
@@ -292,64 +292,64 @@ def validate_last_window_exog(
     Raises
     ------
     TypeError
-        If `last_window_exog` is not a pandas Series, pandas DataFrame,
+        If `context_exog` is not a pandas Series, pandas DataFrame,
         dict, or None.
     ValueError
-        If `last_window_exog` length or `DatetimeIndex` does not match
-        `last_window` for any series.
+        If `context_exog` length or `DatetimeIndex` does not match
+        `context` for any series.
     """
 
-    if last_window is None:
+    if context is None:
         return
 
-    # Improvement A: warn if forecaster uses exog but last_window_exog is not provided
-    if exog_in_ and last_window_exog is None:
+    # Improvement A: warn if forecaster uses exog but context_exog is not provided
+    if exog_in_ and context_exog is None:
         warnings.warn(
             "Forecaster was trained with exogenous variables but "
-            "`last_window_exog` is `None`. The model will receive no historical "
+            "`context_exog` is `None`. The model will receive no historical "
             "exogenous variables (past_covariates) for this prediction window.",
             IgnoredArgumentWarning,
             stacklevel=3,
         )
         return
 
-    if last_window_exog is None:
+    if context_exog is None:
         return
 
-    is_multi = isinstance(last_window, (pd.DataFrame, dict))
+    is_multi = isinstance(context, (pd.DataFrame, dict))
 
     if not is_multi:
-        # Single-series: last_window is pd.Series
+        # Single-series: context is pd.Series
         assert_aligned(
-            last_window_exog, last_window, "`last_window_exog`", "`last_window`"
+            context_exog, context, "`context_exog`", "`context`"
         )
 
     else:
         # Multi-series: normalise both to dicts and validate per series
-        if isinstance(last_window, pd.DataFrame):
+        if isinstance(context, pd.DataFrame):
             lw_dict: dict[str, pd.Series] = {
-                col: last_window[col] for col in last_window.columns
+                col: context[col] for col in context.columns
             }
         else:
-            lw_dict = last_window
+            lw_dict = context
 
-        if isinstance(last_window_exog, dict):
-            lwe_dict: dict[str, pd.Series | pd.DataFrame | None] = last_window_exog
-        elif isinstance(last_window_exog, (pd.Series, pd.DataFrame)):
+        if isinstance(context_exog, dict):
+            lwe_dict: dict[str, pd.Series | pd.DataFrame | None] = context_exog
+        elif isinstance(context_exog, (pd.Series, pd.DataFrame)):
             # Broadcast: same exog for all context windows
-            lwe_dict = {name: last_window_exog for name in lw_dict}
+            lwe_dict = {name: context_exog for name in lw_dict}
         else:
             raise TypeError(
-                "`last_window_exog` must be a pandas Series, a pandas "
+                "`context_exog` must be a pandas Series, a pandas "
                 "DataFrame, a dict, or None. "
-                f"Got {type(last_window_exog)}."
+                f"Got {type(context_exog)}."
             )
 
         for name, lw in lw_dict.items():
             lwe = lwe_dict.get(name, None)
             if lwe is None:
                 warnings.warn(
-                    f"No `last_window_exog` for series '{name}'. The model will "
+                    f"No `context_exog` for series '{name}'. The model will "
                     f"receive no historical exogenous variables (past_covariates) "
                     f"for this series.",
                     MissingExogWarning,
@@ -359,8 +359,8 @@ def validate_last_window_exog(
 
             assert_aligned(
                 lwe, lw,
-                f"`last_window_exog` for series '{name}'",
-                f"`last_window['{name}']`",
+                f"`context_exog` for series '{name}'",
+                f"`context['{name}']`",
             )
 
 
@@ -386,7 +386,7 @@ def align_exog_single(
     steps : int
         Forecast horizon.
     ref_end : object
-        Last observed index value (last entry of `last_window` or training
+        Last observed index value (last entry of `context` or training
         range).
     index_freq_ : DateOffset, int, default None
         Index frequency.
@@ -424,8 +424,8 @@ def align_exog_single(
             if exog.index[0] != expected_start:
                 raise ValueError(
                     f"To make predictions {label} must start one step ahead of "
-                    "`last_window`.\n"
-                    f"    `last_window` ends at: {ref_end}.\n"
+                    "`context`.\n"
+                    f"    `context` ends at: {ref_end}.\n"
                     f"    {label} starts at: {exog.index[0]}.\n"
                     f"    Expected index: {expected_start}."
                 )
@@ -435,12 +435,12 @@ def align_exog_single(
 def validate_exog_predict(
     exog: pd.Series | pd.DataFrame | None,
     steps: int,
-    last_window: pd.Series | pd.DataFrame | dict | None,
+    context: pd.Series | pd.DataFrame | dict | None,
     exog_names_in_: list[str],
     exog_in_: bool,
     index_freq_: object,
     is_multiseries: bool,
-    training_range_: object,
+    context_range_: object,
     series_names_in_: list[str],
     exog_names_in_per_series_: dict[str, list[str] | None] | None = None,
 ) -> pd.Series | pd.DataFrame | None:
@@ -476,7 +476,7 @@ def validate_exog_predict(
         Exogenous variables provided to a predict method.
     steps : int
         Number of steps to forecast.
-    last_window : pandas Series, pandas DataFrame, dict, default None
+    context : pandas Series, pandas DataFrame, dict, default None
         Context override passed to the same predict call. Used to determine
         the reference end-timestamp for index alignment.
     exog_names_in_ : list
@@ -487,7 +487,7 @@ def validate_exog_predict(
         Frequency of the training index.
     is_multiseries : bool
         Whether the forecaster was trained in multi-series mode.
-    training_range_ : dict
+    context_range_ : dict
         Training range stored by the forecaster.
     series_names_in_ : list
         Names of all series seen during training.
@@ -565,16 +565,16 @@ def validate_exog_predict(
                 )
 
             # Reference end-point for this specific series
-            if isinstance(last_window, dict) and last_window.get(sid) is not None:
-                ref_end_s = last_window[sid].index[-1]
-            elif last_window is not None and isinstance(
-                last_window, (pd.Series, pd.DataFrame)
+            if isinstance(context, dict) and context.get(sid) is not None:
+                ref_end_s = context[sid].index[-1]
+            elif context is not None and isinstance(
+                context, (pd.Series, pd.DataFrame)
             ):
-                ref_end_s = last_window.index[-1]
-            elif isinstance(training_range_, dict) and sid in training_range_:
-                ref_end_s = training_range_[sid][1]
+                ref_end_s = context.index[-1]
+            elif isinstance(context_range_, dict) and sid in context_range_:
+                ref_end_s = context_range_[sid][1]
             else:
-                ref_end_s = training_range_[series_names_in_[0]][1]
+                ref_end_s = context_range_[series_names_in_[0]][1]
 
             # Alignment
             exog[sid] = align_exog_single(
@@ -611,20 +611,20 @@ def validate_exog_predict(
             )
 
     # Determine the reference end-point (last known observation)
-    if last_window is not None and isinstance(
-        last_window, (pd.Series, pd.DataFrame)
+    if context is not None and isinstance(
+        context, (pd.Series, pd.DataFrame)
     ):
-        ref_end = last_window.index[-1]
-    elif last_window is not None and isinstance(last_window, dict):
+        ref_end = context.index[-1]
+    elif context is not None and isinstance(context, dict):
         first_series = next(
-            (v for v in last_window.values() if v is not None), None
+            (v for v in context.values() if v is not None), None
         )
         if first_series is not None:
             ref_end = first_series.index[-1]
         else:
-            ref_end = training_range_[series_names_in_[0]][1]
+            ref_end = context_range_[series_names_in_[0]][1]
     else:
-        ref_end = training_range_[series_names_in_[0]][1]
+        ref_end = context_range_[series_names_in_[0]][1]
 
     # Align exog to the forecast horizon.
     return align_exog_single(exog, steps, ref_end, index_freq_, "`exog`")

@@ -27,7 +27,7 @@ def test_repr_output_before_fit():
     assert "Context length:" in result
     assert "Series names:" in result
     assert "Exogenous included:" in result
-    assert "Training range: None" in result
+    assert "Context range: None" in result
     assert "Last fit date: None" in result
     assert "Skforecast version:" in result
     assert "Python version:" in result
@@ -47,7 +47,7 @@ def test_repr_output_after_fit(exog_input, exog_present_str):
     forecaster.fit(series=y, exog=exog_input)
     result = repr(forecaster)
 
-    assert "Training range: None" not in result
+    assert "Context range: None" not in result
     assert "Last fit date: None" not in result
     assert "Series names: ['y']" in result
     assert exog_present_str in result

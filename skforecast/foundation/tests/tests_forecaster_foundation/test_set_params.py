@@ -74,10 +74,10 @@ def test_set_params_resets_fitted_state():
 
     assert forecaster.is_fitted is False
     assert forecaster.fit_date is None
-    assert forecaster.training_range_ is None
+    assert forecaster.context_range_ is None
     assert forecaster.index_type_ is None
     assert forecaster.index_freq_ is None
-    assert forecaster.last_window_ is None
+    assert forecaster.context_ is None
     assert forecaster.series_names_in_ is None
     assert forecaster.is_multiple_series_ is False
     assert forecaster.exog_in_ is False

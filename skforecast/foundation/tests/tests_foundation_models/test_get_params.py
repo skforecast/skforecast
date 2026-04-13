@@ -20,7 +20,7 @@ def test_get_params_returns_expected_keys_and_values():
     params = m.get_params()
 
     assert set(params.keys()) == {
-        "model",
+        "model_id",
         "cross_learning",
         "context_length",
         "device_map",
@@ -28,6 +28,6 @@ def test_get_params_returns_expected_keys_and_values():
         "predict_kwargs",
     }
     assert "pipeline" not in params
-    assert params["model"] == "autogluon/chronos-2-small"
+    assert params["model_id"] == "autogluon/chronos-2-small"
     assert params["context_length"] == 64
     assert params["cross_learning"] is True
