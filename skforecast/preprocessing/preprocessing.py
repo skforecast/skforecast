@@ -490,6 +490,10 @@ def reshape_series_long_to_dict(
         data = data.copy()
         first_col = data.columns[0]
         data.index = data.index.set_names([data.index.names[0], None])
+        # TODO: Replace with groupby approach (~4x faster, preserves .freq, avoids
+        # stale MultiIndex levels). Benchmark confirmed in dev/optimize_groupby_multiindex.ipynb.
+        # Requires adapting the loop body: use `for k, group in data.groupby(level=0, sort=True)`
+        # and replace `data.loc[k]` with `group.droplevel(0)`.
         series_dict = {}
         for k in data.index.levels[0]:
             original_size = len(data.loc[k])
@@ -602,6 +606,10 @@ def reshape_exog_long_to_dict(
 
         data = data.copy()
         data.index = data.index.set_names([data.index.names[0], None])
+        # TODO: Replace with groupby approach (~4x faster, preserves .freq, avoids
+        # stale MultiIndex levels). Benchmark confirmed in dev/optimize_groupby_multiindex.ipynb.
+        # Requires adapting the loop body: use `for k, group in data.groupby(level=0, sort=True)`
+        # and replace all `data.loc[k]` references with `group.droplevel(0)`.
         exog_dict = {}
         cols_float_dtype = set()
         nans_introduced = False

@@ -2291,6 +2291,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 )
             
             exog = exog.copy().to_frame() if isinstance(exog, pd.Series) else exog.copy()
+            # TODO: Replace with groupby approach (~4x faster, preserves .freq, avoids
+            # stale MultiIndex levels). Benchmark confirmed in dev/optimize_groupby_multiindex.ipynb.
+            # exog = {
+            #     sid: group.droplevel(0)
+            #     for sid, group in exog.groupby(level=0, sort=True)
+            #     if sid in levels
+            # }
             exog = {
                 series_id: exog.loc[series_id] 
                 for series_id in exog.index.levels[0]
