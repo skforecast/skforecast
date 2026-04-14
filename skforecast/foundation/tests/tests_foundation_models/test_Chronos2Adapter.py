@@ -24,7 +24,7 @@ def test_Chronos2Adapter_init_default_params():
     assert adapter.model_id == "autogluon/chronos-2-small"
     assert adapter.context_length == 8192
     assert adapter.predict_kwargs == {}
-    assert adapter.device_map is None
+    assert adapter.device_map == "auto"
     assert adapter.torch_dtype is None
     assert adapter.cross_learning is False
     assert adapter._pipeline is None

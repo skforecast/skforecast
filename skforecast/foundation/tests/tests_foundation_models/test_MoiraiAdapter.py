@@ -37,6 +37,7 @@ def test_MoiraiAdapter_init_default_params():
     adapter = MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small")
     assert adapter.model_id == "Salesforce/moirai-2.0-R-small"
     assert adapter.context_length == 2048
+    assert adapter.device == "auto"
     assert adapter._module is None
     assert adapter._forecast_obj is None
     assert adapter.context_ is None
@@ -86,9 +87,10 @@ def test_MoiraiAdapter_get_params_returns_expected_keys_and_values():
         model_id="Salesforce/moirai-2.0-R-base", context_length=1024
     )
     params = adapter.get_params()
-    assert set(params.keys()) == {"model_id", "context_length"}
+    assert set(params.keys()) == {"model_id", "context_length", "device"}
     assert params["model_id"] == "Salesforce/moirai-2.0-R-base"
     assert params["context_length"] == 1024
+    assert params["device"] == "auto"
 
 
 @pytest.mark.parametrize(
@@ -114,6 +116,7 @@ def test_MoiraiAdapter_set_params_ValueError_when_invalid(params, match):
     [
         ("model_id", "Salesforce/moirai-2.0-R-large"),
         ("context_length", 512),
+        ("device", "cpu"),
     ],
     ids=lambda x: str(x)
 )

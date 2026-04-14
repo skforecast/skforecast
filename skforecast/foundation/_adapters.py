@@ -15,6 +15,38 @@ import numpy as np
 import pandas as pd
 
 
+def _resolve_torch_device(device: str) -> str:
+    """
+    Resolve a device string to a concrete PyTorch device name.
+
+    If `device` is `"auto"`, the best available accelerator is selected
+    in priority order: CUDA > MPS (Apple Silicon) > CPU.
+
+    Parameters
+    ----------
+    device : str
+        Device string. Use `"auto"` for automatic selection, or an
+        explicit name such as `"cuda"`, `"mps"`, or `"cpu"`.
+
+    Returns
+    -------
+    device : str
+        Resolved device name.
+
+    """
+
+    if device != "auto":
+        return device
+
+    import torch
+
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 class Chronos2Adapter:
     """
     Adapter for Amazon Chronos-2 foundation models.
@@ -36,9 +68,11 @@ class Chronos2Adapter:
     predict_kwargs : dict, default None
         Additional keyword arguments forwarded to the pipeline's
         `predict_quantiles` method.
-    device_map : str, default None
-        Device map string forwarded to `BaseChronosPipeline.from_pretrained`
-        (e.g. "cuda", "cpu").
+    device_map : str, default 'auto'
+        Device placement for the model. `"auto"` selects the best
+        available accelerator (CUDA > MPS > CPU). Also accepts explicit
+        values such as `"cuda"`, `"mps"`, or `"cpu"`, forwarded to
+        `BaseChronosPipeline.from_pretrained`.
     torch_dtype : object, default None
         Torch dtype forwarded to `BaseChronosPipeline.from_pretrained`.
     cross_learning : bool, default False
@@ -83,7 +117,7 @@ class Chronos2Adapter:
         pipeline: Any | None = None,
         context_length: int = 8192,
         predict_kwargs: dict[str, Any] | None = None,
-        device_map: str | None = None,
+        device_map: str = "auto",
         torch_dtype: Any | None = None,
         cross_learning: bool = False,
     ) -> None:
@@ -110,10 +144,11 @@ class Chronos2Adapter:
         predict_kwargs : dict, default None
             Additional keyword arguments forwarded verbatim to the
             pipeline's `predict_quantiles` method.
-        device_map : str, default None
-            Device map string forwarded to
-            `BaseChronosPipeline.from_pretrained` (e.g. "cuda",
-            "cpu", "auto").
+        device_map : str, default 'auto'
+            Device placement for the model. `"auto"` selects the best
+            available accelerator (CUDA > MPS > CPU). Also accepts
+            explicit values such as `"cuda"`, `"mps"`, or `"cpu"`,
+            forwarded to `BaseChronosPipeline.from_pretrained`.
         torch_dtype : object, default None
             Torch dtype forwarded to `BaseChronosPipeline.from_pretrained`
             (e.g. `torch.bfloat16`).
@@ -346,8 +381,7 @@ class Chronos2Adapter:
             ) from exc
 
         kwargs: dict[str, Any] = {}
-        if self.device_map is not None:
-            kwargs["device_map"] = self.device_map
+        kwargs["device_map"] = self.device_map
         if self.torch_dtype is not None:
             kwargs["torch_dtype"] = self.torch_dtype
         
@@ -877,6 +911,10 @@ class MoiraiAdapter:
         predict time, if `context` is longer than `context_length`
         it is trimmed to this length; if it is shorter, all available
         observations are used as-is. Must be a positive integer.
+    device : str, default 'auto'
+        Device placement for the model. `"auto"` selects the best
+        available accelerator (CUDA > MPS > CPU). Also accepts explicit
+        values such as `"cuda"`, `"mps"`, or `"cpu"`.
 
     Attributes
     ----------
@@ -888,6 +926,8 @@ class MoiraiAdapter:
         Not used, present here for API consistency by convention.
     context_length : int
         Maximum number of historical observations used as context.
+    device : str
+        Device placement for the model.
     _forecast_obj : object
         Internal Moirai-2 forecast object, populated at the first call to
         `predict`.
@@ -923,6 +963,7 @@ class MoiraiAdapter:
         *,
         module: Any | None = None,
         context_length: int = 2048,
+        device: str = "auto",
     ) -> None:
         """
         Initialise the adapter.
@@ -941,6 +982,10 @@ class MoiraiAdapter:
             is longer than `context_length` it is trimmed to this length;
             if it is shorter, all available observations are passed as-is.
             Must be a positive integer.
+        device : str, default 'auto'
+            Device placement for the model. `"auto"` selects the best
+            available accelerator (CUDA > MPS > CPU). Also accepts
+            explicit values such as `"cuda"`, `"mps"`, or `"cpu"`.
         
         """
 
@@ -955,6 +1000,7 @@ class MoiraiAdapter:
         self.context_       = None
         self.context_exog_  = None
         self.context_length = context_length
+        self.device         = device
         self._forecast_obj  = None
         self.is_fitted      = False
 
@@ -965,11 +1011,12 @@ class MoiraiAdapter:
         Returns
         -------
         params : dict
-            Keys: `model_id`, `context_length`.
+            Keys: `model_id`, `context_length`, `device`.
         """
         return {
             'model_id':       self.model_id,
             'context_length': self.context_length,
+            'device':         self.device,
         }
 
     def set_params(self, **params) -> MoiraiAdapter:
@@ -980,7 +1027,7 @@ class MoiraiAdapter:
         Parameters
         ----------
         **params :
-            Valid keys: `model_id`, `context_length`.
+            Valid keys: `model_id`, `context_length`, `device`.
 
         Returns
         -------
@@ -988,14 +1035,14 @@ class MoiraiAdapter:
 
         """
 
-        valid = {'model_id', 'context_length'}
+        valid = {'model_id', 'context_length', 'device'}
         invalid = set(params) - valid
         if invalid:
             raise ValueError(
                 f"Invalid parameter(s) for MoiraiAdapter: {sorted(invalid)}. "
                 f"Valid parameters are: {sorted(valid)}."
             )
-        if params.keys() & {'model_id', 'context_length'}:
+        if params.keys() & {'model_id', 'context_length', 'device'}:
             self._module = None
             self._forecast_obj = None
         for key, value in params.items():
@@ -1167,7 +1214,8 @@ class MoiraiAdapter:
         -----
         Calls `_load_module` then wraps `self._module` in a
         `Moirai2Forecast` with `prediction_length=1` (overridden
-        per-call via `hparams_context`) and sets it to evaluation mode.
+        per-call via `hparams_context`), sets it to evaluation mode,
+        and moves it to the device specified by `self.device`.
         This method is a no-op when `self._forecast_obj` is already
         populated.
         """
@@ -1179,13 +1227,14 @@ class MoiraiAdapter:
         from uni2ts.model.moirai2 import Moirai2Forecast
 
         self._forecast_obj = Moirai2Forecast(
-            module=self._module,
-            prediction_length=1,
-            context_length=self.context_length,
-            target_dim=1,
-            feat_dynamic_real_dim=0,
-            past_feat_dynamic_real_dim=0,
+            module                     = self._module,
+            prediction_length          = 1,
+            context_length             = self.context_length,
+            target_dim                 = 1,
+            feat_dynamic_real_dim      = 0,
+            past_feat_dynamic_real_dim = 0,
         ).eval()
+        self._forecast_obj.to(_resolve_torch_device(self.device))
 
     def _run_inference(
         self,
