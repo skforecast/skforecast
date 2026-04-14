@@ -2794,17 +2794,10 @@ def check_preprocess_series(
 
             series = series.copy()
             series.index = series.index.set_names([series.index.names[0], None])
-            # TODO: Replace with groupby approach (~4x faster, preserves .freq, avoids
-            # stale MultiIndex levels). Benchmark confirmed in dev/optimize_groupby_multiindex.ipynb.
-            # Use sort=True to keep alphabetical order consistent with current levels[0] behaviour.
             series_dict = {
-                series_id: series.loc[series_id][first_col].rename(series_id)
-                for series_id in series.index.remove_unused_levels().levels[0]
+                series_id: group[first_col].droplevel(0).rename(series_id)
+                for series_id, group in series.groupby(level=0, sort=True, observed=True)
             }
-            # series_dict = {
-            #     sid: group[first_col].droplevel(0).rename(sid)
-            #     for sid, group in series.groupby(level=0, sort=True)
-            # }
         
         warnings.warn(
             "Passing a DataFrame (either wide or long format) as `series` requires "
@@ -2951,19 +2944,10 @@ def check_preprocess_exog_multiseries(
                     f"{type(exog.index.levels[1])}."
                 )
             exog.index = exog.index.set_names([exog.index.names[0], None])
-            # TODO: Replace with groupby approach (~4x faster, preserves .freq, avoids
-            # stale MultiIndex levels). Benchmark confirmed in dev/optimize_groupby_multiindex.ipynb.
-            # exog_dict.update(
-            #     {
-            #         sid: group.droplevel(0)
-            #         for sid, group in exog.groupby(level=0, sort=True)
-            #         if sid in series_names_in_
-            #     }
-            # )
             exog_dict.update(
                 {
-                    series_id: exog.loc[series_id] 
-                    for series_id in exog.index.remove_unused_levels().levels[0]
+                    series_id: group.droplevel(0)
+                    for series_id, group in exog.groupby(level=0, sort=True, observed=True)
                     if series_id in series_names_in_
                 }
             )
