@@ -56,7 +56,7 @@ def test_fit_output_when_single_series():
     # Exog metadata
     assert m.exog_in_ is False
     assert m.exog_names_in_ is None
-    assert m.exog_names_in_per_series_ == {"sales": None}
+    assert m.exog_names_in_per_series_ is None
 
     # Fit date
     assert m.fit_date is not None
@@ -97,6 +97,29 @@ def test_fit_output_when_multi_series(series_input):
     assert m.series_names_in_ == ["s1", "s2"]
     assert isinstance(m.adapter.context_, dict)
     assert list(m.adapter.context_.keys()) == ["s1", "s2"]
+
+
+def test_fit_output_when_single_series_range_index():
+    """
+    Test fit on a single series with RangeIndex: index_type_ is
+    pd.RangeIndex, index_freq_ stores the step, and context_range_ uses
+    the RangeIndex values.
+    """
+    y_range = pd.Series(
+        np.arange(30, dtype=float),
+        index=pd.RangeIndex(start=0, stop=30, step=1),
+        name="y",
+    )
+    m = FoundationModel("autogluon/chronos-2-small")
+    m.fit(series=y_range)
+
+    assert m.index_type_ is pd.RangeIndex
+    assert m.index_freq_ == 1
+    assert m.is_fitted is True
+    pd.testing.assert_index_equal(
+        m.context_range_["y"],
+        y_range.index[[0, -1]],
+    )
 
 
 # Tests fit — does not modify input

@@ -107,6 +107,26 @@ def test_predict_interval_custom_percentiles():
     )
 
 
+def test_predict_interval_with_float_interval():
+    """
+    When interval is a single float (coverage level), it is converted to
+    the symmetric [lower, upper] percentile pair.
+    """
+    forecaster = make_forecaster()
+    forecaster.fit(series=y)
+    # interval=0.8 → [(0.5-0.4)*100, (0.5+0.4)*100] = [10, 90]
+    result = forecaster.predict_interval(steps=3, interval=0.8)
+
+    assert list(result.columns) == ["level", "pred", "lower_bound", "upper_bound"]
+    assert len(result) == 3
+    np.testing.assert_array_almost_equal(
+        result["lower_bound"].values, [0.1] * 3
+    )
+    np.testing.assert_array_almost_equal(
+        result["upper_bound"].values, [0.9] * 3
+    )
+
+
 @pytest.mark.parametrize(
     "interval",
     [[10, 90], [5, 95], [25, 75]],

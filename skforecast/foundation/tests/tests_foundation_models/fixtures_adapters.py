@@ -4,9 +4,19 @@ import numpy as np
 import pandas as pd
 from skforecast.foundation._utils import (
     check_preprocess_series_foundation,
-    normalize_exog_to_dict,
 )
 from skforecast.utils import expand_index
+
+
+def normalize_exog_to_dict(exog, series_names):
+    """
+    Simple exog normalizer for test fixtures.
+    """
+    if exog is None:
+        return {name: None for name in series_names}
+    if isinstance(exog, dict):
+        return {name: exog.get(name, None) for name in series_names}
+    return {name: exog for name in series_names}
 
 
 # Shared time-series fixtures
@@ -178,19 +188,23 @@ def prepare_fit_args(series, exog=None, context_length=None):
     """
     context, _ = check_preprocess_series_foundation(series)
     series_names = list(context.keys())
-    context_exog = normalize_exog_to_dict(exog, series_names)
+    if exog is not None:
+        context_exog = normalize_exog_to_dict(exog, series_names)
+    else:
+        context_exog = None
 
     if context_length is not None:
         context = {
             name: s.iloc[-context_length:]
             for name, s in context.items()
         }
-        context_exog = {
-            name: (
-                e.iloc[-context_length:] if e is not None else None
-            )
-            for name, e in context_exog.items()
-        }
+        if context_exog is not None:
+            context_exog = {
+                name: (
+                    e.iloc[-context_length:] if e is not None else None
+                )
+                for name, e in context_exog.items()
+            }
 
     return context, context_exog
 
@@ -216,7 +230,7 @@ def prepare_predict_args(adapter, steps, context=None, context_exog=None,
     else:
         ctx = adapter.context_
 
-    if lw_dict is not None:
+    if lw_dict is not None and context_exog is not None:
         ctx_exog = normalize_exog_to_dict(context_exog, series_names)
         ctx_exog = {
             name: (
@@ -225,11 +239,11 @@ def prepare_predict_args(adapter, steps, context=None, context_exog=None,
             for name, e in ctx_exog.items()
         }
     else:
-        if adapter.context_exog_ is not None:
-            ctx_exog = adapter.context_exog_
-        else:
-            ctx_exog = {name: None for name in series_names}
+        ctx_exog = adapter.context_exog_
 
-    future_exog = normalize_exog_to_dict(exog, series_names)
+    if exog is not None:
+        future_exog = normalize_exog_to_dict(exog, series_names)
+    else:
+        future_exog = None
 
     return ctx, ctx_exog, future_exog

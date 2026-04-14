@@ -21,17 +21,16 @@ from ..utils import (
 )
 from ._foundation_model import FoundationModel
 
-# TODO: HAcer que context y history miren al del adapter
-# TODO: Añadir alias de context_ que sea last_window_, igual para context_exog_
+
 class ForecasterFoundation:
     """
     Forecaster that wraps a `FoundationModel` for full skforecast ecosystem
     compatibility: backtesting, model selection, etc.
 
     Unlike ML-based forecasters, there is no training step — the underlying
-    foundation models are zero-shot. `fit` only stores the history
-    as context and records index metadata. Predictions are generated directly
-    by the model's `predict_quantiles` pipeline.
+    foundation models are zero-shot. `fit` only stores the context
+    (recent observations) and records index metadata. Predictions are generated 
+    directly by the model's `predict_quantiles` pipeline.
 
     Supports both single-series and multi-series modes. Pass a `pandas.Series`
     to `fit` for single-series forecasting or a wide `pandas.DataFrame`, a
@@ -50,51 +49,62 @@ class ForecasterFoundation:
     ----------
     estimator : FoundationModel
         The `FoundationModel` instance provided by the user.
-    context_length : int
-        Maximum number of historical observations used as context. Mirrors
-        `estimator.context_length`. Updated when `set_params` is called.
     model_id : str
-        HuggingFace model ID. Mirrors `estimator.model_id`. Updated when
-        `set_params` is called.
+        HuggingFace model ID. Delegates to `estimator.model_id`.
+    context_ : dict
+        Per-series dict of pandas Series containing the last `context_length`
+        observations from the training data. Delegates to
+        `estimator.context_`. `None` before fitting.
+    context_exog_ : dict
+        Per-series dict of pandas DataFrame containing the last
+        `context_length` exogenous variables from the training data.
+        Delegates to `estimator.context_exog_`. `None` before fitting or
+        if no exogenous variables were provided.
+    last_window_ : dict
+        Alias for `context_`.
+    last_window_exog_ : dict
+        Alias for `context_exog_`.
+    context_length : int
+        Maximum number of historical observations used as context. Delegates
+        to `estimator.context_length`.
     window_size : int
-        Number of historical observations provided to the model as context in
-        each backtesting fold. Always equals `context_length`. Unlike ML
-        forecasters where `window_size` is the strict minimum required to build
-        features, here it represents the *desired* context size: backtesting
-        passes up to `context_length` observations per fold so the model
-        receives as much history as possible. When fewer observations are
-        available (e.g. early folds), all available data is passed and the
-        model handles shorter input gracefully.
-    context_ : None
-        Intentionally `None` — `ForecasterFoundation` never stores training
-        data directly; the adapter's internal `context_` is used instead.
+        Desired number of historical observations used as context by the
+        model. Always equals `context_length`.
     index_type_ : type
-        Type of index of the input used in training.
+        Type of index of the input used in training. Delegates to
+        `estimator.index_type_`.
     index_freq_ : pandas DateOffset, int
         Frequency of the index of the input used in training. A
         `pandas.DateOffset` for `DatetimeIndex`; the `step` integer
-        for `RangeIndex`.
+        for `RangeIndex`. Delegates to `estimator.index_freq_`.
     context_range_ : dict
         First and last values of index of the data used during training.
         A `dict` keyed by series name with `pandas.Index` values.
+        Delegates to `estimator.context_range_`.
     series_names_in_ : list
         Names of the series (levels) provided by the user during training.
+        Delegates to `estimator.series_names_in_`.
     is_multiple_series_ : bool
-        Whether the forecaster was fitted with multiple series.
+        Whether the forecaster was fitted with multiple series. Delegates
+        to `estimator.is_multiple_series_`.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
+        Delegates to `estimator.exog_in_`.
     exog_names_in_ : list
-        Names of the exogenous variables used during training.
+        Names of the exogenous variables used during training. Delegates
+        to `estimator.exog_names_in_`.
     exog_names_in_per_series_ : dict
-        Names of the exogenous variables used during training for each series.
+        Names of the exogenous variables used during training for each
+        series. Delegates to `estimator.exog_names_in_per_series_`.
     exog_type_in_ : type
-        Type of exogenous variable/s used in training.
+        Type of exogenous variable/s used in training. Delegates to
+        `estimator.exog_type_in_`.
     creation_date : str
         Date of creation.
     is_fitted : bool
         Tag to identify if the forecaster has been fitted (trained).
     fit_date : str
-        Date of last fit.
+        Date of last fit. Delegates to `estimator.fit_date`.
     skforecast_version : str
         Version of skforecast library used to create the forecaster.
     python_version : str
@@ -118,26 +128,12 @@ class ForecasterFoundation:
                 f"Got {type(estimator)}."
             )
 
-        self.estimator                 = estimator
-        self.context_length            = estimator.context_length
-        self.model_id                  = estimator.model_id
-        self.window_size               = estimator.context_length
-        self.context_                  = None
-        self.index_type_               = None
-        self.index_freq_               = None
-        self.context_range_           = None
-        self.series_names_in_          = None
-        self.is_multiple_series_       = False
-        self.exog_in_                  = False
-        self.exog_names_in_            = None
-        self.exog_names_in_per_series_ = None
-        self.exog_type_in_             = None
-        self.creation_date             = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.is_fitted                 = False
-        self.fit_date                  = None
-        self.skforecast_version        = __version__
-        self.python_version            = sys.version.split(" ")[0]
-        self.forecaster_id             = forecaster_id
+        self.estimator          = estimator
+        self.creation_date      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
+        self.is_fitted          = False
+        self.skforecast_version = __version__
+        self.python_version     = sys.version.split(" ")[0]
+        self.forecaster_id      = forecaster_id
 
         self.__skforecast_tags__ = {
             "library": "skforecast",
@@ -177,6 +173,216 @@ class ForecasterFoundation:
             "probabilistic_methods": ["quantile_native"],
             "handles_binned_residuals": False,
         }
+
+    @property
+    def context_length(self) -> int:
+        """
+        Maximum number of historical observations used as context.
+
+        Returns
+        -------
+        context_length : int
+            Maximum context length. Delegates to `estimator.context_length`.
+        """
+        return self.estimator.context_length
+
+    @property
+    def model_id(self) -> str:
+        """
+        HuggingFace model ID.
+
+        Returns
+        -------
+        model_id : str
+            HuggingFace model ID. Delegates to `estimator.model_id`.
+        """
+        return self.estimator.model_id
+
+    @property
+    def window_size(self) -> int:
+        """
+        Desired number of historical observations used as context by the
+        model. Always equals `context_length`.
+
+        Returns
+        -------
+        window_size : int
+            Context window size. Delegates to `estimator.context_length`.
+        """
+        return self.estimator.context_length
+
+    @property
+    def context_(self) -> dict[str, pd.Series] | None:
+        """
+        Per-series context stored during `fit`.
+
+        Returns
+        -------
+        context_ : dict, None
+            Per-series dict of pandas Series containing the last
+            `context_length` observations from the training data.
+            Delegates to `estimator.context_`. `None` before fitting.
+        """
+        return self.estimator.context_ if self.is_fitted else None
+
+    @property
+    def last_window_(self) -> dict[str, pd.Series] | None:
+        """
+        Alias for `context_`.
+
+        Returns
+        -------
+        last_window_ : dict, None
+            Per-series dict of pandas Series. Alias for `context_`.
+        """
+        return self.context_
+
+    @property
+    def context_exog_(self) -> dict[str, pd.DataFrame] | None:
+        """
+        Per-series exogenous context stored during `fit`.
+
+        Returns
+        -------
+        context_exog_ : dict, None
+            Per-series dict of pandas DataFrame containing the last
+            `context_length` exogenous variables from the training data.
+            Delegates to `estimator.context_exog_`. `None` before fitting
+            or if no exogenous variables were provided.
+        """
+        return self.estimator.context_exog_ if self.is_fitted else None
+
+    @property
+    def last_window_exog_(self) -> dict[str, pd.DataFrame] | None:
+        """
+        Alias for `context_exog_`.
+
+        Returns
+        -------
+        last_window_exog_ : dict, None
+            Per-series dict of pandas DataFrame. Alias for `context_exog_`.
+        """
+        return self.context_exog_
+
+    @property
+    def index_type_(self) -> type | None:
+        """
+        Type of index of the input used in training.
+
+        Returns
+        -------
+        index_type_ : type, None
+            Index type. Delegates to `estimator.index_type_`.
+        """
+        return self.estimator.index_type_
+
+    @property
+    def index_freq_(self) -> object:
+        """
+        Frequency of the index of the input used in training.
+
+        Returns
+        -------
+        index_freq_ : pandas DateOffset, int, None
+            Index frequency. Delegates to `estimator.index_freq_`.
+        """
+        return self.estimator.index_freq_
+
+    @property
+    def context_range_(self) -> dict[str, pd.Index] | None:
+        """
+        First and last values of index of the data used during training.
+
+        Returns
+        -------
+        context_range_ : dict, None
+            Per-series index range. Delegates to `estimator.context_range_`.
+        """
+        return self.estimator.context_range_
+
+    @property
+    def series_names_in_(self) -> list[str] | None:
+        """
+        Names of the series (levels) provided by the user during training.
+
+        Returns
+        -------
+        series_names_in_ : list, None
+            Series names. Delegates to `estimator.series_names_in_`.
+        """
+        return self.estimator.series_names_in_
+
+    @property
+    def is_multiple_series_(self) -> bool:
+        """
+        Whether the forecaster was fitted with multiple series.
+
+        Returns
+        -------
+        is_multiple_series_ : bool
+            Delegates to `estimator.is_multiple_series_`.
+        """
+        return self.estimator.is_multiple_series_
+
+    @property
+    def exog_in_(self) -> bool:
+        """
+        If the forecaster has been trained using exogenous variable/s.
+
+        Returns
+        -------
+        exog_in_ : bool
+            Delegates to `estimator.exog_in_`.
+        """
+        return self.estimator.exog_in_
+
+    @property
+    def exog_names_in_(self) -> list[str] | None:
+        """
+        Names of the exogenous variables used during training.
+
+        Returns
+        -------
+        exog_names_in_ : list, None
+            Delegates to `estimator.exog_names_in_`.
+        """
+        return self.estimator.exog_names_in_
+
+    @property
+    def exog_names_in_per_series_(self) -> dict | None:
+        """
+        Names of the exogenous variables used during training for each series.
+
+        Returns
+        -------
+        exog_names_in_per_series_ : dict, None
+            Delegates to `estimator.exog_names_in_per_series_`.
+        """
+        return self.estimator.exog_names_in_per_series_
+
+    @property
+    def exog_type_in_(self) -> type | None:
+        """
+        Type of exogenous variable/s used in training.
+
+        Returns
+        -------
+        exog_type_in_ : type, None
+            Delegates to `estimator.exog_type_in_`.
+        """
+        return self.estimator.exog_type_in_
+
+    @property
+    def fit_date(self) -> str | None:
+        """
+        Date of last fit.
+
+        Returns
+        -------
+        fit_date : str, None
+            Delegates to `estimator.fit_date`.
+        """
+        return self.estimator.fit_date
 
     def __repr__(self) -> str:
         """
@@ -311,7 +517,7 @@ class ForecasterFoundation:
         """
         Training Forecaster.
 
-        Stores index metadata and delegates history storage to the underlying
+        Stores index metadata and delegates context storage to the underlying
         adapter. No model training occurs since foundation model is zero-shot.
 
         Parameters
@@ -347,18 +553,7 @@ class ForecasterFoundation:
 
         """
 
-        self.context_              = None
-        self.index_type_               = None
-        self.index_freq_               = None
-        self.context_range_           = None
-        self.series_names_in_          = None
-        self.is_multiple_series_       = False
-        self.exog_in_                  = False
-        self.exog_names_in_            = None
-        self.exog_names_in_per_series_ = None
-        self.exog_type_in_             = None
-        self.is_fitted                 = False
-        self.fit_date                  = None
+        self.is_fitted = False
 
         if exog is not None and not self.estimator.allow_exog:
             warnings.warn(
@@ -370,21 +565,7 @@ class ForecasterFoundation:
             exog = None
 
         self.estimator.fit(series=series, exog=exog)
-
-        self.series_names_in_    = self.estimator.series_names_in_
-        self.is_multiple_series_ = self.estimator.is_multiple_series_
-
-        self.exog_in_                  = self.estimator.exog_in_
-        self.exog_names_in_            = self.estimator.exog_names_in_
-        self.exog_names_in_per_series_ = self.estimator.exog_names_in_per_series_ 
-        if exog is not None and self.exog_in_:
-            self.exog_type_in_ = type(exog)
-        
-        self.is_fitted       = True
-        self.fit_date        = self.estimator.fit_date
-        self.context_range_ = self.estimator.context_range_
-        self.index_type_     = self.estimator.index_type_
-        self.index_freq_     = self.estimator.index_freq_
+        self.is_fitted = True
 
     def predict(
         self,
@@ -403,6 +584,7 @@ class ForecasterFoundation:
             | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
+        check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
         Predict n steps ahead.
@@ -416,7 +598,7 @@ class ForecasterFoundation:
             all series seen at fit time are predicted.
         context : pandas Series, pandas DataFrame, dict, default None
             Context override for backtesting. When provided, replaces the
-            history stored at fit time. In single-series mode pass a
+            context stored at fit time. In single-series mode pass a
             `pd.Series`; in multi-series mode pass a wide `pd.DataFrame` or a
             `dict[str, pd.Series]`. If longer than `context_length`, only the
             last `context_length` observations are used. If shorter, all
@@ -429,6 +611,12 @@ class ForecasterFoundation:
             Future-known exogenous variables for the forecast horizon. Maps to
             `future_covariates` in Chronos-2. Must cover exactly `steps` steps
             for each series.
+        check_inputs : bool, default True
+            If `True`, the `context` and `context_exog` inputs are validated
+            and normalized. If `False`, `context` must already be a
+            `dict[str, pandas Series]` and `context_exog` must be a
+            `dict[str, pandas DataFrame | None]` or `None`. This argument
+            is created for internal use and is not recommended to be changed.
 
         Returns
         -------
@@ -450,6 +638,7 @@ class ForecasterFoundation:
                           context_exog = context_exog,
                           exog         = exog,
                           quantiles    = None,
+                          check_inputs = check_inputs,
                       )
 
         if levels is not None:
@@ -477,6 +666,7 @@ class ForecasterFoundation:
             | None
         ) = None,
         interval: list[float] | tuple[float] = [10, 90],
+        check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
         Predict n steps ahead with prediction intervals.
@@ -501,6 +691,12 @@ class ForecasterFoundation:
             Confidence of the prediction interval. Sequence of two percentiles
             `[lower, upper]`, e.g. `[10, 90]` for an 80 % interval.
             Values must be between 0 and 100 inclusive.
+        check_inputs : bool, default True
+            If `True`, the `context` and `context_exog` inputs are validated
+            and normalized. If `False`, `context` must already be a
+            `dict[str, pandas Series]` and `context_exog` must be a
+            `dict[str, pandas DataFrame | None]` or `None`. This argument
+            is created for internal use and is not recommended to be changed.
 
         Returns
         -------
@@ -544,6 +740,7 @@ class ForecasterFoundation:
                           context_exog = context_exog,
                           exog         = exog,
                           quantiles    = quantiles,
+                          check_inputs = check_inputs,
                       )
 
         predictions = predictions[['level', f'q_{0.5}', f'q_{lower_q}', f'q_{upper_q}']]
@@ -569,6 +766,7 @@ class ForecasterFoundation:
             | None
         ) = None,
         quantiles: list[float] | tuple[float] = [0.1, 0.5, 0.9],
+        check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
         Predict n steps ahead at specified quantile levels.
@@ -588,6 +786,12 @@ class ForecasterFoundation:
             Future-known exogenous variables (`future_covariates`).
         quantiles : list, tuple, default [0.1, 0.5, 0.9]
             Quantile levels to forecast. Values must be in the range (0, 1).
+        check_inputs : bool, default True
+            If `True`, the `context` and `context_exog` inputs are validated
+            and normalized. If `False`, `context` must already be a
+            `dict[str, pandas Series]` and `context_exog` must be a
+            `dict[str, pandas DataFrame | None]` or `None`. This argument
+            is created for internal use and is not recommended to be changed.
 
         Returns
         -------
@@ -608,6 +812,7 @@ class ForecasterFoundation:
                           context_exog = context_exog,
                           exog         = exog,
                           quantiles    = list(quantiles),
+                          check_inputs = check_inputs,
                       )
         
         if levels is not None:
@@ -622,7 +827,6 @@ class ForecasterFoundation:
         Set new values to the parameters of the underlying estimator.
 
         After calling this method, the forecaster is reset to an unfitted state.
-        The `fit` method must be called before prediction.
 
         Parameters
         ----------
@@ -636,23 +840,7 @@ class ForecasterFoundation:
         """
 
         self.estimator.set_params(**params)
-
-        self.context_length = self.estimator.context_length
-        self.model_id       = self.estimator.model_id
-        self.window_size    = self.estimator.context_length
-
-        self.context_                  = None
-        self.index_type_               = None
-        self.index_freq_               = None
-        self.context_range_           = None
-        self.series_names_in_          = None
-        self.is_multiple_series_       = False
-        self.exog_in_                  = False
-        self.exog_names_in_            = None
-        self.exog_names_in_per_series_ = None
-        self.exog_type_in_             = None
-        self.is_fitted                 = False
-        self.fit_date                  = None
+        self.is_fitted = False
 
     def summary(self) -> None:
         """

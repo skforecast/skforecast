@@ -22,7 +22,7 @@ def test_Chronos2Adapter_init_default_params():
     """
     adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
     assert adapter.model_id == "autogluon/chronos-2-small"
-    assert adapter.context_length == 2048
+    assert adapter.context_length == 8192
     assert adapter.predict_kwargs == {}
     assert adapter.device_map is None
     assert adapter.torch_dtype is None
@@ -248,12 +248,12 @@ def test_Chronos2Adapter_fit_exog_stored_and_trimmed():
     assert len(hist_exog) == context_length
     pd.testing.assert_frame_equal(hist_exog, exog.iloc[-context_length:])
 
-    # Fit without exog → all None
+    # Fit without exog → context_exog_ is None
     ctx2, ctx_exog2 = prepare_fit_args(y)
     adapter.fit(
         context=ctx2, context_exog=ctx_exog2
     )
-    assert all(v is None for v in adapter.context_exog_.values())
+    assert adapter.context_exog_ is None
 
 
 def test_Chronos2Adapter_fit_multiseries_exog_broadcast_and_per_series():
@@ -660,3 +660,24 @@ def test_Chronos2Adapter_build_chronos_input_mixed_numeric_and_categorical():
     )
     assert result["past_covariates"]["temperature"].dtype == np.float64
     assert result["past_covariates"]["weather"].dtype.kind in ("U", "O")
+
+
+@pytest.mark.parametrize(
+    "col_data, expected_dtype_kind",
+    [
+        (np.arange(10, dtype=int), "f"),
+        (np.arange(10, dtype=float), "f"),
+        (np.array([True, False] * 5), "f"),
+        (["sunny", "cloudy"] * 5, "UO"),
+    ],
+    ids=["np_int→float64", "np_float→float64", "np_bool→float64", "list_str→object"],
+)
+def test_Chronos2Adapter_to_covariate_array_non_pandas_inputs(
+    col_data, expected_dtype_kind
+):
+    """
+    Test _to_covariate_array fallback path for non-pandas inputs: numpy
+    arrays and plain lists are handled correctly.
+    """
+    arr = Chronos2Adapter._to_covariate_array(col_data)
+    assert arr.dtype.kind in expected_dtype_kind

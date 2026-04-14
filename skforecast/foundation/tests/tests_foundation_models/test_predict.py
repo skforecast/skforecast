@@ -60,7 +60,35 @@ def test_predict_ValueError_when_quantile_out_of_range(bad_quantile):
         m.predict(steps=3, quantiles=[0.5, bad_quantile])
 
 
+def test_predict_ValueError_when_steps_is_bool_false():
+    """
+    Test predict raises ValueError when steps is False. bool is a subclass
+    of int in Python, so False (== 0) fails the `steps < 1` check.
+    """
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m.fit(series=y)
+    err_msg = re.escape("`steps` must be a positive integer.")
+    with pytest.raises(ValueError, match=err_msg):
+        m.predict(steps=False)
 
+
+def test_predict_IgnoredArgumentWarning_when_context_exog_without_context():
+    """
+    Test predict issues IgnoredArgumentWarning when context_exog is
+    provided but context is not, because context_exog is silently
+    replaced by the stored context_exog_.
+    """
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m.fit(series=y)
+    dummy_exog = pd.DataFrame(
+        {"feat": np.arange(50, dtype=float)},
+        index=y.index,
+    )
+    warn_msg = re.escape(
+        "`context_exog` is ignored when `context` is not provided."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        m.predict(steps=5, context_exog=dummy_exog)
 
 
 # Tests predict — single-series output

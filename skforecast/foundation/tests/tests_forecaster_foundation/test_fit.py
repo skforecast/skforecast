@@ -39,7 +39,10 @@ def test_fit_TypeError_when_series_has_invalid_type():
     Raise TypeError when `series` is not pd.Series, pd.DataFrame, or dict.
     """
     forecaster = make_forecaster()
-    with pytest.raises(TypeError, match="`series` must be"):
+    err_msg = re.escape(
+        "`series` must be a pandas DataFrame or a dict of DataFrames or Series."
+    )
+    with pytest.raises(TypeError, match=err_msg):
         forecaster.fit(series=[1, 2, 3])
 
 
@@ -410,11 +413,13 @@ def test_fit_long_format_exog_non_datetime_second_level_raises_TypeError():
     exog_bad = pd.DataFrame({"feat_a": [1.0, 2.0, 3.0, 4.0]}, index=idx)
 
     forecaster = make_forecaster()
+    err_msg = re.escape(
+        "`series` and `exog` second level index must be a "
+        "pandas DatetimeIndex."
+    )
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        with pytest.raises(
-            TypeError, match="second level.*index must be a.*DatetimeIndex"
-        ):
+        with pytest.raises(TypeError, match=err_msg):
             forecaster.fit(series=series_long, exog=exog_bad)
 
 
@@ -452,6 +457,45 @@ def test_fit_long_format_exog_missing_series_issues_MissingExogWarning():
 
 # Tests fit — does not modify input
 # ==============================================================================
+
+def test_fit_context_and_aliases_after_fit():
+    """
+    After fit, context_, last_window_, context_exog_, and last_window_exog_
+    are correctly populated. last_window_ is an alias for context_ and
+    last_window_exog_ is an alias for context_exog_.
+    """
+    forecaster = make_forecaster()
+    forecaster.fit(series=y, exog=exog)
+
+    # context_ and alias
+    assert forecaster.context_ is not None
+    assert forecaster.last_window_ is forecaster.context_
+
+    # context_exog_ and alias
+    assert forecaster.context_exog_ is not None
+    assert forecaster.last_window_exog_ is forecaster.context_exog_
+
+    # Before fit → None
+    forecaster_new = make_forecaster()
+    assert forecaster_new.context_ is None
+    assert forecaster_new.last_window_ is None
+    assert forecaster_new.context_exog_ is None
+    assert forecaster_new.last_window_exog_ is None
+
+
+def test_fit_exog_names_in_per_series_correctly_stored():
+    """
+    exog_names_in_per_series_ stores per-series exog column names after fit
+    with per-series exog dict.
+    """
+    forecaster = make_forecaster()
+    forecaster.fit(series=series_df, exog=exog_dict)
+
+    assert isinstance(forecaster.exog_names_in_per_series_, dict)
+    assert set(forecaster.exog_names_in_per_series_.keys()) == {"s1", "s2"}
+    assert forecaster.exog_names_in_per_series_["s1"] == ["feat_a"]
+    assert forecaster.exog_names_in_per_series_["s2"] == ["feat_a"]
+
 
 def test_fit_does_not_modify_input():
     """

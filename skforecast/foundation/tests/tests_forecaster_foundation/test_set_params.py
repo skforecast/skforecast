@@ -18,7 +18,8 @@ def test_set_params_ValueError_when_invalid_key():
     Raise ValueError when an invalid parameter key is provided.
     """
     forecaster = make_forecaster()
-    with pytest.raises(ValueError, match="Invalid parameter"):
+    err_msg = re.escape("Invalid parameter")
+    with pytest.raises(ValueError, match=err_msg):
         forecaster.set_params({"bad_param": 42})
 
 

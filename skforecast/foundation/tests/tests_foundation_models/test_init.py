@@ -1,5 +1,6 @@
 # Unit test __init__ FoundationModel
 # ==============================================================================
+import re
 import pytest
 import pandas as pd
 from skforecast.foundation._adapters import Chronos2Adapter
@@ -19,7 +20,7 @@ def test_init_output_when_default_params():
     assert isinstance(m.adapter, Chronos2Adapter)
     assert m.model_id == "autogluon/chronos-2-small"
     assert m.model_id == m.adapter.model_id
-    assert m.context_length == 2048
+    assert m.context_length == 8192
     assert m.context_length == m.adapter.context_length
     assert m.allow_exog is True
     assert m.allow_exog is m.adapter.allow_exog
@@ -66,5 +67,6 @@ def test_init_ValueError_when_unknown_model():
     Test that FoundationModel raises ValueError when the model ID does
     not match any registered adapter prefix.
     """
-    with pytest.raises(ValueError, match="No adapter found"):
+    err_msg = re.escape("No adapter found for model 'unknown/unsupported-model'.")
+    with pytest.raises(ValueError, match=err_msg):
         FoundationModel("unknown/unsupported-model")

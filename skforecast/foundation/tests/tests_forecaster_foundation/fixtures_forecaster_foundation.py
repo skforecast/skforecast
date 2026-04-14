@@ -144,21 +144,6 @@ exog_dict = {
     ),
 }
 
-# Future exog for predict (5 steps)
-FORECAST_INDEX = pd.date_range("2024-07-31", periods=5, freq="ME")
-future_exog_df = pd.DataFrame(
-    {"feat_a": np.arange(70, 75, dtype=float)},
-    index=FORECAST_INDEX,
-)
-future_exog_dict = {
-    "s1": pd.DataFrame(
-        {"feat_a": np.arange(70, 75, dtype=float)}, index=FORECAST_INDEX
-    ),
-    "s2": pd.DataFrame(
-        {"feat_a": np.arange(70, 75, dtype=float) * 2}, index=FORECAST_INDEX
-    ),
-}
-
 # Last-window override (as DataFrame and dict)
 LW_INDEX = pd.date_range("2024-03-31", periods=20, freq="ME")
 lw_df = pd.DataFrame(

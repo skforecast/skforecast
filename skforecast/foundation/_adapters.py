@@ -23,32 +23,36 @@ class Chronos2Adapter:
     ----------
     model_id : str
         HuggingFace model ID, e.g. "autogluon/chronos-2-small".
-    context_length : int, default 2048
+    pipeline : BaseChronosPipeline, default None
+        Pre-loaded pipeline instance. If `None`, the pipeline is loaded
+        lazily on the first call to `predict`.
+    context_length : int, default 8192
         Maximum number of historical observations to use as context. At fit
         time only the last `context_length` observations are stored. At
         predict time, if `context` is longer than `context_length` it is
         trimmed to this length; if it is shorter, all available observations
-        are used as-is. Defaults to 2048, which matches the context window of
-        all current Chronos-2 variants. Must be a positive integer.
-    pipeline : BaseChronosPipeline, default None
-        Pre-loaded pipeline instance. If `None`, the pipeline is loaded
-        lazily on the first call to `predict`.
+        are used as-is. Defaults to 8192, which matches the maximum context
+        window of Chronos-2. Must be a positive integer.
+    predict_kwargs : dict, default None
+        Additional keyword arguments forwarded to the pipeline's
+        `predict_quantiles` method.
     device_map : str, default None
         Device map string forwarded to `BaseChronosPipeline.from_pretrained`
         (e.g. "cuda", "cpu").
     torch_dtype : object, default None
         Torch dtype forwarded to `BaseChronosPipeline.from_pretrained`.
-    predict_kwargs : dict, default None
-        Additional keyword arguments forwarded to the pipeline's
-        `predict_quantiles` method.
+    cross_learning : bool, default False
+        If `True`, Chronos-2 shares information across all series in
+        the batch when predicting in multi-series mode. Forwarded
+        directly to `predict_quantiles`. Ignored in single-series mode.
 
     Attributes
     ----------
     model_id : str
         HuggingFace model ID.
-    context_ : dict[str, pandas Series]
+    context_ : dict
         Stored training series after fitting.
-    context_exog_ : dict[str, pandas DataFrame or Series or None]
+    context_exog_ : dict
         Stored historical exogenous variables after fitting.
     context_length : int
         Maximum number of historical observations used as context.
@@ -63,6 +67,11 @@ class Chronos2Adapter:
     is_fitted : bool
         Whether the adapter has been fitted.
 
+    References
+    ----------
+    .. [1] https://github.com/amazon-science/chronos-forecasting
+    .. [2] https://huggingface.co/amazon/chronos-2
+
     """
 
     allow_exog: bool = True
@@ -72,7 +81,7 @@ class Chronos2Adapter:
         model_id: str,
         *,
         pipeline: Any | None = None,
-        context_length: int = 2048,
+        context_length: int = 8192,
         predict_kwargs: dict[str, Any] | None = None,
         device_map: str | None = None,
         torch_dtype: Any | None = None,
@@ -88,15 +97,15 @@ class Chronos2Adapter:
         pipeline : BaseChronosPipeline, default None
             Pre-loaded pipeline instance. If `None`, the pipeline is
             loaded lazily on the first call to `predict`.
-        context_length : int, default 2048
+        context_length : int, default 8192
             Maximum number of historical observations to retain as context.
             At `fit` time only the last `context_length` observations of
             `series` (and `exog`) are stored. At `predict` time, if
             `context` is longer than `context_length` it is trimmed to
             this length before inference; if it is shorter, all available
             observations are passed as-is and the model handles reduced
-            context gracefully. Defaults to 2048, which matches the context
-            window of all current Chronos-2 variants. Must be a positive
+            context gracefully. Defaults to 8192, which matches the
+            maximum context window of Chronos-2. Must be a positive
             integer.
         predict_kwargs : dict, default None
             Additional keyword arguments forwarded verbatim to the
@@ -138,7 +147,7 @@ class Chronos2Adapter:
 
         Returns
         -------
-        dict
+        params : dict
             Keys: `model_id`, `cross_learning`, `context_length`,
             `device_map`, `torch_dtype`, `predict_kwargs`.
         
@@ -244,16 +253,16 @@ class Chronos2Adapter:
         performed upstream by `FoundationModel`; this method receives
         pre-processed dicts only.
 
-        Parameters 
+        Parameters
         ----------
         steps : int
             Number of steps ahead to forecast.
-        context : dict pandas Series
+        context : dict
             Per-series context windows (already trimmed to
             `context_length`).
-        context_exog : dict pandas DataFrame, pandas Series, or None
+        context_exog : dict
             Per-series past covariates (already trimmed).
-        exog : dict pandas DataFrame, pandas Series, or None
+        exog : dict
             Per-series future covariates for the forecast horizon.
         quantiles : list of float or None
             Quantile levels to return. If `None`, a point forecast
@@ -261,7 +270,7 @@ class Chronos2Adapter:
 
         Returns
         -------
-        predictions : dict[str, np.ndarray]
+        predictions : dict
             Keys are series names. Each value is a 2-D array of shape
             `(steps, n_quantiles)`.
         
@@ -277,8 +286,8 @@ class Chronos2Adapter:
         inputs_list = [
             self._build_chronos_input(
                 context      = context[name].to_numpy(),
-                context_exog = context_exog[name],
-                exog         = exog[name],
+                context_exog = context_exog[name] if context_exog is not None else None,
+                exog         = exog[name] if exog is not None else None,
             )
             for name in series_names_in
         ]
@@ -361,9 +370,10 @@ class Chronos2Adapter:
 
         Returns
         -------
-        numpy ndarray
-            A 1-D numpy array. Numeric/bool are cast to `float64`. Others keep their original
-            dtype (typically `object` for string and categorical data).
+        col_array : numpy ndarray
+            A 1-D numpy array. Numeric/bool are cast to `float64`. Others
+            keep their original dtype (typically `object` for string and
+            categorical data).
         
         """
 
@@ -481,6 +491,10 @@ class TimesFM25Adapter:
     ----------
     model_id : str
         HuggingFace model ID.
+    context_ : dict
+        Stored training series after fitting.
+    context_exog_ : dict
+        Not used, present here for API consistency by convention.
     context_length : int
         Maximum number of historical observations used as context.
     max_horizon : int
@@ -499,6 +513,11 @@ class TimesFM25Adapter:
     Covariate support (via TimesFM's `forecast_with_covariates`) is not
     yet implemented. Passing `exog` or `context_exog` issues an
     `IgnoredArgumentWarning` and the values are discarded.
+
+    References
+    ----------
+    .. [1] https://github.com/google-research/timesfm
+    .. [2] https://huggingface.co/google/timesfm-2.5-200m-pytorch
 
     """
 
@@ -567,7 +586,7 @@ class TimesFM25Adapter:
 
         Returns
         -------
-        dict
+        params : dict
             Keys: `model_id`, `context_length`, `max_horizon`,
             `forecast_config_kwargs`.
         
@@ -676,19 +695,19 @@ class TimesFM25Adapter:
         ----------
         steps : int
             Number of steps ahead to forecast.
-        context : dict pandas Series
+        context : dict
             Per-series context windows (already trimmed to
             `context_length`).
-        context_exog : dict pandas DataFrame, pandas Series, or None
-            Per-series past covariates (already trimmed).
-        exog : dict pandas DataFrame, pandas Series, or None
-            Per-series future covariates for the forecast horizon.
+        context_exog : Any
+            Not used, present here for API consistency by convention.
+        exog : Any
+            Not used, present here for API consistency by convention.
         quantiles : list of float or None
             Quantile levels. Must be a subset of `SUPPORTED_QUANTILES`.
 
         Returns
         -------
-        predictions : dict[str, np.ndarray]
+        predictions : dict
             Keys are series names. Each value is a 2-D array of shape
             `(steps, n_quantiles)`.
 
@@ -863,8 +882,15 @@ class MoiraiAdapter:
     ----------
     model_id : str
         HuggingFace model ID.
+    context_ : dict
+        Stored training series after fitting.
+    context_exog_ : dict
+        Not used, present here for API consistency by convention.
     context_length : int
         Maximum number of historical observations used as context.
+    _forecast_obj : object
+        Internal Moirai-2 forecast object, populated at the first call to
+        `predict`.
     is_fitted : bool
         Whether the adapter has been fitted.
 
@@ -880,6 +906,11 @@ class MoiraiAdapter:
     `context_length`, discarding the future portion that future
     covariates require. Passing `exog` or `context_exog` issues an
     `IgnoredArgumentWarning` and the values are discarded.
+
+    References
+    ----------
+    .. [1] https://github.com/SalesforceAIResearch/uni2ts
+    .. [2] https://huggingface.co/Salesforce/moirai-2.0-R-small
 
     """
 
@@ -933,7 +964,7 @@ class MoiraiAdapter:
 
         Returns
         -------
-        dict
+        params : dict
             Keys: `model_id`, `context_length`.
         """
         return {
@@ -1041,7 +1072,7 @@ class MoiraiAdapter:
 
         Returns
         -------
-        predictions : dict[str, np.ndarray]
+        predictions : dict
             Keys are series names. Each value is a 2-D array of shape
             `(steps, n_quantiles)`.
 
@@ -1207,7 +1238,7 @@ def _resolve_adapter(model_id: str) -> type:
 
     Returns
     -------
-    type
+    adapter_cls : type
         The adapter class corresponding to the given model ID.
 
     """

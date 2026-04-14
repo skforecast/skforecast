@@ -2246,7 +2246,7 @@ def _backtesting_foundation(
     Backtesting of ForecasterFoundation.
 
     The original forecaster is used directly (no copy): refit is always
-    disabled for foundation models and every fold passes `last_window`
+    disabled for foundation models and every fold passes `context`
     explicitly, so `self.context_` is never modified during the fold loop.
     The only state change is the initial `fit` call that stores the training
     context window.
@@ -2454,8 +2454,8 @@ def _backtesting_foundation(
         should_refit = fold[5]
 
         steps_with_gap = test_gap_end - test_gap_start
-        last_window = _slice_series(series_norm, window_start, window_end)
-        last_window_exog = _slice_exog(exog, window_start, window_end)
+        context = _slice_series(series_norm, window_start, window_end)
+        context_exog = _slice_exog(exog, window_start, window_end)
         exog_test = _slice_exog(exog, test_gap_start, test_gap_end)
 
         if should_refit:
@@ -2464,14 +2464,16 @@ def _backtesting_foundation(
                 exog=_slice_exog(exog, train_start, train_end),
             )
 
+        # TODO: Pass check_inputs=False to skip redundant context/exog
+        #       validation since data has already been validated upstream.
         if quantiles is not None:
             pred = forecaster.predict_quantiles(
                 steps=steps_with_gap,
                 levels=levels,
                 quantiles=quantiles,
                 exog=exog_test,
-                last_window=last_window,
-                last_window_exog=last_window_exog,
+                context=context,
+                context_exog=context_exog,
             )
         elif interval is not None:
             pred = forecaster.predict_interval(
@@ -2479,16 +2481,16 @@ def _backtesting_foundation(
                 levels=levels,
                 interval=interval,
                 exog=exog_test,
-                last_window=last_window,
-                last_window_exog=last_window_exog,
+                context=context,
+                context_exog=context_exog,
             )
         else:
             pred = forecaster.predict(
                 steps=steps_with_gap,
                 levels=levels,
                 exog=exog_test,
-                last_window=last_window,
-                last_window_exog=last_window_exog,
+                context=context,
+                context_exog=context_exog,
             )
 
         if isinstance(pred, pd.Series):
