@@ -18,6 +18,7 @@
 [![Downloads](https://img.shields.io/pypi/dm/skforecast?style=flat-square&color=blue&label=downloads%2Fmonth)](https://pypistats.org/packages/skforecast)
 [![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/master/LICENSE)
 [![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787)
+[![llms.txt](https://img.shields.io/badge/llms.txt-available-blue)](https://skforecast.org/latest/llms-full.txt)
 [![paypal](https://img.shields.io/static/v1?style=social&amp;label=Donate&amp;message=%E2%9D%A4&amp;logo=Paypal&amp;color&amp;link=%3curl%3e)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
 [![buymeacoffee](https://img.shields.io/badge/-Buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/skforecast)
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/joaquinamatrodrigo?logo=github&label=Github%20sponsors&link=https%3A%2F%2Fgithub.com%2Fsponsors%2FJoaquinAmatRodrigo)
@@ -106,6 +107,11 @@ Skforecast provides a set of key features designed to make time series forecasti
 Explore our extensive list of examples and tutorials (English and Spanish) to get you started with skforecast. You can find them [here](./examples/examples_english.md).
 
 
+## AI-assisted forecasting
+
+Skforecast includes machine-readable context files so AI assistants (ChatGPT, Claude, Copilot, and others) can generate accurate code. Paste `https://skforecast.org/latest/llms-full.txt` into any LLM, or let your IDE pick up context automatically. Learn more in [AI-assisted forecasting](./quick-start/ai-assisted-forecasting.md).
+
+
 ## How to contribute
 
 Primarily, skforecast development consists of adding and creating new *Forecasters*, new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:
@@ -129,12 +135,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.21.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.22.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.22.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **BibTeX**:
@@ -142,8 +148,8 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Compu
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.21.0},
-  month   = {2},
+  version = {0.22.0},
+  month   = {3},
   year    = {2026},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},

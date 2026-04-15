@@ -247,6 +247,7 @@ class ForecasterEquivalentDate():
             "supports_window_features": False,
             "supports_transformer_series": False,
             "supports_transformer_exog": False,
+            "supports_categorical_features": False,
             "supports_weight_func": False,
             "supports_differentiation": False,
 

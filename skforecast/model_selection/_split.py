@@ -20,7 +20,7 @@ from ..exceptions import IgnoredArgumentWarning
 class BaseFold():
     """
     Base class for all Fold classes in skforecast. All fold classes should specify
-    all the parameters that can be set at the class level in their ``__init__``.
+    all the parameters that can be set at the class level in their `__init__`.
 
     Parameters
     ----------

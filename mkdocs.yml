@@ -18,6 +18,7 @@ nav:
     - Forecaster Parameters: quick-start/forecaster-parameters.md
     - Forecaster Attributes: quick-start/forecaster-attributes.ipynb
     - How to install: quick-start/how-to-install.md
+    - AI-assisted forecasting: quick-start/ai-assisted-forecasting.md
 
   - User Guides:
     - Table of contents: user_guides/table-of-contents.md
@@ -45,9 +46,10 @@ nav:
       - Exogenous variables: user_guides/exogenous-variables.ipynb
       - Window and custom features: user_guides/window-features-and-custom-features.ipynb
       - Categorical features: user_guides/categorical-features.ipynb
-      - Calendars features: user_guides/calendar-features.ipynb
+      - Calendar features: user_guides/calendar-features.ipynb
       - Data transformation: user_guides/sklearn-transformers-and-pipeline.ipynb
       - Differentiation: user_guides/time-series-differentiation.ipynb
+      - Handling missing values: user_guides/handling-missing-values.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
       - Sktime pipelines: user_guides/sktime-pipelines.ipynb
     - Model Evaluation and Tuning:
@@ -181,8 +183,8 @@ plugins:
       include_requirejs: True
       include_source: True
   - mike:
-      alias_type: redirect
-      canonical_version: null
+      alias_type: copy
+      canonical_version: latest
       css_dir: css
       deploy_prefix: ''
       javascript_dir: js
@@ -247,7 +249,6 @@ markdown_extensions:
   - admonition
   - attr_list
   - footnotes
-  - pymdownx.details
   - md_in_html
   - toc:
       permalink: true
@@ -265,17 +266,17 @@ markdown_extensions:
       linenums: false
       pygments_lang_class: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
   - pymdownx.keys
+  - pymdownx.magiclink
   - pymdownx.mark
   - pymdownx.smartsymbols
+  - pymdownx.snippets
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
-  - pymdownx.magiclink
   
 extra:
   version:

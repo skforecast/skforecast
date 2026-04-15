@@ -40,7 +40,9 @@ from ..utils import (
     check_preprocess_series,
     check_preprocess_exog_multiseries,
     manage_warnings,
-    deepcopy_forecaster
+    deepcopy_forecaster,
+    _get_estimator_categorical_set_params,
+    _restore_estimator_categorical_set_params
 )
 
 
@@ -432,7 +434,9 @@ def _evaluate_grid_hyperparameters(
                 X_train,
                 y_train,
                 X_test,
-                y_test
+                y_test,
+                sample_weight,
+                fit_kwargs
             ) = forecaster_search._train_test_split_one_step_ahead(
                 y=y, initial_train_size=cv.initial_train_size, exog=exog
             )
@@ -464,12 +468,14 @@ def _evaluate_grid_hyperparameters(
                 else:
 
                     metric_values = _calculate_metrics_one_step_ahead(
-                                        forecaster = forecaster_search,
-                                        metrics    = metric,
-                                        X_train    = X_train,
-                                        y_train    = y_train,
-                                        X_test     = X_test,
-                                        y_test     = y_test
+                                        forecaster    = forecaster_search,
+                                        metrics       = metric,
+                                        X_train       = X_train,
+                                        y_train       = y_train,
+                                        X_test        = X_test,
+                                        y_test        = y_test,
+                                        sample_weight = sample_weight,
+                                        fit_kwargs    = fit_kwargs
                                     )
             except Exception as e:
                 warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
@@ -489,8 +495,9 @@ def _evaluate_grid_hyperparameters(
                 metric_dict[m_name].append(m_value)
         
             if output_file is not None:
-                header = ['lags', 'lags_label', 'params', 
-                          *metric_dict.keys(), *params.keys()]
+                header = [
+                    'lags', 'lags_label', 'params', *metric_dict.keys(), *params.keys()
+                ]
                 row = [lags_v, lags_k, params, 
                        *metric_values, *params.values()]
                 if not os.path.isfile(output_file):
@@ -803,21 +810,37 @@ def bayesian_search_forecaster(
                     X_train,
                     y_train,
                     X_test,
-                    y_test
+                    y_test,
+                    sample_weight,
+                    fit_kwargs
                 ) = forecaster_search._train_test_split_one_step_ahead(
                     y=y, initial_train_size=cv.initial_train_size, exog=exog
                 )
-                _cached_split[lags_key] = (X_train, y_train, X_test, y_test)
+                
+                _cached_split[lags_key] = (
+                    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs,
+                    _get_estimator_categorical_set_params(forecaster_search)
+                )
+
             else:
-                X_train, y_train, X_test, y_test = _cached_split[lags_key]
+
+                (
+                    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs,
+                    _estimator_cat_params
+                ) = _cached_split[lags_key]
+                _restore_estimator_categorical_set_params(
+                    forecaster_search, _estimator_cat_params
+                )
 
             metrics = _calculate_metrics_one_step_ahead(
-                          forecaster = forecaster_search,
-                          metrics    = metric,
-                          X_train    = X_train,
-                          y_train    = y_train,
-                          X_test     = X_test,
-                          y_test     = y_test
+                          forecaster    = forecaster_search,
+                          metrics       = metric,
+                          X_train       = X_train,
+                          y_train       = y_train,
+                          X_test        = X_test,
+                          y_test        = y_test,
+                          sample_weight = sample_weight,
+                          fit_kwargs    = fit_kwargs
                       )
 
             # Store all metrics in the trial using optuna's user_attrs mechanism.
@@ -830,9 +853,14 @@ def bayesian_search_forecaster(
     if 'direction' not in kwargs_create_study.keys():
         kwargs_create_study['direction'] = 'minimize' if is_regression else 'maximize'
     if 'sampler' not in kwargs_create_study:
-        kwargs_create_study['sampler'] = TPESampler(
-            multivariate=True, group=True, consider_endpoints=True, seed=random_state
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                'ignore',
+                message='.*multivariate.*|.*group.*'
+            )
+            kwargs_create_study['sampler'] = TPESampler(
+                multivariate=True, group=True, consider_endpoints=True, seed=random_state
+            )
 
     kwargs_study_optimize = kwargs_study_optimize.copy() if kwargs_study_optimize is not None else {}
     if show_progress:
@@ -1410,7 +1438,9 @@ def _evaluate_grid_hyperparameters_multiseries(
                 X_test,
                 y_test,
                 X_train_encoding,
-                X_test_encoding
+                X_test_encoding,
+                sample_weight,
+                fit_kwargs
             ) = forecaster_search._train_test_split_one_step_ahead(
                 series=series, exog=exog, initial_train_size=cv.initial_train_size
             )
@@ -1455,8 +1485,12 @@ def _evaluate_grid_hyperparameters_multiseries(
                         X_test_encoding       = X_test_encoding,
                         levels                = levels,
                         metrics               = metric,
-                        add_aggregated_metric = add_aggregated_metric
+                        add_aggregated_metric = add_aggregated_metric,
+                        sample_weight         = sample_weight,
+                        fit_kwargs            = fit_kwargs,
+                        return_predictions    = False
                     )
+            
             except Exception as e:
                 warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
                 continue
@@ -1479,8 +1513,9 @@ def _evaluate_grid_hyperparameters_multiseries(
             metrics_list.append(metrics)
 
             if output_file is not None:
-                header = ['levels', 'lags', 'lags_label', 'params', 
-                          *metric_names, *params.keys()]
+                header = [
+                    'levels', 'lags', 'lags_label', 'params', *metric_names, *params.keys()
+                ]
                 row = [
                     levels,
                     lags_v,
@@ -1874,18 +1909,27 @@ def bayesian_search_forecaster_multiseries(
                     X_test,
                     y_test,
                     X_train_encoding,
-                    X_test_encoding
+                    X_test_encoding,
+                    sample_weight,
+                    fit_kwargs
                 ) = forecaster_search._train_test_split_one_step_ahead(
                     series=series, exog=exog, initial_train_size=cv.initial_train_size,
                 )
                 _cached_split[lags_key] = (
-                    X_train, y_train, X_test, y_test,
-                    X_train_encoding, X_test_encoding
+                    X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding,
+                    sample_weight, fit_kwargs,
+                    _get_estimator_categorical_set_params(forecaster_search)
                 )
             else:
                 (
-                    X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding
+                    X_train, y_train, X_test, y_test,
+                    X_train_encoding, X_test_encoding,
+                    sample_weight, fit_kwargs,
+                    _estimator_cat_params
                 ) = _cached_split[lags_key]
+                _restore_estimator_categorical_set_params(
+                    forecaster_search, _estimator_cat_params
+                )
 
             metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
                              forecaster            = forecaster_search,
@@ -1898,7 +1942,10 @@ def bayesian_search_forecaster_multiseries(
                              X_test_encoding       = X_test_encoding,
                              levels                = levels,
                              metrics               = metric,
-                             add_aggregated_metric = add_aggregated_metric
+                             add_aggregated_metric = add_aggregated_metric,
+                             sample_weight         = sample_weight,
+                             fit_kwargs            = fit_kwargs,
+                             return_predictions    = False
                          )
 
             if add_aggregated_metric:
@@ -1921,9 +1968,14 @@ def bayesian_search_forecaster_multiseries(
     if 'direction' not in kwargs_create_study:
         kwargs_create_study['direction'] = 'minimize' if is_regression else 'maximize'
     if 'sampler' not in kwargs_create_study:
-        kwargs_create_study['sampler'] = TPESampler(
-            multivariate=True, group=True, consider_endpoints=True, seed=random_state
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                'ignore',
+                message='.*multivariate.*|.*group.*'
+            )
+            kwargs_create_study['sampler'] = TPESampler(
+                multivariate=True, group=True, consider_endpoints=True, seed=random_state
+            )
     
     kwargs_study_optimize = kwargs_study_optimize.copy() if kwargs_study_optimize is not None else {}
     if show_progress:

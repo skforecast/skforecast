@@ -45,8 +45,8 @@
             {
                 "guid": "bank",
                 "type": "bank",
-                "address": "IBAN: ES5001825322260000238540",
-                "description": "BIC: BBVAESMM. Please include \"skforecast\" in the purpose."
+                "address": "IBAN: ES6300812717310023277146",
+                "description": "BIC: BSABESBBXXX. Please include \"skforecast\" in the purpose."
             },
             {
                 "guid": "github",

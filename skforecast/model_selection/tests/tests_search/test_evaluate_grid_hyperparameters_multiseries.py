@@ -1357,7 +1357,7 @@ def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterDi
         exog               = None,
         lags_grid          = lags_grid,
         return_best        = True,
-        verbose            = False,
+        verbose            = True,
         show_progress      = False
     )
 
@@ -1663,6 +1663,7 @@ def test_evaluate_grid_hyperparameters_multiseries_warn_when_non_valid_params():
     param_grid = list(ParameterGrid(param_grid))
     cv = TimeSeriesFold(steps=12, initial_train_size=30, refit=False)
     forecaster = ForecasterRecursiveMultiSeries(estimator=ElasticNet(), lags=5)
+
     msg = re.escape(
         "Parameters skipped: {'alpha': 0.1, 'l1_ratio': 10}. The 'l1_ratio' "
         "parameter of ElasticNet must be a float in the range [0.0, 1.0]. "
@@ -1677,7 +1678,7 @@ def test_evaluate_grid_hyperparameters_multiseries_warn_when_non_valid_params():
             metric="mean_squared_error",
             return_best=True,
             n_jobs="auto",
-            verbose=False,
+            verbose=True,
             show_progress=False,
         )
 

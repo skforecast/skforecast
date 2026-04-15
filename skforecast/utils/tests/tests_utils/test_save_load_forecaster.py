@@ -61,7 +61,7 @@ def test_save_and_load_forecaster_persistence():
         attribute_forecaster = forecaster.__getattribute__(key)
         attribute_forecaster_loaded = forecaster_loaded.__getattribute__(key)
 
-        if key in ['estimator', 'binner', 'transformer_y', 'transformer_exog']:
+        if key in ['estimator', 'binner', 'transformer_y', 'transformer_exog', 'categorical_encoder']:
             assert joblib.hash(attribute_forecaster) == joblib.hash(attribute_forecaster_loaded)
         elif isinstance(attribute_forecaster, np.ndarray):
             np.testing.assert_array_almost_equal(attribute_forecaster, attribute_forecaster_loaded)

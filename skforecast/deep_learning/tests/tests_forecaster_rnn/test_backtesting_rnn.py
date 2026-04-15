@@ -1,6 +1,7 @@
 # Unit test backtesting_forecaster_multiseries ForecasterRnn using PyTorch backend
 # ==============================================================================
 import os
+import pytest
 import numpy as np
 import pandas as pd
 os.environ["KERAS_BACKEND"] = "torch"
@@ -109,7 +110,12 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog():
     assert preds.shape == (54, 3)
 
 
-def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog_and_interval():
+@pytest.mark.parametrize(
+    "use_binned_residuals", 
+    [True, False],
+    ids=["use_binned_residuals_True", "use_binned_residuals_False"]
+)
+def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog_and_interval(use_binned_residuals):
     """
     Test case for backtesting ForecasterRnn with multiseries data with 
     exogenous variables and interval predictions.
@@ -126,15 +132,16 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog_and_interval
          )
 
     metrics, preds = backtesting_forecaster_multiseries(
-                         forecaster      = forecaster,
-                         series          = series,
-                         exog            = exog,
-                         cv              = cv,
-                         levels          = ['1', '2'],
-                         metric          = 'mean_absolute_error', 
-                         interval        = [5, 95],
-                         interval_method = "conformal",
-                         verbose         = False
+                         forecaster           = forecaster,
+                         series               = series,
+                         exog                 = exog,
+                         cv                   = cv,
+                         levels               = ['1', '2'],
+                         metric               = 'mean_absolute_error', 
+                         interval             = [5, 95],
+                         interval_method      = "conformal",
+                         use_binned_residuals = use_binned_residuals,
+                         verbose              = False
                      )
 
     assert metrics.shape == (5, 2)

@@ -60,7 +60,7 @@ from skforecast.recursive import ForecasterEquivalentDate
      (ForecasterEquivalentDate(2), 2, 1),
      (ForecasterEquivalentDate(2), False, 1)
 ], 
-ids=lambda info: f'info: {info}')
+ids=lambda val: str(val) if len(str(val)) <= 80 else str(val)[:80])
 def test_select_n_jobs_backtesting(forecaster, refit, n_jobs_expected):
     """
     Test select_n_jobs_backtesting
