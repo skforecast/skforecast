@@ -55,13 +55,13 @@ The main changes in this release are:
 
 **Fixed**
 
-+ Fixed an issue in <code>[backtesting_forecaster_multiseries]</code> where the `tqdm` progress bar completed during data preparation instead of tracking the actual fold computation, giving the false impression that backtesting had finished.
++ Fixed an issue in conformal prediction intervals (`method='conformal'`) where the correction factor was incorrectly scaled when using `differentiation`. The inverse differentiation was applied to both the point predictions and the correction factor, causing the prediction intervals to grow too fast. Affected forecasters: <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. ([#1143](https://github.com/skforecast/skforecast/pull/1143))
 
 + Fixed an issue in <code>[ForecasterRecursiveClassifier]</code> where the lags were not correctly passed as categorical features when using categorical exogenous variables.
 
 + Fixed an issue in the hyperparameter search when using a <code>[OneStepAheadFold]</code> validation. During training, the forecaster arguments `sample_weight` and `fit_kwargs` were not set correctly.
 
-+ Fixed an issue in conformal prediction intervals (`method='conformal'`) where the correction factor was incorrectly scaled when using `differentiation`. The inverse differentiation was applied to both the point predictions and the correction factor, causing the prediction intervals to grow too fast. Affected forecasters: <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. ([#1143](https://github.com/skforecast/skforecast/pull/1143))
++ Fixed an issue in <code>[backtesting_forecaster_multiseries]</code> where the `tqdm` progress bar completed during data preparation instead of tracking the actual fold computation, giving the false impression that backtesting had finished.
 
 
 ## 0.21.0 <small>Mar 13, 2026</small> { id="0.21.0" }
