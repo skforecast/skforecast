@@ -21,6 +21,7 @@ from lightgbm import LGBMRegressor
 from skforecast.preprocessing import RollingFeatures
 from skforecast.preprocessing import TimeSeriesDifferentiator
 from skforecast.direct import ForecasterDirectMultiVariate
+from skforecast.exceptions import MissingValuesWarning
 
 # Fixtures
 from .fixtures_forecaster_direct_multivariate import series
@@ -905,4 +906,91 @@ def test_predict_output_when_window_features_steps_10():
                )
     expected = expected_df_to_long_format(expected)
     
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_output_when_last_window_stored_has_NaN():
+    """
+    Test predict output when the stored last_window_ contains NaN values
+    because the original series had NaN near the end. Estimator:
+    HistGradientBoostingRegressor (supports NaN natively).
+    """
+    series_nan = pd.DataFrame(
+        {'l1': [1., 2., 3., 4., 5., 6., 7., np.nan, 9., 10.],
+         'l2': np.arange(50, 60, dtype=float)},
+        index=pd.RangeIndex(start=0, stop=10),
+    )
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     level              = 'l1',
+                     lags               = 3,
+                     steps              = 2,
+                     transformer_series = None,
+                     dropna_from_series = True
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. They have been dropped. If "
+        "you want to keep them, set `forecaster.dropna_from_series = False`. "
+        "Same rows have been removed from `y_train` to maintain alignment. "
+        "This is caused by interspersed NaNs in `series` or `exog`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        forecaster.fit(series=series_nan)
+
+    assert forecaster.last_window_.isna().any().any()
+
+    warn_msg = re.escape(
+        "`last_window` has missing values."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        predictions = forecaster.predict(steps=2)
+
+    expected = pd.DataFrame(
+                   data    = {'level': ['l1', 'l1'],
+                              'pred': np.array([5.5, 6.75])},
+                   index   = pd.RangeIndex(start=10, stop=12, step=1),
+               )
+
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_output_when_last_window_argument_has_NaN():
+    """
+    Test predict output when a custom last_window with NaN values is passed
+    to the predict method. Estimator: HistGradientBoostingRegressor.
+    """
+    series_clean = pd.DataFrame(
+        {'l1': np.arange(1., 21.),
+         'l2': np.arange(50., 70.)},
+        index=pd.RangeIndex(start=0, stop=20),
+    )
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     level              = 'l1',
+                     lags               = 3,
+                     steps              = 2,
+                     transformer_series = None,
+                     dropna_from_series = False
+                 )
+    forecaster.fit(series=series_clean)
+
+    last_window_nan = pd.DataFrame(
+        {'l1': [np.nan, 19., 20.],
+         'l2': [67., 68., 69.]},
+        index=pd.RangeIndex(start=17, stop=20),
+    )
+
+    warn_msg = re.escape(
+        "`last_window` has missing values."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        predictions = forecaster.predict(steps=2, last_window=last_window_nan)
+
+    expected = pd.DataFrame(
+                   data    = {'level': ['l1', 'l1'],
+                              'pred': np.array([11.5, 12.5])},
+                   index   = pd.RangeIndex(start=20, stop=22, step=1),
+               )
+
     pd.testing.assert_frame_equal(predictions, expected)

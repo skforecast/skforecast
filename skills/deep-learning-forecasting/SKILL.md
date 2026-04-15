@@ -194,6 +194,7 @@ predictions = forecaster.predict_interval(
     method='conformal',           # Only 'conformal' supported
     interval=[10, 90],
     use_in_sample_residuals=True,
+    use_binned_residuals=True,    # Better calibration with binned residuals
 )
 ```
 

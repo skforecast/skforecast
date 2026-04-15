@@ -17,6 +17,7 @@ from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.ensemble import HistGradientBoostingClassifier
 from lightgbm import LGBMClassifier
 
+from skforecast.exceptions import MissingValuesWarning
 from skforecast.preprocessing import RollingFeaturesClassification
 from skforecast.recursive import ForecasterRecursiveClassifier
 
@@ -460,3 +461,94 @@ def test_predict_proba_output_when_window_features(steps):
                )
     
     pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_proba_output_when_last_window_stored_has_NaN():
+    """
+    Test predict_proba output when stored last_window_ contains NaN values
+    from training data with interspersed NaNs.
+    """
+    y = pd.Series(
+        data  = [1, 2, 1, 2, 1, 2, np.nan, 1, 2, 1, np.nan],
+        index = pd.date_range('2020-01-01', periods=11, freq='D'),
+        name  = 'y',
+        dtype = float
+    )
+    forecaster = ForecasterRecursiveClassifier(
+        estimator=LGBMClassifier(
+            n_estimators=10, max_depth=2, random_state=123, verbose=-1
+        ),
+        lags=3,
+        dropna_from_series=True
+    )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. They have been dropped. If "
+        "you want to keep them, set `forecaster.dropna_from_series = False`. "
+        "Same rows have been removed from `y_train` to maintain alignment. "
+        "This is caused by interspersed NaNs in `y` or `exog`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        forecaster.fit(y=y)
+
+    warn_msg = re.escape(
+        "`last_window` has missing values."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        probabilities = forecaster.predict_proba(steps=3)
+
+    expected = pd.DataFrame(
+        data=np.array([[0.33333333, 0.66666667],
+                       [0.33333333, 0.66666667],
+                       [0.33333333, 0.66666667]]),
+        index=pd.date_range('2020-01-12', periods=3, freq='D'),
+        columns=['1.0_proba', '2.0_proba']
+    )
+
+    pd.testing.assert_frame_equal(probabilities, expected)
+    np.testing.assert_allclose(probabilities.values.sum(axis=1), 1.0)
+
+
+def test_predict_proba_output_when_last_window_stored_has_NaN_and_dropna_from_series_False():
+    """
+    Test predict_proba output when stored last_window_ contains NaN values
+    from training data with interspersed NaNs and dropna_from_series is False.
+    """
+    y = pd.Series(
+        data  = [1, 2, 1, 2, 1, 2, np.nan, 1, 2, 1, np.nan],
+        index = pd.date_range('2020-01-01', periods=11, freq='D'),
+        name  = 'y',
+        dtype = float
+    )
+    forecaster = ForecasterRecursiveClassifier(
+        estimator=LGBMClassifier(
+            n_estimators=10, max_depth=2, random_state=123, verbose=-1
+        ),
+        lags=3,
+        dropna_from_series=False
+    )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. Some estimators do not allow "
+        "NaN values during training. If you want to drop them, "
+        "set `forecaster.dropna_from_series = True`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        forecaster.fit(y=y)
+
+    warn_msg = re.escape(
+        "`last_window` has missing values."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        probabilities = forecaster.predict_proba(steps=3)
+
+    expected = pd.DataFrame(
+        data=np.array([[0.5, 0.5],
+                       [0.5, 0.5],
+                       [0.5, 0.5]]),
+        index=pd.date_range('2020-01-12', periods=3, freq='D'),
+        columns=['1.0_proba', '2.0_proba']
+    )
+
+    pd.testing.assert_frame_equal(probabilities, expected)
+    np.testing.assert_allclose(probabilities.values.sum(axis=1), 1.0)

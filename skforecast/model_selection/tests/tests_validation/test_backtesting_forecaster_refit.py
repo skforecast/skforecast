@@ -20,6 +20,7 @@ from skforecast.preprocessing import RollingFeatures
 
 # Fixtures
 from skforecast.exceptions import IgnoredArgumentWarning
+from skforecast.exceptions import MissingValuesWarning
 from ..fixtures_model_selection import y, y_clf
 from ..fixtures_model_selection import exog
 from ..fixtures_model_selection import out_sample_residuals
@@ -2319,6 +2320,248 @@ def test_output_backtesting_forecaster_refit_ForecasterDirect_categorical_featur
                                         metric     = 'mean_squared_error',
                                         verbose    = False
                                    )
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+# ******************************************************************************
+# * Test _backtesting_forecaster Refit with NaN values                         *
+# ******************************************************************************
+
+def test_output_backtesting_forecaster_ForecasterRecursive_refit_y_exog_with_NaN_dropna_True():
+    """
+    Test output of _backtesting_forecaster for ForecasterRecursive with
+    refit=True, y and exog containing NaN values, and dropna_from_series=True.
+    """
+
+    y_nan = y.copy()
+    y_nan.iloc[5] = np.nan
+    y_nan.iloc[15] = np.nan
+    y_nan.iloc[25] = np.nan
+    exog_nan = exog.copy()
+    exog_nan.iloc[10] = np.nan
+    exog_nan.iloc[20] = np.nan
+    exog_nan.iloc[30] = np.nan
+
+    forecaster = ForecasterRecursive(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     lags               = 3,
+                     dropna_from_series = True,
+                 )
+    cv = TimeSeriesFold(
+             steps              = 4,
+             initial_train_size = len(y_nan) - 12,
+             refit              = True,
+             fixed_train_size   = False,
+         )
+
+    with pytest.warns(MissingValuesWarning):
+        metric, backtest_predictions = _backtesting_forecaster(
+                                            forecaster = forecaster,
+                                            y          = y_nan,
+                                            exog       = exog_nan,
+                                            cv         = cv,
+                                            metric     = 'mean_squared_error',
+                                            verbose    = False,
+                                       )
+
+    expected_metric = pd.DataFrame(
+        {'mean_squared_error': [0.06878347228393202]}
+    )
+    expected_predictions = pd.DataFrame(
+        data = {
+            'fold': np.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]),
+            'pred': np.array([
+                0.5387242045, 0.5387242045,
+                0.5387242045, 0.5387242045,
+                0.5400021724999999, 0.5400021724999999,
+                0.5400021724999999, 0.5400021724999999,
+                0.5288902985714284, 0.5288902985714284,
+                0.5288902985714284, 0.5288902985714284,
+            ]),
+        },
+        index = pd.RangeIndex(start=38, stop=50, step=1),
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_ForecasterRecursive_refit_y_exog_with_NaN_dropna_False():
+    """
+    Test output of _backtesting_forecaster for ForecasterRecursive with
+    refit=True, y and exog containing NaN values, and dropna_from_series=False.
+    """
+
+    y_nan = y.copy()
+    y_nan.iloc[5] = np.nan
+    y_nan.iloc[15] = np.nan
+    y_nan.iloc[25] = np.nan
+    exog_nan = exog.copy()
+    exog_nan.iloc[10] = np.nan
+    exog_nan.iloc[20] = np.nan
+    exog_nan.iloc[30] = np.nan
+
+    forecaster = ForecasterRecursive(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     lags               = 3,
+                     dropna_from_series = False,
+                 )
+    cv = TimeSeriesFold(
+             steps              = 4,
+             initial_train_size = len(y_nan) - 12,
+             refit              = True,
+             fixed_train_size   = False,
+         )
+
+    with pytest.warns(MissingValuesWarning):
+        metric, backtest_predictions = _backtesting_forecaster(
+                                            forecaster = forecaster,
+                                            y          = y_nan,
+                                            exog       = exog_nan,
+                                            cv         = cv,
+                                            metric     = 'mean_squared_error',
+                                            verbose    = False,
+                                       )
+
+    expected_metric = pd.DataFrame(
+        {'mean_squared_error': [0.06933885636693991]}
+    )
+    expected_predictions = pd.DataFrame(
+        data = {
+            'fold': np.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]),
+            'pred': np.array([
+                0.4926235828125, 0.4926235828125,
+                0.4926235828125, 0.4926235828125,
+                0.49859785277777774, 0.49859785277777774,
+                0.49859785277777774, 0.49859785277777774,
+                0.47171785746344064, 0.5095447535494847,
+                0.5921274385613604, 0.6194126868437841,
+            ]),
+        },
+        index = pd.RangeIndex(start=38, stop=50, step=1),
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_ForecasterDirect_refit_y_exog_with_NaN_dropna_True():
+    """
+    Test output of _backtesting_forecaster for ForecasterDirect with
+    refit=True, y and exog containing NaN values, and dropna_from_series=True.
+    """
+
+    y_nan = y.copy()
+    y_nan.iloc[5] = np.nan
+    y_nan.iloc[15] = np.nan
+    y_nan.iloc[25] = np.nan
+    exog_nan = exog.copy()
+    exog_nan.iloc[10] = np.nan
+    exog_nan.iloc[20] = np.nan
+    exog_nan.iloc[30] = np.nan
+
+    forecaster = ForecasterDirect(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     lags               = 3,
+                     steps              = 4,
+                     dropna_from_series = True,
+                 )
+    cv = TimeSeriesFold(
+             steps              = 4,
+             initial_train_size = len(y_nan) - 12,
+             refit              = True,
+             fixed_train_size   = False,
+         )
+
+    with pytest.warns(MissingValuesWarning):
+        metric, backtest_predictions = _backtesting_forecaster(
+                                            forecaster = forecaster,
+                                            y          = y_nan,
+                                            exog       = exog_nan,
+                                            cv         = cv,
+                                            metric     = 'mean_squared_error',
+                                            verbose    = False,
+                                       )
+
+    expected_metric = pd.DataFrame(
+        {'mean_squared_error': [0.06581387422495952]}
+    )
+    expected_predictions = pd.DataFrame(
+        data = {
+            'fold': np.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]),
+            'pred': np.array([
+                0.5377930823529412, 0.5219736594117647,
+                0.48344896400000004, 0.4693515757142857,
+                0.5580306719047619, 0.5542518752380952,
+                0.5263465870833334, 0.4816780456,
+                0.5310935048, 0.5244388968,
+                0.512369905, 0.47899404689655173,
+            ]),
+        },
+        index = pd.RangeIndex(start=38, stop=50, step=1),
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_ForecasterDirect_refit_y_exog_with_NaN_dropna_False():
+    """
+    Test output of _backtesting_forecaster for ForecasterDirect with
+    refit=True, y and exog containing NaN values, and dropna_from_series=False.
+    """
+
+    y_nan = y.copy()
+    y_nan.iloc[5] = np.nan
+    y_nan.iloc[15] = np.nan
+    y_nan.iloc[25] = np.nan
+    exog_nan = exog.copy()
+    exog_nan.iloc[10] = np.nan
+    exog_nan.iloc[20] = np.nan
+    exog_nan.iloc[30] = np.nan
+
+    forecaster = ForecasterDirect(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     lags               = 3,
+                     steps              = 4,
+                     dropna_from_series = False,
+                 )
+    cv = TimeSeriesFold(
+             steps              = 4,
+             initial_train_size = len(y_nan) - 12,
+             refit              = True,
+             fixed_train_size   = False,
+         )
+
+    with pytest.warns(MissingValuesWarning):
+        metric, backtest_predictions = _backtesting_forecaster(
+                                            forecaster = forecaster,
+                                            y          = y_nan,
+                                            exog       = exog_nan,
+                                            cv         = cv,
+                                            metric     = 'mean_squared_error',
+                                            verbose    = False,
+                                       )
+
+    expected_metric = pd.DataFrame(
+        {'mean_squared_error': [0.07205000560632253]}
+    )
+    expected_predictions = pd.DataFrame(
+        data = {
+            'fold': np.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]),
+            'pred': np.array([
+                0.4873087227586208, 0.4790654968965517,
+                0.4689579913793103, 0.483105697,
+                0.5063065051515152, 0.5048071690909092,
+                0.5019127442424243, 0.49055114588235293,
+                0.49369751837837833, 0.49000863837837844,
+                0.4939772921621622, 0.48756882052631584,
+            ]),
+        },
+        index = pd.RangeIndex(start=38, stop=50, step=1),
+    )
 
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)

@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import platform
 import pytest
 from pytest import approx
 import numpy as np
@@ -258,7 +259,6 @@ def test_ValueError_bayesian_search_forecaster_multiseries_when_search_space_nam
 # pytest -m slow --verbose
 # pytest -m "not slow" --verbose
 @pytest.mark.slow
-@pytest.mark.skipif(sys.platform == "darwin", reason="Fails in MacOS")
 def test_results_output_bayesian_search_forecaster_multiseries_with_mocked_when_lags_grid_dict():
     """
     Test output of bayesian_search_forecaster_multiseries in ForecasterRecursiveMultiSeries 
@@ -299,82 +299,159 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_mocked_when_
                   return_best        = False,
                   verbose            = False
               )[0]
-    
-    expected_results = pd.DataFrame(
-        np.array([
-            [['l1', 'l2'],
-                np.array([1, 2]),
-                {'n_estimators': 13, 'min_samples_leaf': 0.20142843988664705, 'max_features': 'sqrt'},
-                0.21000466923864858,
-                13,
-                0.20142843988664705,
-                'sqrt'],
-            [['l1', 'l2'],
-                np.array([1, 2]),
-                {'n_estimators': 11, 'min_samples_leaf': 0.2714570796881701, 'max_features': 'sqrt'},
-                0.2108843883798094,
-                11,
-                0.2714570796881701,
-                'sqrt'],
-            [['l1', 'l2'],
-                np.array([1, 2]),
-                {'n_estimators': 17, 'min_samples_leaf': 0.19325882509735576, 'max_features': 'sqrt'},
-                0.21223533093219435,
-                17,
-                0.19325882509735576,
-                'sqrt'],
-            [['l1', 'l2'],
-                np.array([1, 2]),
-                {'n_estimators': 14, 'min_samples_leaf': 0.1147302385573586, 'max_features': 'sqrt'},
-                0.21340636192242327,
-                14,
-                0.1147302385573586,
-                'sqrt'],
-            [['l1', 'l2'],
-                np.array([1, 2, 3, 4]),
-                {'n_estimators': 13, 'min_samples_leaf': 0.2599119286878713, 'max_features': 'log2'},
-                0.21559787742691414,
-                13,
-                0.2599119286878713,
-                'log2'],
-            [['l1', 'l2'],
-                np.array([1, 2, 3, 4]),
-                {'n_estimators': 20, 'min_samples_leaf': 0.4839825891759374, 'max_features': 'log2'},
-                0.21615288060051888,
-                20,
-                0.4839825891759374,
-                'log2'],
-            [['l1', 'l2'],
-                np.array([1, 2]),
-                {'n_estimators': 15, 'min_samples_leaf': 0.41010449151752726, 'max_features': 'sqrt'},
-                0.2163760081019307,
-                15,
-                0.41010449151752726,
-                'sqrt'],
-            [['l1', 'l2'],
-                np.array([1, 2]),
-                {'n_estimators': 14, 'min_samples_leaf': 0.782328520465639, 'max_features': 'log2'},
-                0.21653840486608775,
-                14,
-                0.782328520465639,
-                'log2'],
-            [['l1', 'l2'],
-                np.array([1, 2]),
-                {'n_estimators': 15, 'min_samples_leaf': 0.34027307604369605, 'max_features': 'sqrt'},
-                0.2166204088831145,
-                15,
-                0.34027307604369605,
-                'sqrt'],
-            [['l1', 'l2'],
-                np.array([1, 2, 3, 4]),
-                {'n_estimators': 17, 'min_samples_leaf': 0.21035794225904136, 'max_features': 'log2'},
-                0.21732156972764352,
-                17,
-                0.21035794225904136,
-                'log2']], dtype=object),
-        columns=['levels', 'lags', 'params', 'mean_absolute_error__weighted_average', 'n_estimators', 'min_samples_leaf', 'max_features'],
-        index=pd.RangeIndex(start=0, stop=10, step=1)
-    ).astype({'mean_absolute_error__weighted_average': float, 'n_estimators': int, 'min_samples_leaf': float})
+
+    if platform.system() == 'Darwin':
+        expected_results = pd.DataFrame(
+            np.array([
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 13, 'min_samples_leaf': 0.20142843988664705, 'max_features': 'sqrt'},
+                    0.21000466923864858,
+                    13,
+                    0.20142843988664705,
+                    'sqrt'],
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 11, 'min_samples_leaf': 0.2714570796881702, 'max_features': 'sqrt'},
+                    0.2108843883798094,
+                    11,
+                    0.2714570796881702,
+                    'sqrt'],
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 17, 'min_samples_leaf': 0.19325882509735576, 'max_features': 'sqrt'},
+                    0.21223533093219435,
+                    17,
+                    0.19325882509735576,
+                    'sqrt'],
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 14, 'min_samples_leaf': 0.1147302385573586, 'max_features': 'sqrt'},
+                    0.21315705728046805,
+                    14,
+                    0.1147302385573586,
+                    'sqrt'],
+                [['l1', 'l2'],
+                    np.array([1, 2, 3, 4]),
+                    {'n_estimators': 13, 'min_samples_leaf': 0.2599119286878713, 'max_features': 'log2'},
+                    0.21559787742691414,
+                    13,
+                    0.2599119286878713,
+                    'log2'],
+                [['l1', 'l2'],
+                    np.array([1, 2, 3, 4]),
+                    {'n_estimators': 20, 'min_samples_leaf': 0.48398258917593734, 'max_features': 'log2'},
+                    0.21615288060051888,
+                    20,
+                    0.48398258917593734,
+                    'log2'],
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 15, 'min_samples_leaf': 0.41010449151752726, 'max_features': 'sqrt'},
+                    0.2163760081019307,
+                    15,
+                    0.41010449151752726,
+                    'sqrt'],
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 14, 'min_samples_leaf': 0.7823285204656389, 'max_features': 'log2'},
+                    0.21653840486608775,
+                    14,
+                    0.7823285204656389,
+                    'log2'],
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 15, 'min_samples_leaf': 0.34027307604369605, 'max_features': 'sqrt'},
+                    0.2166204088831145,
+                    15,
+                    0.34027307604369605,
+                    'sqrt'],
+                [['l1', 'l2'],
+                    np.array([1, 2, 3, 4]),
+                    {'n_estimators': 17, 'min_samples_leaf': 0.21035794225904134, 'max_features': 'log2'},
+                    0.21732156972764352,
+                    17,
+                    0.21035794225904134,
+                    'log2']], dtype=object),
+            columns=['levels', 'lags', 'params', 'mean_absolute_error__weighted_average', 'n_estimators', 'min_samples_leaf', 'max_features'],
+            index=pd.RangeIndex(start=0, stop=10, step=1)
+        ).astype({'mean_absolute_error__weighted_average': float, 'n_estimators': int, 'min_samples_leaf': float})
+    else:
+        expected_results = pd.DataFrame(
+            np.array([
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 13, 'min_samples_leaf': 0.20142843988664705, 'max_features': 'sqrt'},
+                    0.21000466923864858,
+                    13,
+                    0.20142843988664705,
+                    'sqrt'],
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 11, 'min_samples_leaf': 0.2714570796881701, 'max_features': 'sqrt'},
+                    0.2108843883798094,
+                    11,
+                    0.2714570796881701,
+                    'sqrt'],
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 17, 'min_samples_leaf': 0.19325882509735576, 'max_features': 'sqrt'},
+                    0.21223533093219435,
+                    17,
+                    0.19325882509735576,
+                    'sqrt'],
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 14, 'min_samples_leaf': 0.1147302385573586, 'max_features': 'sqrt'},
+                    0.21340636192242327,
+                    14,
+                    0.1147302385573586,
+                    'sqrt'],
+                [['l1', 'l2'],
+                    np.array([1, 2, 3, 4]),
+                    {'n_estimators': 13, 'min_samples_leaf': 0.2599119286878713, 'max_features': 'log2'},
+                    0.21559787742691414,
+                    13,
+                    0.2599119286878713,
+                    'log2'],
+                [['l1', 'l2'],
+                    np.array([1, 2, 3, 4]),
+                    {'n_estimators': 20, 'min_samples_leaf': 0.4839825891759374, 'max_features': 'log2'},
+                    0.21615288060051888,
+                    20,
+                    0.4839825891759374,
+                    'log2'],
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 15, 'min_samples_leaf': 0.41010449151752726, 'max_features': 'sqrt'},
+                    0.2163760081019307,
+                    15,
+                    0.41010449151752726,
+                    'sqrt'],
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 14, 'min_samples_leaf': 0.782328520465639, 'max_features': 'log2'},
+                    0.21653840486608775,
+                    14,
+                    0.782328520465639,
+                    'log2'],
+                [['l1', 'l2'],
+                    np.array([1, 2]),
+                    {'n_estimators': 15, 'min_samples_leaf': 0.34027307604369605, 'max_features': 'sqrt'},
+                    0.2166204088831145,
+                    15,
+                    0.34027307604369605,
+                    'sqrt'],
+                [['l1', 'l2'],
+                    np.array([1, 2, 3, 4]),
+                    {'n_estimators': 17, 'min_samples_leaf': 0.21035794225904136, 'max_features': 'log2'},
+                    0.21732156972764352,
+                    17,
+                    0.21035794225904136,
+                    'log2']], dtype=object),
+            columns=['levels', 'lags', 'params', 'mean_absolute_error__weighted_average', 'n_estimators', 'min_samples_leaf', 'max_features'],
+            index=pd.RangeIndex(start=0, stop=10, step=1)
+        ).astype({'mean_absolute_error__weighted_average': float, 'n_estimators': int, 'min_samples_leaf': float})
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
@@ -919,14 +996,13 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_creat
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
-@pytest.mark.skipif(sys.platform == "darwin", reason="Fails in MacOS")
 def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_study_optimize():
     """
     Test output of bayesian_search_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     when `kwargs_study_optimize` with mocked (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     estimator = RandomForestRegressor(random_state=123, n_jobs=1),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
@@ -940,15 +1016,13 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_study
 
     def search_space(trial):
         search_space  = {
-            'n_estimators': trial.suggest_int('n_estimators', 100, 200),
-            'max_depth': trial.suggest_int('max_depth', 20, 35, log=True),
-            'max_features': trial.suggest_categorical('max_features', ['log2', 'sqrt']),
+            'alpha': trial.suggest_float('alpha', 1e-2, 1.0),
             'lags': trial.suggest_categorical('lags', [2, 4])
         }
          
         return search_space
 
-    kwargs_study_optimize = {'timeout': 3.0}
+    kwargs_study_optimize = {'gc_after_trial': True}
     results = bayesian_search_forecaster_multiseries(
                   forecaster            = forecaster,
                   series                = series_dict_dt,
@@ -958,26 +1032,68 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_study
                   aggregate_metric      = 'weighted_average',
                   n_trials              = 10,
                   random_state          = 123,
-                  n_jobs                = 1,
                   return_best           = False,
                   verbose               = False,
                   kwargs_study_optimize = kwargs_study_optimize
-              )[0].reset_index(drop=True)
+              )[0]
     
     expected_results = pd.DataFrame(
         np.array([
             [['l1', 'l2'],
+                np.array([1, 2, 3, 4]),
+                {'alpha': 0.23598059857016607},
+                0.20880273566554797,
+                0.23598059857016607],
+            [['l1', 'l2'],
+                np.array([1, 2, 3, 4]),
+                {'alpha': 0.398196343012209},
+                0.20881083349292262,
+                0.398196343012209],
+            [['l1', 'l2'],
+                np.array([1, 2, 3, 4]),
+                {'alpha': 0.4441865222328282},
+                0.2088131177203144,
+                0.4441865222328282],
+            [['l1', 'l2'],
+                np.array([1, 2, 3, 4]),
+                {'alpha': 0.53623586010342},
+                0.20881767431515372,
+                0.53623586010342],
+            [['l1', 'l2'],
+                np.array([1, 2, 3, 4]),
+                {'alpha': 0.7252189487445193},
+                0.20882696592349723,
+                0.7252189487445193],
+            [['l1', 'l2'],
                 np.array([1, 2]),
-                {'n_estimators': 144, 'max_depth': 20, 'max_features': 'sqrt'},
-                0.1864271937373934,
-                144,
-                20,
-                'sqrt']], dtype=object),
-        columns=['levels', 'lags', 'params', 'mean_absolute_error__weighted_average', 'n_estimators', 'max_depth', 'max_features'],
-        index=pd.RangeIndex(start=0, stop=1, step=1)
-    ).astype({'mean_absolute_error__weighted_average': float, 'n_estimators': int, 'max_depth': int})
+                {'alpha': 0.5558016213920624},
+                0.20913532870732662,
+                0.5558016213920624],
+            [['l1', 'l2'],
+                np.array([1, 2]),
+                {'alpha': 0.6995044937418831},
+                0.20913908163271674,
+                0.6995044937418831],
+            [['l1', 'l2'],
+                np.array([1, 2]),
+                {'alpha': 0.7406154516747153},
+                0.209140152549569,
+                0.7406154516747153],
+            [['l1', 'l2'],
+                np.array([1, 2]),
+                {'alpha': 0.8509374761370117},
+                0.20914302038975388,
+                0.8509374761370117],
+            [['l1', 'l2'],
+                np.array([1, 2]),
+                {'alpha': 0.9809565564007693},
+                0.20914638910039662,
+                0.9809565564007693]], dtype=object),
+        columns=['levels', 'lags', 'params', 'mean_absolute_error__weighted_average', 'alpha'],
+        index=pd.RangeIndex(start=0, stop=10, step=1)
+    ).astype({'mean_absolute_error__weighted_average': float, 'alpha': float})
 
-    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]).head(1), expected_results.head(1), check_dtype=False)
+    pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
 def test_results_output_bayesian_search_forecaster_multiseries_when_lags_is_not_provided():

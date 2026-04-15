@@ -21,7 +21,7 @@ Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
 - NumPy-style docstrings
 - Type hints for function signatures
 - PEP 8 compliant (max line length 88, enforced by ruff)
-- Single quotes for strings (ruff `quote-style = "single"`)
+- Double quotes for strings (ruff `quote-style = "double"`)
 - Relative imports within package
 
 ### Dependencies
@@ -39,13 +39,13 @@ Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 + seaborn>=0.12
 
 > Python library for time series forecasting using machine learning models
 
-This document is for skforecast v0.21.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.22.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library that simplifies time series forecasting using machine learning. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.21.0
+- Version: 0.22.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -187,6 +187,102 @@ forecaster.fit(y=y_train, exog=exog_train)
 
 # Predict - exog must cover the forecast horizon
 predictions = forecaster.predict(steps=10, exog=exog_test)
+```
+
+## Categorical Exogenous Variables
+
+All ML forecasters (ForecasterRecursive, ForecasterDirect, ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRecursiveClassifier) include a `categorical_features` parameter to handle categorical exogenous variables automatically.
+
+```python
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+    categorical_features='auto',  # Default: auto-detect non-numeric columns after transformer_exog
+)
+forecaster.fit(y=y_train, exog=exog_train)
+```
+
+**`categorical_features` options:**
+- `'auto'` (default): Non-numeric columns (after `transformer_exog`) are automatically detected and encoded using an internal `OrdinalEncoder`. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
+- `list`: Explicit list of column names to treat as categorical (including numeric columns).
+- `None`: No categorical encoding is applied.
+
+**Important:** When `categorical_features` is not `None` do not set categorical features directly on the estimator or via `fit_kwargs`. The forecaster manages categorical configuration internally and overwrites any estimator-level settings.
+
+**Choosing an encoding strategy:**
+
+| Method | API | Best for |
+|--------|-----|----------|
+| Built-in `categorical_features` | `categorical_features='auto'` or `list` | Gradient boosting (LightGBM, XGBoost, CatBoost, HistGBR) — simplest workflow |
+| One-hot / Ordinal encoding | `transformer_exog` | Linear models, SVMs, non-gradient-boosting trees |
+| Target encoding | Outside forecaster | High-cardinality features (applied manually to avoid leakage) |
+
+**`categorical_features` and `transformer_exog` interaction:**
+`transformer_exog` is applied **before** `categorical_features` detection. They can be used together — e.g., scale numeric columns with `transformer_exog` while `categorical_features='auto'` handles the categorical ones. Avoid applying both mechanisms to the same columns.
+
+```python
+from sklearn.compose import make_column_transformer
+from sklearn.preprocessing import StandardScaler
+
+# Scale numeric columns, leave categorical columns untouched
+transformer_exog = make_column_transformer(
+    (StandardScaler(), ['temp', 'hum']),
+    remainder='passthrough',
+    verbose_feature_names_out=False
+).set_output(transform='pandas')
+
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+    transformer_exog=transformer_exog,
+    categorical_features='auto',  # Detects remaining non-numeric columns
+)
+```
+
+## Handling Missing Values
+
+All ML forecasters (ForecasterRecursive, ForecasterDirect, ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRecursiveClassifier) include a `dropna_from_series` parameter to control how NaN values in the training data are handled. Not applicable to ForecasterStats, ForecasterEquivalentDate, or ForecasterRnn.
+
+When `y`, `series`, or `exog` contain interspersed NaN values, the training matrices (`X_train`, `y_train`) will also contain NaNs. The `dropna_from_series` parameter determines what happens next.
+
+**`dropna_from_series` options:**
+- `False` (default): NaN rows are kept in the training matrices. A `MissingValuesWarning` is issued. Only use with NaN-tolerant estimators.
+- `True`: Rows containing NaN in `X_train` (and the corresponding rows in `y_train`) are dropped before fitting.
+
+**NaN-tolerant estimators** (support `dropna_from_series=False`):
+- LightGBM (`LGBMRegressor`, `LGBMClassifier`)
+- CatBoost (`CatBoostRegressor`, `CatBoostClassifier`)
+- HistGradientBoosting (`HistGradientBoostingRegressor`, `HistGradientBoostingClassifier`)
+- XGBoost (`XGBRegressor`, `XGBClassifier`) with `tree_method='hist'`
+
+**Choosing a strategy:**
+
+| Scenario | Recommended strategy |
+|:---------|:---------------------|
+| Using LightGBM, CatBoost, XGBoost (hist), or HistGradientBoosting | `dropna_from_series=False` — let the estimator handle NaNs. No data loss. |
+| Estimator does not support NaN (RandomForest, LinearRegression, SVR...) | `dropna_from_series=True` — drop incomplete rows before fitting. |
+| Few or small gaps in the series | `dropna_from_series=True` — simple and data loss is negligible. |
+| Large gaps, need to preserve all training data | Imputation + `weight_func` — fill NaNs and down-weight imputed observations. |
+| Multi-series with different lengths | `ForecasterRecursiveMultiSeries` with `dropna_from_series=True`. |
+
+```python
+from lightgbm import LGBMRegressor
+
+# NaN-tolerant estimator: keep all rows including NaN
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(random_state=123, verbose=-1),
+    lags=14,
+    dropna_from_series=False,  # Default — NaN rows kept for NaN-tolerant estimators
+)
+forecaster.fit(y=y_train, suppress_warnings=True)  # Suppress MissingValuesWarning
+
+# Non-NaN-tolerant estimator: drop rows with NaN
+forecaster = ForecasterRecursive(
+    estimator=RandomForestRegressor(random_state=123),
+    lags=14,
+    dropna_from_series=True,  # Drop NaN rows before fitting
+)
+forecaster.fit(y=y_train)
 ```
 
 ## Window Features (Rolling Statistics)
@@ -514,7 +610,7 @@ show_datasets_info()
 ## Tips for Best Results
 
 1. **Always set frequency**: Use `data.asfreq('h')` or similar — skforecast requires a DatetimeIndex with frequency
-2. **Handle missing values**: Forecasters don't accept NaN by default
+2. **Handle missing values**: Use `dropna_from_series=True` to drop NaN rows, or `dropna_from_series=False` (default) with NaN-tolerant estimators (LightGBM, CatBoost, HistGradientBoosting)
 3. **Scale data**: Use `transformer_y` for better model performance
 4. **Use backtesting**: Always validate with realistic train/test splits
 5. **Consider differentiation**: For non-stationary series, use `differentiation` parameter
@@ -531,5 +627,5 @@ show_datasets_info()
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.22.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```

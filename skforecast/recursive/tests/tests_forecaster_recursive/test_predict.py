@@ -20,6 +20,7 @@ from lightgbm import LGBMRegressor
 from skforecast.preprocessing import RollingFeatures
 from skforecast.preprocessing import TimeSeriesDifferentiator
 from skforecast.recursive import ForecasterRecursive
+from skforecast.exceptions import MissingValuesWarning
 
 # Fixtures
 from .fixtures_forecaster_recursive import y as y_categorical
@@ -572,4 +573,75 @@ def test_predict_output_when_window_features(steps):
                    name = 'pred'
                )
     
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_last_window_stored_has_NaN():
+    """
+    Test predict output when the stored last_window_ contains NaN values.
+    Estimator: HistGradientBoostingRegressor (supports NaN natively).
+    """
+    y_nan = pd.Series(
+        data=[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, np.nan, 9.0, 10.0],
+        name='y'
+    )
+    forecaster = ForecasterRecursive(
+                     estimator=HistGradientBoostingRegressor(random_state=123),
+                     lags=3,
+                     dropna_from_series=True
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. They have been dropped."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        forecaster.fit(y=y_nan)
+
+    assert forecaster.last_window_.isna().any().any()
+
+    warn_msg = re.escape(
+        "`last_window` has missing values."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        predictions = forecaster.predict(steps=3)
+
+    expected = pd.Series(
+                   data=np.array([5.5, 5.5, 5.5]),
+                   index=pd.RangeIndex(start=10, stop=13, step=1),
+                   name='pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_last_window_argument_has_NaN():
+    """
+    Test predict output when a custom last_window with NaN values is passed
+    to the predict method. Estimator: HistGradientBoostingRegressor.
+    """
+    y = pd.Series(data=np.arange(1.0, 21.0), name='y')
+    forecaster = ForecasterRecursive(
+                     estimator=HistGradientBoostingRegressor(random_state=123),
+                     lags=3,
+                     dropna_from_series=False
+                 )
+    forecaster.fit(y=y)
+
+    last_window_nan = pd.Series(
+        data=[np.nan, 19.0, 20.0],
+        index=pd.RangeIndex(start=17, stop=20)
+    )
+
+    warn_msg = re.escape(
+        "`last_window` has missing values."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        predictions = forecaster.predict(steps=3, last_window=last_window_nan)
+
+    expected = pd.Series(
+                   data=np.array([12., 12., 12.]),
+                   index=pd.RangeIndex(start=20, stop=23, step=1),
+                   name='pred'
+               )
+
     pd.testing.assert_series_equal(predictions, expected)

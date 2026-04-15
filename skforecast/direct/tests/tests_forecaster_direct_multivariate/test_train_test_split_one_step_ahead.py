@@ -695,3 +695,52 @@ def test_train_test_split_one_step_ahead_restores_is_fitted(initial_is_fitted):
     )
 
     assert forecaster.is_fitted == initial_is_fitted
+
+
+def test_train_test_split_one_step_ahead_NaN_filtered_when_dropna_from_series_True():
+    """
+    Test _train_test_split_one_step_ahead filters NaN from both train and
+    test sets when dropna_from_series is True.
+    """
+    series = pd.DataFrame(
+        {'l1': [0, 1, 2, np.nan, 4, 5, 6, 7, 8, 9, 10, 11, np.nan, 13, 14],
+         'l2': np.arange(50, 65, dtype=float)},
+        index=pd.date_range('2020-01-01', periods=15, freq='D'),
+        dtype=float,
+    )
+
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2,
+        transformer_series=None, dropna_from_series=True,
+    )
+    forecaster.fit(
+        series=pd.DataFrame(
+            {'l1': np.arange(20, dtype=float),
+             'l2': np.arange(50, 70, dtype=float)},
+            index=pd.date_range('2020-01-01', periods=20, freq='D'),
+        )
+    )
+
+    X_train, y_train, X_test, y_test, train_index, test_index, sample_weight, fit_kwargs = (
+        forecaster._train_test_split_one_step_ahead(
+            series=series, initial_train_size=10
+        )
+    )
+
+    expected_X_train = np.array([
+        [6., 5., 4., 56., 55., 54.],
+        [7., 6., 5., 57., 56., 55.],
+    ])
+    expected_y_train = np.array([7., 8.])
+    expected_X_test = np.array([
+        [ 9.,  8.,  7., 59., 58., 57.],
+        [10.,  9.,  8., 60., 59., 58.],
+    ])
+    expected_y_test = np.array([10., 11.])
+
+    np.testing.assert_array_almost_equal(X_train, expected_X_train)
+    np.testing.assert_array_almost_equal(y_train, expected_y_train)
+    np.testing.assert_array_almost_equal(X_test, expected_X_test)
+    np.testing.assert_array_almost_equal(y_test, expected_y_test)
+    assert sample_weight is None
+    assert fit_kwargs == {}

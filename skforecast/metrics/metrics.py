@@ -122,7 +122,7 @@ def add_y_train_argument(func: Callable) -> Callable:
     return wrapper
 
 
-def any_metric_needs_y_train(metrics: list) -> bool:
+def _any_metric_needs_y_train(metrics: list) -> bool:
     """
     Check if any metric in the list requires `y_train`.
 

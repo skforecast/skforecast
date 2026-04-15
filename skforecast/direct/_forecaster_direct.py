@@ -21,7 +21,11 @@ from joblib import Parallel, delayed, cpu_count
 
 from .. import __version__
 from ..base import ForecasterBase
-from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
+from ..exceptions import (
+    DataTransformationWarning,
+    MissingValuesWarning,
+    ResidualsUsageWarning
+)
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -45,7 +49,8 @@ from ..utils import (
     get_style_repr_html,
     _build_predict_function,
     manage_warnings,
-    configure_estimator_categorical_features
+    configure_estimator_categorical_features,
+    scale_correction_factor_differentiation
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
@@ -59,7 +64,7 @@ def _fit_one_step_estimator(
     train_index: dict,
     X_train_features_names_out_: list[str],
     step: int
-) -> tuple[int, object, np.ndarray | None]:
+) -> tuple[int, object, np.ndarray, np.ndarray | None]:
     """
     Fit a single estimator for a given step of a direct forecaster.
 
@@ -94,6 +99,8 @@ def _fit_one_step_estimator(
         Step number.
     estimator : object
         Fitted estimator.
+    y_train_step : numpy ndarray
+        Target values for the step after NaN filtering.
     y_pred_step : numpy ndarray, None
         Predicted values for the step (only if probabilistic mode is active).
 
@@ -105,9 +112,14 @@ def _fit_one_step_estimator(
                                      y_train         = y_train,
                                      step            = step,
                                  )
-    sample_weight = forecaster.create_sample_weights(
-                        X_train=train_index[step]
-                    )
+    X_train_step, y_train_step, train_index_step = (
+        forecaster._filter_nan_X_y_step(
+            X_train_step     = X_train_step,
+            y_train_step     = y_train_step,
+            train_index_step = train_index[step],
+        )
+    )
+    sample_weight = forecaster.create_sample_weights(X_train=train_index_step)
 
     if forecaster.categorical_features is not None:
         fit_kwargs = configure_estimator_categorical_features(
@@ -155,7 +167,7 @@ def _fit_one_step_estimator(
             )
             y_pred_step = estimator.predict(X_train_step)
 
-    return step, estimator, y_pred_step
+    return step, estimator, y_train_step, y_pred_step
 
 
 class ForecasterDirect(ForecasterBase):
@@ -212,6 +224,13 @@ class ForecasterDirect(ForecasterBase):
         of times the differencing operation is applied to a time series. Differencing
         involves computing the differences between consecutive data points in the series.
         Before returning a prediction, the differencing operation is reversed.
+    dropna_from_series : bool, default False
+        Determine whether NaN detected in the training matrices will be dropped.
+        Relevant when `y` or `exog` contain interspersed NaN values.
+
+        - If `True`, drop NaNs in `X_train` and same rows in `y_train`.
+        - If `False`, leave NaNs in `X_train` and warn the user.
+        **New in version 0.22.0**
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the estimator.
     binner_kwargs : dict, default None
@@ -220,7 +239,6 @@ class ForecasterDirect(ForecasterBase):
         with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
         `random_state` and `dtype`. Argument `method` is passed internally to the
         function `numpy.percentile`.
-        **New in version 0.15.0**
     n_jobs : int, 'auto', default `'auto'`
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -287,6 +305,8 @@ class ForecasterDirect(ForecasterBase):
         the value of the `differentiation` parameter.
     differentiator : TimeSeriesDifferentiator
         Skforecast object used to differentiate the time series.
+    dropna_from_series : bool
+        Determine whether NaN detected in the training matrices will be dropped.
     last_window_ : pandas DataFrame
         This window represents the most recent data observed by the predictor
         during its training phase. It contains the values needed to predict the
@@ -357,7 +377,6 @@ class ForecasterDirect(ForecasterBase):
         `transformer_y` is not `None`, residuals are stored in the transformed 
         scale. If `differentiation` is not `None`, residuals are stored after 
         differentiation. 
-        **New in version 0.15.0**
     out_sample_residuals_ : numpy ndarray
         Residuals of the model when predicting non-training data. Only stored up to
         10_000 values. Use `set_out_sample_residuals()` method to set values. If 
@@ -371,18 +390,13 @@ class ForecasterDirect(ForecasterBase):
         `transformer_y` is not `None`, residuals are stored in the transformed 
         scale. If `differentiation` is not `None`, residuals are stored after 
         differentiation. 
-        **New in version 0.15.0**
     binner : skforecast.preprocessing.QuantileBinner
         `QuantileBinner` used to discretize residuals into k bins according 
         to the predicted values associated with each residual.
-        **New in version 0.15.0**
-    binner_intervals_ : dict
         Intervals used to discretize residuals into k bins according to the predicted
         values associated with each residual.
-        **New in version 0.15.0**
     binner_kwargs : dict
         Additional arguments to pass to the `QuantileBinner`.
-        **New in version 0.15.0**
     filter_train_X_y_index_cache_ : dict
         Cache storing column indices for each forecasting step to speed up the 
         creation of training matrices during backtesting. The cache uses step 
@@ -437,6 +451,7 @@ class ForecasterDirect(ForecasterBase):
         categorical_features: str | list[str] | None = 'auto',
         weight_func: Callable | None = None,
         differentiation: int | None = None,
+        dropna_from_series: bool = False,
         fit_kwargs: dict[str, object] | None = None,
         binner_kwargs: dict[str, object] | None = None,
         n_jobs: int | str = 'auto',
@@ -452,6 +467,7 @@ class ForecasterDirect(ForecasterBase):
         self.differentiation                    = differentiation
         self.differentiation_max                = None
         self.differentiator                     = None
+        self.dropna_from_series                 = dropna_from_series
         self.last_window_                       = None
         self.index_type_                        = None
         self.index_freq_                        = None
@@ -603,7 +619,7 @@ class ForecasterDirect(ForecasterBase):
             "allowed_input_types_series": ["pandas.Series"],
             "supports_exog": True,
             "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
-            "handles_missing_values_series": False, 
+            "handles_missing_values_series": True, 
             "handles_missing_values_exog": True, 
 
             "supports_lags": True,
@@ -658,6 +674,7 @@ class ForecasterDirect(ForecasterBase):
             f"Transformer for exog: {self.transformer_exog} \n"
             f"Weight function included: {True if self.weight_func is not None else False} \n"
             f"Differentiation order: {self.differentiation} \n"
+            f"Drop NaN from series: {self.dropna_from_series} \n"
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
@@ -685,12 +702,14 @@ class ForecasterDirect(ForecasterBase):
             exog_names_in_,
             _,
         ) = self._preprocess_repr(
-                estimator      = self.estimator,
-                exog_names_in_ = self.exog_names_in_
+                estimator                       = self.estimator,
+                exog_names_in_                  = self.exog_names_in_,
+                categorical_features_names_in_  = self.categorical_features_names_in_,
+                as_html                         = True,
             )
 
         style, unique_id = get_style_repr_html(self.is_fitted)
-        
+
         content = f"""
         <div class="container-{unique_id}">
             <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
@@ -707,6 +726,7 @@ class ForecasterDirect(ForecasterBase):
                     <li><strong>Categorical features:</strong> {self.categorical_features}</li>
                     <li><strong>Weight function included:</strong> {self.weight_func is not None}</li>
                     <li><strong>Differentiation order:</strong> {self.differentiation}</li>
+                    <li><strong>Drop NaN from series:</strong> {self.dropna_from_series}</li>
                     <li><strong>Creation date:</strong> {self.creation_date}</li>
                     <li><strong>Last fit date:</strong> {self.fit_date}</li>
                     <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
@@ -716,9 +736,7 @@ class ForecasterDirect(ForecasterBase):
             </details>
             <details>
                 <summary>Exogenous Variables</summary>
-                <ul>
-                    {exog_names_in_}
-                </ul>
+                <p style="margin: 0.2em 0 0.2em 1.5em;">{exog_names_in_}</p>
             </details>
             <details>
                 <summary>Data Transformations</summary>
@@ -938,10 +956,19 @@ class ForecasterDirect(ForecasterBase):
             Type of each exogenous variable/s used in training after the transformation 
             applied by `transformer_exog`. If `transformer_exog` is not used, it 
             is equal to `exog_dtypes_in_`.
+
+        Notes
+        -----
+        If `y` or `exog` contain interspersed NaN values, rows where `y_train`
+        is NaN are always removed per step. Rows where `X_train` contains NaN
+        (from lagged NaN in `y` or from NaN in `exog`) are removed only if
+        `dropna_from_series=True`; otherwise a warning is issued. Because each
+        step has its own target, NaN filtering is applied per step during
+        fitting rather than globally.
         
         """
 
-        check_y(y=y)
+        check_y(y=y, allow_nan=True)
         y = input_to_frame(data=y, input_name='y')
 
         if len(y) < self.window_size + self.max_step:
@@ -1131,6 +1158,16 @@ class ForecasterDirect(ForecasterBase):
         else:
             X_train_autoreg = np.concatenate(X_train_autoreg, axis=1)
 
+        any_nan_y = np.isnan(y_train).any()
+        if any_nan_y:
+            warnings.warn(
+                "NaNs detected in `y_train`. They have been dropped because the "
+                "target variable cannot have NaN values. Same rows have been "
+                "dropped from `X_train` to maintain alignment. This is caused by "
+                "interspersed NaNs in `y`.",
+                MissingValuesWarning
+            )
+
         y_train = {
             step: y_train[:, step - 1] for step in self.steps
         }
@@ -1139,6 +1176,27 @@ class ForecasterDirect(ForecasterBase):
             step: y_index[self.window_size + step - 1:][:len_train_index]
             for step in self.steps
         }
+
+        any_nan_X = np.isnan(X_train_autoreg).any()
+        if X_train_exog is not None and not any_nan_X:
+            any_nan_X = pd.isna(X_train_exog).any()
+
+        if any_nan_X:
+            if self.dropna_from_series:
+                warnings.warn(
+                    "NaNs detected in `X_train`. They have been dropped. If "
+                    "you want to keep them, set `forecaster.dropna_from_series = False`. "
+                    "Same rows have been removed from `y_train` to maintain alignment. "
+                    "This is caused by interspersed NaNs in `y` or `exog`.",
+                    MissingValuesWarning
+                )
+            else:
+                warnings.warn(
+                    "NaNs detected in `X_train`. Some estimators do not allow "
+                    "NaN values during training. If you want to drop them, "
+                    "set `forecaster.dropna_from_series = True`.",
+                    MissingValuesWarning
+                )
         
         return (
             X_train_autoreg,
@@ -1204,6 +1262,65 @@ class ForecasterDirect(ForecasterBase):
 
         return X_train_step, y_train_step
 
+    def _filter_nan_X_y_step(
+        self,
+        X_train_step: np.ndarray,
+        y_train_step: np.ndarray,
+        train_index_step: pd.Index | None = None
+    ) -> tuple[np.ndarray, np.ndarray, pd.Index | None]:
+        """
+        Remove rows with NaN from the training data for a single step.
+
+        Rows where `y_train_step` contains NaN are always removed. Rows where
+        `X_train_step` contains NaN are removed only when `self.dropna_from_series` 
+        is `True`.
+
+        Parameters
+        ----------
+        X_train_step : numpy ndarray
+            Training matrix for the step, shape (n_train, n_features).
+        y_train_step : numpy ndarray
+            Target values for the step, shape (n_train,).
+        train_index_step : pandas Index, default None
+            Index associated with the training data for the step. If `None`,
+            no index filtering is performed.
+
+        Returns
+        -------
+        X_train_step : numpy ndarray
+            Filtered training matrix.
+        y_train_step : numpy ndarray
+            Filtered target values.
+        train_index_step : pandas Index, None
+            Filtered index. `None` if no index was provided.
+
+        """
+
+        if np.isnan(y_train_step).any():
+            mask = ~np.isnan(y_train_step)
+            y_train_step = y_train_step[mask]
+            X_train_step = X_train_step[mask]
+            if train_index_step is not None:
+                train_index_step = train_index_step[mask]
+
+        if self.dropna_from_series:
+            nan_rows = pd.isna(X_train_step).any(axis=1)
+            if nan_rows.any():
+                mask = ~nan_rows
+                X_train_step = X_train_step[mask]
+                y_train_step = y_train_step[mask]
+                if train_index_step is not None:
+                    train_index_step = train_index_step[mask]
+
+        if len(y_train_step) == 0:
+            raise ValueError(
+                "All samples have been removed due to NaNs. Set "
+                "`forecaster.dropna_from_series = False` or review `y` and "
+                "`exog` values."
+            )
+
+        return X_train_step, y_train_step, train_index_step
+
     def create_train_X_y(
         self,
         y: pd.Series,
@@ -1231,6 +1348,15 @@ class ForecasterDirect(ForecasterBase):
         y_train : dict
             Values of the time series related to each row of `X_train` for each 
             step in the form {step: y_step_[i]}.
+
+        Notes
+        -----
+        If `y` or `exog` contain interspersed NaN values, rows where `y_train`
+        is NaN are always removed per step. Rows where `X_train` contains NaN
+        (from lagged NaN in `y` or from NaN in `exog`) are removed only if
+        `dropna_from_series=True`; otherwise a warning is issued. Because each
+        step has its own target, NaN filtering is applied per step during
+        fitting rather than globally.
         
         """
 
@@ -1239,12 +1365,12 @@ class ForecasterDirect(ForecasterBase):
             X_train_exog,
             y_train,
             train_index,
-            exog_names_in_,
-            categorical_features_names_in_,
-            X_train_exog_names_out_,
-            X_train_features_names_out_,
+            _,
+            _,
+            _,
+            _,
             X_train_direct_features_names_out_,
-            exog_dtypes_in_,
+            _,
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
 
@@ -1359,6 +1485,18 @@ class ForecasterDirect(ForecasterBase):
             X_train_step.columns = self.filter_train_X_y_columns_cache_[step]
             y_train_step.name = y_train_step.name.replace(f"_step_{step}", "")
 
+        # NaN filtering: same logic as _filter_nan_X_y_step but on pandas
+        nan_y = y_train_step.isna()
+        if nan_y.any():
+            y_train_step = y_train_step[~nan_y]
+            X_train_step = X_train_step[~nan_y]
+
+        if self.dropna_from_series:
+            nan_X = X_train_step.isna().any(axis=1)
+            if nan_X.any():
+                X_train_step = X_train_step[~nan_X]
+                y_train_step = y_train_step[~nan_X]
+
         return X_train_step, y_train_step
 
     def _train_test_split_one_step_ahead(
@@ -1453,7 +1591,17 @@ class ForecasterDirect(ForecasterBase):
                              step            = step,
                          )
 
-        sample_weight = self.create_sample_weights(X_train=train_index[step])
+        X_train, y_train, train_index_step = self._filter_nan_X_y_step(
+            X_train_step     = X_train,
+            y_train_step     = y_train,
+            train_index_step = train_index[step],
+        )
+        X_test, y_test, _ = self._filter_nan_X_y_step(
+            X_train_step     = X_test,
+            y_train_step     = y_test,
+        )
+
+        sample_weight = self.create_sample_weights(X_train=train_index_step)
 
         if self.categorical_features is not None:
             fit_kwargs = configure_estimator_categorical_features(
@@ -1629,8 +1777,8 @@ class ForecasterDirect(ForecasterBase):
         self.estimators_ = {step: estimator for step, estimator, *_ in results_fit}
 
         if self._probabilistic_mode is not False:
-            y_pred = [y_pred for _, _, y_pred in results_fit]
-            y_true = [y_train[step] for step in self.steps]
+            y_true = [y_true_step for _, _, y_true_step, _ in results_fit]
+            y_pred = [y_pred_step for _, _, _, y_pred_step in results_fit]
             self._binning_in_sample_residuals(
                 y_true                    = np.concatenate(y_true),
                 y_pred                    = np.concatenate(y_pred),
@@ -1686,7 +1834,6 @@ class ForecasterDirect(ForecasterBase):
         The number of residuals stored per bin is limited to 
         `10_000 // self.binner.n_bins_`. The total number of residuals stored is
         `10_000`.
-        **New in version 0.15.0**
 
         Parameters
         ----------
@@ -2123,7 +2270,7 @@ class ForecasterDirect(ForecasterBase):
 
         predictions = self._direct_predict(steps=steps, Xs=Xs)
 
-        if self.differentiation is not None:
+        if differentiator is not None:
             predictions = differentiator.inverse_transform_next_window(predictions)
 
         predictions = transform_numpy(
@@ -2258,7 +2405,7 @@ class ForecasterDirect(ForecasterBase):
         boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
         boot_predictions = boot_predictions + sampled_residuals
 
-        if self.differentiation is not None:
+        if differentiator is not None:
             boot_predictions = (
                 differentiator.inverse_transform_next_window(boot_predictions)
             )
@@ -2377,12 +2524,17 @@ class ForecasterDirect(ForecasterBase):
         else:
             correction_factor = np.quantile(np.abs(residuals), nominal_coverage)
 
+        if differentiator is not None:
+            predictions = differentiator.inverse_transform_next_window(predictions)
+            correction_factor = scale_correction_factor_differentiation(
+                correction_factor     = correction_factor,
+                steps                 = len(predictions),
+                differentiation_order = self.differentiation
+            )
+
         lower_bound = predictions - correction_factor
         upper_bound = predictions + correction_factor
         predictions = np.column_stack([predictions, lower_bound, upper_bound])
-
-        if self.differentiation is not None:
-            predictions = differentiator.inverse_transform_next_window(predictions)
         
         if self.transformer_y:
             predictions = transform_numpy(
@@ -2940,7 +3092,7 @@ class ForecasterDirect(ForecasterBase):
                 "arguments before using `set_in_sample_residuals()`."
             )
         
-        check_y(y=y)
+        check_y(y=y, allow_nan=True)
         y_index_range = check_extract_values_and_index(
             data=y, data_label='`y`', return_values=False
         )[1][[0, -1]]
@@ -2998,6 +3150,10 @@ class ForecasterDirect(ForecasterBase):
                                              y_train         = y_train,
                                              step            = step,
                                          )
+            X_train_step, y_train_step, _ = self._filter_nan_X_y_step(
+                                                X_train_step = X_train_step,
+                                                y_train_step = y_train_step,
+                                            )
             
             y_true_steps.append(y_train_step)
             y_pred_steps.append(self.estimators_[step].predict(X_train_step))

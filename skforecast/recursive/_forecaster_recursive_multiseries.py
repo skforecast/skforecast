@@ -56,7 +56,8 @@ from ..utils import (
     manage_warnings,
     get_style_repr_html,
     set_cpu_gpu_device,
-    _build_predict_function
+    _build_predict_function,
+    scale_correction_factor_differentiation
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..model_selection._utils import _extract_data_folds_multiseries
@@ -149,9 +150,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         - If `None`, no differencing is applied.
     dropna_from_series : bool, default False
         Determine whether NaN detected in the training matrices will be dropped.
+        Relevant when `series` or `exog` contain interspersed NaN values.
 
-        - If `True`, drop NaNs in X_train and same rows in y_train.
-        - If `False`, leave NaNs in X_train and warn the user.
+        - If `True`, drop NaNs in `X_train` and same rows in `y_train`.
+        - If `False`, leave NaNs in `X_train` and warn the user.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the estimator.
     binner_kwargs : dict, default None
@@ -322,7 +324,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         If `transformer_series` is not `None`, residuals are stored in the 
         transformed scale. If `differentiation` is not `None`, residuals are 
         stored after differentiation. 
-        **New in version 0.15.0**
     out_sample_residuals_ : dict
         Residuals of the model when predicting non-training data. Only stored up 
         to 10_000 values per series in the form `{series: residuals}`. Use 
@@ -336,19 +337,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         If `transformer_series` is not `None`, residuals are stored in the 
         transformed scale. If `differentiation` is not `None`, residuals are 
         stored after differentiation. 
-        **New in version 0.15.0**
     binner : dict
         Dictionary of `skforecast.preprocessing.QuantileBinner` used to discretize
         residuals of each series into k bins according to the predicted values 
         associated with each residual. In the form `{series: binner}`.
-        **New in version 0.15.0**
     binner_intervals_ : dict
         Intervals used to discretize residuals into k bins according to the predicted
         values associated with each residual. In the form `{series: binner_intervals_}`.
-        **New in version 0.15.0**
     binner_kwargs : dict
         Additional arguments to pass to the `QuantileBinner`.
-        **New in version 0.15.0**
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -684,6 +681,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             f"Weight function included: {True if self.weight_func is not None else False} \n"
             f"Series weights: {self.series_weights} \n"
             f"Differentiation order: {self.differentiation} \n"
+            f"Drop NaN from series: {self.dropna_from_series} \n"
             f"Training range: {training_range_} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
@@ -711,15 +709,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             exog_names_in_,
             transformer_series,
         ) = self._preprocess_repr(
-                estimator          = self.estimator,
-                training_range_    = self.training_range_,
-                series_names_in_   = self.series_names_in_,
-                exog_names_in_     = self.exog_names_in_,
-                transformer_series = self.transformer_series,
+                estimator                       = self.estimator,
+                training_range_                 = self.training_range_,
+                series_names_in_                = self.series_names_in_,
+                exog_names_in_                  = self.exog_names_in_,
+                transformer_series              = self.transformer_series,
+                categorical_features_names_in_  = self.categorical_features_names_in_,
+                as_html                         = True,
             )
 
         style, unique_id = get_style_repr_html(self.is_fitted)
-        
+
         content = f"""
         <div class="container-{unique_id}">
             <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
@@ -736,6 +736,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     <li><strong>Weight function included:</strong> {self.weight_func is not None}</li>
                     <li><strong>Series weights:</strong> {self.series_weights}</li>
                     <li><strong>Differentiation order:</strong> {self.differentiation}</li>
+                    <li><strong>Drop NaN from series:</strong> {self.dropna_from_series}</li>
                     <li><strong>Creation date:</strong> {self.creation_date}</li>
                     <li><strong>Last fit date:</strong> {self.fit_date}</li>
                     <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
@@ -745,9 +746,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             </details>
             <details>
                 <summary>Exogenous Variables</summary>
-                <ul>
-                    {exog_names_in_}
-                </ul>
+                <p style="margin: 0.2em 0 0.2em 1.5em;">{exog_names_in_}</p>
             </details>
             <details>
                 <summary>Data Transformations</summary>
@@ -1375,7 +1374,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 "NaNs detected in `y_train`. They have been dropped because the "
                 "target variable cannot have NaN values. Same rows have been "
                 "dropped from `X_train` to maintain alignment. This is caused by "
-                "series with interspersed NaNs.",
+                "interspersed NaNs in `series`.",
                 MissingValuesWarning
             )
 
@@ -1388,7 +1387,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     "NaNs detected in `X_train`. They have been dropped. If "
                     "you want to keep them, set `forecaster.dropna_from_series = False`. "
                     "Same rows have been removed from `y_train` to maintain alignment. "
-                    "This caused by series with interspersed NaNs.",
+                    "This is caused by interspersed NaNs in `series` or `exog`.",
                     MissingValuesWarning
                 )
         else:
@@ -1403,7 +1402,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if X_train.empty:
             raise ValueError(
                 "All samples have been removed due to NaNs. Set "
-                "`forecaster.dropna_from_series = False` or review `exog` values."
+                "`forecaster.dropna_from_series = False` or review `series` "
+                "and `exog` values."
             )
         
         if self.encoding == 'onehot':
@@ -2133,7 +2133,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         The number of residuals stored per bin is limited to 
         `10_000 // self.binner.n_bins_`. The total number of residuals stored is
         `10_000`.
-        **New in version 0.15.0**
 
         Parameters
         ----------
@@ -3344,10 +3343,20 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         for i, level in enumerate(levels):
 
             if differentiators.get(level) is not None:
-                predictions[i, :, :] = (
+                # NOTE: Only the point predictions (column 0) need to be
+                # undifferenced. The bounds (columns 1, 2) are overwritten
+                # below with the correctly scaled correction factor.
+                predictions[i, :, 0] = (
                     differentiators[level]
-                    .inverse_transform_next_window(predictions[i, :, :])
+                    .inverse_transform_next_window(predictions[i, :, 0])
                 )
+                c_factor_scaled = scale_correction_factor_differentiation(
+                    correction_factor     = correction_factor[:, i],
+                    steps                 = steps,
+                    differentiation_order = differentiators[level].order
+                )
+                predictions[i, :, 1] = predictions[i, :, 0] - c_factor_scaled
+                predictions[i, :, 2] = predictions[i, :, 0] + c_factor_scaled
             
             transformer_level = self.transformer_series_.get(
                                     level,

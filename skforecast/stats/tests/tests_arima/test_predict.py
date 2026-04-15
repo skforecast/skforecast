@@ -173,10 +173,6 @@ def test_arima_predict_returns_finite_and_exact_values():
     assert np.all(np.isfinite(pred))
 
 
-@pytest.mark.skipif(
-    platform.system() == 'Darwin',
-    reason="ARIMA optimizer converges to different values on macOS"
-)
 def test_arima_predict_with_exog_numpy_array():
     """
     Test predict with exogenous variables as numpy array.
@@ -185,14 +181,17 @@ def test_arima_predict_with_exog_numpy_array():
     y = np.random.randn(30) * 0.5
     y[0] = 1.0
     for i in range(1, 30):
-        y[i] = 0.5 * y[i-1] + y[i]
+        y[i] = 0.5 * y[i - 1] + y[i]
     exog_train = np.random.randn(30, 2)
     
     model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
     model.fit(y, exog=exog_train)
     
     # Check exact coefficients (R-based implementation values)
-    expected_coef = np.array([0.71943314, -0.10608029, -0.03679128, -0.06247405])
+    if platform.system() == 'Darwin':
+        expected_coef = np.array([0.71943314, 0.04802214, 0.07733238, -0.0906819])
+    else:
+        expected_coef = np.array([0.71943314, -0.10608029, -0.03679128, -0.06247405])
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=5)
     assert model.n_exog_features_in_ == 2
 
@@ -200,7 +199,10 @@ def test_arima_predict_with_exog_numpy_array():
     pred = model.predict(steps=3, exog=exog_pred)
 
     # Check exact prediction values (R-based implementation)
-    expected_pred = np.array([-0.32577062, -0.31016259, -0.23927637])
+    if platform.system() == 'Darwin':
+        expected_pred = np.array([-0.10050243, -0.0419365, -0.1563397])
+    else:
+        expected_pred = np.array([-0.32577062, -0.31016259, -0.23927637])
     np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
 
 

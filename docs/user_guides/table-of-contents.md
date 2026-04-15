@@ -32,6 +32,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Calendars features](../user_guides/calendar-features.ipynb)
 - [Data transformations](../user_guides/sklearn-transformers-and-pipeline.ipynb)
 - [Differentiation](../user_guides/time-series-differentiation.ipynb)
+- [Handling missing values](../user_guides/handling-missing-values.ipynb)
 - [Feature selection](../user_guides/feature-selection.ipynb)
 - [Sktime pipelines](../user_guides/sktime-pipelines.ipynb)
 

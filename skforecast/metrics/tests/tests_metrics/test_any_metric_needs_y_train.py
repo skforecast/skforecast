@@ -1,9 +1,9 @@
-# Unit test any_metric_needs_y_train
+# Unit test _any_metric_needs_y_train
 # ==============================================================================
 import pytest
 from skforecast.metrics import (
     add_y_train_argument,
-    any_metric_needs_y_train,
+    _any_metric_needs_y_train,
     mean_absolute_scaled_error,
     root_mean_squared_scaled_error,
 )
@@ -37,7 +37,7 @@ def test_any_metric_needs_y_train_with_wrapped_metrics(metrics, expected):
     Test any_metric_needs_y_train with metrics processed by
     add_y_train_argument.
     """
-    assert any_metric_needs_y_train(metrics) is expected
+    assert _any_metric_needs_y_train(metrics) is expected
 
 
 @pytest.mark.parametrize(
@@ -64,4 +64,4 @@ def test_any_metric_needs_y_train_with_custom_metric(needs_attr, expected):
     if needs_attr is not None:
         custom_metric._needs_y_train = needs_attr
 
-    assert any_metric_needs_y_train([custom_metric]) is expected
+    assert _any_metric_needs_y_train([custom_metric]) is expected

@@ -49,7 +49,7 @@ steps : int, str, pandas Timestamp
 - **Default values**: written as `default None`, `default True`, `default 123`, `default 'auto'` — always on the type line, not in the description.
 - **Description indentation**: 4 spaces from the left margin (one level deeper than the parameter name).
 - **Sub-items** (enumerated options): use a blank line before the list, then `- If \`value\`: description` with 4-space indentation, matching the description indentation.
-- **Backticks**: use single backticks for parameter names, values, and attribute references (`` `y` ``, `` `None` ``, `` `self.last_window_` ``).
+- **Backticks**: use single backticks for parameter names, values, and attribute references (`y`, `None`, `self.last_window_`).
 - **Multi-line descriptions**: continuation lines align with the first line of the description (4-space indent).
 - **Type naming conventions**:
   - `pandas Series`, `pandas DataFrame` (not `pd.Series`)

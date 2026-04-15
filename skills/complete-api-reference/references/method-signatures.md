@@ -8,16 +8,18 @@ Complete constructor and method signatures for all skforecast public API.
 
 ```python
 ForecasterRecursive(
-    estimator=None,           # sklearn-compatible regressor
-    lags=None,                # int | list[int] | np.ndarray | range | None
-    window_features=None,     # RollingFeatures | list[RollingFeatures] | None
-    transformer_y=None,       # sklearn transformer for target variable
-    transformer_exog=None,    # sklearn transformer | ColumnTransformer for exog
-    weight_func=None,         # Callable to weight training samples by index position
-    differentiation=None,     # int, differencing order applied before training
-    fit_kwargs=None,          # dict, extra kwargs passed to estimator.fit()
-    binner_kwargs=None,       # dict, kwargs for KBinsDiscretizer (binned residuals)
-    forecaster_id=None,       # str | int, optional identifier
+    estimator=None,               # sklearn-compatible regressor
+    lags=None,                    # int | list[int] | np.ndarray | range | None
+    window_features=None,         # RollingFeatures | list[RollingFeatures] | None
+    transformer_y=None,           # sklearn transformer for target variable
+    transformer_exog=None,        # sklearn transformer | ColumnTransformer for exog
+    categorical_features='auto',  # 'auto' | list[str] | None, categorical exog handling
+    weight_func=None,             # Callable to weight training samples by index position
+    differentiation=None,         # int, differencing order applied before training
+    dropna_from_series=False,     # bool, drop NaN rows from training matrices
+    fit_kwargs=None,              # dict, extra kwargs passed to estimator.fit()
+    binner_kwargs=None,           # dict, kwargs for KBinsDiscretizer (binned residuals)
+    forecaster_id=None,           # str | int, optional identifier
 )
 ```
 
@@ -31,6 +33,7 @@ ForecasterRecursiveMultiSeries(
     encoding='ordinal',            # 'ordinal' | 'ordinal_category' | 'onehot' | None
     transformer_series=None,       # sklearn transformer | dict[str, transformer] | None
     transformer_exog=None,         # sklearn transformer | ColumnTransformer | None
+    categorical_features='auto',   # 'auto' | list[str] | None, categorical exog handling
     weight_func=None,              # Callable | dict[str, Callable] | None
     series_weights=None,           # dict[str, float] | None, relative weight of each series
     differentiation=None,          # int | dict[str, int | None] | None
@@ -45,18 +48,20 @@ ForecasterRecursiveMultiSeries(
 
 ```python
 ForecasterDirect(
-    steps,                    # int (required), number of steps to forecast
-    estimator=None,           # sklearn-compatible regressor
-    lags=None,                # int | list[int] | np.ndarray | range | None
-    window_features=None,     # RollingFeatures | list[RollingFeatures] | None
-    transformer_y=None,       # sklearn transformer for target variable
-    transformer_exog=None,    # sklearn transformer | ColumnTransformer for exog
-    weight_func=None,         # Callable to weight training samples by index position
-    differentiation=None,     # int, differencing order applied before training
-    fit_kwargs=None,          # dict, extra kwargs passed to estimator.fit()
-    binner_kwargs=None,       # dict, kwargs for KBinsDiscretizer (binned residuals)
-    n_jobs='auto',            # int | str, parallel jobs for training one model per step
-    forecaster_id=None,       # str | int, optional identifier
+    steps,                        # int (required), number of steps to forecast
+    estimator=None,               # sklearn-compatible regressor
+    lags=None,                    # int | list[int] | np.ndarray | range | None
+    window_features=None,         # RollingFeatures | list[RollingFeatures] | None
+    transformer_y=None,           # sklearn transformer for target variable
+    transformer_exog=None,        # sklearn transformer | ColumnTransformer for exog
+    categorical_features='auto',  # 'auto' | list[str] | None, categorical exog handling
+    weight_func=None,             # Callable to weight training samples by index position
+    differentiation=None,         # int, differencing order applied before training
+    dropna_from_series=False,     # bool, drop NaN rows from training matrices
+    fit_kwargs=None,              # dict, extra kwargs passed to estimator.fit()
+    binner_kwargs=None,           # dict, kwargs for KBinsDiscretizer (binned residuals)
+    n_jobs='auto',                # int | str, parallel jobs for training one model per step
+    forecaster_id=None,           # str | int, optional identifier
 )
 ```
 
@@ -71,8 +76,10 @@ ForecasterDirectMultiVariate(
     window_features=None,          # RollingFeatures | list[RollingFeatures] | None
     transformer_series=StandardScaler(),  # sklearn transformer | dict[str, transformer] | None
     transformer_exog=None,         # sklearn transformer | ColumnTransformer | None
+    categorical_features='auto',   # 'auto' | list[str] | None, categorical exog handling
     weight_func=None,              # Callable to weight training samples by index position
     differentiation=None,          # int, differencing order applied before training
+    dropna_from_series=False,      # bool, drop NaN rows from training matrices
     fit_kwargs=None,               # dict, extra kwargs passed to estimator.fit()
     binner_kwargs=None,            # dict, kwargs for KBinsDiscretizer (binned residuals)
     n_jobs='auto',                 # int | str, parallel jobs for training one model per step
@@ -84,14 +91,16 @@ ForecasterDirectMultiVariate(
 
 ```python
 ForecasterRecursiveClassifier(
-    estimator,                # sklearn-compatible classifier (required, not optional)
-    lags=None,                # int | list[int] | np.ndarray | range | None
-    window_features=None,     # RollingFeatures | list[RollingFeatures] | None
-    features_encoding='auto', # str, encoding for categorical exog features
-    transformer_exog=None,    # sklearn transformer | ColumnTransformer for exog
-    weight_func=None,         # Callable to weight training samples by index position
-    fit_kwargs=None,          # dict, extra kwargs passed to estimator.fit()
-    forecaster_id=None,       # str | int, optional identifier
+    estimator,                    # sklearn-compatible classifier (required, not optional)
+    lags=None,                    # int | list[int] | np.ndarray | range | None
+    window_features=None,         # RollingFeatures | list[RollingFeatures] | None
+    features_encoding='auto',     # str, encoding for categorical exog features
+    transformer_exog=None,        # sklearn transformer | ColumnTransformer for exog
+    categorical_features='auto',  # 'auto' | list[str] | None, categorical exog handling
+    weight_func=None,             # Callable to weight training samples by index position
+    dropna_from_series=False,     # bool, drop NaN rows from training matrices
+    fit_kwargs=None,              # dict, extra kwargs passed to estimator.fit()
+    forecaster_id=None,           # str | int, optional identifier
 )
 # NOTE: No transformer_y, differentiation, or binner_kwargs.
 # NOTE: Uses predict_proba() instead of predict_interval().
@@ -124,12 +133,13 @@ ForecasterEquivalentDate(
 
 ```python
 ForecasterRnn(
+    estimator=None,                    # Keras model (use create_and_compile_model)
     levels,                            # str | list[str] (required), target series names
     lags,                              # int | list[int] | np.ndarray | range (required)
-    estimator=None,                    # Keras model (use create_and_compile_model)
     transformer_series=MinMaxScaler(feature_range=(0, 1)),  # transformer | dict | None
     transformer_exog=MinMaxScaler(feature_range=(0, 1)),    # transformer | None
     fit_kwargs=None,                   # dict, extra kwargs passed to model.fit()
+    binner_kwargs=None,                # dict, kwargs for KBinsDiscretizer (binned residuals)
     forecaster_id=None,                # str | int, optional identifier
 )
 ```
@@ -364,9 +374,9 @@ forecaster.predict_interval(
     method='conformal',                 # only 'conformal' supported
     interval=[5, 95],                   # float | list[float] | tuple[float]
     use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
     suppress_warnings=False,            # bool
     n_boot=None,                        # Any, ignored (API compatibility)
-    use_binned_residuals=None,          # Any, ignored (API compatibility)
     random_state=None,                  # Any, ignored (API compatibility)
 ) -> pd.DataFrame
 

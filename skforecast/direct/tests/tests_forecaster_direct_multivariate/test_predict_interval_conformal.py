@@ -268,7 +268,10 @@ def test_predict_interval_conformal_output_binned__out_sample_residuals():
 
 def test_predict_interval_conformal_output_with_differentiation():
     """
-    Test predict output when using differentiation.
+    Test predict output when using differentiation. Prediction intervals should
+    grow with sqrt(h) for d=1 (not linearly), as the correct scaling of the
+    conformal correction factor is applied based on the MA(inf) representation
+    of the (1-B)^{-d} filter.
     """
     forecaster = ForecasterDirectMultiVariate(
                      estimator          = LinearRegression(),
@@ -286,8 +289,8 @@ def test_predict_interval_conformal_output_with_differentiation():
     expected = pd.DataFrame(
                    data = np.array([
                             [ 0.75141456,  0.26049601,  1.24233311],
-                            [ 0.64535259, -0.33648452,  1.62718969],
-                            [ 0.63651233, -0.83624333,  2.10926798]]),
+                            [ 0.64535258, -0.04891109,  1.33961626],
+                            [ 0.63651232, -0.21378355,  1.48680819]]),
                    index = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )

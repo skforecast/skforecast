@@ -273,3 +273,162 @@ def test_filter_train_X_y_for_step_output_when_window_features_and_exog_steps_2(
 
     pd.testing.assert_frame_equal(results[0], expected[0])
     pd.testing.assert_series_equal(results[1], expected[1])
+
+
+def test_filter_train_X_y_for_step_output_when_y_and_exog_have_nan_and_dropna_from_series_True():
+    """
+    Test that filter_train_X_y_for_step removes rows where y or exog has
+    NaN when dropna_from_series is True. NaN in y propagates to different
+    steps due to the target offset; NaN in exog affects the step where
+    that exog column appears.
+    """
+    y = pd.Series(
+        [0, 1, 2, np.nan, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        index=pd.date_range('2020-01-01', periods=13, freq='D'),
+        name='y', dtype=float
+    )
+    exog = pd.DataFrame(
+        {
+            'exog_1': [10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 21., 22.],
+            'exog_2': [100., 101., 102., np.nan, 104., 105., 106., 107., 108., 109., 110., np.nan, 112.],
+        },
+        index=pd.date_range('2020-01-01', periods=13, freq='D'),
+    )
+
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2,
+        dropna_from_series=True
+    )
+    X_train, y_train = forecaster.create_train_X_y(y=y, exog=exog)
+
+    # Step 1: NaN from y (lag propagation) and exog_2 NaN at 2020-01-12
+    X_step1, y_step1 = forecaster.filter_train_X_y_for_step(
+        step=1, X_train=X_train, y_train=y_train
+    )
+
+    expected_X_step1 = pd.DataFrame(
+        data    = np.array([[6., 5., 4., 17., 107.],
+                            [7., 6., 5., 18., 108.],
+                            [8., 7., 6., 19., 109.],
+                            [9., 8., 7., 20., 110.]]),
+        index   = pd.date_range('2020-01-08', periods=4, freq='D'),
+        columns = ['lag_1', 'lag_2', 'lag_3', 'exog_1_step_1', 'exog_2_step_1']
+    )
+    expected_y_step1 = pd.Series(
+        data  = np.array([7., 8., 9., 10.]),
+        index = pd.date_range('2020-01-08', periods=4, freq='D'),
+        name  = 'y_step_1'
+    )
+
+    pd.testing.assert_frame_equal(X_step1, expected_X_step1)
+    pd.testing.assert_series_equal(y_step1, expected_y_step1)
+
+    # Step 2: NaN from y (target and lag) and exog_2 NaN at 2020-01-12
+    X_step2, y_step2 = forecaster.filter_train_X_y_for_step(
+        step=2, X_train=X_train, y_train=y_train
+    )
+
+    expected_X_step2 = pd.DataFrame(
+        data    = np.array([[ 2.,  1.,  0., 14., 104.],
+                            [ 6.,  5.,  4., 18., 108.],
+                            [ 7.,  6.,  5., 19., 109.],
+                            [ 8.,  7.,  6., 20., 110.],
+                            [10.,  9.,  8., 22., 112.]]),
+        index   = pd.DatetimeIndex(
+                      ['2020-01-05', '2020-01-09', '2020-01-10',
+                       '2020-01-11', '2020-01-13'],
+                      freq=None
+                  ),
+        columns = ['lag_1', 'lag_2', 'lag_3', 'exog_1_step_2', 'exog_2_step_2']
+    )
+    expected_y_step2 = pd.Series(
+        data  = np.array([4., 8., 9., 10., 12.]),
+        index = pd.DatetimeIndex(
+                    ['2020-01-05', '2020-01-09', '2020-01-10',
+                     '2020-01-11', '2020-01-13'],
+                    freq=None
+                ),
+        name  = 'y_step_2'
+    )
+
+    pd.testing.assert_frame_equal(X_step2, expected_X_step2)
+    pd.testing.assert_series_equal(y_step2, expected_y_step2)
+
+
+def test_filter_train_X_y_for_step_output_when_y_has_nan_and_dropna_from_series_False():
+    """
+    Test that filter_train_X_y_for_step removes rows where y has NaN but
+    keeps rows where X has NaN when dropna_from_series is False.
+    """
+    y = pd.Series(
+        [0, 1, 2, np.nan, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        index=pd.date_range('2020-01-01', periods=13, freq='D'),
+        name='y', dtype=float
+    )
+
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2,
+        dropna_from_series=False
+    )
+    X_train, y_train = forecaster.create_train_X_y(y=y)
+
+    X_step1, y_step1 = forecaster.filter_train_X_y_for_step(
+        step=1, X_train=X_train, y_train=y_train
+    )
+
+    expected_X_step1 = pd.DataFrame(
+        data    = np.array([[np.nan,  2.,  1.],
+                            [ 4., np.nan,  2.],
+                            [ 5.,  4., np.nan],
+                            [ 6.,  5.,  4.],
+                            [ 7.,  6.,  5.],
+                            [ 8.,  7.,  6.],
+                            [ 9.,  8.,  7.],
+                            [10.,  9.,  8.]]),
+        index   = pd.date_range('2020-01-05', periods=8, freq='D'),
+        columns = ['lag_1', 'lag_2', 'lag_3']
+    )
+    expected_y_step1 = pd.Series(
+        data  = np.array([4., 5., 6., 7., 8., 9., 10., 11.]),
+        index = pd.date_range('2020-01-05', periods=8, freq='D'),
+        name  = 'y_step_1'
+    )
+
+    pd.testing.assert_frame_equal(X_step1, expected_X_step1)
+    pd.testing.assert_series_equal(y_step1, expected_y_step1)
+
+
+def test_filter_train_X_y_for_step_output_when_no_nans_unchanged():
+    """
+    Test that filter_train_X_y_for_step returns the same output as before
+    NaN filtering was added when there are no NaN values.
+    """
+    y = pd.Series(np.arange(10), name='y', dtype=float)
+
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2,
+        dropna_from_series=True
+    )
+    X_train, y_train = forecaster.create_train_X_y(y=y)
+    X_step, y_step = forecaster.filter_train_X_y_for_step(
+        step=1, X_train=X_train, y_train=y_train
+    )
+
+    expected_X = pd.DataFrame(
+        data=np.array([[2., 1., 0.],
+                        [3., 2., 1.],
+                        [4., 3., 2.],
+                        [5., 4., 3.],
+                        [6., 5., 4.],
+                        [7., 6., 5.]], dtype=float),
+        index=pd.RangeIndex(start=3, stop=9, step=1),
+        columns=['lag_1', 'lag_2', 'lag_3']
+    )
+    expected_y = pd.Series(
+        data=np.array([3., 4., 5., 6., 7., 8.], dtype=float),
+        index=pd.RangeIndex(start=3, stop=9, step=1),
+        name='y_step_1'
+    )
+
+    pd.testing.assert_frame_equal(X_step, expected_X)
+    pd.testing.assert_series_equal(y_step, expected_y)

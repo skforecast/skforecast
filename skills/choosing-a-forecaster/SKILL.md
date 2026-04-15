@@ -131,7 +131,7 @@ How many series?
 | Weight function | ✓ | ✓ | ✓ (per-series) | ✓ | — | — | — | ✓ |
 | Bootstrapping intervals | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
 | Conformal intervals | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
-| Binned residuals | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — |
+| Binned residuals | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
 | Quantile predictions | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
 | Distribution fitting | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
 | Class probabilities | — | — | — | — | — | — | — | ✓ |

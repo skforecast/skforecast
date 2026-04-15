@@ -6,13 +6,13 @@
 
 > Python library for time series forecasting using machine learning models
 
-This document is for skforecast v0.21.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.22.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library that simplifies time series forecasting using machine learning. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.21.0
+- Version: 0.22.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -154,6 +154,102 @@ forecaster.fit(y=y_train, exog=exog_train)
 
 # Predict - exog must cover the forecast horizon
 predictions = forecaster.predict(steps=10, exog=exog_test)
+```
+
+## Categorical Exogenous Variables
+
+All ML forecasters (ForecasterRecursive, ForecasterDirect, ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRecursiveClassifier) include a `categorical_features` parameter to handle categorical exogenous variables automatically.
+
+```python
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+    categorical_features='auto',  # Default: auto-detect non-numeric columns after transformer_exog
+)
+forecaster.fit(y=y_train, exog=exog_train)
+```
+
+**`categorical_features` options:**
+- `'auto'` (default): Non-numeric columns (after `transformer_exog`) are automatically detected and encoded using an internal `OrdinalEncoder`. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
+- `list`: Explicit list of column names to treat as categorical (including numeric columns).
+- `None`: No categorical encoding is applied.
+
+**Important:** When `categorical_features` is not `None` do not set categorical features directly on the estimator or via `fit_kwargs`. The forecaster manages categorical configuration internally and overwrites any estimator-level settings.
+
+**Choosing an encoding strategy:**
+
+| Method | API | Best for |
+|--------|-----|----------|
+| Built-in `categorical_features` | `categorical_features='auto'` or `list` | Gradient boosting (LightGBM, XGBoost, CatBoost, HistGBR) — simplest workflow |
+| One-hot / Ordinal encoding | `transformer_exog` | Linear models, SVMs, non-gradient-boosting trees |
+| Target encoding | Outside forecaster | High-cardinality features (applied manually to avoid leakage) |
+
+**`categorical_features` and `transformer_exog` interaction:**
+`transformer_exog` is applied **before** `categorical_features` detection. They can be used together — e.g., scale numeric columns with `transformer_exog` while `categorical_features='auto'` handles the categorical ones. Avoid applying both mechanisms to the same columns.
+
+```python
+from sklearn.compose import make_column_transformer
+from sklearn.preprocessing import StandardScaler
+
+# Scale numeric columns, leave categorical columns untouched
+transformer_exog = make_column_transformer(
+    (StandardScaler(), ['temp', 'hum']),
+    remainder='passthrough',
+    verbose_feature_names_out=False
+).set_output(transform='pandas')
+
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+    transformer_exog=transformer_exog,
+    categorical_features='auto',  # Detects remaining non-numeric columns
+)
+```
+
+## Handling Missing Values
+
+All ML forecasters (ForecasterRecursive, ForecasterDirect, ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRecursiveClassifier) include a `dropna_from_series` parameter to control how NaN values in the training data are handled. Not applicable to ForecasterStats, ForecasterEquivalentDate, or ForecasterRnn.
+
+When `y`, `series`, or `exog` contain interspersed NaN values, the training matrices (`X_train`, `y_train`) will also contain NaNs. The `dropna_from_series` parameter determines what happens next.
+
+**`dropna_from_series` options:**
+- `False` (default): NaN rows are kept in the training matrices. A `MissingValuesWarning` is issued. Only use with NaN-tolerant estimators.
+- `True`: Rows containing NaN in `X_train` (and the corresponding rows in `y_train`) are dropped before fitting.
+
+**NaN-tolerant estimators** (support `dropna_from_series=False`):
+- LightGBM (`LGBMRegressor`, `LGBMClassifier`)
+- CatBoost (`CatBoostRegressor`, `CatBoostClassifier`)
+- HistGradientBoosting (`HistGradientBoostingRegressor`, `HistGradientBoostingClassifier`)
+- XGBoost (`XGBRegressor`, `XGBClassifier`) with `tree_method='hist'`
+
+**Choosing a strategy:**
+
+| Scenario | Recommended strategy |
+|:---------|:---------------------|
+| Using LightGBM, CatBoost, XGBoost (hist), or HistGradientBoosting | `dropna_from_series=False` — let the estimator handle NaNs. No data loss. |
+| Estimator does not support NaN (RandomForest, LinearRegression, SVR...) | `dropna_from_series=True` — drop incomplete rows before fitting. |
+| Few or small gaps in the series | `dropna_from_series=True` — simple and data loss is negligible. |
+| Large gaps, need to preserve all training data | Imputation + `weight_func` — fill NaNs and down-weight imputed observations. |
+| Multi-series with different lengths | `ForecasterRecursiveMultiSeries` with `dropna_from_series=True`. |
+
+```python
+from lightgbm import LGBMRegressor
+
+# NaN-tolerant estimator: keep all rows including NaN
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(random_state=123, verbose=-1),
+    lags=14,
+    dropna_from_series=False,  # Default — NaN rows kept for NaN-tolerant estimators
+)
+forecaster.fit(y=y_train, suppress_warnings=True)  # Suppress MissingValuesWarning
+
+# Non-NaN-tolerant estimator: drop rows with NaN
+forecaster = ForecasterRecursive(
+    estimator=RandomForestRegressor(random_state=123),
+    lags=14,
+    dropna_from_series=True,  # Drop NaN rows before fitting
+)
+forecaster.fit(y=y_train)
 ```
 
 ## Window Features (Rolling Statistics)
@@ -481,7 +577,7 @@ show_datasets_info()
 ## Tips for Best Results
 
 1. **Always set frequency**: Use `data.asfreq('h')` or similar — skforecast requires a DatetimeIndex with frequency
-2. **Handle missing values**: Forecasters don't accept NaN by default
+2. **Handle missing values**: Use `dropna_from_series=True` to drop NaN rows, or `dropna_from_series=False` (default) with NaN-tolerant estimators (LightGBM, CatBoost, HistGradientBoosting)
 3. **Scale data**: Use `transformer_y` for better model performance
 4. **Use backtesting**: Always validate with realistic train/test splits
 5. **Consider differentiation**: For non-stationary series, use `differentiation` parameter
@@ -498,7 +594,7 @@ show_datasets_info()
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.22.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
 ================================================================================
@@ -543,7 +639,9 @@ forecaster = ForecasterRecursive(
     lags=24,
     window_features=rolling_features,
     transformer_y=None,          # e.g., StandardScaler() for scaling
+    categorical_features='auto', # Auto-detect and encode non-numeric exog columns
     differentiation=None,        # e.g., 1 for first-order differencing
+    dropna_from_series=False,    # True to drop NaN rows; False to keep (NaN-tolerant estimators)
 )
 
 # 4. Train
@@ -601,6 +699,7 @@ forecaster = ForecasterDirect(
     estimator=RandomForestRegressor(n_estimators=100, random_state=123),
     lags=24,
     steps=10,
+    categorical_features='auto',  # Auto-detect and encode non-numeric exog columns
 )
 forecaster.fit(y=y_train, exog=exog_train)
 predictions = forecaster.predict(exog=exog_test)
@@ -609,7 +708,7 @@ predictions = forecaster.predict(exog=exog_test)
 ## Common Mistakes
 
 1. **Missing frequency on index**: Always call `data.asfreq('h')` (or `'D'`, `'MS'`, etc.).
-2. **NaN in data**: Forecasters reject NaN by default. Impute missing values first.
+2. **NaN in data**: Forecasters reject NaN by default. Use `dropna_from_series=True` to drop incomplete rows, or keep `dropna_from_series=False` (default) with NaN-tolerant estimators (LightGBM, CatBoost, HistGradientBoosting, XGBoost hist). Alternatively, impute missing values first.
 3. **Exog not covering forecast horizon**: The exogenous DataFrame for `predict()` must have rows for every future step.
 4. **Random train/test split**: Time series must be split chronologically, never shuffled.
 5. **Forgetting `store_in_sample_residuals=True`**: Required before calling `predict_interval()` with `method='bootstrapping'` on a standalone forecaster. During backtesting, residuals are computed automatically.
@@ -665,8 +764,9 @@ forecaster = ForecasterRecursiveMultiSeries(
     # transformer_series={'series_1': StandardScaler(), 'series_2': MinMaxScaler()},
     # weight_func={'series_1': custom_weights_fn, '_default': None},
     # differentiation={'series_1': 1, 'series_2': None},
+    categorical_features='auto',  # Auto-detect and encode non-numeric exog columns
     differentiation=None,
-    dropna_from_series=False, # Set True if individual series may have NaN
+    dropna_from_series=False,     # True to drop NaN rows; False to keep (NaN-tolerant estimators)
 )
 
 # 3. Train
@@ -716,6 +816,8 @@ forecaster = ForecasterDirectMultiVariate(
     estimator=LGBMRegressor(n_estimators=100, random_state=123),
     lags=24,                  # Or dict: {'series_a': 12, 'series_b': 24}
     transformer_series=StandardScaler(),  # Default — set None to disable scaling
+    categorical_features='auto',  # Auto-detect and encode non-numeric exog columns
+    dropna_from_series=False,     # True to drop NaN rows; False to keep (NaN-tolerant estimators)
 )
 forecaster.fit(series=series_df)
 predictions = forecaster.predict()
@@ -1826,12 +1928,11 @@ forecaster.predict_interval(
     method='conformal',              # only valid value
     interval=[5, 95],
     use_in_sample_residuals=True,
+    use_binned_residuals=True,       # bool, selects residuals by predicted value level
     n_boot=None,                     # Any, accepted but ignored
-    use_binned_residuals=None,       # Any, accepted but ignored
     random_state=None,               # Any, accepted but ignored
 )
-# NOTE: `n_boot`, `use_binned_residuals`, and `random_state` exist for API
-#       compatibility but are ignored.
+# NOTE: `n_boot` and `random_state` exist for API compatibility but are ignored.
 ```
 
 ## Backtesting with Intervals
@@ -1890,7 +1991,7 @@ because residual variance often depends on the prediction magnitude.
 | ForecasterRecursiveMultiSeries | ✓ |
 | ForecasterDirectMultiVariate | ✓ |
 | ForecasterEquivalentDate | ✓ |
-| ForecasterRnn | — |
+| ForecasterRnn | ✓ |
 | ForecasterStats | — |
 
 ## Probabilistic Prediction Methods Beyond Intervals
@@ -1968,7 +2069,7 @@ sunlight features, differencing, or data scaling.
 | `CyclicalFeatures` | feature_engine | Encode cyclical features with sin/cos |
 | `RollingFeatures` | skforecast | Rolling window statistics (mean, std, min, max, etc.) |
 | `differentiation` param | skforecast | Make non-stationary series stationary |
-| `astral` | astral | Sunrise, sunset, daylight hours |
+
 
 ## Calendar Features with feature_engine
 
@@ -2040,32 +2141,6 @@ exog_calendar = cyclical_encoder.fit_transform(calendar_features)
 # Produces columns: month_sin, month_cos, week_sin, week_cos, ...
 ```
 
-## Sunlight Features
-
-Sunrise/sunset times can be powerful features for energy, transport, or
-activity-related series.
-
-```python
-from astral.sun import sun
-from astral import LocationInfo
-
-location = LocationInfo('Washington, D.C.', 'USA')
-sunrise_hour = [sun(location.observer, date=date)['sunrise'] for date in data.index]
-sunset_hour = [sun(location.observer, date=date)['sunset'] for date in data.index]
-
-# Round to the nearest hour
-sunrise_hour = pd.Series(sunrise_hour, index=data.index).dt.round('h').dt.hour
-sunset_hour = pd.Series(sunset_hour, index=data.index).dt.round('h').dt.hour
-
-sun_light_features = pd.DataFrame({
-    'sunrise_hour': sunrise_hour,
-    'sunset_hour': sunset_hour,
-})
-sun_light_features['daylight_hours'] = (
-    sun_light_features['sunset_hour'] - sun_light_features['sunrise_hour']
-)
-```
-
 ## Rolling Features (Window Statistics)
 
 ```python
@@ -2123,29 +2198,59 @@ forecaster.fit(y=y_train)
 predictions = forecaster.predict(steps=10)  # Auto inverse-transformed
 ```
 
-## Data Transformers (Scaling)
+## Categorical Exogenous Variables
+
+All ML forecasters include a `categorical_features` parameter (default `'auto'`)
+that automatically detects and encodes non-numeric exogenous columns using an
+internal `OrdinalEncoder` (into float codes, since numpy arrays are used internally).
+Native categorical support is configured automatically for LightGBM, CatBoost,
+XGBoost, and HistGradientBoostingRegressor.
 
 ```python
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-
-# Scale target variable — transformer applied automatically during fit/predict
 forecaster = ForecasterRecursive(
     estimator=LGBMRegressor(),
     lags=24,
-    transformer_y=StandardScaler(),
-    transformer_exog=StandardScaler(),
+    categorical_features='auto',  # Default — auto-detect non-numeric columns
 )
+```
 
-# For multi-series, different transformers per series
-from skforecast.recursive import ForecasterRecursiveMultiSeries
+**`categorical_features` options:**
+- `'auto'` (default): Auto-detect non-numeric columns after `transformer_exog`.
+- `list`: Explicit column names to treat as categorical (including numeric columns).
+- `None`: No internal categorical encoding.
 
-forecaster = ForecasterRecursiveMultiSeries(
+**Important:** When `categorical_features` is not `None`, do not set categorical
+features directly on the estimator or via `fit_kwargs`. The forecaster manages
+the configuration internally and overwrites estimator-level settings.
+
+**Choosing an encoding strategy:**
+
+| Method | API | Best for |
+|--------|-----|----------|
+| Built-in `categorical_features` | `categorical_features='auto'` or `list` | Gradient boosting (LightGBM, XGBoost, CatBoost, HistGBR) — simplest workflow |
+| One-hot / Ordinal encoding | `transformer_exog` | Linear models, SVMs, non-gradient-boosting trees |
+| Target encoding | Outside forecaster | High-cardinality features (applied manually to avoid leakage) |
+
+**Combining `transformer_exog` and `categorical_features`:**
+`transformer_exog` is applied **before** `categorical_features` detection. Scale
+numeric columns with `transformer_exog` while `categorical_features='auto'` handles
+the rest. Avoid applying both mechanisms to the same columns.
+
+```python
+from sklearn.compose import make_column_transformer
+from sklearn.preprocessing import StandardScaler
+
+transformer_exog = make_column_transformer(
+    (StandardScaler(), ['temp', 'hum']),
+    remainder='passthrough',
+    verbose_feature_names_out=False
+).set_output(transform='pandas')
+
+forecaster = ForecasterRecursive(
     estimator=LGBMRegressor(),
     lags=24,
-    transformer_series={
-        'series_1': StandardScaler(),
-        'series_2': MinMaxScaler(),
-    },
+    transformer_exog=transformer_exog,
+    categorical_features='auto',  # Detects remaining non-numeric columns
 )
 ```
 
@@ -2859,6 +2964,7 @@ predictions = forecaster.predict_interval(
     method='conformal',           # Only 'conformal' supported
     interval=[10, 90],
     use_in_sample_residuals=True,
+    use_binned_residuals=True,    # Better calibration with binned residuals
 )
 ```
 
@@ -3128,6 +3234,7 @@ predictions = forecaster.predict_interval(
     method='conformal',           # only valid method
     interval=[10, 90],
     use_in_sample_residuals=True,
+    use_binned_residuals=True,    # Better calibration with binned residuals
 )
 # NOTE: 'bootstrapping' is NOT supported for ForecasterRnn
 # NOTE: predict_quantiles() and predict_dist() are NOT available
@@ -3261,7 +3368,7 @@ How many series?
 | Weight function | ✓ | ✓ | ✓ (per-series) | ✓ | — | — | — | ✓ |
 | Bootstrapping intervals | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
 | Conformal intervals | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
-| Binned residuals | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — |
+| Binned residuals | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
 | Quantile predictions | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
 | Distribution fitting | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
 | Class probabilities | — | — | — | — | — | — | — | ✓ |
@@ -3292,7 +3399,7 @@ Once you have chosen a forecaster, follow these steps to get started:
 
 The most frequent LLM error. Old import paths no longer exist.
 
-| Wrong (Deprecated) | Correct (v0.21.0+) |
+| Wrong (Deprecated) | Correct (v0.14.0+) |
 |-------|---------|
 | `from skforecast.ForecasterAutoreg import ForecasterAutoreg` | `from skforecast.recursive import ForecasterRecursive` |
 | `from skforecast.ForecasterAutoregMultiSeries import ForecasterAutoregMultiSeries` | `from skforecast.recursive import ForecasterRecursiveMultiSeries` |
@@ -3310,6 +3417,29 @@ The most frequent LLM error. Old import paths no longer exist.
 | `ForecasterAutoregMultiVariate` | `ForecasterDirectMultiVariate` |
 | `ForecasterSarimax` | `ForecasterStats(estimator=Sarimax(...))` |
 
+## Removed Arguments
+
+| Removed (v0.22.0+) | Replacement |
+|---------------------|-------------|
+| `regressor=...` | `estimator=...` (in all Forecasters) |
+
+## Categorical Exogenous Variables
+
+```python
+# ❌ WRONG: setting categorical features directly on the estimator
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(categorical_feature=[0, 1]),
+    lags=24,
+)
+
+# ✅ CORRECT: use categorical_features parameter on the forecaster
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+    categorical_features='auto',  # or ['col_name_1', 'col_name_2']
+)
+```
+
 ## Data Issues
 
 ### "ValueError: The index of the series must be a DatetimeIndex with frequency"
@@ -3325,7 +3455,22 @@ data = data.asfreq('QS')      # Quarterly start
 ### "ValueError: y contains NaN values"
 
 ```python
-# Fix: handle missing values before fitting
+# Fix 1 (recommended for NaN-tolerant estimators): keep NaN rows
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(verbose=-1),  # LightGBM handles NaN natively
+    lags=14,
+    dropna_from_series=False,  # Default — NaN rows kept in training matrices
+)
+forecaster.fit(y=data['target'], suppress_warnings=True)
+
+# Fix 2: drop rows with NaN from training matrices
+forecaster = ForecasterRecursive(
+    estimator=RandomForestRegressor(),
+    lags=14,
+    dropna_from_series=True,  # Drop NaN rows before fitting
+)
+
+# Fix 3: impute missing values before fitting
 data = data.ffill()                      # Forward fill
 data = data.interpolate(method='linear') # Linear interpolation
 ```
@@ -3426,6 +3571,31 @@ ets_model = Ets(model='AAA', m=12)
 | **Bayesian Search** | `bayesian_search_forecaster` | `bayesian_search_forecaster_multiseries` | N/A |
 | **Feature Selection** | `select_features` | `select_features_multiseries` | N/A |
 
+## Loading Serialized Forecasters from Older Versions
+
+Forecasters saved (pickled/joblib) with older skforecast versions may fail to load or behave unexpectedly after upgrading. Internal attributes, class structures, and default values change between releases.
+
+```python
+# ❌ Common error when loading a forecaster saved with an older version
+import joblib
+forecaster = joblib.load('forecaster_v0.13.pkl')
+# AttributeError: 'ForecasterRecursive' object has no attribute 'new_attribute'
+# or: ModuleNotFoundError: No module named 'skforecast.ForecasterAutoreg'
+
+# ✅ CORRECT: retrain the forecaster with the current version
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+)
+forecaster.fit(y=y_train)
+joblib.dump(forecaster, 'forecaster_v0.22.pkl')
+```
+
+**Best practices:**
+- Always retrain and re-save forecasters after upgrading skforecast.
+- Store training code (not just the serialized object) so models can be reproduced.
+- Pin skforecast version in `requirements.txt` for production deployments.
+
 ================================================================================
 # SKILL: complete-api-reference
 ================================================================================
@@ -3502,16 +3672,18 @@ Complete constructor and method signatures for all skforecast public API.
 
 ```python
 ForecasterRecursive(
-    estimator=None,           # sklearn-compatible regressor
-    lags=None,                # int | list[int] | np.ndarray | range | None
-    window_features=None,     # RollingFeatures | list[RollingFeatures] | None
-    transformer_y=None,       # sklearn transformer for target variable
-    transformer_exog=None,    # sklearn transformer | ColumnTransformer for exog
-    weight_func=None,         # Callable to weight training samples by index position
-    differentiation=None,     # int, differencing order applied before training
-    fit_kwargs=None,          # dict, extra kwargs passed to estimator.fit()
-    binner_kwargs=None,       # dict, kwargs for KBinsDiscretizer (binned residuals)
-    forecaster_id=None,       # str | int, optional identifier
+    estimator=None,               # sklearn-compatible regressor
+    lags=None,                    # int | list[int] | np.ndarray | range | None
+    window_features=None,         # RollingFeatures | list[RollingFeatures] | None
+    transformer_y=None,           # sklearn transformer for target variable
+    transformer_exog=None,        # sklearn transformer | ColumnTransformer for exog
+    categorical_features='auto',  # 'auto' | list[str] | None, categorical exog handling
+    weight_func=None,             # Callable to weight training samples by index position
+    differentiation=None,         # int, differencing order applied before training
+    dropna_from_series=False,     # bool, drop NaN rows from training matrices
+    fit_kwargs=None,              # dict, extra kwargs passed to estimator.fit()
+    binner_kwargs=None,           # dict, kwargs for KBinsDiscretizer (binned residuals)
+    forecaster_id=None,           # str | int, optional identifier
 )
 ```
 
@@ -3525,6 +3697,7 @@ ForecasterRecursiveMultiSeries(
     encoding='ordinal',            # 'ordinal' | 'ordinal_category' | 'onehot' | None
     transformer_series=None,       # sklearn transformer | dict[str, transformer] | None
     transformer_exog=None,         # sklearn transformer | ColumnTransformer | None
+    categorical_features='auto',   # 'auto' | list[str] | None, categorical exog handling
     weight_func=None,              # Callable | dict[str, Callable] | None
     series_weights=None,           # dict[str, float] | None, relative weight of each series
     differentiation=None,          # int | dict[str, int | None] | None
@@ -3539,18 +3712,20 @@ ForecasterRecursiveMultiSeries(
 
 ```python
 ForecasterDirect(
-    steps,                    # int (required), number of steps to forecast
-    estimator=None,           # sklearn-compatible regressor
-    lags=None,                # int | list[int] | np.ndarray | range | None
-    window_features=None,     # RollingFeatures | list[RollingFeatures] | None
-    transformer_y=None,       # sklearn transformer for target variable
-    transformer_exog=None,    # sklearn transformer | ColumnTransformer for exog
-    weight_func=None,         # Callable to weight training samples by index position
-    differentiation=None,     # int, differencing order applied before training
-    fit_kwargs=None,          # dict, extra kwargs passed to estimator.fit()
-    binner_kwargs=None,       # dict, kwargs for KBinsDiscretizer (binned residuals)
-    n_jobs='auto',            # int | str, parallel jobs for training one model per step
-    forecaster_id=None,       # str | int, optional identifier
+    steps,                        # int (required), number of steps to forecast
+    estimator=None,               # sklearn-compatible regressor
+    lags=None,                    # int | list[int] | np.ndarray | range | None
+    window_features=None,         # RollingFeatures | list[RollingFeatures] | None
+    transformer_y=None,           # sklearn transformer for target variable
+    transformer_exog=None,        # sklearn transformer | ColumnTransformer for exog
+    categorical_features='auto',  # 'auto' | list[str] | None, categorical exog handling
+    weight_func=None,             # Callable to weight training samples by index position
+    differentiation=None,         # int, differencing order applied before training
+    dropna_from_series=False,     # bool, drop NaN rows from training matrices
+    fit_kwargs=None,              # dict, extra kwargs passed to estimator.fit()
+    binner_kwargs=None,           # dict, kwargs for KBinsDiscretizer (binned residuals)
+    n_jobs='auto',                # int | str, parallel jobs for training one model per step
+    forecaster_id=None,           # str | int, optional identifier
 )
 ```
 
@@ -3565,8 +3740,10 @@ ForecasterDirectMultiVariate(
     window_features=None,          # RollingFeatures | list[RollingFeatures] | None
     transformer_series=StandardScaler(),  # sklearn transformer | dict[str, transformer] | None
     transformer_exog=None,         # sklearn transformer | ColumnTransformer | None
+    categorical_features='auto',   # 'auto' | list[str] | None, categorical exog handling
     weight_func=None,              # Callable to weight training samples by index position
     differentiation=None,          # int, differencing order applied before training
+    dropna_from_series=False,      # bool, drop NaN rows from training matrices
     fit_kwargs=None,               # dict, extra kwargs passed to estimator.fit()
     binner_kwargs=None,            # dict, kwargs for KBinsDiscretizer (binned residuals)
     n_jobs='auto',                 # int | str, parallel jobs for training one model per step
@@ -3578,14 +3755,16 @@ ForecasterDirectMultiVariate(
 
 ```python
 ForecasterRecursiveClassifier(
-    estimator,                # sklearn-compatible classifier (required, not optional)
-    lags=None,                # int | list[int] | np.ndarray | range | None
-    window_features=None,     # RollingFeatures | list[RollingFeatures] | None
-    features_encoding='auto', # str, encoding for categorical exog features
-    transformer_exog=None,    # sklearn transformer | ColumnTransformer for exog
-    weight_func=None,         # Callable to weight training samples by index position
-    fit_kwargs=None,          # dict, extra kwargs passed to estimator.fit()
-    forecaster_id=None,       # str | int, optional identifier
+    estimator,                    # sklearn-compatible classifier (required, not optional)
+    lags=None,                    # int | list[int] | np.ndarray | range | None
+    window_features=None,         # RollingFeatures | list[RollingFeatures] | None
+    features_encoding='auto',     # str, encoding for categorical exog features
+    transformer_exog=None,        # sklearn transformer | ColumnTransformer for exog
+    categorical_features='auto',  # 'auto' | list[str] | None, categorical exog handling
+    weight_func=None,             # Callable to weight training samples by index position
+    dropna_from_series=False,     # bool, drop NaN rows from training matrices
+    fit_kwargs=None,              # dict, extra kwargs passed to estimator.fit()
+    forecaster_id=None,           # str | int, optional identifier
 )
 # NOTE: No transformer_y, differentiation, or binner_kwargs.
 # NOTE: Uses predict_proba() instead of predict_interval().
@@ -3618,12 +3797,13 @@ ForecasterEquivalentDate(
 
 ```python
 ForecasterRnn(
+    estimator=None,                    # Keras model (use create_and_compile_model)
     levels,                            # str | list[str] (required), target series names
     lags,                              # int | list[int] | np.ndarray | range (required)
-    estimator=None,                    # Keras model (use create_and_compile_model)
     transformer_series=MinMaxScaler(feature_range=(0, 1)),  # transformer | dict | None
     transformer_exog=MinMaxScaler(feature_range=(0, 1)),    # transformer | None
     fit_kwargs=None,                   # dict, extra kwargs passed to model.fit()
+    binner_kwargs=None,                # dict, kwargs for KBinsDiscretizer (binned residuals)
     forecaster_id=None,                # str | int, optional identifier
 )
 ```
@@ -3858,9 +4038,9 @@ forecaster.predict_interval(
     method='conformal',                 # only 'conformal' supported
     interval=[5, 95],                   # float | list[float] | tuple[float]
     use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
     suppress_warnings=False,            # bool
     n_boot=None,                        # Any, ignored (API compatibility)
-    use_binned_residuals=None,          # Any, ignored (API compatibility)
     random_state=None,                  # Any, ignored (API compatibility)
 ) -> pd.DataFrame
 

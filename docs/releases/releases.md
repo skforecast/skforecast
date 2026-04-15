@@ -14,7 +14,11 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
++ <span class="badge text-bg-feature">Feature</span> New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (`LightGBM`, `CatBoost`, `XGBoost`, `HistGradientBoostingRegressor`).
+
++ <span class="badge text-bg-feature">Feature</span> New `dropna_from_series` parameter in the <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in the <code>[ForecasterRecursiveMultiSeries]</code>.
+
++ <span class="badge text-bg-feature">Feature</span> [Binned residuals](../user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRnn]</code>. 
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
 
@@ -22,25 +26,25 @@ The main changes in this release are:
 
 + <span class="badge text-bg-api-change">API Change</span> The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
 
-+ <span class="badge text-bg-api-change">API Change</span> Unified the RNN model architecture in <code>[create_and_compile_model]</code>. The previous exog path (`RepeatVector` + `TimeDistributed`) shared weights across prediction steps, preventing the model from learning step-specific exogenous effects. The new architecture (`Flatten` + `Dense` + `Reshape`) is used for both paths and provides independent weights per step. **Breaking change**: models serialized with previous versions must be retrained.
-
-+ <span class="badge text-bg-danger">Fix</span> Minor bug fixes, see details in the "Fixed" section below.
++ <span class="badge text-bg-danger">Fix</span> Fixed conformal prediction intervals with `differentiation`, categorical lags in <code>[ForecasterRecursiveClassifier]</code>, and other bug fixes. See details in the "Fixed" section below.
 
 !!! warning "Serialized models incompatibility"
 
-    Forecasters that were serialized with previous versions of skforecast are **not compatible** with version 0.22.0 due to internal changes in all Forecasters (new `categorical_features` parameter, changes in attributes, and an optimized training pipeline). Forecasters must be **retrained** after upgrading.
+    Forecasters that were serialized with previous versions of skforecast are **not compatible** with version 0.22.0 due to internal changes in all Forecasters (new parameters, changes in attributes, and an optimized training pipeline). Forecasters must be **retrained** after upgrading.
 
 
 **Added**
 
-+ New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
++ New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (`LightGBM`, `CatBoost`, `XGBoost`, `HistGradientBoostingRegressor`).
+
++ New `dropna_from_series` parameter in the <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in the <code>[ForecasterRecursiveMultiSeries]</code>.
+
++ [Binned residuals](../user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRnn]</code>. 
 
 
 **Changed**
 
 + The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
-
-+ Unified the RNN model architecture in <code>[create_and_compile_model]</code> for both exogenous and non-exogenous cases. The previous exog path used `RepeatVector` + `TimeDistributed`, which shared weights across all prediction steps and prevented the model from learning step-specific exogenous effects. The new architecture uses `Flatten` + `Dense` + `Reshape` for both paths, giving the model independent weights per prediction step. **This is a breaking change**: models serialized with previous versions are incompatible and must be retrained. The internal layer name `output_dense_td_layer` has been renamed to `output_dense_layer`.
 
 + Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
 
@@ -54,6 +58,8 @@ The main changes in this release are:
 + Fixed an issue in <code>[ForecasterRecursiveClassifier]</code> where the lags were not correctly passed as categorical features when using categorical exogenous variables.
 
 + Fixed an issue in the hyperparameter search when using a <code>[OneStepAheadFold]</code> validation. During training, the forecaster arguments `sample_weight` and `fit_kwargs` were not set correctly.
+
++ Fixed an issue in conformal prediction intervals (`method='conformal'`) where the correction factor was incorrectly scaled when using `differentiation`. The inverse differentiation was applied to both the point predictions and the correction factor, causing the prediction intervals to grow too fast. Affected forecasters: <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. ([#1143](https://github.com/skforecast/skforecast/pull/1143))
 
 
 ## 0.21.0 <small>Mar 13, 2026</small> { id="0.21.0" }

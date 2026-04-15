@@ -92,13 +92,13 @@ class SARIMAOrder:
 
     def to_arma_list(self) -> list:
         """
-        Convert to the legacy ``[p, q, P, Q, s, d, D]`` list for backward
+        Convert to the legacy `[p, q, P, Q, s, d, D]` list for backward
         compatibility with public API return values.
 
         Returns
         -------
         list
-            List of ints ``[p, q, P, Q, s, d, D]``.
+            List of ints `[p, q, P, Q, s, d, D]`.
         """
         return [self.p, self.q, self.P, self.Q, self.s, self.d, self.D]
 
@@ -132,7 +132,7 @@ class StateSpaceArrays:
         equation, so there is no separate measurement noise. The field is
         retained as a forward-compatibility placeholder for structural
         time-series models that add a measurement-error term. Because it is
-        always zero, ``kalman_forecast_core`` adds a harmless ``+ h`` to
+        always zero, `kalman_forecast_core` adds a harmless `+ h` to
         its forecast-variance computation.
     predicted_covariance : np.ndarray
         Predicted state covariance.
@@ -868,7 +868,7 @@ def transform_arima_parameters(
 
     The products are computed via polynomial multiplication (convolution).
 
-    If ``trans=True``, the Jones (1980) stationarity transform is applied
+    If `trans=True`, the Jones (1980) stationarity transform is applied
     to AR parameters before expansion.
 
     Parameters
@@ -2803,7 +2803,7 @@ def arima(
     The multiplicative seasonal ARIMA(p,d,q)(P,D,Q)[s] model is:
       φ(B)·Φ(Bˢ)·Δᵈ·Δₛᴰ yₜ = θ(B)·Θ(Bˢ) εₜ
 
-    When ``enforce_stationarity=True``, the Jones (1980) parameterization
+    When `enforce_stationarity=True`, the Jones (1980) parameterization
     is used to ensure stationarity of AR polynomials during optimization.
 
     Parameters

@@ -116,18 +116,26 @@ def test_predict_interval_output_size_2_steps_ahead_specific_levels():
     assert int_preds.shape == (2 * 1, 4)
 
 
-def test_predict_interval_exog_and_out_sample_residuals():
+@pytest.mark.parametrize(
+    "use_binned_residuals", 
+    [True, False],
+    ids=["use_binned_residuals_True", "use_binned_residuals_False"]
+)
+def test_predict_interval_exog_and_out_sample_residuals(use_binned_residuals):
     """
-    Test case for predicting with exogenous variables
+    Test case for predicting with exogenous variables and out-of-sample residuals, 
+    with both binned and global residuals.
     """
     forecaster = ForecasterRnn(
         estimator=model_exog, levels=["1", "2", "3"], lags=10
     )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
+    forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
 
     predictions = forecaster.predict_interval(
-        steps=None, exog=exog_pred, use_in_sample_residuals=False
+        steps=None, exog=exog_pred, use_in_sample_residuals=False, 
+        use_binned_residuals=use_binned_residuals
     )
 
     assert predictions.shape == (24, 4)
@@ -144,3 +152,80 @@ def test_predict_interval_specific_levels_with_exog():
     predictions = forecaster.predict_interval(steps=5, exog=exog_pred, levels=["1", "2"])
 
     assert predictions.shape == (10, 4)
+
+
+def test_predict_interval_with_binned_residuals_True():
+    """
+    Test predict_interval with use_binned_residuals=True produces valid output.
+    """
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
+    forecaster.fit(series, store_in_sample_residuals=True)
+
+    predictions = forecaster.predict_interval(
+        steps=4, use_binned_residuals=True
+    )
+
+    assert predictions.shape == (8, 4)
+    assert 'pred' in predictions.columns
+    assert 'lower_bound' in predictions.columns
+    assert 'upper_bound' in predictions.columns
+
+
+def test_predict_interval_with_binned_residuals_False():
+    """
+    Test predict_interval with use_binned_residuals=False falls back to global.
+    """
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
+    forecaster.fit(series, store_in_sample_residuals=True)
+
+    predictions = forecaster.predict_interval(
+        steps=4, use_binned_residuals=False
+    )
+
+    assert predictions.shape == (8, 4)
+    assert 'pred' in predictions.columns
+    assert 'lower_bound' in predictions.columns
+    assert 'upper_bound' in predictions.columns
+
+
+def test_predict_interval_binned_vs_global_differ():
+    """
+    Test that predictions with binned and global residuals may differ.
+    """
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
+    forecaster.fit(series, store_in_sample_residuals=True)
+
+    preds_binned = forecaster.predict_interval(
+        steps=4, use_binned_residuals=True
+    )
+    preds_global = forecaster.predict_interval(
+        steps=4, use_binned_residuals=False
+    )
+
+    # pred column should be the same
+    np.testing.assert_array_almost_equal(
+        preds_binned['pred'].values, preds_global['pred'].values
+    )
+    # Bounds may differ (not guaranteed with tiny data, but columns exist)
+    assert preds_binned.shape == preds_global.shape
+
+
+def test_predict_interval_out_sample_residuals_with_binned():
+    """
+    Test predict_interval with out-of-sample residuals and use_binned_residuals=True.
+    """
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
+    forecaster.fit(series, store_in_sample_residuals=True)
+    forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
+    forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
+
+    predictions = forecaster.predict_interval(
+        steps=4,
+        use_in_sample_residuals=False,
+        use_binned_residuals=True
+    )
+
+    assert predictions.shape == (8, 4)
+    assert 'pred' in predictions.columns
+    assert 'lower_bound' in predictions.columns
+    assert 'upper_bound' in predictions.columns

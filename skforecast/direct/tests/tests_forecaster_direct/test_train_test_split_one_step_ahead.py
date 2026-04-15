@@ -132,13 +132,32 @@ def test_train_test_split_one_step_ahead_when_weight_func():
         y=y, initial_train_size=10
     )
 
-    assert sample_weight is not None
-    assert isinstance(sample_weight, np.ndarray)
-    assert len(sample_weight) == len(y_train)
-    # train_index[1]: 2020-01-04..2020-01-10 (7 obs, lags=3 so first at y[3])
-    # weights: 2020-01-04,05,06 -> 1.0; 2020-01-07,08,09,10 -> 2.0
-    expected_weights = np.array([1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0])
-    np.testing.assert_array_equal(sample_weight, expected_weights)
+    expected_X_train = np.array([
+        [2., 1., 0.],
+        [3., 2., 1.],
+        [4., 3., 2.],
+        [5., 4., 3.],
+        [6., 5., 4.],
+        [7., 6., 5.],
+        [8., 7., 6.],
+    ])
+    expected_y_train = np.array([3., 4., 5., 6., 7., 8., 9.])
+    expected_X_test = np.array([
+        [ 9.,  8.,  7.],
+        [10.,  9.,  8.],
+        [11., 10.,  9.],
+        [12., 11., 10.],
+        [13., 12., 11.],
+    ])
+    expected_y_test = np.array([10., 11., 12., 13., 14.])
+    expected_sample_weight = np.array([1., 1., 1., 2., 2., 2., 2.])
+
+    np.testing.assert_array_almost_equal(X_train, expected_X_train)
+    np.testing.assert_array_almost_equal(y_train, expected_y_train)
+    np.testing.assert_array_almost_equal(X_test, expected_X_test)
+    np.testing.assert_array_almost_equal(y_test, expected_y_test)
+    np.testing.assert_array_equal(sample_weight, expected_sample_weight)
+    assert fit_kwargs == {}
 
 
 def test_train_test_split_one_step_ahead_when_window_features_and_transformers_and_differentiation():
@@ -171,20 +190,39 @@ def test_train_test_split_one_step_ahead_when_window_features_and_transformers_a
         y=y, exog=exog, initial_train_size=15
     )
 
-    assert isinstance(X_train, np.ndarray)
-    assert isinstance(y_train, np.ndarray)
-    assert isinstance(X_test, np.ndarray)
-    assert isinstance(y_test, np.ndarray)
-    # 3 lags + 1 window_feature (rolling mean) + 1 exog = 5 columns
-    assert X_train.shape[1] == 5
-    assert X_test.shape[1] == 5
-    # window_size = max(3, 3) + differentiation(1) = 4
-    # train rows: 15 - 1(diff) = 14, then 14 - 3 window = 11
-    # test_init = 15 - 4 = 11, y[11:] = 9 obs -> diff 8 -> -3 window = 5 rows
-    assert X_train.shape[0] == 11
-    assert X_test.shape[0] == 5
-    assert len(y_train) == 11
-    assert len(y_test) == 5
+    expected_X_train = np.array([
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502, -0.69436507],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502, -0.46291005],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502, -0.23145502],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502,  0.        ],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502,  0.23145502],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502,  0.46291005],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502,  0.69436507],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502,  0.9258201 ],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502,  1.15727512],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502,  1.38873015],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502,  1.62018517],
+    ])
+    expected_y_train = np.array([
+        0.23145502, 0.23145502, 0.23145502, 0.23145502, 0.23145502,
+        0.23145502, 0.23145502, 0.23145502, 0.23145502, 0.23145502,
+        0.23145502,
+    ])
+    expected_X_test = np.array([
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502, 1.8516402 ],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502, 2.08309522],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502, 2.31455025],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502, 2.54600527],
+        [0.23145502, 0.23145502, 0.23145502, 0.23145502, 2.7774603 ],
+    ])
+    expected_y_test = np.array([
+        0.23145502, 0.23145502, 0.23145502, 0.23145502, 0.23145502,
+    ])
+
+    np.testing.assert_array_almost_equal(X_train, expected_X_train)
+    np.testing.assert_array_almost_equal(y_train, expected_y_train)
+    np.testing.assert_array_almost_equal(X_test, expected_X_test)
+    np.testing.assert_array_almost_equal(y_test, expected_y_test)
     assert sample_weight is None
     assert fit_kwargs == {}
 
@@ -215,23 +253,28 @@ def test_train_test_split_one_step_ahead_when_steps_greater_than_1():
         y=y, exog=exog, initial_train_size=15
     )
 
-    # Filtered to step 1: 5 lags + 2 exog (step 1 only) = 7 columns
-    # Train: 15 - 5(lags) - 2(steps-1) = 8 rows
-    # Test: test_init = 15-5 = 10, y[10:20] = 10 obs, 10-5-2 = 3 rows
-    assert X_train.shape == (8, 7)
-    assert X_test.shape == (3, 7)
-    assert len(y_train) == 8
-    assert len(y_test) == 3
-    # First train row: lags=[4,3,2,1,0], exog_step1=[105,1005], y=5
-    np.testing.assert_array_almost_equal(
-        X_train[0], [4.0, 3.0, 2.0, 1.0, 0.0, 105.0, 1005.0]
-    )
-    np.testing.assert_array_almost_equal(y_train[0], 5.0)
-    # First test row: lags=[14,13,12,11,10], exog_step1=[115,1015], y=15
-    np.testing.assert_array_almost_equal(
-        X_test[0], [14.0, 13.0, 12.0, 11.0, 10.0, 115.0, 1015.0]
-    )
-    np.testing.assert_array_almost_equal(y_test[0], 15.0)
+    expected_X_train = np.array([
+        [  4.,   3.,   2.,   1.,   0.,  105., 1005.],
+        [  5.,   4.,   3.,   2.,   1.,  106., 1006.],
+        [  6.,   5.,   4.,   3.,   2.,  107., 1007.],
+        [  7.,   6.,   5.,   4.,   3.,  108., 1008.],
+        [  8.,   7.,   6.,   5.,   4.,  109., 1009.],
+        [  9.,   8.,   7.,   6.,   5.,  110., 1010.],
+        [ 10.,   9.,   8.,   7.,   6.,  111., 1011.],
+        [ 11.,  10.,   9.,   8.,   7.,  112., 1012.],
+    ])
+    expected_y_train = np.array([5., 6., 7., 8., 9., 10., 11., 12.])
+    expected_X_test = np.array([
+        [ 14.,  13.,  12.,  11.,  10.,  115., 1015.],
+        [ 15.,  14.,  13.,  12.,  11.,  116., 1016.],
+        [ 16.,  15.,  14.,  13.,  12.,  117., 1017.],
+    ])
+    expected_y_test = np.array([15., 16., 17.])
+
+    np.testing.assert_array_almost_equal(X_train, expected_X_train)
+    np.testing.assert_array_almost_equal(y_train, expected_y_train)
+    np.testing.assert_array_almost_equal(X_test, expected_X_test)
+    np.testing.assert_array_almost_equal(y_test, expected_y_test)
     assert sample_weight is None
     assert fit_kwargs == {}
 
@@ -267,14 +310,37 @@ def test_train_test_split_one_step_ahead_when_lightgbm_categorical():
         y=y, exog=exog, initial_train_size=15
     )
 
-    assert isinstance(X_train, np.ndarray)
-    assert isinstance(X_test, np.ndarray)
-    # Features: lag_1, lag_2, lag_3, exog_num, exog_cat -> cat at index 4
+    expected_X_train = np.array([
+        [  2.,   1.,   0., 103.,   3.],
+        [  3.,   2.,   1., 104.,   4.],
+        [  4.,   3.,   2., 105.,   5.],
+        [  5.,   4.,   3., 106.,   6.],
+        [  6.,   5.,   4., 107.,   7.],
+        [  7.,   6.,   5., 108.,   8.],
+        [  8.,   7.,   6., 109.,   9.],
+        [  9.,   8.,   7., 110.,  10.],
+        [ 10.,   9.,   8., 111.,  11.],
+        [ 11.,  10.,   9., 112.,  12.],
+        [ 12.,  11.,  10., 113.,  13.],
+        [ 13.,  12.,  11., 114.,  14.],
+    ])
+    expected_y_train = np.array([3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14.])
+    expected_X_test = np.array([
+        [ 14.,  13.,  12., 115.,  np.nan],
+        [ 15.,  14.,  13., 116.,  np.nan],
+        [ 16.,  15.,  14., 117.,  np.nan],
+        [ 17.,  16.,  15., 118.,  np.nan],
+        [ 18.,  17.,  16., 119.,  np.nan],
+    ])
+    expected_y_test = np.array([15., 16., 17., 18., 19.])
+
+    np.testing.assert_array_almost_equal(X_train, expected_X_train)
+    np.testing.assert_array_almost_equal(y_train, expected_y_train)
+    np.testing.assert_array_equal(X_test, expected_X_test)
+    np.testing.assert_array_almost_equal(y_test, expected_y_test)
     assert 'categorical_feature' in fit_kwargs
     assert fit_kwargs['categorical_feature'] == [4]
-    # Data should remain float (LightGBM handles categoricals natively)
     assert X_train.dtype != object
-    # The original forecaster.fit_kwargs should not be mutated
     assert 'categorical_feature' not in forecaster.fit_kwargs
 
 
@@ -310,13 +376,38 @@ def test_train_test_split_one_step_ahead_when_xgboost_categorical():
         y=y, exog=exog, initial_train_size=15
     )
 
-    # XGBoost uses set_params in-place, not fit_kwargs
+    expected_X_train = np.array([
+        [  2.,   1.,   0., 103.,   3.],
+        [  3.,   2.,   1., 104.,   4.],
+        [  4.,   3.,   2., 105.,   5.],
+        [  5.,   4.,   3., 106.,   6.],
+        [  6.,   5.,   4., 107.,   7.],
+        [  7.,   6.,   5., 108.,   8.],
+        [  8.,   7.,   6., 109.,   9.],
+        [  9.,   8.,   7., 110.,  10.],
+        [ 10.,   9.,   8., 111.,  11.],
+        [ 11.,  10.,   9., 112.,  12.],
+        [ 12.,  11.,  10., 113.,  13.],
+        [ 13.,  12.,  11., 114.,  14.],
+    ])
+    expected_y_train = np.array([3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14.])
+    expected_X_test = np.array([
+        [ 14.,  13.,  12., 115.,  np.nan],
+        [ 15.,  14.,  13., 116.,  np.nan],
+        [ 16.,  15.,  14., 117.,  np.nan],
+        [ 17.,  16.,  15., 118.,  np.nan],
+        [ 18.,  17.,  16., 119.,  np.nan],
+    ])
+    expected_y_test = np.array([15., 16., 17., 18., 19.])
+
+    np.testing.assert_array_almost_equal(X_train, expected_X_train)
+    np.testing.assert_array_almost_equal(y_train, expected_y_train)
+    np.testing.assert_array_equal(X_test, expected_X_test)
+    np.testing.assert_array_almost_equal(y_test, expected_y_test)
     assert 'categorical_feature' not in fit_kwargs
     assert 'cat_features' not in fit_kwargs
-    # estimators_[1] should be configured (not self.estimator)
     params = forecaster.estimators_[1].get_params()
     assert params['enable_categorical'] is True
-    # Features: lag_1, lag_2, lag_3, exog_num, exog_cat -> cat at index 4
     assert params['feature_types'] == ['q', 'q', 'q', 'q', 'c']
 
 
@@ -351,12 +442,37 @@ def test_train_test_split_one_step_ahead_when_histgradientboosting_categorical()
         y=y, exog=exog, initial_train_size=15
     )
 
-    # HistGradientBoosting uses set_params in-place, not fit_kwargs
+    expected_X_train = np.array([
+        [  2.,   1.,   0., 103.,   3.],
+        [  3.,   2.,   1., 104.,   4.],
+        [  4.,   3.,   2., 105.,   5.],
+        [  5.,   4.,   3., 106.,   6.],
+        [  6.,   5.,   4., 107.,   7.],
+        [  7.,   6.,   5., 108.,   8.],
+        [  8.,   7.,   6., 109.,   9.],
+        [  9.,   8.,   7., 110.,  10.],
+        [ 10.,   9.,   8., 111.,  11.],
+        [ 11.,  10.,   9., 112.,  12.],
+        [ 12.,  11.,  10., 113.,  13.],
+        [ 13.,  12.,  11., 114.,  14.],
+    ])
+    expected_y_train = np.array([3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14.])
+    expected_X_test = np.array([
+        [ 14.,  13.,  12., 115.,  np.nan],
+        [ 15.,  14.,  13., 116.,  np.nan],
+        [ 16.,  15.,  14., 117.,  np.nan],
+        [ 17.,  16.,  15., 118.,  np.nan],
+        [ 18.,  17.,  16., 119.,  np.nan],
+    ])
+    expected_y_test = np.array([15., 16., 17., 18., 19.])
+
+    np.testing.assert_array_almost_equal(X_train, expected_X_train)
+    np.testing.assert_array_almost_equal(y_train, expected_y_train)
+    np.testing.assert_array_equal(X_test, expected_X_test)
+    np.testing.assert_array_almost_equal(y_test, expected_y_test)
     assert 'categorical_feature' not in fit_kwargs
     assert 'cat_features' not in fit_kwargs
-    # estimators_[1] should be configured
     params = forecaster.estimators_[1].get_params()
-    # Features: lag_1, lag_2, lag_3, exog_num, exog_cat -> cat at index 4
     assert params['categorical_features'] == [4]
 
 
@@ -395,17 +511,38 @@ def test_train_test_split_one_step_ahead_when_catboost_categorical():
         y=y, exog=exog, initial_train_size=15
     )
 
-    # Features: lag_1, lag_2, lag_3, exog_num, exog_cat -> cat at index 4
+    expected_X_train = np.array([
+        [2.0, 1.0, 0.0, 103.0, 0],
+        [3.0, 2.0, 1.0, 104.0, 1],
+        [4.0, 3.0, 2.0, 105.0, 2],
+        [5.0, 4.0, 3.0, 106.0, 0],
+        [6.0, 5.0, 4.0, 107.0, 1],
+        [7.0, 6.0, 5.0, 108.0, 2],
+        [8.0, 7.0, 6.0, 109.0, 0],
+        [9.0, 8.0, 7.0, 110.0, 1],
+        [10.0, 9.0, 8.0, 111.0, 2],
+        [11.0, 10.0, 9.0, 112.0, 0],
+        [12.0, 11.0, 10.0, 113.0, 1],
+        [13.0, 12.0, 11.0, 114.0, 2],
+    ], dtype=object)
+    expected_y_train = np.array([3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14.])
+    expected_X_test = np.array([
+        [14.0, 13.0, 12.0, 115.0, 0],
+        [15.0, 14.0, 13.0, 116.0, 1],
+        [16.0, 15.0, 14.0, 117.0, 2],
+        [17.0, 16.0, 15.0, 118.0, 0],
+        [18.0, 17.0, 16.0, 119.0, 1],
+    ], dtype=object)
+    expected_y_test = np.array([15., 16., 17., 18., 19.])
+
+    np.testing.assert_array_equal(X_train, expected_X_train)
+    np.testing.assert_array_almost_equal(y_train, expected_y_train)
+    np.testing.assert_array_equal(X_test, expected_X_test)
+    np.testing.assert_array_almost_equal(y_test, expected_y_test)
     assert 'cat_features' in fit_kwargs
     assert fit_kwargs['cat_features'] == [4]
-    # CatBoost requires object dtype with int-cast categorical columns
     assert X_train.dtype == object
     assert X_test.dtype == object
-    # Categorical column (index 4) should contain int values
-    assert all(isinstance(v, (int, np.integer)) for v in X_train[:, 4])
-    assert all(isinstance(v, (int, np.integer)) for v in X_test[:, 4])
-    # Non-categorical columns should still be float
-    assert all(isinstance(v, (float, np.floating)) for v in X_train[:, 0])
 
 
 def test_train_test_split_one_step_ahead_when_fit_kwargs_no_categorical():
@@ -441,9 +578,35 @@ def test_train_test_split_one_step_ahead_when_fit_kwargs_no_categorical():
         y=y, exog=exog, initial_train_size=15
     )
 
-    # User fit_kwargs passed through the else branch (no categorical config)
+    expected_X_train = np.array([
+        [  2.,   1.,   0., 103.,   0.],
+        [  3.,   2.,   1., 104.,   1.],
+        [  4.,   3.,   2., 105.,   2.],
+        [  5.,   4.,   3., 106.,   0.],
+        [  6.,   5.,   4., 107.,   1.],
+        [  7.,   6.,   5., 108.,   2.],
+        [  8.,   7.,   6., 109.,   0.],
+        [  9.,   8.,   7., 110.,   1.],
+        [ 10.,   9.,   8., 111.,   2.],
+        [ 11.,  10.,   9., 112.,   0.],
+        [ 12.,  11.,  10., 113.,   1.],
+        [ 13.,  12.,  11., 114.,   2.],
+    ])
+    expected_y_train = np.array([3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14.])
+    expected_X_test = np.array([
+        [ 14.,  13.,  12., 115.,   0.],
+        [ 15.,  14.,  13., 116.,   1.],
+        [ 16.,  15.,  14., 117.,   2.],
+        [ 17.,  16.,  15., 118.,   0.],
+        [ 18.,  17.,  16., 119.,   1.],
+    ])
+    expected_y_test = np.array([15., 16., 17., 18., 19.])
+
+    np.testing.assert_array_almost_equal(X_train, expected_X_train)
+    np.testing.assert_array_almost_equal(y_train, expected_y_train)
+    np.testing.assert_array_almost_equal(X_test, expected_X_test)
+    np.testing.assert_array_almost_equal(y_test, expected_y_test)
     assert fit_kwargs == {'categorical_feature': 'auto'}
-    # fit_kwargs is a copy, not the same object
     assert fit_kwargs is not forecaster.fit_kwargs
 
 
@@ -470,18 +633,30 @@ def test_train_test_split_one_step_ahead_when_non_contiguous_lags():
         y=y, exog=exog, initial_train_size=15
     )
 
-    # window_size = max_lag = 7
-    # train rows: 15 - 7 = 8
-    # test_init = 15 - 7 = 8, y[8:] = 12 obs -> 12 - 7 = 5 rows
-    # columns: lag_1, lag_7, exog_1 = 3
-    assert X_train.shape == (8, 3)
-    assert X_test.shape == (5, 3)
-    assert len(y_train) == 8
-    assert len(y_test) == 5
-    # First training row: y[7]=7 is target, features = [lag_1=y[6]=6, lag_7=y[0]=0, exog=107]
-    np.testing.assert_array_almost_equal(X_train[0], [6.0, 0.0, 107.0])
-    # First test row: y[15]=15 is target, features = [lag_1=y[14]=14, lag_7=y[8]=8, exog=115]
-    np.testing.assert_array_almost_equal(X_test[0], [14.0, 8.0, 115.0])
+    expected_X_train = np.array([
+        [  6.,   0., 107.],
+        [  7.,   1., 108.],
+        [  8.,   2., 109.],
+        [  9.,   3., 110.],
+        [ 10.,   4., 111.],
+        [ 11.,   5., 112.],
+        [ 12.,   6., 113.],
+        [ 13.,   7., 114.],
+    ])
+    expected_y_train = np.array([7., 8., 9., 10., 11., 12., 13., 14.])
+    expected_X_test = np.array([
+        [ 14.,   8., 115.],
+        [ 15.,   9., 116.],
+        [ 16.,  10., 117.],
+        [ 17.,  11., 118.],
+        [ 18.,  12., 119.],
+    ])
+    expected_y_test = np.array([15., 16., 17., 18., 19.])
+
+    np.testing.assert_array_almost_equal(X_train, expected_X_train)
+    np.testing.assert_array_almost_equal(y_train, expected_y_train)
+    np.testing.assert_array_almost_equal(X_test, expected_X_test)
+    np.testing.assert_array_almost_equal(y_test, expected_y_test)
     assert sample_weight is None
     assert fit_kwargs == {}
 
@@ -591,3 +766,50 @@ def test_train_test_split_one_step_ahead_restores_is_fitted(initial_is_fitted):
     )
 
     assert forecaster.is_fitted == initial_is_fitted
+
+
+def test_train_test_split_one_step_ahead_NaN_filtered_when_dropna_from_series_True():
+    """
+    Test _train_test_split_one_step_ahead filters NaN from both train and
+    test sets when dropna_from_series is True.
+    """
+    y = pd.Series(
+        [0, 1, 2, np.nan, 4, 5, 6, 7, 8, 9, 10, 11, np.nan, 13, 14],
+        index=pd.date_range('2020-01-01', periods=15, freq='D'),
+        dtype=float,
+    )
+
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2,
+        dropna_from_series=True,
+    )
+    forecaster.fit(
+        y=pd.Series(
+            np.arange(20, dtype=float),
+            index=pd.date_range('2020-01-01', periods=20, freq='D'),
+        )
+    )
+
+    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs = (
+        forecaster._train_test_split_one_step_ahead(
+            y=y, initial_train_size=10
+        )
+    )
+
+    expected_X_train = np.array([
+        [6., 5., 4.],
+        [7., 6., 5.],
+    ])
+    expected_y_train = np.array([7., 8.])
+    expected_X_test = np.array([
+        [ 9.,  8.,  7.],
+        [10.,  9.,  8.],
+    ])
+    expected_y_test = np.array([10., 11.])
+
+    np.testing.assert_array_almost_equal(X_train, expected_X_train)
+    np.testing.assert_array_almost_equal(y_train, expected_y_train)
+    np.testing.assert_array_almost_equal(X_test, expected_X_test)
+    np.testing.assert_array_almost_equal(y_test, expected_y_test)
+    assert sample_weight is None
+    assert fit_kwargs == {}

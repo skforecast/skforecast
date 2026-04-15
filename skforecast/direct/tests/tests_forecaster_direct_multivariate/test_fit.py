@@ -1,5 +1,6 @@
 # Unit test fit ForecasterDirectMultiVariate
 # ==============================================================================
+import re
 import pytest
 from pytest import approx
 from itertools import chain
@@ -15,6 +16,7 @@ from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
 from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirectMultiVariate
+from skforecast.exceptions import MissingValuesWarning
 
 # Fixtures
 from .fixtures_forecaster_direct_multivariate import series as series_fixtures
@@ -710,3 +712,78 @@ def test_fit_no_categoricals_with_supported_estimators(estimator):
 
     assert forecaster.is_fitted
     assert forecaster.categorical_features_names_in_ is None
+
+
+def test_fit_with_interspersed_NaN_and_dropna_from_series_True():
+    """
+    Test fit works correctly with interspersed NaN in series and
+    dropna_from_series=True. Estimator: LinearRegression.
+    Also checks last_window_ has no NaN and predict returns valid output.
+    """
+
+    series_nan = pd.DataFrame(
+        {'l1': [1, 2, np.nan, 4, 5, 6, 7, 8, 9, 10],
+         'l2': np.arange(50, 60, dtype=float)},
+        index=pd.RangeIndex(start=0, stop=10),
+        dtype=float
+    )
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = LinearRegression(),
+                     level              = 'l1',
+                     lags               = 3,
+                     steps              = 2,
+                     transformer_series = None,
+                     dropna_from_series = True
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. They have been dropped. If "
+        "you want to keep them, set `forecaster.dropna_from_series = False`. "
+        "Same rows have been removed from `y_train` to maintain alignment. "
+        "This is caused by interspersed NaNs in `series` or `exog`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        forecaster.fit(series=series_nan)
+
+    assert forecaster.is_fitted
+    assert not np.isnan(forecaster.last_window_.to_numpy()).any()
+    predictions = forecaster.predict(steps=2)
+    assert len(predictions) == 2
+    assert not predictions.isna().any().any()
+
+
+def test_fit_with_interspersed_NaN_and_dropna_from_series_False():
+    """
+    Test fit works correctly with interspersed NaN in series and
+    dropna_from_series=False. Estimator: HistGradientBoostingRegressor
+    (supports NaN natively). Also checks last_window_ and predict output.
+    """
+
+    series_nan = pd.DataFrame(
+        {'l1': [1, 2, np.nan, 4, 5, 6, 7, 8, 9, 10],
+         'l2': np.arange(50, 60, dtype=float)},
+        index=pd.RangeIndex(start=0, stop=10),
+        dtype=float
+    )
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     level              = 'l1',
+                     lags               = 3,
+                     steps              = 2,
+                     transformer_series = None,
+                     dropna_from_series = False
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. Some estimators do not allow "
+        "NaN values during training. If you want to drop them, "
+        "set `forecaster.dropna_from_series = True`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        forecaster.fit(series=series_nan)
+
+    assert forecaster.is_fitted
+    assert not np.isnan(forecaster.last_window_.to_numpy()).any()
+    predictions = forecaster.predict(steps=2)
+    assert len(predictions) == 2
+    assert not predictions.isna().any().any()

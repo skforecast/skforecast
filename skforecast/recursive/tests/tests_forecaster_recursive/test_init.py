@@ -191,3 +191,21 @@ def test_init_binner_is_created_when_binner_kwargs_is_not_None():
     }
 
     assert forecaster.binner.get_params() == expected
+
+
+@pytest.mark.parametrize(
+    'dropna_from_series',
+    [True, False],
+    ids=lambda d: f'dropna_from_series: {d}'
+)
+def test_init_dropna_from_series_attribute_correctly_stored(dropna_from_series):
+    """
+    Test dropna_from_series is correctly stored when True or False.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator          = LinearRegression(),
+                     lags               = 5,
+                     dropna_from_series = dropna_from_series
+                 )
+
+    assert forecaster.dropna_from_series == dropna_from_series
