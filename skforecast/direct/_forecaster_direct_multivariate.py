@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 from typing import Callable, Any
-import html
 import warnings
 import sys
 import numpy as np
@@ -650,33 +649,19 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             params,
             _,
             series_names_in_,
-            _,
+            exog_names_in_,
             transformer_series,
         ) = self._preprocess_repr(
-                estimator          = self.estimator,
-                series_names_in_   = self.series_names_in_,
-                transformer_series = self.transformer_series,
+                estimator                       = self.estimator,
+                series_names_in_                = self.series_names_in_,
+                exog_names_in_                  = self.exog_names_in_,
+                transformer_series              = self.transformer_series,
+                categorical_features_names_in_  = self.categorical_features_names_in_,
+                as_html                         = True,
             )
 
         style, unique_id = get_style_repr_html(self.is_fitted)
 
-        if self.exog_names_in_ is None:
-            exog_names_in_ = 'None'
-        else:
-            cat_set = set(self.categorical_features_names_in_ or [])
-            exog_items = self.exog_names_in_
-            if len(exog_items) > 50:
-                exog_items = exog_items[:25] + ['...'] + exog_items[-25:]
-            _cat_badge = (
-                '<span title="categorical" style="background-color: #FFA726; color: white; '
-                'border-radius: 3px; padding: 1px 5px; font-size: 0.75em; '
-                'margin-left: 4px; font-weight: bold; letter-spacing: 0.03em;">CAT</span>'
-            )
-            exog_names_in_ = ', '.join(
-                f'{html.escape(str(name))}{_cat_badge}' if name in cat_set else html.escape(str(name))
-                for name in exog_items
-            )
-        
         content = f"""
         <div class="container-{unique_id}">
             <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
