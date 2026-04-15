@@ -709,15 +709,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             exog_names_in_,
             transformer_series,
         ) = self._preprocess_repr(
-                estimator          = self.estimator,
-                training_range_    = self.training_range_,
-                series_names_in_   = self.series_names_in_,
-                exog_names_in_     = self.exog_names_in_,
-                transformer_series = self.transformer_series,
+                estimator                       = self.estimator,
+                training_range_                 = self.training_range_,
+                series_names_in_                = self.series_names_in_,
+                exog_names_in_                  = self.exog_names_in_,
+                transformer_series              = self.transformer_series,
+                categorical_features_names_in_  = self.categorical_features_names_in_,
+                as_html                         = True,
             )
 
         style, unique_id = get_style_repr_html(self.is_fitted)
-        
+
         content = f"""
         <div class="container-{unique_id}">
             <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
@@ -744,9 +746,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             </details>
             <details>
                 <summary>Exogenous Variables</summary>
-                <ul>
-                    {exog_names_in_}
-                </ul>
+                <p style="margin: 0.2em 0 0.2em 1.5em;">{exog_names_in_}</p>
             </details>
             <details>
                 <summary>Data Transformations</summary>
