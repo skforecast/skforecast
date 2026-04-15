@@ -13,6 +13,7 @@ from xgboost import XGBRegressor
 from skforecast.utils.utils import _get_estimator_categorical_set_params
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
+from skforecast.direct import ForecasterDirectMultiVariate
 
 
 # ==============================================================================
@@ -104,20 +105,40 @@ def test_pipeline_with_xgboost_unwraps_last_step():
 
 
 # ==============================================================================
-# Tests: ForecasterDirect reads from estimators_[1]
+# Tests: ForecasterDirect / ForecasterDirectMultiVariate read from estimators_[1]
 # ==============================================================================
-def test_forecaster_direct_reads_from_estimators_1_not_template():
+@pytest.mark.parametrize(
+    'forecaster_cls, fit_kwargs',
+    [
+        (ForecasterDirect, {'y': None}),
+        (ForecasterDirectMultiVariate, {'series': None}),
+    ],
+    ids=['ForecasterDirect', 'ForecasterDirectMultiVariate']
+)
+def test_forecaster_direct_reads_from_estimators_1_not_template(forecaster_cls, fit_kwargs):
     """
-    Test that ForecasterDirect reads params from estimators_[1] (the fitted
-    per-step clone) and not from the template estimator attribute.
+    Test that ForecasterDirect and ForecasterDirectMultiVariate read params
+    from estimators_[1] (the fitted per-step clone) and not from the template
+    estimator attribute.
     """
     rng = np.random.default_rng(42)
     y = pd.Series(
         rng.normal(size=50),
         index=pd.date_range('2020', periods=50, freq='D')
     )
-    forecaster = ForecasterDirect(estimator=XGBRegressor(), lags=2, steps=3)
-    forecaster.fit(y=y)
+
+    if forecaster_cls is ForecasterDirect:
+        forecaster = ForecasterDirect(estimator=XGBRegressor(), lags=2, steps=3)
+        forecaster.fit(y=y)
+    else:
+        series = pd.DataFrame(
+            {'s1': y.values, 's2': rng.normal(size=50)},
+            index=y.index
+        )
+        forecaster = ForecasterDirectMultiVariate(
+            estimator=XGBRegressor(), level='s1', lags=2, steps=3
+        )
+        forecaster.fit(series=series)
 
     # Set a distinct value on the step-1 clone and a different value on the
     # template so we can tell which one the helper reads.

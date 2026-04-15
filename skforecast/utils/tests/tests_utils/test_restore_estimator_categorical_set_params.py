@@ -11,6 +11,7 @@ from xgboost import XGBRegressor
 from skforecast.utils.utils import _restore_estimator_categorical_set_params
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
+from skforecast.direct import ForecasterDirectMultiVariate
 
 
 # ==============================================================================
@@ -112,20 +113,38 @@ def test_pipeline_with_xgboost_unwraps_and_restores_last_step():
 
 
 # ==============================================================================
-# Tests: ForecasterDirect restores estimators_[1], not the template
+# Tests: ForecasterDirect / ForecasterDirectMultiVariate restore estimators_[1],
+# not the template
 # ==============================================================================
-def test_forecaster_direct_restores_estimators_1_not_template():
+@pytest.mark.parametrize(
+    'forecaster_cls',
+    [ForecasterDirect, ForecasterDirectMultiVariate],
+    ids=['ForecasterDirect', 'ForecasterDirectMultiVariate']
+)
+def test_forecaster_direct_restores_estimators_1_not_template(forecaster_cls):
     """
-    Test that ForecasterDirect restores params only on estimators_[1] (the
-    fitted per-step clone) and does not modify the template estimator attribute.
+    Test that ForecasterDirect and ForecasterDirectMultiVariate restore params
+    only on estimators_[1] (the fitted per-step clone) and do not modify the
+    template estimator attribute.
     """
     rng = np.random.default_rng(42)
     y = pd.Series(
         rng.normal(size=50),
         index=pd.date_range('2020', periods=50, freq='D')
     )
-    forecaster = ForecasterDirect(estimator=XGBRegressor(), lags=2, steps=3)
-    forecaster.fit(y=y)
+
+    if forecaster_cls is ForecasterDirect:
+        forecaster = ForecasterDirect(estimator=XGBRegressor(), lags=2, steps=3)
+        forecaster.fit(y=y)
+    else:
+        series = pd.DataFrame(
+            {'s1': y.values, 's2': rng.normal(size=50)},
+            index=y.index
+        )
+        forecaster = ForecasterDirectMultiVariate(
+            estimator=XGBRegressor(), level='s1', lags=2, steps=3
+        )
+        forecaster.fit(series=series)
 
     snapshot = {'feature_types': ['q', 'c', 'q'], 'enable_categorical': True}
 

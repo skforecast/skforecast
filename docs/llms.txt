@@ -35,6 +35,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [Calendar features](https://skforecast.org/latest/user_guides/calendar-features.html): Date and time-based features with DateTimeFeatureTransformer
 - [Categorical features](https://skforecast.org/latest/user_guides/categorical-features.html): Native categorical support with LightGBM, XGBoost, CatBoost
 - [Classification forecasting](https://skforecast.org/latest/user_guides/autoregressive-classification-forecasting.html): Classification-based forecasting for categorical time series
+- [Handling missing values](https://skforecast.org/latest/user_guides/handling-missing-values.html): Strategies for training and forecasting with incomplete data
 - [Data transformation](https://skforecast.org/latest/user_guides/sklearn-transformers-and-pipeline.html): Sklearn transformers and pipelines for preprocessing
 - [Feature selection](https://skforecast.org/latest/user_guides/feature-selection.html): Selecting relevant lags, window features, and exogenous variables
 
@@ -67,7 +68,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 
 ## FAQ
 
-- [Missing values](https://skforecast.org/latest/faq/forecasting-time-series-with-missing-values.html): Forecasting time series with missing values
+- [Missing values FAQ](https://skforecast.org/latest/faq/forecasting-time-series-with-missing-values.html): Quick tips for forecasting time series with missing values
 - [Negative predictions](https://skforecast.org/latest/faq/non-negative-predictions.html): Avoiding negative predictions when forecasting
 - [Delayed historical data](https://skforecast.org/latest/faq/forecasting-with-delayed-historical-data.html): Forecasting when recent data is not yet available
 - [Backtesting vs One-step-ahead](https://skforecast.org/latest/faq/parameters-search-backtesting-vs-one-step-ahead.html): Choosing between backtesting and one-step-ahead validation
@@ -107,7 +108,10 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [Time series aggregation](https://skforecast.org/latest/faq/time-series-aggregation.html): Aggregating time series to different frequencies
 - [Parallelization](https://skforecast.org/latest/faq/parallelization-skforecast.html): Parallel execution and performance optimization
 - [Intro to forecasting](https://skforecast.org/latest/introduction-forecasting/introduction-forecasting.html): Conceptual introduction to time series forecasting
+- [How to install](https://skforecast.org/latest/quick-start/how-to-install.html): Installation guide with optional dependencies
 - [Forecaster parameters](https://skforecast.org/latest/quick-start/forecaster-parameters.html): Reference for all forecaster configuration parameters
+- [Forecaster attributes](https://skforecast.org/latest/quick-start/forecaster-attributes.html): Reference for all forecaster attributes after fitting
+- [AI-assisted forecasting](https://skforecast.org/latest/quick-start/ai-assisted-forecasting.html): Using LLMs and AI tools with skforecast
 - [Examples and tutorials](https://skforecast.org/latest/examples/examples_english.html): External tutorials with real-world datasets
 - [Migration guide](https://skforecast.org/latest/user_guides/migration-guide.html): Upgrading from previous skforecast versions
 - [Release notes](https://skforecast.org/latest/releases/releases.html): Full changelog for all versions
