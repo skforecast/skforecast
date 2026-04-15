@@ -29,6 +29,11 @@ from ..fixtures_model_selection_multiseries import (
     exog_dict_nans,
 )
 
+pytestmark = [
+    pytest.mark.filterwarnings("ignore::skforecast.exceptions.MissingExogWarning"),
+    pytest.mark.filterwarnings("ignore::skforecast.exceptions.MissingValuesWarning"),
+]
+
 
 # NOTE: Ignored, inputs checks are commented out in the function.
 # def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():

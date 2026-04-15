@@ -1048,10 +1048,10 @@ class ForecasterRnn(ForecasterBase):
             print(f"Using '{self.keras_backend_}' backend with device: {device}")
 
             torch_device = torch.device(device)
-            X_train = torch.tensor(X_train).to(torch_device)
-            y_train = torch.tensor(y_train).to(torch_device)
+            X_train = torch.tensor(X_train, dtype=torch.float32).to(torch_device)
+            y_train = torch.tensor(y_train, dtype=torch.float32).to(torch_device)
             if exog_train is not None:
-                exog_train = torch.tensor(exog_train).to(torch_device)
+                exog_train = torch.tensor(exog_train, dtype=torch.float32).to(torch_device)
 
         if self.series_val is not None:
             series_val = self.series_val[series_names_in_]
@@ -1064,10 +1064,10 @@ class ForecasterRnn(ForecasterBase):
                 series=series_val, exog=exog_val
             )
             if self.keras_backend_ == "torch":
-                X_val = torch.tensor(X_val).to(torch_device)
-                y_val = torch.tensor(y_val).to(torch_device)
+                X_val = torch.tensor(X_val, dtype=torch.float32).to(torch_device)
+                y_val = torch.tensor(y_val, dtype=torch.float32).to(torch_device)
                 if exog_val is not None:
-                    exog_val = torch.tensor(exog_val).to(torch_device)
+                    exog_val = torch.tensor(exog_val, dtype=torch.float32).to(torch_device)
 
             if self.exog_val is not None:
                 history = self.estimator.fit(

@@ -2292,8 +2292,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             
             exog = exog.copy().to_frame() if isinstance(exog, pd.Series) else exog.copy()
             exog = {
-                series_id: exog.loc[series_id] 
-                for series_id in exog.index.levels[0]
+                series_id: group.droplevel(0)
+                for series_id, group in exog.groupby(level=0, sort=True, observed=True)
                 if series_id in levels
             }
 

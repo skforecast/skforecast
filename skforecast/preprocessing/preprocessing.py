@@ -491,9 +491,10 @@ def reshape_series_long_to_dict(
         first_col = data.columns[0]
         data.index = data.index.set_names([data.index.names[0], None])
         series_dict = {}
-        for k in data.index.levels[0]:
-            original_size = len(data.loc[k])
-            series_dict[k] = data.loc[k][first_col].rename(k).asfreq(freq, fill_value=fill_value)
+        for k, group in data.groupby(level=0, sort=True, observed=True):
+            group = group.droplevel(0)
+            original_size = len(group)
+            series_dict[k] = group[first_col].rename(k).asfreq(freq, fill_value=fill_value)
             if not suppress_warnings and len(series_dict[k]) != original_size:
                 fill_msg = (
                     "NaNs have been introduced"
@@ -605,10 +606,11 @@ def reshape_exog_long_to_dict(
         exog_dict = {}
         cols_float_dtype = set()
         nans_introduced = False
-        for k in data.index.levels[0]:
-            original_index = data.loc[k].index
-            original_size = len(data.loc[k])
-            exog_dict[k] = data.loc[k].asfreq(freq)
+        for k, group in data.groupby(level=0, sort=True, observed=True):
+            group = group.droplevel(0)
+            original_index = group.index
+            original_size = len(group)
+            exog_dict[k] = group.asfreq(freq)
             if len(exog_dict[k]) != original_size:
                 nans_introduced = True
                 non_numeric_cols = []

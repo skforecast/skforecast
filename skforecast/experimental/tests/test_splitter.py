@@ -6,6 +6,10 @@ import pandas as pd
 
 from .._splitter import TimeSeriesSplitter
 
+pytestmark = [
+    pytest.mark.filterwarnings("ignore::skforecast.exceptions.InputTypeWarning"),
+]
+
 
 @pytest.fixture
 def df_datetime_wide():
