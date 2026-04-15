@@ -14,11 +14,11 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
++ <span class="badge text-bg-feature">Feature</span> New module <code>foundation</code> for zero-shot time series forecasting using pre-trained foundation models. The module introduces <code>[FoundationModel]</code>, a scikit-learn compatible interface, and <code>[ForecasterFoundation]</code>, a high-level forecaster fully integrated with the skforecast ecosystem (backtesting, prediction intervals via native quantiles). Three adapters are included out of the box: **Chronos-2** (Amazon), **TimesFM 2.5** (Google), and **Moirai-2** (Salesforce). Supports single-series and multi-series forecasting, exogenous variables (Chronos-2), and quantile-based prediction intervals. [User guide](../user_guides/foundation-forecasting-models.ipynb)
+
 + <span class="badge text-bg-feature">Feature</span> New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (`LightGBM`, `CatBoost`, `XGBoost`, `HistGradientBoostingRegressor`).
 
 + <span class="badge text-bg-feature">Feature</span> New `dropna_from_series` parameter in the <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in the <code>[ForecasterRecursiveMultiSeries]</code>.
-
-+ <span class="badge text-bg-feature">Feature</span> [Binned residuals](../user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRnn]</code>. 
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
 
@@ -34,6 +34,8 @@ The main changes in this release are:
 
 
 **Added**
+
++ New module <code>foundation</code> for zero-shot time series forecasting using pre-trained foundation models. <code>[FoundationModel]</code> provides a scikit-learn compatible interface that wraps model-specific adapters, while <code>[ForecasterFoundation]</code> integrates foundation models into the skforecast ecosystem enabling backtesting, and quantile-based prediction intervals. Supported adapters: **Chronos-2** (Amazon, with exogenous variable support), **TimesFM 2.5** (Google), and **Moirai-2** (Salesforce). [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
 + New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (`LightGBM`, `CatBoost`, `XGBoost`, `HistGradientBoostingRegressor`).
 
@@ -1494,11 +1496,15 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterDirect]: ../api/ForecasterDirect.md
 [ForecasterRecursiveMultiSeries]: ../api/ForecasterRecursiveMultiSeries.md
 [ForecasterDirectMultiVariate]: ../api/ForecasterDirectMultiVariate.md
+[ForecasterFoundation]: ../api/ForecasterFoundation.md
 [ForecasterRnn]: ../api/ForecasterRnn.md
 [create_and_compile_model]: ../api/ForecasterRnn.md#skforecast.deep_learning.utils.create_and_compile_model
 [ForecasterStats]: ../api/ForecasterStats.md
 [ForecasterEquivalentDate]: ../api/ForecasterEquivalentDate.md
 [ForecasterRecursiveClassifier]: ../api/ForecasterRecursiveClassifier.md
+
+<!-- foundation -->
+[FoundationModel]: ../api/FoundationModel.md#skforecast.foundation._foundation_model.FoundationModel
 
 <!-- stats -->
 [stats]: ../api/stats.md
@@ -1523,6 +1529,8 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [backtesting_stats]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_stats
 [grid_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.grid_search_stats
 [random_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.random_search_stats
+
+[backtesting_foundation]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_foundation
 
 [BaseFold]: ../api/model_selection.md#skforecast.model_selection._split.BaseFold
 [TimeSeriesFold]: ../api/model_selection.md#skforecast.model_selection._split.TimeSeriesFold

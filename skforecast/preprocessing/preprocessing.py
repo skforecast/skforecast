@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 from typing import Any
-from typing_extensions import Self
 import warnings
 from numba import njit
 import numpy as np
@@ -163,7 +162,7 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         self, 
         X: np.ndarray, 
         y: Any = None
-    ) -> Self:
+    ) -> TimeSeriesDifferentiator:
         """
         Fits the transformer. Stores the values needed to revert the 
         differentiation of different window of the time series, original 
