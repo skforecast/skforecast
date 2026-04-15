@@ -17,6 +17,11 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Dependent multivariate series forecasting](../user_guides/dependent-multi-series-multivariate-forecasting.ipynb)
 - [Deep learning Recurrent Neural Networks](../user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb)
 
+<span style="font-size: 1.3em;">Foundation Models</span>
+
+- [Forecasting with foundation models](../user_guides/foundation-forecasting-models.ipynb)
+- [Tabular foundation models](../user_guides/tabular-foundation-models.ipynb)
+
 <span style="font-size: 1.3em;">Statistical Models</span>
 
 - [Forecasting with statistical models](../user_guides/forecasting-statistical-models.ipynb)

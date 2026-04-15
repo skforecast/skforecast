@@ -58,6 +58,9 @@ optional_dependencies = {
         'matplotlib>=3.7, <3.11', 
         'seaborn>=0.12, <0.14', 
         'statsmodels>=0.13, <0.15'
+    ],
+    'foundation': [
+        'chronos-forecasting>=2.0, <3.0',
     ]
 }
 
@@ -2793,8 +2796,13 @@ def check_preprocess_series(
             series.index = series.index.set_names([series.index.names[0], None])
             series_dict = {
                 series_id: series.loc[series_id][first_col].rename(series_id)
-                for series_id in series.index.levels[0]
+                for series_id in series.index.remove_unused_levels().levels[0]
             }
+            # TODO: See if this is faster and if this keeps the freq fol all series
+            # series_dict = {
+            #     sid: group[first_col].droplevel(0).rename(sid)
+            #     for sid, group in series.groupby(level=0, sort=False)
+            # }
         
         warnings.warn(
             "Passing a DataFrame (either wide or long format) as `series` requires "
@@ -2944,11 +2952,11 @@ def check_preprocess_exog_multiseries(
             exog_dict.update(
                 {
                     series_id: exog.loc[series_id] 
-                    for series_id in exog.index.levels[0]
+                    for series_id in exog.index.remove_unused_levels().levels[0]
                     if series_id in series_names_in_
                 }
             )
-            series_ids_in_exog = exog.index.levels[0]
+            series_ids_in_exog = exog.index.remove_unused_levels().levels[0]
             warnings.warn(
                 "Using a long-format DataFrame as `exog` requires additional transformations, "
                 "which can increase computational time. It is recommended to use a dictionary of "
@@ -3059,12 +3067,13 @@ def check_preprocess_exog_multiseries(
 
 def align_series_and_exog_multiseries(
     series_dict: dict[str, pd.Series],
-    exog_dict: dict[str, pd.DataFrame] | None = None
+    exog_dict: dict[str, pd.DataFrame] | None = None,
+    trim_series_nan: bool = True,
 ) -> tuple[dict[str, pd.Series], dict[str, pd.DataFrame | None]]:
     """
     Align series and exog according to their index. If needed, reindexing is
     applied. Heading and trailing NaNs are removed from all series in 
-    `series_dict`.
+    `series_dict` when `trim_series_nan` is `True`.
 
     Parameters
     ----------
@@ -3072,6 +3081,10 @@ def align_series_and_exog_multiseries(
         Dictionary with the series used during training.
     exog_dict : dict, default None
         Dictionary with the exogenous variable/s used during training.
+    trim_series_nan : bool, default True
+        If `True`, leading and trailing NaNs are removed from each series
+        and exog is reindexed accordingly. If `False`, NaN trimming is
+        skipped and only exog reindexing is performed.
 
     Returns
     -------
@@ -3083,7 +3096,9 @@ def align_series_and_exog_multiseries(
     """
 
     for k in series_dict.keys():
-        if np.isnan(series_dict[k].iat[0]) or np.isnan(series_dict[k].iat[-1]):
+        if trim_series_nan and (
+            np.isnan(series_dict[k].iat[0]) or np.isnan(series_dict[k].iat[-1])
+        ):
             first_valid_index = series_dict[k].first_valid_index()
             last_valid_index = series_dict[k].last_valid_index()
             series_dict[k] = series_dict[k].loc[first_valid_index : last_valid_index]
@@ -3473,8 +3488,9 @@ def deepcopy_forecaster(
     ----------
     forecaster : object
         Forecaster object to copy. Can be any skforecast forecaster:
-        `ForecasterRecursive`, `ForecasterDirect`, `ForecasterRecursiveMultiSeries`, 
-        `ForecasterDirectMultiVariate` or `ForecasterStats`.
+        `ForecasterRecursive`, `ForecasterDirect`, `ForecasterRecursiveMultiSeries`,
+        `ForecasterDirectMultiVariate`, `ForecasterStats` or
+        `ForecasterFoundation`.
     include_in_sample_residuals : bool, default `False`
         If `True`, `in_sample_residuals_` and `in_sample_residuals_by_bin_` are 
         preserved in the copy. These are recomputed during `fit()`, so they can 
