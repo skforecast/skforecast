@@ -207,7 +207,8 @@ def check_backtesting_input(
         "ForecasterRnn",
     ]
     forecasters_multi_dict = [
-        "ForecasterRecursiveMultiSeries"
+        "ForecasterRecursiveMultiSeries",
+        "ForecasterFoundation"
     ]
     # NOTE: ForecasterStats has interval but not with bootstrapping or conformal
     # NOTE: ForecasterRnn has interval with conformal but not bootstrapping
@@ -247,26 +248,11 @@ def check_backtesting_input(
         data_name = 'series'
         data_length = max([len(series[serie]) for serie in series])
 
-    elif forecaster_name == 'ForecasterFoundation':
-        # NOTE: Input is pre-normalised by `_check_preprocess_series_type` in
-        # `backtesting_foundation` before `check_backtesting_input` is called,
-        # so `series` is never a long-format MultiIndex DataFrame here.
-        if not isinstance(series, (pd.Series, pd.DataFrame, dict)):
-            raise TypeError(
-                f"`series` must be a pandas Series, DataFrame or dict. "
-                f"Got {type(series)}."
-            )
-        data_name = 'series'
-        if isinstance(series, dict):
-            data_length = max(len(v) for v in series.values() if v is not None)
-        else:
-            data_length = len(series)
-
     if exog is not None:
-        if forecaster_name in (forecasters_multi_dict + ['ForecasterFoundation']):
+        if forecaster_name in forecasters_multi_dict:
             # NOTE: Checks are not need as they are done in the function 
-            # `check_preprocess_exog_multiseries` / forecaster.fit() that is 
-            # used before `check_backtesting_input` in the backtesting function.
+            # `check_preprocess_exog_multiseries` that is used before 
+            # `check_backtesting_input` in the backtesting function.
             pass
         else:
             if not isinstance(exog, (pd.Series, pd.DataFrame)):
@@ -326,10 +312,10 @@ def check_backtesting_input(
                                  date_literal = 'initial_train_size'
                              )
         if forecaster_name == 'ForecasterFoundation':
-            # For ForecasterFoundation, window_size equals context_length which
-            # is the *maximum* context the model accepts, not a minimum required
-            # training size. Only validate that initial_train_size is at least 1
-            # and smaller than data_length.
+            # NOTE: For ForecasterFoundation, window_size equals context_length 
+            # which is the *maximum* context the model accepts, not a minimum 
+            # required training size. Only validate that initial_train_size is 
+            # at least 1 and smaller than data_length.
             if initial_train_size < 1 or initial_train_size >= data_length:
                 raise ValueError(
                     f"If `initial_train_size` is an integer, it must be greater than "
@@ -368,7 +354,9 @@ def check_backtesting_input(
                     f"    steps: {steps}\n"
                 )
     else:
-        if forecaster_name in ['ForecasterStats', 'ForecasterFoundation', 'ForecasterEquivalentDate']:
+        if forecaster_name in [
+            'ForecasterStats', 'ForecasterFoundation', 'ForecasterEquivalentDate'
+        ]:
             raise ValueError(
                 f"When using {forecaster_name}, `initial_train_size` must be an "
                 f"integer smaller than the length of `{data_name}` ({data_length})."
@@ -472,7 +460,10 @@ def check_backtesting_input(
                     f"probabilities are returned by default during backtesting, "
                     f"set `interval=None`."
                 )
-            check_interval(interval=interval, alpha=alpha)
+            if forecaster_name == 'ForecasterFoundation':
+                check_interval(quantiles=interval)
+            else:
+                check_interval(interval=interval, alpha=alpha)
 
     if return_predictors and forecaster_name not in forecasters_return_predictors:
         raise ValueError(
@@ -1173,7 +1164,9 @@ def _calculate_metrics_backtesting_multiseries(
         ])
         series_train = series.loc[series.index.isin(train_indexes)]
         # NOTE: Exclude first window_size observations used to create predictors
-        series_train = series_train[series_train.groupby(level="level").cumcount() >= window_size]
+        series_train = series_train[
+            series_train.groupby(level="level").cumcount() >= window_size
+        ]
         series_train_grouped = (
             series_train
             .reset_index(level="level")

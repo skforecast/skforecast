@@ -28,22 +28,19 @@ from .fixtures_forecaster_foundation import (
 # Tests predict — errors
 # ==============================================================================
 
-def test_predict_NotFittedError_when_not_fitted():
+def test_predict_NotFittedError_when_not_fitted_and_no_context():
     """
-    Raise NotFittedError when forecaster is not fitted, regardless of whether
-    context is provided.
+    Raise NotFittedError when forecaster is not fitted and no context is
+    provided.
     """
     forecaster = make_forecaster()
 
     err_msg = re.escape(
         "This forecaster is not fitted yet. Call `fit` with appropriate "
-        "arguments before using `predict()`."
+        "arguments before using `predict()`, or pass `context`."
     )
     with pytest.raises(NotFittedError, match=err_msg):
         forecaster.predict(steps=5)
-
-    with pytest.raises(NotFittedError):
-        forecaster.predict(steps=3, context=y)
 
 
 # Tests predict — single series basic output
@@ -161,14 +158,16 @@ def test_predict_with_context_multiseries(context):
     assert list(result.columns) == ["level", "pred"]
 
 
-def test_predict_unfitted_with_context_raises_not_fitted_error():
+def test_predict_zero_shot_with_context_unfitted():
     """
-    predict() raises NotFittedError even when context is provided
-    and the forecaster has not been fitted.
+    predict() works in zero-shot mode when context is provided and the
+    forecaster has not been fitted.
     """
     forecaster = make_forecaster()
-    with pytest.raises(NotFittedError):
-        forecaster.predict(steps=3, context=lw_df)
+    predictions = forecaster.predict(steps=3, context=y)
+    assert isinstance(predictions, pd.DataFrame)
+    assert list(predictions.columns) == ["level", "pred"]
+    assert len(predictions) == 3
 
 
 # Tests predict — exog

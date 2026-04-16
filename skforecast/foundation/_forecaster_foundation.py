@@ -624,12 +624,30 @@ class ForecasterFoundation:
             Long-format DataFrame with columns `['level', 'pred']`.
             The index repeats each forecast timestamp once per series.
 
+        Notes
+        -----
+        Foundation models are pre-trained and do not learn from the data passed
+        to `fit`. The `fit` method only stores context (the last `context_length`
+        observations) and metadata. This leads to four distinct behaviors
+        depending on the combination of `is_fitted` and `context`:
+
+        - **Not fitted, `context=None`**: raises `NotFittedError`. There is no
+        context available for prediction.
+        - **Fitted, `context=None`**: uses the context and `context_exog_` stored
+        during `fit`. If the user supplies `context_exog`, it is ignored with a
+        warning.
+        - **Not fitted, `context` provided (zero-shot mode)**: The model uses
+        `context` and `context_exog` (if provided) as context for prediction.
+        - **Fitted, `context` provided**: Stored context is ignored, the
+        provided `context` and `context_exog` (if provided) are used for
+        prediction.
+
         """
 
-        if not self.is_fitted:
+        if not self.is_fitted and context is None:
             raise NotFittedError(
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
-                "arguments before using `predict()`."
+                "arguments before using `predict()`, or pass `context`."
             )
 
         predictions = self.estimator.predict(
@@ -704,12 +722,30 @@ class ForecasterFoundation:
             Long-format DataFrame with columns `['level', 'pred', 'lower_bound',
             'upper_bound']`.
 
+        Notes
+        -----
+        Foundation models are pre-trained and do not learn from the data passed
+        to `fit`. The `fit` method only stores context (the last `context_length`
+        observations) and metadata. This leads to four distinct behaviors
+        depending on the combination of `is_fitted` and `context`:
+
+        - **Not fitted, `context=None`**: raises `NotFittedError`. There is no
+        context available for prediction.
+        - **Fitted, `context=None`**: uses the context and `context_exog_` stored
+        during `fit`. If the user supplies `context_exog`, it is ignored with a
+        warning.
+        - **Not fitted, `context` provided (zero-shot mode)**: The model uses
+        `context` and `context_exog` (if provided) as context for prediction.
+        - **Fitted, `context` provided**: Stored context is ignored, the
+        provided `context` and `context_exog` (if provided) are used for
+        prediction.
+
         """
 
-        if not self.is_fitted:
+        if not self.is_fitted and context is None:
             raise NotFittedError(
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
-                "arguments before using `predict_interval()`."
+                "arguments before using `predict_interval()`, or pass `context`."
             )
 
         if isinstance(interval, (int, float)):
@@ -798,12 +834,30 @@ class ForecasterFoundation:
         predictions : pandas DataFrame
             Long-format DataFrame with columns `['level', 'q_0.1', 'q_0.5', ...]`.
 
+        Notes
+        -----
+        Foundation models are pre-trained and do not learn from the data passed
+        to `fit`. The `fit` method only stores context (the last `context_length`
+        observations) and metadata. This leads to four distinct behaviors
+        depending on the combination of `is_fitted` and `context`:
+
+        - **Not fitted, `context=None`**: raises `NotFittedError`. There is no
+        context available for prediction.
+        - **Fitted, `context=None`**: uses the context and `context_exog_` stored
+        during `fit`. If the user supplies `context_exog`, it is ignored with a
+        warning.
+        - **Not fitted, `context` provided (zero-shot mode)**: The model uses
+        `context` and `context_exog` (if provided) as context for prediction.
+        - **Fitted, `context` provided**: Stored context is ignored, the
+        provided `context` and `context_exog` (if provided) are used for
+        prediction.
+
         """
 
-        if not self.is_fitted:
+        if not self.is_fitted and context is None:
             raise NotFittedError(
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
-                "arguments before using `predict_quantiles()`."
+                "arguments before using `predict_quantiles()`, or pass `context`."
             )
 
         predictions = self.estimator.predict(

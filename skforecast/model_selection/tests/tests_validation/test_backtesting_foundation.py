@@ -77,9 +77,40 @@ def test_backtesting_foundation_TypeError_when_wrong_forecaster_type():
         )
 
 
-def test_backtesting_foundation_ValueError_when_interval_and_quantiles_both_provided():
+def test_backtesting_foundation_warns_IgnoredArgumentWarning_when_quantiles_missing_median():
     """
-    Test that ValueError is raised when both interval and quantiles are provided.
+    Test that IgnoredArgumentWarning is raised when quantiles does not
+    include 0.5 (median), because it is auto-added for metric computation.
+    """
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(
+        steps=3,
+        initial_train_size=38,
+        refit=True,
+        fixed_train_size=False,
+        verbose=False,
+    )
+    with patch(
+        "skforecast.model_selection._validation.deepcopy_forecaster",
+        side_effect=deepcopy,
+    ):
+        with pytest.warns(
+            IgnoredArgumentWarning,
+            match="The median quantile",
+        ):
+            backtesting_foundation(
+                forecaster=forecaster,
+                series=y,
+                cv=cv,
+                metric="mean_absolute_error",
+                quantiles=[0.1, 0.9],
+                show_progress=False,
+            )
+
+
+def test_backtesting_foundation_ValueError_when_quantiles_invalid():
+    """
+    Test that ValueError is raised when quantiles contains a value outside [0, 1].
     """
     forecaster = make_forecaster()
     cv = TimeSeriesFold(
@@ -89,34 +120,9 @@ def test_backtesting_foundation_ValueError_when_interval_and_quantiles_both_prov
         verbose=False,
     )
     err_msg = re.escape(
-        "`interval` and `quantiles` cannot be provided simultaneously."
+        "All elements in `quantiles` must be >= 0 and <= 1."
     )
     with pytest.raises(ValueError, match=err_msg):
-        backtesting_foundation(
-            forecaster=forecaster,
-            series=y,
-            cv=cv,
-            metric="mean_absolute_error",
-            interval=[10, 90],
-            quantiles=[0.1, 0.5, 0.9],
-        )
-
-
-def test_backtesting_foundation_TypeError_when_quantiles_invalid():
-    """
-    Test that TypeError is raised when quantiles contains a value outside [0, 1].
-    """
-    forecaster = make_forecaster()
-    cv = TimeSeriesFold(
-        steps=3,
-        initial_train_size=38,
-        refit=False,
-        verbose=False,
-    )
-    err_msg = re.escape(
-        "`quantiles` must be a list or tuple of floats in the range [0, 1]."
-    )
-    with pytest.raises(TypeError, match=err_msg):
         backtesting_foundation(
             forecaster=forecaster,
             series=y,
@@ -171,7 +177,8 @@ def test_output_backtesting_foundation_single_no_refit_no_exog_no_remainder(init
         columns=["pred"],
         index=_test_index,
     )
-    expected_preds.insert(0, "fold", [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
+    expected_preds.insert(0, "level", "y")
+    expected_preds.insert(1, "fold", [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions)
@@ -212,9 +219,9 @@ def test_output_backtesting_foundation_single_no_refit_no_exog_remainder(initial
         )
 
     expected_metric = pd.DataFrame({"mean_absolute_error": [43.0]})
-    assert backtest_predictions.shape == (12, 2)
+    assert backtest_predictions.shape == (12, 3)
     assert backtest_predictions["fold"].tolist() == [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2]
-    assert backtest_predictions.columns.tolist() == ["fold", "pred"]
+    assert backtest_predictions.columns.tolist() == ["level", "fold", "pred"]
     pd.testing.assert_frame_equal(expected_metric, metric)
 
 
@@ -249,7 +256,7 @@ def test_output_backtesting_foundation_single_no_refit_yes_exog():
 
     expected_metric = pd.DataFrame({"mean_absolute_error": [43.0]})
     pd.testing.assert_frame_equal(expected_metric, metric)
-    assert backtest_predictions.shape == (12, 2)
+    assert backtest_predictions.shape == (12, 3)
     assert (backtest_predictions["pred"] == 0.5).all()
 
 
@@ -284,7 +291,7 @@ def test_output_backtesting_foundation_single_refit_no_exog_no_remainder():
 
     expected_metric = pd.DataFrame({"mean_absolute_error": [43.0]})
     pd.testing.assert_frame_equal(expected_metric, metric)
-    assert backtest_predictions.shape == (12, 2)
+    assert backtest_predictions.shape == (12, 3)
     assert (backtest_predictions["pred"] == 0.5).all()
     assert backtest_predictions["fold"].tolist() == [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3]
 
@@ -319,7 +326,7 @@ def test_output_backtesting_foundation_single_refit_fixed_train_size_no_exog():
 
     expected_metric = pd.DataFrame({"mean_absolute_error": [43.0]})
     pd.testing.assert_frame_equal(expected_metric, metric)
-    assert backtest_predictions.shape == (12, 2)
+    assert backtest_predictions.shape == (12, 3)
 
 
 def test_output_backtesting_foundation_single_refit_yes_exog():
@@ -352,7 +359,7 @@ def test_output_backtesting_foundation_single_refit_yes_exog():
 
     expected_metric = pd.DataFrame({"mean_absolute_error": [43.0]})
     pd.testing.assert_frame_equal(expected_metric, metric)
-    assert backtest_predictions.shape == (12, 2)
+    assert backtest_predictions.shape == (12, 3)
 
 
 # ===========================================================================
@@ -427,10 +434,11 @@ def test_output_backtesting_foundation_single_list_of_metrics():
 # Single-series, prediction intervals and quantiles
 # ===========================================================================
 
-def test_output_backtesting_foundation_single_interval_no_refit():
+def test_output_backtesting_foundation_single_quantiles_auto_add_median_no_refit():
     """
-    Test output columns and values for backtesting with interval=[10, 90].
-    FakePipeline: lower_bound=0.1, pred=0.5, upper_bound=0.9 for all steps.
+    Test output columns and values for backtesting with quantiles=[0.1, 0.9].
+    The median (0.5) is auto-added. FakePipeline returns quantile level as
+    value, so q_0.1=0.1, q_0.5=0.5, q_0.9=0.9.
     """
     forecaster = make_forecaster()
     cv = TimeSeriesFold(
@@ -448,31 +456,32 @@ def test_output_backtesting_foundation_single_interval_no_refit():
             series=y,
             cv=cv,
             metric="mean_absolute_error",
-            interval=[10, 90],
+            quantiles=[0.1, 0.9],
             verbose=False,
             show_progress=False,
         )
 
     assert backtest_predictions.columns.tolist() == [
-        "fold", "pred", "lower_bound", "upper_bound"
+        "level", "fold", "q_0.1", "q_0.5", "q_0.9"
     ]
-    assert backtest_predictions.shape == (12, 4)
+    assert backtest_predictions.shape == (12, 5)
     np.testing.assert_array_almost_equal(
-        backtest_predictions["pred"].values, np.full(12, 0.5)
+        backtest_predictions["q_0.1"].values, np.full(12, 0.1)
     )
     np.testing.assert_array_almost_equal(
-        backtest_predictions["lower_bound"].values, np.full(12, 0.1)
+        backtest_predictions["q_0.5"].values, np.full(12, 0.5)
     )
     np.testing.assert_array_almost_equal(
-        backtest_predictions["upper_bound"].values, np.full(12, 0.9)
+        backtest_predictions["q_0.9"].values, np.full(12, 0.9)
     )
     expected_metric = pd.DataFrame({"mean_absolute_error": [43.0]})
     pd.testing.assert_frame_equal(expected_metric, metric)
 
 
-def test_output_backtesting_foundation_single_interval_refit():
+def test_output_backtesting_foundation_single_quantiles_auto_add_median_refit():
     """
-    Test output columns and values for backtesting with interval=[10, 90] and refit.
+    Test output columns and values for backtesting with quantiles=[0.1, 0.9]
+    and refit=True. The median (0.5) is auto-added.
     """
     forecaster = make_forecaster()
     cv = TimeSeriesFold(
@@ -490,20 +499,20 @@ def test_output_backtesting_foundation_single_interval_refit():
             series=y,
             cv=cv,
             metric="mean_absolute_error",
-            interval=[10, 90],
+            quantiles=[0.1, 0.9],
             verbose=False,
             show_progress=False,
         )
 
     assert backtest_predictions.columns.tolist() == [
-        "fold", "pred", "lower_bound", "upper_bound"
+        "level", "fold", "q_0.1", "q_0.5", "q_0.9"
     ]
-    assert backtest_predictions.shape == (12, 4)
+    assert backtest_predictions.shape == (12, 5)
     np.testing.assert_array_almost_equal(
-        backtest_predictions["lower_bound"].values, np.full(12, 0.1)
+        backtest_predictions["q_0.1"].values, np.full(12, 0.1)
     )
     np.testing.assert_array_almost_equal(
-        backtest_predictions["upper_bound"].values, np.full(12, 0.9)
+        backtest_predictions["q_0.9"].values, np.full(12, 0.9)
     )
 
 
@@ -534,9 +543,9 @@ def test_output_backtesting_foundation_single_quantiles_no_refit():
         )
 
     assert backtest_predictions.columns.tolist() == [
-        "fold", "q_0.1", "q_0.5", "q_0.9"
+        "level", "fold", "q_0.1", "q_0.5", "q_0.9"
     ]
-    assert backtest_predictions.shape == (12, 4)
+    assert backtest_predictions.shape == (12, 5)
     np.testing.assert_array_almost_equal(
         backtest_predictions["q_0.1"].values, np.full(12, 0.1)
     )
@@ -576,7 +585,7 @@ def test_output_backtesting_foundation_single_quantiles_refit():
         )
 
     assert backtest_predictions.columns.tolist() == [
-        "fold", "q_0.1", "q_0.5", "q_0.9"
+        "level", "fold", "q_0.1", "q_0.5", "q_0.9"
     ]
     np.testing.assert_array_almost_equal(
         backtest_predictions["q_0.1"].values, np.full(12, 0.1)
@@ -624,7 +633,7 @@ def test_output_backtesting_foundation_single_fold_stride():
 
     # fold_stride=2, steps=3, 12 available test obs → overlapping folds
     # produce 17 total rows (confirmed with exact expected value)
-    assert backtest_predictions.shape == (17, 2)
+    assert backtest_predictions.shape == (17, 3)
     np.testing.assert_array_almost_equal(
         backtest_predictions["pred"].values, np.full(17, 0.5)
     )
@@ -662,7 +671,7 @@ def test_output_backtesting_foundation_single_gap():
 
     expected_metric = pd.DataFrame({"mean_absolute_error": [44.0]})
     pd.testing.assert_frame_equal(expected_metric, metric)
-    assert backtest_predictions.shape == (10, 2)
+    assert backtest_predictions.shape == (10, 3)
 
 
 # ===========================================================================
@@ -826,10 +835,11 @@ def test_output_backtesting_foundation_multiseries_levels_filter():
 # Multi-series, intervals and quantiles
 # ===========================================================================
 
-def test_output_backtesting_foundation_multiseries_interval():
+def test_output_backtesting_foundation_multiseries_quantiles_auto_add_median():
     """
-    Test backtesting with interval=[10, 90] in multi-series mode.
-    Output DataFrame must have columns level, fold, pred, lower_bound, upper_bound.
+    Test backtesting with quantiles=[0.1, 0.9] in multi-series mode.
+    The median (0.5) is auto-added. Output DataFrame must have columns
+    level, fold, q_0.1, q_0.5, q_0.9.
     """
     forecaster = make_forecaster()
     cv = TimeSeriesFold(
@@ -847,21 +857,21 @@ def test_output_backtesting_foundation_multiseries_interval():
             series=series_wide,
             cv=cv,
             metric="mean_absolute_error",
-            interval=[10, 90],
+            quantiles=[0.1, 0.9],
             add_aggregated_metric=False,
             verbose=False,
             show_progress=False,
         )
 
     assert backtest_predictions.columns.tolist() == [
-        "level", "fold", "pred", "lower_bound", "upper_bound"
+        "level", "fold", "q_0.1", "q_0.5", "q_0.9"
     ]
     assert backtest_predictions.shape == (24, 5)
     np.testing.assert_array_almost_equal(
-        backtest_predictions["lower_bound"].values, np.full(24, 0.1)
+        backtest_predictions["q_0.1"].values, np.full(24, 0.1)
     )
     np.testing.assert_array_almost_equal(
-        backtest_predictions["upper_bound"].values, np.full(24, 0.9)
+        backtest_predictions["q_0.9"].values, np.full(24, 0.9)
     )
 
 
@@ -1020,6 +1030,9 @@ def test_backtesting_foundation_warns_IgnoredArgumentWarning_when_refit_True():
     """
     Test that an IgnoredArgumentWarning is raised when refit=True is passed,
     because foundation models are zero-shot and do not use refit.
+    The warning fires when the user explicitly sets non-default values
+    (refit=True or fixed_train_size=False), signalling they expect specific
+    behaviour that does not apply to foundation models.
     """
     forecaster = make_forecaster()
     cv = TimeSeriesFold(
@@ -1033,7 +1046,10 @@ def test_backtesting_foundation_warns_IgnoredArgumentWarning_when_refit_True():
         "skforecast.model_selection._validation.deepcopy_forecaster",
         side_effect=deepcopy,
     ):
-        with pytest.warns(IgnoredArgumentWarning, match="`refit` has no effect"):
+        with pytest.warns(
+            IgnoredArgumentWarning,
+            match="`refit` and `fixed_train_size` have no effect",
+        ):
             backtesting_foundation(
                 forecaster=forecaster,
                 series=y,
