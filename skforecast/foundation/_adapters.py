@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Any
 import numpy as np
 import pandas as pd
+import warnings
 
 
 def _resolve_torch_device(device: str) -> str:
@@ -393,7 +394,7 @@ class Chronos2Adapter:
         Convert a covariate column to a numpy array.
 
         Numeric columns (int, float) and boolean columns are cast to
-        `float64`. All other dtypes (object, string, Categorical) are left
+        `float32`. All other dtypes (object, string, Categorical) are left
         as-is so that Chronos-2 can handle them as categorical covariates
         natively.
 
@@ -405,7 +406,7 @@ class Chronos2Adapter:
         Returns
         -------
         col_array : numpy ndarray
-            A 1-D numpy array. Numeric/bool are cast to `float64`. Others
+            A 1-D numpy array. Numeric/bool are cast to `float32`. Others
             keep their original dtype (typically `object` for string and
             categorical data).
         
@@ -413,16 +414,16 @@ class Chronos2Adapter:
 
         # Handle pandas Series first to correctly process nullable extension
         # dtypes (pd.Int64Dtype, pd.Float64Dtype, pd.BooleanDtype): np.asarray()
-        # on those produces dtype=object with pd.NA sentinels instead of float64.
+        # on those produces dtype=object with pd.NA sentinels instead of float32.
         if isinstance(col_data, pd.Series):
             if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
-                return col_data.astype(np.float64).to_numpy()
+                return col_data.astype(np.float32).to_numpy()
             return col_data.to_numpy()
 
         # Fallback for numpy arrays, lists, etc.
         arr = np.asarray(col_data)
         if arr.dtype.kind in ("i", "u", "f", "b"):  # integer, unsigned int, float, bool
-            return arr.astype(np.float64)
+            return arr.astype(np.float32)
         
         return arr
 
@@ -439,33 +440,33 @@ class Chronos2Adapter:
         ----------
         context : numpy ndarray
             1-D array of observed time series values used as context. Must be
-            castable to `float64`.
+            castable to `float32`.
         context_exog : pandas DataFrame, pandas Series, default None
             Historical exogenous variables whose index is aligned to
             `context`. Each column (or the single Series, referenced by
             its name) becomes an entry in the returned
             "past_covariates" dict. Numeric and boolean columns are
-            cast to `float64`; string and categorical columns are passed
+            cast to `float32`; string and categorical columns are passed
             as-is and handled natively by Chronos-2.
         exog : pandas DataFrame, pandas Series, default None
             Future-known exogenous variables covering the forecast horizon.
             Must have exactly `prediction_length` rows. Each column
             becomes an entry in the returned "future_covariates" dict.
-            Numeric and boolean columns are cast to `float64`; string and
+            Numeric and boolean columns are cast to `float32`; string and
             categorical columns are passed as-is.
 
         Returns
         -------
         input_dict : dict
-            Dictionary with mandatory key "target" (1-D `float64`
+            Dictionary with mandatory key "target" (1-D `float32`
             `numpy ndarray`) and optional keys "past_covariates" and
             "future_covariates", each mapping column names to 1-D
-            arrays (`float64` for numeric/bool columns, `object` dtype
+            arrays (`float32` for numeric/bool columns, `object` dtype
             for string/categorical columns).
         
         """
 
-        input_dict = {"target": np.asarray(context, dtype=float)}
+        input_dict = {"target": np.asarray(context, dtype=np.float32)}
         if context_exog is not None:
             df = (
                 context_exog
@@ -505,7 +506,7 @@ class TimesFM25Adapter:
         predict time, if `context` is longer than `context_length` it
         is trimmed to this length; if it is shorter, all available
         observations are used as-is. Must be a positive integer. Defaults to
-        512. TimesFM 2.5 supports up to 16 384.
+        512. TimesFM 2.5 supports up to 16_384.
     max_horizon : int, default 512
         Maximum forecast horizon. If `predict` is called with
         `steps > max_horizon`, a `ValueError` is raised. The model is
@@ -1153,7 +1154,7 @@ class MoiraiAdapter:
 
         series_names_in = list(context.keys())
         inputs_list = [
-            context[name].to_numpy(dtype=float).reshape(-1, 1)
+            context[name].to_numpy(dtype=np.float32).reshape(-1, 1)
             for name in series_names_in
         ]
 
@@ -1234,7 +1235,17 @@ class MoiraiAdapter:
             feat_dynamic_real_dim      = 0,
             past_feat_dynamic_real_dim = 0,
         ).eval()
-        self._forecast_obj.to(_resolve_torch_device(self.device))
+
+        resolved_device = _resolve_torch_device(self.device)
+        if resolved_device == "mps":
+            warnings.warn(
+                "MPS device is not supported by Moirai because the uni2ts "
+                "library uses float64 operations internally. Falling back "
+                "to CPU.",
+                stacklevel=2,
+            )
+            resolved_device = "cpu"
+        self._forecast_obj.to(resolved_device)
 
     def _run_inference(
         self,
@@ -1248,7 +1259,7 @@ class MoiraiAdapter:
         ----------
         inputs_list : list of numpy ndarray
             List of 2-D arrays with shape `(T, 1)`, one per series.
-            Each array holds `float64` values.
+            Each array holds `float32` values.
         steps : int
             Forecast horizon.
 
@@ -1269,6 +1280,7 @@ class MoiraiAdapter:
 
 
 _ADAPTER_REGISTRY: dict[str, type] = {
+    "amazon/chronos":    Chronos2Adapter,
     "autogluon/chronos": Chronos2Adapter,
     "google/timesfm":    TimesFM25Adapter,
     "Salesforce/moirai": MoiraiAdapter,

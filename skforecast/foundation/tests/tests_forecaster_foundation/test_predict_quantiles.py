@@ -25,22 +25,19 @@ from .fixtures_forecaster_foundation import (
 # Tests predict_quantiles — errors
 # ==============================================================================
 
-def test_predict_quantiles_NotFittedError_when_not_fitted():
+def test_predict_quantiles_NotFittedError_when_not_fitted_and_no_context():
     """
-    Raise NotFittedError when forecaster is not fitted, regardless of whether
-    context is provided.
+    Raise NotFittedError when forecaster is not fitted and no context is
+    provided.
     """
     forecaster = make_forecaster()
 
     err_msg = re.escape(
         "This forecaster is not fitted yet. Call `fit` with appropriate "
-        "arguments before using `predict_quantiles()`."
+        "arguments before using `predict_quantiles()`, or pass `context`."
     )
     with pytest.raises(NotFittedError, match=err_msg):
         forecaster.predict_quantiles(steps=5)
-
-    with pytest.raises(NotFittedError):
-        forecaster.predict_quantiles(steps=3, context=y)
 
 
 # Tests predict_quantiles — single series basic output

@@ -338,9 +338,11 @@ class FoundationModel:
         self.exog_type_in_              = None
         self.fit_date                   = None
         
-        context, series_indexes, series_names_in_, context_exog, exog_names_in_ = self._check_preprocess_context(
-            series = series,
-            exog   = exog,
+        context, series_indexes, series_names_in_, context_exog, exog_names_in_ = (
+            self._check_preprocess_context(
+                series=series,
+                exog=exog,
+            )
         )
 
         self.adapter.fit(
@@ -723,8 +725,6 @@ class FoundationModel:
             series_names_in = list(context.keys())
 
         # Future exog
-        # TODO: Skip future exog validation when check_inputs=False (exog
-        #       already normalized and aligned by the caller).
         if not self.allow_exog:
             has_exog = (exog is not None) or (context_exog is not None)
             if has_exog:
@@ -736,13 +736,14 @@ class FoundationModel:
                 )
                 exog = None
                 context_exog = None
-        else: 
-            exog = self._prepare_future_exog(
-                       steps           = steps,
-                       context         = context,
-                       exog            = exog,
-                       series_names_in = series_names_in,
-                   )
+        else:
+            if check_inputs:
+                exog = self._prepare_future_exog(
+                           steps           = steps,
+                           context         = context,
+                           exog            = exog,
+                           series_names_in = series_names_in,
+                       )
 
         # Adapter returns dict[str, np.ndarray] with shape (steps, n_q)
         raw_predictions = self.adapter.predict(

@@ -684,7 +684,7 @@ class TimeSeriesFold(BaseFold):
         - If `True`, the forecaster is refitted in each fold.
         - If `False`, the forecaster is trained only in the first fold.
         - If an integer, the forecaster is trained in the first fold and then refitted
-          every `refit` folds.
+        every `refit` folds.
     fixed_train_size : bool, default True
         Whether the training size is fixed or increases in each fold.
     gap : int, default 0
