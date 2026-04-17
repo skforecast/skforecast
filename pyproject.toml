@@ -153,24 +153,24 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "serial",
 ]
-filterwarnings = [
-#     "ignore::DeprecationWarning",
-#     "ignore::FutureWarning",
-    "ignore::skforecast.exceptions.DataTypeWarning",
-    "ignore::skforecast.exceptions.DataTransformationWarning",
-    "ignore::skforecast.exceptions.ExogenousInterpretationWarning",
-    "ignore::skforecast.exceptions.FeatureOutOfRangeWarning",
-    "ignore::skforecast.exceptions.IgnoredArgumentWarning",
-    "ignore::skforecast.exceptions.InputTypeWarning",
-    "ignore::skforecast.exceptions.LongTrainingWarning",
-    "ignore::skforecast.exceptions.MissingExogWarning",
-    "ignore::skforecast.exceptions.MissingValuesWarning",
-    "ignore::skforecast.exceptions.OneStepAheadValidationWarning",
-    "ignore::skforecast.exceptions.ResidualsUsageWarning",
-    "ignore::skforecast.exceptions.UnknownLevelWarning",
-    "ignore::skforecast.exceptions.SaveLoadSkforecastWarning",
-    "ignore::skforecast.exceptions.SkforecastVersionWarning",
-]
+# filterwarnings = [
+#     # "ignore::DeprecationWarning",
+#     # "ignore::FutureWarning",
+#     "ignore::skforecast.exceptions.DataTypeWarning",
+#     "ignore::skforecast.exceptions.DataTransformationWarning",
+#     "ignore::skforecast.exceptions.ExogenousInterpretationWarning",
+#     "ignore::skforecast.exceptions.FeatureOutOfRangeWarning",
+#     "ignore::skforecast.exceptions.IgnoredArgumentWarning",
+#     "ignore::skforecast.exceptions.InputTypeWarning",
+#     "ignore::skforecast.exceptions.LongTrainingWarning",
+#     "ignore::skforecast.exceptions.MissingExogWarning",
+#     "ignore::skforecast.exceptions.MissingValuesWarning",
+#     "ignore::skforecast.exceptions.OneStepAheadValidationWarning",
+#     "ignore::skforecast.exceptions.ResidualsUsageWarning",
+#     "ignore::skforecast.exceptions.UnknownLevelWarning",
+#     "ignore::skforecast.exceptions.SaveLoadSkforecastWarning",
+#     "ignore::skforecast.exceptions.SkforecastVersionWarning",
+# ]
 
 [tool.coverage.run]
 omit = [
