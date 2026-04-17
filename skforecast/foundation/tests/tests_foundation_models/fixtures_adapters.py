@@ -247,3 +247,62 @@ def prepare_predict_args(adapter, steps, context=None, context_exog=None,
         future_exog = None
 
     return ctx, ctx_exog, future_exog
+
+
+# Fake TabICL forecaster
+# ==============================================================================
+class FakeTabICLForecaster:
+    """
+    Fake TabICLForecaster for testing without tabicl.
+
+    `predict_df()` returns a DataFrame with a (item_id, timestamp)
+    MultiIndex where:
+
+    - ``"target"`` column = 0.0 for every step.
+    - Each quantile column ``q`` = ``q`` (quantile value itself) for every
+      step, making assertions straightforward.
+
+    Records the last call arguments for inspection.
+    """
+
+    def __init__(
+        self,
+        max_context_length=4096,
+        temporal_features=None,
+        point_estimate="mean",
+        tabicl_config=None,
+    ):
+        self.max_context_length = max_context_length
+        self.temporal_features = temporal_features
+        self.point_estimate = point_estimate
+        self.tabicl_config = tabicl_config or {}
+        self.last_context_df = None
+        self.last_future_df = None
+        self.last_quantiles = None
+
+    def predict_df(self, context_df, future_df, quantiles=None):
+        self.last_context_df = context_df.copy()
+        self.last_future_df = future_df.copy()
+        self.last_quantiles = list(quantiles) if quantiles is not None else None
+
+        if quantiles is None:
+            quantiles = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+        # Build a MultiIndex (item_id, timestamp) result DataFrame.
+        idx_tuples = []
+        rows = []
+        for item_id in future_df["item_id"].unique():
+            item_rows = future_df[future_df["item_id"] == item_id]
+            for _, row in item_rows.iterrows():
+                idx_tuples.append((item_id, row["timestamp"]))
+                r = {"target": 0.0}
+                for q in quantiles:
+                    r[q] = float(q)
+                rows.append(r)
+
+        index = pd.MultiIndex.from_tuples(idx_tuples, names=["item_id", "timestamp"])
+        data = {"target": [r["target"] for r in rows]}
+        for q in quantiles:
+            data[q] = [r[q] for r in rows]
+
+        return pd.DataFrame(data, index=index)

@@ -774,12 +774,17 @@ class FoundationModel:
             level_col = np.tile(series_names_in, steps)
 
         col_names = ["pred"] if quantiles is None else [f"q_{q}" for q in quantiles]
+        n_cols = len(col_names)
+        # Pre-allocate (steps, n_series, n_cols), fill per series, then reshape
+        # to step-major (steps*n_series, n_cols) — one allocation instead of one
+        # per quantile, and the ravel order matches level_col / long_index.
+        pred_matrix = np.empty((steps, n_series, n_cols), dtype=np.float64)
+        for i, name in enumerate(series_names_in):
+            pred_matrix[:, i, :] = raw_predictions[name]
+        pred_matrix = pred_matrix.reshape(steps * n_series, n_cols)
         predictions: dict[str, np.ndarray] = {"level": level_col}
         for j, col in enumerate(col_names):
-            pred_arr = np.empty((steps, n_series), dtype=np.float64)
-            for i, name in enumerate(series_names_in):
-                pred_arr[:, i] = raw_predictions[name][:, j]
-            predictions[col] = pred_arr.ravel()
+            predictions[col] = pred_matrix[:, j]
 
         predictions = pd.DataFrame(predictions, index=long_index)
 
