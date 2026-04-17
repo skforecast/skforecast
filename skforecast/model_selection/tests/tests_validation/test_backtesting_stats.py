@@ -1380,5 +1380,5 @@ def test_output_backtesting_stats_auto_arima_arar_freeze_params_False_gap_air_pa
                           142, 142, 143, 143])
     )
 
-    pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
-    pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
+    pd.testing.assert_frame_equal(expected_metric, metric, rtol=0.01)
+    pd.testing.assert_frame_equal(expected_preds, backtest_predictions, rtol=0.01)

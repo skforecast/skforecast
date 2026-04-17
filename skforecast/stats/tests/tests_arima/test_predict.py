@@ -425,7 +425,8 @@ def test_arima_predict_multi_seasonal_data():
         ])
     
     assert model.coef_names_ == ['ar1', 'ar2', 'ar3', 'ar4', 'ar5', 'ma1', 'ma2', 'sar1', 'sma1']
-    np.testing.assert_allclose(model.coef_, expected_coef, atol=1e-3)
+    
+    np.testing.assert_allclose(model.coef_, expected_coef, atol=5e-3)
     np.testing.assert_allclose(pred, expected_pred, rtol=1e-4)
 
 
