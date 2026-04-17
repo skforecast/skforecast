@@ -144,6 +144,25 @@ ForecasterRnn(
 )
 ```
 
+### ForecasterFoundation
+
+```python
+FoundationModel(
+    model_id,                  # str (required), e.g. 'autogluon/chronos-2-small'
+    **kwargs,                  # Forwarded to the resolved adapter. Common keys:
+                               #   context_length : int
+                               #   device_map / device : 'auto' | 'cuda' | 'mps' | 'cpu'
+                               #   torch_dtype : object (Chronos-2 only)
+                               #   cross_learning : bool (Chronos-2 only)
+                               #   max_horizon, forecast_config_kwargs (TimesFM 2.5)
+)
+
+ForecasterFoundation(
+    estimator,                 # FoundationModel (required)
+    forecaster_id=None,        # str | int, optional identifier
+)
+```
+
 ## Forecaster Methods: fit()
 
 ```python
@@ -202,6 +221,15 @@ forecaster.fit(
     suppress_warnings=False           # bool
 )
 # NOTE: No exog parameter (uses date offsets, not exogenous variables).
+
+# ForecasterFoundation
+forecaster.fit(
+    series,                           # pd.Series | pd.DataFrame | dict[str, pd.Series] (required)
+    exog=None,                        # pd.Series | pd.DataFrame | dict | None (Chronos-2 only)
+)
+# NOTE: "fit" does not train the model — it only stores the last
+# context_length observations and metadata. Foundation models are
+# pre-trained; training happens upstream on HuggingFace.
 ```
 
 ## Forecaster Methods: predict()
@@ -278,6 +306,19 @@ forecaster.predict(
     suppress_warnings=False,  # bool
     check_inputs=True         # bool
 ) -> pd.DataFrame
+
+# ForecasterFoundation
+forecaster.predict(
+    steps,                    # int (required)
+    levels=None,              # str | list[str] | None, subset of series
+    context=None,             # pd.Series | pd.DataFrame | dict | None, override stored context
+    context_exog=None,        # pd.Series | pd.DataFrame | dict | None, historical exog
+    exog=None,                # pd.Series | pd.DataFrame | dict | None, future exog (Chronos-2 only)
+    check_inputs=True         # bool
+) -> pd.DataFrame             # Long-format: columns ['level', 'pred']
+# Also:
+#   predict_interval(steps, ..., interval=[10, 90]) -> ['level','pred','lower_bound','upper_bound']
+#   predict_quantiles(steps, ..., quantiles=[0.1, 0.5, 0.9]) -> ['level','q_0.1','q_0.5','q_0.9']
 ```
 
 ## Forecaster Methods: predict_interval()

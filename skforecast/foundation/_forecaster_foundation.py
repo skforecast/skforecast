@@ -42,6 +42,8 @@ class ForecasterFoundation:
     estimator : FoundationModel
         A configured `FoundationModel` instance, e.g.
         `FoundationModel("autogluon/chronos-2-small", context_length=512)`.
+        See `FoundationModel` for the list of supported `model_id` values
+        and adapter-specific parameters.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
 
@@ -384,21 +386,58 @@ class ForecasterFoundation:
         """
         return self.estimator.fit_date
 
+    @staticmethod
+    def _format_names_repr(
+        names: list[str] | None,
+        max_items: int = 50,
+        max_text_length: int = 58,
+    ) -> str | None:
+        """
+        Format a list of names for text `__repr__`.
+
+        Truncates the list to the first and last `max_items // 2` elements
+        (joined by ``'...'``) when it exceeds `max_items`, then wraps the
+        resulting string with `textwrap.fill` when it exceeds
+        `max_text_length` characters.
+
+        Parameters
+        ----------
+        names : list, None
+            Names to format. If `None`, returns `None`.
+        max_items : int, default 50
+            Maximum number of names to display before truncation.
+        max_text_length : int, default 58
+            Maximum length of the joined string before text wrapping.
+
+        Returns
+        -------
+        formatted : str, None
+            Formatted string, or `None` if `names` is `None`.
+
+        """
+
+        if names is None:
+            return None
+
+        names = copy(names)
+        if len(names) > max_items:
+            half = max_items // 2
+            names = names[:half] + ["..."] + names[-half:]
+        formatted = ", ".join(names)
+        if len(formatted) > max_text_length:
+            formatted = "\n    " + textwrap.fill(
+                formatted, width=80, subsequent_indent="    "
+            )
+
+        return formatted
+
     def __repr__(self) -> str:
         """
         Information displayed when a ForecasterFoundation object is printed.
         """
 
-        exog_names_in_ = None
-        if self.exog_names_in_ is not None:
-            names = copy(self.exog_names_in_)
-            if len(names) > 50:
-                names = names[:50] + ["..."]
-            exog_names_in_ = ", ".join(names)
-            if len(exog_names_in_) > 58:
-                exog_names_in_ = "\n    " + textwrap.fill(
-                    exog_names_in_, width=80, subsequent_indent="    "
-                )
+        series_names_in_ = self._format_names_repr(self.series_names_in_)
+        exog_names_in_ = self._format_names_repr(self.exog_names_in_)
 
         if self.is_fitted:
             context_range_repr = {
@@ -407,16 +446,13 @@ class ForecasterFoundation:
         else:
             context_range_repr = None
 
-        series_repr = self.series_names_in_
-        series_label = "Series names"
-
         info = (
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
             f"Model: {self.model_id} \n"
             f"Context length: {self.context_length} \n"
-            f"{series_label}: {series_repr} \n"
+            f"Series names: {series_names_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Context range: {context_range_repr} \n"
@@ -439,12 +475,26 @@ class ForecasterFoundation:
 
         style, unique_id = get_style_repr_html(self.is_fitted)
 
+        max_items = 50
+
         exog_names_html = None
         if self.exog_names_in_ is not None:
             names = copy(self.exog_names_in_)
-            if len(names) > 50:
-                names = names[:50] + ["..."]
+            if len(names) > max_items:
+                half = max_items // 2
+                names = names[:half] + ["..."] + names[-half:]
             exog_names_html = "".join(f"<li>{n}</li>" for n in names)
+
+        if self.series_names_in_ is not None:
+            series_names = copy(self.series_names_in_)
+            if len(series_names) > max_items:
+                half = max_items // 2
+                series_names = (
+                    series_names[:half] + ["..."] + series_names[-half:]
+                )
+            series_value_html = ", ".join(str(n) for n in series_names)
+        else:
+            series_value_html = str(self.series_names_in_)
 
         if self.is_fitted:
             context_range_html = "".join(
@@ -456,7 +506,6 @@ class ForecasterFoundation:
             context_range_html = "Not fitted"
 
         series_label_html = "Series names"
-        series_value_html = str(self.series_names_in_)
 
         content = f"""
         <div class="container-{unique_id}">
@@ -534,8 +583,10 @@ class ForecasterFoundation:
               issued; consider passing a dict directly for better performance.
             - If `dict[str, pd.Series]`: multi-series mode.
         exog : pandas Series, pandas DataFrame, dict, default None
-            Historical exogenous variables aligned to `series`. These map to
-            `past_covariates` in the Chronos-2 input at prediction time.
+            Historical exogenous variables aligned to `series`. At prediction
+            time they are forwarded to the underlying adapter as past
+            (historical) covariates, using the adapter-specific covariate
+            format.
 
             In single-series mode: `pd.Series` or `pd.DataFrame` aligned to
             `series`.
@@ -594,8 +645,8 @@ class ForecasterFoundation:
         steps : int
             Number of steps ahead to forecast.
         levels : str, list, default None
-            Series to predict. Only used in multi-series mode. If `None`,
-            all series seen at fit time are predicted.
+            Subset of series to predict. If `None`, all series in `context` are 
+            predicted. 
         context : pandas Series, pandas DataFrame, dict, default None
             Context override for backtesting. When provided, replaces the
             context stored at fit time. In single-series mode pass a
@@ -605,12 +656,12 @@ class ForecasterFoundation:
             available observations are passed as-is and the model handles the
             reduced context gracefully.
         context_exog : pandas Series, pandas DataFrame, dict, default None
-            Historical exogenous variables aligned to `context`. Maps to
-            `past_covariates` in Chronos-2.
+            Historical exogenous variables aligned to `context` (past
+            covariates, mapped to the adapter-specific covariate format).
         exog : pandas Series, pandas DataFrame, dict, default None
-            Future-known exogenous variables for the forecast horizon. Maps to
-            `future_covariates` in Chronos-2. Must cover exactly `steps` steps
-            for each series.
+            Future-known exogenous variables for the forecast horizon (future
+            covariates, mapped to the adapter-specific covariate format).
+            Must cover exactly `steps` steps for each series.
         check_inputs : bool, default True
             If `True`, the `context` and `context_exog` inputs are validated
             and normalized. If `False`, `context` must already be a
@@ -656,13 +707,9 @@ class ForecasterFoundation:
                           context_exog = context_exog,
                           exog         = exog,
                           quantiles    = None,
+                          levels       = levels,
                           check_inputs = check_inputs,
                       )
-
-        if levels is not None:
-            if isinstance(levels, str):
-                levels = [levels]
-            predictions = predictions[predictions["level"].isin(levels)]
 
         return predictions
 
@@ -689,22 +736,24 @@ class ForecasterFoundation:
         """
         Predict n steps ahead with prediction intervals.
 
-        Prediction intervals are derived directly from Chronos-2's native
-        quantile output — no bootstrapping or residual estimation is used.
+        Prediction intervals are derived directly from the underlying
+        foundation model's native quantile output — no bootstrapping or
+        residual estimation is used.
 
         Parameters
         ----------
         steps : int
             Number of steps ahead to forecast.
         levels : str, list, default None
-            Series to predict. Only used in multi-series mode. If `None`,
-            all series seen at fit time are predicted.
+            Subset of series to predict. If `None`, all series in `context` are 
+            predicted. 
         context : pandas Series, pandas DataFrame, dict, default None
             Context override for backtesting.
         context_exog : pandas Series, pandas DataFrame, dict, default None
-            Historical exog aligned to `context`.
+            Historical exog aligned to `context` (past covariates).
         exog : pandas Series, pandas DataFrame, dict, default None
-            Future-known exogenous variables (`future_covariates`).
+            Future-known exogenous variables for the forecast horizon
+            (future covariates).
         interval : list, tuple, default [10, 90]
             Confidence of the prediction interval. Sequence of two percentiles
             `[lower, upper]`, e.g. `[10, 90]` for an 80 % interval.
@@ -812,14 +861,15 @@ class ForecasterFoundation:
         steps : int
             Number of steps ahead to forecast.
         levels : str, list, default None
-            Series to predict. Only used in multi-series mode. If `None`,
-            all series seen at fit time are predicted.
+            Subset of series to predict. If `None`, all series in `context` are 
+            predicted. 
         context : pandas Series, pandas DataFrame, dict, default None
             Context override for backtesting.
         context_exog : pandas Series, pandas DataFrame, dict, default None
-            Historical exog aligned to `context`.
+            Historical exog aligned to `context` (past covariates).
         exog : pandas Series, pandas DataFrame, dict, default None
-            Future-known exogenous variables (`future_covariates`).
+            Future-known exogenous variables for the forecast horizon
+            (future covariates).
         quantiles : list, tuple, default [0.1, 0.5, 0.9]
             Quantile levels to forecast. Values must be in the range (0, 1).
         check_inputs : bool, default True
@@ -866,14 +916,10 @@ class ForecasterFoundation:
                           context_exog = context_exog,
                           exog         = exog,
                           quantiles    = list(quantiles),
+                          levels       = levels,
                           check_inputs = check_inputs,
                       )
-        
-        if levels is not None:
-            if isinstance(levels, str):
-                levels = [levels]
-            predictions = predictions[predictions["level"].isin(levels)]
-        
+
         return predictions
 
     def set_params(self, params: dict[str, object]) -> None:

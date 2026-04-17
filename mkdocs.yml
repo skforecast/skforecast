@@ -108,8 +108,8 @@ nav:
       - ForecasterDirect: api/ForecasterDirect.md
       - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md
     - foundation:
-      - FoundationModel: api/FoundationModel.md
       - ForecasterFoundation: api/ForecasterFoundation.md
+      - FoundationModel: api/FoundationModel.md
     - deep_learning:
       - ForecasterRnn: api/ForecasterRnn.md
     - stats: api/stats.md

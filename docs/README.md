@@ -82,18 +82,20 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterDirect]               |✔️|||✔️|✔️|✔️|✔️|✔️|
 |[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
 |[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
+|[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
 |[ForecasterRnn]                  |✔️|✔️||✔️|✔️||✔️||
 |[ForecasterStats]                |✔️||✔️||✔️|✔️|✔️||
-|[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
+|[ForecasterFoundation]           |✔️|✔️|||✔️||✔️||
 |[ForecasterEquivalentDate]       |✔️||✔️||✔️||||
 
 [ForecasterRecursive]: ./user_guides/autoregressive-forecaster.ipynb
 [ForecasterDirect]: ./user_guides/direct-multi-step-forecasting.ipynb
 [ForecasterRecursiveMultiSeries]: ./user_guides/independent-multi-time-series-forecasting.ipynb
 [ForecasterDirectMultiVariate]: ./user_guides/dependent-multi-series-multivariate-forecasting.ipynb
+[ForecasterRecursiveClassifier]: ./user_guides/autoregressive-classification-forecasting.ipynb
 [ForecasterRnn]: ./user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
 [ForecasterStats]: ./user_guides/forecasting-sarimax-arima.ipynb
-[ForecasterRecursiveClassifier]: ./user_guides/autoregressive-classification-forecasting.ipynb
+[ForecasterFoundation]: ./user_guides/foundation-forecasting-models.ipynb
 [ForecasterEquivalentDate]: ./user_guides/forecasting-baseline.ipynb
 
 

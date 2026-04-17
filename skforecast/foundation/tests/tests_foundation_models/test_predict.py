@@ -331,3 +331,68 @@ def test_predict_does_not_modify_context():
     m.predict(steps=3, context=context)
 
     pd.testing.assert_series_equal(context, lw_copy)
+
+
+# Tests predict — levels filtering
+# ==============================================================================
+def test_predict_levels_filters_before_adapter_inference():
+    """
+    Test that passing `levels` filters the input sent to the adapter, so the
+    underlying pipeline receives only the requested series (avoiding
+    unnecessary inference work).
+    """
+    pipe = FakePipeline()
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=pipe)
+    m.fit(series=y_dict)  # 2 series: s1, s2
+
+    result = m.predict(steps=5, levels=["s1"])
+
+    # Pipeline must have received exactly 1 input, not 2
+    assert len(pipe.last_inputs) == 1
+    assert list(result["level"].unique()) == ["s1"]
+    assert len(result) == 5
+
+
+def test_predict_levels_preserves_requested_order():
+    """
+    Test that when `levels` is provided, the output preserves the order of
+    the levels as requested by the user, regardless of the order in which
+    series were fitted.
+    """
+    pipe = FakePipeline()
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=pipe)
+    m.fit(series=y_dict)  # fitted order: s1, s2
+
+    result = m.predict(steps=3, levels=["s2", "s1"])
+
+    # Each timestamp appears twice (once per level); the first occurrence of
+    # each timestamp must correspond to the first level in `levels`.
+    level_order = result.groupby(result.index, sort=False)["level"].first().tolist()
+    assert all(lv == "s2" for lv in level_order)
+
+
+def test_predict_levels_accepts_string():
+    """
+    Test that `levels` accepts a single string, not only a list.
+    """
+    pipe = FakePipeline()
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=pipe)
+    m.fit(series=y_dict)
+
+    result = m.predict(steps=3, levels="s2")
+
+    assert len(pipe.last_inputs) == 1
+    assert list(result["level"].unique()) == ["s2"]
+
+
+def test_predict_levels_ValueError_when_unknown_level():
+    """
+    Test predict raises ValueError with a clear message when `levels`
+    contains a name not present in the fitted series.
+    """
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m.fit(series=y_dict)  # series: s1, s2
+
+    err_msg = re.escape("`levels` ['foo'] not found in available series")
+    with pytest.raises(ValueError, match=err_msg):
+        m.predict(steps=3, levels=["s1", "foo"])

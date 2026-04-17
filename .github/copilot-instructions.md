@@ -27,7 +27,7 @@ Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
 ### Dependencies
 
 Core: numpy>=1.26, pandas>=2.1,<3.0, scikit-learn>=1.4, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
-Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 + seaborn>=0.12,<0.14 (plotting), keras>=3.0,<4.0 (deep learning)
+Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 + seaborn>=0.12,<0.14 (plotting), keras>=3.0,<4.0 (deep learning), chronos-forecasting>=2.0,<3.0 (foundation)
 
 ---
 
@@ -63,6 +63,7 @@ Optional dependencies:
 pip install skforecast[stats]        # For ARIMA, SARIMAX, ETS models
 pip install skforecast[plotting]     # For visualization
 pip install skforecast[deeplearning] # For RNN/LSTM models
+pip install skforecast[foundation]   # For Chronos-2, TimesFM 2.5, Moirai-2
 ```
 
 ## Project Structure
@@ -74,6 +75,8 @@ skforecast/
 │                            # ForecasterRecursiveClassifier, ForecasterStats, ForecasterEquivalentDate
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
+├── foundation/              # FoundationModel, ForecasterFoundation
+│                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2)
 ├── stats/                   # Arima, Sarimax, Ets, Arar (sklearn-compatible wrappers)
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, DateTimeFeatureTransformer,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
@@ -92,8 +95,9 @@ skforecast/
 ### Module Relationships
 
 - **Forecasters inheriting from `ForecasterBase`**: ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterRecursiveClassifier, ForecasterDirect, ForecasterDirectMultiVariate, ForecasterRnn
-- **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate
+- **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate, ForecasterFoundation
 - Statistical models in `stats/` are wrapped by `ForecasterStats` (in `recursive/`)
+- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`Chronos2Adapter`, `TimesFM25Adapter`, `MoiraiAdapter`) resolved from the HuggingFace `model_id`
 - `model_selection/` functions work with all forecaster types
 - `preprocessing/` classes can be passed to forecasters via `transformer_y`, `transformer_exog`, `window_features`
 
@@ -107,6 +111,7 @@ skforecast/
 | ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
 | ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
 | ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
+| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
 
@@ -463,6 +468,48 @@ forecaster = ForecasterStats(estimator=Arima(order=None, seasonal=True, m=12))
 forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 ```
 
+## Foundation Models (Zero-Shot)
+
+Pre-trained time series foundation models that forecast without task-specific training. Install with `pip install skforecast[foundation]`. Models are downloaded from HuggingFace on first use.
+
+`FoundationModel` is the low-level interface; `ForecasterFoundation` wraps it to integrate with the rest of the skforecast ecosystem (backtesting, model selection, uniform `predict` / `predict_interval` / `predict_quantiles` API).
+
+```python
+from skforecast.foundation import FoundationModel, ForecasterFoundation
+
+# Zero-shot single-series forecasting with Chronos-2
+model = FoundationModel(
+    model_id='autogluon/chronos-2-small',
+    context_length=2048,
+    device_map='auto',
+)
+forecaster = ForecasterFoundation(estimator=model)
+forecaster.fit(series=data['target'])  # Only stores context; no training
+predictions = forecaster.predict(steps=24)  # Long-format: columns ['level', 'pred']
+
+# Prediction intervals (native quantile output — no bootstrapping needed)
+predictions = forecaster.predict_interval(steps=24, interval=[10, 90])
+predictions = forecaster.predict_quantiles(steps=24, quantiles=[0.1, 0.5, 0.9])
+
+# Multi-series (global zero-shot model) — pass a wide DataFrame
+forecaster.fit(series=series_df)
+predictions = forecaster.predict(steps=24, levels=['series_1', 'series_2'])
+```
+
+Supported adapters (selected automatically from `model_id`):
+
+| Adapter | `model_id` prefix | Exog | Default `context_length` | Quantiles |
+|---------|-------------------|------|--------------------------|-----------|
+| Chronos2Adapter (Amazon) | `autogluon/chronos` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
+| TimesFM25Adapter (Google) | `google/timesfm` | No | 512 | `[0.1, 0.2, …, 0.9]` |
+| MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, …, 0.9]` |
+
+Key points:
+- `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
+- The index must have a frequency (`data.asfreq(...)`) — same requirement as other skforecast forecasters.
+- `predict(..., context=...)` lets you override the stored context (used internally by backtesting).
+- Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. Refit is always disabled internally — model weights are preserved across folds since there is no per-fold training.
+
 ## Feature Selection
 
 Use sklearn selectors (RFECV, SelectFromModel, etc.) to identify relevant lags, window features, and exogenous variables. Multi-series variant: `select_features_multiseries`.
@@ -520,11 +567,14 @@ from skforecast.direct import ForecasterDirect
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning import create_and_compile_model
+from skforecast.foundation import FoundationModel
+from skforecast.foundation import ForecasterFoundation
 
 # Model Selection
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection import backtesting_stats
+from skforecast.model_selection import backtesting_foundation
 from skforecast.model_selection import grid_search_forecaster
 from skforecast.model_selection import grid_search_forecaster_multiseries
 from skforecast.model_selection import random_search_forecaster

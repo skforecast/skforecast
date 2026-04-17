@@ -165,7 +165,6 @@ class Chronos2Adapter:
                 f"`context_length` must be a positive integer. Got {context_length!r}."
             )
 
-        # TODO: Ver qué atributos podemos sacar de dentro del adapter
         self.model_id       = model_id
         self._pipeline      = pipeline
         self.context_       = None
@@ -1242,7 +1241,7 @@ class MoiraiAdapter:
                 "MPS device is not supported by Moirai because the uni2ts "
                 "library uses float64 operations internally. Falling back "
                 "to CPU.",
-                stacklevel=2,
+                stacklevel=6,
             )
             resolved_device = "cpu"
         self._forecast_obj.to(resolved_device)

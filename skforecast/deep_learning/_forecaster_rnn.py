@@ -47,7 +47,7 @@ from ..utils import (
 )
 from ..preprocessing import QuantileBinner
 
-# TODO: Review in skforecast 0.21.0
+# TODO: Review in skforecast 0.23.0
 try:
     import keras
 except ImportError as e:

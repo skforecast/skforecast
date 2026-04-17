@@ -45,6 +45,7 @@ SKILL_ORDER: list[str] = [
     "feature-selection",
     "drift-detection",
     "deep-learning-forecasting",
+    "foundation-forecasting",
     "choosing-a-forecaster",
     "troubleshooting-common-errors",
     "complete-api-reference",
@@ -198,7 +199,7 @@ def validate_imports_consistency() -> list[str]:
     subpackages = [
         "recursive", "direct", "preprocessing", "model_selection",
         "feature_selection", "metrics", "datasets", "stats",
-        "drift_detection", "deep_learning",
+        "drift_detection", "deep_learning", "foundation",
     ]
 
     for pkg in subpackages:

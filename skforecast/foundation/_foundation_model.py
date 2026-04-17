@@ -34,11 +34,28 @@ class FoundationModel:
     Parameters
     ----------
     model_id : str
-        HuggingFace model ID, e.g. "autogluon/chronos-2-small".
+        HuggingFace model ID. The adapter is resolved automatically from
+        the `model_id` prefix. Available model IDs:
+
+        Amazon Chronos-2 (supports `exog`):
+
+        - `'amazon/chronos-2'`
+        - `'autogluon/chronos-2-small'`
+        - `'autogluon/chronos-2-synth'`
+
+        Google TimesFM 2.5 (does not support `exog`):
+
+        - `'google/timesfm-2.5-200m-pytorch'`
+
+        Salesforce Moirai-2 (does not support `exog`):
+
+        - `'Salesforce/moirai-2.0-R-small'`
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
-        Valid keys depend on the adapter selected by `model_id`; see the
-        corresponding adapter class for the full parameter list.
+        Valid keys depend on the adapter selected by `model_id`. See the
+        corresponding adapter class (`Chronos2Adapter`, `TimesFM25Adapter`,
+        `Moirai2Adapter`) for the full parameter list, or refer to the
+        model documentation linked in the References section below.
 
     Attributes
     ----------
@@ -102,6 +119,26 @@ class FoundationModel:
     method that first needs it) rather than at module level. This means
     that only the library required by the adapter you actually use needs to
     be installed, other foundation-model backends remain optional.
+
+    References
+    ----------
+    .. [1] Amazon Chronos - GitHub repository.
+           https://github.com/amazon-science/chronos-forecasting
+
+    .. [2] Amazon Chronos - HuggingFace collection.
+           https://huggingface.co/collections/amazon/chronos-models-65f1791d630a8d57cb718444
+
+    .. [3] Google TimesFM - GitHub repository.
+           https://github.com/google-research/timesfm
+
+    .. [4] Google TimesFM - HuggingFace collection.
+           https://huggingface.co/collections/google/timesfm-release-66e4be5fdb56e960c1e482a6
+
+    .. [5] Salesforce Moirai (uni2ts) - GitHub repository.
+           https://github.com/SalesforceAIResearch/uni2ts
+
+    .. [6] Salesforce Moirai-R - HuggingFace collection.
+           https://huggingface.co/collections/Salesforce/moirai-r-models-65c8d3a94c51428c300e0742
 
     """
 
@@ -430,7 +467,7 @@ class FoundationModel:
                 "computational time. It is recommended to use a dictionary "
                 "of pandas Series or DataFrames instead.",
                 InputTypeWarning,
-                stacklevel=3,
+                stacklevel=5,
             )
             return {name: per_series.get(name, None) for name in series_names_in}
 
@@ -604,6 +641,7 @@ class FoundationModel:
                 f"to match the expected forecast horizon. Missing timestamps "
                 f"were filled with NaN.",
                 MissingValuesWarning,
+                stacklevel=4,
             )
 
         return exog_aligned
@@ -611,6 +649,7 @@ class FoundationModel:
     def predict(
         self,
         steps: int,
+        levels: str | list[str] | None = None,
         context: pd.Series | pd.DataFrame | dict[str, pd.Series] | None = None,
         context_exog: (
             pd.Series
@@ -634,6 +673,9 @@ class FoundationModel:
         ----------
         steps : int
             Number of steps ahead to forecast.
+        levels : str, list, default None
+            Subset of series to predict. If `None`, all series in `context` are 
+            predicted. 
         context : pandas Series, pandas DataFrame, dict, default None
             Override the stored context with this window.
 
@@ -712,6 +754,7 @@ class FoundationModel:
                     "`context_exog` is ignored when `context` is not provided. "
                     "The stored `context_exog_` from `fit` is used instead.",
                     IgnoredArgumentWarning,
+                    stacklevel=3,
                 )
             context = self.adapter.context_
             series_names_in = self.series_names_in_
@@ -723,6 +766,21 @@ class FoundationModel:
             )
         else:
             series_names_in = list(context.keys())
+        
+        if levels is not None:
+            requested_levels = [levels] if isinstance(levels, str) else list(levels)
+            unknown = [lv for lv in requested_levels if lv not in series_names_in]
+            if unknown:
+                raise ValueError(
+                    f"`levels` {unknown} not found in available series "
+                    f"{list(series_names_in)}."
+                )
+            series_names_in = requested_levels
+            context = {name: context[name] for name in requested_levels}
+            if context_exog is not None:
+                context_exog = {
+                    name: context_exog.get(name) for name in requested_levels
+                }
 
         # Future exog
         if not self.allow_exog:
@@ -733,6 +791,7 @@ class FoundationModel:
                     "support covariates. `exog` and `context_exog` "
                     "are ignored.",
                     IgnoredArgumentWarning,
+                    stacklevel=3,
                 )
                 exog = None
                 context_exog = None
@@ -848,6 +907,8 @@ class FoundationModel:
         self.exog_names_in_per_series_ = None
         self.exog_type_in_             = None
         self.fit_date                  = None
+        self.adapter.context_          = None
+        self.adapter.context_exog_     = None
         self.adapter.is_fitted         = False
 
         return self

@@ -79,6 +79,8 @@ def test_set_params_resets_fitted_state_and_metadata():
     assert m.fit_date is not None
     assert m.series_names_in_ is not None
     assert m.exog_in_ is True
+    assert m.context_ is not None
+    assert m.context_exog_ is not None
 
     m.set_params(context_length=256)
 
@@ -93,3 +95,5 @@ def test_set_params_resets_fitted_state_and_metadata():
     assert m.exog_names_in_ is None
     assert m.exog_names_in_per_series_ is None
     assert m.exog_type_in_ is None
+    assert m.context_ is None
+    assert m.context_exog_ is None
