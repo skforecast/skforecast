@@ -564,24 +564,12 @@ class FoundationModel:
         # per-series dict keyed by series name.
         exog_dict = self._exog_to_dict(exog, series_names_in)
 
-        # Determine index type and freq once from the first non-empty
-        # context series. All series share the same type and freq
-        # (guaranteed by check_preprocess_series upstream).
-        first_ctx = next(
-            (ctx for ctx in context.values() if ctx is not None and len(ctx) > 0),
-            None,
-        )
-        if first_ctx is not None:
-            is_datetime_ctx = isinstance(first_ctx.index, pd.DatetimeIndex)
-            if is_datetime_ctx:
-                freq = first_ctx.index.freq
-            elif isinstance(first_ctx.index, pd.RangeIndex):
-                freq = first_ctx.index.step
-            else:
-                freq = None
-        else:
-            is_datetime_ctx = False
-            freq = None
+        # Determine index type and freq once from the first context series.
+        # All series share the same type and freq, and are non-empty with a
+        # valid freq/step (guaranteed by check_preprocess_series upstream).
+        first_ctx = next(iter(context.values()))
+        is_datetime_ctx = isinstance(first_ctx.index, pd.DatetimeIndex)
+        freq = first_ctx.index.freq if is_datetime_ctx else first_ctx.index.step
 
         # Align each series' exog to its forecast horizon
         exog_aligned = {}
@@ -595,18 +583,13 @@ class FoundationModel:
             if isinstance(e, pd.Series):
                 e = e.to_frame()
 
-            # No context available for this series: keep exog as-is
-            ctx = context.get(name)
-            if ctx is None or len(ctx) == 0:
-                exog_aligned[name] = e
-                continue
-
+            ctx = context[name]
             ref_end = ctx.index[-1]
             label = f"`exog` for series '{name}'"
 
             # DatetimeIndex: reindex to the exact expected date range,
             # filling gaps with NaN.
-            if is_datetime_ctx and freq is not None and isinstance(e.index, pd.DatetimeIndex):
+            if is_datetime_ctx and isinstance(e.index, pd.DatetimeIndex):
                 expected_idx = pd.date_range(
                     start=ref_end + freq, periods=steps, freq=freq
                 )
@@ -622,7 +605,7 @@ class FoundationModel:
                         f"{label} must have at least {steps} values. "
                         f"Got {len(e)}."
                     )
-                if isinstance(e.index, pd.RangeIndex) and freq is not None:
+                if isinstance(e.index, pd.RangeIndex):
                     expected_start = ref_end + freq
                     if e.index[0] != expected_start:
                         raise ValueError(
