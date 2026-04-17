@@ -453,9 +453,8 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000_pe
     forecaster.fit(series=series)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
-    n_bins = forecaster.binner_kwargs['n_bins']
-    max_per_bin = 10_000 // n_bins
     for level in ['l1', 'l2']:
+        max_per_bin = 10_000 // forecaster.binner[level].n_bins_
         for v in forecaster.out_sample_residuals_by_bin_[level].values():
             assert len(v) <= max_per_bin
 
