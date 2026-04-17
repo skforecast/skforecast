@@ -277,11 +277,11 @@ def test_MoiraiAdapter_ensure_forecast_obj_calls_to_with_resolved_device():
     mock_forecast_instance.to.assert_called_once_with("cuda")
 
 
-def test_MoiraiAdapter_ensure_forecast_obj_auto_resolves_to_mps():
+def test_MoiraiAdapter_ensure_forecast_obj_auto_mps_falls_back_to_cpu():
     """
-    Test that _ensure_forecast_obj with device="auto" calls
-    _resolve_torch_device("auto") and moves the model to the resolved
-    device (mps in this mock scenario).
+    Test that _ensure_forecast_obj with device="auto" falls back to CPU when
+    the resolved device is "mps" (not supported by Moirai due to float64
+    operations in uni2ts). A warning is also issued.
     """
     mock_module = MagicMock()
     mock_forecast_cls = MagicMock()
@@ -304,9 +304,10 @@ def test_MoiraiAdapter_ensure_forecast_obj_auto_resolves_to_mps():
             {"uni2ts": MagicMock(), "uni2ts.model": MagicMock(),
              "uni2ts.model.moirai2": MagicMock(Moirai2Forecast=mock_forecast_cls)}
         ):
-            adapter._ensure_forecast_obj()
+            with pytest.warns(UserWarning, match="MPS device is not supported"):
+                adapter._ensure_forecast_obj()
 
-    mock_forecast_instance.to.assert_called_once_with("mps")
+    mock_forecast_instance.to.assert_called_once_with("cpu")
 
 
 def test_MoiraiAdapter_predict_full_pipeline_with_device():

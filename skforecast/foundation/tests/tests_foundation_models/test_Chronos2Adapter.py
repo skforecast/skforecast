@@ -532,13 +532,13 @@ _target_30 = np.arange(30, dtype=float)
 def test_Chronos2Adapter_build_chronos_input_target_only():
     """
     Test _build_chronos_input returns only 'target' key when no exog is passed,
-    and converts integer target to float64.
+    and converts integer target to float32.
     """
     int_target = np.arange(10, dtype=int)
     result = _adapter_for_build._build_chronos_input(context=int_target)
     assert set(result.keys()) == {"target"}
-    assert result["target"].dtype == np.float64
-    np.testing.assert_array_equal(result["target"], int_target.astype(float))
+    assert result["target"].dtype == np.float32
+    np.testing.assert_array_equal(result["target"], int_target.astype(np.float32))
 
 
 @pytest.mark.parametrize(
@@ -658,7 +658,7 @@ def test_Chronos2Adapter_build_chronos_input_mixed_numeric_and_categorical():
     result = _adapter_for_build._build_chronos_input(
         context=_target_30, context_exog=mixed_exog
     )
-    assert result["past_covariates"]["temperature"].dtype == np.float64
+    assert result["past_covariates"]["temperature"].dtype == np.float32
     assert result["past_covariates"]["weather"].dtype.kind in ("U", "O")
 
 

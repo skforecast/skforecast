@@ -49,7 +49,7 @@ def test_repr_output_after_fit(exog_input, exog_present_str):
 
     assert "Context range: None" not in result
     assert "Last fit date: None" not in result
-    assert "Series names: ['y']" in result
+    assert "Series names: y" in result
     assert exog_present_str in result
     if exog_input is not None:
         assert "feat_a" in result

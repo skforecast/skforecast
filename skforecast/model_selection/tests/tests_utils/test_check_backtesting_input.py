@@ -1070,7 +1070,7 @@ def test_check_backtesting_input_ForecasterFoundation_no_error_when_initial_trai
         forecaster        = forecaster,
         cv                = cv,
         metric            = 'mean_absolute_error',
-        series            = y_foundation,
+        series            = {'y': y_foundation},
         show_progress     = False,
         suppress_warnings = False,
     )
@@ -1107,7 +1107,7 @@ def test_check_backtesting_input_ForecasterFoundation_ValueError_when_initial_tr
             forecaster        = forecaster,
             cv                = cv,
             metric            = 'mean_absolute_error',
-            series            = y_foundation,
+            series            = {'y': y_foundation},
             show_progress     = False,
             suppress_warnings = False,
         )
