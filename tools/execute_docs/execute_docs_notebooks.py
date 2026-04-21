@@ -1,5 +1,11 @@
-# Execute and save all the notebooks in the current directory
+# Execute and save all documentation notebooks, collecting warnings
 # ======================================================================================
+# Usage:
+#   python tools/execute_docs/execute_docs_notebooks.py                  # All docs/
+#   python tools/execute_docs/execute_docs_notebooks.py user_guides      # Only docs/user_guides/
+#   python tools/execute_docs/execute_docs_notebooks.py quick-start faq  # Multiple subdirectories
+# ======================================================================================
+import argparse
 import papermill as pm
 import nbformat
 import os
@@ -11,19 +17,14 @@ from pathlib import Path
 from datetime import datetime
 import time
 
-CONDA_ENV = "skforecast_22_py13"
-NOTEBOOK_DIR = Path(__file__).parent
+CONDA_ENV = "skforecast_py14"
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+DOCS_DIR = REPO_ROOT / "docs"
+LOG_DIR = REPO_ROOT / "tools/execute_docs/logs"
 
-# Notebooks to exclude (by name or relative path)
-EXCLUDE_NOTEBOOKS = [
-    "00_execute_all_notebooks.ipynb",
-    "00_check_urls.ipynb",
-    "py54-forecasting-con-deep-learning.ipynb",
-    "py54-forecasting-with-deep-learning.ipynb",
-    "py61-m5-forecasting-competition.ipynb",
-    "py65-accelerate-forecasting-models-gpu.ipynb",
-    "py65-acelerar-modelos-forecasting-gpu.ipynb",
-]
+# Notebooks to exclude (by name or relative path within docs/)
+EXCLUDE_NOTEBOOKS = []
+
 
 # ANSI color codes
 class C:
@@ -33,13 +34,16 @@ class C:
     INFO   = "\033[93m"
     END    = "\033[0m"
 
+
 _ANSI_ESCAPE = re.compile(r'\033\[[0-9;]*m')
+
 
 def _strip_ansi(text):
     return _ANSI_ESCAPE.sub('', text)
 
+
 def _setup_logger(log_path):
-    logger = logging.getLogger("nb_runner")
+    logger = logging.getLogger("docs_nb_runner")
     logger.setLevel(logging.DEBUG)
     logger.handlers.clear()
 
@@ -61,11 +65,13 @@ def _setup_logger(log_path):
 
     return logger
 
+
 def _get_pkg_version(pkg):
     try:
         return importlib.metadata.version(pkg)
     except Exception:
         return "n/a"
+
 
 def _extract_warnings(notebook_path):
     """Parse a notebook file and return deduplicated warning entries from cell outputs.
@@ -99,27 +105,56 @@ def _extract_warnings(notebook_path):
         pass
     return warning_entries
 
-def run_notebooks():
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-    log_path  = NOTEBOOK_DIR / f"execution_log_{timestamp}.txt"
-    log = _setup_logger(log_path)
+def _collect_notebooks(subdirs):
+    """Collect notebooks from the specified subdirectories of docs/."""
 
     exclude_set = {str(Path(x)) for x in EXCLUDE_NOTEBOOKS}
 
-    notebooks = sorted([
-        nb for nb in NOTEBOOK_DIR.rglob("*.ipynb")
-        if ".ipynb_checkpoints" not in str(nb)
-        and (nb.name not in exclude_set)
-        and (str(nb.relative_to(NOTEBOOK_DIR)) not in exclude_set)
-    ])
+    if subdirs:
+        search_dirs = []
+        for sub in subdirs:
+            d = DOCS_DIR / sub
+            if not d.is_dir():
+                print(f"Warning: directory docs/{sub}/ does not exist, skipping.")
+            else:
+                search_dirs.append(d)
+    else:
+        search_dirs = [DOCS_DIR]
+
+    notebooks = []
+    for search_dir in search_dirs:
+        notebooks.extend([
+            nb for nb in search_dir.rglob("*.ipynb")
+            if ".ipynb_checkpoints" not in str(nb)
+            and (nb.name not in exclude_set)
+            and (str(nb.relative_to(DOCS_DIR)) not in exclude_set)
+        ])
+
+    return sorted(set(notebooks))
+
+
+def run_notebooks(subdirs=None):
+
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    suffix = f"_{'_'.join(subdirs)}" if subdirs else ""
+    log_path  = LOG_DIR / f"docs_execution_log{suffix}_{timestamp}.txt"
+    log = _setup_logger(log_path)
+
+    notebooks = _collect_notebooks(subdirs)
+
+    if not notebooks:
+        log.info(f"{C.FAIL}No notebooks found.{C.END}")
+        return
 
     results = {"success": [], "failed": [], "warnings": []}
 
     # ── Header ───────────────────────────────────────────────────────────────
+    scope = ", ".join(f"docs/{s}/" for s in subdirs) if subdirs else "docs/"
     log.info(f"Started    : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     log.info(f"Log file   : {log_path.resolve()}")
-    log.info(f"Directory  : {NOTEBOOK_DIR.resolve()}")
+    log.info(f"Directory  : {DOCS_DIR.resolve()}")
+    log.info(f"Scope      : {scope}")
     log.info(f"Env        : {CONDA_ENV}")
     log.info("Kernel     : python3")
     log.info(f"Python     : {sys.version.split()[0]}")
@@ -138,9 +173,10 @@ def run_notebooks():
     for i, notebook in enumerate(notebooks, 1):
 
         nb_start_time = datetime.now().strftime("%H:%M:%S")
-        log.info(f"\n{C.HEADER}{'='*60}")
-        log.info(f"[{i}/{len(notebooks)}] {nb_start_time} — {C.INFO}{notebook.name}{C.END}")
-        log.info(f"{'='*60}{C.END}")
+        rel_path = notebook.relative_to(DOCS_DIR)
+        log.info(f"\n{C.HEADER}{'=' * 60}")
+        log.info(f"[{i}/{len(notebooks)}] {nb_start_time} — {C.INFO}{rel_path}{C.END}")
+        log.info(f"{'=' * 60}{C.END}")
 
         temp_output_path = notebook.with_name(f"{notebook.stem}_temp_exec{notebook.suffix}")
         start = time.time()
@@ -165,13 +201,13 @@ def run_notebooks():
             if nb_warnings:
                 results["warnings"].append((notebook, nb_warnings))
                 log.info(
-                    f"{C.OK}✓ Success:{C.END} {notebook.name} ({elapsed:.2f}s) | "
+                    f"{C.OK}✓ Success:{C.END} {rel_path} ({elapsed:.2f}s) | "
                     f"{C.INFO}{len(nb_warnings)} warning(s){C.END}"
                 )
                 for w in nb_warnings:
                     log.info(f"  {C.INFO}WARNING:{C.END} {w}")
             else:
-                log.info(f"{C.OK}✓ Success:{C.END} {notebook.name} ({elapsed:.2f}s)")
+                log.info(f"{C.OK}✓ Success:{C.END} {rel_path} ({elapsed:.2f}s)")
 
         except Exception as e:
             elapsed = time.time() - start
@@ -187,7 +223,7 @@ def run_notebooks():
 
             full_error = str(e)
             results["failed"].append((notebook, elapsed, full_error, partial_warnings))
-            log.info(f"{C.FAIL}✗ FAILED:{C.END} {notebook.name} ({elapsed:.2f}s)")
+            log.info(f"{C.FAIL}✗ FAILED:{C.END} {rel_path} ({elapsed:.2f}s)")
             log.info(f"  {C.FAIL}Error:{C.END}\n{full_error}")
             if partial_warnings:
                 log.info(f"  {C.INFO}Warnings before failure ({len(partial_warnings)}):{C.END}")
@@ -197,11 +233,12 @@ def run_notebooks():
     total_elapsed = time.time() - total_start
 
     # ── Summary ──────────────────────────────────────────────────────────────
-    log.info(f"\n{C.HEADER}{'='*60}")
+    log.info(f"\n{C.HEADER}{'=' * 60}")
     log.info("EXECUTION SUMMARY")
-    log.info(f"{'='*60}{C.END}")
+    log.info(f"{'=' * 60}{C.END}")
     log.info(f"Finished     : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     log.info(f"Total time   : {total_elapsed:.1f}s ({total_elapsed / 60:.1f} min)")
+    log.info(f"Scope        : {scope}")
     log.info(f"Total        : {C.INFO}{len(notebooks)}{C.END}")
     log.info(f"Excluded     : {C.INFO}{len(EXCLUDE_NOTEBOOKS)}{C.END}")
     log.info(f"Successful   : {C.OK}{len(results['success'])}{C.END}")
@@ -212,16 +249,16 @@ def run_notebooks():
         log.info(f"\n{C.FAIL}Failed notebooks:{C.END}")
         for nb, elapsed, _, partial_warns in results["failed"]:
             suffix = f" | {len(partial_warns)} warning(s) before failure" if partial_warns else ""
-            log.info(f"  {C.FAIL}✗ {nb.name}{C.END} ({elapsed:.2f}s){suffix}")
+            log.info(f"  {C.FAIL}✗ {nb.relative_to(DOCS_DIR)}{C.END} ({elapsed:.2f}s){suffix}")
         log.info(f"\n{C.FAIL}Errors (full):{C.END}")
         for nb, elapsed, err, _ in results["failed"]:
-            log.info(f"\n  {C.FAIL}── {nb.name} ──{C.END}")
+            log.info(f"\n  {C.FAIL}── {nb.relative_to(DOCS_DIR)} ──{C.END}")
             log.info(err)
 
     if results["warnings"]:
         log.info(f"\n{C.INFO}Notebooks with warnings:{C.END}")
         for nb, warns in results["warnings"]:
-            log.info(f"  {C.INFO}⚠ {nb.name}{C.END} ({len(warns)} warning(s))")
+            log.info(f"  {C.INFO}⚠ {nb.relative_to(DOCS_DIR)}{C.END} ({len(warns)} warning(s))")
             for w in warns:
                 log.info(f"    {w}")
 
@@ -229,4 +266,22 @@ def run_notebooks():
 
 
 if __name__ == "__main__":
-    run_notebooks()
+    parser = argparse.ArgumentParser(
+        description="Execute documentation notebooks and collect warnings.",
+        epilog=(
+            "Examples:\n"
+            "  python tools/execute_docs/execute_docs_notebooks.py                  # All docs/\n"
+            "  python tools/execute_docs/execute_docs_notebooks.py user_guides      # Only docs/user_guides/\n"
+            "  python tools/execute_docs/execute_docs_notebooks.py quick-start faq  # Multiple subdirs\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "subdirs",
+        nargs="*",
+        default=None,
+        help="Subdirectories of docs/ to execute (e.g. user_guides quick-start). "
+             "If omitted, all notebooks under docs/ are executed.",
+    )
+    args = parser.parse_args()
+    run_notebooks(subdirs=args.subdirs or None)

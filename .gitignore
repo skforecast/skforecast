@@ -150,3 +150,6 @@ dmypy.json
 # Github Agents & prompts
 .github/agents
 .github/prompts
+
+# Docs execution logs
+tools/execute_docs/logs/
