@@ -787,7 +787,13 @@ def _calculate_metrics_one_step_ahead(
         estimator.fit(X=X_train, y=y_train, **fit_kwargs)
 
     y_true = y_test
-    y_pred = estimator.predict(X_test).ravel()
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="X does not have valid feature names",
+            category=UserWarning
+        )
+        y_pred = estimator.predict(X_test).ravel()
 
     if not needs_y_train:
         y_train = None
@@ -1410,6 +1416,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         freq = series[levels[0]].index.step
 
     # ForecasterDirectMultiVariate path (numpy)
+    # ==========================================================================
     # X_train_encoding and X_test_encoding are pandas Index objects.
     if type(forecaster).__name__ == 'ForecasterDirectMultiVariate':
         
@@ -1428,7 +1435,13 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             estimator.fit(X=X_train, y=y_train, **fit_kwargs)
 
         y_true = y_test
-        y_pred = estimator.predict(X_test).ravel()
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="X does not have valid feature names",
+                category=UserWarning
+            )
+            y_pred = estimator.predict(X_test).ravel()
 
         if needs_y_train:
             y_train_metric = y_train.copy()
@@ -1487,6 +1500,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         return metrics_levels, predictions
 
     # ForecasterRecursiveMultiSeries path (pandas)
+    # ==========================================================================
     # X_train_encoding and X_test_encoding are series identifiers for each row 
     # of X_train and X_test, respectively.
     if (

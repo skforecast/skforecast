@@ -254,7 +254,7 @@ class FoundationModel:
             | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
-    ) -> tuple[dict[str, pd.Series], dict[str, pd.Index], list[str], dict[str, pd.DataFrame | pd.Series | None], list[str]]:
+    ) -> tuple[dict[str, pd.Series], dict[str, pd.Index], list[str], dict[str, pd.DataFrame | None] | None, list[str] | None]:
         """
         Normalize and validate context input to a per-series dict.
 
@@ -377,8 +377,8 @@ class FoundationModel:
         
         context, series_indexes, series_names_in_, context_exog, exog_names_in_ = (
             self._check_preprocess_context(
-                series=series,
-                exog=exog,
+                series = series,
+                exog   = exog,
             )
         )
 

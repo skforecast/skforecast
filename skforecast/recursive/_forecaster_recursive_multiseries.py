@@ -908,7 +908,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         y: pd.Series,
         ignore_exog: bool,
         exog: pd.DataFrame | None = None
-    ) -> tuple[np.ndarray, str, pd.Index, list[str], pd.DataFrame, np.ndarray]:
+    ) -> tuple[np.ndarray, str, pd.Index, list[str], pd.DataFrame | None, np.ndarray]:
         """
         Create training matrices from univariate time series and exogenous
         variables. This method does not transform the exog variables.

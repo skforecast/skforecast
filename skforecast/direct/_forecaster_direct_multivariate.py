@@ -1741,8 +1741,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             train_index_step = train_index[step],
         )
         X_test, y_test, _ = self._filter_nan_X_y_step(
-            X_train_step     = X_test,
-            y_train_step     = y_test,
+            X_train_step = X_test,
+            y_train_step = y_test,
         )
 
         sample_weight = self.create_sample_weights(X_train=train_index_step)
@@ -3398,9 +3398,17 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                                                 X_train_step = X_train_step,
                                                 y_train_step = y_train_step,
                                             )
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message="X does not have valid feature names",
+                    category=UserWarning
+                )
+                y_pred = self.estimators_[step].predict(X_train_step)
             
             y_true_steps.append(y_train_step)
-            y_pred_steps.append(self.estimators_[step].predict(X_train_step))
+            y_pred_steps.append(y_pred)
 
         self._binning_in_sample_residuals(
             level                     = self.level,

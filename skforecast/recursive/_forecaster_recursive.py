@@ -2808,6 +2808,7 @@ class ForecasterRecursive(ForecasterBase):
                 category=UserWarning
             )
             y_pred = self.estimator.predict(X_train).ravel()
+        
         self._binning_in_sample_residuals(
             y_true                    = y_train,
             y_pred                    = y_pred,
