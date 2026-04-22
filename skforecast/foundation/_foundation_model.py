@@ -699,6 +699,11 @@ class FoundationModel:
             raise ValueError("`steps` must be a positive integer.")
 
         if quantiles is not None:
+            if not isinstance(quantiles, (list, tuple)):
+                raise TypeError(
+                    "`quantiles` must be a `list` or `tuple`. For example, quantiles "
+                    "0.1, 0.5, and 0.9 should be as `quantiles = [0.1, 0.5, 0.9]`."
+                )
             for q in quantiles:
                 if not 0.0 <= q <= 1.0:
                     raise ValueError(
@@ -763,15 +768,16 @@ class FoundationModel:
 
         if n_series == 1:
             long_index = per_series_indices[0]
-            level_col = np.repeat(series_names_in, steps)
         else:
-            idx_matrix = np.empty(
-                (steps, n_series), dtype=per_series_indices[0].dtype
+            idx_arr = np.column_stack(
+                [idx.to_numpy() for idx in per_series_indices]
+            ).ravel()
+            long_index = (
+                pd.DatetimeIndex(idx_arr)
+                if isinstance(per_series_indices[0], pd.DatetimeIndex)
+                else pd.Index(idx_arr)
             )
-            for i, idx in enumerate(per_series_indices):
-                idx_matrix[:, i] = idx
-            long_index = idx_matrix.ravel()
-            level_col = np.tile(series_names_in, steps)
+        level_col = np.tile(series_names_in, steps)
 
         col_names = ["pred"] if quantiles is None else [f"q_{q}" for q in quantiles]
         n_cols = len(col_names)

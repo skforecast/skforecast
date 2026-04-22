@@ -1328,6 +1328,9 @@ class TabICLAdapter:
         Temporal feature transforms applied to the series.
     is_fitted : bool
         Whether the adapter has been fitted.
+    _model : object
+        Internal `TabICLForecaster` instance. `None` until the first call
+        to `predict`, after which it is cached for reuse.
 
     Notes
     -----
@@ -1423,7 +1426,9 @@ class TabICLAdapter:
         -------
         params : dict
             Keys: `model_id`, `context_length`, `point_estimate`,
-            `tabicl_config`, `temporal_features`.
+            `tabicl_config`, `temporal_features`. `tabicl_config` is
+            returned as `None` when no additional config was set (i.e.
+            when the internal dict is empty).
 
         """
         return {
@@ -1463,25 +1468,32 @@ class TabICLAdapter:
                 f"Valid parameters are: {sorted(valid)}."
             )
 
-        if params.keys() & valid:
-            self._model = None
-
+        validated = {}
         for key, value in params.items():
             if key == "context_length":
                 if not isinstance(value, int) or value < 1:
                     raise ValueError(
                         f"`context_length` must be a positive integer. Got {value!r}."
                     )
-                self.context_length = value
+                validated[key] = value
             elif key == "point_estimate":
                 if value not in ("mean", "median"):
                     raise ValueError(
                         f"`point_estimate` must be 'mean' or 'median'. Got {value!r}."
                     )
-                self.point_estimate = value
+                validated[key] = value
             elif key == "tabicl_config":
-                self.tabicl_config = dict(value) if value else {}
+                validated[key] = dict(value) if value else {}
             else:
+                validated[key] = value
+
+        actually_changed = {
+            k: v for k, v in validated.items()
+            if getattr(self, k) != v
+        }
+        if actually_changed:
+            self._model = None
+            for key, value in actually_changed.items():
                 setattr(self, key, value)
 
         return self
@@ -1579,6 +1591,7 @@ class TabICLAdapter:
                 "integer-indexed data. Consider passing "
                 "`temporal_features=[]` to disable calendar feature "
                 "transforms.",
+                # stacklevel=3: TabICLAdapter.predict → FoundationModel.predict → user
                 stacklevel=3,
             )
 
@@ -1724,13 +1737,13 @@ class TabICLAdapter:
         self,
         series_names: list,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: dict[str, pd.DataFrame | None] | None,
         is_datetime: bool,
     ) -> pd.DataFrame:
         """
         Build a long-format context DataFrame expected by TabICL.
 
-        Each serie's observations become rows with `item_id`, `timestamp`,
+        Each series' observations become rows with `item_id`, `timestamp`,
         `target`, and optional exogenous covariate columns.
 
         Parameters
@@ -1752,51 +1765,31 @@ class TabICLAdapter:
 
         """
 
-        item_ids_list = []
-        timestamps_list = []
-        targets_list = []
-        exog_arrays: dict[str, list] = {}
-        row_counts: list[int] = []
-
+        parts = []
         for name in series_names:
             series = context[name]
             n = len(series)
-            row_counts.append(n)
-            timestamps = self._get_timestamps(series, is_datetime)
-            item_ids_list.append(np.full(n, name))
-            timestamps_list.append(np.asarray(timestamps))
-            targets_list.append(series.to_numpy(dtype=float))
-
+            part = pd.DataFrame({
+                "item_id":   np.full(n, name),
+                "timestamp": np.asarray(self._get_timestamps(series, is_datetime)),
+                "target":    series.to_numpy(dtype=float),
+            })
             exog_entry = (
                 context_exog.get(name) if context_exog is not None else None
             )
             if exog_entry is not None:
-                if isinstance(exog_entry, pd.Series):
-                    exog_entry = exog_entry.to_frame()
-                for col in exog_entry.columns:
-                    exog_arrays.setdefault(col, [None] * len(row_counts))[-1] = exog_entry[col].to_numpy()
+                part = pd.concat(
+                    [part, exog_entry.reset_index(drop=True)], axis=1
+                )
+            parts.append(part)
 
-        data: dict = {
-            "item_id":   np.concatenate(item_ids_list),
-            "timestamp": np.concatenate(timestamps_list),
-            "target":    np.concatenate(targets_list),
-        }
-        for col, per_series in exog_arrays.items():
-            col_parts = []
-            for k, arr in enumerate(per_series):
-                if arr is None:
-                    col_parts.append(np.full(row_counts[k], np.nan))
-                else:
-                    col_parts.append(arr)
-            data[col] = np.concatenate(col_parts)
-
-        return pd.DataFrame(data)
+        return pd.concat(parts, ignore_index=True)
 
     def _build_future_df(
         self,
         series_names: list,
         context: dict[str, pd.Series],
-        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | None] | None,
         steps: int,
         is_datetime: bool,
     ) -> pd.DataFrame:
@@ -1828,41 +1821,23 @@ class TabICLAdapter:
 
         """
 
-        item_ids_list = []
-        timestamps_list = []
-        exog_arrays: dict[str, list] = {}
-        row_counts: list[int] = []
-
+        parts = []
         for name in series_names:
             series = context[name]
-            future_timestamps = self._get_future_timestamps(
-                series, steps, is_datetime
-            )
-            row_counts.append(steps)
-            item_ids_list.append(np.full(steps, name))
-            timestamps_list.append(np.asarray(future_timestamps))
-
+            part = pd.DataFrame({
+                "item_id":   np.full(steps, name),
+                "timestamp": np.asarray(
+                    self._get_future_timestamps(series, steps, is_datetime)
+                ),
+            })
             future_exog = exog.get(name) if exog is not None else None
             if future_exog is not None:
-                if isinstance(future_exog, pd.Series):
-                    future_exog = future_exog.to_frame()
-                for col in future_exog.columns:
-                    exog_arrays.setdefault(col, [None] * len(row_counts))[-1] = future_exog[col].to_numpy()
+                part = pd.concat(
+                    [part, future_exog.reset_index(drop=True)], axis=1
+                )
+            parts.append(part)
 
-        data: dict = {
-            "item_id":   np.concatenate(item_ids_list),
-            "timestamp": np.concatenate(timestamps_list),
-        }
-        for col, per_series in exog_arrays.items():
-            col_parts = []
-            for k, arr in enumerate(per_series):
-                if arr is None:
-                    col_parts.append(np.full(row_counts[k], np.nan))
-                else:
-                    col_parts.append(arr)
-            data[col] = np.concatenate(col_parts)
-
-        return pd.DataFrame(data)
+        return pd.concat(parts, ignore_index=True)
 
 
 _ADAPTER_REGISTRY: dict[str, type] = {

@@ -238,7 +238,7 @@ def test_TabICLAdapter_predict_point_forecast_single_series():
     steps = 5
     adapter = TabICLAdapter(
         model_id="soda-inria/tabicl",
-        _model=FakeTabICLForecaster(),
+        model=FakeTabICLForecaster(),
     )
     context, context_exog = prepare_fit_args(y)
     adapter.fit(context=context, context_exog=context_exog)
@@ -268,7 +268,7 @@ def test_TabICLAdapter_predict_quantile_forecast_single_series():
     quantiles = [0.1, 0.5, 0.9]
     adapter = TabICLAdapter(
         model_id="soda-inria/tabicl",
-        _model=FakeTabICLForecaster(),
+        model=FakeTabICLForecaster(),
     )
     context, context_exog = prepare_fit_args(y)
     adapter.fit(context=context, context_exog=context_exog)
