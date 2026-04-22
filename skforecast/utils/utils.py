@@ -3062,7 +3062,7 @@ def check_preprocess_exog_multiseries(
 
 def align_series_and_exog_multiseries(
     series_dict: dict[str, pd.Series],
-    exog_dict: dict[str, pd.DataFrame] | None = None,
+    exog_dict: dict[str, pd.DataFrame | None],
     trim_series_nan: bool = True,
 ) -> tuple[dict[str, pd.Series], dict[str, pd.DataFrame | None]]:
     """
