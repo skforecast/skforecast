@@ -50,6 +50,7 @@ EXCLUDE_NOTEBOOKS = [
     "user_guides/foundation-forecasting-models.ipynb",  # Specific environment
     "user_guides/tabular-foundation-models.ipynb",
     "user_guides/skforecast-in-GPU.ipynb",
+    "user_guides/sktime-pipelines.ipynb",
 
     "faq/profiling-skforecast.ipynb",
     "faq/skforecast-benchmark.ipynb"
@@ -72,6 +73,9 @@ CLEANUP_FILES = {
         "forecaster_custom_features.joblib",
         "forecaster_multiseries_custom_features.joblib",
         "custom_weights.py",
+        "custom_weights_item_1.py",
+        "custom_weights_item_2.py",
+        "custom_weights_item_3.py",
     ]
 }
 
