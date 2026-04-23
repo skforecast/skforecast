@@ -202,7 +202,7 @@ def test_fit_exog_metadata_correctly_stored(
 def test_fit_exog_accepted_when_adapter_supports_exog():
     """
     fit() stores exog metadata normally when allow_exog=True (default for
-    Chronos2Adapter).
+    ChronosAdapter).
     """
     forecaster = make_forecaster()
     assert forecaster.estimator.allow_exog is True

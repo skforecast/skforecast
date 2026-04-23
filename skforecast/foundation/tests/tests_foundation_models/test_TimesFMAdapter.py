@@ -1,4 +1,4 @@
-# Unit test TimesFM25Adapter
+# Unit test TimesFMAdapter
 # ==============================================================================
 import re
 import sys
@@ -6,7 +6,7 @@ import types
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.foundation._adapters import TimesFM25Adapter
+from skforecast.foundation._adapters import TimesFMAdapter
 from .fixtures_adapters import (
     y, y_wide, y_dict,
     FakeTimesFM25Model,
@@ -16,27 +16,27 @@ from .fixtures_adapters import (
 
 # Helpers
 # ==============================================================================
-def make_adapter(**kwargs) -> TimesFM25Adapter:
+def make_adapter(**kwargs) -> TimesFMAdapter:
     """
-    Return a TimesFM25Adapter pre-loaded with FakeTimesFM25Model.
+    Return a TimesFMAdapter pre-loaded with FakeTimesFM25Model.
     """
     defaults = dict(
         model_id="google/timesfm-2.5-200m-pytorch",
         model=FakeTimesFM25Model()
     )
     defaults.update(kwargs)
-    return TimesFM25Adapter(**defaults)
+    return TimesFMAdapter(**defaults)
 
 
 # ==============================================================================
-# Tests TimesFM25Adapter.__init__
+# Tests TimesFMAdapter.__init__
 # ==============================================================================
-def test_TimesFM25Adapter_init_default_params():
+def test_TimesFMAdapter_init_default_params():
     """
     Test that default parameter values are set correctly and class-level
     attributes are properly initialised.
     """
-    adapter = TimesFM25Adapter(model_id="google/timesfm-2.5-200m-pytorch")
+    adapter = TimesFMAdapter(model_id="google/timesfm-2.5-200m-pytorch")
     assert adapter.model_id == "google/timesfm-2.5-200m-pytorch"
     assert adapter.context_length == 512
     assert adapter.max_horizon == 512
@@ -44,8 +44,8 @@ def test_TimesFM25Adapter_init_default_params():
     assert adapter._model is None
     assert adapter.context_ is None
     assert adapter.is_fitted is False
-    assert TimesFM25Adapter.allow_exog is False
-    assert TimesFM25Adapter.SUPPORTED_QUANTILES == [
+    assert TimesFMAdapter.allow_exog is False
+    assert TimesFMAdapter.SUPPORTED_QUANTILES == [
         0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9
     ]
 
@@ -62,23 +62,23 @@ def test_TimesFM25Adapter_init_default_params():
     ],
     ids=lambda x: str(x)
 )
-def test_TimesFM25Adapter_init_ValueError_when_invalid_params(param, value):
+def test_TimesFMAdapter_init_ValueError_when_invalid_params(param, value):
     """
     Test that __init__ raises ValueError for non-positive-integer
     context_length or max_horizon.
     """
     with pytest.raises(ValueError, match=re.escape(f"`{param}` must be a positive integer")):
-        TimesFM25Adapter(
+        TimesFMAdapter(
             model_id="google/timesfm-2.5-200m-pytorch", **{param: value}
         )
 
 
-def test_TimesFM25Adapter_init_forecast_config_kwargs_is_independent_copy():
+def test_TimesFMAdapter_init_forecast_config_kwargs_is_independent_copy():
     """
     Test that forecast_config_kwargs is stored as an independent copy.
     """
     original = {"normalize_inputs": True}
-    adapter = TimesFM25Adapter(
+    adapter = TimesFMAdapter(
         model_id="google/timesfm-2.5-200m-pytorch",
         forecast_config_kwargs=original
     )
@@ -87,14 +87,14 @@ def test_TimesFM25Adapter_init_forecast_config_kwargs_is_independent_copy():
 
 
 # ==============================================================================
-# Tests TimesFM25Adapter.get_params / set_params
+# Tests TimesFMAdapter.get_params / set_params
 # ==============================================================================
-def test_TimesFM25Adapter_get_params_returns_expected_keys_and_values():
+def test_TimesFMAdapter_get_params_returns_expected_keys_and_values():
     """
     Test that get_params returns all expected keys with correct values, and
     that forecast_config_kwargs is None when empty.
     """
-    adapter = TimesFM25Adapter(
+    adapter = TimesFMAdapter(
         model_id="google/timesfm-2.5-200m-pytorch",
         context_length=256,
         max_horizon=128,
@@ -110,7 +110,7 @@ def test_TimesFM25Adapter_get_params_returns_expected_keys_and_values():
     assert params["forecast_config_kwargs"] == {"normalize_inputs": True}
 
     # Empty kwargs → None
-    adapter2 = TimesFM25Adapter(model_id="google/timesfm-2.5-200m-pytorch")
+    adapter2 = TimesFMAdapter(model_id="google/timesfm-2.5-200m-pytorch")
     assert adapter2.get_params()["forecast_config_kwargs"] is None
 
 
@@ -123,7 +123,7 @@ def test_TimesFM25Adapter_get_params_returns_expected_keys_and_values():
     ],
     ids=["context_length=-1", "max_horizon=0", "unknown_param"]
 )
-def test_TimesFM25Adapter_set_params_ValueError_when_invalid(params, match):
+def test_TimesFMAdapter_set_params_ValueError_when_invalid(params, match):
     """
     Test that set_params raises ValueError for invalid values or unknown
     parameter names.
@@ -143,7 +143,7 @@ def test_TimesFM25Adapter_set_params_ValueError_when_invalid(params, match):
     ],
     ids=lambda x: str(x)
 )
-def test_TimesFM25Adapter_set_params_updates_and_resets_model(param, value):
+def test_TimesFMAdapter_set_params_updates_and_resets_model(param, value):
     """
     Test that set_params updates the given parameter, resets _model (since
     all TimesFM params affect compilation), and returns self.
@@ -156,9 +156,9 @@ def test_TimesFM25Adapter_set_params_updates_and_resets_model(param, value):
 
 
 # ==============================================================================
-# Tests TimesFM25Adapter.fit
+# Tests TimesFMAdapter.fit
 # ==============================================================================
-def test_TimesFM25Adapter_fit_error_handling():
+def test_TimesFMAdapter_fit_error_handling():
     """
     Test fit raises TypeError for unsupported series types.
     """
@@ -172,7 +172,7 @@ def test_TimesFM25Adapter_fit_error_handling():
     [(10, 10), (20, 20), (50, 50), (100, 50)],
     ids=lambda x: f"{x}"
 )
-def test_TimesFM25Adapter_fit_output_single_series(context_length, expected_len):
+def test_TimesFMAdapter_fit_output_single_series(context_length, expected_len):
     """
     Test fit on a single series: returns self, sets is_fitted=True,
     stores history trimmed to context_length,
@@ -198,7 +198,7 @@ def test_TimesFM25Adapter_fit_output_single_series(context_length, expected_len)
     [y_wide, y_dict],
     ids=["wide_dataframe", "dict"]
 )
-def test_TimesFM25Adapter_fit_output_multi_series(series_input):
+def test_TimesFMAdapter_fit_output_multi_series(series_input):
     """
     Test fit on multi-series input: sets is_fitted=True,
     stores a dict of Series keyed by series names,
@@ -216,7 +216,7 @@ def test_TimesFM25Adapter_fit_output_multi_series(series_input):
         assert len(s) == context_length
 
 
-def test_TimesFM25Adapter_fit_exog_ignored_silently():
+def test_TimesFMAdapter_fit_exog_ignored_silently():
     """
     Test that passing exog to fit completes successfully (exog handling
     is done upstream by FoundationModel).
@@ -229,14 +229,14 @@ def test_TimesFM25Adapter_fit_exog_ignored_silently():
 
 
 # ==============================================================================
-# Tests TimesFM25Adapter.predict — error handling
+# Tests TimesFMAdapter.predict — error handling
 # ==============================================================================
 @pytest.mark.parametrize(
     "bad_quantile",
     [0.05, 0.15, 0.25, 0.95, 1.1, -0.1],
     ids=lambda x: f"q={x}"
 )
-def test_TimesFM25Adapter_predict_ValueError_for_unsupported_quantile(bad_quantile):
+def test_TimesFMAdapter_predict_ValueError_for_unsupported_quantile(bad_quantile):
     """
     Test predict raises ValueError for quantile levels not in
     SUPPORTED_QUANTILES.
@@ -246,7 +246,7 @@ def test_TimesFM25Adapter_predict_ValueError_for_unsupported_quantile(bad_quanti
     adapter.fit(context=ctx, context_exog=ctx_exog)
 
     ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=3)
-    with pytest.raises(ValueError, match=re.escape("TimesFM 2.5 only supports quantile levels")):
+    with pytest.raises(ValueError, match=re.escape("TimesFM only supports quantile levels")):
         adapter.predict(
             steps=3, context=ctx_p, context_exog=ctx_exog_p,
             exog=exog_p, quantiles=[0.5, bad_quantile],
@@ -254,7 +254,7 @@ def test_TimesFM25Adapter_predict_ValueError_for_unsupported_quantile(bad_quanti
         )
 
 
-def test_TimesFM25Adapter_predict_ValueError_when_steps_exceed_max_horizon():
+def test_TimesFMAdapter_predict_ValueError_when_steps_exceed_max_horizon():
     """
     Test predict raises ValueError when steps > max_horizon.
     """
@@ -272,9 +272,9 @@ def test_TimesFM25Adapter_predict_ValueError_when_steps_exceed_max_horizon():
 
 
 # ==============================================================================
-# Tests TimesFM25Adapter.predict — single series
+# Tests TimesFMAdapter.predict — single series
 # ==============================================================================
-def test_TimesFM25Adapter_predict_point_forecast_single_series():
+def test_TimesFMAdapter_predict_point_forecast_single_series():
     """
     Test point forecast (quantiles=None) on a single series: returns dict
     with one key, shape (steps, 1), values = 0.0 (FakeTimesFM25Model zeros).
@@ -295,7 +295,7 @@ def test_TimesFM25Adapter_predict_point_forecast_single_series():
     np.testing.assert_array_equal(arr[:, 0], np.zeros(12))
 
 
-def test_TimesFM25Adapter_predict_quantile_forecast_single_series():
+def test_TimesFMAdapter_predict_quantile_forecast_single_series():
     """
     Test quantile forecast on a single series: returns dict with correct
     shape and values matching FakeTimesFM25Model output (q_level at each
@@ -318,7 +318,7 @@ def test_TimesFM25Adapter_predict_quantile_forecast_single_series():
         np.testing.assert_array_almost_equal(arr[:, i], np.full(5, q))
 
 
-def test_TimesFM25Adapter_predict_all_supported_quantiles():
+def test_TimesFMAdapter_predict_all_supported_quantiles():
     """
     Test that all 9 supported quantile levels are accepted without error.
     """
@@ -330,21 +330,21 @@ def test_TimesFM25Adapter_predict_all_supported_quantiles():
     raw = adapter.predict(
         steps=3, context=ctx_p, context_exog=ctx_exog_p,
         exog=exog_p,
-        quantiles=TimesFM25Adapter.SUPPORTED_QUANTILES,
+        quantiles=TimesFMAdapter.SUPPORTED_QUANTILES,
         
     )
     assert raw["sales"].shape == (3, 9)
 
 
 # ==============================================================================
-# Tests TimesFM25Adapter.predict — multi-series
+# Tests TimesFMAdapter.predict — multi-series
 # ==============================================================================
 @pytest.mark.parametrize(
     "series_input",
     [y_wide, y_dict],
     ids=["wide_dataframe", "dict"]
 )
-def test_TimesFM25Adapter_predict_point_forecast_multi_series(series_input):
+def test_TimesFMAdapter_predict_point_forecast_multi_series(series_input):
     """
     Test point forecast on multi-series: returns dict with one array per
     series, each of shape (steps, 1) with value 0.0.
@@ -365,7 +365,7 @@ def test_TimesFM25Adapter_predict_point_forecast_multi_series(series_input):
         np.testing.assert_array_equal(raw[name][:, 0], np.zeros(5))
 
 
-def test_TimesFM25Adapter_predict_quantile_forecast_multi_series():
+def test_TimesFMAdapter_predict_quantile_forecast_multi_series():
     """
     Test quantile forecast on multi-series: returns dict with one array per
     series, each of shape (steps, n_quantiles) with correct values.
@@ -388,9 +388,9 @@ def test_TimesFM25Adapter_predict_quantile_forecast_multi_series():
 
 
 # ==============================================================================
-# Tests TimesFM25Adapter.predict — pipeline receives correct args
+# Tests TimesFMAdapter.predict — pipeline receives correct args
 # ==============================================================================
-def test_TimesFM25Adapter_predict_model_receives_correct_args():
+def test_TimesFMAdapter_predict_model_receives_correct_args():
     """
     Test that the model's forecast receives the correct horizon and number
     of input arrays.
@@ -409,7 +409,7 @@ def test_TimesFM25Adapter_predict_model_receives_correct_args():
     assert len(fake_model.last_inputs) == 1
 
 
-def test_TimesFM25Adapter_predict_context_length_trims_history():
+def test_TimesFMAdapter_predict_context_length_trims_history():
     """
     Test that the history passed to the model is trimmed to context_length.
     """
@@ -428,9 +428,9 @@ def test_TimesFM25Adapter_predict_context_length_trims_history():
 
 
 # ==============================================================================
-# Tests TimesFM25Adapter._ensure_compiled
+# Tests TimesFMAdapter._ensure_compiled
 # ==============================================================================
-def test_TimesFM25Adapter_ensure_compiled_calls_compile_with_actual_steps():
+def test_TimesFMAdapter_ensure_compiled_calls_compile_with_actual_steps():
     """
     Test that _ensure_compiled compiles the model with max_horizon equal to
     the requested steps, not to the adapter's max_horizon ceiling. This is
@@ -453,7 +453,7 @@ def test_TimesFM25Adapter_ensure_compiled_calls_compile_with_actual_steps():
             self.max_horizon = kwargs.get("max_horizon")
 
     tracking_model = _TrackingModel()
-    adapter = TimesFM25Adapter(
+    adapter = TimesFMAdapter(
         model_id="google/timesfm-2.5-200m-pytorch",
         model=tracking_model,
         context_length=128,
@@ -476,7 +476,7 @@ def test_TimesFM25Adapter_ensure_compiled_calls_compile_with_actual_steps():
     assert tracking_model.compile_calls[0].max_horizon == 12
 
 
-def test_TimesFM25Adapter_ensure_compiled_noop_when_already_compiled():
+def test_TimesFMAdapter_ensure_compiled_noop_when_already_compiled():
     """
     Test that _ensure_compiled is a no-op when the model is already compiled
     for a horizon >= steps.
@@ -494,7 +494,7 @@ def test_TimesFM25Adapter_ensure_compiled_noop_when_already_compiled():
     tracking_model = _TrackingModel()
     tracking_model.forecast_config = type("_FC", (), {"max_horizon": 100})()
 
-    adapter = TimesFM25Adapter(
+    adapter = TimesFMAdapter(
         model_id="google/timesfm-2.5-200m-pytorch",
         model=tracking_model
     )

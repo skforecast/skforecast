@@ -227,7 +227,7 @@ def test_MoiraiAdapter_predict_ValueError_for_unsupported_quantile(bad_quantile)
     adapter.fit(context=ctx, context_exog=ctx_exog)
 
     ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=3)
-    with pytest.raises(ValueError, match=re.escape("Moirai-2 only supports quantile levels")):
+    with pytest.raises(ValueError, match=re.escape("Moirai only supports quantile levels")):
         adapter.predict(
             steps=3, context=ctx_p, context_exog=ctx_exog_p,
             exog=exog_p, quantiles=[0.5, bad_quantile],

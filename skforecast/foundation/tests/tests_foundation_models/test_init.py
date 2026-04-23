@@ -3,7 +3,7 @@
 import re
 import pytest
 import pandas as pd
-from skforecast.foundation._adapters import Chronos2Adapter
+from skforecast.foundation._adapters import ChronosAdapter
 from skforecast.foundation._foundation_model import FoundationModel
 
 
@@ -17,7 +17,7 @@ def test_init_output_when_default_params():
     """
     m = FoundationModel("autogluon/chronos-2-small")
 
-    assert isinstance(m.adapter, Chronos2Adapter)
+    assert isinstance(m.adapter, ChronosAdapter)
     assert m.model_id == "autogluon/chronos-2-small"
     assert m.model_id == m.adapter.model_id
     assert m.context_length == 8192

@@ -2,7 +2,7 @@
 # ==============================================================================
 import numpy as np
 import pandas as pd
-from skforecast.foundation._adapters import Chronos2Adapter
+from skforecast.foundation._adapters import ChronosAdapter
 from skforecast.foundation._foundation_model import FoundationModel
 
 

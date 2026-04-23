@@ -20,7 +20,6 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 <span style="font-size: 1.3em;">Foundation Models</span>
 
 - [Forecasting with foundation models](../user_guides/foundation-forecasting-models.ipynb)
-- [Tabular foundation models](../user_guides/tabular-foundation-models.ipynb)
 
 <span style="font-size: 1.3em;">Statistical Models</span>
 

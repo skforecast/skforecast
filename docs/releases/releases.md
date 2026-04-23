@@ -10,11 +10,11 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.22.0 <small>In development</small> { id="0.22.0" }
+## 0.22.0 <small>Apr 23, 2026</small> { id="0.22.0" }
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> New module <code>foundation</code> for zero-shot time series forecasting using pre-trained foundation models. The module introduces <code>[FoundationModel]</code>, a scikit-learn compatible interface, and <code>[ForecasterFoundation]</code>, a high-level forecaster fully integrated with the skforecast ecosystem (backtesting, prediction intervals via native quantiles). Three adapters are included out of the box: **Chronos-2** (Amazon), **TimesFM 2.5** (Google), and **Moirai-2** (Salesforce). Supports single-series and multi-series forecasting, exogenous variables (Chronos-2), and quantile-based prediction intervals. [User guide](../user_guides/foundation-forecasting-models.ipynb)
++ <span class="badge text-bg-feature">Feature</span> New module <code>foundation</code> for zero-shot time series forecasting using pre-trained foundation models. The module introduces <code>[FoundationModel]</code>, a scikit-learn compatible interface, and <code>[ForecasterFoundation]</code>, a high-level forecaster fully integrated with the skforecast ecosystem (backtesting, prediction intervals via native quantiles). Four adapters are included out of the box: **Chronos-2** (Amazon), **TimesFM 2.5** (Google), **Moirai-2** (Salesforce), and **TabICLv2** (Soda-Inria). Supports single-series and multi-series forecasting, exogenous variables (Chronos-2, TabICLv2), and quantile-based prediction intervals. [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
 + <span class="badge text-bg-feature">Feature</span> New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (`LightGBM`, `CatBoost`, `XGBoost`, `HistGradientBoostingRegressor`).
 
@@ -35,7 +35,7 @@ The main changes in this release are:
 
 **Added**
 
-+ New module <code>foundation</code> for zero-shot time series forecasting using pre-trained foundation models. <code>[FoundationModel]</code> provides a scikit-learn compatible interface that wraps model-specific adapters, while <code>[ForecasterFoundation]</code> integrates foundation models into the skforecast ecosystem enabling backtesting, and quantile-based prediction intervals. Supported adapters: **Chronos-2** (Amazon, with exogenous variable support), **TimesFM 2.5** (Google), and **Moirai-2** (Salesforce). [User guide](../user_guides/foundation-forecasting-models.ipynb)
++ New module <code>foundation</code> for zero-shot time series forecasting using pre-trained foundation models. The module introduces <code>[FoundationModel]</code>, a scikit-learn compatible interface, and <code>[ForecasterFoundation]</code>, a high-level forecaster fully integrated with the skforecast ecosystem (backtesting, prediction intervals via native quantiles). Four adapters are included out of the box: **Chronos-2** (Amazon), **TimesFM 2.5** (Google), **Moirai-2** (Salesforce), and **TabICLv2** (Soda-Inria). Supports single-series and multi-series forecasting, exogenous variables (Chronos-2, TabICLv2), and quantile-based prediction intervals. [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
 + New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (`LightGBM`, `CatBoost`, `XGBoost`, `HistGradientBoostingRegressor`).
 

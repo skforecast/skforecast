@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from skforecast.foundation._adapters import (
     _resolve_torch_device,
-    Chronos2Adapter,
+    ChronosAdapter,
     MoiraiAdapter,
 )
 from .fixtures_adapters import (
@@ -93,13 +93,13 @@ def test_resolve_torch_device_auto_priority_cuda_over_mps():
 
 
 # ==============================================================================
-# Tests Chronos2Adapter device_map handling
+# Tests ChronosAdapter device_map handling
 # ==============================================================================
-def test_Chronos2Adapter_device_map_default_is_auto():
+def test_ChronosAdapter_device_map_default_is_auto():
     """
-    Test that Chronos2Adapter default device_map is "auto".
+    Test that ChronosAdapter default device_map is "auto".
     """
-    adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
+    adapter = ChronosAdapter(model_id="autogluon/chronos-2-small")
     assert adapter.device_map == "auto"
 
 
@@ -108,24 +108,24 @@ def test_Chronos2Adapter_device_map_default_is_auto():
     ["auto", "cpu", "cuda", "mps"],
     ids=lambda d: f"device_map={d}"
 )
-def test_Chronos2Adapter_device_map_stored_in_get_params(device_map):
+def test_ChronosAdapter_device_map_stored_in_get_params(device_map):
     """
     Test that custom device_map values are stored and returned by
     get_params.
     """
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", device_map=device_map
     )
     assert adapter.device_map == device_map
     assert adapter.get_params()["device_map"] == device_map
 
 
-def test_Chronos2Adapter_set_params_device_map_resets_pipeline():
+def test_ChronosAdapter_set_params_device_map_resets_pipeline():
     """
     Test that changing device_map via set_params resets the cached
     _pipeline to None.
     """
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
     )
     assert adapter._pipeline is not None
@@ -134,7 +134,7 @@ def test_Chronos2Adapter_set_params_device_map_resets_pipeline():
     assert adapter.device_map == "cpu"
 
 
-def test_Chronos2Adapter_load_pipeline_passes_device_map_to_from_pretrained():
+def test_ChronosAdapter_load_pipeline_passes_device_map_to_from_pretrained():
     """
     Test that _load_pipeline passes device_map directly to
     BaseChronosPipeline.from_pretrained without resolving it
@@ -143,7 +143,7 @@ def test_Chronos2Adapter_load_pipeline_passes_device_map_to_from_pretrained():
     mock_pipeline_cls = MagicMock()
     mock_pipeline_cls.from_pretrained.return_value = FakePipeline()
 
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", device_map="auto"
     )
 
@@ -158,7 +158,7 @@ def test_Chronos2Adapter_load_pipeline_passes_device_map_to_from_pretrained():
     )
 
 
-def test_Chronos2Adapter_load_pipeline_passes_explicit_device_map():
+def test_ChronosAdapter_load_pipeline_passes_explicit_device_map():
     """
     Test that an explicit device_map like "cuda" is forwarded as-is to
     from_pretrained.
@@ -166,7 +166,7 @@ def test_Chronos2Adapter_load_pipeline_passes_explicit_device_map():
     mock_pipeline_cls = MagicMock()
     mock_pipeline_cls.from_pretrained.return_value = FakePipeline()
 
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", device_map="cuda"
     )
 
@@ -180,12 +180,12 @@ def test_Chronos2Adapter_load_pipeline_passes_explicit_device_map():
     assert call_kwargs[1]["device_map"] == "cuda"
 
 
-def test_Chronos2Adapter_predict_full_pipeline_with_device_map():
+def test_ChronosAdapter_predict_full_pipeline_with_device_map():
     """
     Test that the full fit → predict pipeline works with an explicit
     device_map. Uses FakePipeline so no actual GPU is needed.
     """
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small",
         pipeline=FakePipeline(),
         device_map="cpu",

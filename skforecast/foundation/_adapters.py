@@ -48,9 +48,9 @@ def _resolve_torch_device(device: str) -> str:
     return "cpu"
 
 
-class Chronos2Adapter:
+class ChronosAdapter:
     """
-    Adapter for Amazon Chronos-2 foundation models.
+    Adapter for Amazon Chronos foundation models.
 
     Parameters
     ----------
@@ -65,7 +65,7 @@ class Chronos2Adapter:
         predict time, if `context` is longer than `context_length` it is
         trimmed to this length; if it is shorter, all available observations
         are used as-is. Defaults to 8192, which matches the maximum context
-        window of Chronos-2. Must be a positive integer.
+        window of Chronos. Must be a positive integer.
     predict_kwargs : dict, default None
         Additional keyword arguments forwarded to the pipeline's
         `predict_quantiles` method.
@@ -77,7 +77,7 @@ class Chronos2Adapter:
     torch_dtype : object, default None
         Torch dtype forwarded to `BaseChronosPipeline.from_pretrained`.
     cross_learning : bool, default False
-        If `True`, Chronos-2 shares information across all series in
+        If `True`, Chronos shares information across all series in
         the batch when predicting in multi-series mode. Forwarded
         directly to `predict_quantiles`. Ignored in single-series mode.
 
@@ -140,7 +140,7 @@ class Chronos2Adapter:
             this length before inference; if it is shorter, all available
             observations are passed as-is and the model handles reduced
             context gracefully. Defaults to 8192, which matches the
-            maximum context window of Chronos-2. Must be a positive
+            maximum context window of Chronos. Must be a positive
             integer.
         predict_kwargs : dict, default None
             Additional keyword arguments forwarded verbatim to the
@@ -154,7 +154,7 @@ class Chronos2Adapter:
             Torch dtype forwarded to `BaseChronosPipeline.from_pretrained`
             (e.g. `torch.bfloat16`).
         cross_learning : bool, default False
-            If `True`, Chronos-2 shares information across all series in
+            If `True`, Chronos shares information across all series in
             the batch when predicting in multi-series mode. Forwarded
             directly to `predict_quantiles`. Ignored in single-series mode.
         
@@ -196,7 +196,7 @@ class Chronos2Adapter:
             'predict_kwargs': self.predict_kwargs or None,
         }
 
-    def set_params(self, **params) -> Chronos2Adapter:
+    def set_params(self, **params) -> ChronosAdapter:
         """
         Set adapter parameters. Resets the pipeline when a device or dtype
         param changes, since those are baked into the loaded pipeline.
@@ -209,7 +209,7 @@ class Chronos2Adapter:
 
         Returns
         -------
-        self : Chronos2Adapter
+        self : ChronosAdapter
 
         """
 
@@ -220,7 +220,7 @@ class Chronos2Adapter:
         invalid = set(params) - valid
         if invalid:
             raise ValueError(
-                f"Invalid parameter(s) for Chronos2Adapter: {sorted(invalid)}. "
+                f"Invalid parameter(s) for ChronosAdapter: {sorted(invalid)}. "
                 f"Valid parameters are: {sorted(valid)}."
             )
         
@@ -246,10 +246,10 @@ class Chronos2Adapter:
         self,
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None],
-    ) -> Chronos2Adapter:
+    ) -> ChronosAdapter:
         """
         Store the training series and optional historical exogenous variables.
-        No model training occurs since Chronos-2 is a zero-shot inference model.
+        No model training occurs since Chronos is a zero-shot inference model.
 
         All input normalization and validation is performed upstream by
         `FoundationModel`; this method receives canonical dicts only.
@@ -263,7 +263,7 @@ class Chronos2Adapter:
 
         Returns
         -------
-        self : Chronos2Adapter
+        self : ChronosAdapter
 
         """
 
@@ -282,7 +282,7 @@ class Chronos2Adapter:
         quantiles: list[float] | tuple[float] | None
     ) -> dict[str, np.ndarray]:
         """
-        Generate predictions using the Chronos-2 pipeline.
+        Generate predictions using the Chronos pipeline.
 
         All input normalization, validation, and context trimming is
         performed upstream by `FoundationModel`; this method receives
@@ -312,7 +312,7 @@ class Chronos2Adapter:
         """
 
         # NOTE: the pipeline is loaded lazily here so that the adapter can be
-        # instantiated and fitted without requiring Chronos-2 to be installed.
+        # instantiated and fitted without requiring Chronos to be installed.
         self._load_pipeline()
 
         series_names_in = list(context.keys())
@@ -348,7 +348,7 @@ class Chronos2Adapter:
 
     def _load_pipeline(self) -> None:
         """
-        Load the Chronos-2 pipeline into `self._pipeline` if not already set.
+        Load the Chronos pipeline into `self._pipeline` if not already set.
 
         Returns
         -------
@@ -394,7 +394,7 @@ class Chronos2Adapter:
 
         Numeric columns (int, float) and boolean columns are cast to
         `float32`. All other dtypes (object, string, Categorical) are left
-        as-is so that Chronos-2 can handle them as categorical covariates
+        as-is so that Chronos can handle them as categorical covariates
         natively.
 
         Parameters
@@ -446,7 +446,7 @@ class Chronos2Adapter:
             its name) becomes an entry in the returned
             "past_covariates" dict. Numeric and boolean columns are
             cast to `float32`; string and categorical columns are passed
-            as-is and handled natively by Chronos-2.
+            as-is and handled natively by Chronos.
         exog : pandas DataFrame, pandas Series, default None
             Future-known exogenous variables covering the forecast horizon.
             Must have exactly `prediction_length` rows. Each column
@@ -473,7 +473,7 @@ class Chronos2Adapter:
                 else context_exog.to_frame()
             )
             input_dict["past_covariates"] = {
-                col: Chronos2Adapter._to_covariate_array(df[col]) for col in df.columns
+                col: ChronosAdapter._to_covariate_array(df[col]) for col in df.columns
             }
         if exog is not None:
             df = (
@@ -482,15 +482,15 @@ class Chronos2Adapter:
                 else exog.to_frame()
             )
             input_dict["future_covariates"] = {
-                col: Chronos2Adapter._to_covariate_array(df[col]) for col in df.columns
+                col: ChronosAdapter._to_covariate_array(df[col]) for col in df.columns
             }
         
         return input_dict
 
 
-class TimesFM25Adapter:
+class TimesFMAdapter:
     """
-    Adapter for Google TimesFM 2.5 foundation models.
+    Adapter for Google TimesFM foundation models.
 
     Parameters
     ----------
@@ -505,7 +505,7 @@ class TimesFM25Adapter:
         predict time, if `context` is longer than `context_length` it
         is trimmed to this length; if it is shorter, all available
         observations are used as-is. Must be a positive integer. Defaults to
-        512. TimesFM 2.5 supports up to 16_384.
+        512. TimesFM supports up to 16_384.
     max_horizon : int, default 512
         Maximum forecast horizon. If `predict` is called with
         `steps > max_horizon`, a `ValueError` is raised. The model is
@@ -540,7 +540,7 @@ class TimesFM25Adapter:
 
     Notes
     -----
-    TimesFM 2.5 supports only the fixed quantile levels
+    TimesFM supports only the fixed quantile levels
     `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. Requesting any
     other level raises a `ValueError`.
 
@@ -632,7 +632,7 @@ class TimesFM25Adapter:
             'forecast_config_kwargs': self.forecast_config_kwargs or None,
         }
 
-    def set_params(self, **params) -> TimesFM25Adapter:
+    def set_params(self, **params) -> TimesFMAdapter:
         """
         Set adapter parameters. Resets the model when parameters that affect
         compilation change (`model_id`, `context_length`, `max_horizon`,
@@ -646,7 +646,7 @@ class TimesFM25Adapter:
 
         Returns
         -------
-        self : TimesFM25Adapter
+        self : TimesFMAdapter
 
         """
 
@@ -654,7 +654,7 @@ class TimesFM25Adapter:
         invalid = set(params) - valid
         if invalid:
             raise ValueError(
-                f"Invalid parameter(s) for TimesFM25Adapter: {sorted(invalid)}. "
+                f"Invalid parameter(s) for TimesFMAdapter: {sorted(invalid)}. "
                 f"Valid parameters are: {sorted(valid)}."
             )
         model_reset_keys = {'model_id', 'context_length', 'max_horizon', 'forecast_config_kwargs'}
@@ -684,10 +684,10 @@ class TimesFM25Adapter:
         self,
         context: dict[str, pd.Series],
         context_exog: Any,
-    ) -> TimesFM25Adapter:
+    ) -> TimesFMAdapter:
         """
         Store the training series.
-        No model training occurs since TimesFM 2.5 is a zero-shot inference model.
+        No model training occurs since TimesFM is a zero-shot inference model.
 
         All input normalization and validation is performed upstream by
         `FoundationModel`; this method receives canonical dicts only.
@@ -701,7 +701,7 @@ class TimesFM25Adapter:
 
         Returns
         -------
-        self : TimesFM25Adapter
+        self : TimesFMAdapter
 
         """
 
@@ -719,7 +719,7 @@ class TimesFM25Adapter:
         quantiles: list[float] | tuple[float] | None,
     ) -> dict[str, np.ndarray]:
         """
-        Generate predictions using the TimesFM 2.5 model.
+        Generate predictions using the TimesFM model.
 
         All input normalization, validation, and context trimming is
         performed upstream by `FoundationModel`; this method receives
@@ -758,7 +758,7 @@ class TimesFM25Adapter:
             for q in quantile_list:
                 if not any(abs(q - sq) < 1e-9 for sq in self.SUPPORTED_QUANTILES):
                     raise ValueError(
-                        f"TimesFM 2.5 only supports quantile levels "
+                        f"TimesFM only supports quantile levels "
                         f"{self.SUPPORTED_QUANTILES}. Got {q!r}. "
                         f"Quantile interpolation is not supported."
                     )
@@ -799,7 +799,7 @@ class TimesFM25Adapter:
 
     def _load_model(self) -> None:
         """
-        Load (but do not compile) the TimesFM 2.5 model into `self._model`
+        Load (but do not compile) the TimesFM model into `self._model`
         if not already set.
 
         Returns
@@ -828,7 +828,7 @@ class TimesFM25Adapter:
             import timesfm
         except ImportError as exc:
             raise ImportError(
-                "timesfm is required for TimesFM25Adapter. "
+                "timesfm is required for TimesFMAdapter. "
                 "Install it with `pip install git+https://github.com/google-research/timesfm.git`."
             ) from exc
 
@@ -895,7 +895,7 @@ class TimesFM25Adapter:
 
 class MoiraiAdapter:
     """
-    Adapter for Salesforce Moirai-2 foundation models.
+    Adapter for Salesforce Moirai foundation models.
 
     Parameters
     ----------
@@ -929,14 +929,14 @@ class MoiraiAdapter:
     device : str
         Device placement for the model.
     _forecast_obj : object
-        Internal Moirai-2 forecast object, populated at the first call to
+        Internal Moirai forecast object, populated at the first call to
         `predict`.
     is_fitted : bool
         Whether the adapter has been fitted.
 
     Notes
     -----
-    Moirai-2 supports only the fixed quantile levels
+    Moirai supports only the fixed quantile levels
     `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. Requesting any
     other level raises a `ValueError`.
 
@@ -1065,7 +1065,7 @@ class MoiraiAdapter:
     ) -> MoiraiAdapter:
         """
         Store the training series.
-        No model training occurs since Moirai-2 is a zero-shot inference model.
+        No model training occurs since Moirai is a zero-shot inference model.
 
         All input normalization and validation is performed upstream by
         `FoundationModel`; this method receives canonical dicts only.
@@ -1097,7 +1097,7 @@ class MoiraiAdapter:
         quantiles: list[float] | tuple[float] | None,
     ) -> dict[str, np.ndarray]:
         """
-        Generate predictions using Moirai-2.
+        Generate predictions using Moirai.
 
         All input normalization, validation, and context trimming is
         performed upstream by `FoundationModel`; this method receives
@@ -1135,7 +1135,7 @@ class MoiraiAdapter:
             for q in quantile_list:
                 if not any(abs(q - sq) < 1e-9 for sq in self.SUPPORTED_QUANTILES):
                     raise ValueError(
-                        f"Moirai-2 only supports quantile levels "
+                        f"Moirai only supports quantile levels "
                         f"{self.SUPPORTED_QUANTILES}. Got {q!r}. "
                         f"Quantile interpolation is not supported."
                     )
@@ -1334,7 +1334,7 @@ class TabICLAdapter:
     Notes
     -----
     TabICL supports arbitrary quantile levels (any float in `[0, 1]`),
-    unlike models with fixed quantile sets such as TimesFM 2.5 or Moirai-2.
+    unlike models with fixed quantile sets such as TimesFM or Moirai.
 
     Covariate support is available: extra columns in `context` and `exog`
     are forwarded as covariates. TabICL uses only the intersection of columns
@@ -1351,7 +1351,7 @@ class TabICLAdapter:
     References
     ----------
     .. [1] https://github.com/soda-inria/tabicl
-    .. [2] https://huggingface.co/soda-inria/tabicl
+    .. [2] https://tabicl.readthedocs.io/en/latest/
 
     """
 
@@ -1651,7 +1651,7 @@ class TabICLAdapter:
         if self._model is not None:
             return
         try:
-            from tabicl.forecast.forecaster import TabICLForecaster
+            from tabicl.forecast import TabICLForecaster
         except ImportError as exc:
             raise ImportError(
                 "tabicl[forecast] is required for TabICLAdapter. "
@@ -1855,9 +1855,9 @@ class TabICLAdapter:
 
 
 _ADAPTER_REGISTRY: dict[str, type] = {
-    "amazon/chronos":    Chronos2Adapter,
-    "autogluon/chronos": Chronos2Adapter,
-    "google/timesfm":    TimesFM25Adapter,
+    "amazon/chronos":    ChronosAdapter,
+    "autogluon/chronos": ChronosAdapter,
+    "google/timesfm":    TimesFMAdapter,
     "Salesforce/moirai": MoiraiAdapter,
     "soda-inria/tabicl": TabICLAdapter,
     # "ibm/TTM": TTMAdapter,

@@ -27,9 +27,10 @@ class FoundationModel:
     """
     Scikit-learn compatible interface for foundation time-series models.
 
-    Currently supports Amazon Chronos-2, Google TimesFM 2.5 and Salesforce
-    Moirai-2. For full skforecast ecosystem integration (backtesting, model
-    selection, etc.) use `ForecasterFoundation` instead.
+    Currently supports Amazon Chronos-2, Google TimesFM 2.5, Salesforce
+    Moirai-2 and TabICLv2. For full skforecast ecosystem integration
+    (backtesting, model selection, etc.) use `ForecasterFoundation`
+    instead.
 
     Parameters
     ----------
@@ -50,19 +51,24 @@ class FoundationModel:
         Salesforce Moirai-2 (does not support `exog`):
 
         - `'Salesforce/moirai-2.0-R-small'`
+
+        TabICLv2 (supports `exog`):
+
+        - `'soda-inria/tabicl'`
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
         Valid keys depend on the adapter selected by `model_id`. See the
-        corresponding adapter class (`Chronos2Adapter`, `TimesFM25Adapter`,
-        `Moirai2Adapter`) for the full parameter list, or refer to the
-        model documentation linked in the References section below.
+        corresponding adapter class (`ChronosAdapter`, `TimesFMAdapter`,
+        `MoiraiAdapter`, `TabICLAdapter`) for the full parameter list, or
+        refer to the model documentation linked in the References section
+        below.
 
     Attributes
     ----------
     adapter : object
         The underlying adapter instance, instantiated automatically based on
         the `model_id` prefix. The concrete type depends on the model — e.g.
-        `Chronos2Adapter` for `autogluon/chronos-*` models.
+        `ChronosAdapter` for `autogluon/chronos-*` models.
     model_id : str
         HuggingFace model ID. Mirrors `adapter.model_id`.
     context_ : dict[str, pandas Series]
@@ -139,6 +145,12 @@ class FoundationModel:
 
     .. [6] Salesforce Moirai-R - HuggingFace collection.
            https://huggingface.co/collections/Salesforce/moirai-r-models-65c8d3a94c51428c300e0742
+
+    .. [7] TabICL - GitHub repository.
+           https://github.com/soda-inria/tabicl
+
+    .. [8] TabICL - Documentation.
+           https://tabicl.readthedocs.io/en/latest/
 
     """
 

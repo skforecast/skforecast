@@ -3,9 +3,10 @@
 import re
 import pytest
 from skforecast.foundation._adapters import (
-    Chronos2Adapter,
-    TimesFM25Adapter,
+    ChronosAdapter,
+    TimesFMAdapter,
     MoiraiAdapter,
+    TabICLAdapter,
     _resolve_adapter,
     _ADAPTER_REGISTRY,
 )
@@ -16,11 +17,12 @@ from skforecast.foundation._adapters import (
 @pytest.mark.parametrize(
     "model_id, expected_cls",
     [
-        ("autogluon/chronos-2-small", Chronos2Adapter),
-        ("autogluon/chronos-2-large", Chronos2Adapter),
-        ("google/timesfm-2.5-200m-pytorch", TimesFM25Adapter),
-        ("google/timesfm-2.5-200m-flax", TimesFM25Adapter),
+        ("autogluon/chronos-2-small", ChronosAdapter),
+        ("autogluon/chronos-2-large", ChronosAdapter),
+        ("google/timesfm-2.5-200m-pytorch", TimesFMAdapter),
+        ("google/timesfm-2.5-200m-flax", TimesFMAdapter),
         ("Salesforce/moirai-2-base", MoiraiAdapter),
+        ("soda-inria/tabicl", TabICLAdapter),
     ],
     ids=lambda x: str(x),
 )
@@ -50,9 +52,10 @@ def test_ADAPTER_REGISTRY_contains_all_expected_entries():
     Test that _ADAPTER_REGISTRY maps each expected prefix to its adapter.
     """
     expected = {
-        "autogluon/chronos": Chronos2Adapter,
-        "google/timesfm":    TimesFM25Adapter,
+        "autogluon/chronos": ChronosAdapter,
+        "google/timesfm":    TimesFMAdapter,
         "Salesforce/moirai": MoiraiAdapter,
+        "soda-inria/tabicl": TabICLAdapter,
     }
     for prefix, cls in expected.items():
         assert prefix in _ADAPTER_REGISTRY

@@ -14,8 +14,8 @@ description: >
 ## References
 
 See [references/adapter-parameters.md](references/adapter-parameters.md) for
-the per-adapter constructor parameters of `Chronos2Adapter`,
-`TimesFM25Adapter`, and `MoiraiAdapter`.
+the per-adapter constructor parameters of `ChronosAdapter`,
+`TimesFMAdapter`, and `MoiraiAdapter`.
 
 ## When to Use
 

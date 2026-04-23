@@ -64,7 +64,7 @@ def test_set_params_ValueError_when_invalid_key():
     with pytest.raises(ValueError, match=err_msg) as exc_info:
         m.set_params(bad_param=1)
     assert "FoundationModel" in str(exc_info.value)
-    assert "Chronos2Adapter" not in str(exc_info.value)
+    assert "ChronosAdapter" not in str(exc_info.value)
 
 
 def test_set_params_resets_fitted_state_and_metadata():

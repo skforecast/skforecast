@@ -60,7 +60,6 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 ## Foundation Models
 
 - [Forecasting with foundation models](https://skforecast.org/latest/user_guides/foundation-forecasting-models.html): Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2)
-- [Tabular foundation models](https://skforecast.org/latest/user_guides/tabular-foundation-models.html): Tabular foundation models for time series forecasting
 
 ## Deep Learning
 

@@ -48,7 +48,6 @@ EXCLUDE_NOTEBOOKS = [
     "user_guides/feature-selection.ipynb",  # Too long
     "user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb", 
     "user_guides/foundation-forecasting-models.ipynb",  # Specific environment
-    "user_guides/tabular-foundation-models.ipynb",
     "user_guides/skforecast-in-GPU.ipynb",
     "user_guides/sktime-pipelines.ipynb",
 

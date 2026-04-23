@@ -14,7 +14,7 @@ model = FoundationModel(
 )
 ```
 
-## Chronos2Adapter — Amazon Chronos-2
+## ChronosAdapter — Amazon Chronos-2
 
 - **`model_id` prefix**: `autogluon/chronos`
 - **`allow_exog`**: `True` (past and future covariates)
@@ -30,7 +30,7 @@ model = FoundationModel(
 | `torch_dtype`    | object  | `None`   | Torch dtype for `from_pretrained` (e.g. `torch.bfloat16`).                          |
 | `cross_learning` | bool    | `False`  | If `True`, shares information across series in multi-series batches.                |
 
-## TimesFM25Adapter — Google TimesFM 2.5
+## TimesFMAdapter — Google TimesFM 2.5
 
 - **`model_id` prefix**: `google/timesfm`
 - **`allow_exog`**: `False`

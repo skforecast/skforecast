@@ -64,7 +64,7 @@ skforecast/
 - **Forecasters inheriting from `ForecasterBase`**: ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterRecursiveClassifier, ForecasterDirect, ForecasterDirectMultiVariate, ForecasterRnn
 - **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate, ForecasterFoundation
 - Statistical models in `stats/` are wrapped by `ForecasterStats` (in `recursive/`)
-- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`Chronos2Adapter`, `TimesFM25Adapter`, `MoiraiAdapter`) resolved from the HuggingFace `model_id`
+- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`) resolved from the HuggingFace `model_id`
 - `model_selection/` functions work with all forecaster types
 - `preprocessing/` classes can be passed to forecasters via `transformer_y`, `transformer_exog`, `window_features`
 
@@ -467,8 +467,8 @@ Supported adapters (selected automatically from `model_id`):
 
 | Adapter | `model_id` prefix | Exog | Default `context_length` | Quantiles |
 |---------|-------------------|------|--------------------------|-----------|
-| Chronos2Adapter (Amazon) | `autogluon/chronos` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
-| TimesFM25Adapter (Google) | `google/timesfm` | No | 512 | `[0.1, 0.2, …, 0.9]` |
+| ChronosAdapter (Amazon) | `autogluon/chronos` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
+| TimesFMAdapter (Google) | `google/timesfm` | No | 512 | `[0.1, 0.2, …, 0.9]` |
 | MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, …, 0.9]` |
 
 Key points:
@@ -3323,8 +3323,8 @@ predictions = forecaster.predict_interval(
 ## References
 
 See [references/adapter-parameters.md](references/adapter-parameters.md) for
-the per-adapter constructor parameters of `Chronos2Adapter`,
-`TimesFM25Adapter`, and `MoiraiAdapter`.
+the per-adapter constructor parameters of `ChronosAdapter`,
+`TimesFMAdapter`, and `MoiraiAdapter`.
 
 ## When to Use
 
@@ -3524,7 +3524,7 @@ model = FoundationModel(
 )
 ```
 
-## Chronos2Adapter — Amazon Chronos-2
+## ChronosAdapter — Amazon Chronos-2
 
 - **`model_id` prefix**: `autogluon/chronos`
 - **`allow_exog`**: `True` (past and future covariates)
@@ -3540,7 +3540,7 @@ model = FoundationModel(
 | `torch_dtype`    | object  | `None`   | Torch dtype for `from_pretrained` (e.g. `torch.bfloat16`).                          |
 | `cross_learning` | bool    | `False`  | If `True`, shares information across series in multi-series batches.                |
 
-## TimesFM25Adapter — Google TimesFM 2.5
+## TimesFMAdapter — Google TimesFM 2.5
 
 - **`model_id` prefix**: `google/timesfm`
 - **`allow_exog`**: `False`

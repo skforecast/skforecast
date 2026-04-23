@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from skforecast.foundation import ForecasterFoundation, FoundationModel
-from skforecast.foundation._adapters import Chronos2Adapter
+from skforecast.foundation._adapters import ChronosAdapter
 
 # Fixtures
 from .fixtures_forecaster_foundation import make_forecaster, FakePipeline
@@ -18,7 +18,7 @@ from .fixtures_forecaster_foundation import make_forecaster, FakePipeline
 
 @pytest.mark.parametrize(
     "estimator",
-    [LinearRegression(), Chronos2Adapter(model_id="autogluon/chronos-2-small")],
+    [LinearRegression(), ChronosAdapter(model_id="autogluon/chronos-2-small")],
     ids=lambda e: f"estimator: {type(e).__name__}",
 )
 def test_init_TypeError_when_estimator_is_not_FoundationModel(estimator):

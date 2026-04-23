@@ -1,10 +1,10 @@
-# Unit test Chronos2Adapter
+# Unit test ChronosAdapter
 # ==============================================================================
 import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.foundation._adapters import Chronos2Adapter
+from skforecast.foundation._adapters import ChronosAdapter
 from .fixtures_adapters import (
     y, exog, y_wide, y_dict, exog_shared,
     FakePipeline,
@@ -13,14 +13,14 @@ from .fixtures_adapters import (
 
 
 # ==============================================================================
-# Tests Chronos2Adapter.__init__
+# Tests ChronosAdapter.__init__
 # ==============================================================================
-def test_Chronos2Adapter_init_default_params():
+def test_ChronosAdapter_init_default_params():
     """
     Test that default parameter values are set correctly and class-level
     attributes are properly initialised.
     """
-    adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
+    adapter = ChronosAdapter(model_id="autogluon/chronos-2-small")
     assert adapter.model_id == "autogluon/chronos-2-small"
     assert adapter.context_length == 8192
     assert adapter.predict_kwargs == {}
@@ -31,7 +31,7 @@ def test_Chronos2Adapter_init_default_params():
     assert adapter.context_ is None
     assert adapter.context_exog_ is None
     assert adapter.is_fitted is False
-    assert Chronos2Adapter.allow_exog is True
+    assert ChronosAdapter.allow_exog is True
 
 
 @pytest.mark.parametrize(
@@ -39,22 +39,22 @@ def test_Chronos2Adapter_init_default_params():
     [0, -1, None, 1.5, "not_int"],
     ids=lambda cl: f"context_length={cl}"
 )
-def test_Chronos2Adapter_init_ValueError_when_context_length_invalid(context_length):
+def test_ChronosAdapter_init_ValueError_when_context_length_invalid(context_length):
     """
     Test that __init__ raises ValueError for non-positive-integer
     context_length values.
     """
     with pytest.raises(ValueError, match=re.escape("`context_length` must be a positive integer")):
-        Chronos2Adapter(
+        ChronosAdapter(
             model_id="autogluon/chronos-2-small", context_length=context_length
         )
 
 
-def test_Chronos2Adapter_init_custom_params_stored():
+def test_ChronosAdapter_init_custom_params_stored():
     """
     Test that custom constructor parameters are stored correctly.
     """
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small",
         context_length=512,
         cross_learning=True,
@@ -66,14 +66,14 @@ def test_Chronos2Adapter_init_custom_params_stored():
 
 
 # ==============================================================================
-# Tests Chronos2Adapter.get_params / set_params
+# Tests ChronosAdapter.get_params / set_params
 # ==============================================================================
-def test_Chronos2Adapter_get_params_returns_expected_keys_and_values():
+def test_ChronosAdapter_get_params_returns_expected_keys_and_values():
     """
     Test that get_params returns all expected keys with the values set at
     construction, and that predict_kwargs is None when empty.
     """
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small",
         context_length=512,
         cross_learning=True
@@ -98,12 +98,12 @@ def test_Chronos2Adapter_get_params_returns_expected_keys_and_values():
     ],
     ids=["context_length=0", "context_length=-1", "unknown_param"]
 )
-def test_Chronos2Adapter_set_params_ValueError_when_invalid(params, match):
+def test_ChronosAdapter_set_params_ValueError_when_invalid(params, match):
     """
     Test that set_params raises ValueError for invalid parameter values or
     unknown parameter names.
     """
-    adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
+    adapter = ChronosAdapter(model_id="autogluon/chronos-2-small")
     with pytest.raises(ValueError, match=re.escape(match)):
         adapter.set_params(**params)
 
@@ -120,14 +120,14 @@ def test_Chronos2Adapter_set_params_ValueError_when_invalid(params, match):
     ],
     ids=lambda x: str(x)
 )
-def test_Chronos2Adapter_set_params_updates_and_resets_pipeline(
+def test_ChronosAdapter_set_params_updates_and_resets_pipeline(
     param, value, resets_pipeline
 ):
     """
     Test that set_params updates the given parameter and resets _pipeline
     only when model_id, device_map, or torch_dtype changes. Returns self.
     """
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
     )
     assert adapter._pipeline is not None
@@ -139,12 +139,12 @@ def test_Chronos2Adapter_set_params_updates_and_resets_pipeline(
         assert adapter._pipeline is not None
 
 
-def test_Chronos2Adapter_set_params_predict_kwargs_none_normalises_to_empty_dict():
+def test_ChronosAdapter_set_params_predict_kwargs_none_normalises_to_empty_dict():
     """
     Test that passing predict_kwargs=None via set_params normalises
     the internal value to an empty dict (consistent with __init__ behaviour).
     """
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small",
         predict_kwargs={"num_samples": 20}
     )
@@ -153,14 +153,14 @@ def test_Chronos2Adapter_set_params_predict_kwargs_none_normalises_to_empty_dict
 
 
 # ==============================================================================
-# Tests Chronos2Adapter.fit
+# Tests ChronosAdapter.fit
 # ==============================================================================
-def test_Chronos2Adapter_fit_error_handling():
+def test_ChronosAdapter_fit_error_handling():
     """
     Test fit raises TypeError for unsupported series types, ValueError for
     empty dict, and TypeError for non-Series dict values.
     """
-    adapter = Chronos2Adapter(model_id="autogluon/chronos-2-small")
+    adapter = ChronosAdapter(model_id="autogluon/chronos-2-small")
 
     with pytest.raises(TypeError):
         context, context_exog = prepare_fit_args(np.array([1, 2, 3]))
@@ -179,13 +179,13 @@ def test_Chronos2Adapter_fit_error_handling():
     [(10, 10), (25, 25), (50, 50), (100, 50)],
     ids=lambda x: f"{x}"
 )
-def test_Chronos2Adapter_fit_output_single_series(context_length, expected_len):
+def test_ChronosAdapter_fit_output_single_series(context_length, expected_len):
     """
     Test fit on a single series: returns self, sets is_fitted=True,
     stores history trimmed to context_length,
     and does not modify the input series.
     """
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", context_length=context_length
     )
     y_copy = y.copy()
@@ -207,14 +207,14 @@ def test_Chronos2Adapter_fit_output_single_series(context_length, expected_len):
     [y_wide, y_dict],
     ids=["wide_dataframe", "dict"]
 )
-def test_Chronos2Adapter_fit_output_multi_series(series_input):
+def test_ChronosAdapter_fit_output_multi_series(series_input):
     """
     Test fit on multi-series input (wide DataFrame or dict): sets is_fitted
     and stores a dict of Series keyed by series
     names, each trimmed to context_length.
     """
     context_length = 10
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", context_length=context_length
     )
     context, context_exog = prepare_fit_args(series_input, context_length=context_length)
@@ -229,13 +229,13 @@ def test_Chronos2Adapter_fit_output_multi_series(series_input):
         assert len(s) == context_length
 
 
-def test_Chronos2Adapter_fit_exog_stored_and_trimmed():
+def test_ChronosAdapter_fit_exog_stored_and_trimmed():
     """
     Test that exog is stored in context_exog_, trimmed to context_length,
     and that None exog maps all series to None.
     """
     context_length = 15
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", context_length=context_length
     )
 
@@ -256,14 +256,14 @@ def test_Chronos2Adapter_fit_exog_stored_and_trimmed():
     assert adapter.context_exog_ is None
 
 
-def test_Chronos2Adapter_fit_multiseries_exog_broadcast_and_per_series():
+def test_ChronosAdapter_fit_multiseries_exog_broadcast_and_per_series():
     """
     Test that a shared exog DataFrame is broadcast to all series, and that
     a per-series exog dict stores correctly (present key → stored, absent
     key → None). Context_length trims exog per series.
     """
     context_length = 8
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", context_length=context_length
     )
 
@@ -288,15 +288,15 @@ def test_Chronos2Adapter_fit_multiseries_exog_broadcast_and_per_series():
 
 
 # ==============================================================================
-# Tests Chronos2Adapter.predict — single series
+# Tests ChronosAdapter.predict — single series
 # ==============================================================================
-def test_Chronos2Adapter_predict_point_forecast_single_series():
+def test_ChronosAdapter_predict_point_forecast_single_series():
     """
     Test point forecast (quantiles=None) on a single series: returns a
     DataFrame with columns ["level", "pred"], correct length, correct index,
     correct level name, and values = 0.5 (FakePipeline median).
     """
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
     )
     ctx, ctx_exog = prepare_fit_args(y)
@@ -315,13 +315,13 @@ def test_Chronos2Adapter_predict_point_forecast_single_series():
     np.testing.assert_array_almost_equal(arr[:, 0], np.full(12, 0.5))
 
 
-def test_Chronos2Adapter_predict_quantile_forecast_single_series():
+def test_ChronosAdapter_predict_quantile_forecast_single_series():
     """
     Test quantile forecast on a single series: returns dict with correct
     shape, and each quantile column equals its level (FakePipeline property).
     """
     quantiles = [0.1, 0.5, 0.9]
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
     )
     ctx, ctx_exog = prepare_fit_args(y)
@@ -340,19 +340,19 @@ def test_Chronos2Adapter_predict_quantile_forecast_single_series():
 
 
 # ==============================================================================
-# Tests Chronos2Adapter.predict — multi-series
+# Tests ChronosAdapter.predict — multi-series
 # ==============================================================================
 @pytest.mark.parametrize(
     "series_input",
     [y_wide, y_dict],
     ids=["wide_dataframe", "dict"]
 )
-def test_Chronos2Adapter_predict_point_forecast_multi_series(series_input):
+def test_ChronosAdapter_predict_point_forecast_multi_series(series_input):
     """
     Test point forecast on multi-series: returns a dict with one array per
     series, each of shape (steps, 1) with value 0.5.
     """
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
     )
     ctx, ctx_exog = prepare_fit_args(series_input)
@@ -370,13 +370,13 @@ def test_Chronos2Adapter_predict_point_forecast_multi_series(series_input):
         np.testing.assert_array_almost_equal(raw[name][:, 0], np.full(5, 0.5))
 
 
-def test_Chronos2Adapter_predict_quantile_forecast_multi_series():
+def test_ChronosAdapter_predict_quantile_forecast_multi_series():
     """
     Test quantile forecast on multi-series: returns a dict with one array
     per series, each of shape (steps, n_quantiles) with correct values.
     """
     quantiles = [0.1, 0.5, 0.9]
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
     )
     ctx, ctx_exog = prepare_fit_args(y_dict)
@@ -395,15 +395,15 @@ def test_Chronos2Adapter_predict_quantile_forecast_multi_series():
 
 
 # ==============================================================================
-# Tests Chronos2Adapter.predict — pipeline receives correct args
+# Tests ChronosAdapter.predict — pipeline receives correct args
 # ==============================================================================
-def test_Chronos2Adapter_predict_pipeline_receives_correct_args():
+def test_ChronosAdapter_predict_pipeline_receives_correct_args():
     """
     Test that the pipeline's predict_quantiles receives the correct steps,
     quantile_levels, number of inputs, and cross_learning flag.
     """
     pipeline = FakePipeline()
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", pipeline=pipeline
     )
     ctx, ctx_exog = prepare_fit_args(y)
@@ -429,7 +429,7 @@ def test_Chronos2Adapter_predict_pipeline_receives_correct_args():
     assert pipeline.last_quantile_levels == [0.05, 0.95]
 
 
-def test_Chronos2Adapter_predict_cross_learning_forwarded_multiseries():
+def test_ChronosAdapter_predict_cross_learning_forwarded_multiseries():
     """
     Test that cross_learning=True is forwarded to predict_quantiles in
     multi-series mode and cross_learning=False by default.
@@ -437,7 +437,7 @@ def test_Chronos2Adapter_predict_cross_learning_forwarded_multiseries():
     pipeline = FakePipeline()
 
     # cross_learning=True
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small",
         pipeline=pipeline,
         cross_learning=True
@@ -453,7 +453,7 @@ def test_Chronos2Adapter_predict_cross_learning_forwarded_multiseries():
     assert len(pipeline.last_inputs) == 2
 
     # cross_learning=False (default)
-    adapter2 = Chronos2Adapter(
+    adapter2 = ChronosAdapter(
         model_id="autogluon/chronos-2-small", pipeline=pipeline
     )
     adapter2.fit(context=ctx, context_exog=ctx_exog)
@@ -465,16 +465,16 @@ def test_Chronos2Adapter_predict_cross_learning_forwarded_multiseries():
 
 
 # ==============================================================================
-# Tests Chronos2Adapter.predict — exog forwarding
+# Tests ChronosAdapter.predict — exog forwarding
 # ==============================================================================
-def test_Chronos2Adapter_predict_past_and_future_covariates_forwarded():
+def test_ChronosAdapter_predict_past_and_future_covariates_forwarded():
     """
     Test that past exog (from fit history) is forwarded as past_covariates,
     future exog is forwarded as future_covariates, and absent exog results
     in no covariates key.
     """
     pipeline = FakePipeline()
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small", pipeline=pipeline
     )
 
@@ -497,14 +497,14 @@ def test_Chronos2Adapter_predict_past_and_future_covariates_forwarded():
     assert len(pipeline.last_inputs[0]["future_covariates"]["feat_a"]) == 6
 
 
-def test_Chronos2Adapter_predict_context_length_trims_history():
+def test_ChronosAdapter_predict_context_length_trims_history():
     """
     Test that the history passed to the pipeline is trimmed to
     context_length when longer.
     """
     context_length = 10
     pipeline = FakePipeline()
-    adapter = Chronos2Adapter(
+    adapter = ChronosAdapter(
         model_id="autogluon/chronos-2-small",
         pipeline=pipeline,
         context_length=context_length
@@ -521,15 +521,15 @@ def test_Chronos2Adapter_predict_context_length_trims_history():
 
 
 # ==============================================================================
-# Tests Chronos2Adapter._build_chronos_input
+# Tests ChronosAdapter._build_chronos_input
 # ==============================================================================
 _past_exog_idx = pd.date_range("2020-01-01", periods=30, freq="ME")
 _future_exog_idx = pd.date_range("2022-07-01", periods=12, freq="ME")
-_adapter_for_build = Chronos2Adapter(model_id="autogluon/chronos-2-small")
+_adapter_for_build = ChronosAdapter(model_id="autogluon/chronos-2-small")
 _target_30 = np.arange(30, dtype=float)
 
 
-def test_Chronos2Adapter_build_chronos_input_target_only():
+def test_ChronosAdapter_build_chronos_input_target_only():
     """
     Test _build_chronos_input returns only 'target' key when no exog is passed,
     and converts integer target to float32.
@@ -577,7 +577,7 @@ def test_Chronos2Adapter_build_chronos_input_target_only():
     ],
     ids=["past_df", "past_series", "future_df", "both"]
 )
-def test_Chronos2Adapter_build_chronos_input_with_covariates(
+def test_ChronosAdapter_build_chronos_input_with_covariates(
     past_exog, future_exog, expected_keys
 ):
     """
@@ -612,7 +612,7 @@ def test_Chronos2Adapter_build_chronos_input_with_covariates(
         "string→object", "categorical→object",
     ]
 )
-def test_Chronos2Adapter_build_chronos_input_dtype_handling(
+def test_ChronosAdapter_build_chronos_input_dtype_handling(
     col_data, expected_dtype_kind
 ):
     """
@@ -642,7 +642,7 @@ def test_Chronos2Adapter_build_chronos_input_dtype_handling(
         assert np.isnan(arr[2])
 
 
-def test_Chronos2Adapter_build_chronos_input_mixed_numeric_and_categorical():
+def test_ChronosAdapter_build_chronos_input_mixed_numeric_and_categorical():
     """
     Test _build_chronos_input handles DataFrames with a mix of numeric and
     string columns: numeric → float64, string → object/unicode.
@@ -672,12 +672,12 @@ def test_Chronos2Adapter_build_chronos_input_mixed_numeric_and_categorical():
     ],
     ids=["np_int→float64", "np_float→float64", "np_bool→float64", "list_str→object"],
 )
-def test_Chronos2Adapter_to_covariate_array_non_pandas_inputs(
+def test_ChronosAdapter_to_covariate_array_non_pandas_inputs(
     col_data, expected_dtype_kind
 ):
     """
     Test _to_covariate_array fallback path for non-pandas inputs: numpy
     arrays and plain lists are handled correctly.
     """
-    arr = Chronos2Adapter._to_covariate_array(col_data)
+    arr = ChronosAdapter._to_covariate_array(col_data)
     assert arr.dtype.kind in expected_dtype_kind
