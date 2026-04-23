@@ -463,9 +463,9 @@ class OneStepAheadFold(BaseFold):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{__version__}/api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">&#128214; <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{__version__}/faq/parameters-search-backtesting-vs-one-step-ahead.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/faq/parameters-search-backtesting-vs-one-step-ahead.html">&#128221; <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -865,9 +865,9 @@ class TimeSeriesFold(BaseFold):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{__version__}/api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold">&#128214; <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{__version__}/user_guides/backtesting.html#timeseriesfold">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/backtesting.html#timeseriesfold">&#128221; <strong>User Guide</strong></a>
             </p>
         </div>
         """

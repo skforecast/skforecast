@@ -319,9 +319,9 @@ class FoundationModel:
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{__version__}/api/foundationmodel.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/foundationmodel.html">&#128214; <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{__version__}/user_guides/foundation-forecasting-models.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/foundation-forecasting-models.html">&#128221; <strong>User Guide</strong></a>
             </p>
         </div>
         """

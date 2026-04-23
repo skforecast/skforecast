@@ -550,9 +550,9 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterrecursiveclassifier.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterrecursiveclassifier.html">&#128214; <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/autoregressive-classification-forecasting.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/autoregressive-classification-forecasting.html">&#128221; <strong>User Guide</strong></a>
             </p>
         </div>
         """
