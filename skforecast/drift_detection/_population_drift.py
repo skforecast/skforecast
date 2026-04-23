@@ -341,9 +341,9 @@ class PopulationDriftDetector:
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{__version__}/api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector">&#128214; <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{__version__}/user_guides/drift-detection.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/drift-detection.html">&#128221; <strong>User Guide</strong></a>
             </p>
         </div>
         """
