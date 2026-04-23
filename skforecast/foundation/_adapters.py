@@ -1501,7 +1501,7 @@ class TabICLAdapter:
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> TabICLAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -1533,8 +1533,8 @@ class TabICLAdapter:
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
-        exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         quantiles: list[float] | tuple[float] | None,
     ) -> dict[str, np.ndarray]:
         """
@@ -1596,17 +1596,25 @@ class TabICLAdapter:
             )
 
         context_df = self._build_context_df(
-            series_names_in, context, context_exog, is_datetime
-        )
+                         series_names = series_names_in, 
+                         context      = context, 
+                         context_exog = context_exog, 
+                         is_datetime  = is_datetime
+                     )
+        
         future_df = self._build_future_df(
-            series_names_in, context, exog, steps, is_datetime
-        )
+                        series_names = series_names_in, 
+                        context      = context, 
+                        exog         = exog, 
+                        steps        = steps, 
+                        is_datetime  = is_datetime
+                    )
 
         result_df = self._model.predict_df(
-            context_df = context_df,
-            future_df  = future_df,
-            quantiles  = tabicl_quantiles,
-        )
+                        context_df = context_df,
+                        future_df  = future_df,
+                        quantiles  = tabicl_quantiles,
+                    )
 
         # result_df is a plain DataFrame with MultiIndex (item_id, timestamp).
         # columns: "target" (str) and quantile levels as float column names.
@@ -1644,20 +1652,19 @@ class TabICLAdapter:
         if self._model is not None:
             return
         try:
-            from tabicl.forecast.forecaster import (
-                TabICLForecaster as _TabICLForecaster,
-            )
+            from tabicl.forecast.forecaster import TabICLForecaster
         except ImportError as exc:
             raise ImportError(
                 "tabicl[forecast] is required for TabICLAdapter. "
                 "Install it with `pip install tabicl[forecast]`."
             ) from exc
-        self._model = _TabICLForecaster(
-            max_context_length = self.context_length,
-            temporal_features  = self.temporal_features,
-            point_estimate     = self.point_estimate,
-            tabicl_config      = self.tabicl_config or {},
-        )
+        
+        self._model = TabICLForecaster(
+                          max_context_length = self.context_length,
+                          temporal_features  = self.temporal_features,
+                          point_estimate     = self.point_estimate,
+                          tabicl_config      = self.tabicl_config or {},
+                      )
 
     def _get_timestamps(
         self, series: pd.Series, is_datetime: bool
@@ -1686,6 +1693,7 @@ class TabICLAdapter:
 
         if is_datetime:
             return series.index
+        
         return pd.date_range("2000-01-01", periods=len(series), freq="D")
 
     def _get_future_timestamps(
@@ -1721,17 +1729,20 @@ class TabICLAdapter:
                 freq = pd.tseries.frequencies.to_offset(
                     pd.infer_freq(series.index)
                 )
-            return pd.date_range(
-                start   = series.index[-1] + freq,
-                periods = steps,
-                freq    = freq,
-            )
-        n = len(series)
-        return pd.date_range(
-            start   = pd.Timestamp("2000-01-01") + pd.Timedelta(days=n),
-            periods = steps,
-            freq    = "D",
-        )
+            timestamps = pd.date_range(
+                             start   = series.index[-1] + freq,
+                             periods = steps,
+                             freq    = freq,
+                         )
+        else:
+            n = len(series)
+            timestamps = pd.date_range(
+                             start   = pd.Timestamp("2000-01-01") + pd.Timedelta(days=n),
+                             periods = steps,
+                             freq    = "D",
+                         )
+        
+        return timestamps
 
     def _build_context_df(
         self,
@@ -1765,7 +1776,7 @@ class TabICLAdapter:
 
         """
 
-        parts = []
+        context_df = []
         for name in series_names:
             series = context[name]
             n = len(series)
@@ -1781,9 +1792,11 @@ class TabICLAdapter:
                 part = pd.concat(
                     [part, exog_entry.reset_index(drop=True)], axis=1
                 )
-            parts.append(part)
+            context_df.append(part)
 
-        return pd.concat(parts, ignore_index=True)
+        context_df = pd.concat(context_df, ignore_index=True)
+
+        return context_df
 
     def _build_future_df(
         self,
@@ -1821,7 +1834,7 @@ class TabICLAdapter:
 
         """
 
-        parts = []
+        future_df = []
         for name in series_names:
             series = context[name]
             part = pd.DataFrame({
@@ -1835,9 +1848,11 @@ class TabICLAdapter:
                 part = pd.concat(
                     [part, future_exog.reset_index(drop=True)], axis=1
                 )
-            parts.append(part)
+            future_df.append(part)
 
-        return pd.concat(parts, ignore_index=True)
+        future_df = pd.concat(future_df, ignore_index=True)
+
+        return future_df
 
 
 _ADAPTER_REGISTRY: dict[str, type] = {
