@@ -157,6 +157,69 @@ def test_fetch_dataset_invalid_name_raises():
         )
 
 
+def test_fetch_dataset_parquet_already_indexed():
+    """
+    `fetch_dataset` skips `set_index` when the parquet DataFrame is already
+    stored with the date column as the index (i.e. `df.index.name == index_col`).
+    """
+    mock_df = pd.DataFrame(
+        {'value': [1.0, 2.0, 3.0]},
+        index=pd.DatetimeIndex(
+            ['2019-01-01', '2019-01-02', '2019-01-03'], name='timestamp'
+        )
+    )
+
+    with patch('pandas.read_parquet', return_value=mock_df):
+        df = fetch_dataset('m4_daily', version='latest', raw=False, verbose=False)
+
+    assert isinstance(df.index, pd.DatetimeIndex)
+    assert df.index.name == 'timestamp'
+    assert df.index.freq == 'D'
+
+
+def test_fetch_dataset_duplicate_index_skips_asfreq():
+    """
+    `fetch_dataset` does not call `asfreq` when the index has duplicate dates,
+    which happens with long-format multi-series datasets. The result has a
+    DatetimeIndex but no frequency set.
+    """
+    mock_df = pd.DataFrame({
+        'timestamp': [
+            '2019-01-01 00:00:00', '2019-01-02 00:00:00', '2019-01-03 00:00:00',
+            '2019-01-01 00:00:00', '2019-01-02 00:00:00', '2019-01-03 00:00:00',
+        ],
+        'series_id': ['S1', 'S1', 'S1', 'S2', 'S2', 'S2'],
+        'value': [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+    })
+
+    with patch('pandas.read_parquet', return_value=mock_df):
+        df = fetch_dataset('m4_daily', version='latest', raw=False, verbose=False)
+
+    assert isinstance(df.index, pd.DatetimeIndex)
+    assert not df.index.is_unique
+    assert df.index.freq is None
+
+
+def test_fetch_dataset_preprocessing_failure_warns():
+    """
+    `fetch_dataset` emits a `UserWarning` with an informative message when
+    preprocessing fails (e.g., `index_col` is not present in the DataFrame).
+    The raw DataFrame is returned unchanged rather than raising an exception.
+    """
+    mock_df = pd.DataFrame({
+        'wrong_col': ['2019-01-01 00:00:00', '2019-01-02 00:00:00'],
+        'value': [1.0, 2.0],
+    })
+
+    warn_msg = re.escape("Could not preprocess dataset 'm4_daily':")
+    with patch('pandas.read_parquet', return_value=mock_df):
+        with pytest.warns(UserWarning, match=warn_msg):
+            df = fetch_dataset('m4_daily', version='latest', raw=False, verbose=False)
+
+    assert isinstance(df, pd.DataFrame)
+    assert 'wrong_col' in df.columns
+
+
 def test_fetch_dataset_invalid_version_raises():
     """
     `fetch_dataset` raises `ValueError` when the requested version does not

@@ -246,10 +246,6 @@ def test_predict_interval_wider_for_higher_confidence():
     assert np.all(width_95 < width_99)
 
 
-@pytest.mark.skipif(
-    platform.system() == 'Darwin',
-    reason="ARIMA optimizer converges to different values on macOS"
-)
 def test_predict_interval_with_exog():
     """
     Test predict_interval with exogenous variables.
@@ -268,9 +264,14 @@ def test_predict_interval_with_exog():
     assert result.shape[0] == 10
     assert 'mean' in result.columns
     
-    expected_mean = np.array([-0.69037816, -0.28696593, -0.09660924])
-    expected_lower_95 = np.array([-2.45209152, -2.40343258, -2.35255749])
-    expected_upper_95 = np.array([1.07133521, 1.82950073, 2.15933901])
+    if platform.system() == 'Darwin':
+        expected_mean = np.array([-0.74715307, -0.50854947, -0.46409710])
+        expected_lower_95 = np.array([-2.50886643, -2.62501611, -2.72004532])
+        expected_upper_95 = np.array([1.01456030, 1.60791717, 1.79185113])
+    else:
+        expected_mean = np.array([-0.69037816, -0.28696593, -0.09660924])
+        expected_lower_95 = np.array([-2.45209152, -2.40343258, -2.35255749])
+        expected_upper_95 = np.array([1.07133521, 1.82950073, 2.15933901])
 
     np.testing.assert_array_almost_equal(result['mean'].iloc[:3], expected_mean, decimal=4)
     np.testing.assert_array_almost_equal(result['lower_95'].iloc[:3], expected_lower_95, decimal=4)
@@ -372,10 +373,6 @@ def test_predict_interval_with_differencing():
     np.testing.assert_array_almost_equal(result['upper_95'].values, expected_upper_95, decimal=4)
 
 
-@pytest.mark.skipif(
-    platform.system() == 'Darwin',
-    reason="Arima optimizer converges to different local minima on macOS"
-)
 def test_predict_interval_fuel_consumption_data_with_exog():
     """
     Test predict_interval works correctly with auto ARIMA on Fuel Consumption dataset
@@ -419,16 +416,16 @@ def test_predict_interval_fuel_consumption_data_with_exog():
             }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
         'Darwin':
             pd.DataFrame({
-                'mean': np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
-                                490.92842560605027, 502.3511798022874]),
-                'lower_95': np.array([419.01183057292997, 390.374886879868, 416.9267606112706,
-                                    457.9051928081597, 468.2289786562149]),
-                'upper_95': np.array([471.5594841633824, 449.2944254405835, 479.96150926434274,
-                                        523.9516584039409, 536.4733809483598]),
-                'lower_99': np.array([410.7559958492004, 381.1179564725308, 407.02328383973776,
-                                        447.52854101139263, 457.50700597719066]),
-                'upper_99': np.array([479.81531888711197, 458.55135584792066, 489.8649860358756,
-                                        534.3283102007078, 547.1953536273841])
+                'mean': np.array([1574723.70415075, 1449374.84229687, 1509207.5498717,
+                                  1484745.24866416, 1403996.30903765]),
+                'lower_95': np.array([1540589.04180584, 1415232.21354456, 1472739.65288243,
+                                      1447311.84936564, 1365243.52152282]),
+                'upper_95': np.array([1608858.36649566, 1483517.47104918, 1545675.44686097,
+                                      1522178.64796267, 1442749.09655248]),
+                'lower_99': np.array([1529863.15353435, 1404503.82204645, 1461280.609150,
+                                      1435549.42281984, 1353066.51315249]),
+                'upper_99': np.array([1619584.25476714, 1494245.86254729, 1557134.49059342,
+                                      1533941.07450847, 1454926.10492282])
             }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
         'Windows':
             pd.DataFrame({
@@ -646,10 +643,6 @@ def test_predict_interval_after_reduce_memory():
     np.testing.assert_array_almost_equal(result_after['upper_95'].values, expected_upper_95, decimal=4)
 
 
-@pytest.mark.skipif(
-    platform.system() == 'Darwin',
-    reason="Arima optimizer converges to different local minima on macOS"
-)
 def test_predict_interval_auto_arima_air_passengers_data():
     """
     Test predict_interval works correctly with auto ARIMA on Air Passengers dataset
@@ -701,16 +694,16 @@ def test_predict_interval_auto_arima_air_passengers_data():
             }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
         'Darwin':
             pd.DataFrame({
-                'mean': np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
-                                490.92842560605027, 502.3511798022874]),
-                'lower_95': np.array([419.01183057292997, 390.374886879868, 416.9267606112706,
-                                    457.9051928081597, 468.2289786562149]),
-                'upper_95': np.array([471.5594841633824, 449.2944254405835, 479.96150926434274,
-                                        523.9516584039409, 536.4733809483598]),
-                'lower_99': np.array([410.7559958492004, 381.1179564725308, 407.02328383973776,
-                                        447.52854101139263, 457.50700597719066]),
-                'upper_99': np.array([479.81531888711197, 458.55135584792066, 489.8649860358756,
-                                        534.3283102007078, 547.1953536273841])
+                'mean': np.array([451.34628823, 427.10183452, 463.38381393,
+                                  499.70307970, 514.03336880]),
+                'lower_95': np.array([428.96077818, 400.56547521, 433.26329483,
+                                      466.38172054, 477.79277993]),
+                'upper_95': np.array([473.73179828, 453.63819383, 493.50433303,
+                                      533.02443886, 550.27395767]),
+                'lower_99': np.array([421.92674113, 392.22714679, 423.79874178,
+                                      455.91139065, 466.40516159]),
+                'upper_99': np.array([480.76583533, 461.97652225, 502.96888608,
+                                      543.49476874, 561.66157602])
             }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
         'Windows':
             pd.DataFrame({
@@ -735,10 +728,6 @@ def test_predict_interval_auto_arima_air_passengers_data():
     pd.testing.assert_frame_equal(pred, expected[platform.system()], rtol=1e-4)
 
 
-@pytest.mark.skipif(
-    platform.system() == 'Darwin',
-    reason="Arima optimizer converges to different local minima on macOS"
-)
 def test_predict_interval_auto_arima_multi_seasonal_data():
     """
     Test predict_interval works correctly with auto ARIMA on multi-seasonal dataset
@@ -760,16 +749,16 @@ def test_predict_interval_auto_arima_multi_seasonal_data():
             }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
         'Darwin':
             pd.DataFrame({
-                'mean': np.array([445.2856573681562, 419.83465616022573, 448.44413493780667,
-                                490.92842560605027, 502.3511798022874]),
-                'lower_95': np.array([419.01183057292997, 390.374886879868, 416.9267606112706,
-                                    457.9051928081597, 468.2289786562149]),
-                'upper_95': np.array([471.5594841633824, 449.2944254405835, 479.96150926434274,
-                                        523.9516584039409, 536.4733809483598]),
-                'lower_99': np.array([410.7559958492004, 381.1179564725308, 407.02328383973776,
-                                        447.52854101139263, 457.50700597719066]),
-                'upper_99': np.array([479.81531888711197, 458.55135584792066, 489.8649860358756,
-                                        534.3283102007078, 547.1953536273841])
+                'mean': np.array([174.21936633, 174.12224580, 174.85105988,
+                                  174.84623437, 174.80278169]),
+                'lower_95': np.array([153.19558622, 153.05888166, 153.78522049,
+                                      153.72595590, 153.62527370]),
+                'upper_95': np.array([195.24314643, 195.18560994, 195.91689928,
+                                      195.96651284, 195.98028968]),
+                'lower_99': np.array([146.58943573, 146.44029296, 147.16585401,
+                                      147.08948342, 146.97081840]),
+                'upper_99': np.array([201.84929693, 201.80419863, 202.53626575,
+                                      202.60298531, 202.63474498])
             }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
         'Windows':
             pd.DataFrame({

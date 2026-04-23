@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 from typing import Any
-from typing_extensions import Self
 import warnings
 from numba import njit
 import numpy as np
@@ -163,7 +162,7 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         self, 
         X: np.ndarray, 
         y: Any = None
-    ) -> Self:
+    ) -> TimeSeriesDifferentiator:
         """
         Fits the transformer. Stores the values needed to revert the 
         differentiation of different window of the time series, original 
@@ -492,9 +491,10 @@ def reshape_series_long_to_dict(
         first_col = data.columns[0]
         data.index = data.index.set_names([data.index.names[0], None])
         series_dict = {}
-        for k in data.index.levels[0]:
-            original_size = len(data.loc[k])
-            series_dict[k] = data.loc[k][first_col].rename(k).asfreq(freq, fill_value=fill_value)
+        for k, group in data.groupby(level=0, sort=True, observed=True):
+            group = group.droplevel(0)
+            original_size = len(group)
+            series_dict[k] = group[first_col].rename(k).asfreq(freq, fill_value=fill_value)
             if not suppress_warnings and len(series_dict[k]) != original_size:
                 fill_msg = (
                     "NaNs have been introduced"
@@ -606,10 +606,11 @@ def reshape_exog_long_to_dict(
         exog_dict = {}
         cols_float_dtype = set()
         nans_introduced = False
-        for k in data.index.levels[0]:
-            original_index = data.loc[k].index
-            original_size = len(data.loc[k])
-            exog_dict[k] = data.loc[k].asfreq(freq)
+        for k, group in data.groupby(level=0, sort=True, observed=True):
+            group = group.droplevel(0)
+            original_index = group.index
+            original_size = len(group)
+            exog_dict[k] = group.asfreq(freq)
             if len(exog_dict[k]) != original_size:
                 nans_introduced = True
                 non_numeric_cols = []
@@ -718,7 +719,7 @@ def reshape_exog_long_to_dict(
 
     if consolidate_dtypes and nans_introduced:
         new_dtypes = {col: float for col in cols_float_dtype}
-        exog_dict = {k: v.astype(new_dtypes) for k, v in exog_dict.items()}
+        exog_dict = {k: v.astype(new_dtypes, copy=False) for k, v in exog_dict.items()}
 
     if drop_all_nan_cols:
         exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}
@@ -2551,7 +2552,7 @@ class QuantileBinner:
         
         bin_indices = np.searchsorted(
             self.internal_edges_, X, side='right'
-        ).astype(self.dtype)
+        ).astype(self.dtype, copy=False)
 
         return bin_indices
 

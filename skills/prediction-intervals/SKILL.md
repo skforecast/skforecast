@@ -84,6 +84,30 @@ predictions = forecaster.predict_interval(
 )
 ```
 
+## Foundation Model Intervals
+
+`ForecasterFoundation` returns intervals and quantiles directly from the
+underlying foundation model's native quantile output — no bootstrapping
+or conformal calibration required.
+
+```python
+from skforecast.foundation import FoundationModel, ForecasterFoundation
+
+forecaster = ForecasterFoundation(
+    estimator=FoundationModel(model_id='autogluon/chronos-2-small')
+)
+forecaster.fit(series=y_train)
+
+predictions = forecaster.predict_interval(steps=24, interval=[10, 90])
+predictions = forecaster.predict_quantiles(
+    steps=24, quantiles=[0.1, 0.5, 0.9]
+)
+```
+
+TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, …, 0.9]`;
+Chronos-2 and TabICL accept any quantile in `(0, 1)`. See the
+`foundation-forecasting` skill for details.
+
 ## During Backtesting
 
 ```python

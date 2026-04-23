@@ -17,7 +17,7 @@ Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
 - NumPy-style docstrings
 - Type hints for function signatures
 - PEP 8 compliant (max line length 88, enforced by ruff)
-- Single quotes for strings (ruff `quote-style = "single"`)
+- Double quotes for strings (ruff `quote-style = "double"`)
 - Relative imports within package
 
 ### Dependencies

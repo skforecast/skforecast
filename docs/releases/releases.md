@@ -10,20 +10,78 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.22.0 <small>Apr 23, 2026</small> { id="0.22.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span> New module <code>foundation</code> for zero-shot time series forecasting using pre-trained foundation models. The module introduces <code>[FoundationModel]</code>, a scikit-learn compatible interface, and <code>[ForecasterFoundation]</code>, a high-level forecaster fully integrated with the skforecast ecosystem (backtesting, prediction intervals via native quantiles). Four adapters are included out of the box: **Chronos-2** (Amazon), **TimesFM 2.5** (Google), **Moirai-2** (Salesforce), and **TabICLv2** (Soda-Inria). Supports single-series and multi-series forecasting, exogenous variables (Chronos-2, TabICLv2), and quantile-based prediction intervals. [User guide](../user_guides/foundation-forecasting-models.ipynb)
+
++ <span class="badge text-bg-feature">Feature</span> New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (`LightGBM`, `CatBoost`, `XGBoost`, `HistGradientBoostingRegressor`).
+
++ <span class="badge text-bg-feature">Feature</span> New `dropna_from_series` parameter in the <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in the <code>[ForecasterRecursiveMultiSeries]</code>.
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Significantly reduced memory consumption and improved training speed in direct Forecasters (<code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>) when using exogenous variables. Memory usage is reduced by up to **90%** and fit times improve by **1.2x–3.8x** in large-scale scenarios, enabling training with more steps and exogenous features without running into memory limitations.
+
++ <span class="badge text-bg-api-change">API Change</span> The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
+
++ <span class="badge text-bg-danger">Fix</span> Fixed conformal prediction intervals with `differentiation`, categorical lags in <code>[ForecasterRecursiveClassifier]</code>, and other bug fixes. See details in the "Fixed" section below.
+
+!!! warning "Serialized models incompatibility"
+
+    Forecasters that were serialized with previous versions of skforecast are **not compatible** with version 0.22.0 due to internal changes in all Forecasters (new parameters, changes in attributes, and an optimized training pipeline). Forecasters must be **retrained** after upgrading.
+
+
+**Added**
+
++ New module <code>foundation</code> for zero-shot time series forecasting using pre-trained foundation models. The module introduces <code>[FoundationModel]</code>, a scikit-learn compatible interface, and <code>[ForecasterFoundation]</code>, a high-level forecaster fully integrated with the skforecast ecosystem (backtesting, prediction intervals via native quantiles). Four adapters are included out of the box: **Chronos-2** (Amazon), **TimesFM 2.5** (Google), **Moirai-2** (Salesforce), and **TabICLv2** (Soda-Inria). Supports single-series and multi-series forecasting, exogenous variables (Chronos-2, TabICLv2), and quantile-based prediction intervals. [User guide](../user_guides/foundation-forecasting-models.ipynb)
+
++ New `categorical_features` parameter in all ML Forecasters. When set to `'auto'` (default), non-numeric exogenous columns are automatically detected and encoded using an internal `OrdinalEncoder`. A list of column names can also be provided to explicitly specify which columns should be treated as categorical, including numeric columns. Native categorical support is configured automatically for compatible estimators (`LightGBM`, `CatBoost`, `XGBoost`, `HistGradientBoostingRegressor`).
+
++ New `dropna_from_series` parameter in the <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. When set to `True`, rows with NaN values generated during the construction of the training matrices are dropped before fitting. This allows training forecasters with time series that contain interspersed missing values. This parameter was already available in the <code>[ForecasterRecursiveMultiSeries]</code>.
+
++ [Binned residuals](../user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRnn]</code>. 
+
+
+**Changed**
+
++ The `regressor` argument has been removed, deprecated in version **0.19.0**. Use the `estimator` argument instead.
+
++ Optimized the training pipeline in all Forecasters eliminating unnecessary DataFrame construction and dtype casting during `fit`. The public `create_train_X_y` method continues to return pandas objects for user inspection.
+
++ Significantly reduced memory consumption and improved training speed in direct Forecasters (<code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>) when using exogenous variables. Memory usage is reduced by up to 90% and fit times improve by 1.2x–3.8x in large-scale scenarios, enabling training with more steps and exogenous features without running into memory limitations.
+
+
+**Fixed**
+
++ Fixed an issue in conformal prediction intervals (`method='conformal'`) where the correction factor was incorrectly scaled when using `differentiation`. The inverse differentiation was applied to both the point predictions and the correction factor, causing the prediction intervals to grow too fast. Affected forecasters: <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>. ([#1143](https://github.com/skforecast/skforecast/pull/1143))
+
++ Fixed an issue in <code>[ForecasterRecursiveClassifier]</code> where the lags were not correctly passed as categorical features when using categorical exogenous variables.
+
++ Fixed an issue in the hyperparameter search when using a <code>[OneStepAheadFold]</code> validation. During training, the forecaster arguments `sample_weight` and `fit_kwargs` were not set correctly.
+
++ Fixed an issue in <code>[backtesting_forecaster_multiseries]</code> where the `tqdm` progress bar completed during data preparation instead of tracking the actual fold computation, giving the false impression that backtesting had finished.
+
+
 ## 0.21.0 <small>Mar 13, 2026</small> { id="0.21.0" }
 
 The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span> Added **AI context files** (`llms.txt`, `llms-full.txt`) following the [llmstxt.org](https://llmstxt.org) spec, IDE integration for GitHub Copilot, Claude Code, Cursor, and Aider, and 12 modular workflow skills so that AI coding assistants can generate accurate, up-to-date skforecast code. [User guide](../quick-start/ai-assisted-forecasting.md)
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized internal prediction loops in `_recursive_predict` and `_recursive_predict_bootstrapping` for <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>. Changes include vectorized lag indexing for non-contiguous lags (~50% faster with 15-20 lags), pre-computation of loop-invariant values, and reduced redundant operations. These improvements result in faster `predict` methods calls, especially in scenarios with many lags and bootstrap iterations.
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized and refactored Bayesian search functions (<code>bayesian_search_forecaster</code>, <code>bayesian_search_forecaster_multiseries</code>). Key improvements include: better default TPE sampler configuration (`multivariate=True`, `group=True`, `consider_endpoints=True`) for more effective hyperparameter optimization, caching of train/test splits in `OneStepAheadFold` to avoid redundant computation when the same lag configuration is evaluated multiple times, default `n_trials` increased from 10 to 20, and `kwargs_create_study`/`kwargs_study_optimize` defaults changed from `{}` to `None`. Additionally, the `return_best` refit summary message is now controlled by the `verbose` parameter across all search functions.
 
-+ <span class="badge text-bg-api-change">API Change</span> <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> now return the full optuna `Study` object as the second element of the tuple instead of `best_trial`. The best trial is still accessible via `study.best_trial`. This enables access to all optimization trials, optuna visualizations, and study resumption.
-
 + <span class="badge text-bg-enhancement">Enhancement</span> <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> results DataFrame now includes a `trial_number` column, allowing users to correlate result rows with specific optuna trials via `study.trials[trial_number]`.
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> now return the full optuna `Study` object as the second element of the tuple instead of `best_trial`. The best trial is still accessible via `study.best_trial`. This enables access to all optimization trials, optuna visualizations, and study resumption.
 
 
 **Added**
+
++ Added machine-readable AI context files (`llms.txt`, `llms-full.txt`) following the [llmstxt.org](https://llmstxt.org) spec, automatic IDE integration (`.github/copilot-instructions.md`, `AGENTS.md`), 12 workflow skills in `skills/`, and a generation script (`tools/ai/generate_ai_context_files.py`) to keep all derived files in sync. [User guide](../quick-start/ai-assisted-forecasting.md)
 
 + Added <code>[TimeSeriesSplitter]</code> class to the experimental module. This class provides a flexible way to split time series data into training and testing sets while respecting temporal order and allowing for various configurations of train/test sizes, gaps, and strides ([#1117](https://github.com/skforecast/skforecast/pull/1117)).
 
@@ -34,9 +92,9 @@ The main changes in this release are:
 
 + Optimized and refactored Bayesian search functions (`bayesian_search_forecaster`, `bayesian_search_forecaster_multiseries`). Key improvements include: better default TPE sampler configuration (`multivariate=True`, `group=True`, `consider_endpoints=True`) for more effective hyperparameter optimization, caching of train/test splits in `OneStepAheadFold` to avoid redundant computation when the same lag configuration is evaluated multiple times, default `n_trials` increased from 10 to 20, and `kwargs_create_study`/`kwargs_study_optimize` defaults changed from `{}` to `None`. Additionally, the `return_best` refit summary message is now controlled by the `verbose` parameter across all search functions.
 
-+ <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> now return the full optuna `Study` object as the second element of the tuple instead of `best_trial`. The best trial is still accessible via `study.best_trial`.
-
 + <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> results DataFrame now includes a `trial_number` column, allowing users to correlate result rows with specific optuna trials via `study.trials[trial_number]`.
+
++ <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code> now return the full optuna `Study` object as the second element of the tuple instead of `best_trial`. The best trial is still accessible via `study.best_trial`.
 
 + `kwargs_read_csv` has been renamed to `kwargs_read` in the `fetch_dataset` function. The new name reflects that the keyword arguments are passed to both `pd.read_csv` and `pd.read_parquet`, depending on the dataset file type.
 
@@ -1438,11 +1496,15 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterDirect]: ../api/ForecasterDirect.md
 [ForecasterRecursiveMultiSeries]: ../api/ForecasterRecursiveMultiSeries.md
 [ForecasterDirectMultiVariate]: ../api/ForecasterDirectMultiVariate.md
+[ForecasterFoundation]: ../api/ForecasterFoundation.md
 [ForecasterRnn]: ../api/ForecasterRnn.md
 [create_and_compile_model]: ../api/ForecasterRnn.md#skforecast.deep_learning.utils.create_and_compile_model
 [ForecasterStats]: ../api/ForecasterStats.md
 [ForecasterEquivalentDate]: ../api/ForecasterEquivalentDate.md
 [ForecasterRecursiveClassifier]: ../api/ForecasterRecursiveClassifier.md
+
+<!-- foundation -->
+[FoundationModel]: ../api/FoundationModel.md#skforecast.foundation._foundation_model.FoundationModel
 
 <!-- stats -->
 [stats]: ../api/stats.md
@@ -1467,6 +1529,8 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [backtesting_stats]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_stats
 [grid_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.grid_search_stats
 [random_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.random_search_stats
+
+[backtesting_foundation]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_foundation
 
 [BaseFold]: ../api/model_selection.md#skforecast.model_selection._split.BaseFold
 [TimeSeriesFold]: ../api/model_selection.md#skforecast.model_selection._split.TimeSeriesFold

@@ -36,20 +36,21 @@ These files contain the same core content: project structure, all forecasters, c
 
 The AI context covers:
 
-- **Choice of forecaster** — when to use `ForecasterRecursive` vs `ForecasterRecursiveMultiSeries` vs `ForecasterRnn`, etc.
-- **All 8 forecaster types** — constructors, `fit()`, and `predict()` methods including parameters and defaults.
+- **Choice of forecaster** — when to use `ForecasterRecursive` vs `ForecasterRecursiveMultiSeries` vs `ForecasterRnn` vs `ForecasterFoundation`, etc.
+- **All 9 forecaster types** — constructors, `fit()`, and `predict()` methods including parameters and defaults.
 - **Model selection** — `backtesting_forecaster`, `bayesian_search_forecaster` and other hyperparameter optimization methods, `TimeSeriesFold`, `OneStepAheadFold`, and their multi-series variants.
 - **Statistical models** — `Arima`, `Sarimax`, `Ets`, `Arar` wrapped by `ForecasterStats`.
 - **Deep learning** — `ForecasterRnn` with `create_and_compile_model`, LSTM/GRU architectures.
+- **Foundation models (zero-shot)** — `FoundationModel` + `ForecasterFoundation` with Chronos-2, TimesFM 2.5, and Moirai-2 backends.
 - **Feature engineering** — `RollingFeatures`, custom features, and exogenous variables.
 - **Feature selection** — `RFECV`, `SelectFromModel` for lags, window features, and exogenous variables.
 - **Drift detection** — `RangeDriftDetector` and `PopulationDriftDetector` for production monitoring.
-- **12 specialized workflow skills** — step-by-step guides for common tasks, loaded on-demand by advanced AI agents.
+- **13 specialized workflow skills** — step-by-step guides for common tasks, loaded on-demand by advanced AI agents.
 
 
 ## Workflow skills
 
-Skforecast includes 12 modular **skills** — self-contained guides that AI agents can load on demand when a user asks about a specific topic. Each skill covers a complete workflow with decision trees, code examples, and common pitfalls.
+Skforecast includes 13 modular **skills** — self-contained guides that AI agents can load on demand when a user asks about a specific topic. Each skill covers a complete workflow with decision trees, code examples, and common pitfalls.
 
 | Skill | What it covers |
 |-------|----------------|
@@ -62,6 +63,7 @@ Skforecast includes 12 modular **skills** — self-contained guides that AI agen
 | `feature-selection` | `RFECV`, `SelectFromModel`: selecting lags, window features, and exog |
 | `drift-detection` | `RangeDriftDetector` and `PopulationDriftDetector` for production monitoring |
 | `deep-learning-forecasting` | `ForecasterRnn` with Keras: `create_and_compile_model`, LSTM/GRU architectures |
+| `foundation-forecasting` | Zero-shot forecasting with `ForecasterFoundation`: Chronos-2, TimesFM 2.5, Moirai-2 |
 | `choosing-a-forecaster` | Decision guide: "I have X situation → use Y forecaster" |
 | `troubleshooting-common-errors` | Frequent mistakes AI assistants make with skforecast and their corrections |
 | `complete-api-reference` | Full method signatures and availability matrix for all forecasters |
@@ -73,7 +75,7 @@ These skills are bundled into `llms-full.txt`. AI agents that support the [Agent
 
 | File | Audience | Description |
 |------|----------|-------------|
-| [`llms-full.txt`](../llms-full.txt) | Any LLM user | Complete context: API + 12 workflow skills |
+| [`llms-full.txt`](../llms-full.txt) | Any LLM user | Complete context: API + 13 workflow skills |
 | [`llms.txt`](../llms.txt) | LLMs with web search | Public index with links to all documentation sections |
 | `.github/copilot-instructions.md` | Contributors (VS Code) | Auto-injected into GitHub Copilot |
 | `AGENTS.md` | Contributors (Claude Code, Codex, Aider) | Standard agent context file |
@@ -85,5 +87,5 @@ The context files are **auto-generated** from a single source of truth (`tools/a
 
 1. **Always provide the context URL** — Without it, LLMs may hallucinate methods that don't exist or use outdated API names (e.g., `ForecasterAutoreg` instead of `ForecasterRecursive`).
 2. **Be specific about your forecaster** — Mention which forecaster you're using. Parameter names and defaults differ across forecasters.
-3. **Mention the version** — Say "skforecast 0.21.0" so the LLM doesn't mix advice from older versions.
+3. **Mention the version** — Say "skforecast 0.22.0" so the LLM doesn't mix advice from older versions.
 4. **Validate the output** — AI-generated code is a starting point. Always run backtesting to verify model performance.

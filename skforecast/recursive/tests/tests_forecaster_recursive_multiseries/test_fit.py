@@ -1,13 +1,20 @@
 # Unit test fit ForecasterRecursiveMultiSeries
 # ==============================================================================
+import re
 import pytest
 from pytest import approx
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
+from catboost import CatBoostRegressor
+from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
+
+from skforecast.exceptions import MissingExogWarning
 from skforecast.preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
@@ -126,6 +133,7 @@ def test_forecaster_series_exog_features_stored():
         'exog_2_a': np.dtype(float), 
         'exog_2_b': np.dtype(float)
     }
+    categorical_features_names_in_ = []
     X_train_series_names_in_ = ['l1', 'l2']
     X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
     X_train_exog_names_out_ = ['exog_1', 'exog_2_a', 'exog_2_b']
@@ -140,6 +148,7 @@ def test_forecaster_series_exog_features_stored():
     assert forecaster.exog_names_in_ == exog_names_in_
     assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
     assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
+    assert forecaster.categorical_features_names_in_ == categorical_features_names_in_
     assert forecaster.X_train_series_names_in_ == X_train_series_names_in_
     assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
@@ -161,7 +170,17 @@ def test_forecaster_series_not_matching_exog_features_stored():
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, window_features=rolling, transformer_exog=transformer_exog
     )
-    forecaster.fit(series=series_dict_range, exog=exog_dict_no_match)
+
+    warn_msg = re.escape(
+        "No exogenous variables were found in `exog` that match the "
+        "series IDs provided in `series`. As a result, no exogenous "
+        "variables are included in the training matrices. Please "
+        "review the series IDs in `exog` and ensure they match the "
+        "following IDs: ['l1', 'l2']. The forecaster will be "
+        "trained without exogenous variables."
+    )
+    with pytest.warns(MissingExogWarning, match = warn_msg):
+        forecaster.fit(series=series_dict_range, exog=exog_dict_no_match)
 
     series_names_in_ = ['l1', 'l2']
     exog_in_ = False
@@ -169,6 +188,7 @@ def test_forecaster_series_not_matching_exog_features_stored():
     exog_names_in_ = None
     exog_dtypes_in_ = None
     exog_dtypes_out_ = None
+    categorical_features_names_in_ = None
     X_train_series_names_in_ = ['l1', 'l2']
     X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
     X_train_exog_names_out_ = None
@@ -182,6 +202,7 @@ def test_forecaster_series_not_matching_exog_features_stored():
     assert forecaster.exog_names_in_ == exog_names_in_
     assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
     assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
+    assert forecaster.categorical_features_names_in_ == categorical_features_names_in_
     assert forecaster.X_train_series_names_in_ == X_train_series_names_in_
     assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
@@ -789,3 +810,164 @@ def test_fit_resets_out_sample_residuals_on_refit():
 
     assert forecaster.out_sample_residuals_ is None
     assert forecaster.out_sample_residuals_by_bin_ is None
+
+
+# ==============================================================================
+# Tests: fit with categorical features and configure_estimator_categorical_features
+# ==============================================================================
+@pytest.mark.parametrize(
+    "estimator, check_fn",
+    [
+        (
+            CatBoostRegressor(
+                iterations=10, random_seed=123, verbose=0,
+                allow_writing_files=False
+            ),
+            None
+        ),
+        (
+            LGBMRegressor(verbose=-1, random_state=123),
+            None
+        ),
+        (
+            XGBRegressor(random_state=123),
+            lambda est, cat_idx, n_features: (
+                est.get_params()['enable_categorical'] is True
+                and est.get_params()['feature_types'] == [
+                    'c' if i in cat_idx else 'q' for i in range(n_features)
+                ]
+            )
+        ),
+        (
+            HistGradientBoostingRegressor(random_state=123),
+            lambda est, cat_idx, n_features: (
+                est.get_params()['categorical_features'] == cat_idx
+            )
+        ),
+    ],
+    ids=['CatBoostRegressor', 'LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_fit_configures_estimator_categorical_features(estimator, check_fn):
+    """
+    Test that fit correctly configures native categorical feature support
+    for each supported estimator (CatBoostRegressor, LGBMRegressor,
+    XGBRegressor, HistGradientBoostingRegressor).
+    """
+    series = {
+        'l1': pd.Series(np.arange(20, dtype=float)),
+        'l2': pd.Series(np.arange(20, dtype=float))
+    }
+    exog = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float),
+        'exog_cat': pd.Categorical(range(20))
+    })
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=estimator, lags=3, encoding='ordinal_category',
+        transformer_series=None, categorical_features='auto'
+    )
+    forecaster.fit(series=series, exog=exog, suppress_warnings=True)
+
+    assert forecaster.is_fitted
+    assert forecaster.categorical_features_names_in_ == ['exog_cat']
+    assert 'exog_cat' in forecaster.X_train_features_names_out_
+
+    if check_fn is not None:
+        # With ordinal_category, _level_skforecast is also treated as categorical
+        cat_idx = [
+            forecaster.X_train_features_names_out_.index('exog_cat'),
+            forecaster.X_train_features_names_out_.index('_level_skforecast')
+        ]
+        n_features = len(forecaster.X_train_features_names_out_)
+        assert check_fn(forecaster.estimator, cat_idx, n_features)
+
+    # fit_kwargs must not be mutated
+    assert forecaster.fit_kwargs == {}
+
+
+@pytest.mark.parametrize(
+    "estimator, param_name, default_value",
+    [
+        (
+            XGBRegressor(random_state=123),
+            'feature_types',
+            None
+        ),
+        (
+            HistGradientBoostingRegressor(random_state=123),
+            'categorical_features',
+            'from_dtype'
+        ),
+    ],
+    ids=['XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_fit_resets_estimator_categorical_params_on_refit_without_categoricals(
+    estimator, param_name, default_value
+):
+    """
+    Test that fitting with categorical features and then refitting without
+    categoricals resets the estimator's categorical parameters to their
+    default values (XGBoost: feature_types=None,
+    HistGradientBoosting: categorical_features='from_dtype').
+    """
+    series = {
+        'l1': pd.Series(np.arange(20, dtype=float)),
+        'l2': pd.Series(np.arange(20, dtype=float))
+    }
+    exog_with_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float),
+        'exog_cat': pd.Categorical(['a', 'b'] * 10)
+    })
+    exog_no_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float)
+    })
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=estimator, lags=3, encoding='ordinal',
+        transformer_series=None, categorical_features='auto'
+    )
+
+    # First fit — with categoricals
+    forecaster.fit(series=series, exog=exog_with_cat, suppress_warnings=True)
+    assert forecaster.categorical_features_names_in_ == ['exog_cat']
+
+    # Second fit — without categoricals (auto detects no categories → [])
+    forecaster.fit(series=series, exog=exog_no_cat, suppress_warnings=True)
+    assert forecaster.categorical_features_names_in_ == []
+    assert forecaster.estimator.get_params()[param_name] == default_value
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        CatBoostRegressor(
+            iterations=10, random_seed=123, verbose=0,
+            allow_writing_files=False
+        ),
+        LGBMRegressor(verbose=-1, random_state=123),
+        XGBRegressor(random_state=123),
+        HistGradientBoostingRegressor(random_state=123),
+    ],
+    ids=['CatBoostRegressor', 'LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_fit_no_categoricals_with_supported_estimators(estimator):
+    """
+    Test that fit works correctly with supported estimators when
+    categorical_features=None (no categorical encoding).
+    """
+    series = {
+        'l1': pd.Series(np.arange(20, dtype=float)),
+        'l2': pd.Series(np.arange(20, dtype=float))
+    }
+    exog = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float)
+    })
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=estimator, lags=3, encoding='ordinal',
+        transformer_series=None, categorical_features=None
+    )
+    forecaster.fit(series=series, exog=exog, suppress_warnings=True)
+
+    assert forecaster.is_fitted
+    assert forecaster.categorical_features_names_in_ is None

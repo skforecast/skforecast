@@ -53,7 +53,7 @@ def test_create_window_features_TypeError_when_transform_batch_not_pandas():
     Test TypeError is raised when `transform_batch` does not return 
     a pandas DataFrame.
     """
-    wf = WindowFeatureNoPandas(window_sizes=5, features_names='feature_1')
+    wf = WindowFeatureNoPandas(window_sizes=5, features_names=['feature_1'])
     y = pd.Series(np.arange(10), name='l1')
     train_index = pd.RangeIndex(start=6, stop=10, step=1)
 
@@ -73,7 +73,7 @@ def test_create_window_features_ValueError_when_transform_batch_not_correct_leng
     Test ValueError is raised when `transform_batch` does not return
     a DataFrame with the correct length.
     """
-    wf = WindowFeatureNoCorrectLength(window_sizes=5, features_names='feature_1')
+    wf = WindowFeatureNoCorrectLength(window_sizes=5, features_names=['feature_1'])
     y = pd.Series(np.arange(10), name='l1')
     train_index = pd.RangeIndex(start=6, stop=10, step=1)
 

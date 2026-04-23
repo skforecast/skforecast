@@ -1,6 +1,6 @@
 # Skforecast
 
-> Python library that simplifies time series forecasting using machine learning. Works with any scikit-learn compatible estimator (LightGBM, XGBoost, CatBoost, Keras, etc.). Version 0.21.0+. Python 3.10-3.14. BSD-3-Clause.
+> Python library that simplifies time series forecasting using machine learning. Works with any scikit-learn compatible estimator (LightGBM, XGBoost, CatBoost, Keras, etc.). Version 0.22.0+. Python 3.10-3.14. BSD-3-Clause.
 
 - [Documentation](https://skforecast.org/latest/): Full documentation site
 - [PyPI](https://pypi.org/project/skforecast/): pip install skforecast
@@ -18,6 +18,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [ForecasterDirectMultiVariate](https://skforecast.org/latest/api/ForecasterDirectMultiVariate.html): Multivariate forecasting using multiple series as input features
 - [ForecasterRnn](https://skforecast.org/latest/api/ForecasterRnn.html): Deep learning forecasting with RNN/LSTM architectures
 - [ForecasterStats](https://skforecast.org/latest/api/ForecasterStats.html): Statistical models (ARIMA, SARIMAX, ETS, ARAR) with sklearn-compatible interface
+- [ForecasterFoundation](https://skforecast.org/latest/api/ForecasterFoundation.html): Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL)
 - [ForecasterRecursiveClassifier](https://skforecast.org/latest/api/ForecasterRecursiveClassifier.html): Classification-based forecasting for categorical time series
 - [ForecasterEquivalentDate](https://skforecast.org/latest/api/ForecasterEquivalentDate.html): Baseline forecaster using equivalent past dates
 
@@ -35,6 +36,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [Calendar features](https://skforecast.org/latest/user_guides/calendar-features.html): Date and time-based features with DateTimeFeatureTransformer
 - [Categorical features](https://skforecast.org/latest/user_guides/categorical-features.html): Native categorical support with LightGBM, XGBoost, CatBoost
 - [Classification forecasting](https://skforecast.org/latest/user_guides/autoregressive-classification-forecasting.html): Classification-based forecasting for categorical time series
+- [Handling missing values](https://skforecast.org/latest/user_guides/handling-missing-values.html): Strategies for training and forecasting with incomplete data
 - [Data transformation](https://skforecast.org/latest/user_guides/sklearn-transformers-and-pipeline.html): Sklearn transformers and pipelines for preprocessing
 - [Feature selection](https://skforecast.org/latest/user_guides/feature-selection.html): Selecting relevant lags, window features, and exogenous variables
 
@@ -55,6 +57,10 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [Global models](https://skforecast.org/latest/user_guides/probabilistic-forecasting-global-models.html): Prediction intervals for multi-series forecasters
 - [Probabilistic metrics](https://skforecast.org/latest/user_guides/probabilistic-forecasting-metrics.html): CRPS, pinball loss, coverage metrics for interval evaluation
 
+## Foundation Models
+
+- [Forecasting with foundation models](https://skforecast.org/latest/user_guides/foundation-forecasting-models.html): Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL)
+
 ## Deep Learning
 
 - [RNN/LSTM forecasting](https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm.html): Recurrent neural networks for time series with Keras
@@ -67,7 +73,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 
 ## FAQ
 
-- [Missing values](https://skforecast.org/latest/faq/forecasting-time-series-with-missing-values.html): Forecasting time series with missing values
+- [Missing values FAQ](https://skforecast.org/latest/faq/forecasting-time-series-with-missing-values.html): Quick tips for forecasting time series with missing values
 - [Negative predictions](https://skforecast.org/latest/faq/non-negative-predictions.html): Avoiding negative predictions when forecasting
 - [Delayed historical data](https://skforecast.org/latest/faq/forecasting-with-delayed-historical-data.html): Forecasting when recent data is not yet available
 - [Backtesting vs One-step-ahead](https://skforecast.org/latest/faq/parameters-search-backtesting-vs-one-step-ahead.html): Choosing between backtesting and one-step-ahead validation
@@ -84,6 +90,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [preprocessing](https://skforecast.org/latest/api/preprocessing.html): RollingFeatures, TimeSeriesDifferentiator, DateTimeFeatureTransformer, QuantileBinner
 - [feature_selection](https://skforecast.org/latest/api/feature_selection.html): select_features, select_features_multiseries
 - [stats](https://skforecast.org/latest/api/stats.html): Arima, Sarimax, Ets, Arar model classes
+- [foundation](https://skforecast.org/latest/api/foundation.html): FoundationModel, ForecasterFoundation, Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL adapters
 - [drift_detection](https://skforecast.org/latest/api/drift_detection.html): RangeDriftDetector, PopulationDriftDetector
 - [metrics](https://skforecast.org/latest/api/metrics.html): MASE, RMSSE, sMAPE, CRPS, pinball loss, coverage
 - [datasets](https://skforecast.org/latest/api/datasets.html): fetch_dataset, load_demo_dataset with 30+ built-in datasets
@@ -107,7 +114,10 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [Time series aggregation](https://skforecast.org/latest/faq/time-series-aggregation.html): Aggregating time series to different frequencies
 - [Parallelization](https://skforecast.org/latest/faq/parallelization-skforecast.html): Parallel execution and performance optimization
 - [Intro to forecasting](https://skforecast.org/latest/introduction-forecasting/introduction-forecasting.html): Conceptual introduction to time series forecasting
+- [How to install](https://skforecast.org/latest/quick-start/how-to-install.html): Installation guide with optional dependencies
 - [Forecaster parameters](https://skforecast.org/latest/quick-start/forecaster-parameters.html): Reference for all forecaster configuration parameters
+- [Forecaster attributes](https://skforecast.org/latest/quick-start/forecaster-attributes.html): Reference for all forecaster attributes after fitting
+- [AI-assisted forecasting](https://skforecast.org/latest/quick-start/ai-assisted-forecasting.html): Using LLMs and AI tools with skforecast
 - [Examples and tutorials](https://skforecast.org/latest/examples/examples_english.html): External tutorials with real-world datasets
 - [Migration guide](https://skforecast.org/latest/user_guides/migration-guide.html): Upgrading from previous skforecast versions
 - [Release notes](https://skforecast.org/latest/releases/releases.html): Full changelog for all versions

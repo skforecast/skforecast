@@ -318,10 +318,8 @@ def select_features_multiseries(
     
     forecaster = deepcopy_forecaster(forecaster)
     forecaster.is_fitted = False
-    output = forecaster._create_train_X_y(series=series, exog=exog)
-    X_train = output[0]
-    y_train = output[1]
     if forecaster_name == 'ForecasterDirectMultiVariate':
+        X_train, y_train = forecaster.create_train_X_y(series=series, exog=exog)
         X_train, y_train = forecaster.filter_train_X_y_for_step(
                                step          = 1,
                                X_train       = X_train,
@@ -334,8 +332,11 @@ def select_features_multiseries(
         window_features_cols = forecaster.X_train_window_features_names_out_
         encoding_cols = []
     else:
+        output = forecaster._create_train_X_y(series=series, exog=exog)
+        X_train = output[0]
+        y_train = output[1]
         lags_cols = forecaster.lags_names
-        window_features_cols = output[6]  # X_train_window_features_names_out_ output
+        window_features_cols = output[7]  # X_train_window_features_names_out_ output
         if forecaster.encoding == 'onehot':
             encoding_cols = output[4]  # X_train_series_names_in_ output
         else:

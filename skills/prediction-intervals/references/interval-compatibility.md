@@ -67,12 +67,11 @@ forecaster.predict_interval(
     method='conformal',              # only valid value
     interval=[5, 95],
     use_in_sample_residuals=True,
+    use_binned_residuals=True,       # bool, selects residuals by predicted value level
     n_boot=None,                     # Any, accepted but ignored
-    use_binned_residuals=None,       # Any, accepted but ignored
     random_state=None,               # Any, accepted but ignored
 )
-# NOTE: `n_boot`, `use_binned_residuals`, and `random_state` exist for API
-#       compatibility but are ignored.
+# NOTE: `n_boot` and `random_state` exist for API compatibility but are ignored.
 ```
 
 ## Backtesting with Intervals
@@ -131,7 +130,7 @@ because residual variance often depends on the prediction magnitude.
 | ForecasterRecursiveMultiSeries | ✓ |
 | ForecasterDirectMultiVariate | ✓ |
 | ForecasterEquivalentDate | ✓ |
-| ForecasterRnn | — |
+| ForecasterRnn | ✓ |
 | ForecasterStats | — |
 
 ## Probabilistic Prediction Methods Beyond Intervals

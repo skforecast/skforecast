@@ -82,18 +82,20 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterDirect]               |✔️|||✔️|✔️|✔️|✔️|✔️|
 |[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
 |[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
+|[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
 |[ForecasterRnn]                  |✔️|✔️||✔️|✔️||✔️||
 |[ForecasterStats]                |✔️||✔️||✔️|✔️|✔️||
-|[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
+|[ForecasterFoundation]           |✔️|✔️|||✔️||✔️||
 |[ForecasterEquivalentDate]       |✔️||✔️||✔️||||
 
 [ForecasterRecursive]: ./user_guides/autoregressive-forecaster.ipynb
 [ForecasterDirect]: ./user_guides/direct-multi-step-forecasting.ipynb
 [ForecasterRecursiveMultiSeries]: ./user_guides/independent-multi-time-series-forecasting.ipynb
 [ForecasterDirectMultiVariate]: ./user_guides/dependent-multi-series-multivariate-forecasting.ipynb
+[ForecasterRecursiveClassifier]: ./user_guides/autoregressive-classification-forecasting.ipynb
 [ForecasterRnn]: ./user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
 [ForecasterStats]: ./user_guides/forecasting-sarimax-arima.ipynb
-[ForecasterRecursiveClassifier]: ./user_guides/autoregressive-classification-forecasting.ipynb
+[ForecasterFoundation]: ./user_guides/foundation-forecasting-models.ipynb
 [ForecasterEquivalentDate]: ./user_guides/forecasting-baseline.ipynb
 
 
@@ -135,12 +137,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.21.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.22.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.22.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **BibTeX**:
@@ -148,8 +150,8 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Compu
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.21.0},
-  month   = {3},
+  version = {0.22.0},
+  month   = {4},
   year    = {2026},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},

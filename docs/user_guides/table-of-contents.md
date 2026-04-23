@@ -17,6 +17,10 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Dependent multivariate series forecasting](../user_guides/dependent-multi-series-multivariate-forecasting.ipynb)
 - [Deep learning Recurrent Neural Networks](../user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb)
 
+<span style="font-size: 1.3em;">Foundation Models</span>
+
+- [Forecasting with foundation models](../user_guides/foundation-forecasting-models.ipynb)
+
 <span style="font-size: 1.3em;">Statistical Models</span>
 
 - [Forecasting with statistical models](../user_guides/forecasting-statistical-models.ipynb)
@@ -32,6 +36,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Calendars features](../user_guides/calendar-features.ipynb)
 - [Data transformations](../user_guides/sklearn-transformers-and-pipeline.ipynb)
 - [Differentiation](../user_guides/time-series-differentiation.ipynb)
+- [Handling missing values](../user_guides/handling-missing-values.ipynb)
 - [Feature selection](../user_guides/feature-selection.ipynb)
 - [Sktime pipelines](../user_guides/sktime-pipelines.ipynb)
 

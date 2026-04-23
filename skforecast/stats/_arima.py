@@ -234,7 +234,7 @@ class Arima(BaseEstimator, RegressorMixin):
     aic_ : float
         Akaike Information Criterion value.
     bic_ : float or None
-        Bayesian Information Criterion value (may be ``None`` if not available).
+        Bayesian Information Criterion value (may be `None` if not available).
     arma_ : list of int
         ARIMA specification: [p, q, P, Q, m, d, D].
     converged_ : bool

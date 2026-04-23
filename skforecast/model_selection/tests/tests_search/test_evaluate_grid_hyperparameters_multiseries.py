@@ -37,6 +37,11 @@ from tqdm import tqdm
 from functools import partialmethod
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
 
+pytestmark = [
+    pytest.mark.filterwarnings("ignore::skforecast.exceptions.MissingExogWarning"),
+    pytest.mark.filterwarnings("ignore::skforecast.exceptions.MissingValuesWarning"),
+]
+
 
 def test_ValueError_evaluate_grid_hyperparameters_multiseries_when_return_best_and_len_series_exog_different():
     """

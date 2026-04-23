@@ -18,7 +18,7 @@ pip install skforecast
 Specific version:
 
 ```bash
-pip install skforecast==0.21.0
+pip install skforecast==0.22.0
 ```
 
 Latest (unstable):
@@ -29,12 +29,13 @@ pip install git+https://github.com/skforecast/skforecast@master
 
 The following dependencies are installed with the default installation:
 
-+ numpy>=1.24
-+ pandas>=1.5
-+ tqdm>=4.57
-+ scikit-learn>=1.2
-+ optuna>=2.10
-+ joblib>=1.1
++ numpy>=1.22
++ pandas>=2.1
++ tqdm>=4.66
++ scikit-learn>=1.4
++ scipy>=1.12
++ optuna>=4.0
++ joblib>=1.3
 + numba>=0.59
 + rich>=13.9
 
@@ -55,7 +56,7 @@ For specific use cases, you can install these dependencies as needed:
 pip install skforecast[stats]
 ```
 
-+ statsmodels>=0.12, <0.15
++ statsmodels>=0.13, <0.15
 
 
 ### Plotting
@@ -64,9 +65,9 @@ pip install skforecast[stats]
 pip install skforecast[plotting]
 ```
 
-+ matplotlib>=3.3, <3.11
-+ seaborn>=0.11, <0.14
-+ statsmodels>=0.12, <0.15
++ matplotlib>=3.7, <3.11
++ seaborn>=0.12, <0.14
++ statsmodels>=0.13, <0.15
 
 
 ### Deep Learning
@@ -76,4 +77,4 @@ pip install skforecast[deeplearning]
 ```
 
 + keras>=3.0, <4.0
-+ matplotlib>=3.3, <3.11
++ matplotlib>=3.7, <3.11

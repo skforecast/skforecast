@@ -168,6 +168,44 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit():
         np.testing.assert_almost_equal(residuals_fit[level], residuals_in_sample[level])
 
 
+def test_set_in_sample_residuals_stores_same_binned_residuals_as_fit():
+    """
+    Test that set_in_sample_residuals stores same binned residuals as fit.
+    """
+    forecaster = ForecasterRnn(
+        estimator=model, levels=["1", "2", "3"], lags=3
+    )
+    forecaster.fit(series=series, store_in_sample_residuals=True)
+    binned_fit = forecaster.in_sample_residuals_by_bin_
+
+    forecaster.in_sample_residuals_by_bin_ = None  # Reset
+    forecaster.set_in_sample_residuals(series=series)
+    binned_set = forecaster.in_sample_residuals_by_bin_
+
+    assert binned_fit.keys() == binned_set.keys()
+    for level in binned_fit.keys():
+        assert binned_fit[level].keys() == binned_set[level].keys()
+        for bin_k in binned_fit[level].keys():
+            np.testing.assert_almost_equal(
+                binned_fit[level][bin_k], binned_set[level][bin_k]
+            )
+
+
+def test_set_in_sample_residuals_populates_binner_and_intervals():
+    """
+    Test that binner and binner_intervals_ are populated after set_in_sample_residuals.
+    """
+    forecaster = ForecasterRnn(
+        estimator=model, levels=["1", "2", "3"], lags=3
+    )
+    forecaster.fit(series=series, store_in_sample_residuals=True)
+
+    for level in forecaster.levels:
+        assert level in forecaster.binner
+        assert level in forecaster.binner_intervals_
+        assert len(forecaster.binner_intervals_[level]) == forecaster.binner_kwargs['n_bins']
+
+
 def test_set_in_sample_residuals_store_same_residuals_as_fit_exog():
     """
     Test that set_in_sample_residuals stores same residuals as fit with exogenous variables.

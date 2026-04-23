@@ -33,6 +33,7 @@ Skforecast is a **machine learning-first** library. The ML forecasters are the p
 | **General purpose** (start here) | `ForecasterRecursive` | Default choice. One model, recursive multi-step. Works with any sklearn-compatible estimator (LightGBM, XGBoost, CatBoost, RandomForest, etc.). Supports lags, window features, exog, differentiation, transformers, weight functions, and all probabilistic prediction methods (bootstrapping, conformal, quantiles, distributions) |
 | **Horizon-dependent patterns** (e.g., predicting at 1h vs 24h requires different relationships) | `ForecasterDirect` | Trains one independent model per step — no error propagation. Better when the predictive relationship changes significantly across the forecast horizon. Requires `steps` at init; parallelizable with `n_jobs` |
 | **Statistical baseline** | `ForecasterStats` | Wraps ARIMA, SARIMAX, ETS, ARAR. Use as a benchmark to compare against ML models, or when the series is very short (< 200 obs) and ML overfits |
+| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL). `fit()` only stores context — no training. Good baseline and cold-start option. See the `foundation-forecasting` skill |
 | **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Use as a sanity-check baseline |
 
 ## Step 2b — Multiple Series
@@ -42,6 +43,7 @@ Skforecast is a **machine learning-first** library. The ML forecasters are the p
 | **Forecast many series with a shared model** (start here) | `ForecasterRecursiveMultiSeries` | One global model learns cross-series patterns. Supports DataFrame or dict input (dict allows series with different date ranges). Encoding options: `'ordinal'` (default), `'ordinal_category'`, `'onehot'`, `None`. Supports per-series transformers, per-series differentiation, series_weights |
 | **Other series are features for one target** | `ForecasterDirectMultiVariate` | All series become input features to predict a single `level`. Per-series lags via dict (`{'sales': [1,7], 'price': [1]}`). One model per step — no error propagation |
 | **Deep learning / complex nonlinear patterns** | `ForecasterRnn` | Keras-based RNN/LSTM/GRU. Single model outputs all steps and levels simultaneously via 3D tensors. Only conformal intervals (no bootstrapping). Requires keras |
+| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL. `fit()` only stores context. Native quantile intervals. Chronos-2 and TabICL support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
 
 ## Decision Flowchart
 
@@ -72,6 +74,9 @@ How many series?
     │
     └─► Need deep learning for very complex patterns?
         └─► ForecasterRnn
+
+Zero-shot / no training data / cold-start (single or multi-series)?
+    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL)
 ```
 
 ## Key Comparisons
@@ -131,7 +136,7 @@ How many series?
 | Weight function | ✓ | ✓ | ✓ (per-series) | ✓ | — | — | — | ✓ |
 | Bootstrapping intervals | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
 | Conformal intervals | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
-| Binned residuals | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — |
+| Binned residuals | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
 | Quantile predictions | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
 | Distribution fitting | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
 | Class probabilities | — | — | — | — | — | — | — | ✓ |

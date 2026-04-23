@@ -1,6 +1,6 @@
 [project]
 name = "skforecast"
-version = "0.21.0"
+version = "0.22.0"
 description = "Skforecast is a Python library for time series forecasting using statistical and machine learning models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others."
 readme = "README.md"
 authors = [
@@ -49,6 +49,7 @@ keywords = [
     "deep-learning",
     "lightgbm",
     "xgboost",
+    "catboost",
 ]
 dependencies = [
     "numpy>=1.26",
@@ -85,7 +86,7 @@ all = [
     "statsmodels>=0.13, <0.15",
     "keras>=3.0, <4.0",
     'tensorflow>=2.18, <2.21; python_version < "3.14"',
-    "torch>=2.4, <2.11",
+    "torch>=2.4, <2.12"
 ]
 
 full = ["skforecast[all]"]
@@ -114,8 +115,9 @@ test = [
     # Other optional dependencies
     "lightgbm>=4.0, <5.0",
     "xgboost>=2.1, <4.0",
+    "catboost>=1.2, <2.0",
     "keras>=3.0, <4.0",
-    "torch>=2.4, <2.11",
+    "torch>=2.4, <2.12",
     "tomli>=2.0",
     "pandas[parquet]>=2.1"
 ]
@@ -142,9 +144,27 @@ testpaths = ["skforecast"]
 python_files = "test_*.py"
 python_functions = "test_*"
 addopts = "-vv --tb=short"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "serial",
+]
 # filterwarnings = [
-#     "ignore::DeprecationWarning",
-#     "ignore::FutureWarning",
+#     # "ignore::DeprecationWarning",
+#     # "ignore::FutureWarning",
+#     "ignore::skforecast.exceptions.DataTypeWarning",
+#     "ignore::skforecast.exceptions.DataTransformationWarning",
+#     "ignore::skforecast.exceptions.ExogenousInterpretationWarning",
+#     "ignore::skforecast.exceptions.FeatureOutOfRangeWarning",
+#     "ignore::skforecast.exceptions.IgnoredArgumentWarning",
+#     "ignore::skforecast.exceptions.InputTypeWarning",
+#     "ignore::skforecast.exceptions.LongTrainingWarning",
+#     "ignore::skforecast.exceptions.MissingExogWarning",
+#     "ignore::skforecast.exceptions.MissingValuesWarning",
+#     "ignore::skforecast.exceptions.OneStepAheadValidationWarning",
+#     "ignore::skforecast.exceptions.ResidualsUsageWarning",
+#     "ignore::skforecast.exceptions.UnknownLevelWarning",
+#     "ignore::skforecast.exceptions.SaveLoadSkforecastWarning",
+#     "ignore::skforecast.exceptions.SkforecastVersionWarning",
 # ]
 
 [tool.coverage.run]
