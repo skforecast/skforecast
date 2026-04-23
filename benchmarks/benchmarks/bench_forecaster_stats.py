@@ -76,7 +76,7 @@ def _make_data(
     return y, exog, exog_pred
 
 
-def run_benchmark_ForecasterStats(output_dir):
+def run_benchmark_ForecasterStats(output_dir, run_id=None):
     """
     Run all benchmarks for the ForecasterStats class with Arima and save the results.
     """
@@ -202,22 +202,22 @@ def run_benchmark_ForecasterStats(output_dir):
             )
 
     # Fit benchmarks
-    runner = BenchmarkRunner(repeat=15, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=15, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_fit, forecaster=forecaster, y=y, exog=exog)
 
-    runner = BenchmarkRunner(repeat=8, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=8, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_fit_auto, forecaster=forecaster_auto, y=y, exog=exog)
 
     # Predict benchmarks (fit first)
     forecaster.fit(y=y, exog=exog, suppress_warnings=True)
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterStats__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterStats_predict, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterStats_predict_interval, forecaster=forecaster, exog=exog_pred)
 
     # Backtesting benchmarks
-    runner = BenchmarkRunner(repeat=8, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=8, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_backtesting, forecaster=forecaster, y=y)
     _ = runner.benchmark(ForecasterStats_backtesting_exog, forecaster=forecaster, y=y, exog=exog)
     _ = runner.benchmark(ForecasterStats_backtesting_interval_exog, forecaster=forecaster, y=y, exog=exog)
