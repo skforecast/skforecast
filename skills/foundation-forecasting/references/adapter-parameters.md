@@ -60,6 +60,21 @@ The model is compiled lazily for the exact requested `steps` (up to
 | `context_length` | int  | `2048`   | Max historical observations kept as context.                             |
 | `device`         | str  | `'auto'` | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`. |
 
+## TabICLAdapter — Soda-INRIA TabICL
+
+- **`model_id` prefix**: `soda-inria/tabicl`
+- **`allow_exog`**: `True` (past and future covariates)
+- **Quantiles**: any value in `(0, 1)`
+
+| Parameter            | Type  | Default  | Description                                                                      |
+|----------------------|-------|----------|----------------------------------------------------------------------------------|
+| `model_id`           | str   | —        | HuggingFace model ID (e.g. `soda-inria/tabicl`).                                 |
+| `model`              | obj   | `None`   | Pre-instantiated `TabICLForecaster`. If `None`, created lazily on first predict. |
+| `context_length`     | int   | `4096`   | Max historical observations kept as context.                                     |
+| `point_estimate`     | str   | `'mean'` | Point forecast method: `'mean'` or `'median'`.                                   |
+| `tabicl_config`      | dict  | `None`   | Extra kwargs forwarded to `TabICLRegressor` at inference time.                   |
+| `temporal_features`  | list  | `None`   | `TimeTransform` instances applied before inference. `None` = TabICL defaults; `[]` = disable all. |
+
 ## Common Behavior
 
 All adapters implement the same minimal interface:
@@ -70,7 +85,6 @@ All adapters implement the same minimal interface:
   name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
 
-Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`) are imported
-**lazily** inside the adapter method that needs them, so installing
-`skforecast[foundation]` (which pulls only `chronos-forecasting`) is
-enough if you only use Chronos-2.
+Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`) are
+imported **lazily** inside the adapter method that needs them, so only the
+backend for the adapter you actually use needs to be installed.

@@ -2,8 +2,8 @@
 name: foundation-forecasting
 description: >
   Zero-shot time series forecasting with pre-trained foundation models
-  (Amazon Chronos-2, Google TimesFM 2.5, Salesforce Moirai-2) via
-  ForecasterFoundation and FoundationModel. Covers single and multi-series
+  (Amazon Chronos-2, Google TimesFM 2.5, Salesforce Moirai-2, Soda-INRIA TabICL)
+  via ForecasterFoundation and FoundationModel. Covers single and multi-series
   workflows, exogenous variables, prediction intervals / quantiles, and
   backtesting. Use when the user wants forecasts without task-specific
   training, cold-start baselines, or pre-trained generalist models.
@@ -15,7 +15,7 @@ description: >
 
 See [references/adapter-parameters.md](references/adapter-parameters.md) for
 the per-adapter constructor parameters of `ChronosAdapter`,
-`TimesFMAdapter`, and `MoiraiAdapter`.
+`TimesFMAdapter`, `MoiraiAdapter`, and `TabICLAdapter`.
 
 ## When to Use
 
@@ -30,13 +30,17 @@ train them; it only stores the recent context and metadata.
 
 ## Installation
 
+Foundation model backends are **not** bundled with skforecast. Install only
+the backend(s) you need:
+
 ```bash
-pip install skforecast[foundation]
+pip install chronos-forecasting                                 # For Chronos-2
+pip install git+https://github.com/google-research/timesfm.git  # For TimesFM 2.5
+pip install uni2ts                                              # For Moirai-2
+pip install tabicl[forecast]                                    # For TabICL
 ```
 
-This installs `chronos-forecasting`. TimesFM 2.5 and Moirai-2 require their
-own backends (`timesfm` / `uni2ts`) installed separately. Models are
-downloaded from HuggingFace on first use.
+Models are downloaded from HuggingFace on first use.
 
 ## Quick Start (single series)
 
@@ -90,10 +94,10 @@ model = FoundationModel(
 )
 ```
 
-## With Exogenous Variables (Chronos-2 only)
+## With Exogenous Variables (Chronos-2 and TabICL)
 
-Only Chronos-2 (`allow_exog=True`) accepts exogenous variables. TimesFM 2.5
-and Moirai-2 ignore them.
+Chronos-2 and TabICL (`allow_exog=True`) accept exogenous variables.
+TimesFM 2.5 and Moirai-2 ignore them.
 
 ```python
 # Historical + future exog (must cover the forecast horizon)
@@ -124,8 +128,8 @@ predictions = forecaster.predict_quantiles(
 ```
 
 For TimesFM 2.5 and Moirai-2, requested quantiles must be a subset of
-`[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. Chronos-2 supports any
-quantile in `(0, 1)`.
+`[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. Chronos-2 and TabICL
+support any quantile in `(0, 1)`.
 
 ## Choosing a Model
 
@@ -134,6 +138,7 @@ quantile in `(0, 1)`.
 | `autogluon/chronos-2-*` (Amazon)       | Yes  | 8192            | General-purpose, exog-friendly, cross-series info |
 | `google/timesfm-2.5-*` (Google)        | No   | 512             | Long-horizon point/quantile forecasts             |
 | `Salesforce/moirai-2.0-*` (Salesforce) | No   | 2048            | Multivariate pretraining, probabilistic forecasts |
+| `soda-inria/tabicl` (Soda-INRIA)       | Yes  | 4096            | Tabular in-context learning, exog-aware           |
 
 The adapter is resolved automatically from the `model_id` prefix — no need
 to import adapter classes directly.
@@ -187,11 +192,11 @@ automatically to the last `context_length` observations.
 2. **Index without frequency**: call `series.asfreq('h')` (or similar)
    before `fit` — skforecast requires a frequency.
 3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2
-   supports exogenous variables.
+   and TabICL support exogenous variables.
 4. **Requesting unsupported quantiles**: TimesFM 2.5 and Moirai-2 are
    restricted to the nine deciles `0.1 … 0.9`.
 5. **Large model downloads**: first call can be slow; consider using
    smaller variants (`*-small`) for experimentation.
-6. **Forgetting the HuggingFace backend**: installing
-   `skforecast[foundation]` only brings Chronos-2. Install `timesfm` or
-   `uni2ts` separately if you want those backbones.
+6. **Forgetting to install the backend**: each foundation model requires
+   its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`).
+   Install only the one(s) you need.

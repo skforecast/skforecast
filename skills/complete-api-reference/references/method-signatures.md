@@ -155,6 +155,7 @@ FoundationModel(
                                #   torch_dtype : object (Chronos-2 only)
                                #   cross_learning : bool (Chronos-2 only)
                                #   max_horizon, forecast_config_kwargs (TimesFM 2.5)
+                               #   point_estimate, tabicl_config, temporal_features (TabICL)
 )
 
 ForecasterFoundation(

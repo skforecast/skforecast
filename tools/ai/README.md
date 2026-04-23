@@ -131,8 +131,8 @@ These are the only files you edit directly:
 | `tools/ai/llms-base.txt` | ~730 | Core API reference: all forecasters, imports, examples, workflows |
 | `tools/ai/ai_context_header.md` | ~95 | Dev-only context: testing commands, code style, dependencies |
 | `llms.txt` (root) | ~120 | Public index per [llmstxt.org](https://llmstxt.org) spec with links to docs |
-| `skills/*/SKILL.md` | 12 skills | Modular workflow guides, one per topic |
-| `skills/*/references/*.md` | 6 files | Supplementary reference tables for some skills |
+| `skills/*/SKILL.md` | 13 skills | Modular workflow guides, one per topic |
+| `skills/*/references/*.md` | 7 files | Supplementary reference tables for some skills |
 | `.github/instructions/*.md` | 2 files | Pattern-matched coding conventions |
 | `.github/prompts/*.md` | 2 files | Reusable review checklists |
 
@@ -144,13 +144,13 @@ All marked with `<!-- AUTO-GENERATED -->` header and tracked in `.gitattributes`
 |------|--------|---------|
 | `.github/copilot-instructions.md` | header + llms-base | IDE context for GitHub Copilot |
 | `AGENTS.md` | header + llms-base | IDE context for Claude Code, Codex, Aider |
-| `llms-full.txt` | llms-base + 12 skills | Complete LLM reference (~2500 lines) |
+| `llms-full.txt` | llms-base + 13 skills | Complete LLM reference (~2500 lines) |
 | `docs/llms.txt` | copy of root `llms.txt` | Served at skforecast.org/llms.txt |
 | `docs/llms-full.txt` | copy of `llms-full.txt` | Served at skforecast.org/llms-full.txt |
 
 ## Skills
 
-12 self-contained workflow guides in `skills/`. Each has a `SKILL.md` with YAML frontmatter (`name`, `description`) and optional `references/` subfolder.
+13 self-contained workflow guides in `skills/`. Each has a `SKILL.md` with YAML frontmatter (`name`, `description`) and optional `references/` subfolder.
 
 | Skill | References | Topic |
 |-------|-----------|-------|
@@ -163,6 +163,7 @@ All marked with `<!-- AUTO-GENERATED -->` header and tracked in `.gitattributes`
 | `feature-selection` | — | RFECV, SelectFromModel |
 | `drift-detection` | — | RangeDriftDetector, PopulationDriftDetector |
 | `deep-learning-forecasting` | `architecture-options.md` | ForecasterRnn, LSTM/GRU |
+| `foundation-forecasting` | `adapter-parameters.md` | ForecasterFoundation, Chronos-2, TimesFM 2.5, Moirai-2, TabICL |
 | `choosing-a-forecaster` | — | Decision guide for forecaster selection |
 | `troubleshooting-common-errors` | — | Common mistakes and fixes |
 | `complete-api-reference` | `method-signatures.md` | All constructor and method signatures |
