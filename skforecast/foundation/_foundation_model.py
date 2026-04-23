@@ -724,6 +724,11 @@ class FoundationModel:
             raise ValueError("`steps` must be a positive integer.")
 
         if quantiles is not None:
+            if not isinstance(quantiles, (list, tuple)):
+                raise TypeError(
+                    "`quantiles` must be a `list` or `tuple`. For example, quantiles "
+                    "0.1, 0.5, and 0.9 should be as `quantiles = [0.1, 0.5, 0.9]`."
+                )
             for q in quantiles:
                 if not 0.0 <= q <= 1.0:
                     raise ValueError(
@@ -805,23 +810,29 @@ class FoundationModel:
 
         if n_series == 1:
             long_index = per_series_indices[0]
-            level_col = np.repeat(series_names_in, steps)
         else:
-            idx_matrix = np.empty(
-                (steps, n_series), dtype=per_series_indices[0].dtype
+            idx_arr = np.column_stack(
+                [idx.to_numpy() for idx in per_series_indices]
+            ).ravel()
+            long_index = (
+                pd.DatetimeIndex(idx_arr)
+                if isinstance(per_series_indices[0], pd.DatetimeIndex)
+                else pd.Index(idx_arr)
             )
-            for i, idx in enumerate(per_series_indices):
-                idx_matrix[:, i] = idx
-            long_index = idx_matrix.ravel()
-            level_col = np.tile(series_names_in, steps)
+        level_col = np.tile(series_names_in, steps)
 
         col_names = ["pred"] if quantiles is None else [f"q_{q}" for q in quantiles]
+        n_cols = len(col_names)
+        # Pre-allocate (steps, n_series, n_cols), fill per series, then reshape
+        # to step-major (steps*n_series, n_cols) — one allocation instead of one
+        # per quantile, and the ravel order matches level_col / long_index.
+        pred_matrix = np.empty((steps, n_series, n_cols), dtype=np.float64)
+        for i, name in enumerate(series_names_in):
+            pred_matrix[:, i, :] = raw_predictions[name]
+        pred_matrix = pred_matrix.reshape(steps * n_series, n_cols)
         predictions: dict[str, np.ndarray] = {"level": level_col}
         for j, col in enumerate(col_names):
-            pred_arr = np.empty((steps, n_series), dtype=np.float64)
-            for i, name in enumerate(series_names_in):
-                pred_arr[:, i] = raw_predictions[name][:, j]
-            predictions[col] = pred_arr.ravel()
+            predictions[col] = pred_matrix[:, j]
 
         predictions = pd.DataFrame(predictions, index=long_index)
 

@@ -60,6 +60,26 @@ def test_predict_ValueError_when_quantile_out_of_range(bad_quantile):
         m.predict(steps=3, quantiles=[0.5, bad_quantile])
 
 
+@pytest.mark.parametrize(
+    "bad_quantiles",
+    [0.5, np.float64(0.5), {0.1, 0.5, 0.9}],
+    ids=["float", "np.float64", "set"],
+)
+def test_predict_TypeError_when_quantiles_not_list_or_tuple(bad_quantiles):
+    """
+    Test predict raises TypeError when `quantiles` is not a list or tuple
+    (e.g. a bare float, a numpy scalar, or a set).
+    """
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m.fit(series=y)
+    err_msg = re.escape(
+        "`quantiles` must be a `list` or `tuple`. For example, quantiles "
+        "0.1, 0.5, and 0.9 should be as `quantiles = [0.1, 0.5, 0.9]`."
+    )
+    with pytest.raises(TypeError, match=err_msg):
+        m.predict(steps=3, quantiles=bad_quantiles)
+
+
 def test_predict_ValueError_when_steps_is_bool_false():
     """
     Test predict raises ValueError when steps is False. bool is a subclass
