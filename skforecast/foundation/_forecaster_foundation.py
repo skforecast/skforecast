@@ -6,10 +6,10 @@
 # coding=utf-8
 
 from __future__ import annotations
+import html
 import sys
 import textwrap
 import warnings
-from copy import copy
 import pandas as pd
 from sklearn.exceptions import NotFittedError
 
@@ -387,6 +387,42 @@ class ForecasterFoundation:
         return self.estimator.fit_date
 
     @staticmethod
+    def _truncate_names(
+        names: list[str] | None,
+        max_items: int = 50,
+    ) -> list[str] | None:
+        """
+        Truncate a list of names for display.
+
+        Returns the first and last `max_items // 2` elements (joined by
+        `'...'`) when the list exceeds `max_items`. Returns a shallow
+        copy so callers can mutate the result freely.
+
+        Parameters
+        ----------
+        names : list, None
+            Names to truncate. If `None`, returns `None`.
+        max_items : int, default 50
+            Maximum number of names to keep before truncation.
+
+        Returns
+        -------
+        truncated : list, None
+            Truncated list, or `None` if `names` is `None`.
+
+        """
+
+        if names is None:
+            return None
+
+        names = list(names)
+        if len(names) > max_items:
+            half = max_items // 2
+            names = names[:half] + ["..."] + names[-half:]
+
+        return names
+
+    @staticmethod
     def _format_names_repr(
         names: list[str] | None,
         max_items: int = 50,
@@ -396,7 +432,7 @@ class ForecasterFoundation:
         Format a list of names for text `__repr__`.
 
         Truncates the list to the first and last `max_items // 2` elements
-        (joined by ``'...'``) when it exceeds `max_items`, then wraps the
+        (joined by `'...'`) when it exceeds `max_items`, then wraps the
         resulting string with `textwrap.fill` when it exceeds
         `max_text_length` characters.
 
@@ -416,13 +452,10 @@ class ForecasterFoundation:
 
         """
 
+        names = ForecasterFoundation._truncate_names(names, max_items)
         if names is None:
             return None
 
-        names = copy(names)
-        if len(names) > max_items:
-            half = max_items // 2
-            names = names[:half] + ["..."] + names[-half:]
         formatted = ", ".join(names)
         if len(formatted) > max_text_length:
             formatted = "\n    " + textwrap.fill(
@@ -450,7 +483,7 @@ class ForecasterFoundation:
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Model: {self.model_id} \n"
+            f"Model ID: {self.model_id} \n"
             f"Context length: {self.context_length} \n"
             f"Series names: {series_names_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
@@ -475,37 +508,42 @@ class ForecasterFoundation:
 
         style, unique_id = get_style_repr_html(self.is_fitted)
 
-        max_items = 50
+        exog_names = self._truncate_names(self.exog_names_in_)
+        if exog_names is not None:
+            parts = []
+            for n in exog_names:
+                if n == "...":
+                    parts.append('<em style="color: #999;">\u2026</em>')
+                else:
+                    parts.append(html.escape(str(n)))
+            exog_names_html = ", ".join(parts)
+        else:
+            exog_names_html = str(None)
 
-        exog_names_html = None
-        if self.exog_names_in_ is not None:
-            names = copy(self.exog_names_in_)
-            if len(names) > max_items:
-                half = max_items // 2
-                names = names[:half] + ["..."] + names[-half:]
-            exog_names_html = "".join(f"<li>{n}</li>" for n in names)
-
-        if self.series_names_in_ is not None:
-            series_names = copy(self.series_names_in_)
-            if len(series_names) > max_items:
-                half = max_items // 2
-                series_names = (
-                    series_names[:half] + ["..."] + series_names[-half:]
-                )
-            series_value_html = ", ".join(str(n) for n in series_names)
+        series_names = self._truncate_names(self.series_names_in_)
+        if series_names is not None:
+            series_value_html = ", ".join(html.escape(str(n)) for n in series_names)
         else:
             series_value_html = str(self.series_names_in_)
 
         if self.is_fitted:
-            context_range_html = "".join(
-                f"<li><strong>{k}:</strong> {v.to_list()}</li>"
+            context_range_parts = [
+                f"'{k}': {v.astype(str).to_list()}"
                 for k, v in self.context_range_.items()
-            )
-            context_range_html = f"<ul>{context_range_html}</ul>"
+            ]
+            if len(context_range_parts) > 10:
+                context_range_parts = (
+                    context_range_parts[:5] + ["..."] + context_range_parts[-5:]
+                )
+            context_range_html = ", ".join(context_range_parts)
         else:
             context_range_html = "Not fitted"
 
-        series_label_html = "Series names"
+        params_html = "".join(
+            f"<li><strong>{html.escape(str(k))}:</strong> {html.escape(str(v))}</li>"
+            for k, v in self.estimator.adapter.get_params().items()
+            if k != "model_id"
+        )
 
         content = f"""
         <div class="container-{unique_id}">
@@ -513,10 +551,10 @@ class ForecasterFoundation:
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Model:</strong> {self.model_id}</li>
+                    <li><strong>Model ID:</strong> {self.model_id}</li>
                     <li><strong>Context length:</strong> {self.context_length}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
-                    <li><strong>{series_label_html}:</strong> {series_value_html}</li>
+                    <li><strong>Series names:</strong> {series_value_html}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
                     <li><strong>Creation date:</strong> {self.creation_date}</li>
                     <li><strong>Last fit date:</strong> {self.fit_date}</li>
@@ -527,9 +565,7 @@ class ForecasterFoundation:
             </details>
             <details>
                 <summary>Exogenous Variables</summary>
-                <ul>
-                    {exog_names_html}
-                </ul>
+                <p style="margin: 0.2em 0 0.2em 1.5em;">{exog_names_html}</p>
             </details>
             <details>
                 <summary>Training Information</summary>
@@ -542,11 +578,13 @@ class ForecasterFoundation:
             <details>
                 <summary>Model Parameters</summary>
                 <ul>
-                    {''.join(f'<li><strong>{k}:</strong> {v}</li>' for k, v in self.estimator.adapter.get_params().items() if k != 'model_id')}
+                    {params_html}
                 </ul>
             </details>
             <p>
                 <a href="https://skforecast.org/{__version__}/api/forecasterfoundation.html">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{__version__}/user_guides/foundation-forecasting-models.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """

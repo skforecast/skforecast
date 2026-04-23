@@ -3343,10 +3343,10 @@ Foundation model backends are **not** bundled with skforecast. Install only
 the backend(s) you need:
 
 ```bash
-pip install chronos-forecasting   # For Chronos-2
-pip install timesfm               # For TimesFM 2.5
-pip install uni2ts                 # For Moirai-2
-pip install tabicl                 # For TabICL
+pip install chronos-forecasting                                 # For Chronos-2
+pip install git+https://github.com/google-research/timesfm.git  # For TimesFM 2.5
+pip install uni2ts                                              # For Moirai-2
+pip install tabicl[forecast]                                    # For TabICL
 ```
 
 Models are downloaded from HuggingFace on first use.

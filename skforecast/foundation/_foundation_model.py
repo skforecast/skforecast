@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 from typing import Any
+import html
 import sys
 import warnings
 import numpy as np
@@ -20,6 +21,7 @@ from ..utils import (
     check_preprocess_exog_multiseries,
     align_series_and_exog_multiseries,
     expand_index,
+    get_style_repr_html,
 )
 
 
@@ -256,7 +258,76 @@ class FoundationModel:
             `False` otherwise.
         """
         return self.adapter.is_fitted
-    
+
+    def __repr__(self) -> str:
+        """
+        Information displayed when a FoundationModel object is printed.
+        """
+
+        params = {
+            k: v for k, v in self.adapter.get_params().items()
+            if k != "model_id"
+        }
+
+        info = (
+            f"{'=' * len(type(self).__name__)} \n"
+            f"{type(self).__name__} \n"
+            f"{'=' * len(type(self).__name__)} \n"
+            f"Model ID: {self.model_id} \n"
+            f"Context length: {self.context_length} \n"
+            f"Model parameters: {params} \n"
+            f"Creation date: {self.creation_date} \n"
+            f"Last fit date: {self.fit_date} \n"
+            f"Skforecast version: {self.skforecast_version} \n"
+            f"Python version: {self.python_version} \n"
+        )
+
+        return info
+
+    def _repr_html_(self) -> str:
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+
+        style, unique_id = get_style_repr_html(self.is_fitted)
+
+        params_html = "".join(
+            f"<li><strong>{html.escape(str(k))}:</strong> {html.escape(str(v))}</li>"
+            for k, v in self.adapter.get_params().items()
+            if k != "model_id"
+        )
+
+        content = f"""
+        <div class="container-{unique_id}">
+            <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Model ID:</strong> {self.model_id}</li>
+                    <li><strong>Context length:</strong> {self.context_length}</li>
+                    <li><strong>Creation date:</strong> {self.creation_date}</li>
+                    <li><strong>Last fit date:</strong> {self.fit_date}</li>
+                    <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
+                    <li><strong>Python version:</strong> {self.python_version}</li>
+                </ul>
+            </details>
+            <details>
+                <summary>Model Parameters</summary>
+                <ul>
+                    {params_html}
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{__version__}/api/foundationmodel.html">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{__version__}/user_guides/foundation-forecasting-models.html">&#128462 <strong>User Guide</strong></a>
+            </p>
+        </div>
+        """
+
+        return style + content
+
     def _check_preprocess_context(
         self,
         series: pd.Series | pd.DataFrame | dict[str, pd.Series],

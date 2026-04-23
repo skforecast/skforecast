@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from skforecast.foundation._adapters import TabICLAdapter
 from .fixtures_adapters import (
-    y, exog, y_wide, y_dict,
+    y, exog, y_wide, y_dict, exog_shared,
     FakeTabICLForecaster,
     prepare_fit_args, prepare_predict_args,
 )
@@ -133,21 +133,51 @@ def test_TabICLAdapter_set_params_ValueError_when_invalid(params, match):
         adapter.set_params(**params)
 
 
-def test_TabICLAdapter_set_params_updates_and_returns_self():
+@pytest.mark.parametrize(
+    "param, value",
+    [
+        ("model_id", "soda-inria/tabicl-v2"),
+        ("context_length", 128),
+        ("point_estimate", "median"),
+        ("tabicl_config", {"n_estimators": 5}),
+        ("temporal_features", []),
+    ],
+    ids=lambda x: str(x)
+)
+def test_TabICLAdapter_set_params_resets_model_when_param_changes(
+    param, value
+):
     """
-    Test that set_params updates parameters, resets the internal _model
-    object, and returns self.
+    Test that set_params resets the internal _model when any parameter
+    actually changes value, and returns self.
     """
     fake = FakeTabICLForecaster()
     adapter = TabICLAdapter(model_id="soda-inria/tabicl", model=fake)
     assert adapter._model is not None
 
-    result = adapter.set_params(context_length=128, point_estimate="median")
+    result = adapter.set_params(**{param: value})
 
     assert result is adapter
-    assert adapter.context_length == 128
-    assert adapter.point_estimate == "median"
-    assert adapter._model is None  # reset when any param changes
+    assert adapter._model is None
+
+
+def test_TabICLAdapter_set_params_no_reset_when_value_unchanged():
+    """
+    Test that set_params does not reset _model when the same value is
+    passed (no actual change).
+    """
+    fake = FakeTabICLForecaster()
+    adapter = TabICLAdapter(
+        model_id="soda-inria/tabicl",
+        model=fake,
+        context_length=4096,
+        point_estimate="mean",
+    )
+    assert adapter._model is not None
+
+    adapter.set_params(context_length=4096, point_estimate="mean")
+
+    assert adapter._model is not None  # not reset because values unchanged
 
 
 def test_TabICLAdapter_set_params_tabicl_config_none_normalises_to_empty_dict():
@@ -166,14 +196,24 @@ def test_TabICLAdapter_set_params_tabicl_config_none_normalises_to_empty_dict():
 # ==============================================================================
 # Tests TabICLAdapter.fit
 # ==============================================================================
-def test_TabICLAdapter_fit_single_series_stores_context():
+@pytest.mark.parametrize(
+    "context_length, expected_len",
+    [(10, 10), (25, 25), (50, 50), (100, 50)],
+    ids=lambda x: f"{x}"
+)
+def test_TabICLAdapter_fit_single_series_stores_context(
+    context_length, expected_len
+):
     """
     Test fit on a single series: returns self, sets is_fitted=True,
-    stores the context dict, and does not modify the input series.
+    stores history trimmed to context_length, and does not modify the
+    input series.
     """
-    adapter = TabICLAdapter(model_id="soda-inria/tabicl", context_length=20)
+    adapter = TabICLAdapter(
+        model_id="soda-inria/tabicl", context_length=context_length
+    )
     y_copy = y.copy()
-    context, context_exog = prepare_fit_args(y, context_length=20)
+    context, context_exog = prepare_fit_args(y, context_length=context_length)
 
     result = adapter.fit(context=context, context_exog=context_exog)
 
@@ -181,8 +221,8 @@ def test_TabICLAdapter_fit_single_series_stores_context():
     assert adapter.is_fitted is True
     assert set(adapter.context_.keys()) == {"sales"}
     hist = adapter.context_["sales"]
-    assert len(hist) == 20
-    pd.testing.assert_series_equal(hist, y.iloc[-20:])
+    assert len(hist) == expected_len
+    pd.testing.assert_series_equal(hist, y.iloc[-expected_len:])
     pd.testing.assert_series_equal(y, y_copy)
 
 
@@ -225,6 +265,35 @@ def test_TabICLAdapter_fit_stores_exog_and_handles_none_exog():
     ctx2, ctx_exog2 = prepare_fit_args(y)
     adapter.fit(context=ctx2, context_exog=ctx_exog2)
     assert adapter.context_exog_ is None
+
+
+def test_TabICLAdapter_fit_multiseries_exog_broadcast_and_per_series():
+    """
+    Test that a shared exog DataFrame is broadcast to all series, and that
+    a per-series exog dict stores correctly (present key → stored, absent
+    key → None). Context_length trims exog per series.
+    """
+    context_length = 8
+    adapter = TabICLAdapter(
+        model_id="soda-inria/tabicl", context_length=context_length
+    )
+
+    # Shared exog broadcast
+    context, context_exog = prepare_fit_args(
+        y_dict, exog=exog_shared, context_length=context_length
+    )
+    adapter.fit(context=context, context_exog=context_exog)
+    for name in y_dict:
+        assert adapter.context_exog_[name] is not None
+        assert len(adapter.context_exog_[name]) == context_length
+
+    # Per-series exog dict: s1 has exog, s2 does not
+    ctx2, ctx_exog2 = prepare_fit_args(
+        y_dict, exog={"s1": exog_shared.copy()}
+    )
+    adapter.fit(context=ctx2, context_exog=ctx_exog2)
+    assert adapter.context_exog_["s1"] is not None
+    assert adapter.context_exog_["s2"] is None
 
 
 # ==============================================================================
@@ -293,12 +362,49 @@ def test_TabICLAdapter_predict_quantile_forecast_single_series():
 # ==============================================================================
 # Tests TabICLAdapter.predict — multi-series
 # ==============================================================================
-def test_TabICLAdapter_predict_multi_series_returns_all_keys():
+@pytest.mark.parametrize(
+    "series_input",
+    [y_wide, y_dict],
+    ids=["wide_dataframe", "dict"]
+)
+def test_TabICLAdapter_predict_point_forecast_multi_series(series_input):
     """
-    Test that predict on multi-series returns one array per series with
-    correct shape.
+    Test point forecast on multi-series: returns a dict with one array per
+    series, each of shape (steps, 1) with value 0.0 (FakeTabICLForecaster
+    target).
     """
     steps = 4
+    adapter = TabICLAdapter(
+        model_id="soda-inria/tabicl",
+        model=FakeTabICLForecaster(),
+    )
+    context, context_exog = prepare_fit_args(series_input)
+    adapter.fit(context=context, context_exog=context_exog)
+    ctx, ctx_exog, future_exog = prepare_predict_args(adapter, steps)
+
+    predictions = adapter.predict(
+        steps=steps,
+        context=ctx,
+        context_exog=ctx_exog,
+        exog=future_exog,
+        quantiles=None,
+    )
+
+    assert set(predictions.keys()) == {"s1", "s2"}
+    for name in ["s1", "s2"]:
+        assert predictions[name].shape == (steps, 1)
+        np.testing.assert_array_almost_equal(
+            predictions[name][:, 0], np.full(steps, 0.0)
+        )
+
+
+def test_TabICLAdapter_predict_quantile_forecast_multi_series():
+    """
+    Test quantile forecast on multi-series: returns a dict with one array
+    per series, each of shape (steps, n_quantiles) with correct values.
+    """
+    steps = 4
+    quantiles = [0.1, 0.5, 0.9]
     adapter = TabICLAdapter(
         model_id="soda-inria/tabicl",
         model=FakeTabICLForecaster(),
@@ -312,12 +418,14 @@ def test_TabICLAdapter_predict_multi_series_returns_all_keys():
         context=ctx,
         context_exog=ctx_exog,
         exog=future_exog,
-        quantiles=[0.1, 0.9],
+        quantiles=quantiles,
     )
 
     assert set(predictions.keys()) == {"s1", "s2"}
-    for name, arr in predictions.items():
-        assert arr.shape == (steps, 2)
+    for name in ["s1", "s2"]:
+        assert predictions[name].shape == (steps, len(quantiles))
+        for col_idx, q in enumerate(quantiles):
+            np.testing.assert_allclose(predictions[name][:, col_idx], q)
 
 
 # ==============================================================================
@@ -358,6 +466,100 @@ def test_TabICLAdapter_predict_exog_forwarded_to_context_df_and_future_df():
     # future_df must contain the exog columns
     for col in exog.columns:
         assert col in fake.last_future_df.columns
+
+
+# ==============================================================================
+# Tests TabICLAdapter.predict — model receives correct args
+# ==============================================================================
+def test_TabICLAdapter_predict_model_receives_correct_quantiles_and_structure():
+    """
+    Test that the underlying FakeTabICLForecaster receives the correct
+    quantiles, and that context_df and future_df have the expected
+    structure (item_id, timestamp, target columns).
+    """
+    steps = 5
+    quantiles = [0.2, 0.8]
+    fake = FakeTabICLForecaster()
+    adapter = TabICLAdapter(model_id="soda-inria/tabicl", model=fake)
+    context, context_exog = prepare_fit_args(y)
+    adapter.fit(context=context, context_exog=context_exog)
+    ctx, ctx_exog, future_exog = prepare_predict_args(adapter, steps)
+
+    adapter.predict(
+        steps=steps,
+        context=ctx,
+        context_exog=ctx_exog,
+        exog=future_exog,
+        quantiles=quantiles,
+    )
+
+    assert fake.last_quantiles == quantiles
+    # context_df structure
+    assert "item_id" in fake.last_context_df.columns
+    assert "timestamp" in fake.last_context_df.columns
+    assert "target" in fake.last_context_df.columns
+    # future_df structure
+    assert "item_id" in fake.last_future_df.columns
+    assert "timestamp" in fake.last_future_df.columns
+    # future_df has exactly `steps` rows per series
+    future_counts = fake.last_future_df.groupby("item_id").size()
+    assert (future_counts == steps).all()
+
+
+def test_TabICLAdapter_predict_point_forecast_passes_default_quantiles():
+    """
+    Test that when quantiles=None (point forecast), the default quantile
+    set [0.1, ..., 0.9] is passed to predict_df.
+    """
+    steps = 3
+    fake = FakeTabICLForecaster()
+    adapter = TabICLAdapter(model_id="soda-inria/tabicl", model=fake)
+    context, context_exog = prepare_fit_args(y)
+    adapter.fit(context=context, context_exog=context_exog)
+    ctx, ctx_exog, future_exog = prepare_predict_args(adapter, steps)
+
+    adapter.predict(
+        steps=steps,
+        context=ctx,
+        context_exog=ctx_exog,
+        exog=future_exog,
+        quantiles=None,
+    )
+
+    expected_default = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    assert fake.last_quantiles == expected_default
+
+
+# ==============================================================================
+# Tests TabICLAdapter.predict — context_length trims history
+# ==============================================================================
+def test_TabICLAdapter_predict_context_length_trims_history():
+    """
+    Test that the context_df passed to the underlying model contains at
+    most context_length observations per series.
+    """
+    context_length = 10
+    steps = 3
+    fake = FakeTabICLForecaster()
+    adapter = TabICLAdapter(
+        model_id="soda-inria/tabicl",
+        model=fake,
+        context_length=context_length,
+    )
+    context, context_exog = prepare_fit_args(y, context_length=context_length)
+    adapter.fit(context=context, context_exog=context_exog)
+    ctx, ctx_exog, future_exog = prepare_predict_args(adapter, steps)
+
+    adapter.predict(
+        steps=steps,
+        context=ctx,
+        context_exog=ctx_exog,
+        exog=future_exog,
+        quantiles=None,
+    )
+
+    context_counts = fake.last_context_df.groupby("item_id").size()
+    assert (context_counts == context_length).all()
 
 
 # ==============================================================================
