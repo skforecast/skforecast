@@ -1518,6 +1518,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#backtesting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backtesting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#multiple-series-global-model" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6783,13 +6794,31 @@ predictions_intervals.head(3)</div>
 </div>
 </div>
 </div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=01903b63">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="backtesting">Backtesting<a class="anchor-link" href="#backtesting">¶</a></h3><p>Backtesting with foundation models works differently than with traditional machine learning forecasters. Since the model's weights are frozen and never updated, the concept of <strong>refitting</strong> does not apply. The <code>refit</code> and <code>fixed_train_size</code> arguments in <code>TimeSeriesFold</code> are ignored internally.</p>
+<p>Instead, what changes across folds is the <strong>context window</strong>. As backtesting progresses, the amount of historical data available grows. At each fold, the model receives the most recent observations up to the fold boundary. This process has two phases: first, the context <strong>expands</strong> as more historical data becomes available with each fold; once the available history exceeds the model's <code>context_length</code>, the context <strong>stops growing</strong> and instead <strong>slides forward</strong>, always using the last <code>context_length</code> observations before the fold boundary.</p>
+<p style="text-align: center">
+<img alt="No description has been provided for this image" src="../img/time-series-backtesting-forecasting-foundation.gif" style="width: 650px;"/>
+<br/>
+<font size="2.5"> <i>Backtesting with expanding context</i></font>
+</p>
+<p>To learn more about backtesting, visit the <a href="../user_guides/backtesting.html">backtesting user guide</a>.</p>
+</div>
+</div>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
 <div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=297af594">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-8">
@@ -6911,7 +6940,7 @@ Backtest predictions
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[ ]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
