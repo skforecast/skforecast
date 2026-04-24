@@ -57,6 +57,8 @@ class FoundationModel:
         TabICLv2 (supports `exog`):
 
         - `'soda-inria/tabicl'`
+
+        See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
         Valid keys depend on the adapter selected by `model_id`. See the
