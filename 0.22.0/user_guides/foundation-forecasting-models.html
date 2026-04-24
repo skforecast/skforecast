@@ -5707,7 +5707,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h1 id="forecasting-with-foundation-models">Forecasting with foundation models<a class="anchor-link" href="#forecasting-with-foundation-models">¶</a></h1><p>Foundation Models (FMs) have recently introduced a major paradigm shift in the field of time series forecasting. Driven by the same architectural breakthroughs that power Large Language Models (LLMs), these models offer powerful generalization capabilities out-of-the-box.</p>
 <p>In the context of time series, a Foundation Model is a large-scale neural network (typically based on Transformer architectures) that has been pre-trained on massive and highly diverse datasets spanning multiple domains (e.g., finance, weather, web traffic, and retail).</p>
-<p>Models such as <strong>AWS Chronos</strong>, <strong>Google TimesFM2.5</strong>, and <strong>Salesforce MOIRAI</strong> operate on a principle similar to language models: they treat time series values as a sequence of tokens. Because they have already "seen" millions of time series patterns during their pre-training phase, they can identify trends, seasonality, and complex dynamics in new, unseen data without requiring any domain-specific training.</p>
+<p>Models such as <strong>Amazon Chronos</strong>, <strong>Google TimesFM2.5</strong>, <strong>Salesforce MOIRAI</strong>, and <strong>Soda-INRIA TabICL</strong> operate on a principle similar to language models: they treat time series values as a sequence of tokens. Because they have already "seen" millions of time series patterns during their pre-training phase, they can identify trends, seasonality, and complex dynamics in new, unseen data without requiring any domain-specific training.</p>
 </div>
 </div>
 </div>
@@ -5752,7 +5752,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="foundation-models-in-skforecast">Foundation Models in skforecast<a class="anchor-link" href="#foundation-models-in-skforecast">¶</a></h2><p>Skforecast's integration is built on two layers. First, <code>FoundationModel</code> acts as a unified wrapper that adapts each model's native API (Chronos-2, TimesFM 2.5, Moirai-2) behind a familiar scikit-learn interface (<code>.fit()</code>, <code>.predict()</code>, <code>.get_params()</code>). Second, <code>ForecasterFoundation</code> wraps that estimator to unlock the full skforecast ecosystem (backtesting, prediction intervals, multi-series support...) with the same code you would use for any other forecaster.</p>
+<h2 id="foundation-models-in-skforecast">Foundation Models in skforecast<a class="anchor-link" href="#foundation-models-in-skforecast">¶</a></h2><p>Skforecast's integration is built on two layers. First, <code>FoundationModel</code> acts as a unified wrapper that adapts each model's native API (Chronos, TimesFM, Moirai, TabICL) behind a familiar scikit-learn interface (<code>.fit()</code>, <code>.predict()</code>, <code>.get_params()</code>). Second, <code>ForecasterFoundation</code> wraps that estimator to unlock the full skforecast ecosystem (backtesting, prediction intervals, multi-series support...) with the same code you would use for any other forecaster.</p>
 </div>
 </div>
 </div>
@@ -5905,7 +5905,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="foundationmodel">FoundationModel<a class="anchor-link" href="#foundationmodel">¶</a></h3><p>Each foundation model (Chronos-2, TimesFM 2.5, Moirai-2) has its own API, input format, and inference logic. The <code>FoundationModel</code> class abstracts away these differences behind a single scikit-learn-compatible interface (<code>.fit()</code>, <code>.predict()</code>). Internally, it delegates to a model-specific adapter that handles all the implementation details.</p>
+<h3 id="foundationmodel">FoundationModel<a class="anchor-link" href="#foundationmodel">¶</a></h3><p>Each foundation model (Chronos, TimesFM, Moirai, TabICL) has its own API, input format, and inference logic. The <code>FoundationModel</code> class abstracts away these differences behind a single scikit-learn-compatible interface (<code>.fit()</code>, <code>.predict()</code>). Internally, it delegates to a model-specific adapter that handles all the implementation details.</p>
 </div>
 </div>
 </div>
@@ -6002,7 +6002,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p><strong>Exogenous Variables (<code>exog</code>)</strong></p>
-<p>Exogenous variables must be aligned with the target series index. Currently, only <strong>Chronos</strong> supports covariates (see the <a href="#supported-foundation-models">Supported Foundation Models</a> table). TimesFM 2.5 and Moirai-2 do not accept exogenous variables.</p>
+<p>Exogenous variables must be aligned with the target series index. Currently, only <strong>Chronos</strong> and <strong>TabICL</strong> support covariates (see the <a href="#supported-foundation-models">Supported Foundation Models</a> table). TimesFM and Moirai do not accept exogenous variables.\n</p>
 <table>
 <thead>
 <tr>
@@ -6339,7 +6339,7 @@ Test dates : 2014-12-01 00:00:00 --- 2014-12-30 23:00:00  (n=720)
 <i style="font-size: 18px; color:#ff9100; border-color: #ff1744;"></i>
 <b style="color: #ff9100;"> <span style="color: #ff9100;">⚠</span> Warning: Data Leakage</b>
 </p>
-<p>The following examples use a widely available public dataset for illustrative purposes. It is highly probable that the foundation models (Chronos, TimesFM, Moirai) were exposed to these data points during their pre-training phase. As a result, the predictions may be more optimistic than what would be achieved in a real-world production environment with private or novel data.</p>
+<p>The following examples use a widely available public dataset for illustrative purposes. It is highly probable that the foundation models (Chronos, TimesFM, Moirai, TabICL) were exposed to these data points during their pre-training phase. As a result, the predictions may be more optimistic than what would be achieved in a real-world production environment with private or novel data.</p>
 </div>
 </div>
 </div>
@@ -6407,7 +6407,7 @@ forecaster = ForecasterFoundation(estimator=estimator)</div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p>Each adapter accepts <strong>additional keyword arguments</strong> that control model-specific behavior (e.g., <code>context_length</code>, <code>device_map</code>, <code>torch_dtype</code>). These can be passed directly through the <code>FoundationModel</code> constructor.</p>
-<p>For the full list of available parameters, see the API reference: <a href="../api/FoundationModel.html#skforecast.foundation._adapters.ChronosAdapter"><code>ChronosAdapter</code></a>, <a href="../api/FoundationModel.html#skforecast.foundation._adapters.TimesFMAdapter"><code>TimesFMAdapter</code></a>, <a href="../api/FoundationModel.html#skforecast.foundation._adapters.MoiraiAdapter"><code>MoiraiAdapter</code></a>.</p>
+<p>For the full list of available parameters, see the API reference: <a href="../api/FoundationModel.html#skforecast.foundation._adapters.ChronosAdapter"><code>ChronosAdapter</code></a>, <a href="../api/FoundationModel.html#skforecast.foundation._adapters.TimesFMAdapter"><code>TimesFMAdapter</code></a>, <a href="../api/FoundationModel.html#skforecast.foundation._adapters.MoiraiAdapter"><code>MoiraiAdapter</code></a>, <a href="../api/FoundationModel.html#skforecast.foundation._adapters.TabICLAdapter"><code>TabICLAdapter</code></a>.</p>
 </div>
 </div>
 </div>
@@ -9719,13 +9719,13 @@ Backtest predictions
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="model-comparison">Model comparison<a class="anchor-link" href="#model-comparison">¶</a></h2><p>The following table summarizes the backtesting results (Mean Absolute Error) for the three foundation models on the same dataset.</p>
+<h2 id="model-comparison">Model comparison<a class="anchor-link" href="#model-comparison">¶</a></h2><p>The following table summarizes the backtesting results (Mean Absolute Error) for the four foundation models on the same dataset.</p>
 <div class="admonition note" name="html-admonition" style="background: rgba(0,184,212,.1); padding-top: 0px; padding-bottom: 6px; border-radius: 8px; border-left: 8px solid #00b8d4; border-color: #00b8d4; padding-left: 10px; padding-right: 10px;">
 <p class="title">
 <i style="font-size: 18px; color:#00b8d4;"></i>
 <b style="color: #00b8d4;">✎ Note</b>
 </p>
-<p>Chronos-2 is the only model that supports exogenous variables, so its backtesting includes them. TimesFM and Moirai do not use exogenous variables. This difference should be considered when comparing results.</p>
+<p>Chronos-2 and TabICL are the only models that support exogenous variables, so their backtesting includes them. TimesFM and Moirai do not use exogenous variables. This difference should be considered when comparing results.</p>
 </div>
 </div>
 </div>
