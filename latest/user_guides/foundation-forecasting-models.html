@@ -1546,10 +1546,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#timesfm25" class="md-nav__link">
+  <a href="#timesfm" class="md-nav__link">
     <span class="md-ellipsis">
       
-        TimesFM2.5
+        TimesFM
       
     </span>
   </a>
@@ -5696,7 +5696,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h1 id="forecasting-with-foundation-models">Forecasting with foundation models<a class="anchor-link" href="#forecasting-with-foundation-models">¶</a></h1><p>Foundation models (FMs) have triggered a fundamental paradigm shift in time series forecasting, moving the field away from modelling for each dataset and towards generalised representation learning. Driven by the same architectural breakthroughs that power Large Language Models (LLMs), FMs bring zero-shot and in-context learning capabilities to temporal data.</p>
 <p>In the context of forecasting, a foundation model is a massively scaled neural network (typically Transformer-based) that has been pre-trained on highly diverse, cross-domain datasets spanning finance, weather, web traffic, retail and more.</p>
-<p>Models such as <strong>AWS Chronos</strong>, <strong>Google TimesFM 2.5</strong> and <strong>Salesforce Moirai</strong> frame temporal forecasting as a sequence modelling problem and often treat time series values as discrete patches or tokens. Having already internalised the structural priors of millions of series during pre-training, they can instantly infer trends, seasonality and complex dynamics in completely unseen data, eliminating the need for any domain-specific weight updates.</p>
+<p>Models such as <strong>Amazon Chronos</strong>, <strong>Google TimesFM</strong>, <strong>Salesforce Moirai</strong>, and <strong>Soda-INRIA TabICL</strong>  frame temporal forecasting as a sequence modelling problem and often treat time series values as discrete patches or tokens. Having already internalised the structural priors of millions of series during pre-training, they can instantly infer trends, seasonality and complex dynamics in completely unseen data, eliminating the need for any domain-specific weight updates.</p>
 </div>
 </div>
 </div>
@@ -5724,10 +5724,10 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="impact-of-the-context-length">Impact of the context length<a class="anchor-link" href="#impact-of-the-context-length">¶</a></h2><p>Because foundation forecasting models are highly generalized, they lack intrinsic knowledge of your specific dataset. To compensate, they rely on a "context window", a specific period of recent historical data, to adapt to your unique scenario in real-time. This context acts as the model's short-term memory, allowing it to calculate the current trajectory of your data and identify whether the series is trending upward, accelerating, or flattening out.</p>
-<p>The length of this context window is absolutely critical for capturing seasonality and recurring events. To accurately predict a pattern, such as a weekly sales spike or a yearly cycle, the model must actually observe that pattern within the provided history. For instance, if your data has a 365-day seasonality, providing 400 days of context allows the model to recognize and project the cycle, whereas a 30-day window would cause the model to miss the pattern entirely, resulting in a flat or inaccurate forecast.</p>
-<p>However, increasing the context length to improve accuracy introduces a significant computational trade-off. Because most foundation models are built on Transformer architectures, the computational complexity of their attention mechanism scales quadratically ($O(N^2)$) with the length of the input sequence. Consequently, doubling the context window can quadruple the required memory and processing power, leading to exponentially higher costs and slower inference times.</p>
-<p>Ultimately, effectively utilizing foundation models requires carefully evaluating this trade-off. The best practice is to analyze the context size and select the shortest possible window that still achieves high predictive performance. Striking this balance ensures accurate, pattern-aware forecasts while preventing the unnecessary waste of computational resources and data transfer bandwidth.</p>
+<h2 id="impact-of-the-context-length">Impact of the context length<a class="anchor-link" href="#impact-of-the-context-length">¶</a></h2><p>Because foundation forecasting models are highly generalized, they lack intrinsic knowledge of your specific dataset. To compensate, they rely on a <strong>context window</strong>, a specific period of recent historical data, to adapt to your unique scenario at inference time. This context acts as the model's short-term memory, allowing it to calculate the current trajectory of your data and identify whether the series is trending upward, accelerating, or flattening out.</p>
+<p>The length of this context window is critical for <strong>capturing seasonality and recurring events</strong>. To accurately predict a pattern, such as a weekly sales spike or a yearly cycle, the model must actually observe that pattern within the provided history. For instance, if your data has a 365-day seasonality, providing 400 days of context allows the model to recognize and project the cycle, whereas a 30-day window would cause the model to miss the pattern entirely, resulting in a flat or inaccurate forecast.</p>
+<p>However, increasing the context length to improve accuracy introduces a significant <strong>computational trade-off</strong>. Because most foundation models are built on Transformer architectures, the computational complexity of their attention mechanism often scales quadratically ($O(N^2)$) with the length of the input sequence. Consequently, doubling the context window can quadruple the required memory and processing power, leading to higher costs and slower inference times.</p>
+<p>Ultimately, effectively utilizing foundation models requires carefully evaluating this trade-off. The best practice is to analyze the context size and select the <strong>shortest possible window that still achieves high predictive performance</strong>. Striking this balance ensures accurate, pattern-aware forecasts while preventing the unnecessary waste of computational resources.</p>
 </div>
 </div>
 </div>
@@ -5755,7 +5755,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="foundation-models-in-skforecast">Foundation Models in skforecast<a class="anchor-link" href="#foundation-models-in-skforecast">¶</a></h2><p>Skforecast's integration is built on two layers. First, <a href="../api/foundationmodel">FoundationModel</a> acts as a unified wrapper that adapts each model's native API (Chronos-2, TimesFM 2.5, Moirai-2, TabICL) behind a familiar scikit-learn interface (fit, predict, get_params). Second, <a href="../api/forecasterfoundation">ForecasterFoundation</a> wraps that estimator to unlock the full skforecast ecosystem. It exposes the same interface as any other skforecast forecaster, meaning users can use backtesting, prediction intervals, and multi-series support with the exact same code.</p>
+<h2 id="foundation-models-in-skforecast">Foundation Models in skforecast<a class="anchor-link" href="#foundation-models-in-skforecast">¶</a></h2><p>Skforecast's integration is built on two layers. First, <a href="../api/foundationmodel.html"><code>FoundationModel</code></a> acts as a unified wrapper that adapts each model's native API (Chronos, TimesFM, Moirai, TabICL) behind a familiar scikit-learn interface (fit, predict, get_params). Second, <a href="../api/forecasterfoundation.html"><code>ForecasterFoundation</code></a> wraps that estimator to unlock the full skforecast ecosystem. It exposes the same interface as any other skforecast forecaster, meaning users can use backtesting, prediction intervals, and multi-series support with the exact same code.</p>
 </div>
 </div>
 </div>
@@ -6370,7 +6370,7 @@ forecaster = ForecasterFoundation(estimator=estimator)</div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p>Each adapter accepts <strong>additional keyword arguments</strong> that control model-specific behavior (e.g., <code>context_length</code>, <code>device_map</code>, <code>torch_dtype</code>). These can be passed directly through the <code>FoundationModel</code> constructor.</p>
-<p>For the full list of available parameters, see the API reference: <a href="https://skforecast.org/latest/api/FoundationModel.html#skforecast.foundation._adapters.ChronosAdapter">ChronosAdapter</a>, <a href="https://skforecast.org/latest/api/FoundationModel.html#skforecast.foundation._adapters.TimesFMAdapter">TimesFMAdapter</a>, <a href="https://skforecast.org/latest/api/FoundationModel.html#skforecast.foundation._adapters.MoiraiAdapter">MoiraiAdapter</a>, <a href="https://skforecast.org/latest/api/FoundationModel.html#skforecast.foundation._adapters.TabICLAdapter">TabICLAdapter</a>.</p>
+<p>For the full list of available parameters, see the API reference: <a href="../api/FoundationModel.html#skforecast.foundation._adapters.ChronosAdapter">ChronosAdapter</a>, <a href="../api/FoundationModel.html#skforecast.foundation._adapters.TimesFMAdapter">TimesFMAdapter</a>, <a href="../api/FoundationModel.html#skforecast.foundation._adapters.MoiraiAdapter">MoiraiAdapter</a>, <a href="../api/FoundationModel.html#skforecast.foundation._adapters.TabICLAdapter">TabICLAdapter</a>.</p>
 </div>
 </div>
 </div>
@@ -7768,7 +7768,7 @@ predictions_intervals.head()</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="timesfm25">TimesFM2.5<a class="anchor-link" href="#timesfm25">¶</a></h3><p>A <code><a href="../api/forecasterfoundation.html">ForecasterFoundation</a></code> is created using Google's <strong>TimesFM-2.5-200m</strong> model.</p>
+<h3 id="timesfm">TimesFM<a class="anchor-link" href="#timesfm">¶</a></h3><p>A <code><a href="../api/forecasterfoundation.html">ForecasterFoundation</a></code> is created using Google's <strong>TimesFM-2.5-200m</strong> model.</p>
 </div>
 </div>
 </div>
