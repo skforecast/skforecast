@@ -18,7 +18,7 @@
         {
             "guid": "skforecast",
             "name": "Skforecast",
-            "description": "Skforecast is a Python library for time series forecasting using statistical and machine learning models. It aims to make state-of-the-art forecasting accessible through simple, unified, and production-ready tools.",
+            "description": "Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It aims to make state-of-the-art forecasting accessible through simple, unified, and production-ready tools.",
             "webpageUrl": {
                 "url": "https://skforecast.org"
             },
