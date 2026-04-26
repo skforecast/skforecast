@@ -37,11 +37,11 @@ Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 + seaborn>=0.12
 
 # Skforecast
 
-> Python library for time series forecasting using machine learning models
+> Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
 This document is for skforecast v0.22.0+. If you are using an older version, check the documentation at skforecast.org.
 
-Skforecast is a Python library that simplifies time series forecasting using machine learning. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
+Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 

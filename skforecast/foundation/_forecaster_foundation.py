@@ -24,7 +24,7 @@ from ._foundation_model import FoundationModel
 
 class ForecasterFoundation:
     """
-    Forecaster that wraps a `FoundationModel` for full skforecast ecosystem
+    Forecaster that wraps a `FoundationModel` [1]_ for full skforecast ecosystem
     compatibility: backtesting, model selection, etc.
 
     Unlike ML-based forecasters, there is no training step — the underlying
@@ -115,6 +115,11 @@ class ForecasterFoundation:
         Name used as an identifier of the forecaster.
     __skforecast_tags__ : dict
         Tags associated with the forecaster.
+
+    References
+    ----------
+    .. [1] FoundationModel and adapters:
+           https://skforecast.org/latest/api/foundationmodel.html
 
     """
 

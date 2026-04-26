@@ -2,7 +2,7 @@ site_name: Skforecast Docs
 repo_url: https://github.com/skforecast/skforecast
 site_url: https://skforecast.org
 remote_branch: docs_dev
-site_description: Python library for time series forecasting using machine learning models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
+site_description: Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
 site_author: Joaquin Amat Rodrigo and Javier Escobar Ortiz
 use_directory_urls: false
 copyright: Copyright &copy; 2021 - 2030 Joaquín Amat Rodrigo, Javier Escobar Ortiz
