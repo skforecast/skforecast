@@ -70,18 +70,18 @@ stats = [
 ]
 
 plotting = [
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.10.9, <3.11",
     "seaborn>=0.12, <0.14",
     "statsmodels>=0.13, <0.15"
 ]
 
 deeplearning = [
     "keras>=3.0, <4.0",
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.10.9, <3.11",
 ]
 
 all = [
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.10.9, <3.11",
     "seaborn>=0.12, <0.14",
     "statsmodels>=0.13, <0.15",
     "keras>=3.0, <4.0",
@@ -109,7 +109,7 @@ test = [
     
     # Stats and plotting
     "statsmodels>=0.13, <0.15",  
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.10.9, <3.11",
     "seaborn>=0.12, <0.14",
     
     # Other optional dependencies
