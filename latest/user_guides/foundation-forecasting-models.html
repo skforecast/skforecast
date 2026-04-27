@@ -5732,6 +5732,23 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 </div>
 </div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6b775e93">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<figure style="text-align: center; margin: 0;">
+<img alt="Gráfico del error de predicción frente a la longitud del contexto" src="../img/prediction_error_vs_context_length.png" style="max-width: 420px; width: 100%;"/>
+<img alt="Gráfico del tiempo transcurrido frente a la longitud del contexto" src="../img/elapsed_time_vs_context_length.png" style="max-width: 420px; width: 100%;"/>
+<figcaption style="font-style: italic; margin-top: 10px; font-size: 14px">
+    Comparative charts of prediction error and elapsed time based on context length.
+  </figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=59bdd469">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
@@ -5743,7 +5760,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <i style="font-size: 18px; color:#00b8d4;"></i>
 <b style="color: #00b8d4;">✎ Note</b>
 </p>
-<p>For more details about forecasting with foundation models, visit <a href="https://otexts.com/fpppy/nbs/15-foundation-models.html">Forecasting: Principles and Practice, the Pythonic Way</a>.</p>
+<p>For more details about foundation models, visit <a href="https://otexts.com/fpppy/nbs/15-foundation-models.html">Forecasting: Principles and Practice, the Pythonic Way</a>.</p>
 </div>
 </div>
 </div>
@@ -9410,7 +9427,7 @@ backtest_predictions.head(4)</div>
         <span class="n">metrics_chronos</span><span class="p">[</span><span class="s2">"mean_absolute_error"</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
         <span class="n">metrics_timesfm</span><span class="p">[</span><span class="s2">"mean_absolute_error"</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
         <span class="n">metrics_moirai</span><span class="p">[</span><span class="s2">"mean_absolute_error"</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-        <span class="n">metrics_tabicl</span><span class="p">[</span><span class="s2">"mean_absolute_error"</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Reduced context length</span>
+        <span class="n">metrics_tabicl</span><span class="p">[</span><span class="s2">"mean_absolute_error"</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="p">],</span>
 <span class="p">})</span>
 
@@ -9431,7 +9448,7 @@ comparison = pd.DataFrame({
         metrics_chronos["mean_absolute_error"].iloc[0],
         metrics_timesfm["mean_absolute_error"].iloc[0],
         metrics_moirai["mean_absolute_error"].iloc[0],
-        metrics_tabicl["mean_absolute_error"].iloc[0]  # Reduced context length
+        metrics_tabicl["mean_absolute_error"].iloc[0]
     ],
 })
 
