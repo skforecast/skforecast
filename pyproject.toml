@@ -104,7 +104,7 @@ docs = [
 test = [
     # Testing
     "pytest>=7.3",
-    "pytest-cov>=4.1",
+    "pytest-cov>=7.1.0",
     "pytest-xdist>=3.3",
     
     # Stats and plotting
