@@ -21,6 +21,12 @@ Jupyter Wrapper Styles
   font-size: 1.2em; /* Adjust the size as needed */
 }
 
+/* Size of rich HTML output cells in Jupyter Notebooks */
+.jupyter-wrapper .jp-RenderedHTMLCommon.jp-OutputArea-output pre {
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
 /* Display inline tables for dataframes in Jupyter */
 .jupyter-wrapper table.dataframe {
   display: inline;
