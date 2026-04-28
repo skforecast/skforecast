@@ -3337,6 +3337,7 @@ def get_style_repr_html(
         }}
         .container-{unique_id} details {{
             margin: 10px 0;
+            border-color: {section_color};
         }}
         .container-{unique_id} summary {{
             font-weight: bold;
