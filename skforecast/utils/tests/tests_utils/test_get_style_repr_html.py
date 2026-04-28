@@ -40,6 +40,7 @@ def test_get_style_repr_html(is_fitted):
         }}
         .container-{unique_id} details {{
             margin: 10px 0;
+            border-color: {section_color};
         }}
         .container-{unique_id} summary {{
             font-weight: bold;
