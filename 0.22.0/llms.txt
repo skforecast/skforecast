@@ -12,15 +12,15 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 
 ## Core Forecasters
 
-- [ForecasterRecursive](https://skforecast.org/latest/api/ForecasterRecursive.html): Single series, recursive multi-step forecasting using autoregressive lags
-- [ForecasterDirect](https://skforecast.org/latest/api/ForecasterDirect.html): Single series, direct multi-step forecasting with one model per step
-- [ForecasterRecursiveMultiSeries](https://skforecast.org/latest/api/ForecasterRecursiveMultiSeries.html): Multiple series forecasting with a single global model
-- [ForecasterDirectMultiVariate](https://skforecast.org/latest/api/ForecasterDirectMultiVariate.html): Multivariate forecasting using multiple series as input features
-- [ForecasterRnn](https://skforecast.org/latest/api/ForecasterRnn.html): Deep learning forecasting with RNN/LSTM architectures
-- [ForecasterStats](https://skforecast.org/latest/api/ForecasterStats.html): Statistical models (ARIMA, SARIMAX, ETS, ARAR) with sklearn-compatible interface
-- [ForecasterFoundation](https://skforecast.org/latest/api/ForecasterFoundation.html): Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL)
-- [ForecasterRecursiveClassifier](https://skforecast.org/latest/api/ForecasterRecursiveClassifier.html): Classification-based forecasting for categorical time series
-- [ForecasterEquivalentDate](https://skforecast.org/latest/api/ForecasterEquivalentDate.html): Baseline forecaster using equivalent past dates
+- [ForecasterRecursive](https://skforecast.org/latest/api/forecasterrecursive): Single series, recursive multi-step forecasting using autoregressive lags
+- [ForecasterDirect](https://skforecast.org/latest/api/forecasterdirect): Single series, direct multi-step forecasting with one model per step
+- [ForecasterRecursiveMultiSeries](https://skforecast.org/latest/api/forecasterrecursivemultiseries): Multiple series forecasting with a single global model
+- [ForecasterDirectMultiVariate](https://skforecast.org/latest/api/forecasterdirectmultivariate): Multivariate forecasting using multiple series as input features
+- [ForecasterRnn](https://skforecast.org/latest/api/forecasterrnn): Deep learning forecasting with RNN/LSTM architectures
+- [ForecasterStats](https://skforecast.org/latest/api/forecasterstats): Statistical models (ARIMA, SARIMAX, ETS, ARAR) with sklearn-compatible interface
+- [ForecasterFoundation](https://skforecast.org/latest/api/forecasterfoundation): Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL)
+- [ForecasterRecursiveClassifier](https://skforecast.org/latest/api/forecasterrecursiveclassifier): Classification-based forecasting for categorical time series
+- [ForecasterEquivalentDate](https://skforecast.org/latest/api/forecasterequivalentdate): Baseline forecaster using equivalent past dates
 
 ## User Guides
 
@@ -90,7 +90,8 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [preprocessing](https://skforecast.org/latest/api/preprocessing.html): RollingFeatures, TimeSeriesDifferentiator, DateTimeFeatureTransformer, QuantileBinner
 - [feature_selection](https://skforecast.org/latest/api/feature_selection.html): select_features, select_features_multiseries
 - [stats](https://skforecast.org/latest/api/stats.html): Arima, Sarimax, Ets, Arar model classes
-- [foundation](https://skforecast.org/latest/api/foundation.html): FoundationModel, ForecasterFoundation, Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL adapters
+- [FoundationModel](https://skforecast.org/latest/api/foundationmodel): Estimator used by ForecasterFoundation to run zero-shot foundation models; delegates model-specific execution to low-level adapters for Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL
+- [ForecasterFoundation](https://skforecast.org/latest/api/forecasterfoundation): High-level zero-shot forecaster integrated with skforecast backtesting and prediction intervals
 - [drift_detection](https://skforecast.org/latest/api/drift_detection.html): RangeDriftDetector, PopulationDriftDetector
 - [metrics](https://skforecast.org/latest/api/metrics.html): MASE, RMSSE, sMAPE, CRPS, pinball loss, coverage
 - [datasets](https://skforecast.org/latest/api/datasets.html): fetch_dataset, load_demo_dataset with 30+ built-in datasets
@@ -104,7 +105,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [Weighted forecasting](https://skforecast.org/latest/user_guides/weighted-time-series-forecasting.html): Assigning weights to recent vs older observations
 - [Stacking ensemble](https://skforecast.org/latest/user_guides/stacking-ensemble-models-forecasting.html): Combining multiple models with stacking
 - [XGBoost and LightGBM](https://skforecast.org/latest/user_guides/forecasting-xgboost-lightgbm.html): Specific tips for gradient boosting frameworks
-- [GPU usage](https://skforecast.org/latest/user_guides/skforecast-in-GPU.html): Running skforecast on GPU with RAPIDS and CUDA
+- [GPU usage](https://skforecast.org/latest/user_guides/skforecast-in-gpu): Running skforecast on GPU with RAPIDS and CUDA
 - [Plotting](https://skforecast.org/latest/user_guides/plotting.html): Visualization functions for time series and forecasts
 - [Datasets catalog](https://skforecast.org/latest/user_guides/datasets.html): 30+ built-in datasets with descriptions and frequencies
 - [Training matrices](https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html): Inspecting the internal feature matrices used by forecasters

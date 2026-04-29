@@ -862,10 +862,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#quick-start-paste-a-url-into-any-llm" class="md-nav__link">
+  <a href="#quick-start-provide-the-context-to-an-llm" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick start: paste a URL into any LLM
+        Quick start: provide the context to an LLM
       
     </span>
   </a>
@@ -873,10 +873,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ide-integration-automatic" class="md-nav__link">
+  <a href="#ide-integration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        IDE integration (automatic)
+        IDE integration
       
     </span>
   </a>
@@ -4860,17 +4860,18 @@
 
 <h1 id="using-ai-assistants-with-skforecast">Using AI assistants with skforecast<a class="headerlink" href="#using-ai-assistants-with-skforecast" title="Permanent link">&para;</a></h1>
 <p>Skforecast provides machine-readable context files so that AI coding assistants (ChatGPT, Claude, Gemini, GitHub Copilot, Cursor, and others) can generate <strong>accurate, up-to-date code</strong> for time series forecasting.</p>
-<h2 id="quick-start-paste-a-url-into-any-llm">Quick start: paste a URL into any LLM<a class="headerlink" href="#quick-start-paste-a-url-into-any-llm" title="Permanent link">&para;</a></h2>
-<p>Copy the following URL and paste it into any AI chat:</p>
+<h2 id="quick-start-provide-the-context-to-an-llm">Quick start: provide the context to an LLM<a class="headerlink" href="#quick-start-provide-the-context-to-an-llm" title="Permanent link">&para;</a></h2>
+<p>If your AI assistant can access web pages, paste the following URL into the chat:</p>
 <div class="language-text highlight"><pre><span></span><code>https://skforecast.org/latest/llms-full.txt
 </code></pre></div>
-<p>This single file contains the complete API reference, all forecaster signatures, workflow examples, and best practices. It gives any LLM enough context to help you with skforecast without hallucinating deprecated methods or wrong parameter names.</p>
+<p>If your assistant cannot browse URLs, open the file and paste or upload its contents instead.</p>
+<p>This single file contains the core API reference, forecaster APIs, workflow examples, and best practices. It gives AI assistants enough context to help you with skforecast while reducing hallucinations about deprecated methods or wrong parameter names.</p>
 <p><strong>Example prompt:</strong></p>
 <blockquote>
 <p>Using the context from <a href="https://skforecast.org/latest/llms-full.txt">https://skforecast.org/latest/llms-full.txt</a>, create a ForecasterRecursiveMultiSeries with LightGBM, fit it on a DataFrame with 3 series, and run backtesting with conformal prediction intervals.</p>
 </blockquote>
-<h2 id="ide-integration-automatic">IDE integration (automatic)<a class="headerlink" href="#ide-integration-automatic" title="Permanent link">&para;</a></h2>
-<p>If you clone or open the skforecast repository in an AI-enabled IDE, the context is loaded <strong>automatically</strong>, no manual setup required:</p>
+<h2 id="ide-integration">IDE integration<a class="headerlink" href="#ide-integration" title="Permanent link">&para;</a></h2>
+<p>If you clone or open the skforecast repository in an AI-enabled IDE that supports repository context files, the assistant can load the relevant context from the repo:</p>
 <table>
 <thead>
 <tr>
@@ -4883,22 +4884,22 @@
 <tr>
 <td><strong>VS Code + GitHub Copilot</strong></td>
 <td><code>.github/copilot-instructions.md</code></td>
-<td>Injected into every Copilot prompt</td>
+<td>Used as repository instructions by Copilot</td>
 </tr>
 <tr>
 <td><strong>Claude Code</strong></td>
 <td><code>AGENTS.md</code></td>
-<td>Read automatically at project root</td>
+<td>Read from the project root</td>
 </tr>
 <tr>
 <td><strong>OpenAI Codex / Aider</strong></td>
 <td><code>AGENTS.md</code></td>
-<td>Read automatically at project root</td>
+<td>Read when the tool supports the AGENTS.md convention</td>
 </tr>
 <tr>
 <td><strong>Cursor</strong></td>
 <td><code>AGENTS.md</code></td>
-<td>Read automatically at project root</td>
+<td>Can be used as project context when supported or configured</td>
 </tr>
 </tbody>
 </table>
@@ -4911,8 +4912,8 @@
 <li><strong>Model selection</strong> — <code>backtesting_forecaster</code>, <code>bayesian_search_forecaster</code> and other hyperparameter optimization methods, <code>TimeSeriesFold</code>, <code>OneStepAheadFold</code>, and their multi-series variants.</li>
 <li><strong>Statistical models</strong> — <code>Arima</code>, <code>Sarimax</code>, <code>Ets</code>, <code>Arar</code> wrapped by <code>ForecasterStats</code>.</li>
 <li><strong>Deep learning</strong> — <code>ForecasterRnn</code> with <code>create_and_compile_model</code>, LSTM/GRU architectures.</li>
-<li><strong>Foundation models (zero-shot)</strong> — <code>FoundationModel</code> + <code>ForecasterFoundation</code> with Chronos-2, TimesFM 2.5, and Moirai-2 backends.</li>
-<li><strong>Feature engineering</strong> — <code>RollingFeatures</code>, custom features, and exogenous variables.</li>
+<li><strong>Foundation models (zero-shot)</strong> — <code>FoundationModel</code> + <code>ForecasterFoundation</code> with Chronos-2, TimesFM 2.5, Moirai-2, and TabICL backends.</li>
+<li><strong>Feature engineering</strong> — <code>RollingFeatures</code>, feature_engine calendar/cyclical features, custom features, and exogenous variables.</li>
 <li><strong>Feature selection</strong> — <code>RFECV</code>, <code>SelectFromModel</code> for lags, window features, and exogenous variables.</li>
 <li><strong>Drift detection</strong> — <code>RangeDriftDetector</code> and <code>PopulationDriftDetector</code> for production monitoring.</li>
 <li><strong>13 specialized workflow skills</strong> — step-by-step guides for common tasks, loaded on-demand by advanced AI agents.</li>
@@ -4949,7 +4950,7 @@
 </tr>
 <tr>
 <td><code>feature-engineering</code></td>
-<td><code>RollingFeatures</code>, <code>DateTimeFeatureTransformer</code>, custom features, exogenous variables</td>
+<td><code>RollingFeatures</code>, feature_engine calendar/cyclical features, custom features, exogenous variables</td>
 </tr>
 <tr>
 <td><code>feature-selection</code></td>
@@ -4965,7 +4966,7 @@
 </tr>
 <tr>
 <td><code>foundation-forecasting</code></td>
-<td>Zero-shot forecasting with <code>ForecasterFoundation</code>: Chronos-2, TimesFM 2.5, Moirai-2</td>
+<td>Zero-shot forecasting with <code>ForecasterFoundation</code>: Chronos-2, TimesFM 2.5, Moirai-2, TabICL</td>
 </tr>
 <tr>
 <td><code>choosing-a-forecaster</code></td>
@@ -5014,13 +5015,13 @@
 </tr>
 </tbody>
 </table>
-<p>The context files are <strong>auto-generated</strong> from a single source of truth (<code>tools/ai/llms-base.txt</code>) to ensure they stay in sync with the library. They are regenerated on every release.</p>
+<p>The context files are <strong>auto-generated</strong> from maintained source files (<code>tools/ai/llms-base.txt</code>, <code>llms.txt</code>, <code>tools/ai/ai_context_header.md</code>, and <code>skills/</code>) to ensure they stay in sync with the library. They are regenerated on every release.</p>
 <h2 id="tips-for-better-results">Tips for better results<a class="headerlink" href="#tips-for-better-results" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>Always provide the context URL</strong> — Without it, LLMs may hallucinate methods that don't exist or use outdated API names (e.g., <code>ForecasterAutoreg</code> instead of <code>ForecasterRecursive</code>).</li>
 <li><strong>Be specific about your forecaster</strong> — Mention which forecaster you're using. Parameter names and defaults differ across forecasters.</li>
 <li><strong>Mention the version</strong> — Say "skforecast 0.22.0" so the LLM doesn't mix advice from older versions.</li>
-<li><strong>Validate the output</strong> — AI-generated code is a starting point. Always run backtesting to verify model performance.</li>
+<li><strong>Validate the output</strong> — AI-generated code is a starting point. Use backtesting or an appropriate holdout evaluation to verify model performance.</li>
 </ol>
 
 
