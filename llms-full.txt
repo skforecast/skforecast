@@ -400,7 +400,7 @@ def search_space(trial):
         'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True)
     }
 
-results, best_trial = bayesian_search_forecaster(
+results, study = bayesian_search_forecaster(
     forecaster=forecaster,
     y=data['target'],
     cv=cv,
@@ -412,6 +412,7 @@ results, best_trial = bayesian_search_forecaster(
     n_jobs='auto',
     show_progress=True
 )
+# Access the best trial with study.best_trial
 ```
 
 ## Statistical Models (ARIMA, ETS, ARAR)
@@ -603,8 +604,26 @@ from skforecast.plot import backtesting_gif_creator
 from skforecast.plot import set_dark_theme
 
 # Exceptions and Warnings
+from skforecast.exceptions import DataTypeWarning
+from skforecast.exceptions import DataTransformationWarning
+from skforecast.exceptions import ExogenousInterpretationWarning
+from skforecast.exceptions import FeatureOutOfRangeWarning
+from skforecast.exceptions import IgnoredArgumentWarning
+from skforecast.exceptions import InputTypeWarning
+from skforecast.exceptions import LongTrainingWarning
+from skforecast.exceptions import MissingExogWarning
+from skforecast.exceptions import MissingValuesWarning
+from skforecast.exceptions import OneStepAheadValidationWarning
+from skforecast.exceptions import ResidualsUsageWarning
+from skforecast.exceptions import SaveLoadSkforecastWarning
+from skforecast.exceptions import SkforecastVersionWarning
+from skforecast.exceptions import UnknownLevelWarning
 from skforecast.exceptions import set_warnings_style
 from skforecast.exceptions import warn_skforecast_categories
+from skforecast.exceptions import runtime_deprecated
+
+# Experimental
+from skforecast.experimental import calculate_distance_from_holiday
 ```
 
 ## Available Datasets
@@ -1380,7 +1399,7 @@ def search_space(trial):
     }
 
 # n_trials=20 is the default. Increase for better results (50-200 recommended).
-results, best_trial = bayesian_search_forecaster(
+results, study = bayesian_search_forecaster(
     forecaster=forecaster,
     y=data['target'],
     exog=exog,
@@ -1395,6 +1414,7 @@ results, best_trial = bayesian_search_forecaster(
     output_file='search_results.csv',  # Save results incrementally
 )
 # results is a DataFrame sorted by metric (best first)
+# study is the full Optuna Study; access the best trial with study.best_trial
 ```
 
 ## Grid Search
@@ -1471,7 +1491,7 @@ cv = TimeSeriesFold(
     refit=False,
 )
 
-results, best_trial = bayesian_search_forecaster_multiseries(
+results, study = bayesian_search_forecaster_multiseries(
     forecaster=forecaster,
     series=series,
     exog=exog,
@@ -1485,6 +1505,7 @@ results, best_trial = bayesian_search_forecaster_multiseries(
     n_jobs='auto',
     show_progress=True,
 )
+# Access the best trial with study.best_trial
 ```
 
 ## Statistical Models Search
@@ -1522,7 +1543,7 @@ cv_fast = OneStepAheadFold(
     initial_train_size=len(data) - 100,
 )
 
-results, best_trial = bayesian_search_forecaster(
+results, study = bayesian_search_forecaster(
     forecaster=forecaster,
     y=data['target'],
     cv=cv_fast,
@@ -1531,6 +1552,7 @@ results, best_trial = bayesian_search_forecaster(
     n_trials=100,
     return_best=True,
 )
+# Access the best trial with study.best_trial
 ```
 
 ## Common Mistakes
@@ -1713,7 +1735,7 @@ param_grid = {
 
 ```python
 # Advanced: customize Optuna study
-results, best_trial = bayesian_search_forecaster(
+results, study = bayesian_search_forecaster(
     ...,
     kwargs_create_study={
         'sampler': optuna.samplers.TPESampler(seed=123),
@@ -1724,20 +1746,21 @@ results, best_trial = bayesian_search_forecaster(
         'gc_after_trial': True,
     },
 )
+# Access the best trial with study.best_trial
 ```
 
 ## Return Values
 
-| Function | Returns | Best trial object |
+| Function | Returns | Study object |
 |----------|---------|:-:|
 | `grid_search_*` | `pd.DataFrame` sorted by metric | — |
 | `random_search_*` | `pd.DataFrame` sorted by metric | — |
-| `bayesian_search_*` | `tuple[pd.DataFrame, optuna.FrozenTrial]` | ✓ |
+| `bayesian_search_*` | `tuple[pd.DataFrame, optuna Study]` | ✓ |
 | `*_stats` | `pd.DataFrame` sorted by metric | — |
 
 When `return_best=True`, the forecaster is automatically updated with the
 best parameters found. The results DataFrame always has rows sorted by
-metric (best first).
+metric (best first). Access the best Optuna trial with `study.best_trial`.
 
 ================================================================================
 # SKILL: prediction-intervals
@@ -2146,6 +2169,13 @@ sunlight features, differencing, or data scaling.
 
 
 ## Calendar Features with feature_engine
+
+`feature-engine` is not a core skforecast dependency. Install it separately
+before using `DatetimeFeatures` or `CyclicalFeatures`:
+
+```bash
+pip install feature-engine
+```
 
 ### Manual extraction (pandas)
 
@@ -3859,36 +3889,40 @@ predictions = forecaster.predict(steps=10, exog=exog_test)
 ```python
 # ❌ WRONG: using backtesting_forecaster with ForecasterStats
 from skforecast.model_selection import backtesting_forecaster
-backtesting_forecaster(forecaster=forecaster_stats, ...)  # Error!
+backtesting_forecaster(forecaster=forecaster_stats, y=y, cv=cv, metric=metric)  # Error!
 
 # ✅ CORRECT: use backtesting_stats for statistical models
 from skforecast.model_selection import backtesting_stats
-backtesting_stats(forecaster=forecaster_stats, ...)
+backtesting_stats(forecaster=forecaster_stats, y=y, cv=cv, metric=metric)
 
 # ❌ WRONG: using backtesting_forecaster with ForecasterRecursiveMultiSeries
-backtesting_forecaster(forecaster=forecaster_multi, ...)  # Error!
+backtesting_forecaster(forecaster=forecaster_multi, y=y, cv=cv, metric=metric)  # Error!
 
 # ✅ CORRECT: use backtesting_forecaster_multiseries
 from skforecast.model_selection import backtesting_forecaster_multiseries
-backtesting_forecaster_multiseries(forecaster=forecaster_multi, series=series, ...)
+backtesting_forecaster_multiseries(
+    forecaster=forecaster_multi, series=series, cv=cv, metric=metric
+)
 ```
 
 ## Wrong Search Function
 
 ```python
 # ❌ WRONG: grid_search_forecaster with ForecasterStats
-grid_search_forecaster(forecaster=forecaster_stats, ...)
+grid_search_forecaster(forecaster=forecaster_stats, y=y, cv=cv, param_grid=param_grid)
 
 # ✅ CORRECT: grid_search_stats for statistical models
 from skforecast.model_selection import grid_search_stats
-grid_search_stats(forecaster=forecaster_stats, ...)
+grid_search_stats(forecaster=forecaster_stats, y=y, cv=cv, param_grid=param_grid)
 
 # ❌ WRONG: grid_search_forecaster with ForecasterRecursiveMultiSeries
-grid_search_forecaster(forecaster=forecaster_multi, ...)
+grid_search_forecaster(forecaster=forecaster_multi, y=y, cv=cv, param_grid=param_grid)
 
 # ✅ CORRECT: grid_search_forecaster_multiseries
 from skforecast.model_selection import grid_search_forecaster_multiseries
-grid_search_forecaster_multiseries(forecaster=forecaster_multi, series=series, ...)
+grid_search_forecaster_multiseries(
+    forecaster=forecaster_multi, series=series, cv=cv, param_grid=param_grid
+)
 ```
 
 ## Prediction Interval Errors

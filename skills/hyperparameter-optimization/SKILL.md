@@ -57,7 +57,7 @@ def search_space(trial):
     }
 
 # n_trials=20 is the default. Increase for better results (50-200 recommended).
-results, best_trial = bayesian_search_forecaster(
+results, study = bayesian_search_forecaster(
     forecaster=forecaster,
     y=data['target'],
     exog=exog,
@@ -72,6 +72,7 @@ results, best_trial = bayesian_search_forecaster(
     output_file='search_results.csv',  # Save results incrementally
 )
 # results is a DataFrame sorted by metric (best first)
+# study is the full Optuna Study; access the best trial with study.best_trial
 ```
 
 ## Grid Search
@@ -148,7 +149,7 @@ cv = TimeSeriesFold(
     refit=False,
 )
 
-results, best_trial = bayesian_search_forecaster_multiseries(
+results, study = bayesian_search_forecaster_multiseries(
     forecaster=forecaster,
     series=series,
     exog=exog,
@@ -162,6 +163,7 @@ results, best_trial = bayesian_search_forecaster_multiseries(
     n_jobs='auto',
     show_progress=True,
 )
+# Access the best trial with study.best_trial
 ```
 
 ## Statistical Models Search
@@ -199,7 +201,7 @@ cv_fast = OneStepAheadFold(
     initial_train_size=len(data) - 100,
 )
 
-results, best_trial = bayesian_search_forecaster(
+results, study = bayesian_search_forecaster(
     forecaster=forecaster,
     y=data['target'],
     cv=cv_fast,
@@ -208,6 +210,7 @@ results, best_trial = bayesian_search_forecaster(
     n_trials=100,
     return_best=True,
 )
+# Access the best trial with study.best_trial
 ```
 
 ## Common Mistakes

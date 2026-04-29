@@ -12,7 +12,7 @@ VS Code + GitHub Copilot recognises several file conventions. Each serves a diff
 | **instructions** | `.github/instructions/*.instructions.md` | Targeted coding conventions that activate **only when the open file matches** an `applyTo` glob in the YAML frontmatter (e.g. docstring rules for `*.py`, testing rules for `tests/`). | Keep the global context lean by extracting domain-specific rules into separate files that load only when relevant, avoiding prompt bloat while ensuring precision in specialized tasks. |
 | **prompts** | `.github/prompts/*.prompt.md` | Reusable prompt templates the developer runs **on demand** from the Copilot Chat prompt picker. Used for review checklists and guided workflows. | Standardize repetitive developer workflows (reviews, audits, migrations) into shareable, version-controlled templates that any team member can invoke identically. |
 | **skills** | `skills/*/SKILL.md` | Self-contained workflow guides that the AI agent **discovers automatically** when the user's question matches the skill description. Each skill covers one topic end-to-end. | Encode deep domain knowledge (decision trees, pitfalls, end-to-end examples) in modular documents the agent retrieves on demand, enabling expert-level guidance without overloading the base context. |
-| **agents** | `.github/agents/*.agent.md` | Custom agent modes that appear in the Copilot Chat **agent picker**. Each defines a specialized AI persona with its own system prompt, allowed tools, and constraints. | Create purpose-built agent configurations for recurring workflows (e.g. a "reviewer" agent that only reads files and runs tests, or a "docs" agent restricted to documentation folders) so developers get a tailored experience without manual prompt engineering. |
+| **agents** | `.github/agents/*.agent.md` | Optional custom agent modes that appear in the Copilot Chat **agent picker** when such files exist. This repository does not currently define custom agents. | Future extension point for purpose-built agent configurations (e.g. a "reviewer" agent that only reads files and runs tests, or a "docs" agent restricted to documentation folders) so developers get a tailored experience without manual prompt engineering. |
 | **AGENTS.md** | `AGENTS.md` (repo root) | Equivalent to `copilot-instructions.md` but for IDEs that follow the AGENTS.md convention (Claude Code, Codex CLI, Aider). Same content, different standard. | Ensure consistent AI behaviour across different IDEs and tools by providing the same project context through each tool's native convention. |
 
 ### Analogy: cooking a dish
@@ -23,7 +23,7 @@ Imagine you hire a chef (the AI) to work in your kitchen (the repo).
 - **instructions** are **station cards** taped next to each workstation: "at the grill, sear 2 min per side" or "at the pastry station, always sift flour." The chef only reads the card for the station she's working at right now.
 - **prompts** are **recipe cards** in a drawer. The chef never opens the drawer on her own — you hand her a specific card when you say "follow this exact recipe for the soufflé." She executes it step by step, once.
 - **skills** are **cooking reference books** on the shelf (one for sauces, one for bread, one for plating). The chef pulls one down when you ask something like "how do I make a béchamel?" — she knows which book to grab by the topic.
-- **agents** are **specialist hats**. When you say "today you're the pastry chef," the chef puts on that hat and only works with desserts, pastry tools, and pastry rules. Switch to "grill master" and her focus, tools, and constraints change entirely.
+- **agents** are **specialist hats**. When they exist, selecting one changes the chef's focus, tools, and constraints for the whole session.
 
 | Kitchen analogy | AI file type | Loaded when |
 |-----------------|-------------|-------------|
@@ -81,7 +81,7 @@ Files in `skills/*/SKILL.md` are **specialized workflow guides** that AI agents 
 
 ### .agent.md files (custom agent modes)
 
-Files in `.github/agents/` define **custom agent modes** that appear in the Copilot Chat agent picker (the model/mode dropdown). Each `.agent.md` file creates a specialized AI persona with its own system prompt and, optionally, restricted tools or scoped instructions.
+Files in `.github/agents/` define **custom agent modes** that appear in the Copilot Chat agent picker (the model/mode dropdown). Each `.agent.md` file creates a specialized AI persona with its own system prompt and, optionally, restricted tools or scoped instructions. skforecast does not currently ship custom agents; this is documented as a future extension point.
 
 - **When**: only when the user selects the agent mode from the picker
 - **Scope**: entire conversation while that mode is active
@@ -107,7 +107,7 @@ Loaded when file pattern matches:
 Loaded on demand by AI agent:
   └─ skills/*/SKILL.md                       (topic-specific workflows)
 
-Loaded when user selects agent mode:
+Optional future extension if agent files are added:
   └─ .github/agents/*.agent.md               (custom agent personas)
 
 Loaded when user explicitly invokes:
@@ -128,8 +128,8 @@ These are the only files you edit directly:
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `tools/ai/llms-base.txt` | ~730 | Core API reference: all forecasters, imports, examples, workflows |
-| `tools/ai/ai_context_header.md` | ~95 | Dev-only context: testing commands, code style, dependencies |
+| `tools/ai/llms-base.txt` | ~650 | Core API reference: all forecasters, imports, examples, workflows |
+| `tools/ai/ai_context_header.md` | ~30 | Dev-only context: testing commands, code style, dependencies |
 | `llms.txt` (root) | ~120 | Public index per [llmstxt.org](https://llmstxt.org) spec with links to docs |
 | `skills/*/SKILL.md` | 13 skills | Modular workflow guides, one per topic |
 | `skills/*/references/*.md` | 7 files | Supplementary reference tables for some skills |
@@ -144,9 +144,9 @@ All marked with `<!-- AUTO-GENERATED -->` header and tracked in `.gitattributes`
 |------|--------|---------|
 | `.github/copilot-instructions.md` | header + llms-base | IDE context for GitHub Copilot |
 | `AGENTS.md` | header + llms-base | IDE context for Claude Code, Codex, Aider |
-| `llms-full.txt` | llms-base + 13 skills | Complete LLM reference (~2500 lines) |
-| `docs/llms.txt` | copy of root `llms.txt` | Served at skforecast.org/llms.txt |
-| `docs/llms-full.txt` | copy of `llms-full.txt` | Served at skforecast.org/llms-full.txt |
+| `llms-full.txt` | llms-base + 13 skills | Complete LLM reference (~5000 lines) |
+| `docs/llms.txt` | copy of root `llms.txt` | Served at skforecast.org/latest/llms.txt |
+| `docs/llms-full.txt` | copy of `llms-full.txt` | Served at skforecast.org/latest/llms-full.txt |
 
 ## Skills
 

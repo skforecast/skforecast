@@ -104,36 +104,40 @@ predictions = forecaster.predict(steps=10, exog=exog_test)
 ```python
 # ❌ WRONG: using backtesting_forecaster with ForecasterStats
 from skforecast.model_selection import backtesting_forecaster
-backtesting_forecaster(forecaster=forecaster_stats, ...)  # Error!
+backtesting_forecaster(forecaster=forecaster_stats, y=y, cv=cv, metric=metric)  # Error!
 
 # ✅ CORRECT: use backtesting_stats for statistical models
 from skforecast.model_selection import backtesting_stats
-backtesting_stats(forecaster=forecaster_stats, ...)
+backtesting_stats(forecaster=forecaster_stats, y=y, cv=cv, metric=metric)
 
 # ❌ WRONG: using backtesting_forecaster with ForecasterRecursiveMultiSeries
-backtesting_forecaster(forecaster=forecaster_multi, ...)  # Error!
+backtesting_forecaster(forecaster=forecaster_multi, y=y, cv=cv, metric=metric)  # Error!
 
 # ✅ CORRECT: use backtesting_forecaster_multiseries
 from skforecast.model_selection import backtesting_forecaster_multiseries
-backtesting_forecaster_multiseries(forecaster=forecaster_multi, series=series, ...)
+backtesting_forecaster_multiseries(
+    forecaster=forecaster_multi, series=series, cv=cv, metric=metric
+)
 ```
 
 ## Wrong Search Function
 
 ```python
 # ❌ WRONG: grid_search_forecaster with ForecasterStats
-grid_search_forecaster(forecaster=forecaster_stats, ...)
+grid_search_forecaster(forecaster=forecaster_stats, y=y, cv=cv, param_grid=param_grid)
 
 # ✅ CORRECT: grid_search_stats for statistical models
 from skforecast.model_selection import grid_search_stats
-grid_search_stats(forecaster=forecaster_stats, ...)
+grid_search_stats(forecaster=forecaster_stats, y=y, cv=cv, param_grid=param_grid)
 
 # ❌ WRONG: grid_search_forecaster with ForecasterRecursiveMultiSeries
-grid_search_forecaster(forecaster=forecaster_multi, ...)
+grid_search_forecaster(forecaster=forecaster_multi, y=y, cv=cv, param_grid=param_grid)
 
 # ✅ CORRECT: grid_search_forecaster_multiseries
 from skforecast.model_selection import grid_search_forecaster_multiseries
-grid_search_forecaster_multiseries(forecaster=forecaster_multi, series=series, ...)
+grid_search_forecaster_multiseries(
+    forecaster=forecaster_multi, series=series, cv=cv, param_grid=param_grid
+)
 ```
 
 ## Prediction Interval Errors

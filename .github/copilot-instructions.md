@@ -433,7 +433,7 @@ def search_space(trial):
         'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True)
     }
 
-results, best_trial = bayesian_search_forecaster(
+results, study = bayesian_search_forecaster(
     forecaster=forecaster,
     y=data['target'],
     cv=cv,
@@ -445,6 +445,7 @@ results, best_trial = bayesian_search_forecaster(
     n_jobs='auto',
     show_progress=True
 )
+# Access the best trial with study.best_trial
 ```
 
 ## Statistical Models (ARIMA, ETS, ARAR)
@@ -636,8 +637,26 @@ from skforecast.plot import backtesting_gif_creator
 from skforecast.plot import set_dark_theme
 
 # Exceptions and Warnings
+from skforecast.exceptions import DataTypeWarning
+from skforecast.exceptions import DataTransformationWarning
+from skforecast.exceptions import ExogenousInterpretationWarning
+from skforecast.exceptions import FeatureOutOfRangeWarning
+from skforecast.exceptions import IgnoredArgumentWarning
+from skforecast.exceptions import InputTypeWarning
+from skforecast.exceptions import LongTrainingWarning
+from skforecast.exceptions import MissingExogWarning
+from skforecast.exceptions import MissingValuesWarning
+from skforecast.exceptions import OneStepAheadValidationWarning
+from skforecast.exceptions import ResidualsUsageWarning
+from skforecast.exceptions import SaveLoadSkforecastWarning
+from skforecast.exceptions import SkforecastVersionWarning
+from skforecast.exceptions import UnknownLevelWarning
 from skforecast.exceptions import set_warnings_style
 from skforecast.exceptions import warn_skforecast_categories
+from skforecast.exceptions import runtime_deprecated
+
+# Experimental
+from skforecast.experimental import calculate_distance_from_holiday
 ```
 
 ## Available Datasets
