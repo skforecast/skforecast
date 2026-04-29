@@ -1,11 +1,11 @@
 ---
 name: feature-engineering
 description: >
-  Creates features for time series forecasting: calendar features with
-  feature_engine (DatetimeFeatures, CyclicalFeatures), rolling statistics
-  with RollingFeatures, differencing, and categorical exogenous variables.
-  Use when the user wants to improve model accuracy through feature
-  engineering or asks about exogenous variable creation.
+    Creates features for time series forecasting: calendar features with
+    feature_engine (DatetimeFeatures, CyclicalFeatures), rolling statistics
+    with RollingFeatures, differencing, and categorical exogenous variables.
+    Use when the user wants to improve model accuracy through feature
+    engineering or asks about exogenous variable creation.
 ---
 
 # Feature Engineering
@@ -33,6 +33,13 @@ sunlight features, differencing, or data scaling.
 
 
 ## Calendar Features with feature_engine
+
+`feature-engine` is not a core skforecast dependency. Install it separately
+before using `DatetimeFeatures` or `CyclicalFeatures`:
+
+```bash
+pip install feature-engine
+```
 
 ### Manual extraction (pandas)
 

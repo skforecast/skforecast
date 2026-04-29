@@ -16,4 +16,4 @@ jobs:
         with:
           python-version: '3.12'
       - name: Check AI context files are up-to-date
-        run: python tools/ai/generate_ai_context_files.py --check
+        run: python tools/ai/generate_ai_context_files.py --check --check-urls
