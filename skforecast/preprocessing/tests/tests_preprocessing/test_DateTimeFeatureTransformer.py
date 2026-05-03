@@ -4,7 +4,8 @@ import pytest
 import re
 import pandas as pd
 import numpy as np
-from skforecast.preprocessing import DateTimeFeatureTransformer
+from sklearn.base import clone
+from skforecast.preprocessing import DateTimeFeatureTransformer, create_datetime_features
 
 # Fixtures
 from .fixtures_preprocessing import features_all_onehot
@@ -46,7 +47,7 @@ def test_create_datetime_features_invalid_encoding():
     )
 
     with pytest.raises(
-        ValueError, match="Encoding must be one of 'cyclical', 'onehot' or None"
+        ValueError, match="Encoding must be one of 'cyclical', 'onehot', 'spline' or None"
     ):
         DateTimeFeatureTransformer(encoding="invalid encoding").fit_transform(df)
 
@@ -65,7 +66,7 @@ def test_create_datetime_features_invalid_feature_name():
     err_msg = re.escape(
         "Features {'invalid_feature'} are not supported. Supported features are "
         "['year', 'month', 'week', 'day_of_week', 'day_of_year', 'day_of_month', "
-        "'weekend', 'hour', 'minute', 'second']."
+        "'weekend', 'hour', 'minute', 'second', 'quarter']."
     )
     with pytest.raises(ValueError, match=err_msg):
         DateTimeFeatureTransformer(features=["invalid_feature"]).fit_transform(df)
@@ -101,6 +102,8 @@ def test_create_datetime_features_output_columns_when_cyclical_encoding():
         "minute_cos",
         "second_sin",
         "second_cos",
+        "quarter_sin",
+        "quarter_cos",
     ]
 
     assert all([feature in results.columns for feature in expected_features])
@@ -146,6 +149,7 @@ def test_create_datetime_features_output_columns_when_None_encoding():
         "hour",
         "minute",
         "second",
+        "quarter",
     ]
     assert all(results.columns == expected_features)
     assert len(results) == len(df)
@@ -360,3 +364,293 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
     )
 
     pd.testing.assert_frame_equal(results, expected)
+
+
+def test_DateTimeFeatureTransformer_get_params_returns_constructor_values():
+    """
+    Test that get_params returns the exact values passed to __init__, including
+    None for defaulted parameters (sklearn BaseEstimator contract).
+    """
+    transformer = DateTimeFeatureTransformer()
+    params = transformer.get_params()
+
+    assert params == {"features": None, "encoding": "cyclical", "max_values": None, "spline_kwargs": None}
+
+
+def test_DateTimeFeatureTransformer_get_params_returns_custom_values():
+    """
+    Test that get_params returns the custom values passed to __init__.
+    """
+    transformer = DateTimeFeatureTransformer(
+        features=["year", "month"],
+        encoding="onehot",
+        max_values={"month": 6},
+    )
+    params = transformer.get_params()
+
+    assert params == {
+        "features": ["year", "month"],
+        "encoding": "onehot",
+        "max_values": {"month": 6},
+        "spline_kwargs": None,
+    }
+
+
+def test_DateTimeFeatureTransformer_clone_preserves_none_defaults():
+    """
+    Test that sklearn clone() round-trips correctly when default (None) params
+    are used. The cloned transformer must produce identical output.
+    """
+    df = pd.DataFrame(
+        np.random.rand(5, 2),
+        columns=["a", "b"],
+        index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
+    )
+    transformer = DateTimeFeatureTransformer()
+    cloned = clone(transformer)
+
+    assert cloned.features is None
+    assert cloned.encoding == "cyclical"
+    assert cloned.max_values is None
+
+    pd.testing.assert_frame_equal(
+        transformer.fit_transform(df), cloned.fit_transform(df)
+    )
+
+
+def test_DateTimeFeatureTransformer_set_params_updates_values():
+    """
+    Test that set_params correctly updates transformer parameters.
+    """
+    transformer = DateTimeFeatureTransformer()
+    transformer.set_params(features=["year", "month"], encoding="onehot")
+
+    assert transformer.features == ["year", "month"]
+    assert transformer.encoding == "onehot"
+    assert transformer.max_values is None
+
+
+def test_DateTimeFeatureTransformer_week_feature_dtype_is_int():
+    """
+    Test that the 'week' feature is returned as int64, consistent with all
+    other extracted features (isocalendar().week returns UInt32 by default).
+    """
+    df = pd.DataFrame(
+        np.random.rand(5, 1),
+        columns=["value"],
+        index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
+    )
+    result = DateTimeFeatureTransformer(
+        features=["week"], encoding=None
+    ).fit_transform(df)
+
+    assert result["week"].dtype == np.dtype("int64")
+
+
+def test_DateTimeFeatureTransformer_get_feature_names_out_raises_before_transform():
+    """
+    Test that get_feature_names_out raises NotFittedError if transform has not
+    been called yet.
+    """
+    from sklearn.exceptions import NotFittedError
+
+    transformer = DateTimeFeatureTransformer()
+    with pytest.raises(NotFittedError):
+        transformer.get_feature_names_out()
+
+
+@pytest.mark.parametrize(
+    "encoding, features, expected",
+    [
+        (
+            None,
+            ["year", "month", "weekend"],
+            ["year", "month", "weekend"],
+        ),
+        (
+            "cyclical",
+            ["year", "month", "weekend"],
+            ["year", "weekend", "month_sin", "month_cos"],
+        ),
+        (
+            "onehot",
+            ["year", "month"],
+            ["year_2022", "month_1"],
+        ),
+        (
+            "spline",
+            ["year", "month"],
+            ["year", "month_sp_0"],
+        ),
+    ],
+    ids=["encoding_None", "encoding_cyclical", "encoding_onehot", "encoding_spline"],
+)
+def test_DateTimeFeatureTransformer_get_feature_names_out(encoding, features, expected):
+    """
+    Test that get_feature_names_out returns the correct column names for each
+    encoding mode and matches the columns of the transform output.
+    """
+    df = pd.DataFrame(
+        np.random.rand(5, 1),
+        columns=["value"],
+        index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
+    )
+    transformer = DateTimeFeatureTransformer(features=features, encoding=encoding)
+    result = transformer.fit_transform(df)
+    names_out = transformer.get_feature_names_out()
+
+    assert names_out == list(result.columns)
+    assert all(e in names_out for e in expected)
+
+
+def test_DateTimeFeatureTransformer_quarter_feature():
+    """
+    Test that 'quarter' is correctly extracted and cyclically encoded.
+    """
+    df = pd.DataFrame(
+        np.random.rand(12, 1),
+        columns=["value"],
+        index=pd.date_range(start="2022-01-01", periods=12, freq="MS"),
+    )
+    result_none = DateTimeFeatureTransformer(
+        features=["quarter"], encoding=None
+    ).fit_transform(df)
+
+    assert list(result_none.columns) == ["quarter"]
+    assert result_none["quarter"].dtype == np.dtype("int64")
+    assert set(result_none["quarter"].unique()).issubset({1, 2, 3, 4})
+
+    result_cyclical = DateTimeFeatureTransformer(
+        features=["quarter"], encoding="cyclical"
+    ).fit_transform(df)
+
+    assert list(result_cyclical.columns) == ["quarter_sin", "quarter_cos"]
+
+
+def test_create_datetime_features_output_columns_when_spline_encoding():
+    """
+    Test that DateTimeFeatureTransformer returns the expected columns when encoding
+    is 'spline'. Features with a max_values entry are replaced by spline columns;
+    features without one (year, weekend) are kept as raw integers.
+    With default n_knots=max_val+1=13, include_bias=True and periodic extrapolation,
+    month produces n_knots - 1 = 12 spline columns.
+    """
+    df = pd.DataFrame(
+        np.random.rand(5, 1),
+        columns=["value"],
+        index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
+    )
+    results = DateTimeFeatureTransformer(
+        features=["year", "month", "weekend"], encoding="spline"
+    ).fit_transform(df)
+
+    # year and weekend have no max_values entry -> kept as integers
+    assert "year" in results.columns
+    assert "weekend" in results.columns
+    # month: n_knots=13, include_bias=True, periodic -> 12 spline columns
+    assert "month" not in results.columns
+    month_sp_cols = [c for c in results.columns if c.startswith("month_sp_")]
+    assert len(month_sp_cols) == 12
+    assert len(results) == len(df)
+
+
+def test_create_datetime_features_output_shape_with_custom_spline_kwargs():
+    """
+    Test that the number of spline output columns respects a custom n_knots.
+    With n_knots=4, include_bias=True (default), periodic extrapolation the formula
+    yields n_knots - 1 = 3 columns per feature.
+    """
+    df = pd.DataFrame(
+        np.random.rand(5, 1),
+        columns=["value"],
+        index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
+    )
+    results = DateTimeFeatureTransformer(
+        features=["month"],
+        encoding="spline",
+        spline_kwargs={"n_knots": 4},
+    ).fit_transform(df)
+
+    assert "month" not in results.columns
+    # n_knots=4, include_bias=True, periodic -> 3 spline columns
+    assert list(results.columns) == ["month_sp_0", "month_sp_1", "month_sp_2"]
+    assert len(results) == len(df)
+
+
+def test_create_datetime_features_spline_encoding_expected_values():
+    """
+    Test that the spline encoding produces the expected numerical values.
+    Uses 4 dates spaced one quarter apart (Jan, Apr, Jul, Oct) with the 'month'
+    feature only. With default settings (n_knots=13, degree=3, include_bias=True,
+    periodic), the 12 output columns sum to 1.0 per row and each spline peaks near
+    one specific month.
+
+    Expected values were pre-computed with:
+        knots = np.linspace(1, 12, 13).reshape(-1, 1)
+        SplineTransformer(degree=3, knots=knots, extrapolation='periodic',
+                          include_bias=True).fit_transform([[1],[4],[7],[10]])
+    """
+    df = pd.DataFrame(
+        {"value": [1.0, 2.0, 3.0, 4.0]},
+        index=pd.DatetimeIndex(
+            ["2022-01-15", "2022-04-15", "2022-07-15", "2022-10-15"]
+        ),
+    )
+    result = DateTimeFeatureTransformer(
+        features=["month"], encoding="spline"
+    ).fit_transform(df)
+
+    expected = pd.DataFrame(
+        {
+            "month_sp_0":  [0.16666667, 0.0,        0.0,        0.09128475],
+            "month_sp_1":  [0.66666667, 0.0,        0.0,        0.0       ],
+            "month_sp_2":  [0.16666667, 0.0,        0.0,        0.0       ],
+            "month_sp_3":  [0.0,        0.0641122,  0.0,        0.0       ],
+            "month_sp_4":  [0.0,        0.60242925, 0.0,        0.0       ],
+            "month_sp_5":  [0.0,        0.33007764, 0.0,        0.0       ],
+            "month_sp_6":  [0.0,        0.00338092, 0.01565239, 0.0       ],
+            "month_sp_7":  [0.0,        0.0,        0.450288,   0.0       ],
+            "month_sp_8":  [0.0,        0.0,        0.50701227, 0.0       ],
+            "month_sp_9":  [0.0,        0.0,        0.02704733, 0.00100175],
+            "month_sp_10": [0.0,        0.0,        0.0,        0.27109942],
+            "month_sp_11": [0.0,        0.0,        0.0,        0.63661407],
+        },
+        index=pd.DatetimeIndex(
+            ["2022-01-15", "2022-04-15", "2022-07-15", "2022-10-15"]
+        ),
+    )
+
+    # Each row must sum to 1.0 (partition of unity with include_bias=True)
+    np.testing.assert_allclose(result.sum(axis=1).to_numpy(), 1.0, atol=1e-6)
+    pd.testing.assert_frame_equal(result, expected, atol=1e-6, check_dtype=False)
+
+
+def test_create_datetime_features_accepts_series_input():
+    """
+    Test that create_datetime_features accepts a pandas Series with a
+    DatetimeIndex, identical to a DataFrame input.
+    """
+    index = pd.date_range(start="2022-01-01", periods=5, freq="D")
+    series = pd.Series(np.random.rand(5), index=index, name="target")
+    df = pd.DataFrame({"value": series.values}, index=index)
+
+    result_series = create_datetime_features(series, features=["year", "month"], encoding=None)
+    result_df = create_datetime_features(df, features=["year", "month"], encoding=None)
+
+    pd.testing.assert_frame_equal(result_series, result_df)
+
+
+def test_create_datetime_features_standalone_invalid_encoding():
+    """
+    Test that create_datetime_features raises ValueError for an invalid encoding
+    when called directly (not via DateTimeFeatureTransformer).
+    """
+    series = pd.Series(
+        np.random.rand(5),
+        index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
+    )
+    with pytest.raises(
+        ValueError, match="Encoding must be one of 'cyclical', 'onehot', 'spline' or None"
+    ):
+        create_datetime_features(series, encoding="invalid")
+
