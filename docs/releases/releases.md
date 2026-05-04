@@ -10,6 +10,22 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.22.1 <small>In development</small> { id="0.22.1" }
+
+The main changes in this release are:
+
+
+**Added**
+
++ New functions <code>[acf]</code>, <code>[pacf]</code> and <code>[calculate_lag_autocorrelation]</code> in the <code>[stats]</code> module. Fast ACF and PACF implementations via FFT and Levinson-Durbin, removing the dependency on `statsmodels` for autocorrelation calculations.
+
+
+**Changed**
+
+
+**Fixed**
+
+
 ## 0.22.0 <small>Apr 23, 2026</small> { id="0.22.0" }
 
 The main changes in this release are:
@@ -1512,6 +1528,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [Sarimax]: ../api/stats.md#skforecast.stats._sarimax.Sarimax
 [Ets]: ../api/stats.md#skforecast.stats._ets.Ets
 [Arar]: ../api/stats.md#skforecast.stats._arar.Arar
+[acf]: ../api/stats.md#skforecast.stats._autocorrelation.acf
+[pacf]: ../api/stats.md#skforecast.stats._autocorrelation.pacf
+[calculate_lag_autocorrelation]: ../api/stats.md#skforecast.stats._autocorrelation.calculate_lag_autocorrelation
 
 <!-- model_selection -->
 [model_selection]: ../api/model_selection.md
@@ -1569,7 +1588,6 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [plot]: ../api/plot.md
 [set_dark_theme]: ../api/plot.md#skforecast.plot.plot.set_dark_theme
 [plot_residuals]: ../api/plot.md#skforecast.plot.plot.plot_residuals
-[calculate_lag_autocorrelation]: ../api/plot.md#skforecast.plot.plot.calculate_lag_autocorrelation
 [plot_prediction_distribution]: ../api/plot.md#skforecast.plot.plot.plot_prediction_distribution
 [plot_prediction_intervals]: ../api/plot.md#skforecast.plot.plot.plot_prediction_intervals
 [backtesting_gif_creator]: ../api/plot.md#skforecast.plot.plot.backtesting_gif_creator

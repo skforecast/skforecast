@@ -43,7 +43,7 @@ skforecast/
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
 ├── foundation/              # FoundationModel, ForecasterFoundation
 │                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL)
-├── stats/                   # Arima, Sarimax, Ets, Arar (sklearn-compatible wrappers)
+├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, DateTimeFeatureTransformer,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
 ├── model_selection/         # backtesting_forecaster, grid/random/bayesian search, TimeSeriesFold
@@ -418,10 +418,12 @@ results, study = bayesian_search_forecaster(
 ## Statistical Models (ARIMA, ETS, ARAR)
 
 Statistical models are wrapped by `ForecasterStats` for a sklearn-compatible interface. Available models: `Arima`, `Sarimax`, `Ets`, `Arar`.
+Autocorrelation utilities are also available in `skforecast.stats`: `acf`, `pacf`, and `calculate_lag_autocorrelation`.
 
 ```python
 from skforecast.recursive import ForecasterStats
 from skforecast.stats import Arima, Ets, Sarimax, Arar
+from skforecast.stats import acf, pacf, calculate_lag_autocorrelation
 
 # ARIMA model (order=(p,d,q), seasonal_order=(P,D,Q), m=seasonal_period)
 forecaster = ForecasterStats(estimator=Arima(order=(1, 1, 1), seasonal_order=(1, 1, 1), m=12))
@@ -589,6 +591,7 @@ from skforecast.metrics import create_mean_pinball_loss
 
 # Statistical models (used with ForecasterStats)
 from skforecast.stats import Arima, Ets, Sarimax, Arar
+from skforecast.stats import acf, pacf, calculate_lag_autocorrelation
 
 # Drift Detection
 from skforecast.drift_detection import RangeDriftDetector
@@ -599,7 +602,6 @@ from skforecast.plot import plot_residuals
 from skforecast.plot import plot_multivariate_time_series_corr
 from skforecast.plot import plot_prediction_distribution
 from skforecast.plot import plot_prediction_intervals
-from skforecast.plot import calculate_lag_autocorrelation
 from skforecast.plot import backtesting_gif_creator
 from skforecast.plot import set_dark_theme
 

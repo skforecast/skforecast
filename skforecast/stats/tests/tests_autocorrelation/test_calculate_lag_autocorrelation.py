@@ -4,7 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.stats.autocorrelation import calculate_lag_autocorrelation
+from skforecast.stats import calculate_lag_autocorrelation
 
 
 def test_calculate_lag_autocorrelation_raise_error_invalid_arguments():
@@ -31,14 +31,14 @@ def test_calculate_lag_autocorrelation_raise_error_invalid_arguments():
     data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     wrong_n_lags = -1
     err_msg = re.escape(f"`n_lags` must be a positive integer. Got {wrong_n_lags}.")
-    with pytest.raises(TypeError, match=err_msg):
+    with pytest.raises(ValueError, match=err_msg):
         calculate_lag_autocorrelation(data=data, n_lags=-1)
 
     wrong_last_n_samples = -1
     err_msg = re.escape(
         f"`last_n_samples` must be a positive integer. Got {wrong_last_n_samples}."
     )
-    with pytest.raises(TypeError, match=err_msg):
+    with pytest.raises(ValueError, match=err_msg):
         calculate_lag_autocorrelation(
             data=data, n_lags=3, last_n_samples=wrong_last_n_samples
         )

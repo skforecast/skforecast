@@ -4,7 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.stats.autocorrelation import acf
+from skforecast.stats import acf
 
 
 # ==============================================================================
@@ -31,13 +31,18 @@ def test_acf_ValueError_when_x_has_fewer_than_2_observations():
         acf(x, nlags=1)
 
 
-def test_acf_ValueError_when_x_contains_nan():
+@pytest.mark.parametrize(
+    "value",
+    [np.nan, np.inf, -np.inf],
+    ids=lambda v: f"value={v!r}",
+)
+def test_acf_ValueError_when_x_contains_non_finite_values(value):
     """
-    Test that acf raises ValueError when x contains NaN values.
+    Test that acf raises ValueError when x contains non-finite values.
     """
-    x = np.array([1.0, 2.0, np.nan, 4.0])
+    x = np.array([1.0, 2.0, value, 4.0])
     err_msg = re.escape(
-        "`x` contains NaN values. Remove or impute them before calling `acf`."
+        "`x` contains non-finite values. Remove or impute them before calling `acf`."
     )
     with pytest.raises(ValueError, match=err_msg):
         acf(x, nlags=2)

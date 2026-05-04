@@ -12,8 +12,8 @@ from __future__ import annotations
 import math
 import numpy as np
 import pandas as pd
-import scipy.stats
 from scipy.fft import irfft, next_fast_len, rfft
+from scipy.stats import norm
 
 
 def _fft_acf(x_centered: np.ndarray, n: int, nlags: int) -> np.ndarray:
@@ -33,14 +33,17 @@ def _fft_acf(x_centered: np.ndarray, n: int, nlags: int) -> np.ndarray:
     -------
     acf_vals : numpy ndarray, shape (nlags + 1,)
         Normalised autocorrelations for lags 0 ... nlags using the biased
-        estimator (denominator `n`). Returns all-ones when the series is
-        constant (zero variance).
+        estimator (denominator `n`). If the series has zero variance
+        (constant values), all entries are set to 1.0 to avoid division
+        by zero.
 
     """
+
     n_fft = next_fast_len(2 * n - 1)
     fft_x = rfft(x_centered, n=n_fft)
     autocorr = irfft((fft_x * fft_x.conj()).real, n=n_fft)
     var = autocorr[0]
+
     return np.ones(nlags + 1) if var == 0.0 else autocorr[:nlags + 1] / var
 
 
@@ -62,7 +65,7 @@ def acf(
     Parameters
     ----------
     x : pandas Series, numpy ndarray
-        1-D time series. Must contain at least 2 observations and no NaN
+        1-D time series. Must contain at least 2 observations and only finite
         values.
     nlags : int, default None
         Number of lags to return. The result always includes lag 0, so the
@@ -98,9 +101,9 @@ def acf(
     (`adjusted=True`) divides by `n - k` and can produce values outside
     `[-1, 1]` for large lags.
 
-    The FFT padding length is chosen as the next power of 2 ≥ `2n - 1`,
-    ensuring circular-convolution artefacts do not contaminate any of the
-    `nlags` requested lags.
+    The FFT padding length is chosen with `scipy.fft.next_fast_len` for a
+    length greater than or equal to `2n - 1`, ensuring circular-convolution
+    artefacts do not contaminate any of the `nlags` requested lags.
 
     References
     ----------
@@ -113,7 +116,7 @@ def acf(
     --------
     ```python
     import numpy as np
-    from skforecast.stats.autocorrelation import acf
+    from skforecast.stats import acf
 
     rng = np.random.default_rng(42)
     x = rng.standard_normal(200)
@@ -126,6 +129,7 @@ def acf(
     ```
 
     """
+
     if isinstance(x, pd.Series):
         x = x.to_numpy(dtype=float)
     else:
@@ -138,9 +142,10 @@ def acf(
         raise ValueError(
             f"`x` must have at least 2 observations, got {n}."
         )
-    if np.any(np.isnan(x)):
+    if np.any(~np.isfinite(x)):
         raise ValueError(
-            "`x` contains NaN values. Remove or impute them before calling `acf`."
+            "`x` contains non-finite values. Remove or impute them before "
+            "calling `acf`."
         )
 
     if nlags is None:
@@ -165,7 +170,7 @@ def acf(
         return acf_vals
 
     # Bartlett confidence intervals
-    z = scipy.stats.norm.ppf(1.0 - alpha / 2.0)
+    z = norm.ppf(1.0 - alpha / 2.0)
     varacf = np.ones(nlags + 1) / n
     varacf[0] = 0.0
     if nlags > 1:
@@ -196,13 +201,14 @@ def pacf(
     Parameters
     ----------
     x : pandas Series, numpy ndarray
-        1-D time series. Must contain at least 2 observations and no NaN
+        1-D time series. Must contain at least 2 observations and only finite
         values.
     nlags : int, default None
         Number of lags to return. The result always includes lag 0, so the
         output length is `nlags + 1`. Must satisfy `0 < nlags < len(x) // 2`.
         If `None`, defaults to `min(int(10 * log10(n)), n // 2 - 1)`,
-        matching the statsmodels convention.
+        matching the statsmodels convention. In this case, `x` must contain at
+        least 4 observations.
     alpha : float, default None
         Significance level for asymptotic confidence intervals under the
         white-noise null hypothesis. If given (e.g. `0.05` for 95%
@@ -244,7 +250,7 @@ def pacf(
     --------
     ```python
     import numpy as np
-    from skforecast.stats.autocorrelation import pacf
+    from skforecast.stats import pacf
 
     rng = np.random.default_rng(42)
     x = rng.standard_normal(200)
@@ -257,6 +263,7 @@ def pacf(
     ```
 
     """
+
     if isinstance(x, pd.Series):
         x = x.to_numpy(dtype=float)
     else:
@@ -269,12 +276,18 @@ def pacf(
         raise ValueError(
             f"`x` must have at least 2 observations, got {n}."
         )
-    if np.any(np.isnan(x)):
+    if np.any(~np.isfinite(x)):
         raise ValueError(
-            "`x` contains NaN values. Remove or impute them before calling `pacf`."
+            "`x` contains non-finite values. Remove or impute them before "
+            "calling `pacf`."
         )
 
     if nlags is None:
+        if n < 4:
+            raise ValueError(
+                f"`x` must have at least 4 observations when `nlags` is None, "
+                f"got {n}."
+            )
         nlags = min(int(10 * math.log10(n)), n // 2 - 1)
     if not isinstance(nlags, (int, np.integer)) or nlags < 1:
         raise ValueError(f"`nlags` must be a positive integer, got {nlags!r}.")
@@ -298,10 +311,11 @@ def pacf(
     phi_prev = np.zeros(nlags + 1)  # previous AR(k-1) coefficients
     phi_prev[1] = acf_vals[1]
     pacf_vals[1] = acf_vals[1]
+    den_tol = np.sqrt(np.finfo(float).eps)
     for k in range(2, nlags + 1):
         num = acf_vals[k] - phi_prev[1:k] @ acf_vals[k - 1:0:-1]
         den = 1.0 - phi_prev[1:k] @ acf_vals[1:k]
-        kk = num / den if den != 0.0 else 0.0
+        kk = num / den if abs(den) > den_tol else 0.0
         phi[1:k] = phi_prev[1:k] - kk * phi_prev[k - 1:0:-1]
         phi[k] = kk
         pacf_vals[k] = kk
@@ -311,7 +325,7 @@ def pacf(
         return pacf_vals
 
     # Asymptotic white-noise confidence intervals: ±z_{α/2} / sqrt(n)
-    z = scipy.stats.norm.ppf(1.0 - alpha / 2.0)
+    z = norm.ppf(1.0 - alpha / 2.0)
     se = z / np.sqrt(n)
     confint = np.column_stack((pacf_vals - se, pacf_vals + se))
     confint[0] = pacf_vals[0]  # lag 0: degenerate, no uncertainty
@@ -355,7 +369,7 @@ def calculate_lag_autocorrelation(
     --------
     ```python
     import pandas as pd
-    from skforecast.stats.autocorrelation import calculate_lag_autocorrelation
+    from skforecast.stats import calculate_lag_autocorrelation
 
     data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     calculate_lag_autocorrelation(data=data, n_lags=4)
@@ -368,6 +382,7 @@ def calculate_lag_autocorrelation(
     ```
 
     """
+
     if not isinstance(data, (pd.Series, pd.DataFrame)):
         raise TypeError(
             f"`data` must be a pandas Series or a DataFrame with a single column. "
@@ -379,11 +394,11 @@ def calculate_lag_autocorrelation(
             f"Got {data.shape[1]} columns."
         )
     if not isinstance(n_lags, int) or n_lags <= 0:
-        raise TypeError(f"`n_lags` must be a positive integer. Got {n_lags}.")
+        raise ValueError(f"`n_lags` must be a positive integer. Got {n_lags}.")
 
     if last_n_samples is not None:
         if not isinstance(last_n_samples, int) or last_n_samples <= 0:
-            raise TypeError(
+            raise ValueError(
                 f"`last_n_samples` must be a positive integer. Got {last_n_samples}."
             )
         data = data.iloc[-last_n_samples:]

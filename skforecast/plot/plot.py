@@ -309,7 +309,6 @@ def plot_prediction_intervals(
         ax.set_xlim(initial_x_zoom)
 
 
-
 def backtesting_gif_creator(
     data: pd.Series | pd.DataFrame,
     cv: object,

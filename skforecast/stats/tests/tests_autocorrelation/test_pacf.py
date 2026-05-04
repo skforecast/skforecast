@@ -4,7 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.stats.autocorrelation import pacf
+from skforecast.stats import pacf
 
 
 # ==============================================================================
@@ -31,16 +31,38 @@ def test_pacf_ValueError_when_x_has_fewer_than_2_observations():
         pacf(x, nlags=1)
 
 
-def test_pacf_ValueError_when_x_contains_nan():
+@pytest.mark.parametrize(
+    "value",
+    [np.nan, np.inf, -np.inf],
+    ids=lambda v: f"value={v!r}",
+)
+def test_pacf_ValueError_when_x_contains_non_finite_values(value):
     """
-    Test that pacf raises ValueError when x contains NaN values.
+    Test that pacf raises ValueError when x contains non-finite values.
     """
-    x = np.array([1.0, 2.0, np.nan, 4.0])
+    x = np.array([1.0, 2.0, value, 4.0])
     err_msg = re.escape(
-        "`x` contains NaN values. Remove or impute them before calling `pacf`."
+        "`x` contains non-finite values. Remove or impute them before calling `pacf`."
     )
     with pytest.raises(ValueError, match=err_msg):
         pacf(x, nlags=1)
+
+
+@pytest.mark.parametrize(
+    "x",
+    [np.arange(2, dtype=float), np.arange(3, dtype=float)],
+    ids=lambda x: f"n={len(x)}",
+)
+def test_pacf_ValueError_when_nlags_is_None_and_x_has_fewer_than_4_observations(x):
+    """
+    Test that pacf raises ValueError with a clear message when the default
+    nlags cannot be computed for short series.
+    """
+    err_msg = re.escape(
+        f"`x` must have at least 4 observations when `nlags` is None, got {len(x)}."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        pacf(x)
 
 
 @pytest.mark.parametrize(
