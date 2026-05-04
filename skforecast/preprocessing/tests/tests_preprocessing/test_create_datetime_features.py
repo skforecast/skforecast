@@ -46,7 +46,7 @@ def test_create_datetime_features_invalid_encoding():
     )
 
     with pytest.raises(
-        ValueError, match="Encoding must be one of 'cyclical', 'onehot' or None"
+        ValueError, match="Encoding must be one of 'cyclical', 'onehot', 'spline' or None"
     ):
         create_datetime_features(df, encoding="invalid encoding")
 
@@ -64,7 +64,7 @@ def test_create_datetime_features_invalid_feature_name():
     err_msg = re.escape(
         "Features {'invalid_feature'} are not supported. Supported features are "
         "['year', 'month', 'week', 'day_of_week', 'day_of_year', 'day_of_month', "
-        "'weekend', 'hour', 'minute', 'second']."
+        "'weekend', 'hour', 'minute', 'second', 'quarter']."
     )
     with pytest.raises(ValueError, match=err_msg):
         create_datetime_features(df, features=["invalid_feature"])
@@ -145,6 +145,7 @@ def test_create_datetime_features_output_columns_when_None_encoding():
         "hour",
         "minute",
         "second",
+        "quarter",
     ]
     assert all(results.columns == expected_features)
     assert len(results) == len(df)
@@ -356,3 +357,105 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
     )
 
     pd.testing.assert_frame_equal(results, expected)
+
+
+def test_create_datetime_features_invalid_features_to_encode():
+    """
+    Test that create_datetime_features raises ValueError when features_to_encode
+    contains features not present in features list.
+    """
+    df = pd.DataFrame(
+        np.random.rand(5, 3),
+        columns=["col_1", "col_2", "col_3"],
+        index=pd.DatetimeIndex(
+            ["2022-01-31", "2022-02-28", "2022-03-31", "2022-04-30", "2022-05-31"]
+        ),
+    )
+
+    err_msg = re.escape("Features {'invalid_feature'} are not present in `features`.")
+    with pytest.raises(ValueError, match=err_msg):
+        create_datetime_features(
+            df,
+            features=["year", "month"],
+            features_to_encode=["month", "invalid_feature"]
+        )
+
+
+def test_create_datetime_features_features_to_encode_cyclical():
+    """
+    Test that create_datetime_features encodes only features in features_to_encode
+    when using cyclical encoding.
+    """
+    df = pd.DataFrame(
+        np.random.rand(2, 1),
+        index=pd.DatetimeIndex(["2022-01-31", "2022-02-28"])
+    )
+
+    results = create_datetime_features(
+        df,
+        features=["month", "hour"],
+        features_to_encode=["hour"],
+        encoding="cyclical"
+    )
+    
+    expected = pd.DataFrame({
+        "month": [1, 2],
+        "hour_sin": [0.0, 0.0],
+        "hour_cos": [1.0, 1.0]
+    }, index=df.index).astype({"month": int})
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_create_datetime_features_features_to_encode_onehot():
+    """
+    Test that create_datetime_features encodes only features in features_to_encode
+    when using onehot encoding.
+    """
+    df = pd.DataFrame(
+        np.random.rand(2, 1),
+        index=pd.DatetimeIndex(["2022-01-01 01:00:00", "2022-02-01 02:00:00"])
+    )
+
+    results = create_datetime_features(
+        df,
+        features=["month", "hour"],
+        features_to_encode=["hour"],
+        encoding="onehot"
+    )
+
+    expected = pd.DataFrame({
+        "month": [1, 2],
+        "hour_1": [1, 0],
+        "hour_2": [0, 1]
+    }, index=df.index).astype({"month": int, "hour_1": int, "hour_2": int})
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_create_datetime_features_features_to_encode_spline():
+    """
+    Test that create_datetime_features encodes only features in features_to_encode
+    when using spline encoding.
+    """
+    df = pd.DataFrame(
+        np.random.rand(2, 1),
+        index=pd.DatetimeIndex(["2022-01-01 01:00:00", "2022-02-01 02:00:00"])
+    )
+
+    results = create_datetime_features(
+        df,
+        features=["month", "hour"],
+        features_to_encode=["hour"],
+        encoding="spline"
+    )
+
+    # Since spline output is complex, we verify the presence and absence of columns
+    assert "month" in results.columns
+    assert "hour" not in results.columns
+    
+    # Hour splines should exist
+    spline_cols = [c for c in results.columns if "hour_sp_" in c or "hour" in c]
+    assert len(spline_cols) > 0
+    assert len(results.columns) > 1
+

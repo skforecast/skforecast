@@ -374,7 +374,7 @@ def test_DateTimeFeatureTransformer_get_params_returns_constructor_values():
     transformer = DateTimeFeatureTransformer()
     params = transformer.get_params()
 
-    assert params == {"features": None, "encoding": "cyclical", "max_values": None, "spline_kwargs": None}
+    assert params == {"features": None, "features_to_encode": None, "encoding": "cyclical", "max_values": None, "spline_kwargs": None}
 
 
 def test_DateTimeFeatureTransformer_get_params_returns_custom_values():
@@ -390,6 +390,7 @@ def test_DateTimeFeatureTransformer_get_params_returns_custom_values():
 
     assert params == {
         "features": ["year", "month"],
+        "features_to_encode": None,
         "encoding": "onehot",
         "max_values": {"month": 6},
         "spline_kwargs": None,
@@ -653,4 +654,105 @@ def test_create_datetime_features_standalone_invalid_encoding():
         ValueError, match="Encoding must be one of 'cyclical', 'onehot', 'spline' or None"
     ):
         create_datetime_features(series, encoding="invalid")
+
+
+def test_DateTimeFeatureTransformer_invalid_features_to_encode():
+    """
+    Test that DateTimeFeatureTransformer raises ValueError when features_to_encode
+    contains features not present in features list.
+    """
+    df = pd.DataFrame(
+        np.random.rand(5, 3),
+        columns=["col_1", "col_2", "col_3"],
+        index=pd.DatetimeIndex(
+            ["2022-01-31", "2022-02-28", "2022-03-31", "2022-04-30", "2022-05-31"]
+        ),
+    )
+
+    transformer = DateTimeFeatureTransformer(
+        features=["year", "month"],
+        features_to_encode=["month", "invalid_feature"]
+    )
+    
+    err_msg = re.escape("Features {'invalid_feature'} are not present in `features`.")
+    with pytest.raises(ValueError, match=err_msg):
+        transformer.fit_transform(df)
+
+
+def test_DateTimeFeatureTransformer_features_to_encode_cyclical():
+    """
+    Test that DateTimeFeatureTransformer encodes only features in features_to_encode
+    when using cyclical encoding.
+    """
+    df = pd.DataFrame(
+        np.random.rand(2, 1),
+        index=pd.DatetimeIndex(["2022-01-31", "2022-02-28"])
+    )
+
+    transformer = DateTimeFeatureTransformer(
+        features=["month", "hour"],
+        features_to_encode=["hour"],
+        encoding="cyclical"
+    )
+    results = transformer.fit_transform(df)
+    
+    expected = pd.DataFrame({
+        "month": [1, 2],
+        "hour_sin": [0.0, 0.0],
+        "hour_cos": [1.0, 1.0]
+    }, index=df.index).astype({"month": int})
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_DateTimeFeatureTransformer_features_to_encode_onehot():
+    """
+    Test that DateTimeFeatureTransformer encodes only features in features_to_encode
+    when using onehot encoding.
+    """
+    df = pd.DataFrame(
+        np.random.rand(2, 1),
+        index=pd.DatetimeIndex(["2022-01-01 01:00:00", "2022-02-01 02:00:00"])
+    )
+
+    transformer = DateTimeFeatureTransformer(
+        features=["month", "hour"],
+        features_to_encode=["hour"],
+        encoding="onehot"
+    )
+    results = transformer.fit_transform(df)
+
+    expected = pd.DataFrame({
+        "month": [1, 2],
+        "hour_1": [1, 0],
+        "hour_2": [0, 1]
+    }, index=df.index).astype({"month": int, "hour_1": int, "hour_2": int})
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_DateTimeFeatureTransformer_features_to_encode_spline():
+    """
+    Test that DateTimeFeatureTransformer encodes only features in features_to_encode
+    when using spline encoding.
+    """
+    df = pd.DataFrame(
+        np.random.rand(2, 1),
+        index=pd.DatetimeIndex(["2022-01-01 01:00:00", "2022-02-01 02:00:00"])
+    )
+
+    transformer = DateTimeFeatureTransformer(
+        features=["month", "hour"],
+        features_to_encode=["hour"],
+        encoding="spline"
+    )
+    results = transformer.fit_transform(df)
+
+    assert "month" in results.columns
+    assert "hour" not in results.columns
+    
+    spline_cols = [c for c in results.columns if "hour_sp_" in c or "hour" in c]
+    assert len(spline_cols) > 0
+    assert len(results.columns) > 1
+
 
