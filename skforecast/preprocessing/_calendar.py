@@ -13,6 +13,7 @@ from sklearn.preprocessing import SplineTransformer
 from sklearn.utils.validation import check_is_fitted
 
 
+#TODO: add argument keep_original_columns=TRUE to indicate that new features are added to the already existent
 def create_datetime_features(
     X: pd.Series | pd.DataFrame,
     features: list[str] | None = None,
@@ -195,6 +196,7 @@ def create_datetime_features(
     return X_new
 
 
+#TODO: add argument keep_original_columns=TRUE to indicate that new features are added to the already existent
 class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
     """
     A transformer for extracting datetime features from the DateTime index of a
