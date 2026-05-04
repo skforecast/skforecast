@@ -31,7 +31,7 @@ def test_create_datetime_features_no_datetime_index():
     """
     df = pd.DataFrame({"a": [1, 2, 3]})
     with pytest.raises(TypeError, match="Input `X` must have a pandas DatetimeIndex"):
-        create_datetime_features(df)
+        create_datetime_features(df, keep_original_columns=False)
 
 
 def test_create_datetime_features_invalid_encoding():
@@ -80,7 +80,7 @@ def test_create_datetime_features_output_columns_when_cyclical_encoding():
         index=pd.date_range(start="1/1/2022", end="1/5/2022", freq="D"),
     )
 
-    results = create_datetime_features(df, encoding="cyclical")
+    results = create_datetime_features(df, encoding="cyclical", keep_original_columns=False)
     expected_features = [
         "year",
         "weekend",
@@ -117,7 +117,7 @@ def test_create_datetime_features_output_columns_when_onehot_encoding():
             index=index,
         )
 
-    results = create_datetime_features(df, encoding="onehot")
+    results = create_datetime_features(df, encoding="onehot", keep_original_columns=False)
 
     assert all([feature in features_all_onehot for feature in results.columns])
     assert len(results) == len(df)
@@ -133,7 +133,7 @@ def test_create_datetime_features_output_columns_when_None_encoding():
         columns=["col_1", "col_2", "col_3"],
         index=index,
     )
-    results = create_datetime_features(df, encoding=None)
+    results = create_datetime_features(df, encoding=None, keep_original_columns=False)
     expected_features = [
         "year",
         "month",
@@ -163,7 +163,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
     )
 
     results = create_datetime_features(
-        df, features=["year", "month", "weekend"], encoding="cyclical"
+        df, features=["year", "month", "weekend"], encoding="cyclical", keep_original_columns=False
     )
     expected = pd.DataFrame(
         {
@@ -215,7 +215,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_oneho
     )
 
     results = create_datetime_features(
-        df, features=["year", "month", "weekend"], encoding="onehot"
+        df, features=["year", "month", "weekend"], encoding="onehot", keep_original_columns=False
     )
     expected = pd.DataFrame(
         {
@@ -267,7 +267,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_None(
     )
 
     results = create_datetime_features(
-        df, features=["year", "month", "weekend"], encoding=None
+        df, features=["year", "month", "weekend"], encoding=None, keep_original_columns=False
     )
     expected = pd.DataFrame(
         {
@@ -319,6 +319,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
         features=["year", "month", "weekend"],
         encoding="cyclical",
         max_values={"month": 6},
+        keep_original_columns=False
     )
 
     expected = pd.DataFrame(
@@ -395,7 +396,8 @@ def test_create_datetime_features_features_to_encode_cyclical():
         df,
         features=["month", "hour"],
         features_to_encode=["hour"],
-        encoding="cyclical"
+        encoding="cyclical",
+        keep_original_columns=False
     )
     
     expected = pd.DataFrame({
@@ -421,7 +423,8 @@ def test_create_datetime_features_features_to_encode_onehot():
         df,
         features=["month", "hour"],
         features_to_encode=["hour"],
-        encoding="onehot"
+        encoding="onehot",
+        keep_original_columns=False
     )
 
     expected = pd.DataFrame({
@@ -447,7 +450,8 @@ def test_create_datetime_features_features_to_encode_spline():
         df,
         features=["month", "hour"],
         features_to_encode=["hour"],
-        encoding="spline"
+        encoding="spline",
+        keep_original_columns=False
     )
 
     # Since spline output is complex, we verify the presence and absence of columns
@@ -458,4 +462,96 @@ def test_create_datetime_features_features_to_encode_spline():
     spline_cols = [c for c in results.columns if "hour_sp_" in c or "hour" in c]
     assert len(spline_cols) > 0
     assert len(results.columns) > 1
+
+
+def test_create_datetime_features_keep_original_columns_True_dataframe():
+    """
+    Test that create_datetime_features returns original columns when 
+    keep_original_columns=True for a DataFrame.
+    """
+    df = pd.DataFrame(
+        {"exog_1": [1, 2], "exog_2": [3, 4]},
+        index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
+    )
+
+    results = create_datetime_features(
+        df,
+        features=["month"],
+        encoding=None,
+        keep_original_columns=True
+    )
+
+    assert "exog_1" in results.columns
+    assert "exog_2" in results.columns
+    assert "month" in results.columns
+    assert list(results.columns) == ["exog_1", "exog_2", "month"]
+    assert results["exog_1"].tolist() == [1, 2]
+
+
+def test_create_datetime_features_keep_original_columns_True_series():
+    """
+    Test that create_datetime_features returns original series as a column when 
+    keep_original_columns=True for a Series.
+    """
+    series = pd.Series(
+        [1, 2],
+        name="target",
+        index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
+    )
+
+    results = create_datetime_features(
+        series,
+        features=["month"],
+        encoding=None,
+        keep_original_columns=True
+    )
+
+    assert "target" in results.columns
+    assert "month" in results.columns
+    assert list(results.columns) == ["target", "month"]
+    assert results["target"].tolist() == [1, 2]
+
+
+def test_create_datetime_features_keep_original_columns_True_overlap_error():
+    """
+    Test that create_datetime_features raises ValueError when keep_original_columns=True
+    and there is a column name overlap with extracted features.
+    """
+    df = pd.DataFrame(
+        {"month": [1, 2], "exog_1": [3, 4]},
+        index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
+    )
+    
+    err_msg = re.escape(
+        "The following extracted feature names already exist in the input DataFrame: "
+        "['month']. To avoid duplicate columns, rename the original columns or "
+        "avoid extracting these features."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        create_datetime_features(
+            df,
+            features=["month"],
+            encoding=None,
+            keep_original_columns=True
+        )
+
+    # Test for series
+    series = pd.Series(
+        [1, 2],
+        name="month",
+        index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
+    )
+    err_msg_series = re.escape(
+        "The following extracted feature names already exist in the input Series: "
+        "['month']. To avoid duplicate columns, rename the original Series or "
+        "avoid extracting these features."
+    )
+    with pytest.raises(ValueError, match=err_msg_series):
+        create_datetime_features(
+            series,
+            features=["month"],
+            encoding=None,
+            keep_original_columns=True
+        )
+
 

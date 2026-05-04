@@ -13,7 +13,6 @@ from sklearn.preprocessing import SplineTransformer
 from sklearn.utils.validation import check_is_fitted
 
 
-#TODO: add argument keep_original_columns=TRUE to indicate that new features are added to the already existent
 def create_datetime_features(
     X: pd.Series | pd.DataFrame,
     features: list[str] | None = None,
@@ -21,6 +20,7 @@ def create_datetime_features(
     encoding: str = "cyclical",
     max_values: dict[str, int] | None = None,
     spline_kwargs: dict | None = None,
+    keep_original_columns: bool = True,
 ) -> pd.DataFrame:
     """
     Extract datetime features from the DateTime index of a pandas DataFrame or Series.
@@ -56,6 +56,9 @@ def create_datetime_features(
         maximum value of each feature (e.g. 1-12 for month, 0-23 for hour), making
         the encoding stateless and consistent between training and prediction. Accepted
         keys: `n_knots` (int), `degree` (int), and `include_bias` (bool).
+    keep_original_columns : bool, default True
+        If True, the original columns of `X` are kept in the output DataFrame. If False,
+        only the extracted datetime features are returned.
 
     Returns
     -------
@@ -193,10 +196,28 @@ def create_datetime_features(
             [X_new, pd.DataFrame(spline_cols, index=X_new.index)], axis=1
         )
 
+    if keep_original_columns:
+        if isinstance(X, pd.DataFrame):
+            overlapping_cols = set(X.columns).intersection(set(X_new.columns))
+            if overlapping_cols:
+                raise ValueError(
+                    f"The following extracted feature names already exist in the input "
+                    f"DataFrame: {list(overlapping_cols)}. To avoid duplicate columns, "
+                    f"rename the original columns or avoid extracting these features."
+                )
+            X_new = pd.concat([X, X_new], axis=1)
+        else:
+            if X.name in X_new.columns:
+                raise ValueError(
+                    f"The following extracted feature names already exist in the input "
+                    f"Series: {list([X.name])}. To avoid duplicate columns, rename the "
+                    f"original Series or avoid extracting these features."
+                )
+            X_new = pd.concat([X, X_new], axis=1)
+
     return X_new
 
 
-#TODO: add argument keep_original_columns=TRUE to indicate that new features are added to the already existent
 class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
     """
     A transformer for extracting datetime features from the DateTime index of a
@@ -229,6 +250,9 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         month, 0-23 for hour), ensuring consistent encoding across training and
         prediction. Accepted keys: `n_knots` (int), `degree` (int), and
         `include_bias` (bool).
+    keep_original_columns : bool, default True
+        If True, the original columns of `X` are kept in the output DataFrame. If False,
+        only the extracted datetime features are returned.
     
     Attributes
     ----------
@@ -245,6 +269,8 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
     spline_kwargs : dict, None
         Keyword arguments for the spline encoding. `None` means the default values
         are used (`degree=3`, `include_bias=True`, `n_knots=max_val+1` per feature).
+    keep_original_columns : bool
+        Whether to keep original columns from the input.
     feature_names_out_ : list
         Names of the output features. Set after calling `transform`.
     
@@ -257,6 +283,7 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         encoding: str = "cyclical",
         max_values: dict[str, int] | None = None,
         spline_kwargs: dict | None = None,
+        keep_original_columns: bool = True,
     ) -> None:
 
         if encoding not in ["cyclical", "onehot", "spline", None]:
@@ -267,6 +294,7 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         self.encoding = encoding
         self.max_values = max_values
         self.spline_kwargs = spline_kwargs
+        self.keep_original_columns = keep_original_columns
 
     def fit(self, X, y=None):
         """
@@ -294,12 +322,13 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         """
 
         X_new = create_datetime_features(
-                    X                  = X,
-                    encoding           = self.encoding,
-                    features           = self.features,
-                    features_to_encode = self.features_to_encode,
-                    max_values         = self.max_values,
-                    spline_kwargs      = self.spline_kwargs,
+                    X                     = X,
+                    encoding              = self.encoding,
+                    features              = self.features,
+                    features_to_encode    = self.features_to_encode,
+                    max_values            = self.max_values,
+                    spline_kwargs         = self.spline_kwargs,
+                    keep_original_columns = self.keep_original_columns,
                 )
         self.feature_names_out_ = list(X_new.columns)
 

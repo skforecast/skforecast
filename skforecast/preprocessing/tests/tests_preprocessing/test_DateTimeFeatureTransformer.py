@@ -82,7 +82,7 @@ def test_create_datetime_features_output_columns_when_cyclical_encoding():
         index=pd.date_range(start="1/1/2022", end="1/5/2022", freq="D"),
     )
 
-    results = DateTimeFeatureTransformer(encoding="cyclical").fit_transform(df)
+    results = DateTimeFeatureTransformer(encoding="cyclical", keep_original_columns=False).fit_transform(df)
     expected_features = [
         "year",
         "weekend",
@@ -121,7 +121,7 @@ def test_create_datetime_features_output_columns_when_onehot_encoding():
         index=index,
     )
 
-    results = DateTimeFeatureTransformer(encoding="onehot").fit_transform(df)
+    results = DateTimeFeatureTransformer(encoding="onehot", keep_original_columns=False).fit_transform(df)
 
     assert all([feature in features_all_onehot for feature in results.columns])
     assert len(results) == len(df)
@@ -137,7 +137,7 @@ def test_create_datetime_features_output_columns_when_None_encoding():
         columns=["col_1", "col_2", "col_3"],
         index=index,
     )
-    results = DateTimeFeatureTransformer(encoding=None).fit_transform(df)
+    results = DateTimeFeatureTransformer(encoding=None, keep_original_columns=False).fit_transform(df)
     expected_features = [
         "year",
         "month",
@@ -167,7 +167,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
     )
 
     results = DateTimeFeatureTransformer(
-        features=["year", "month", "weekend"], encoding="cyclical"
+        features=["year", "month", "weekend"], encoding="cyclical", keep_original_columns=False
     ).fit_transform(df)
     expected = pd.DataFrame(
         {
@@ -219,7 +219,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_oneho
     )
 
     results = DateTimeFeatureTransformer(
-        features=["year", "month", "weekend"], encoding="onehot"
+        features=["year", "month", "weekend"], encoding="onehot", keep_original_columns=False
     ).fit_transform(
         df,
     )
@@ -273,7 +273,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_None(
     )
 
     results = DateTimeFeatureTransformer(
-        features=["year", "month", "weekend"], encoding=None
+        features=["year", "month", "weekend"], encoding=None, keep_original_columns=False
     ).fit_transform(
         df,
     )
@@ -326,6 +326,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
         features=["year", "month", "weekend"],
         encoding="cyclical",
         max_values={"month": 6},
+        keep_original_columns=False
     ).fit_transform(df)
 
     expected = pd.DataFrame(
@@ -374,7 +375,7 @@ def test_DateTimeFeatureTransformer_get_params_returns_constructor_values():
     transformer = DateTimeFeatureTransformer()
     params = transformer.get_params()
 
-    assert params == {"features": None, "features_to_encode": None, "encoding": "cyclical", "max_values": None, "spline_kwargs": None}
+    assert params == {"features": None, "features_to_encode": None, "encoding": "cyclical", "max_values": None, "spline_kwargs": None, "keep_original_columns": True}
 
 
 def test_DateTimeFeatureTransformer_get_params_returns_custom_values():
@@ -385,6 +386,7 @@ def test_DateTimeFeatureTransformer_get_params_returns_custom_values():
         features=["year", "month"],
         encoding="onehot",
         max_values={"month": 6},
+        keep_original_columns=False
     )
     params = transformer.get_params()
 
@@ -394,6 +396,7 @@ def test_DateTimeFeatureTransformer_get_params_returns_custom_values():
         "encoding": "onehot",
         "max_values": {"month": 6},
         "spline_kwargs": None,
+        "keep_original_columns": False,
     }
 
 
@@ -514,7 +517,7 @@ def test_DateTimeFeatureTransformer_quarter_feature():
         index=pd.date_range(start="2022-01-01", periods=12, freq="MS"),
     )
     result_none = DateTimeFeatureTransformer(
-        features=["quarter"], encoding=None
+        features=["quarter"], encoding=None, keep_original_columns=False
     ).fit_transform(df)
 
     assert list(result_none.columns) == ["quarter"]
@@ -522,7 +525,7 @@ def test_DateTimeFeatureTransformer_quarter_feature():
     assert set(result_none["quarter"].unique()).issubset({1, 2, 3, 4})
 
     result_cyclical = DateTimeFeatureTransformer(
-        features=["quarter"], encoding="cyclical"
+        features=["quarter"], encoding="cyclical", keep_original_columns=False
     ).fit_transform(df)
 
     assert list(result_cyclical.columns) == ["quarter_sin", "quarter_cos"]
@@ -570,6 +573,7 @@ def test_create_datetime_features_output_shape_with_custom_spline_kwargs():
         features=["month"],
         encoding="spline",
         spline_kwargs={"n_knots": 4},
+        keep_original_columns=False
     ).fit_transform(df)
 
     assert "month" not in results.columns
@@ -598,7 +602,7 @@ def test_create_datetime_features_spline_encoding_expected_values():
         ),
     )
     result = DateTimeFeatureTransformer(
-        features=["month"], encoding="spline"
+        features=["month"], encoding="spline", keep_original_columns=False
     ).fit_transform(df)
 
     expected = pd.DataFrame(
@@ -635,8 +639,8 @@ def test_create_datetime_features_accepts_series_input():
     series = pd.Series(np.random.rand(5), index=index, name="target")
     df = pd.DataFrame({"value": series.values}, index=index)
 
-    result_series = create_datetime_features(series, features=["year", "month"], encoding=None)
-    result_df = create_datetime_features(df, features=["year", "month"], encoding=None)
+    result_series = create_datetime_features(series, features=["year", "month"], encoding=None, keep_original_columns=False)
+    result_df = create_datetime_features(df, features=["year", "month"], encoding=None, keep_original_columns=False)
 
     pd.testing.assert_frame_equal(result_series, result_df)
 
@@ -692,7 +696,8 @@ def test_DateTimeFeatureTransformer_features_to_encode_cyclical():
     transformer = DateTimeFeatureTransformer(
         features=["month", "hour"],
         features_to_encode=["hour"],
-        encoding="cyclical"
+        encoding="cyclical",
+        keep_original_columns=False
     )
     results = transformer.fit_transform(df)
     
@@ -718,7 +723,8 @@ def test_DateTimeFeatureTransformer_features_to_encode_onehot():
     transformer = DateTimeFeatureTransformer(
         features=["month", "hour"],
         features_to_encode=["hour"],
-        encoding="onehot"
+        encoding="onehot",
+        keep_original_columns=False
     )
     results = transformer.fit_transform(df)
 
@@ -744,7 +750,8 @@ def test_DateTimeFeatureTransformer_features_to_encode_spline():
     transformer = DateTimeFeatureTransformer(
         features=["month", "hour"],
         features_to_encode=["hour"],
-        encoding="spline"
+        encoding="spline",
+        keep_original_columns=False
     )
     results = transformer.fit_transform(df)
 
@@ -754,5 +761,93 @@ def test_DateTimeFeatureTransformer_features_to_encode_spline():
     spline_cols = [c for c in results.columns if "hour_sp_" in c or "hour" in c]
     assert len(spline_cols) > 0
     assert len(results.columns) > 1
+
+
+def test_DateTimeFeatureTransformer_keep_original_columns_True_dataframe():
+    """
+    Test that DateTimeFeatureTransformer returns original columns when 
+    keep_original_columns=True for a DataFrame.
+    """
+    df = pd.DataFrame(
+        {"exog_1": [1, 2], "exog_2": [3, 4]},
+        index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
+    )
+
+    transformer = DateTimeFeatureTransformer(
+        features=["month"],
+        encoding=None,
+        keep_original_columns=True
+    )
+    results = transformer.fit_transform(df)
+
+    assert "exog_1" in results.columns
+    assert "exog_2" in results.columns
+    assert "month" in results.columns
+    assert list(results.columns) == ["exog_1", "exog_2", "month"]
+    assert results["exog_1"].tolist() == [1, 2]
+
+
+def test_DateTimeFeatureTransformer_keep_original_columns_True_series():
+    """
+    Test that DateTimeFeatureTransformer returns original series as a column when 
+    keep_original_columns=True for a Series.
+    """
+    series = pd.Series(
+        [1, 2],
+        name="target",
+        index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
+    )
+
+    transformer = DateTimeFeatureTransformer(
+        features=["month"],
+        encoding=None,
+        keep_original_columns=True
+    )
+    results = transformer.fit_transform(series)
+
+    assert "target" in results.columns
+    assert "month" in results.columns
+    assert list(results.columns) == ["target", "month"]
+    assert results["target"].tolist() == [1, 2]
+
+
+def test_DateTimeFeatureTransformer_keep_original_columns_True_overlap_error():
+    """
+    Test that DateTimeFeatureTransformer raises ValueError when keep_original_columns=True
+    and there is a column name overlap with extracted features.
+    """
+    df = pd.DataFrame(
+        {"month": [1, 2], "exog_1": [3, 4]},
+        index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
+    )
+
+    transformer = DateTimeFeatureTransformer(
+        features=["month"],
+        encoding=None,
+        keep_original_columns=True
+    )
+    
+    err_msg = re.escape(
+        "The following extracted feature names already exist in the input DataFrame: "
+        "['month']. To avoid duplicate columns, rename the original columns or "
+        "avoid extracting these features."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        transformer.fit_transform(df)
+
+    # Test for series
+    series = pd.Series(
+        [1, 2],
+        name="month",
+        index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
+    )
+    err_msg_series = re.escape(
+        "The following extracted feature names already exist in the input Series: "
+        "['month']. To avoid duplicate columns, rename the original Series or "
+        "avoid extracting these features."
+    )
+    with pytest.raises(ValueError, match=err_msg_series):
+        transformer.fit_transform(series)
+
 
 
