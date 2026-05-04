@@ -1,6 +1,6 @@
 [project]
 name = "skforecast"
-version = "0.22.0"
+version = "0.23.0"
 description = "Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others."
 readme = "README.md"
 authors = [
@@ -148,6 +148,20 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "serial",
 ]
+
+[tool.ruff]
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E221", "E251", "E501", "E241"]
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 88
+max-line-length = 88
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = false
 # filterwarnings = [
 #     # "ignore::DeprecationWarning",
 #     # "ignore::FutureWarning",

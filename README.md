@@ -195,12 +195,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.22.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.23.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.22.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.23.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **BibTeX**:
@@ -208,7 +208,7 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.22.0) [Compu
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.22.0},
+  version = {0.23.0},
   month   = {4},
   year    = {2026},
   license = {BSD-3-Clause},
