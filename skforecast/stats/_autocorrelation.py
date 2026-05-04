@@ -4,9 +4,6 @@
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
 # coding=utf-8
-# Fast ACF and PACF implementations for time series analysis.
-# Uses scipy.fft.rfft / irfft (O(N log N)) instead of the O(N²) time-domain
-# approach, and the Levinson-Durbin recursion with O(p) memory for PACF.
 
 from __future__ import annotations
 import math
@@ -81,7 +78,7 @@ def acf(
         `0.05` for 95% intervals), a second array of shape `(nlags + 1, 2)`
         is returned alongside the ACF values. Lag 0 always has interval
         `[1.0, 1.0]`. For lag k ≥ 1, the standard error follows Bartlett's
-        formula: `Var(ρ̂_k) = (1/n)(1 + 2 * sum_{j=1}^{k-1} ρ̂_j²)`.
+        formula: `Var(p_k) = (1/n)(1 + 2 * sum_{j=1}^{k-1} p_j²)`.
 
     Returns
     -------
@@ -121,7 +118,7 @@ def acf(
     rng = np.random.default_rng(42)
     x = rng.standard_normal(200)
 
-    # ACF values for lags 0–10
+    # ACF values for lags 0-10
     acf_vals = acf(x, nlags=10)
 
     # ACF with 95% Bartlett confidence intervals
@@ -244,7 +241,7 @@ def pacf(
     .. [1] Brockwell, P.J. and Davis, R.A. (1991). *Time Series: Theory and
        Methods*, 2nd ed. Springer.
     .. [2] Levinson, N. (1947). The Wiener RMS error criterion in filter
-       design and prediction. *Journal of Mathematics and Physics*, 25, 261–278.
+       design and prediction. *Journal of Mathematics and Physics*, 25, 261-278.
 
     Examples
     --------
@@ -255,7 +252,7 @@ def pacf(
     rng = np.random.default_rng(42)
     x = rng.standard_normal(200)
 
-    # PACF values for lags 0–10
+    # PACF values for lags 0-10
     pacf_vals = pacf(x, nlags=10)
 
     # PACF with 95% white-noise confidence intervals
