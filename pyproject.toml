@@ -118,7 +118,7 @@ test = [
     "catboost>=1.2, <2.0",
     "keras>=3.0, <4.0",
     "torch>=2.4, <2.12",
-    "tomli>=2.0",
+    "tomli>=2.4.1",
     "pandas[parquet]>=2.1"
 ]
 
