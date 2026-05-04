@@ -1,17 +1,4 @@
-"""
-Stats module for time series analysis and forecasting.
-
-This module provides various statistical models and utilities including:
-- ARIMA and Auto-ARIMA models
-- Exponential Smoothing (ETS)
-- SARIMAX
-- ARAR
-- Seasonal analysis utilities
-- Data transformations (Box-Cox)
-"""
-
 from __future__ import annotations
-
 from importlib import import_module
 from typing import TYPE_CHECKING
 
