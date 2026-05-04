@@ -206,53 +206,35 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
 def test_create_datetime_features_output_when_features_year_month_encoding_onehot():
     """
     Test that create_datetime_features returns the expected columns when features
-     is ['year', 'month'] and encoding is 'onehot'.
+    is ['year', 'month', 'weekend'] and encoding is 'onehot'. All predefined
+    categories must be present even when only January dates are in the data.
     """
+    index = pd.date_range(start="1/1/2022", end="1/5/2022", freq="D")
     df = pd.DataFrame(
         np.random.rand(5, 3),
         columns=["col_1", "col_2", "col_3"],
-        index=pd.date_range(start="1/1/2022", end="1/5/2022", freq="D"),
+        index=index,
     )
 
     results = create_datetime_features(
         df, features=["year", "month", "weekend"], encoding="onehot", keep_original_columns=False
     )
-    expected = pd.DataFrame(
-        {
-            "year_2022": {
-                pd.Timestamp("2022-01-01 00:00:00"): 1,
-                pd.Timestamp("2022-01-02 00:00:00"): 1,
-                pd.Timestamp("2022-01-03 00:00:00"): 1,
-                pd.Timestamp("2022-01-04 00:00:00"): 1,
-                pd.Timestamp("2022-01-05 00:00:00"): 1,
-            },
-            "month_1": {
-                pd.Timestamp("2022-01-01 00:00:00"): 1,
-                pd.Timestamp("2022-01-02 00:00:00"): 1,
-                pd.Timestamp("2022-01-03 00:00:00"): 1,
-                pd.Timestamp("2022-01-04 00:00:00"): 1,
-                pd.Timestamp("2022-01-05 00:00:00"): 1,
-            },
-            "weekend_0": {
-                pd.Timestamp("2022-01-01 00:00:00"): 0,
-                pd.Timestamp("2022-01-02 00:00:00"): 0,
-                pd.Timestamp("2022-01-03 00:00:00"): 1,
-                pd.Timestamp("2022-01-04 00:00:00"): 1,
-                pd.Timestamp("2022-01-05 00:00:00"): 1,
-            },
-            "weekend_1": {
-                pd.Timestamp("2022-01-01 00:00:00"): 1,
-                pd.Timestamp("2022-01-02 00:00:00"): 1,
-                pd.Timestamp("2022-01-03 00:00:00"): 0,
-                pd.Timestamp("2022-01-04 00:00:00"): 0,
-                pd.Timestamp("2022-01-05 00:00:00"): 0,
-            },
-        }
-    ).asfreq("D").astype(
-        {'year_2022': int, 'month_1': int, 'weekend_0': int, 'weekend_1': int}
-    )
 
-    pd.testing.assert_frame_equal(results, expected)
+    # year: kept as raw integer (unbounded, not one-hot encoded)
+    assert "year" in results.columns
+    assert results["year"].tolist() == [2022, 2022, 2022, 2022, 2022]
+
+    # month: all 12 columns always generated
+    month_cols = [c for c in results.columns if c.startswith("month_")]
+    assert len(month_cols) == 12
+    assert results["month_1"].tolist() == [1, 1, 1, 1, 1]
+    assert all(results[f"month_{m}"].tolist() == [0, 0, 0, 0, 0] for m in range(2, 13))
+
+    # weekend: kept as raw integer (binary, not one-hot encoded)
+    assert "weekend" in results.columns
+    assert results["weekend"].tolist() == [1, 1, 0, 0, 0]
+
+    assert results.shape == (5, 14)
 
 
 def test_create_datetime_features_output_when_features_year_month_encoding_None():
@@ -412,7 +394,8 @@ def test_create_datetime_features_features_to_encode_cyclical():
 def test_create_datetime_features_features_to_encode_onehot():
     """
     Test that create_datetime_features encodes only features in features_to_encode
-    when using onehot encoding.
+    when using onehot encoding. All 24 hour columns are always generated even
+    though only hours 1 and 2 appear in the data.
     """
     df = pd.DataFrame(
         np.random.rand(2, 1),
@@ -427,13 +410,17 @@ def test_create_datetime_features_features_to_encode_onehot():
         keep_original_columns=False
     )
 
-    expected = pd.DataFrame({
-        "month": [1, 2],
-        "hour_1": [1, 0],
-        "hour_2": [0, 1]
-    }, index=df.index).astype({"month": int, "hour_1": int, "hour_2": int})
+    # month is not encoded — kept as raw integer
+    assert results["month"].tolist() == [1, 2]
 
-    pd.testing.assert_frame_equal(results, expected)
+    # All 24 hour columns are generated regardless of which hours appear
+    hour_cols = [c for c in results.columns if c.startswith("hour_")]
+    assert len(hour_cols) == 24
+    assert results["hour_1"].tolist() == [1, 0]
+    assert results["hour_2"].tolist() == [0, 1]
+    assert results["hour_0"].tolist() == [0, 0]
+
+    assert results.shape == (2, 25)
 
 
 def test_create_datetime_features_features_to_encode_spline():
@@ -554,4 +541,80 @@ def test_create_datetime_features_keep_original_columns_True_overlap_error():
             keep_original_columns=True
         )
 
+
+def test_create_datetime_features_onehot_single_row_generates_all_columns():
+    """
+    Test that onehot encoding always generates all expected columns even when
+    only a single row (or a subset of categories) is present in the input.
+    This guards against pd.get_dummies silently dropping unobserved categories,
+    which would cause downstream model failures at inference time.
+    """
+    # A single Tuesday row: day_of_week == 1, should still produce columns 0-6
+    index = pd.DatetimeIndex(["2022-01-04"])  # Tuesday
+    df = pd.DataFrame({"value": [1.0]}, index=index)
+
+    result = create_datetime_features(
+        df,
+        features=["day_of_week"],
+        encoding="onehot",
+        keep_original_columns=False,
+    )
+
+    expected_cols = [f"day_of_week_{i}" for i in range(7)]
+    assert list(result.columns) == expected_cols
+    assert result["day_of_week_1"].iloc[0] == 1  # Tuesday
+    assert result["day_of_week_0"].iloc[0] == 0  # not Monday
+    assert len(result) == 1
+
+
+def test_create_datetime_features_onehot_all_columns_present_regardless_of_data():
+    """
+    Test that onehot encoding produces the full set of columns for known-bounded
+    features (month, week, day_of_week, day_of_month, day_of_year, hour, minute,
+    second, quarter, weekend) regardless of which values appear in the data.
+    A January-only dataset should still produce 12 month columns.
+    """
+    index = pd.date_range(start="2022-01-01", end="2022-01-31", freq="D")
+    df = pd.DataFrame({"value": range(len(index))}, index=index)
+
+    result = create_datetime_features(
+        df,
+        features=["month", "weekend"],
+        encoding="onehot",
+        keep_original_columns=False,
+    )
+
+    month_cols = [c for c in result.columns if c.startswith("month_")]
+    assert len(month_cols) == 12
+    assert "weekend" in result.columns
+    assert result["weekend"].dtype == np.dtype("int64")
+
+
+def test_create_datetime_features_onehot_year_and_weekend_never_encoded():
+    """
+    Test that year and weekend are never one-hot encoded when encoding='onehot',
+    regardless of whether they appear in features_to_encode.
+    """
+    index = pd.date_range(start="2022-01-01", periods=7, freq="D")
+    df = pd.DataFrame({"value": range(7)}, index=index)
+
+    result = create_datetime_features(
+        df,
+        features=["year", "weekend", "month"],
+        features_to_encode=["year", "weekend", "month"],
+        encoding="onehot",
+        keep_original_columns=False,
+    )
+
+    assert "year" in result.columns
+    assert result["year"].dtype == np.dtype("int64")
+    assert not any(c.startswith("year_") for c in result.columns)
+
+    assert "weekend" in result.columns
+    assert result["weekend"].dtype == np.dtype("int64")
+    assert "weekend_0" not in result.columns
+    assert "weekend_1" not in result.columns
+
+    month_cols = [c for c in result.columns if c.startswith("month_")]
+    assert len(month_cols) == 12
 

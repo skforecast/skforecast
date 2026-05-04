@@ -1,0 +1,264 @@
+# Unit test calculate_distance_from_holiday
+# ==============================================================================
+import pytest
+import numpy as np
+import pandas as pd
+from skforecast.preprocessing import calculate_distance_from_holiday
+from skforecast.exceptions import IgnoredArgumentWarning
+
+if pd.__version__ < "2.2.0":
+    freq_h = "H"
+else:
+    freq_h = "h"
+
+
+def test_calculate_distance_from_holiday_daily_index():
+    """
+    Test output column names, values, and dtype for a daily DatetimeIndex.
+    Holidays on day 0 and day 3; expected distances verified manually.
+    """
+    idx = pd.date_range("2022-01-01", periods=5, freq="D")
+    df = pd.DataFrame(
+        {"value": [1, 2, 3, 4, 5], "is_holiday": [True, False, False, True, False]},
+        index=idx,
+    )
+
+    result = calculate_distance_from_holiday(df, holiday_column="is_holiday")
+
+    assert list(result.columns) == ["time_to_holiday", "time_since_holiday"]
+    assert result.index.equals(df.index)
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float),
+        [0, 2, 1, 0, 0],  # last 0 is fill_na (no next holiday after day 3)
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float),
+        [0, 1, 2, 0, 1],
+    )
+
+
+def test_calculate_distance_from_holiday_hourly_index():
+    """
+    Test that hourly data produces `time_*` column names with correct hour values.
+    """
+    idx = pd.date_range("2022-01-01", periods=4, freq=freq_h)
+    df = pd.DataFrame(
+        {"is_holiday": [True, False, True, False]},
+        index=idx,
+    )
+
+    result = calculate_distance_from_holiday(df, holiday_column="is_holiday")
+
+    assert list(result.columns) == ["time_to_holiday", "time_since_holiday"]
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float),
+        [0, 1, 0, 0],  # last 0 is fill_na
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float),
+        [0, 1, 0, 1],
+    )
+
+
+def test_calculate_distance_from_holiday_date_column():
+    """
+    Test the `date_column` string path: dates come from a DataFrame column
+    and the output unit is always days.
+    """
+    df = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2022-01-01", "2022-01-02", "2022-01-03"]),
+            "is_holiday": [True, False, False],
+        }
+    )
+
+    result = calculate_distance_from_holiday(
+        df, holiday_column="is_holiday", date_column="date"
+    )
+
+    assert list(result.columns) == ["time_to_holiday", "time_since_holiday"]
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float),
+        [0, 0, 0],  # no next holiday after day 0, so fill_na=0 for rows 1 and 2
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float),
+        [0, 1, 2],
+    )
+
+
+def test_calculate_distance_from_holiday_no_holidays():
+    """
+    Test that when there are no holidays, all output values equal `fill_na`.
+    """
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    df = pd.DataFrame({"is_holiday": [False, False, False]}, index=idx)
+
+    result = calculate_distance_from_holiday(df, holiday_column="is_holiday", fill_na=-1)
+
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float), [-1, -1, -1]
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float), [-1, -1, -1]
+    )
+
+
+def test_calculate_distance_from_holiday_fill_na():
+    """
+    Test that `fill_na` controls the value at positions with no prior/next holiday.
+    The first row has no prior holiday and the last has no next holiday.
+    """
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    df = pd.DataFrame({"is_holiday": [False, True, False]}, index=idx)
+
+    result = calculate_distance_from_holiday(df, holiday_column="is_holiday", fill_na=99)
+
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float), [1, 0, 99]
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float), [99, 0, 1]
+    )
+
+
+def test_calculate_distance_from_holiday_no_freq_warns_and_falls_back_to_hours():
+    """
+    Test that when the index has no frequency and it cannot be inferred (irregular
+    spacing), a UserWarning is raised and the output columns are named `time_*`.
+    """
+    idx = pd.DatetimeIndex(["2022-01-01", "2022-01-03", "2022-01-07"])
+    df = pd.DataFrame({"is_holiday": [True, False, False]}, index=idx)
+
+    with pytest.warns(UserWarning, match="Could not determine the frequency"):
+        result = calculate_distance_from_holiday(df, holiday_column="is_holiday")
+
+    assert list(result.columns) == ["time_to_holiday", "time_since_holiday"]
+
+
+def test_calculate_distance_from_holiday_TypeError_when_invalid_index_type():
+    """
+    Test that a TypeError is raised when `date_column=None` and the index is not
+    a pandas DatetimeIndex.
+    """
+    df = pd.DataFrame({"is_holiday": [True, False]}, index=[0, 1])
+
+    with pytest.raises(
+        TypeError,
+        match="When `date_column=None`, the index must be a pandas DatetimeIndex",
+    ):
+        calculate_distance_from_holiday(df, holiday_column="is_holiday")
+
+
+def test_calculate_distance_from_holiday_does_not_mutate_input():
+    """
+    Test that the original DataFrame is not modified by the function.
+    """
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    df = pd.DataFrame({"is_holiday": [True, False, False]}, index=idx)
+    original_columns = list(df.columns)
+    original_values = df["is_holiday"].tolist()
+
+    calculate_distance_from_holiday(df, holiday_column="is_holiday")
+
+    assert list(df.columns) == original_columns
+    assert df["is_holiday"].tolist() == original_values
+
+
+def test_calculate_distance_from_holiday_output_shape():
+    """
+    Test that the result has exactly 2 columns and the same index as the input.
+    """
+    idx = pd.date_range("2022-01-01", periods=5, freq="D")
+    df = pd.DataFrame({"is_holiday": [True, False, False, True, False]}, index=idx)
+
+    result = calculate_distance_from_holiday(df, holiday_column="is_holiday")
+
+    assert result.shape == (5, 2)
+    assert result.index.equals(df.index)
+
+
+def test_calculate_distance_from_holiday_TypeError_when_invalid_X_type():
+    """
+    Test that a TypeError is raised when `X` is not a pandas Series or DataFrame.
+    """
+    with pytest.raises(
+        TypeError,
+        match="Input `X` must be a pandas Series or pandas DataFrame",
+    ):
+        calculate_distance_from_holiday([True, False, True], holiday_column="is_holiday")
+
+
+def test_calculate_distance_from_holiday_ValueError_when_dataframe_without_holiday_column():
+    """
+    Test that a ValueError is raised when `X` is a DataFrame and `holiday_column`
+    is not specified.
+    """
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    df = pd.DataFrame({"is_holiday": [True, False, False]}, index=idx)
+
+    with pytest.raises(
+        ValueError,
+        match="`holiday_column` must be specified when `X` is a pandas DataFrame",
+    ):
+        calculate_distance_from_holiday(df)
+
+
+def test_calculate_distance_from_holiday_series_input():
+    """
+    Test that a boolean pandas Series is accepted directly as the holiday indicator.
+    Output values are identical to passing the same data as a DataFrame column.
+    """
+    idx = pd.date_range("2022-01-01", periods=5, freq="D")
+    s = pd.Series(
+        [True, False, False, True, False], index=idx, name="is_holiday"
+    )
+
+    result = calculate_distance_from_holiday(s)
+
+    assert list(result.columns) == ["time_to_holiday", "time_since_holiday"]
+    assert result.index.equals(idx)
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float),
+        [0, 2, 1, 0, 0],
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float),
+        [0, 1, 2, 0, 1],
+    )
+
+
+def test_calculate_distance_from_holiday_series_ignores_holiday_column_with_warning():
+    """
+    Test that passing `holiday_column` alongside a Series input issues an
+    IgnoredArgumentWarning and still produces correct output.
+    """
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    s = pd.Series([True, False, False], index=idx, name="is_holiday")
+
+    with pytest.warns(IgnoredArgumentWarning, match="`holiday_column` is ignored"):
+        result = calculate_distance_from_holiday(s, holiday_column="some_column")
+
+    assert list(result.columns) == ["time_to_holiday", "time_since_holiday"]
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float), [0, 1, 2]
+    )
+
+
+def test_calculate_distance_from_holiday_series_unnamed():
+    """
+    Test that an unnamed Series (name=None) is accepted and the function uses
+    'is_holiday' as the internal column name without error.
+    """
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    s = pd.Series([True, False, False], index=idx)  # name=None
+
+    result = calculate_distance_from_holiday(s)
+
+    assert list(result.columns) == ["time_to_holiday", "time_since_holiday"]
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float), [0, 0, 0]
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float), [0, 1, 2]
+    )

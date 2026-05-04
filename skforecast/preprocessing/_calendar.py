@@ -1,16 +1,20 @@
 ################################################################################
-#                               experimental                                   #
+#                                Calendar Features                             #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
 # coding=utf-8
 
 from __future__ import annotations
+import re
+import warnings
 import pandas as pd
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import SplineTransformer
 from sklearn.utils.validation import check_is_fitted
+
+from ..exceptions import IgnoredArgumentWarning
 
 
 def create_datetime_features(
@@ -39,7 +43,8 @@ def create_datetime_features(
         features are encoded. If a feature is not in `features`, a ValueError is raised.
     encoding : str, default 'cyclical'
         Encoding method for the extracted features. Options are None, 'cyclical',
-        'onehot' or 'spline'.
+        'onehot' or 'spline'. When `encoding='onehot'`, `year` and `weekend` are
+        always kept as raw integers and never one-hot encoded.
     max_values : dict, default None
         Dictionary of maximum values for the cyclical and spline encoding of calendar
         features. When `None`, the following values are used: {'month': 12, 'week': 52,
@@ -113,7 +118,7 @@ def create_datetime_features(
         "day_of_week": "dayofweek",
         "day_of_year": "dayofyear",
         "day_of_month": "day",
-        "weekend": lambda idx: (idx.weekday >= 5).astype(int),
+        "weekend": lambda idx: (idx.dayofweek >= 5).astype(int),
         "hour": "hour",
         "minute": "minute",
         "second": "second",
@@ -151,9 +156,27 @@ def create_datetime_features(
                 cols_to_drop.append(feature)
         X_new = X_new.drop(columns=cols_to_drop)
     elif encoding == "onehot":
-        X_new = pd.get_dummies(
-            X_new, columns=features_to_encode, drop_first=False, sparse=False, dtype=int
-        )
+        feature_known_categories = {
+            "month": list(range(1, 13)),
+            "week": list(range(1, 53)),
+            "day_of_week": list(range(0, 7)),
+            "day_of_month": list(range(1, 32)),
+            "day_of_year": list(range(1, 366)),
+            "hour": list(range(0, 24)),
+            "minute": list(range(0, 60)),
+            "second": list(range(0, 60)),
+            "quarter": list(range(1, 5)),
+        }
+        effective_encode = [f for f in features_to_encode if f in feature_known_categories]
+        for feature in effective_encode:
+            X_new[feature] = pd.Categorical(
+                X_new[feature],
+                categories=feature_known_categories[feature],
+            )
+        if effective_encode:
+            X_new = pd.get_dummies(
+                X_new, columns=effective_encode, drop_first=False, sparse=False, dtype=int
+            )
     elif encoding == "spline":
         resolved_spline_kwargs = {"degree": 3, "include_bias": True}
         if spline_kwargs is not None:
@@ -236,7 +259,8 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         features are encoded. If a feature is not in `features`, a ValueError is raised.
     encoding : str, default 'cyclical'
         Encoding method for the extracted features. Options are None, 'cyclical',
-        'onehot' or 'spline'.
+        'onehot' or 'spline'. When `encoding='onehot'`, `year` and `weekend` are
+        always kept as raw integers and never one-hot encoded.
     max_values : dict, default None
         Dictionary of maximum values for the cyclical and spline encoding of calendar
         features. When `None`, the following values are used: {'month': 12, 'week': 52,
@@ -272,7 +296,7 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
     keep_original_columns : bool
         Whether to keep original columns from the input.
     feature_names_out_ : list
-        Names of the output features. Set after calling `transform`.
+        Names of the output features. Set after calling `fit` or `transform`.
     
     """
 
@@ -298,8 +322,32 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         """
-        A no-op method to satisfy the scikit-learn API.
+        Fit the transformer by computing the output feature names.
+
+        Parameters
+        ----------
+        X : pandas Series, pandas DataFrame
+            Input DataFrame or Series with a datetime index.
+        y : ignored
+            Not used, present for API compatibility.
+
+        Returns
+        -------
+        self : DateTimeFeatureTransformer
+            Fitted transformer.
+
         """
+        result = create_datetime_features(
+            X=X.iloc[:2] if isinstance(X, (pd.DataFrame, pd.Series)) else X,
+            features=self.features,
+            features_to_encode=self.features_to_encode,
+            encoding=self.encoding,
+            max_values=self.max_values,
+            spline_kwargs=self.spline_kwargs,
+            keep_original_columns=self.keep_original_columns,
+        )
+        self.feature_names_out_ = list(result.columns)
+
         return self
 
     def transform(
@@ -356,66 +404,188 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
 
         return self.feature_names_out_
 
-# TODO: if date_column is None use the index
-def calculate_distance_from_holiday(
-    df: pd.DataFrame, 
-    holiday_column: str = 'is_holiday',
-    date_column: str = 'date', 
-    fill_na: int | float = 0.
-) -> pd.DataFrame:  # pragma: no cover
+
+def _freq_to_timedelta_unit(freq_str: str) -> str:
     """
-    Calculate the number of days to the next holiday and the number of days since 
-    the last holiday.
+    Map a pandas frequency string to a numpy timedelta unit.
+
+    Coarser-than-hourly frequencies (daily, weekly, monthly, etc.) always map to
+    days because holiday dates are calendar dates and sub-daily distances to them
+    are always expressed as whole days.
 
     Parameters
     ----------
-    df : pandas DataFrame
-        DataFrame containing the holiday data.
-    holiday_column : str, default 'is_holiday'
-        The name of the column indicating holidays (True/False), by default 'is_holiday'.
-    date_column : str, default 'date'
-        The name of the column containing the dates, by default 'date'.
-    fill_na : int, float, default 0.
-        Value to fill for NaN values in the output columns, by default 0.
+    freq_str : str
+        Pandas frequency string (e.g. `'D'`, `'h'`, `'2min'`, `'W-MON'`).
 
     Returns
     -------
-    df : pd.DataFrame
-        DataFrame with additional columns for days to the next holiday ('days_to_holiday') 
-        and days since the last holiday ('days_since_holiday').
-    
-    Notes
-    -----
-    The function assumes that the input `df` contains a boolean column indicating holidays
-    and a date column. It calculates the number of days to the next holiday and the number of
-    days since the last holiday for each date in the date column.
+    unit : str
+        Numpy timedelta unit string (e.g. `'D'`, `'h'`, `'m'`).
 
     """
+    # Strip leading digit multiplier and weekday suffix (e.g. '2h' -> 'h', 'W-MON' -> 'W')
+    normalized = re.split(r'[-_]', freq_str)[0]
+    normalized = re.sub(r'^\d+', '', normalized)
 
-    df = df.reset_index(drop=True)
-    df[date_column] = pd.to_datetime(df[date_column])
-    
-    dates = df[date_column].to_numpy()
-    holiday_dates = df.loc[df[holiday_column], date_column].to_numpy()
+    _coarse = {
+        'YE', 'YS', 'Y', 'A', 'AS', 'QE', 'QS', 'Q',
+        'ME', 'MS', 'M', 'BM', 'BMS', 'BME', 'CBM', 'CBMS', 'CBME',
+        'W', 'D', 'B', 'C',
+    }
+    if normalized in _coarse:
+        unit =  'D'
+    elif normalized in {'h', 'H'}:
+        unit = 'h'
+    elif normalized in {'min', 'T'}:
+        unit = 'm'
+    elif normalized in {'s', 'S'}:
+        unit = 's'
+    elif normalized in {'ms', 'L'}:
+        unit = 'ms'
+    elif normalized in {'us', 'U'}:
+        unit = 'us'
+    elif normalized in {'ns', 'N'}:
+        unit = 'ns'
+    else:
+        unit = 'h'  # default to hours if frequency is unknown
+
+    return unit
+
+
+def calculate_distance_from_holiday(
+    X: pd.DataFrame | pd.Series,
+    holiday_column: str | None = None,
+    date_column: str | None = None,
+    fill_na: int | float = 0.,
+) -> pd.DataFrame:
+    """
+    Calculate the number of periods to the next and since the last holiday.
+
+    The time unit used for the calculation (days, hours, minutes, …) is inferred
+    from the frequency of the index when `date_column=None`, and is always days
+    when a date column is used instead. Output columns are always named
+    `time_to_holiday` and `time_since_holiday` regardless of the unit.
+
+    Parameters
+    ----------
+    X : pandas Series, pandas DataFrame
+        Input data containing the holiday indicator. When a Series is passed,
+        its values are used directly as the holiday indicator (boolean or 0/1)
+        and `holiday_column` is ignored. When a DataFrame is passed,
+        `holiday_column` must be specified.
+    holiday_column : str, None, default None
+        Name of the boolean column indicating holidays (`True` or `1` on holiday
+        dates, `False` or `0` otherwise). Required when `X` is a pandas
+        DataFrame. Ignored when `X` is a pandas Series.
+    date_column : str, None, default None
+        Name of the column containing dates to use as reference. When `None`,
+        the index is used and must be a pandas DatetimeIndex.
+    fill_na : int, float, default 0.
+        Value used to fill rows where no previous or next holiday exists (i.e.
+        before the first holiday or after the last). Pass `numpy.nan` to keep
+        those entries as `NaN`.
+
+    Returns
+    -------
+    result : pandas DataFrame
+        DataFrame with two new columns and the same index as `X`:
+
+        - `time_to_holiday`: periods until the next holiday.
+        - `time_since_holiday`: periods since the last holiday.
+
+    Notes
+    -----
+    When `date_column` is specified, the unit is always days regardless of the
+    data frequency, because no index frequency information is available.
+
+    When `date_column=None`, the time unit is inferred from the index frequency:
+
+    - Daily or coarser (weekly, monthly, …): days
+    - Hourly: hours
+    - Minute: minutes
+    - Second: seconds
+    - Millisecond: milliseconds
+    - Microsecond: microseconds
+    - Nanosecond: nanoseconds
+
+    When the index has no frequency set, `pd.infer_freq` is attempted. If the
+    frequency still cannot be determined (e.g. irregular spacing or fewer than
+    three observations), the unit defaults to hours and a `UserWarning` is
+    issued.
+
+    """
+    if not isinstance(X, (pd.DataFrame, pd.Series)):
+        raise TypeError(
+            "Input `X` must be a pandas Series or pandas DataFrame."
+        )
+
+    if isinstance(X, pd.Series):
+        if holiday_column is not None:
+            warnings.warn(
+                "`holiday_column` is ignored when `X` is a pandas Series. "
+                "The Series values are used directly as the holiday indicator.",
+                IgnoredArgumentWarning,
+                stacklevel=2,
+            )
+        col_name = X.name if X.name is not None else "is_holiday"
+        X = X.rename(col_name).to_frame()
+        holiday_column = col_name
+    else:
+        if holiday_column is None:
+            raise ValueError(
+                "`holiday_column` must be specified when `X` is a pandas DataFrame."
+            )
+
+    if date_column is None:
+        if not isinstance(X.index, pd.DatetimeIndex):
+            raise TypeError(
+                "When `date_column=None`, the index must be a pandas DatetimeIndex."
+            )
+        dates = X.index.to_numpy()
+        holiday_dates = X.index[X[holiday_column].astype(bool)].to_numpy()
+
+        freq_str = X.index.freqstr if X.index.freq is not None else None
+        if freq_str is None:
+            freq_str = pd.infer_freq(X.index)
+        if freq_str is None:
+            warnings.warn(
+                "Could not determine the frequency of the index. "
+                "The output column unit defaults to 'hours'. Set the index "
+                "frequency with `X.asfreq(...)` to avoid this warning.",
+                UserWarning,
+                stacklevel=2,
+            )
+            freq_str = 'h'
+        unit = _freq_to_timedelta_unit(freq_str)
+    else:
+        dates = pd.to_datetime(X[date_column]).to_numpy()
+        holiday_dates = pd.to_datetime(
+            X.loc[X[holiday_column].astype(bool), date_column]
+        ).to_numpy()
+        unit = 'D'
+
     holiday_dates_sorted = np.sort(holiday_dates)
 
-    # For next holiday (right side)
+    # Periods until the next holiday
     next_idx = np.searchsorted(holiday_dates_sorted, dates, side='left')
     has_next = next_idx < len(holiday_dates_sorted)
-    days_to_holiday = np.full(len(dates), np.nan)
-    days_to_holiday[has_next] = (
+    to_holiday = np.full(len(dates), np.nan)
+    to_holiday[has_next] = (
         holiday_dates_sorted[next_idx[has_next]] - dates[has_next]
-    ).astype('timedelta64[D]').astype(int)
+    ).astype(f'timedelta64[{unit}]').astype(int)
 
-    # For previous holiday (left side)
+    # Periods since the last holiday
     prev_idx = np.searchsorted(holiday_dates_sorted, dates, side='right') - 1
     has_prev = prev_idx >= 0
-    days_since_holiday = np.full(len(dates), np.nan)
-    days_since_holiday[has_prev] = (
+    since_holiday = np.full(len(dates), np.nan)
+    since_holiday[has_prev] = (
         dates[has_prev] - holiday_dates_sorted[prev_idx[has_prev]]
-    ).astype('timedelta64[D]').astype(int)
+    ).astype(f'timedelta64[{unit}]').astype(int)
 
-    df["days_to_holiday"] = pd.Series(days_to_holiday, dtype="Int64").fillna(fill_na)
-    df["days_since_holiday"] = pd.Series(days_since_holiday, dtype="Int64").fillna(fill_na)
-    
-    return df
+    to_col = pd.Series(to_holiday, index=X.index, dtype="Int64").fillna(fill_na)
+    since_col = pd.Series(since_holiday, index=X.index, dtype="Int64").fillna(fill_na)
+
+    return pd.DataFrame(
+        {"time_to_holiday": to_col, "time_since_holiday": since_col}
+    )
