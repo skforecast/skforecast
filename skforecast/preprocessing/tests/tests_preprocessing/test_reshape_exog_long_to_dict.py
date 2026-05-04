@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 import platform
-from ...preprocessing import reshape_exog_long_to_dict
+from ..._preprocessing import reshape_exog_long_to_dict
 from ....exceptions import MissingValuesWarning
 
 # Fixtures
