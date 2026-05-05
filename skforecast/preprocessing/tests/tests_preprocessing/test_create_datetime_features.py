@@ -951,3 +951,77 @@ def test_create_datetime_features_max_values_unknown_key_warns():
     assert "month_sin" in result.columns
     assert "month_cos" in result.columns
 
+
+def test_create_datetime_features_cyclical_respects_features_order():
+    """
+    Output cyclical-encoded columns must appear in the order given by
+    `features`, not in the internal `_DEFAULT_MAX_VALUES` insertion order.
+    `features=['hour', 'month']` reverses `_DEFAULT_MAX_VALUES` order
+    (where month precedes hour), so the output must lead with `hour`
+    sin/cos columns.
+    """
+    df = pd.DataFrame(
+        {"value": [0, 1, 2]},
+        index=pd.date_range("2022-01-01", periods=3, freq="h"),
+    )
+    result = create_datetime_features(
+        df,
+        features=["hour", "month"],
+        encoding="cyclical",
+        keep_original_columns=False,
+    )
+    assert list(result.columns) == [
+        "hour_sin", "hour_cos", "month_sin", "month_cos"
+    ]
+
+
+def test_create_datetime_features_onehot_respects_features_order():
+    """
+    Output onehot dummy columns must appear grouped by feature in the order
+    given by `features`. `features=['quarter', 'month']` puts quarter
+    (last in `_DEFAULT_MAX_VALUES`) before month (first), so quarter
+    dummies must precede month dummies in the output.
+    """
+    df = pd.DataFrame(
+        {"value": [0, 1, 2]},
+        index=pd.date_range("2022-01-01", periods=3, freq="h"),
+    )
+    result = create_datetime_features(
+        df,
+        features=["quarter", "month"],
+        encoding="onehot",
+        keep_original_columns=False,
+    )
+    cols = list(result.columns)
+    quarter_cols = [c for c in cols if c.startswith("quarter_")]
+    month_cols = [c for c in cols if c.startswith("month_")]
+    assert quarter_cols and month_cols
+    quarter_last = max(cols.index(c) for c in quarter_cols)
+    month_first = min(cols.index(c) for c in month_cols)
+    assert quarter_last < month_first
+
+
+def test_create_datetime_features_spline_respects_features_order():
+    """
+    Output spline-encoded columns must appear grouped by feature in the
+    order given by `features`. `features=['hour', 'month']` reverses the
+    internal default order, so hour_sp_* columns must precede month_sp_*.
+    """
+    df = pd.DataFrame(
+        {"value": [0, 1, 2]},
+        index=pd.date_range("2022-01-01", periods=3, freq="h"),
+    )
+    result = create_datetime_features(
+        df,
+        features=["hour", "month"],
+        encoding="spline",
+        keep_original_columns=False,
+    )
+    cols = list(result.columns)
+    hour_cols = [c for c in cols if c.startswith("hour_sp_")]
+    month_cols = [c for c in cols if c.startswith("month_sp_")]
+    assert hour_cols and month_cols
+    hour_last = max(cols.index(c) for c in hour_cols)
+    month_first = min(cols.index(c) for c in month_cols)
+    assert hour_last < month_first
+

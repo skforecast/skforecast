@@ -157,6 +157,15 @@ def create_datetime_features(
     rather than sparse) are typically more memory-efficient than
     `'onehot'`, especially on multi-year hourly or sub-daily data.
 
+    Output column order: encoded features appear in the order given by
+    `features`. Non-encoded extracted features (e.g. `'year'` or
+    `'weekend'`, which are never encoded) appear first in the output, in
+    `features`-list order; encoded features follow, also in
+    `features`-list order. For example, with
+    `features=['year', 'month', 'weekend', 'hour']` and
+    `encoding='cyclical'` the output columns are
+    `[year, weekend, month_sin, month_cos, hour_sin, hour_cos]`.
+
     """
 
     if not isinstance(X, (pd.DataFrame, pd.Series)):
@@ -243,14 +252,18 @@ def create_datetime_features(
 
     if encoding == "cyclical":
         cols_to_drop = []
-        for feature, max_val in max_values.items():
-            if feature in X_new.columns and feature in features_to_encode:
+        for feature in features:
+            if feature in features_to_encode and feature in max_values:
+                max_val = max_values[feature]
                 X_new[f"{feature}_sin"] = np.sin(2 * np.pi * X_new[feature] / max_val)
                 X_new[f"{feature}_cos"] = np.cos(2 * np.pi * X_new[feature] / max_val)
                 cols_to_drop.append(feature)
         X_new = X_new.drop(columns=cols_to_drop)
     elif encoding == "onehot":
-        effective_encode = [f for f in features_to_encode if f in _FEATURE_KNOWN_CATEGORIES]
+        effective_encode = [
+            f for f in features
+            if f in features_to_encode and f in _FEATURE_KNOWN_CATEGORIES
+        ]
         for feature in effective_encode:
             X_new[feature] = pd.Categorical(
                 X_new[feature],
@@ -295,8 +308,9 @@ def create_datetime_features(
         n_knots_global = resolved_spline_kwargs.pop("n_knots", None)
         cols_to_drop = []
         spline_cols = {}
-        for feature, max_val in max_values.items():
-            if feature in X_new.columns and feature in features_to_encode:
+        for feature in features:
+            if feature in features_to_encode and feature in max_values:
+                max_val = max_values[feature]
                 n_knots = n_knots_global if n_knots_global is not None else max_val + 1
                 min_val = _DEFAULT_MIN_VALUES.get(feature, 0)
                 # Knots span [min_val, min_val + max_val] so that the periodic
@@ -469,6 +483,15 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
     feature) or `'spline'` (≈ `max_val` columns per feature, but dense
     rather than sparse) are typically more memory-efficient than
     `'onehot'`, especially on multi-year hourly or sub-daily data.
+
+    Output column order: encoded features appear in the order given by
+    `features`. Non-encoded extracted features (e.g. `'year'` or
+    `'weekend'`, which are never encoded) appear first in the output, in
+    `features`-list order; encoded features follow, also in
+    `features`-list order. For example, with
+    `features=['year', 'month', 'weekend', 'hour']` and
+    `encoding='cyclical'` the output columns are
+    `[year, weekend, month_sin, month_cos, hour_sin, hour_cos]`.
 
     """
 
