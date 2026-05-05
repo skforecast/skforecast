@@ -17,6 +17,21 @@ from sklearn.utils.validation import check_is_fitted
 from ..exceptions import IgnoredArgumentWarning
 
 
+_FEATURE_KNOWN_CATEGORIES = {
+    "month": list(range(1, 13)),
+    "week": list(range(1, 53)),
+    "day_of_week": list(range(0, 7)),
+    "day_of_month": list(range(1, 32)),
+    "day_of_year": list(range(1, 366)),
+    "hour": list(range(0, 24)),
+    "minute": list(range(0, 60)),
+    "second": list(range(0, 60)),
+    "quarter": list(range(1, 5)),
+}
+_DEFAULT_MAX_VALUES = {k: len(v) for k, v in _FEATURE_KNOWN_CATEGORIES.items()}
+_DEFAULT_MIN_VALUES = {k: v[0] for k, v in _FEATURE_KNOWN_CATEGORIES.items()}
+
+
 def create_datetime_features(
     X: pd.Series | pd.DataFrame,
     features: list[str] | None = None,
@@ -95,19 +110,10 @@ def create_datetime_features(
     if features is None:
         features = default_features
 
-    default_max_values = {
-        "month": 12,
-        "week": 52,
-        "day_of_week": 7,
-        "day_of_month": 31,
-        "day_of_year": 365,
-        "hour": 24,
-        "minute": 60,
-        "second": 60,
-        "quarter": 4,
-    }
-    if max_values is None:
-        max_values = default_max_values
+    resolved_max_values = _DEFAULT_MAX_VALUES.copy()
+    if max_values is not None:
+        resolved_max_values.update(max_values)
+    max_values = resolved_max_values
 
     X_new = pd.DataFrame(index=X.index)
 
@@ -144,6 +150,21 @@ def create_datetime_features(
             raise ValueError(
                 f"Features {not_supported_features_to_encode} are not present in `features`."
             )
+
+        if encoding is not None:
+            if encoding == "onehot":
+                encodable = set(_FEATURE_KNOWN_CATEGORIES.keys())
+            else:  # encoding in ("cyclical", "spline")
+                encodable = set(max_values.keys())
+            not_encodable = [f for f in features_to_encode if f not in encodable]
+            if not_encodable:
+                warnings.warn(
+                    f"Features {not_encodable} cannot be encoded with "
+                    f"encoding={encoding!r}. Encodable features for this encoding "
+                    f"are: {sorted(encodable)}. These features will be kept as "
+                    f"raw integers.",
+                    IgnoredArgumentWarning,
+                )
     else:
         features_to_encode = features
 
@@ -156,22 +177,11 @@ def create_datetime_features(
                 cols_to_drop.append(feature)
         X_new = X_new.drop(columns=cols_to_drop)
     elif encoding == "onehot":
-        feature_known_categories = {
-            "month": list(range(1, 13)),
-            "week": list(range(1, 53)),
-            "day_of_week": list(range(0, 7)),
-            "day_of_month": list(range(1, 32)),
-            "day_of_year": list(range(1, 366)),
-            "hour": list(range(0, 24)),
-            "minute": list(range(0, 60)),
-            "second": list(range(0, 60)),
-            "quarter": list(range(1, 5)),
-        }
-        effective_encode = [f for f in features_to_encode if f in feature_known_categories]
+        effective_encode = [f for f in features_to_encode if f in _FEATURE_KNOWN_CATEGORIES]
         for feature in effective_encode:
             X_new[feature] = pd.Categorical(
                 X_new[feature],
-                categories=feature_known_categories[feature],
+                categories=_FEATURE_KNOWN_CATEGORIES[feature],
             )
         if effective_encode:
             X_new = pd.get_dummies(
@@ -184,23 +194,12 @@ def create_datetime_features(
         degree = resolved_spline_kwargs["degree"]
         include_bias = resolved_spline_kwargs["include_bias"]
         n_knots_global = resolved_spline_kwargs.get("n_knots", None)
-        default_min_values = {
-            "month": 1,
-            "week": 1,
-            "day_of_week": 0,
-            "day_of_month": 1,
-            "day_of_year": 1,
-            "hour": 0,
-            "minute": 0,
-            "second": 0,
-            "quarter": 1,
-        }
         cols_to_drop = []
         spline_cols = {}
         for feature, max_val in max_values.items():
             if feature in X_new.columns and feature in features_to_encode:
                 n_knots = n_knots_global if n_knots_global is not None else max_val + 1
-                min_val = default_min_values.get(feature, 0)
+                min_val = _DEFAULT_MIN_VALUES.get(feature, 0)
                 knots = np.linspace(min_val, max_val, n_knots).reshape(-1, 1)
                 spt = SplineTransformer(
                     degree=degree,
