@@ -65,7 +65,7 @@ def test_create_datetime_features_invalid_feature_name():
 
     err_msg = re.escape(
         "Features {'invalid_feature'} are not supported. Supported features are "
-        "['year', 'month', 'week', 'day_of_week', 'day_of_year', 'day_of_month', "
+        "['year', 'month', 'week', 'day_of_week', 'day_of_month', 'day_of_year', "
         "'weekend', 'hour', 'minute', 'second', 'quarter']."
     )
     with pytest.raises(ValueError, match=err_msg):

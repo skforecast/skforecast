@@ -172,21 +172,21 @@ def create_datetime_features(
             "`keep_original_columns=False`."
         )
 
-    default_features = [
-        "year",
-        "month",
-        "week",
-        "day_of_week",
-        "day_of_month",
-        "day_of_year",
-        "weekend",
-        "hour",
-        "minute",
-        "second",
-        "quarter",
-    ]
+    datetime_attrs = {
+        "year": "year",
+        "month": "month",
+        "week": lambda idx: idx.isocalendar().week.astype(int),
+        "day_of_week": "dayofweek",
+        "day_of_month": "day",
+        "day_of_year": "dayofyear",
+        "weekend": lambda idx: (idx.dayofweek >= 5).astype(int),
+        "hour": "hour",
+        "minute": "minute",
+        "second": "second",
+        "quarter": "quarter",
+    }
     if features is None:
-        features = default_features
+        features = list(datetime_attrs.keys())
 
     resolved_max_values = _DEFAULT_MAX_VALUES.copy()
     if max_values is not None:
@@ -203,20 +203,6 @@ def create_datetime_features(
     max_values = resolved_max_values
 
     X_new = pd.DataFrame(index=X.index)
-
-    datetime_attrs = {
-        "year": "year",
-        "month": "month",
-        "week": lambda idx: idx.isocalendar().week.astype(int),
-        "day_of_week": "dayofweek",
-        "day_of_year": "dayofyear",
-        "day_of_month": "day",
-        "weekend": lambda idx: (idx.dayofweek >= 5).astype(int),
-        "hour": "hour",
-        "minute": "minute",
-        "second": "second",
-        "quarter": "quarter",
-    }
 
     not_supported_features = set(features) - set(datetime_attrs.keys())
     if not_supported_features:
@@ -565,14 +551,14 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         """
 
         X_new = create_datetime_features(
-                    X                     = X,
-                    encoding              = self.encoding,
-                    features              = self.features,
-                    features_to_encode    = self.features_to_encode,
-                    max_values            = self.max_values,
-                    spline_kwargs         = self.spline_kwargs,
-                    keep_original_columns = self.keep_original_columns,
-                )
+            X=X,
+            features=self.features,
+            features_to_encode=self.features_to_encode,
+            encoding=self.encoding,
+            max_values=self.max_values,
+            spline_kwargs=self.spline_kwargs,
+            keep_original_columns=self.keep_original_columns,
+        )
 
         return X_new
 
@@ -618,31 +604,31 @@ def _freq_to_timedelta_unit(freq_str: str) -> str:
         Numpy timedelta unit string (e.g. `'D'`, `'h'`, `'m'`).
 
     """
-    # Strip leading digit multiplier and weekday suffix (e.g. '2h' -> 'h', 'W-MON' -> 'W')
-    normalized = re.split(r'[-_]', freq_str)[0]
-    normalized = re.sub(r'^\d+', '', normalized)
+    # Strip leading digit multiplier and weekday suffix (e.g. "2h" -> "h", "W-MON" -> "W")
+    normalized = re.split(r"[-_]", freq_str)[0]
+    normalized = re.sub(r"^\d+", "", normalized)
 
     _coarse = {
-        'YE', 'YS', 'Y', 'A', 'AS', 'QE', 'QS', 'Q',
-        'ME', 'MS', 'M', 'BM', 'BMS', 'BME', 'CBM', 'CBMS', 'CBME',
-        'W', 'D', 'B', 'C',
+        "YE", "YS", "Y", "A", "AS", "QE", "QS", "Q",
+        "ME", "MS", "M", "BM", "BMS", "BME", "CBM", "CBMS", "CBME",
+        "W", "D", "B", "C",
     }
     if normalized in _coarse:
-        unit = 'D'
-    elif normalized in {'h', 'H'}:
-        unit = 'h'
-    elif normalized in {'min', 'T'}:
-        unit = 'm'
-    elif normalized in {'s', 'S'}:
-        unit = 's'
-    elif normalized in {'ms', 'L'}:
-        unit = 'ms'
-    elif normalized in {'us', 'U'}:
-        unit = 'us'
-    elif normalized in {'ns', 'N'}:
-        unit = 'ns'
+        unit = "D"
+    elif normalized in {"h", "H"}:
+        unit = "h"
+    elif normalized in {"min", "T"}:
+        unit = "m"
+    elif normalized in {"s", "S"}:
+        unit = "s"
+    elif normalized in {"ms", "L"}:
+        unit = "ms"
+    elif normalized in {"us", "U"}:
+        unit = "us"
+    elif normalized in {"ns", "N"}:
+        unit = "ns"
     else:
-        unit = 'h'  # default to hours if frequency is unknown
+        unit = "h"  # default to hours if frequency is unknown
 
     return unit
 
