@@ -5,6 +5,7 @@ import re
 import pandas as pd
 import numpy as np
 from skforecast.preprocessing import create_datetime_features
+from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
 from .fixtures_preprocessing import features_all_onehot
@@ -617,4 +618,249 @@ def test_create_datetime_features_onehot_year_and_weekend_never_encoded():
 
     month_cols = [c for c in result.columns if c.startswith("month_")]
     assert len(month_cols) == 12
+
+
+def test_create_datetime_features_warns_when_features_to_encode_not_encodable():
+    """
+    Test that IgnoredArgumentWarning is raised when features_to_encode contains
+    features that cannot be encoded with the chosen encoding (e.g. 'year' with
+    cyclical encoding).
+    """
+    df = pd.DataFrame(
+        {"value": range(7)},
+        index=pd.date_range(start="2022-01-01", periods=7, freq="D"),
+    )
+    with pytest.warns(
+        IgnoredArgumentWarning,
+        match=r"Features \['year'\] cannot be encoded with encoding='cyclical'",
+    ):
+        create_datetime_features(
+            df,
+            features=["year", "month"],
+            features_to_encode=["year"],
+            encoding="cyclical",
+            keep_original_columns=False,
+        )
+
+
+def test_create_datetime_features_max_values_merge_with_defaults():
+    """
+    Test that user-provided max_values is merged with defaults: keys not in user
+    input fall back to defaults, so other cyclical features are still encoded.
+    """
+    df = pd.DataFrame(
+        {"value": range(5)},
+        index=pd.date_range(start="2022-01-01", periods=5, freq="h"),
+    )
+    result = create_datetime_features(
+        df,
+        features=["month", "hour"],
+        encoding="cyclical",
+        max_values={"month": 6},  # only month overridden; hour falls back to default 24
+        keep_original_columns=False,
+    )
+    assert "month_sin" in result.columns
+    assert "month_cos" in result.columns
+    assert "hour_sin" in result.columns
+    assert "hour_cos" in result.columns
+    # month value at index 0 is 1; with custom period 6, sin(2π·1/6)
+    np.testing.assert_allclose(
+        result["month_sin"].iloc[0], np.sin(2 * np.pi * 1 / 6)
+    )
+    # hour value at index 0 is 0; with default period 24, sin(2π·0/24) = 0
+    np.testing.assert_allclose(result["hour_sin"].iloc[0], 0.0, atol=1e-12)
+
+
+def test_create_datetime_features_spline_kwargs_blocked_knots_raises():
+    """
+    Test that passing 'knots' in spline_kwargs raises ValueError because knots
+    are computed internally from max_values.
+    """
+    df = pd.DataFrame(
+        {"value": range(5)},
+        index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
+    )
+    with pytest.raises(
+        ValueError,
+        match=r"Keys \['knots'\] are not allowed in `spline_kwargs`",
+    ):
+        create_datetime_features(
+            df,
+            features=["month"],
+            encoding="spline",
+            spline_kwargs={"knots": np.array([[1], [2], [3]])},
+            keep_original_columns=False,
+        )
+
+
+def test_create_datetime_features_spline_kwargs_blocked_sparse_output_raises():
+    """
+    Test that passing 'sparse_output' in spline_kwargs raises ValueError because
+    it is incompatible with the DataFrame output.
+    """
+    df = pd.DataFrame(
+        {"value": range(5)},
+        index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
+    )
+    with pytest.raises(
+        ValueError,
+        match=r"Keys \['sparse_output'\] are not allowed in `spline_kwargs`",
+    ):
+        create_datetime_features(
+            df,
+            features=["month"],
+            encoding="spline",
+            spline_kwargs={"sparse_output": True},
+            keep_original_columns=False,
+        )
+
+
+def test_create_datetime_features_spline_kwargs_unknown_key_raises():
+    """
+    Test that passing an unknown key (typo) in spline_kwargs raises ValueError
+    listing the allowed keys.
+    """
+    df = pd.DataFrame(
+        {"value": range(5)},
+        index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
+    )
+    with pytest.raises(
+        ValueError,
+        match=r"Unknown keys in `spline_kwargs`: \['degrees'\]",
+    ):
+        create_datetime_features(
+            df,
+            features=["month"],
+            encoding="spline",
+            spline_kwargs={"degrees": 3},  # typo: should be 'degree'
+            keep_original_columns=False,
+        )
+
+
+def test_create_datetime_features_spline_kwargs_extrapolation_forwarded():
+    """
+    Test that 'extrapolation' is actually forwarded to SplineTransformer.
+    Passing an invalid value should raise from sklearn — proving the kwarg is
+    no longer silently dropped (was hardcoded to 'periodic' before the fix).
+    """
+    df = pd.DataFrame(
+        {"value": range(5)},
+        index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
+    )
+    with pytest.raises(ValueError):
+        create_datetime_features(
+            df,
+            features=["month"],
+            encoding="spline",
+            spline_kwargs={"extrapolation": "not_a_valid_extrapolation_mode"},
+            keep_original_columns=False,
+        )
+
+
+def test_create_datetime_features_unnamed_series_keep_original_raises():
+    """
+    Test that passing an unnamed Series with keep_original_columns=True raises
+    ValueError, since pd.concat would otherwise produce a column literally named '0'.
+    """
+    series = pd.Series(
+        [1, 2, 3],
+        index=pd.date_range(start="2022-01-01", periods=3, freq="D"),
+    )
+    assert series.name is None
+    with pytest.raises(
+        ValueError,
+        match=r"the input Series must have a name",
+    ):
+        create_datetime_features(series, keep_original_columns=True)
+
+
+def test_create_datetime_features_unnamed_series_keep_original_false_ok():
+    """
+    Test that passing an unnamed Series with keep_original_columns=False works
+    without error.
+    """
+    series = pd.Series(
+        [1, 2, 3],
+        index=pd.date_range(start="2022-01-01", periods=3, freq="D"),
+    )
+    assert series.name is None
+    result = create_datetime_features(
+        series, features=["month"], encoding=None, keep_original_columns=False
+    )
+    assert isinstance(result, pd.DataFrame)
+    assert len(result) == 3
+    assert "month" in result.columns
+
+
+def test_create_datetime_features_onehot_week_53_and_day_of_year_366():
+    """
+    Test that 2020-12-31 (ISO week 53, day-of-year 366 in leap year 2020)
+    produces a 1 in the week_53 and day_of_year_366 onehot columns and 0 in
+    the rest, instead of silently producing all-zero rows as before the fix.
+    """
+    df = pd.DataFrame(
+        {"value": [0]},
+        index=pd.DatetimeIndex(["2020-12-31"]),
+    )
+    result = create_datetime_features(
+        df,
+        features=["week", "day_of_year"],
+        encoding="onehot",
+        keep_original_columns=False,
+    )
+    assert "week_53" in result.columns
+    assert "day_of_year_366" in result.columns
+    assert result["week_53"].iloc[0] == 1
+    assert result["day_of_year_366"].iloc[0] == 1
+    week_cols = [c for c in result.columns if c.startswith("week_")]
+    doy_cols = [c for c in result.columns if c.startswith("day_of_year_")]
+    assert sum(result[c].iloc[0] for c in week_cols) == 1
+    assert sum(result[c].iloc[0] for c in doy_cols) == 1
+
+
+def test_create_datetime_features_cyclical_uses_period_53_and_366():
+    """
+    Test that cyclical encoding for week and day_of_year uses periods 53 and
+    366 respectively. For value=period, sin(2π) must be 0 and cos(2π) must
+    be 1 (one full cycle). With the previous periods 52/365, the boundary
+    values (week=53, day_of_year=366) would not satisfy this — sin would be
+    ~0.12 and ~0.017 respectively.
+    """
+    df = pd.DataFrame(
+        {"value": [0]},
+        index=pd.DatetimeIndex(["2020-12-31"]),
+    )
+    result = create_datetime_features(
+        df,
+        features=["week", "day_of_year"],
+        encoding="cyclical",
+        keep_original_columns=False,
+    )
+    # 2020-12-31 has week=53 and day_of_year=366
+    np.testing.assert_allclose(result["week_sin"].iloc[0], 0.0, atol=1e-12)
+    np.testing.assert_allclose(result["week_cos"].iloc[0], 1.0, atol=1e-12)
+    np.testing.assert_allclose(result["day_of_year_sin"].iloc[0], 0.0, atol=1e-12)
+    np.testing.assert_allclose(result["day_of_year_cos"].iloc[0], 1.0, atol=1e-12)
+
+
+def test_create_datetime_features_onehot_non_leap_year_keeps_max_columns_zero():
+    """
+    Test that in a non-leap year without ISO week 53 (2022), the columns
+    week_53 and day_of_year_366 still exist in the output (categorical
+    consistency for train/predict) but remain 0 throughout the year.
+    """
+    df = pd.DataFrame(
+        {"value": range(365)},
+        index=pd.date_range(start="2022-01-01", periods=365, freq="D"),
+    )
+    result = create_datetime_features(
+        df,
+        features=["week", "day_of_year"],
+        encoding="onehot",
+        keep_original_columns=False,
+    )
+    assert "week_53" in result.columns
+    assert "day_of_year_366" in result.columns
+    assert (result["week_53"] == 0).all()
+    assert (result["day_of_year_366"] == 0).all()
 

@@ -6,6 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
+import inspect
 import re
 import warnings
 import pandas as pd
@@ -19,10 +20,10 @@ from ..exceptions import IgnoredArgumentWarning
 
 _FEATURE_KNOWN_CATEGORIES = {
     "month": list(range(1, 13)),
-    "week": list(range(1, 53)),
+    "week": list(range(1, 54)),  # 1..53 to handle ISO week 53; see Notes in create_datetime_features
     "day_of_week": list(range(0, 7)),
     "day_of_month": list(range(1, 32)),
-    "day_of_year": list(range(1, 366)),
+    "day_of_year": list(range(1, 367)),  # 1..366 to handle leap years; see Notes in create_datetime_features
     "hour": list(range(0, 24)),
     "minute": list(range(0, 60)),
     "second": list(range(0, 60)),
@@ -49,42 +50,106 @@ def create_datetime_features(
     X : pandas Series, pandas DataFrame
         Input DataFrame or Series with a datetime index.
     features : list, default None
-        List of calendar features (strings) to extract from the index. When `None`,
-        the following features are extracted: 'year', 'month', 'week', 'day_of_week',
-        'day_of_month', 'day_of_year', 'weekend', 'hour', 'minute', 'second',
-        'quarter'.
+        List of calendar features (strings) to extract from the index. When
+        `None`, the following features are extracted: `'year'`, `'month'`,
+        `'week'`, `'day_of_week'`, `'day_of_month'`, `'day_of_year'`,
+        `'weekend'`, `'hour'`, `'minute'`, `'second'`, `'quarter'`.
     features_to_encode : list, default None
-        List of calendar features (strings) to encode. When `None`, all extracted
-        features are encoded. If a feature is not in `features`, a ValueError is raised.
+        List of calendar features (strings) to encode. When `None`, all
+        extracted features are encoded. If a feature is not in `features`, a
+        `ValueError` is raised. If the explicit list contains features that
+        cannot be encoded with the chosen `encoding` (e.g. `'year'` or
+        `'weekend'`, which are never encodable), an `IgnoredArgumentWarning`
+        is issued and those features are kept as raw integers.
     encoding : str, default 'cyclical'
-        Encoding method for the extracted features. Options are None, 'cyclical',
-        'onehot' or 'spline'. When `encoding='onehot'`, `year` and `weekend` are
-        always kept as raw integers and never one-hot encoded.
+        Encoding method for the extracted features. Options are `None`,
+        `'cyclical'`, `'onehot'` or `'spline'`. Features that cannot be
+        encoded under the chosen mode are kept as raw integers. By default,
+        `'year'` and `'weekend'` are never encoded — `'onehot'` excludes them
+        via the known-category set, while `'cyclical'` and `'spline'` exclude
+        them via `max_values`.
     max_values : dict, default None
-        Dictionary of maximum values for the cyclical and spline encoding of calendar
-        features. When `None`, the following values are used: {'month': 12, 'week': 52,
-        'day_of_week': 7, 'day_of_month': 31, 'day_of_year': 365, 'hour': 24,
-        'minute': 60, 'second': 60, 'quarter': 4}. Features not present in
-        `max_values` (e.g. 'year', 'weekend') are left as raw integers when using
-        spline encoding.
+        Dictionary of maximum values for the cyclical and spline encoding.
+        User-provided values are **merged** with the defaults: keys passed by
+        the user override the corresponding default, and missing keys fall
+        back to the defaults `{'month': 12, 'week': 53, 'day_of_week': 7,
+        'day_of_month': 31, 'day_of_year': 366, 'hour': 24, 'minute': 60,
+        'second': 60, 'quarter': 4}`. For example, passing
+        `max_values={'month': 6}` overrides only `month`; the other features
+        keep their defaults. Features that are not in the defaults (e.g.
+        `'year'`, `'weekend'`) are left as raw integers.
     spline_kwargs : dict, default None
         Additional keyword arguments for the spline encoding. Only used when
-        `encoding='spline'`. When `None`, defaults to `{'degree': 3, 'include_bias':
-        True}`; `n_knots` defaults to `max_values[feature] + 1` per feature, which
-        produces one spline column per distinct period value (analogous to a smooth
-        one-hot encoding). Knots are placed uniformly between the known minimum and
-        maximum value of each feature (e.g. 1-12 for month, 0-23 for hour), making
-        the encoding stateless and consistent between training and prediction. Accepted
-        keys: `n_knots` (int), `degree` (int), and `include_bias` (bool).
+        `encoding='spline'`. When `None`, defaults to `{'degree': 3,
+        'include_bias': True, 'extrapolation': 'periodic'}`; `n_knots`
+        defaults to `max_values[feature] + 1` per feature, which produces one
+        spline column per distinct period value (analogous to a smooth
+        one-hot encoding). Knots are placed uniformly between the known
+        minimum and maximum value of each feature (e.g. 1-12 for month, 0-23
+        for hour), making the encoding stateless and consistent between
+        training and prediction. Any keyword argument accepted by
+        `sklearn.preprocessing.SplineTransformer` is allowed (e.g. `n_knots`,
+        `degree`, `include_bias`, `extrapolation`, `order`) **except**
+        `knots` (computed internally from `max_values`) and `sparse_output`
+        (incompatible with the DataFrame output). Passing either of these or
+        an unknown key raises `ValueError`.
     keep_original_columns : bool, default True
-        If True, the original columns of `X` are kept in the output DataFrame. If False,
-        only the extracted datetime features are returned.
+        If True, the original columns of `X` are kept in the output
+        DataFrame. If False, only the extracted datetime features are
+        returned. When `True` and `X` is an unnamed pandas Series
+        (`X.name is None`), a `ValueError` is raised; either set `X.name` to
+        a string, or pass `keep_original_columns=False`.
 
     Returns
     -------
     X_new : pandas DataFrame
         DataFrame with the extracted (and optionally encoded) datetime features.
-    
+
+    Raises
+    ------
+    TypeError
+        If `X` is not a pandas Series or DataFrame, or if its index is not a
+        pandas DatetimeIndex.
+    ValueError
+        If `encoding` is not one of `'cyclical'`, `'onehot'`, `'spline'` or
+        `None`; if `X` is an unnamed Series and `keep_original_columns=True`;
+        if a feature in `features` is not supported; if a feature in
+        `features_to_encode` is not present in `features`; if `spline_kwargs`
+        contains a blocked key (`'knots'`, `'sparse_output'`) or an unknown
+        key; or if extracted feature names overlap with existing columns in
+        `X` when `keep_original_columns=True`.
+
+    Warns
+    -----
+    IgnoredArgumentWarning
+        When `features_to_encode` is explicitly passed and contains features
+        that cannot be encoded with the chosen `encoding`. Those features
+        are kept as raw integers.
+
+    Notes
+    -----
+    The default `max_values` use 53 for `'week'` and 366 for `'day_of_year'`
+    to accommodate the maximum possible values across all calendar years:
+    ISO week 53 occurs in some years (e.g. 2015, 2020, 2026) and
+    day-of-year 366 occurs in leap years. Because the encoding must be
+    stateless (the same for any year, without prior knowledge of whether it
+    is a leap year or contains ISO week 53), the period is fixed at the
+    maximum-possible value. This implies:
+
+    - **Onehot:** the `week_53` and `day_of_year_366` columns are always
+      present in the output and equal 0 for rows whose year never reaches
+      those values. This guarantees a consistent column schema across
+      training and prediction.
+    - **Cyclical / spline:** in years where the maximum value is reached,
+      the cyclical wrap-around is exact (e.g. `sin(2π·366/366) = 0` matches
+      `sin(2π·0/366) = 0`). In years where it is not, there is a one-step
+      "phantom gap" between the highest observed value and 1 — the
+      cyclical distance is two steps instead of one. This residual
+      asymmetry is numerically small (≈ 1.7% for `day_of_year`, ≈ 12% for
+      `week`) and is strictly preferable to the alternative (period
+      52 / 365), which would silently collapse week 53 onto week 1 and day
+      366 onto day 1 in years where those values occur.
+
     """
 
     if not isinstance(X, (pd.DataFrame, pd.Series)):
@@ -93,6 +158,12 @@ def create_datetime_features(
         raise TypeError("Input `X` must have a pandas DatetimeIndex")
     if encoding not in ["cyclical", "onehot", "spline", None]:
         raise ValueError("Encoding must be one of 'cyclical', 'onehot', 'spline' or None")
+    if isinstance(X, pd.Series) and X.name is None and keep_original_columns:
+        raise ValueError(
+            "When `keep_original_columns=True`, the input Series must have a "
+            "name (`X.name`). Either set `X.name` to a string, or pass "
+            "`keep_original_columns=False`."
+        )
 
     default_features = [
         "year",
@@ -188,12 +259,38 @@ def create_datetime_features(
                 X_new, columns=effective_encode, drop_first=False, sparse=False, dtype=int
             )
     elif encoding == "spline":
-        resolved_spline_kwargs = {"degree": 3, "include_bias": True}
+        if spline_kwargs is not None:
+            blocked = {"knots", "sparse_output"}
+            allowed = (
+                set(inspect.signature(SplineTransformer).parameters) - blocked
+            )
+            invalid = set(spline_kwargs) - allowed
+            if invalid:
+                blocked_passed = invalid & blocked
+                unknown = invalid - blocked
+                msgs = []
+                if blocked_passed:
+                    msgs.append(
+                        f"Keys {sorted(blocked_passed)} are not allowed in "
+                        f"`spline_kwargs`: `knots` is computed internally from "
+                        f"`max_values`, and `sparse_output` is incompatible "
+                        f"with the DataFrame output."
+                    )
+                if unknown:
+                    msgs.append(
+                        f"Unknown keys in `spline_kwargs`: {sorted(unknown)}. "
+                        f"Allowed keys: {sorted(allowed)}."
+                    )
+                raise ValueError(" ".join(msgs))
+
+        resolved_spline_kwargs = {
+            "degree": 3,
+            "include_bias": True,
+            "extrapolation": "periodic",
+        }
         if spline_kwargs is not None:
             resolved_spline_kwargs.update(spline_kwargs)
-        degree = resolved_spline_kwargs["degree"]
-        include_bias = resolved_spline_kwargs["include_bias"]
-        n_knots_global = resolved_spline_kwargs.get("n_knots", None)
+        n_knots_global = resolved_spline_kwargs.pop("n_knots", None)
         cols_to_drop = []
         spline_cols = {}
         for feature, max_val in max_values.items():
@@ -202,10 +299,8 @@ def create_datetime_features(
                 min_val = _DEFAULT_MIN_VALUES.get(feature, 0)
                 knots = np.linspace(min_val, max_val, n_knots).reshape(-1, 1)
                 spt = SplineTransformer(
-                    degree=degree,
                     knots=knots,
-                    extrapolation="periodic",
-                    include_bias=include_bias,
+                    **resolved_spline_kwargs,
                 )
                 values = X_new[feature].to_numpy().reshape(-1, 1)
                 spline_out = spt.fit_transform(values)
@@ -248,55 +343,117 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
     Parameters
     ----------
     features : list, default None
-        List of calendar features (strings) to extract from the index. When `None`,
-        the following features are extracted: 'year', 'month', 'week', 'day_of_week',
-        'day_of_month', 'day_of_year', 'weekend', 'hour', 'minute', 'second',
-        'quarter'. Additional supported features that are not extracted by default
-        can be passed explicitly.
+        List of calendar features (strings) to extract from the index. When
+        `None`, the following features are extracted: `'year'`, `'month'`,
+        `'week'`, `'day_of_week'`, `'day_of_month'`, `'day_of_year'`,
+        `'weekend'`, `'hour'`, `'minute'`, `'second'`, `'quarter'`. Additional
+        supported features that are not extracted by default can be passed
+        explicitly.
     features_to_encode : list, default None
-        List of calendar features (strings) to encode. When `None`, all extracted
-        features are encoded. If a feature is not in `features`, a ValueError is raised.
+        List of calendar features (strings) to encode. When `None`, all
+        extracted features are encoded. If a feature is not in `features`, a
+        `ValueError` is raised at fit/transform time. If the explicit list
+        contains features that cannot be encoded with the chosen `encoding`
+        (e.g. `'year'` or `'weekend'`, which are never encodable), an
+        `IgnoredArgumentWarning` is issued and those features are kept as raw
+        integers.
     encoding : str, default 'cyclical'
-        Encoding method for the extracted features. Options are None, 'cyclical',
-        'onehot' or 'spline'. When `encoding='onehot'`, `year` and `weekend` are
-        always kept as raw integers and never one-hot encoded.
+        Encoding method for the extracted features. Options are `None`,
+        `'cyclical'`, `'onehot'` or `'spline'`. Features that cannot be
+        encoded under the chosen mode are kept as raw integers. By default,
+        `'year'` and `'weekend'` are never encoded — `'onehot'` excludes them
+        via the known-category set, while `'cyclical'` and `'spline'` exclude
+        them via `max_values`.
     max_values : dict, default None
-        Dictionary of maximum values for the cyclical and spline encoding of calendar
-        features. When `None`, the following values are used: {'month': 12, 'week': 52,
-        'day_of_week': 7, 'day_of_month': 31, 'day_of_year': 365, 'hour': 24,
-        'minute': 60, 'second': 60, 'quarter': 4}.
+        Dictionary of maximum values for the cyclical and spline encoding.
+        User-provided values are **merged** with the defaults: keys passed by
+        the user override the corresponding default, and missing keys fall
+        back to the defaults `{'month': 12, 'week': 53, 'day_of_week': 7,
+        'day_of_month': 31, 'day_of_year': 366, 'hour': 24, 'minute': 60,
+        'second': 60, 'quarter': 4}`. For example, passing
+        `max_values={'month': 6}` overrides only `month`; the other features
+        keep their defaults. Features that are not in the defaults (e.g.
+        `'year'`, `'weekend'`) are left as raw integers.
     spline_kwargs : dict, default None
         Additional keyword arguments for the spline encoding. Only used when
-        `encoding='spline'`. When `None`, defaults to `{'degree': 3, 'include_bias':
-        True}`; `n_knots` defaults to `max_values[feature] + 1` per feature. Knots
-        are placed uniformly over the known range of each feature (e.g. 1-12 for
-        month, 0-23 for hour), ensuring consistent encoding across training and
-        prediction. Accepted keys: `n_knots` (int), `degree` (int), and
-        `include_bias` (bool).
+        `encoding='spline'`. When `None`, defaults to `{'degree': 3,
+        'include_bias': True, 'extrapolation': 'periodic'}`; `n_knots`
+        defaults to `max_values[feature] + 1` per feature. Knots are placed
+        uniformly between the known minimum and maximum value of each feature
+        (e.g. 1-12 for month, 0-23 for hour), ensuring consistent encoding
+        across training and prediction. Any keyword argument accepted by
+        `sklearn.preprocessing.SplineTransformer` is allowed (e.g. `n_knots`,
+        `degree`, `include_bias`, `extrapolation`, `order`) **except**
+        `knots` (computed internally from `max_values`) and `sparse_output`
+        (incompatible with the DataFrame output). Passing either of these or
+        an unknown key raises `ValueError` at fit/transform time.
     keep_original_columns : bool, default True
-        If True, the original columns of `X` are kept in the output DataFrame. If False,
-        only the extracted datetime features are returned.
-    
+        If True, the original columns of `X` are kept in the output
+        DataFrame. If False, only the extracted datetime features are
+        returned. When `True` and `X` is an unnamed pandas Series
+        (`X.name is None`), a `ValueError` is raised at fit/transform time;
+        either set `X.name` to a string, or pass `keep_original_columns=False`.
+
     Attributes
     ----------
     features : list, None
         List of calendar features to extract from the index. `None` means the
         default features are used.
     features_to_encode : list, None
-        List of calendar features to encode. `None` means all extracted features are encoded.
+        List of calendar features to encode. `None` means all extracted
+        features are encoded.
     encoding : str
         Encoding method for the extracted features.
     max_values : dict, None
-        Dictionary of maximum values for the cyclical and spline encoding of calendar
-        features. `None` means the default values are used.
+        Dictionary of maximum values for the cyclical and spline encoding of
+        calendar features. `None` means the default values are used.
     spline_kwargs : dict, None
-        Keyword arguments for the spline encoding. `None` means the default values
-        are used (`degree=3`, `include_bias=True`, `n_knots=max_val+1` per feature).
+        Keyword arguments for the spline encoding. `None` means the default
+        values are used (`degree=3`, `include_bias=True`,
+        `extrapolation='periodic'`, `n_knots=max_val+1` per feature).
     keep_original_columns : bool
         Whether to keep original columns from the input.
     feature_names_out_ : list
         Names of the output features. Set after calling `fit` or `transform`.
-    
+
+    Raises
+    ------
+    TypeError, ValueError
+        Raised by `fit`, `transform`, and `fit_transform`, which delegate
+        validation to `create_datetime_features`. See that function for the
+        full list of conditions. Per scikit-learn convention, the constructor
+        does not validate; invalid parameter values surface only when `fit`
+        or `transform` is called.
+
+    Warns
+    -----
+    IgnoredArgumentWarning
+        See `create_datetime_features`.
+
+    Notes
+    -----
+    The default `max_values` use 53 for `'week'` and 366 for `'day_of_year'`
+    to accommodate the maximum possible values across all calendar years:
+    ISO week 53 occurs in some years (e.g. 2015, 2020, 2026) and
+    day-of-year 366 occurs in leap years. Because the encoding must be
+    stateless (the same for any year, without prior knowledge of whether it
+    is a leap year or contains ISO week 53), the period is fixed at the
+    maximum-possible value. This implies:
+
+    - **Onehot:** the `week_53` and `day_of_year_366` columns are always
+      present in the output and equal 0 for rows whose year never reaches
+      those values. This guarantees a consistent column schema across
+      training and prediction.
+    - **Cyclical / spline:** in years where the maximum value is reached,
+      the cyclical wrap-around is exact (e.g. `sin(2π·366/366) = 0` matches
+      `sin(2π·0/366) = 0`). In years where it is not, there is a one-step
+      "phantom gap" between the highest observed value and 1 — the
+      cyclical distance is two steps instead of one. This residual
+      asymmetry is numerically small (≈ 1.7% for `day_of_year`, ≈ 12% for
+      `week`) and is strictly preferable to the alternative (period
+      52 / 365), which would silently collapse week 53 onto week 1 and day
+      366 onto day 1 in years where those values occur.
+
     """
 
     def __init__(
@@ -308,9 +465,6 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         spline_kwargs: dict | None = None,
         keep_original_columns: bool = True,
     ) -> None:
-
-        if encoding not in ["cyclical", "onehot", "spline", None]:
-            raise ValueError("Encoding must be one of 'cyclical', 'onehot', 'spline' or None")
 
         self.features = features
         self.features_to_encode = features_to_encode
@@ -433,7 +587,7 @@ def _freq_to_timedelta_unit(freq_str: str) -> str:
         'W', 'D', 'B', 'C',
     }
     if normalized in _coarse:
-        unit =  'D'
+        unit = 'D'
     elif normalized in {'h', 'H'}:
         unit = 'h'
     elif normalized in {'min', 'T'}:
