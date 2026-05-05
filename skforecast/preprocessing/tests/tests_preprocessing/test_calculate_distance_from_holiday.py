@@ -333,3 +333,22 @@ def test_calculate_distance_from_holiday_invalid_date_column_raises():
         calculate_distance_from_holiday(
             df, holiday_column="is_holiday", date_column="dt"  # typo
         )
+
+
+def test_calculate_distance_from_holiday_fill_na_np_floating_nan_works():
+    """
+    Test that numpy floating NaN subclasses (e.g. `np.float32(np.nan)`,
+    `np.float64(np.nan)`) are accepted as `fill_na` values, not just plain
+    Python `float` NaN.
+    """
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    df = pd.DataFrame({"is_holiday": [False, False, True]}, index=idx)
+
+    for fill_na_value in (np.float32(np.nan), np.float64(np.nan)):
+        result = calculate_distance_from_holiday(
+            df, holiday_column="is_holiday", fill_na=fill_na_value
+        )
+        # The first two rows have no prior holiday → time_since_holiday is pd.NA
+        assert result["time_since_holiday"].iloc[0] is pd.NA
+        assert result["time_since_holiday"].iloc[1] is pd.NA
+        assert result["time_since_holiday"].iloc[2] == 0

@@ -930,3 +930,31 @@ def test_DateTimeFeatureTransformer_fit_empty_input_raises():
     with pytest.raises(ValueError, match=r"Cannot fit on empty input\."):
         DateTimeFeatureTransformer(features=["month"], encoding="cyclical").fit(empty_series)
 
+
+def test_DateTimeFeatureTransformer_transform_does_not_mutate_state():
+    """
+    Test that `transform()` is a pure operation: it does not modify any
+    attribute set by `fit()`. In particular, `feature_names_out_` must be
+    fixed at fit time and unchanged regardless of how many times (or with
+    what data) `transform()` is called afterward (sklearn convention).
+    """
+    df = pd.DataFrame(
+        {"value": [1, 2, 3]},
+        index=pd.date_range("2022-01-01", periods=3, freq="D"),
+    )
+    t = DateTimeFeatureTransformer(features=["month"], encoding="cyclical")
+    t.fit(df)
+    snapshot = list(t.feature_names_out_)
+
+    # Calling transform on the same data must not change the attribute.
+    t.transform(df)
+    assert t.feature_names_out_ == snapshot
+
+    # Calling transform on a smaller / different-shaped frame also must not.
+    df_small = pd.DataFrame(
+        {"value": [10]},
+        index=pd.date_range("2022-06-15", periods=1, freq="D"),
+    )
+    t.transform(df_small)
+    assert t.feature_names_out_ == snapshot
+

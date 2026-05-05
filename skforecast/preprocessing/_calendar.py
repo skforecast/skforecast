@@ -151,6 +151,12 @@ def create_datetime_features(
       52 / 365), which would silently collapse week 53 onto week 1 and day
       366 onto day 1 in years where those values occur.
 
+    For high-cardinality features such as `day_of_year` (366 columns) or
+    `day_of_month` (31 columns), `encoding='cyclical'` (2 columns per
+    feature) or `'spline'` (≈ `max_val` columns per feature, but dense
+    rather than sparse) are typically more memory-efficient than
+    `'onehot'`, especially on multi-year hourly or sub-daily data.
+
     """
 
     if not isinstance(X, (pd.DataFrame, pd.Series)):
@@ -184,6 +190,15 @@ def create_datetime_features(
 
     resolved_max_values = _DEFAULT_MAX_VALUES.copy()
     if max_values is not None:
+        unknown = set(max_values) - set(_DEFAULT_MAX_VALUES)
+        if unknown:
+            warnings.warn(
+                f"Unknown keys in `max_values`: {sorted(unknown)}. "
+                f"Valid keys: {sorted(_DEFAULT_MAX_VALUES)}. Unknown keys "
+                f"are ignored.",
+                IgnoredArgumentWarning,
+            )
+            max_values = {k: v for k, v in max_values.items() if k not in unknown}
         resolved_max_values.update(max_values)
     max_values = resolved_max_values
 
@@ -463,6 +478,12 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
       52 / 365), which would silently collapse week 53 onto week 1 and day
       366 onto day 1 in years where those values occur.
 
+    For high-cardinality features such as `day_of_year` (366 columns) or
+    `day_of_month` (31 columns), `encoding='cyclical'` (2 columns per
+    feature) or `'spline'` (≈ `max_val` columns per feature, but dense
+    rather than sparse) are typically more memory-efficient than
+    `'onehot'`, especially on multi-year hourly or sub-daily data.
+
     """
 
     def __init__(
@@ -552,7 +573,6 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
                     spline_kwargs         = self.spline_kwargs,
                     keep_original_columns = self.keep_original_columns,
                 )
-        self.feature_names_out_ = list(X_new.columns)
 
         return X_new
 
@@ -717,7 +737,7 @@ def calculate_distance_from_holiday(
 
     if isinstance(fill_na, bool) or not (
         isinstance(fill_na, (int, np.integer))
-        or (isinstance(fill_na, float) and np.isnan(fill_na))
+        or (isinstance(fill_na, (float, np.floating)) and np.isnan(fill_na))
     ):
         raise TypeError(
             "`fill_na` must be an int, np.integer, or numpy.nan, "

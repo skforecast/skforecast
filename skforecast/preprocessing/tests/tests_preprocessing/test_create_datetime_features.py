@@ -925,3 +925,29 @@ def test_create_datetime_features_spline_week_53_continuity():
     # the bug where week 53 collapsed onto week 1 making dist_53_to_1 ≈ 0).
     assert dist_53_to_52 < dist_52_to_1
 
+
+def test_create_datetime_features_max_values_unknown_key_warns():
+    """
+    Test that unknown keys in `max_values` (typos like 'mnth' instead of
+    'month') trigger an `IgnoredArgumentWarning` listing valid keys, are
+    silently dropped, and the rest of the encoding proceeds with defaults.
+    """
+    df = pd.DataFrame(
+        {"value": [1, 2, 3]},
+        index=pd.date_range("2022-01-01", periods=3, freq="D"),
+    )
+    with pytest.warns(
+        IgnoredArgumentWarning,
+        match=r"Unknown keys in `max_values`: \['mnth'\]",
+    ):
+        result = create_datetime_features(
+            df,
+            features=["month"],
+            encoding="cyclical",
+            max_values={"month": 12, "mnth": 12},  # 'mnth' is a typo
+            keep_original_columns=False,
+        )
+    # `month` is still encoded with the (default-equal-to-passed) value 12.
+    assert "month_sin" in result.columns
+    assert "month_cos" in result.columns
+
