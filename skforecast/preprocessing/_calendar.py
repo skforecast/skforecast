@@ -65,12 +65,12 @@ def create_datetime_features(
         Encoding method for the extracted features. Options are `None`,
         `'cyclical'`, `'onehot'` or `'spline'`. Features that cannot be
         encoded under the chosen mode are kept as raw integers. By default,
-        `'year'` and `'weekend'` are never encoded — `'onehot'` excludes them
+        `'year'` and `'weekend'` are never encoded. `'onehot'` excludes them
         via the known-category set, while `'cyclical'` and `'spline'` exclude
         them via `max_values`.
     max_values : dict, default None
         Dictionary of maximum values for the cyclical and spline encoding.
-        User-provided values are **merged** with the defaults: keys passed by
+        User-provided values are merged with the defaults: keys passed by
         the user override the corresponding default, and missing keys fall
         back to the defaults `{'month': 12, 'week': 53, 'day_of_week': 7,
         'day_of_month': 31, 'day_of_year': 366, 'hour': 24, 'minute': 60,
@@ -84,12 +84,13 @@ def create_datetime_features(
         'include_bias': True, 'extrapolation': 'periodic'}`; `n_knots`
         defaults to `max_values[feature] + 1` per feature, which produces one
         spline column per distinct period value (analogous to a smooth
-        one-hot encoding). Knots are placed uniformly between the known
-        minimum and maximum value of each feature (e.g. 1-12 for month, 0-23
-        for hour), making the encoding stateless and consistent between
-        training and prediction. Any keyword argument accepted by
+        one-hot encoding). Knots are placed uniformly over `[min_val,
+        min_val + max_val]` (e.g. 1-13 for month, 0-24 for hour), giving a
+        periodic period of exactly `max_val` for both 0-indexed and
+        1-indexed features and keeping the encoding stateless and consistent
+        between training and prediction. Any keyword argument accepted by
         `sklearn.preprocessing.SplineTransformer` is allowed (e.g. `n_knots`,
-        `degree`, `include_bias`, `extrapolation`, `order`) **except**
+        `degree`, `include_bias`, `extrapolation`, `order`) except
         `knots` (computed internally from `max_values`) and `sparse_output`
         (incompatible with the DataFrame output). Passing either of these or
         an unknown key raises `ValueError`.
@@ -136,14 +137,14 @@ def create_datetime_features(
     is a leap year or contains ISO week 53), the period is fixed at the
     maximum-possible value. This implies:
 
-    - **Onehot:** the `week_53` and `day_of_year_366` columns are always
+    - Onehot: the `week_53` and `day_of_year_366` columns are always
       present in the output and equal 0 for rows whose year never reaches
       those values. This guarantees a consistent column schema across
       training and prediction.
-    - **Cyclical / spline:** in years where the maximum value is reached,
+    - Cyclical / spline: in years where the maximum value is reached,
       the cyclical wrap-around is exact (e.g. `sin(2π·366/366) = 0` matches
       `sin(2π·0/366) = 0`). In years where it is not, there is a one-step
-      "phantom gap" between the highest observed value and 1 — the
+      "phantom gap" between the highest observed value and 1. The
       cyclical distance is two steps instead of one. This residual
       asymmetry is numerically small (≈ 1.7% for `day_of_year`, ≈ 12% for
       `week`) and is strictly preferable to the alternative (period
@@ -297,7 +298,13 @@ def create_datetime_features(
             if feature in X_new.columns and feature in features_to_encode:
                 n_knots = n_knots_global if n_knots_global is not None else max_val + 1
                 min_val = _DEFAULT_MIN_VALUES.get(feature, 0)
-                knots = np.linspace(min_val, max_val, n_knots).reshape(-1, 1)
+                # Knots span [min_val, min_val + max_val] so that the periodic
+                # period is exactly `max_val` for both 0-indexed (e.g. hour:
+                # [0..24]) and 1-indexed features (e.g. month: [1..13]). With
+                # the alternative `linspace(min_val, max_val, ...)`, 1-indexed
+                # features would have period `max_val - min_val`, collapsing
+                # the last value onto the first (e.g. month 12 = month 1).
+                knots = np.linspace(min_val, min_val + max_val, n_knots).reshape(-1, 1)
                 spt = SplineTransformer(
                     knots=knots,
                     **resolved_spline_kwargs,
@@ -361,12 +368,12 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         Encoding method for the extracted features. Options are `None`,
         `'cyclical'`, `'onehot'` or `'spline'`. Features that cannot be
         encoded under the chosen mode are kept as raw integers. By default,
-        `'year'` and `'weekend'` are never encoded — `'onehot'` excludes them
+        `'year'` and `'weekend'` are never encoded. `'onehot'` excludes them
         via the known-category set, while `'cyclical'` and `'spline'` exclude
         them via `max_values`.
     max_values : dict, default None
         Dictionary of maximum values for the cyclical and spline encoding.
-        User-provided values are **merged** with the defaults: keys passed by
+        User-provided values are merged with the defaults: keys passed by
         the user override the corresponding default, and missing keys fall
         back to the defaults `{'month': 12, 'week': 53, 'day_of_week': 7,
         'day_of_month': 31, 'day_of_year': 366, 'hour': 24, 'minute': 60,
@@ -379,11 +386,13 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         `encoding='spline'`. When `None`, defaults to `{'degree': 3,
         'include_bias': True, 'extrapolation': 'periodic'}`; `n_knots`
         defaults to `max_values[feature] + 1` per feature. Knots are placed
-        uniformly between the known minimum and maximum value of each feature
-        (e.g. 1-12 for month, 0-23 for hour), ensuring consistent encoding
-        across training and prediction. Any keyword argument accepted by
+        uniformly over `[min_val, min_val + max_val]` (e.g. 1-13 for month,
+        0-24 for hour), giving a periodic period of exactly `max_val` for
+        both 0-indexed and 1-indexed features and ensuring consistent
+        encoding across training and prediction. Any keyword argument
+        accepted by
         `sklearn.preprocessing.SplineTransformer` is allowed (e.g. `n_knots`,
-        `degree`, `include_bias`, `extrapolation`, `order`) **except**
+        `degree`, `include_bias`, `extrapolation`, `order`) except
         `knots` (computed internally from `max_values`) and `sparse_output`
         (incompatible with the DataFrame output). Passing either of these or
         an unknown key raises `ValueError` at fit/transform time.
@@ -440,14 +449,14 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
     is a leap year or contains ISO week 53), the period is fixed at the
     maximum-possible value. This implies:
 
-    - **Onehot:** the `week_53` and `day_of_year_366` columns are always
+    - Onehot: the `week_53` and `day_of_year_366` columns are always
       present in the output and equal 0 for rows whose year never reaches
       those values. This guarantees a consistent column schema across
       training and prediction.
-    - **Cyclical / spline:** in years where the maximum value is reached,
+    - Cyclical / spline: in years where the maximum value is reached,
       the cyclical wrap-around is exact (e.g. `sin(2π·366/366) = 0` matches
       `sin(2π·0/366) = 0`). In years where it is not, there is a one-step
-      "phantom gap" between the highest observed value and 1 — the
+      "phantom gap" between the highest observed value and 1. The
       cyclical distance is two steps instead of one. This residual
       asymmetry is numerically small (≈ 1.7% for `day_of_year`, ≈ 12% for
       `week`) and is strictly preferable to the alternative (period
@@ -489,7 +498,19 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         self : DateTimeFeatureTransformer
             Fitted transformer.
 
+        Raises
+        ------
+        ValueError
+            If `X` is empty (length 0). The same `TypeError`s and
+            `ValueError`s as `create_datetime_features` are also propagated.
+
         """
+        if isinstance(X, (pd.DataFrame, pd.Series)) and len(X) == 0:
+            raise ValueError("Cannot fit on empty input.")
+
+        # Slice to the first 2 rows: the encoding is stateless (column
+        # names depend on parameters and the index frequency, not on data
+        # values), so any non-empty slice yields the same output schema.
         result = create_datetime_features(
             X=X.iloc[:2] if isinstance(X, (pd.DataFrame, pd.Series)) else X,
             features=self.features,
@@ -610,7 +631,7 @@ def calculate_distance_from_holiday(
     X: pd.DataFrame | pd.Series,
     holiday_column: str | None = None,
     date_column: str | None = None,
-    fill_na: int | float = 0.,
+    fill_na: int | float = 0,
 ) -> pd.DataFrame:
     """
     Calculate the number of periods to the next and since the last holiday.
@@ -634,10 +655,12 @@ def calculate_distance_from_holiday(
     date_column : str, None, default None
         Name of the column containing dates to use as reference. When `None`,
         the index is used and must be a pandas DatetimeIndex.
-    fill_na : int, float, default 0.
+    fill_na : int, float, default 0
         Value used to fill rows where no previous or next holiday exists (i.e.
-        before the first holiday or after the last). Pass `numpy.nan` to keep
-        those entries as `NaN`.
+        before the first holiday or after the last). Must be an `int`, a
+        `numpy.integer`, or `numpy.nan`. Booleans and other floats are
+        rejected because the output columns have `Int64` dtype. Pass
+        `numpy.nan` to keep those entries as `pd.NA`.
 
     Returns
     -------
@@ -646,6 +669,17 @@ def calculate_distance_from_holiday(
 
         - `time_to_holiday`: periods until the next holiday.
         - `time_since_holiday`: periods since the last holiday.
+
+    Raises
+    ------
+    TypeError
+        If `X` is not a pandas Series or DataFrame, if `fill_na` is not an
+        `int`, `numpy.integer`, or `numpy.nan`, or if `date_column=None`
+        and the index is not a `DatetimeIndex`.
+    ValueError
+        If `X` is a DataFrame and `holiday_column` is `None` or is not a
+        column of `X`; or if `date_column` is specified but is not a column
+        of `X`.
 
     Notes
     -----
@@ -667,10 +701,28 @@ def calculate_distance_from_holiday(
     three observations), the unit defaults to hours and a `UserWarning` is
     issued.
 
+    In `date_column` mode, fractional days (from arbitrary intra-day
+    timestamps) are truncated, not rounded e.g. a distance of 0.99
+    days is reported as 0. To preserve sub-day precision, use the
+    index-based mode with an appropriate frequency (`'h'`, `'min'`, etc.).
+
+    When a row corresponds to a holiday, both `time_to_holiday` and
+    `time_since_holiday` are 0, the date is at distance 0 from itself.
+
     """
     if not isinstance(X, (pd.DataFrame, pd.Series)):
         raise TypeError(
             "Input `X` must be a pandas Series or pandas DataFrame."
+        )
+
+    if isinstance(fill_na, bool) or not (
+        isinstance(fill_na, (int, np.integer))
+        or (isinstance(fill_na, float) and np.isnan(fill_na))
+    ):
+        raise TypeError(
+            "`fill_na` must be an int, np.integer, or numpy.nan, "
+            f"got {type(fill_na).__name__}={fill_na!r}. The output columns "
+            "have `Int64` dtype, so floats other than NaN cannot be used."
         )
 
     if isinstance(X, pd.Series):
@@ -689,6 +741,17 @@ def calculate_distance_from_holiday(
             raise ValueError(
                 "`holiday_column` must be specified when `X` is a pandas DataFrame."
             )
+        if holiday_column not in X.columns:
+            raise ValueError(
+                f"`holiday_column='{holiday_column}'` is not a column of `X`. "
+                f"Available columns: {list(X.columns)}."
+            )
+
+    if date_column is not None and date_column not in X.columns:
+        raise ValueError(
+            f"`date_column='{date_column}'` is not a column of `X`. "
+            f"Available columns: {list(X.columns)}."
+        )
 
     if date_column is None:
         if not isinstance(X.index, pd.DatetimeIndex):
@@ -704,8 +767,9 @@ def calculate_distance_from_holiday(
         if freq_str is None:
             warnings.warn(
                 "Could not determine the frequency of the index. "
-                "The output column unit defaults to 'hours'. Set the index "
-                "frequency with `X.asfreq(...)` to avoid this warning.",
+                "The output column unit defaults to 'hours'. To avoid this "
+                "warning, either set `X.index.freq = pd.infer_freq(X.index)` "
+                "or pass an index with a known frequency.",
                 UserWarning,
                 stacklevel=2,
             )

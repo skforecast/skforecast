@@ -262,3 +262,74 @@ def test_calculate_distance_from_holiday_series_unnamed():
     np.testing.assert_array_equal(
         result["time_since_holiday"].to_numpy(dtype=float), [0, 1, 2]
     )
+
+
+def test_calculate_distance_from_holiday_fill_na_invalid_float_raises():
+    """
+    Test that a non-NaN float `fill_na` (e.g. 0.5) raises TypeError because
+    the output columns have Int64 dtype.
+    """
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    df = pd.DataFrame({"is_holiday": [False, True, False]}, index=idx)
+    with pytest.raises(TypeError, match=r"`fill_na` must be an int, np\.integer, or numpy\.nan"):
+        calculate_distance_from_holiday(df, holiday_column="is_holiday", fill_na=0.5)
+
+
+def test_calculate_distance_from_holiday_fill_na_bool_raises():
+    """
+    Test that a boolean `fill_na` is rejected even though `bool` is a
+    subclass of `int` in Python — bools should not be implicitly accepted
+    as integer fill values.
+    """
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    df = pd.DataFrame({"is_holiday": [False, True, False]}, index=idx)
+    with pytest.raises(TypeError, match=r"`fill_na` must be an int, np\.integer, or numpy\.nan"):
+        calculate_distance_from_holiday(df, holiday_column="is_holiday", fill_na=True)
+
+
+def test_calculate_distance_from_holiday_fill_na_nan_keeps_pd_NA():
+    """
+    Test that `fill_na=numpy.nan` is accepted and preserves missing entries
+    as `pd.NA` in the Int64 output (not coerced to 0 or any int).
+    """
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    df = pd.DataFrame({"is_holiday": [False, False, True]}, index=idx)
+    result = calculate_distance_from_holiday(
+        df, holiday_column="is_holiday", fill_na=np.nan
+    )
+    # The first two rows have no prior holiday → time_since_holiday is pd.NA
+    assert result["time_since_holiday"].iloc[0] is pd.NA
+    assert result["time_since_holiday"].iloc[1] is pd.NA
+    assert result["time_since_holiday"].iloc[2] == 0
+    assert result["time_since_holiday"].dtype == "Int64"
+
+
+def test_calculate_distance_from_holiday_invalid_holiday_column_raises():
+    """
+    Test that passing a `holiday_column` name that does not exist in `X`
+    raises ValueError with a clear message listing available columns.
+    """
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    df = pd.DataFrame({"is_holiday": [False, True, False]}, index=idx)
+    with pytest.raises(
+        ValueError,
+        match=r"`holiday_column='isHoliday'` is not a column of `X`",
+    ):
+        calculate_distance_from_holiday(df, holiday_column="isHoliday")  # typo
+
+
+def test_calculate_distance_from_holiday_invalid_date_column_raises():
+    """
+    Test that passing a `date_column` name that does not exist in `X`
+    raises ValueError with a clear message listing available columns.
+    """
+    df = pd.DataFrame(
+        {"is_holiday": [False, True, False], "date": pd.date_range("2022-01-01", periods=3)}
+    )
+    with pytest.raises(
+        ValueError,
+        match=r"`date_column='dt'` is not a column of `X`",
+    ):
+        calculate_distance_from_holiday(
+            df, holiday_column="is_holiday", date_column="dt"  # typo
+        )

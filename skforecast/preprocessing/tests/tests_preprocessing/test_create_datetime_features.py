@@ -864,3 +864,64 @@ def test_create_datetime_features_onehot_non_leap_year_keeps_max_columns_zero():
     assert (result["week_53"] == 0).all()
     assert (result["day_of_year_366"] == 0).all()
 
+
+def test_create_datetime_features_spline_month_12_distinct_from_month_1():
+    """
+    Regression test for the knot-placement bug. With the old formula
+    `linspace(min_val, max_val, n_knots)` the periodic spline period for
+    `month` was 11 instead of 12, causing month 12 (December) to map to the
+    same coordinates as month 1 (January). Verify that with the corrected
+    knot range `[1, 13]`, December and January produce distinct outputs.
+    """
+    df = pd.DataFrame(
+        {"value": [1.0, 2.0]},
+        index=pd.DatetimeIndex(["2022-01-15", "2022-12-15"]),
+    )
+    result = create_datetime_features(
+        df, features=["month"], encoding="spline", keep_original_columns=False
+    )
+    jan = result.iloc[0].to_numpy()
+    dec = result.iloc[1].to_numpy()
+    assert not np.allclose(jan, dec, atol=1e-6), (
+        "December and January spline encodings collapsed to the same value, "
+        "indicating the periodic knot placement is wrong."
+    )
+
+
+def test_create_datetime_features_spline_week_53_continuity():
+    """
+    Verify that with the corrected knot placement, week 53 sits between
+    week 52 and week 1 in spline space — the cyclical neighborhood is
+    preserved at the year boundary. Both distances must be strictly
+    positive (week 53 is not collapsed onto its neighbors) and equal
+    (week 53 is one knot step away from each).
+    """
+    # 2020 contains ISO week 52 (2020-12-21 Mon), week 53 (2020-12-28 Mon),
+    # and week 1 of 2021 (2021-01-04 Mon).
+    df = pd.DataFrame(
+        {"value": [1.0, 2.0, 3.0]},
+        index=pd.DatetimeIndex(["2020-12-21", "2020-12-28", "2021-01-04"]),
+    )
+    result = create_datetime_features(
+        df, features=["week"], encoding="spline", keep_original_columns=False
+    )
+    week_52 = result.iloc[0].to_numpy()
+    week_53 = result.iloc[1].to_numpy()
+    week_1 = result.iloc[2].to_numpy()
+
+    dist_53_to_52 = np.linalg.norm(week_53 - week_52)
+    dist_53_to_1 = np.linalg.norm(week_53 - week_1)
+    dist_52_to_1 = np.linalg.norm(week_52 - week_1)
+
+    # Strictly positive — week 53 is its own point.
+    assert dist_53_to_52 > 0
+    assert dist_53_to_1 > 0
+    # Equidistant — week 53 is one knot step from each of week 52 and week 1.
+    np.testing.assert_allclose(dist_53_to_52, dist_53_to_1, atol=1e-6)
+    # Going through week 53 (52 -> 53 -> 1) is shorter than the direct chord
+    # 52 -> 1 only as inequality — not equality — because spline space is not
+    # exactly the unit circle. But the two single-step distances must be
+    # equal AND less than the two-step direct chord (this also rules out
+    # the bug where week 53 collapsed onto week 1 making dist_53_to_1 ≈ 0).
+    assert dist_53_to_52 < dist_52_to_1
+

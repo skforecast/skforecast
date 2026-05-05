@@ -567,11 +567,12 @@ def test_create_datetime_features_spline_encoding_expected_values():
     Test that the spline encoding produces the expected numerical values.
     Uses 4 dates spaced one quarter apart (Jan, Apr, Jul, Oct) with the 'month'
     feature only. With default settings (n_knots=13, degree=3, include_bias=True,
-    periodic), the 12 output columns sum to 1.0 per row and each spline peaks near
-    one specific month.
+    periodic) and the corrected knot range [1, 13], the 12 output columns sum
+    to 1.0 per row and each row activates exactly 3 splines with the canonical
+    cubic-B-spline-at-knot values (1/6, 4/6, 1/6).
 
-    Expected values were pre-computed with:
-        knots = np.linspace(1, 12, 13).reshape(-1, 1)
+    Expected values pre-computed with:
+        knots = np.linspace(1, 13, 13).reshape(-1, 1)
         SplineTransformer(degree=3, knots=knots, extrapolation='periodic',
                           include_bias=True).fit_transform([[1],[4],[7],[10]])
     """
@@ -585,20 +586,22 @@ def test_create_datetime_features_spline_encoding_expected_values():
         features=["month"], encoding="spline", keep_original_columns=False
     ).fit_transform(df)
 
+    one_sixth = 1 / 6
+    four_sixths = 4 / 6
     expected = pd.DataFrame(
         {
-            "month_sp_0":  [0.16666667, 0.0,        0.0,        0.09128475],
-            "month_sp_1":  [0.66666667, 0.0,        0.0,        0.0       ],
-            "month_sp_2":  [0.16666667, 0.0,        0.0,        0.0       ],
-            "month_sp_3":  [0.0,        0.0641122,  0.0,        0.0       ],
-            "month_sp_4":  [0.0,        0.60242925, 0.0,        0.0       ],
-            "month_sp_5":  [0.0,        0.33007764, 0.0,        0.0       ],
-            "month_sp_6":  [0.0,        0.00338092, 0.01565239, 0.0       ],
-            "month_sp_7":  [0.0,        0.0,        0.450288,   0.0       ],
-            "month_sp_8":  [0.0,        0.0,        0.50701227, 0.0       ],
-            "month_sp_9":  [0.0,        0.0,        0.02704733, 0.00100175],
-            "month_sp_10": [0.0,        0.0,        0.0,        0.27109942],
-            "month_sp_11": [0.0,        0.0,        0.0,        0.63661407],
+            "month_sp_0":  [one_sixth,   0.0,         0.0,         0.0        ],
+            "month_sp_1":  [four_sixths, 0.0,         0.0,         0.0        ],
+            "month_sp_2":  [one_sixth,   0.0,         0.0,         0.0        ],
+            "month_sp_3":  [0.0,         one_sixth,   0.0,         0.0        ],
+            "month_sp_4":  [0.0,         four_sixths, 0.0,         0.0        ],
+            "month_sp_5":  [0.0,         one_sixth,   0.0,         0.0        ],
+            "month_sp_6":  [0.0,         0.0,         one_sixth,   0.0        ],
+            "month_sp_7":  [0.0,         0.0,         four_sixths, 0.0        ],
+            "month_sp_8":  [0.0,         0.0,         one_sixth,   0.0        ],
+            "month_sp_9":  [0.0,         0.0,         0.0,         one_sixth  ],
+            "month_sp_10": [0.0,         0.0,         0.0,         four_sixths],
+            "month_sp_11": [0.0,         0.0,         0.0,         one_sixth  ],
         },
         index=pd.DatetimeIndex(
             ["2022-01-15", "2022-04-15", "2022-07-15", "2022-10-15"]
@@ -908,4 +911,22 @@ def test_DateTimeFeatureTransformer_onehot_year_and_weekend_never_encoded():
 
     month_cols = [c for c in result.columns if c.startswith("month_")]
     assert len(month_cols) == 12
+
+
+def test_DateTimeFeatureTransformer_fit_empty_input_raises():
+    """
+    Test that calling fit on an empty DataFrame or Series raises ValueError
+    with a clear message, instead of letting the error surface from inside
+    SplineTransformer (or producing a degenerate transformer).
+    """
+    empty_df = pd.DataFrame(
+        columns=["value"], index=pd.DatetimeIndex([], name="datetime")
+    )
+    transformer = DateTimeFeatureTransformer(features=["month"], encoding="cyclical")
+    with pytest.raises(ValueError, match=r"Cannot fit on empty input\."):
+        transformer.fit(empty_df)
+
+    empty_series = pd.Series([], dtype=float, index=pd.DatetimeIndex([]), name="y")
+    with pytest.raises(ValueError, match=r"Cannot fit on empty input\."):
+        DateTimeFeatureTransformer(features=["month"], encoding="cyclical").fit(empty_series)
 
