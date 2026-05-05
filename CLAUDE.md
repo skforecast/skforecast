@@ -1,0 +1,1 @@
+See @AGENTS.md for all project behavioral rules, coding standards, and operating instructions.
