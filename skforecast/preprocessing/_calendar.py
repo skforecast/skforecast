@@ -266,6 +266,18 @@ def create_datetime_features(
             X_new = pd.get_dummies(
                 X_new, columns=effective_encode, drop_first=False, sparse=False, dtype=int
             )
+            # Match the cyclical / spline ordering: non-encoded features
+            # first (in `features` order), then encoded dummies grouped per
+            # feature (also in `features` order). `pd.get_dummies` keeps
+            # non-encoded columns at their original position, so the dummies
+            # are otherwise interleaved.
+            non_encoded = [f for f in features if f not in effective_encode]
+            encoded_cols = [
+                f"{feature}_{cat}"
+                for feature in effective_encode
+                for cat in _FEATURE_KNOWN_CATEGORIES[feature]
+            ]
+            X_new = X_new[non_encoded + encoded_cols]
     elif encoding == "spline":
         if spline_kwargs is not None:
             invalid = set(spline_kwargs) - _SPLINE_ALLOWED_KWARGS

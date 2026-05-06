@@ -1058,6 +1058,35 @@ def test_create_datetime_features_spline_respects_features_order():
     assert hour_last < month_first
 
 
+def test_create_datetime_features_onehot_non_encoded_appear_before_dummies():
+    """
+    With encoding='onehot' and a mix of encodable and non-encodable features,
+    non-encoded features (year, weekend) must appear first in `features`
+    order, and dummies must follow grouped per encoded feature, also in
+    `features` order. This matches the cyclical / spline output layout.
+    """
+    df = pd.DataFrame(
+        {"value": [0, 1, 2]},
+        index=pd.date_range("2022-01-01", periods=3, freq="h"),
+    )
+    result = create_datetime_features(
+        df,
+        features=["month", "year", "hour", "weekend"],
+        encoding="onehot",
+        keep_original_columns=False,
+    )
+    cols = list(result.columns)
+    expected_prefix = ["year", "weekend"]
+    assert cols[: len(expected_prefix)] == expected_prefix
+    month_cols = [c for c in cols if c.startswith("month_")]
+    hour_cols = [c for c in cols if c.startswith("hour_")]
+    assert len(month_cols) == 12
+    assert len(hour_cols) == 24
+    month_last = max(cols.index(c) for c in month_cols)
+    hour_first = min(cols.index(c) for c in hour_cols)
+    assert month_last < hour_first
+
+
 def test_create_datetime_features_warns_when_max_values_with_onehot():
     """
     Test that passing `max_values` together with `encoding='onehot'` triggers
