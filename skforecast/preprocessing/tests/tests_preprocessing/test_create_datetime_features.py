@@ -1025,3 +1025,48 @@ def test_create_datetime_features_spline_respects_features_order():
     month_first = min(cols.index(c) for c in month_cols)
     assert hour_last < month_first
 
+
+def test_create_datetime_features_warns_when_max_values_with_onehot():
+    """
+    Test that passing `max_values` together with `encoding='onehot'` triggers
+    an IgnoredArgumentWarning, since onehot uses the fixed known-category set
+    and ignores `max_values`.
+    """
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    s = pd.Series([1, 2, 3], index=idx, name="y")
+
+    with pytest.warns(IgnoredArgumentWarning, match=r"max_values.*onehot"):
+        result = create_datetime_features(
+            s,
+            features=["month"],
+            encoding="onehot",
+            max_values={"month": 6},
+            keep_original_columns=False,
+        )
+
+    # Onehot ignores max_values: output still has 12 month columns from the
+    # fixed known-category set.
+    month_cols = [c for c in result.columns if c.startswith("month_")]
+    assert len(month_cols) == 12
+
+
+def test_create_datetime_features_no_onehot_warning_with_cyclical_encoding():
+    """
+    Test that `max_values` with `encoding='cyclical'` does NOT trigger the
+    onehot-specific IgnoredArgumentWarning.
+    """
+    import warnings as _warnings
+
+    idx = pd.date_range("2022-01-01", periods=3, freq="D")
+    s = pd.Series([1, 2, 3], index=idx, name="y")
+
+    with _warnings.catch_warnings():
+        _warnings.simplefilter("error", IgnoredArgumentWarning)
+        create_datetime_features(
+            s,
+            features=["month"],
+            encoding="cyclical",
+            max_values={"month": 6},
+            keep_original_columns=False,
+        )
+

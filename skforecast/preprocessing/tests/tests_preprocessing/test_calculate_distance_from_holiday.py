@@ -352,3 +352,44 @@ def test_calculate_distance_from_holiday_fill_na_np_floating_nan_works():
         assert result["time_since_holiday"].iloc[0] is pd.NA
         assert result["time_since_holiday"].iloc[1] is pd.NA
         assert result["time_since_holiday"].iloc[2] == 0
+
+
+def test_calculate_distance_from_holiday_warns_and_fills_nan_in_dataframe():
+    """
+    Test that NaN values in the holiday column trigger a UserWarning, are
+    filled with False, the original DataFrame is not mutated, and the output
+    matches what would be obtained by pre-filling NaN with False.
+    """
+    idx = pd.date_range("2022-01-01", periods=5, freq="D")
+    df = pd.DataFrame(
+        {"is_holiday": [True, False, np.nan, True, False]}, index=idx
+    )
+
+    with pytest.warns(UserWarning, match="contains NaN values"):
+        result = calculate_distance_from_holiday(df, holiday_column="is_holiday")
+
+    df_filled = df.copy()
+    with pd.option_context("future.no_silent_downcasting", True):
+        df_filled["is_holiday"] = df_filled["is_holiday"].fillna(False).astype(bool)
+    expected = calculate_distance_from_holiday(df_filled, holiday_column="is_holiday")
+    pd.testing.assert_frame_equal(result, expected)
+
+    # Original input must not be mutated
+    assert df["is_holiday"].isna().sum() == 1
+
+
+def test_calculate_distance_from_holiday_warns_and_fills_nan_in_series():
+    """
+    Test that NaN values in a Series input trigger a UserWarning and are
+    filled with False before computing distances.
+    """
+    idx = pd.date_range("2022-01-01", periods=4, freq="D")
+    s = pd.Series([True, np.nan, False, True], index=idx, name="is_holiday")
+
+    with pytest.warns(UserWarning, match="contains NaN values"):
+        result = calculate_distance_from_holiday(s)
+
+    assert list(result.columns) == ["time_to_holiday", "time_since_holiday"]
+    # NaN at position 1 → filled with False; nearest holidays at positions 0 and 3
+    assert result["time_to_holiday"].iloc[1] == 2
+    assert result["time_since_holiday"].iloc[1] == 1

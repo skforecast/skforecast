@@ -1161,7 +1161,7 @@ class RollingFeatures():
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{__version__}/api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures">&#128214; <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/preprocessing.html#skforecast.preprocessing._preprocessing.RollingFeatures">&#128214; <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
                 <a href="https://skforecast.org/{__version__}/user_guides/window-features-and-custom-features.html">&#128221; <strong>User Guide</strong></a>
             </p>
@@ -1751,7 +1751,7 @@ class RollingFeaturesClassification():
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{__version__}/api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeaturesClassification">&#128214; <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/preprocessing.html#skforecast.preprocessing._preprocessing.RollingFeaturesClassification">&#128214; <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
                 <a href="https://skforecast.org/{__version__}/user_guides/autoregressive-classification-forecasting.html">&#128221; <strong>User Guide</strong></a>
             </p>
@@ -2509,7 +2509,7 @@ class ConformalIntervalCalibrator:
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{__version__}/api/preprocessing#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator">&#128214; <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/preprocessing#skforecast.preprocessing._preprocessing.ConformalIntervalCalibrator">&#128214; <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
                 <a href="https://skforecast.org/{__version__}/user_guides/probabilistic-forecasting-conformal-calibration.html">&#128221; <strong>User Guide</strong></a>
             </p>

@@ -106,26 +106,6 @@ def create_datetime_features(
     X_new : pandas DataFrame
         DataFrame with the extracted (and optionally encoded) datetime features.
 
-    Raises
-    ------
-    TypeError
-        If `X` is not a pandas Series or DataFrame, or if its index is not a
-        pandas DatetimeIndex.
-    ValueError
-        If `encoding` is not one of `'cyclical'`, `'onehot'`, `'spline'` or
-        `None`; if `X` is an unnamed Series and `keep_original_columns=True`;
-        if a feature in `features` is not supported; if a feature in
-        `features_to_encode` is not present in `features`; if `spline_kwargs`
-        contains a blocked key (`'knots'`, `'sparse_output'`) or an unknown
-        key; or if extracted feature names overlap with existing columns in
-        `X` when `keep_original_columns=True`.
-
-    Warns
-    -----
-    IgnoredArgumentWarning
-        When `features_to_encode` is explicitly passed and contains features
-        that cannot be encoded with the chosen `encoding`. Those features
-        are kept as raw integers.
 
     Notes
     -----
@@ -208,6 +188,14 @@ def create_datetime_features(
                 IgnoredArgumentWarning,
             )
             max_values = {k: v for k, v in max_values.items() if k not in unknown}
+        if max_values and encoding == "onehot":
+            warnings.warn(
+                "`max_values` is ignored when `encoding='onehot'`; onehot "
+                "uses the fixed known-category set. Pass "
+                "`encoding='cyclical'` or `encoding='spline'` for "
+                "`max_values` to take effect.",
+                IgnoredArgumentWarning,
+            )
         resolved_max_values.update(max_values)
     max_values = resolved_max_values
 
@@ -440,19 +428,6 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
     feature_names_out_ : list
         Names of the output features. Set after calling `fit` or `transform`.
 
-    Raises
-    ------
-    TypeError, ValueError
-        Raised by `fit`, `transform`, and `fit_transform`, which delegate
-        validation to `create_datetime_features`. See that function for the
-        full list of conditions. Per scikit-learn convention, the constructor
-        does not validate; invalid parameter values surface only when `fit`
-        or `transform` is called.
-
-    Warns
-    -----
-    IgnoredArgumentWarning
-        See `create_datetime_features`.
 
     Notes
     -----
@@ -527,12 +502,6 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         -------
         self : DateTimeFeatureTransformer
             Fitted transformer.
-
-        Raises
-        ------
-        ValueError
-            If `X` is empty (length 0). The same `TypeError`s and
-            `ValueError`s as `create_datetime_features` are also propagated.
 
         """
         if isinstance(X, (pd.DataFrame, pd.Series)) and len(X) == 0:
@@ -698,18 +667,6 @@ def calculate_distance_from_holiday(
 
         - `time_to_holiday`: periods until the next holiday.
         - `time_since_holiday`: periods since the last holiday.
-
-    Raises
-    ------
-    TypeError
-        If `X` is not a pandas Series or DataFrame, if `fill_na` is not an
-        `int`, `numpy.integer`, or `numpy.nan`, or if `date_column=None`
-        and the index is not a `DatetimeIndex`.
-    ValueError
-        If `X` is a DataFrame and `holiday_column` is `None` or is not a
-        column of `X`; or if `date_column` is specified but is not a column
-        of `X`.
-
     Notes
     -----
     When `date_column` is specified, the unit is always days regardless of the
@@ -781,6 +738,18 @@ def calculate_distance_from_holiday(
             f"`date_column='{date_column}'` is not a column of `X`. "
             f"Available columns: {list(X.columns)}."
         )
+
+    if X[holiday_column].isna().any():
+        warnings.warn(
+            f"`{holiday_column}` contains NaN values. "
+            f"They are filled with `False` (treated as non-holidays) "
+            f"before computing distances.",
+            UserWarning,
+            stacklevel=2,
+        )
+        X = X.copy()
+        with pd.option_context("future.no_silent_downcasting", True):
+            X[holiday_column] = X[holiday_column].fillna(False).astype(bool)
 
     if date_column is None:
         if not isinstance(X.index, pd.DatetimeIndex):
