@@ -926,6 +926,38 @@ def test_create_datetime_features_spline_week_53_continuity():
     assert dist_53_to_52 < dist_52_to_1
 
 
+def test_create_datetime_features_spline_day_of_year_366_continuity():
+    """
+    Verify that with the corrected knot placement, day_of_year 366 sits
+    between day 365 and day 1 in spline space — analogous to the week 53
+    test, but for the leap-year boundary.
+    """
+    # 2020 is a leap year: day 365 = 2020-12-30, day 366 = 2020-12-31,
+    # day 1 of 2021 = 2021-01-01.
+    df = pd.DataFrame(
+        {"value": [1.0, 2.0, 3.0]},
+        index=pd.DatetimeIndex(["2020-12-30", "2020-12-31", "2021-01-01"]),
+    )
+    result = create_datetime_features(
+        df,
+        features=["day_of_year"],
+        encoding="spline",
+        keep_original_columns=False,
+    )
+    day_365 = result.iloc[0].to_numpy()
+    day_366 = result.iloc[1].to_numpy()
+    day_1 = result.iloc[2].to_numpy()
+
+    dist_366_to_365 = np.linalg.norm(day_366 - day_365)
+    dist_366_to_1 = np.linalg.norm(day_366 - day_1)
+
+    # Strictly positive — day 366 is its own point, not collapsed.
+    assert dist_366_to_365 > 0
+    assert dist_366_to_1 > 0
+    # Equidistant — day 366 is one knot step from day 365 and one from day 1.
+    np.testing.assert_allclose(dist_366_to_365, dist_366_to_1, atol=1e-6)
+
+
 def test_create_datetime_features_max_values_unknown_key_warns():
     """
     Test that unknown keys in `max_values` (typos like 'mnth' instead of

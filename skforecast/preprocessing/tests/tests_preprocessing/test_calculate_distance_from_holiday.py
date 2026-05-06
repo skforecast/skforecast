@@ -4,6 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from skforecast.preprocessing import calculate_distance_from_holiday
+from skforecast.preprocessing._calendar import _freq_to_timedelta_unit
 from skforecast.exceptions import IgnoredArgumentWarning
 
 if pd.__version__ < "2.2.0":
@@ -335,6 +336,52 @@ def test_calculate_distance_from_holiday_invalid_date_column_raises():
         )
 
 
+def test_calculate_distance_from_holiday_nan_in_date_column_raises():
+    """
+    Test that NaN values in `date_column` raise ValueError. NaT entries would
+    otherwise propagate silently through `np.searchsorted` and produce
+    fill_na rows without informing the user.
+    """
+    df = pd.DataFrame(
+        {
+            "is_holiday": [False, True, False, True],
+            "date": [
+                pd.Timestamp("2022-01-01"),
+                pd.NaT,
+                pd.Timestamp("2022-01-03"),
+                pd.Timestamp("2022-01-04"),
+            ],
+        }
+    )
+    with pytest.raises(
+        ValueError,
+        match=r"`date_column='date'` contains NaN or unparseable values",
+    ):
+        calculate_distance_from_holiday(
+            df, holiday_column="is_holiday", date_column="date"
+        )
+
+
+def test_calculate_distance_from_holiday_unparseable_date_column_raises():
+    """
+    Test that values in `date_column` that cannot be parsed as datetimes
+    raise ValueError with a clear message instead of a pandas parser error.
+    """
+    df = pd.DataFrame(
+        {
+            "is_holiday": [False, True, False],
+            "date": ["2022-01-01", "not a date", "2022-01-03"],
+        }
+    )
+    with pytest.raises(
+        ValueError,
+        match=r"`date_column='date'` contains NaN or unparseable values",
+    ):
+        calculate_distance_from_holiday(
+            df, holiday_column="is_holiday", date_column="date"
+        )
+
+
 def test_calculate_distance_from_holiday_fill_na_np_floating_nan_works():
     """
     Test that numpy floating NaN subclasses (e.g. `np.float32(np.nan)`,
@@ -393,3 +440,49 @@ def test_calculate_distance_from_holiday_warns_and_fills_nan_in_series():
     # NaN at position 1 → filled with False; nearest holidays at positions 0 and 3
     assert result["time_to_holiday"].iloc[1] == 2
     assert result["time_since_holiday"].iloc[1] == 1
+
+
+@pytest.mark.parametrize(
+    "freq_str, expected_unit",
+    [
+        # Daily and coarser → "D"
+        ("D", "D"), ("B", "D"), ("W", "D"), ("W-MON", "D"), ("W-FRI", "D"),
+        ("ME", "D"), ("MS", "D"), ("BME", "D"), ("QE", "D"), ("QS", "D"),
+        ("YE", "D"), ("YS", "D"),
+        # Sub-daily
+        ("h", "h"), ("H", "h"),
+        ("min", "m"), ("T", "m"),
+        ("s", "s"), ("S", "s"),
+        ("ms", "ms"), ("us", "us"), ("ns", "ns"),
+        # Multiplier prefixes
+        ("2h", "h"), ("15min", "m"), ("30s", "s"), ("2W-MON", "D"),
+        # Unknown → fallback to hours
+        ("invalid_xyz", "h"),
+    ],
+)
+def test_freq_to_timedelta_unit(freq_str, expected_unit):
+    """
+    Direct unit tests for the private `_freq_to_timedelta_unit` helper.
+    Covers daily/coarser → 'D', sub-daily units, multiplier prefixes,
+    weekday suffixes, and unknown freq fallback to hours.
+    """
+    assert _freq_to_timedelta_unit(freq_str) == expected_unit
+
+
+@pytest.mark.parametrize("freq", ["min", "s", "ms", "us", "ns"])
+def test_calculate_distance_from_holiday_subday_frequencies(freq):
+    """
+    Test that sub-daily index frequencies produce correct integer distance
+    counts in the matching unit, with no warning.
+    """
+    idx = pd.date_range("2022-01-01", periods=5, freq=freq)
+    s = pd.Series(
+        [False, False, True, False, False], index=idx, name="is_holiday"
+    )
+    result = calculate_distance_from_holiday(s)
+
+    assert result["time_to_holiday"].iloc[0] == 2
+    assert result["time_to_holiday"].iloc[1] == 1
+    assert result["time_to_holiday"].iloc[2] == 0
+    assert result["time_since_holiday"].iloc[3] == 1
+    assert result["time_since_holiday"].iloc[4] == 2

@@ -32,6 +32,11 @@ _FEATURE_KNOWN_CATEGORIES = {
 _DEFAULT_MAX_VALUES = {k: len(v) for k, v in _FEATURE_KNOWN_CATEGORIES.items()}
 _DEFAULT_MIN_VALUES = {k: v[0] for k, v in _FEATURE_KNOWN_CATEGORIES.items()}
 
+_SPLINE_BLOCKED_KWARGS = {"knots", "sparse_output"}
+_SPLINE_ALLOWED_KWARGS = (
+    set(inspect.signature(SplineTransformer).parameters) - _SPLINE_BLOCKED_KWARGS
+)
+
 
 def create_datetime_features(
     X: pd.Series | pd.DataFrame,
@@ -263,14 +268,10 @@ def create_datetime_features(
             )
     elif encoding == "spline":
         if spline_kwargs is not None:
-            blocked = {"knots", "sparse_output"}
-            allowed = (
-                set(inspect.signature(SplineTransformer).parameters) - blocked
-            )
-            invalid = set(spline_kwargs) - allowed
+            invalid = set(spline_kwargs) - _SPLINE_ALLOWED_KWARGS
             if invalid:
-                blocked_passed = invalid & blocked
-                unknown = invalid - blocked
+                blocked_passed = invalid & _SPLINE_BLOCKED_KWARGS
+                unknown = invalid - _SPLINE_BLOCKED_KWARGS
                 msgs = []
                 if blocked_passed:
                     msgs.append(
@@ -282,7 +283,7 @@ def create_datetime_features(
                 if unknown:
                     msgs.append(
                         f"Unknown keys in `spline_kwargs`: {sorted(unknown)}. "
-                        f"Allowed keys: {sorted(allowed)}."
+                        f"Allowed keys: {sorted(_SPLINE_ALLOWED_KWARGS)}."
                     )
                 raise ValueError(" ".join(msgs))
 
@@ -324,23 +325,17 @@ def create_datetime_features(
         )
 
     if keep_original_columns:
-        if isinstance(X, pd.DataFrame):
-            overlapping_cols = set(X.columns).intersection(set(X_new.columns))
-            if overlapping_cols:
-                raise ValueError(
-                    f"The following extracted feature names already exist in the input "
-                    f"DataFrame: {list(overlapping_cols)}. To avoid duplicate columns, "
-                    f"rename the original columns or avoid extracting these features."
-                )
-            X_new = pd.concat([X, X_new], axis=1)
-        else:
-            if X.name in X_new.columns:
-                raise ValueError(
-                    f"The following extracted feature names already exist in the input "
-                    f"Series: {list([X.name])}. To avoid duplicate columns, rename the "
-                    f"original Series or avoid extracting these features."
-                )
-            X_new = pd.concat([X, X_new], axis=1)
+        X_df = X.to_frame() if isinstance(X, pd.Series) else X
+        overlapping_cols = set(X_df.columns).intersection(set(X_new.columns))
+        if overlapping_cols:
+            container = "Series" if isinstance(X, pd.Series) else "DataFrame"
+            rename_target = "Series" if isinstance(X, pd.Series) else "columns"
+            raise ValueError(
+                f"The following extracted feature names already exist in the input "
+                f"{container}: {list(overlapping_cols)}. To avoid duplicate columns, "
+                f"rename the original {rename_target} or avoid extracting these features."
+            )
+        X_new = pd.concat([X_df, X_new], axis=1)
 
     return X_new
 
@@ -504,14 +499,16 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
             Fitted transformer.
 
         """
-        if isinstance(X, (pd.DataFrame, pd.Series)) and len(X) == 0:
+        if not isinstance(X, (pd.DataFrame, pd.Series)):
+            raise TypeError("Input `X` must be a pandas Series or DataFrame")
+        if len(X) == 0:
             raise ValueError("Cannot fit on empty input.")
 
         # Slice to the first 2 rows: the encoding is stateless (column
         # names depend on parameters and the index frequency, not on data
         # values), so any non-empty slice yields the same output schema.
         result = create_datetime_features(
-            X=X.iloc[:2] if isinstance(X, (pd.DataFrame, pd.Series)) else X,
+            X=X.iloc[:2],
             features=self.features,
             features_to_encode=self.features_to_encode,
             encoding=self.encoding,
@@ -534,7 +531,7 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         ----------
         X : pandas Series, pandas DataFrame
             Input DataFrame or Series with a datetime index.
-        
+
         Returns
         -------
         X_new : pandas DataFrame
@@ -597,7 +594,7 @@ def _freq_to_timedelta_unit(freq_str: str) -> str:
 
     """
     # Strip leading digit multiplier and weekday suffix (e.g. "2h" -> "h", "W-MON" -> "W")
-    normalized = re.split(r"[-_]", freq_str)[0]
+    normalized = freq_str.partition("-")[0].partition("_")[0]
     normalized = re.sub(r"^\d+", "", normalized)
 
     _coarse = {
@@ -667,6 +664,7 @@ def calculate_distance_from_holiday(
 
         - `time_to_holiday`: periods until the next holiday.
         - `time_since_holiday`: periods since the last holiday.
+
     Notes
     -----
     When `date_column` is specified, the unit is always days regardless of the
@@ -733,11 +731,17 @@ def calculate_distance_from_holiday(
                 f"Available columns: {list(X.columns)}."
             )
 
-    if date_column is not None and date_column not in X.columns:
-        raise ValueError(
-            f"`date_column='{date_column}'` is not a column of `X`. "
-            f"Available columns: {list(X.columns)}."
-        )
+    if date_column is not None:
+        if date_column not in X.columns:
+            raise ValueError(
+                f"`date_column='{date_column}'` is not a column of `X`. "
+                f"Available columns: {list(X.columns)}."
+            )
+        if pd.to_datetime(X[date_column], errors="coerce").isna().any():
+            raise ValueError(
+                f"`date_column='{date_column}'` contains NaN or unparseable "
+                f"values. All entries must be valid datetimes."
+            )
 
     if X[holiday_column].isna().any():
         warnings.warn(
