@@ -593,6 +593,7 @@ from skforecast.preprocessing import RollingFeaturesClassification
 from skforecast.preprocessing import TimeSeriesDifferentiator
 from skforecast.preprocessing import DateTimeFeatureTransformer
 from skforecast.preprocessing import create_datetime_features
+from skforecast.preprocessing import calculate_distance_from_holiday
 from skforecast.preprocessing import QuantileBinner
 from skforecast.preprocessing import ConformalIntervalCalibrator
 # Data reshaping utilities
@@ -655,8 +656,6 @@ from skforecast.exceptions import set_warnings_style
 from skforecast.exceptions import warn_skforecast_categories
 from skforecast.exceptions import runtime_deprecated
 
-# Experimental
-from skforecast.experimental import calculate_distance_from_holiday
 ```
 
 ## Available Datasets
