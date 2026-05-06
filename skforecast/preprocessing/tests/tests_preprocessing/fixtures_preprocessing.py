@@ -16,13 +16,12 @@ second_cols_onehot = [f"second_{i}" for i in range(0, 60)]
 quarter_cols_onehot = [f"quarter_{i}" for i in range(1, 5)]
 
 features_all_onehot = (
-    ["year"]
+    ["year", "weekend"]
     + month_cols_onehot
     + week_cols_onehot
     + day_of_week_cols_onehot
     + day_of_month_cols_onehot
     + day_of_year_cols_onehot
-    + ["weekend"]
     + hour_cols_onehot
     + minute_cols_onehot
     + second_cols_onehot

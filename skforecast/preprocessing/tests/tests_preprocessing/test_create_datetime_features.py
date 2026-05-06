@@ -120,7 +120,7 @@ def test_create_datetime_features_output_columns_when_onehot_encoding():
 
     results = create_datetime_features(df, encoding="onehot", keep_original_columns=False)
 
-    assert all([feature in features_all_onehot for feature in results.columns])
+    assert list(results.columns) == features_all_onehot
     assert len(results) == len(df)
 
 
