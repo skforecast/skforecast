@@ -49,6 +49,7 @@ from ..utils import (
     check_residuals_input,
     check_interval,
     configure_estimator_categorical_features,
+    cast_catboost_categorical_columns_dataframe,
     input_to_frame,
     expand_index,
     transform_numpy,
@@ -2017,22 +2018,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             fit_kwargs = {**self.fit_kwargs}
 
-        # NOTE: CatBoost requires integer values (not float) for categorical features.
-        # When X is passed as a DataFrame. Categorical columns may have:
-        #   - Categorical dtype: from ordinal_category encoding (_level_skforecast).
-        #     Converted via .cat.codes (NaN -> -1 by default).
-        #   - float dtype with NaN: from OrdinalEncoder applied to exog categoricals
-        #     (encoded_missing_value=np.nan). NaN is filled with -1 before casting.
-        if (
-            'cat_features' in fit_kwargs
-            and type(self.estimator).__name__ == 'CatBoostRegressor'
-        ):
-            cat_cols = [X_train_features_names_out_[i] for i in fit_kwargs['cat_features']]
-            for col in cat_cols:
-                if hasattr(X_train_estimator[col].dtype, 'categories'):
-                    X_train_estimator[col] = X_train_estimator[col].cat.codes.astype(int)
-                else:
-                    X_train_estimator[col] = X_train_estimator[col].fillna(-1).astype(int)
+        X_train_estimator = cast_catboost_categorical_columns_dataframe(
+            X              = X_train_estimator,
+            fit_kwargs     = fit_kwargs,
+            estimator      = self.estimator,
+            feature_names  = X_train_features_names_out_,
+        )
 
         if sample_weight is not None:
             self.estimator.fit(

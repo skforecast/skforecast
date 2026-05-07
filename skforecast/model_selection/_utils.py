@@ -18,7 +18,11 @@ from tqdm.auto import tqdm
 
 from ..exceptions import IgnoredArgumentWarning, OneStepAheadValidationWarning
 from ..metrics import add_y_train_argument, _any_metric_needs_y_train, _get_metric
-from ..utils import check_interval, date_to_index_position
+from ..utils import (
+    check_interval,
+    date_to_index_position,
+    cast_catboost_categorical_columns_dataframe,
+)
 
 
 def initialize_lags_grid(
@@ -1503,29 +1507,18 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     # ==========================================================================
     # X_train_encoding and X_test_encoding are series identifiers for each row 
     # of X_train and X_test, respectively.
-    if (
-        'cat_features' in fit_kwargs
-        and type(forecaster.estimator).__name__ == 'CatBoostRegressor'
-    ):
-        # NOTE: CatBoost requires integer values (not float) for categorical features
-        # when X is passed as a DataFrame. Categorical columns may have:
-        #   - Categorical dtype: from ordinal_category encoding (_level_skforecast).
-        #     Converted via .cat.codes (NaN -> -1 by default).
-        #   - float dtype with NaN: from OrdinalEncoder applied to categorical exogs
-        #     (encoded_missing_value=np.nan). NaN is filled with -1 before casting.
-        # NOTE: Copies of X_train and X_test are needed because the cast to int
-        # mutates the DataFrame in place. Without copies, the original DataFrames
-        # (generated once by `_train_test_split_one_step_ahead`) would be corrupted
-        # for subsequent iterations of the hyperparameter search.
-        X_train = X_train.copy()
-        X_test = X_test.copy()
-        cat_cols = [X_train.columns[i] for i in fit_kwargs['cat_features']]
-        for df in (X_train, X_test):
-            for col in cat_cols:
-                if hasattr(df[col].dtype, 'categories'):
-                    df[col] = df[col].cat.codes.astype(int)
-                else:
-                    df[col] = df[col].fillna(-1).astype(int)
+    # NOTE: The utility copies internally, so the original X_train and X_test
+    # generated once by `_train_test_split_one_step_ahead` are not mutated and
+    # remain reusable across hyperparameter search iterations.
+    feature_names = X_train.columns.to_list()
+    X_train = cast_catboost_categorical_columns_dataframe(
+        X=X_train, fit_kwargs=fit_kwargs,
+        estimator=forecaster.estimator, feature_names=feature_names,
+    )
+    X_test = cast_catboost_categorical_columns_dataframe(
+        X=X_test, fit_kwargs=fit_kwargs,
+        estimator=forecaster.estimator, feature_names=feature_names,
+    )
 
     if sample_weight is not None:
         forecaster.estimator.fit(

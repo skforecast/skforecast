@@ -50,6 +50,7 @@ from ..utils import (
     _build_predict_function,
     manage_warnings,
     configure_estimator_categorical_features,
+    cast_catboost_categorical_columns,
     scale_correction_factor_differentiation
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -131,16 +132,9 @@ def _fit_one_step_estimator(
     else:
         fit_kwargs = {**forecaster.fit_kwargs}
 
-    # NOTE: CatBoost requires integer values (not float) for categorical features
-    # when X is a numpy array. This requires converting X_train_step to object
-    # dtype and casting the categorical columns to int.
-    if (
-        'cat_features' in fit_kwargs
-        and type(estimator).__name__ == 'CatBoostRegressor'
-    ):
-        cat_idx = np.array(fit_kwargs['cat_features'])
-        X_train_step = X_train_step.astype(object)
-        X_train_step[:, cat_idx] = X_train_step[:, cat_idx].astype(int)
+    X_train_step = cast_catboost_categorical_columns(
+        X=X_train_step, fit_kwargs=fit_kwargs, estimator=estimator
+    )
 
     if sample_weight is not None:
         estimator.fit(
@@ -1613,15 +1607,12 @@ class ForecasterDirect(ForecasterBase):
         else:
             fit_kwargs = {**self.fit_kwargs}
 
-        if (
-            'cat_features' in fit_kwargs
-            and type(self.estimators_[step]).__name__ == 'CatBoostRegressor'
-        ):
-            cat_idx = np.array(fit_kwargs['cat_features'])
-            X_train = X_train.astype(object)
-            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
-            X_test = X_test.astype(object)
-            X_test[:, cat_idx] = X_test[:, cat_idx].astype(int)
+        X_train = cast_catboost_categorical_columns(
+            X=X_train, fit_kwargs=fit_kwargs, estimator=self.estimators_[step]
+        )
+        X_test = cast_catboost_categorical_columns(
+            X=X_test, fit_kwargs=fit_kwargs, estimator=self.estimators_[step]
+        )
 
         return X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
 

@@ -39,6 +39,7 @@ from ..utils import (
     check_interval,
     check_extract_values_and_index,
     configure_estimator_categorical_features,
+    cast_catboost_categorical_columns,
     input_to_frame,
     date_to_index_position,
     expand_index,
@@ -1122,15 +1123,12 @@ class ForecasterRecursive(ForecasterBase):
         else:
             fit_kwargs = {**self.fit_kwargs}
 
-        if (
-            'cat_features' in fit_kwargs
-            and type(self.estimator).__name__ == 'CatBoostRegressor'
-        ):
-            cat_idx = np.array(fit_kwargs['cat_features'])
-            X_train = X_train.astype(object)
-            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
-            X_test = X_test.astype(object)
-            X_test[:, cat_idx] = X_test[:, cat_idx].astype(int)
+        X_train = cast_catboost_categorical_columns(
+            X=X_train, fit_kwargs=fit_kwargs, estimator=self.estimator
+        )
+        X_test = cast_catboost_categorical_columns(
+            X=X_test, fit_kwargs=fit_kwargs, estimator=self.estimator
+        )
 
         return X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
 
@@ -1273,16 +1271,9 @@ class ForecasterRecursive(ForecasterBase):
         else:
             fit_kwargs = {**self.fit_kwargs}
 
-        # NOTE: CatBoost requires integer values (not float) for categorical features
-        # when X is a numpy array. This requires converting X_train to object
-        # dtype and casting the categorical columns to int.
-        if (
-            'cat_features' in fit_kwargs
-            and type(self.estimator).__name__ == 'CatBoostRegressor'
-        ):
-            cat_idx = np.array(fit_kwargs['cat_features'])
-            X_train = X_train.astype(object)
-            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
+        X_train = cast_catboost_categorical_columns(
+            X=X_train, fit_kwargs=fit_kwargs, estimator=self.estimator
+        )
 
         if sample_weight is not None:
             self.estimator.fit(
