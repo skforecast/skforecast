@@ -249,6 +249,83 @@ rolling = RollingFeatures(
 )
 ```
 
+### The `window_features` parameter
+
+The forecaster's `window_features` argument accepts **any object (or list of objects)** that implements the contract:
+
+```python
+def transform_batch(y: pd.Series) -> pd.DataFrame:
+    # Returns one row per training sample, indexed to align with y[max_window_size:]
+    ...
+```
+
+`RollingFeatures` is the built-in implementation; user-defined classes that follow the same contract are accepted. See [references/rolling-stats-reference.md](references/rolling-stats-reference.md#custom-window-feature-classes-protocol) for the full protocol and a custom-class example.
+
+**Effective `window_size`.** The forecaster sets `window_size = max(max_lag, max_size_window_features) (+ differentiation)`. A `RollingFeatures(window_sizes=30)` combined with `lags=7` raises `window_size` to 30 — `last_window` must hold ≥ 30 values and the first 30 rows of training data are dropped. This is a frequent source of "not enough data to train" errors when the rolling window is much larger than the lags.
+
+**Lags-free configuration.** `lags=None, window_features=...` is valid (and useful for purely smoothed-history models). At least one of `lags` / `window_features` must be non-`None` — passing both as `None` raises `ValueError`.
+
+**Multiple `RollingFeatures` instances.** When passing a list, each instance is processed independently and their feature names are concatenated. Names must be unique across instances; collisions silently overwrite columns. Use the `features_names=` argument of `RollingFeatures` to disambiguate when reusing the same `stat`/`window_size` combination.
+
+**Runtime mutation.** After construction, use `forecaster.set_window_features(new_window_features)` to swap the configuration (analogous to `set_lags`). This recomputes `window_size`, `max_size_window_features`, `window_features_names`, and the differentiator's window. Useful inside manual hyperparameter loops.
+
+**Interaction with `differentiation`.** Window features are computed on the **differenced** series, not the original one. With `differentiation=1`, `roll_mean_7` is the mean of seven consecutive *changes*, not seven raw values. Take this into account when interpreting feature importances.
+
+**Multi-series.** In `ForecasterRecursiveMultiSeries`, the same `RollingFeatures` instance is applied independently to each series — configuration is global but the computed values are per-series (no leakage between series).
+
+**Classifier variant.** For `ForecasterRecursiveClassifier`, use `RollingFeaturesClassification` (also in `skforecast.preprocessing`) instead of `RollingFeatures`.
+
+### Choosing window features
+
+**When window features help:**
+- Noisy series — a smoothed signal (`mean`, `ewm`) reduces variance the lags cannot.
+- Capturing a longer scale than the lags without exploding column count: with hourly data and `lags=24`, a `roll_mean_168` represents the weekly level with one feature instead of adding 144 more lags.
+- Heteroscedastic or regime-changing series (energy, finance, traffic) — `roll_std`, `coef_variation`.
+- When extreme behaviour drives decisions (peak demand, drawdowns) — `roll_min`, `roll_max`.
+
+**When they don't help:**
+- Short series — each large window discards training rows (`window_size` grows).
+- Highly periodic, low-noise series — lags + calendar features are usually enough.
+- Redundant ranges — a `roll_mean_24` alongside `lags=range(1, 25)` adds little for a gradient boosting model that can already construct the average from splits.
+
+**Which statistic for which signal:**
+
+| Stat | Adds signal when… | Notes |
+|------|------------------|-------|
+| `mean` | Default smoothing — recent level. | Start here. |
+| `ewm` | Recent observations should dominate. | Tune `alpha` in `kwargs_stats` (0.1 slow, 0.5 reactive). |
+| `std` | Volatility / heteroscedasticity matters. | Near-mandatory in finance and energy demand. |
+| `median` | Frequent outliers. | Replaces `mean`, do not combine. |
+| `min` / `max` | Threshold crossings, peaks, operational floors. | Useful in capacity planning. |
+| `sum` | Cumulative quantities (rainfall, sales) rather than levels. | Scale-sensitive — pair with `transformer_y` or scaling. |
+| `ratio_min_max` | Bounded regime indicator. | Often noisy on stationary series. |
+| `coef_variation` | Scale-free volatility. | Useful in `ForecasterRecursiveMultiSeries` to compare series of different magnitudes. |
+
+**Window sizes:**
+- Tie them to actual seasonality: hourly → 24, 168; daily → 7, 30; weekly → 4, 13, 52; monthly → 12.
+- Multi-scale usually wins: combine one short (reactive) and one long (trend) window — e.g. `stats=['mean', 'std', 'mean', 'std'], window_sizes=[7, 7, 30, 30]`.
+- Keep `max_window_size < ~25-30% of len(y_train)` to preserve enough training rows.
+
+**Practical recipe:**
+1. **Baseline**: lags only (from ACF/PACF) + calendar features if applicable. Measure via backtesting.
+2. **If residuals track recent level** → add `roll_mean_<seasonal_period>`.
+3. **If errors scale with magnitude** → add `roll_std_<seasonal_period>`.
+4. **If outliers/peaks matter** → add `roll_max` or `roll_min` with the same window.
+5. **One addition per iteration**, validated with backtesting. Drop it if MAE/RMSE doesn't improve on independent folds.
+6. **Prune with `select_features`** at the end — typically 2-4 of 6-8 candidates survive.
+
+**Combinations that tend to work:**
+- **Hourly electricity demand**: `lags=[1..24, 168]` + `RollingFeatures(['mean', 'std'], [24, 24])` + cyclical calendar.
+- **Daily sales with promotions**: `lags=[1..14]` + `RollingFeatures(['mean', 'median'], [7, 28])` + holiday distance + promo exog.
+- **Financial series**: `lags=[1..5]` + `RollingFeatures(['std', 'coef_variation'], [5, 20])` + `differentiation=1` (window features compute on returns, which is usually what you want).
+- **Multi-series with heterogeneous scales**: prefer `coef_variation` and `ratio_min_max` (scale-free), or apply per-series `transformer_series`.
+
+**Anti-patterns:**
+- Adding 6-8 statistics at once "just in case" — dilutes signal and increases overfitting risk.
+- `roll_sum` without scaling the target — its magnitude dominates the lags and destabilises training.
+- `min` / `max` with very long windows on trending series — the feature becomes near-constant or monotone.
+- Duplicating information: keeping `lags=range(1, 31)` together with `roll_mean_30` rarely helps a gradient boosting model — shrink the lag set when you add the rolling stat.
+
 ## Differencing (Non-Stationary Series)
 
 ```python
@@ -371,3 +448,6 @@ predictions = forecaster.predict(steps=10, exog=exog.loc[forecast_index])
 3. **Not covering forecast horizon with exog**: Calendar / holiday features for `predict()` must include future dates covering the entire forecast horizon.
 4. **Overriding `max_values` for `'week'` or `'day_of_year'`**: The defaults (53, 366) are intentional — they handle ISO week 53 and leap years correctly. Use the smaller value (52 / 365) only if you have verified your data never reaches the maximum.
 5. **Over-engineering features**: Start with lags only, then add rolling features and calendar features incrementally. Validate each addition with backtesting.
+6. **Rolling window larger than lags without checking training size**: The forecaster's `window_size` is `max(max_lag, max_size_window_features)`. A 30-step rolling window with `lags=7` drops the first 30 rows of training data and requires `last_window` of length ≥ 30 at predict time.
+7. **Colliding feature names across multiple `RollingFeatures`**: When passing `window_features=[wf1, wf2]`, names like `roll_mean_7` produced by both instances overwrite each other. Override with `features_names=[...]` on at least one instance.
+8. **Forgetting that window features run on the differenced series**: With `differentiation=1`, `roll_mean_7` is the mean of seven changes, not seven raw values. Adjust interpretation accordingly.

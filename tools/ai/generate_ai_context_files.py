@@ -46,6 +46,7 @@ SKILL_ORDER: list[str] = [
     "statistical-models",
     "hyperparameter-optimization",
     "prediction-intervals",
+    "autocorrelation-and-lag-selection",
     "feature-engineering",
     "feature-selection",
     "drift-detection",
