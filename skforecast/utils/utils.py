@@ -630,6 +630,119 @@ def configure_estimator_categorical_features(
     return fit_kwargs
 
 
+def cast_catboost_categorical_columns(
+    X: np.ndarray,
+    fit_kwargs: dict[str, object],
+    estimator: object,
+) -> np.ndarray:
+    """
+    Cast categorical columns of `X` to integer dtype as required by CatBoost
+    when `X` is a numpy array.
+
+    NaN values produced by the internal `OrdinalEncoder`
+    (`unknown_value=np.nan`, `encoded_missing_value=np.nan`) are filled with
+    `-1` before casting. `-1` cannot collide with the encoder's output range
+    (`0..n-1`) and is treated by CatBoost as a novel category.
+
+    No-op if `cat_features` is not in `fit_kwargs` or the estimator (or the
+    last step of a Pipeline) is not a CatBoost model.
+
+    Parameters
+    ----------
+    X : numpy ndarray
+        Training or test matrix with categorical columns at the indices
+        listed in `fit_kwargs['cat_features']`.
+    fit_kwargs : dict
+        Keyword arguments to pass to `estimator.fit`. Must contain the key
+        `'cat_features'` (a list of int indices) for the cast to run.
+    estimator : object
+        Estimator the matrix will be passed to. The cast only runs if this
+        is a CatBoost estimator (or a `Pipeline` whose last step is).
+
+    Returns
+    -------
+    X : numpy ndarray
+        Matrix with categorical columns cast to int and NaNs replaced by
+        `-1`. Returned unchanged if the cast does not apply.
+
+    """
+
+    if 'cat_features' not in fit_kwargs:
+        return X
+
+    target_estimator = estimator
+    if isinstance(target_estimator, Pipeline):
+        target_estimator = target_estimator[-1]
+    if type(target_estimator).__module__.split('.')[0] != 'catboost':
+        return X
+
+    cat_idx = np.asarray(fit_kwargs['cat_features'])
+    X = X.astype(object)
+    cat_block = np.asarray(X[:, cat_idx], dtype=float)
+    X[:, cat_idx] = np.nan_to_num(cat_block, nan=-1).astype(int)
+
+    return X
+
+
+def cast_catboost_categorical_columns_dataframe(
+    X: pd.DataFrame,
+    fit_kwargs: dict[str, object],
+    estimator: object,
+    feature_names: list[str],
+) -> pd.DataFrame:
+    """
+    Cast categorical columns of `X` to integer dtype as required by CatBoost
+    when `X` is a pandas DataFrame.
+
+    Two dtypes are supported for categorical columns:
+    * `pandas.Categorical` — converted via `.cat.codes` (NaN -> -1 by default).
+    * float (with NaN from the `OrdinalEncoder`) — `fillna(-1).astype(int)`.
+
+    No-op if `cat_features` is not in `fit_kwargs` or the estimator (or the
+    last step of a Pipeline) is not a CatBoost model.
+
+    Parameters
+    ----------
+    X : pandas DataFrame
+        Training matrix.
+    fit_kwargs : dict
+        Keyword arguments to pass to `estimator.fit`. Must contain the key
+        `'cat_features'` (a list of int indices) for the cast to run.
+    estimator : object
+        Estimator the matrix will be passed to. The cast only runs if this
+        is a CatBoost estimator (or a `Pipeline` whose last step is).
+    feature_names : list of str
+        Column names of `X` in positional order; used to translate the
+        integer indices in `fit_kwargs['cat_features']` to column labels.
+
+    Returns
+    -------
+    X : pandas DataFrame
+        DataFrame with categorical columns cast to int. Returned unchanged
+        if the cast does not apply.
+
+    """
+
+    if 'cat_features' not in fit_kwargs:
+        return X
+
+    target_estimator = estimator
+    if isinstance(target_estimator, Pipeline):
+        target_estimator = target_estimator[-1]
+    if type(target_estimator).__module__.split('.')[0] != 'catboost':
+        return X
+
+    X = X.copy()
+    cat_cols = [feature_names[i] for i in fit_kwargs['cat_features']]
+    for col in cat_cols:
+        if hasattr(X[col].dtype, 'categories'):
+            X[col] = X[col].cat.codes.astype(int)
+        else:
+            X[col] = X[col].fillna(-1).astype(int)
+
+    return X
+
+
 def _get_estimator_categorical_set_params(
     forecaster: object
 ) -> dict[str, object]:

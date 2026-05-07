@@ -51,6 +51,7 @@ from ..utils import (
     transform_dataframe,
     select_n_jobs_fit_forecaster,
     configure_estimator_categorical_features,
+    cast_catboost_categorical_columns,
     manage_warnings,
     get_style_repr_html,
     _build_predict_function,
@@ -1757,15 +1758,12 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         else:
             fit_kwargs = {**self.fit_kwargs}
 
-        if (
-            'cat_features' in fit_kwargs
-            and type(self.estimators_[step]).__name__ == 'CatBoostRegressor'
-        ):
-            cat_idx = np.array(fit_kwargs['cat_features'])
-            X_train = X_train.astype(object)
-            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
-            X_test = X_test.astype(object)
-            X_test[:, cat_idx] = X_test[:, cat_idx].astype(int)
+        X_train = cast_catboost_categorical_columns(
+            X=X_train, fit_kwargs=fit_kwargs, estimator=self.estimators_[step]
+        )
+        X_test = cast_catboost_categorical_columns(
+            X=X_test, fit_kwargs=fit_kwargs, estimator=self.estimators_[step]
+        )
 
         return (
             X_train, 
