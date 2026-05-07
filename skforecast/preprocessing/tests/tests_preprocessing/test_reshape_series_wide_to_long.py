@@ -4,7 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from ...preprocessing import reshape_series_wide_to_long
+from ..._preprocessing import reshape_series_wide_to_long
 
 
 def test_TypeError_when_data_is_not_dataframe():

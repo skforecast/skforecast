@@ -14,6 +14,8 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the calendar feature engineering toolkit (<code>[create_datetime_features]</code>, <code>[DateTimeFeatureTransformer]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
+
 
 **Added**
 
@@ -22,6 +24,13 @@ The main changes in this release are:
 
 **Changed**
 
++ Refactored the calendar feature engineering toolkit (<code>[create_datetime_features]</code>, <code>[DateTimeFeatureTransformer]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
+
++ <code>[calculate_distance_from_holiday]</code> moved from <code>[experimental]</code> to <code>[preprocessing]</code>. The function now accepts a `pandas.Series` or `pandas.DataFrame`, infers the time unit from the index frequency, renames its output columns to `time_to_holiday` and `time_since_holiday`, no longer mutates the input, requires `holiday_column` to be passed explicitly when `X` is a DataFrame, and emits a `UserWarning` while filling with `False` when the holiday column contains NaN values.
+
++ Removed the unused experimental `FastOrdinalEncoder`.
+
++ The internal preprocessing submodule was renamed from `skforecast.preprocessing.preprocessing` to `skforecast.preprocessing._preprocessing`. The public API (`from skforecast.preprocessing import …`) is unchanged; only direct imports from the submodule path are affected.
 
 **Fixed**
 
@@ -1562,15 +1571,18 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- preprocessing -->
 [preprocessing]: ../api/preprocessing.md
-[RollingFeatures]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.RollingFeatures
-[RollingFeaturesClassification]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.RollingFeaturesClassification
-[reshape_series_wide_to_long]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.reshape_series_wide_to_long
-[reshape_series_long_to_dict]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict
-[reshape_exog_long_to_dict]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.reshape_exog_long_to_dict
-[reshape_series_exog_dict_to_long]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.reshape_series_exog_dict_to_long
-[TimeSeriesDifferentiator]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
-[QuantileBinner]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.QuantileBinner
-[ConformalIntervalCalibrator]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
+[RollingFeatures]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.RollingFeatures
+[RollingFeaturesClassification]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.RollingFeaturesClassification
+[reshape_series_wide_to_long]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.reshape_series_wide_to_long
+[reshape_series_long_to_dict]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.reshape_series_long_to_dict
+[reshape_exog_long_to_dict]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.reshape_exog_long_to_dict
+[reshape_series_exog_dict_to_long]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.reshape_series_exog_dict_to_long
+[TimeSeriesDifferentiator]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.TimeSeriesDifferentiator
+[QuantileBinner]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.QuantileBinner
+[ConformalIntervalCalibrator]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.ConformalIntervalCalibrator
+[create_datetime_features]: ../api/preprocessing.md#skforecast.preprocessing._calendar.create_datetime_features
+[DateTimeFeatureTransformer]: ../api/preprocessing.md#skforecast.preprocessing._calendar.DateTimeFeatureTransformer
+[calculate_distance_from_holiday]: ../api/preprocessing.md#skforecast.preprocessing._calendar.calculate_distance_from_holiday
 
 <!-- drift_detection -->
 [drift_detection]: ../api/drift_detection.md
@@ -1601,7 +1613,6 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- experimental -->
 [experimental]: ../api/experimental.md
 [TimeSeriesSplitter]: ../api/experimental.md#skforecast.experimental._splitter.TimeSeriesSplitter
-[calculate_distance_from_holiday]: ../api/experimental.md#skforecast.experimental._experimental.calculate_distance_from_holiday
 
 <!-- datasets -->
 [datasets]: ../api/datasets.md
@@ -1611,6 +1622,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- exceptions -->
 [exceptions]: ../api/exceptions.md
+[IgnoredArgumentWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.IgnoredArgumentWarning
 
 <!-- OLD -->
 [ForecasterAutoreg]: https://skforecast.org/0.13.0/api/forecasterautoreg
@@ -1621,8 +1633,6 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterAutoregMultiVariate]: https://skforecast.org/0.13.0/api/forecastermultivariate
 [model_selection_multiseries]: https://skforecast.org/0.13.0/api/model_selection_multiseries
 [model_selection_sarimax]: https://skforecast.org/0.13.0/api/model_selection_sarimax
-[DateTimeFeatureTransformer]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.DateTimeFeatureTransformer
-[create_datetime_features]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.create_datetime_features
 [series_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
 [exog_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
 [ForecasterSarimax]: https://skforecast.org/0.19.0/api/forecastersarimax.html

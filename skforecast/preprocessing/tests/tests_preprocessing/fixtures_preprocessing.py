@@ -5,28 +5,27 @@ import pandas as pd
 
 
 # Datetime Functions
-year_cols_onehot = [f"year_{i}" for i in [2021, 2022, 2023]]
 month_cols_onehot = [f"month_{i}" for i in range(1, 13)]
 week_cols_onehot = [f"week_{i}" for i in range(1, 54)]
 day_of_week_cols_onehot = [f"day_of_week_{i}" for i in range(0, 7)]
 day_of_month_cols_onehot = [f"day_of_month_{i}" for i in range(1, 32)]
-day_of_year_cols_onehot = [f"day_of_year_{i}" for i in range(1, 366)]
-weekend_cols_onehot = ["weekend_0", "weekend_1"]
+day_of_year_cols_onehot = [f"day_of_year_{i}" for i in range(1, 367)]
 hour_cols_onehot = [f"hour_{i}" for i in range(0, 24)]
 minute_cols_onehot = [f"minute_{i}" for i in range(0, 60)]
 second_cols_onehot = [f"second_{i}" for i in range(0, 60)]
+quarter_cols_onehot = [f"quarter_{i}" for i in range(1, 5)]
 
 features_all_onehot = (
-    year_cols_onehot
+    ["year", "weekend"]
     + month_cols_onehot
     + week_cols_onehot
     + day_of_week_cols_onehot
     + day_of_month_cols_onehot
     + day_of_year_cols_onehot
-    + weekend_cols_onehot
     + hour_cols_onehot
     + minute_cols_onehot
     + second_cols_onehot
+    + quarter_cols_onehot
 )
 
 

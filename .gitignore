@@ -152,7 +152,7 @@ dmypy.json
 .github/prompts
 
 # Claude Code (local user settings)
-.claude/
+.claude/settings.local.json
 
 # Docs execution logs
 tools/execute_docs/logs/
