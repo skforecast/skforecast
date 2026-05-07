@@ -5,10 +5,10 @@ This script is the single entry point for producing all derived AI context
 files used by IDEs, the web site, and LLMs.  The source files that are
 maintained by hand are:
 
-  1. tools/ai/llms-base.txt        – core API reference (~730 lines)
-  2. llms.txt                      – public index per llmstxt.org spec (~120 lines)
-  3. skills/*/SKILL.md             – modular Agent Skills (one per directory)
-  4. tools/ai/ai_context_header.md – dev-only header (testing, code style)
+  1. tools/ai/llms-base.txt        - core API reference (~730 lines)
+  2. llms.txt                      - public index per llmstxt.org spec (~120 lines)
+  3. skills/*/SKILL.md             - modular Agent Skills (one per directory)
+  4. tools/ai/ai_context_header.md - dev-only header (testing, code style)
 
 Everything else is generated.
 

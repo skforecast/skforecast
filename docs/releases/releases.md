@@ -32,6 +32,7 @@ The main changes in this release are:
 
 + The internal preprocessing submodule was renamed from `skforecast.preprocessing.preprocessing` to `skforecast.preprocessing._preprocessing`. The public API (`from skforecast.preprocessing import …`) is unchanged; only direct imports from the submodule path are affected.
 
+
 **Fixed**
 
 
