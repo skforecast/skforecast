@@ -17,6 +17,12 @@ Use feature selection when:
 - You want to identify which features matter most
 - You need to speed up training by removing irrelevant features
 
+### Related skills
+
+- **Before**: `autocorrelation-and-lag-selection` (generate an informed candidate set of lags before running the selector)
+- **Before**: `feature-engineering` (create the rolling, calendar, and exogenous features that the selector will rank)
+- **After**: `hyperparameter-optimization` (tune the estimator on the reduced feature set)
+
 ## Single Series
 
 `select_features` works with `ForecasterRecursive` and `ForecasterDirect`.

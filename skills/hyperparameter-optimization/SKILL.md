@@ -26,6 +26,12 @@ Use hyperparameter search after establishing a baseline forecaster to improve pr
 | **Random Search** | Large parameter space, limited compute budget | Medium |
 | **Grid Search** | Small parameter space, exhaustive exploration | Slowest |
 
+### Related skills
+
+- **Before**: `autocorrelation-and-lag-selection` (narrow the `lags` search space to a statistically informed candidate set)
+- **Before**: `feature-selection` (run the search on a reduced feature set to make it tractable)
+- **After**: `prediction-intervals` (add uncertainty quantification once the configuration is fixed)
+
 ## Bayesian Search (Recommended)
 
 Always prefer Bayesian search as the default strategy. It uses Optuna to intelligently explore the search space.

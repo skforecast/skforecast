@@ -24,6 +24,12 @@ Use statistical models when:
 - You need built-in prediction intervals without residual bootstrapping
 - As a baseline to compare against ML models
 
+### Related skills
+
+- **Before**: `autocorrelation-and-lag-selection` (read ACF/PACF to identify ARIMA orders `p`, `d`, `q` before fitting)
+- **After**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals via the `interval_method` argument)
+- **After**: `hyperparameter-optimization` (tune ARIMA `order` / `seasonal_order` via grid search)
+
 ## Available Models
 
 | Model | Class | Description |

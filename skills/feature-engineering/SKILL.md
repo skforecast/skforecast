@@ -22,6 +22,12 @@ Use this skill when the user wants to create features to improve forecasting
 accuracy: calendar/datetime features, rolling statistics, cyclical encoding,
 sunlight features, differencing, or data scaling.
 
+### Related skills
+
+- **Before**: `autocorrelation-and-lag-selection` (use ACF/PACF to choose a candidate set of lags before adding rolling and calendar features)
+- **After**: `feature-selection` (prune redundant features with `select_features` after engineering)
+- **After**: `hyperparameter-optimization` (jointly tune the engineered configuration and the estimator hyperparameters)
+
 ## Overview
 
 | Tool | Package | Purpose |

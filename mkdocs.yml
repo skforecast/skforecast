@@ -48,6 +48,7 @@ nav:
       - Calendar features: user_guides/calendar-features.ipynb
       - Data transformation: user_guides/sklearn-transformers-and-pipeline.ipynb
       - Differentiation: user_guides/time-series-differentiation.ipynb
+      - Autocorrelation and lag selection: user_guides/autocorrelation-and-lag-selection.ipynb
       - Handling missing values: user_guides/handling-missing-values.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
       - Sktime pipelines: user_guides/sktime-pipelines.ipynb
