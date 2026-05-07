@@ -29,6 +29,13 @@ Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
 Core: numpy>=1.26, pandas>=2.1,<3.0, scikit-learn>=1.4, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
 Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 + seaborn>=0.12,<0.14 (plotting), keras>=3.0,<4.0 (deep learning)
 
+### Python environment
+
+Before running any Python command (tests, scripts, notebooks, `pip install`, etc.)
+for the first time in a session, run `conda env list` and ask which environment to
+use. Do not assume the active environment. Once the user confirms an environment,
+reuse it for the rest of the session without asking again.
+
 ---
 
 # Skforecast — Complete API & Workflow Reference
@@ -39,13 +46,13 @@ Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 + seaborn>=0.12
 
 > Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
-This document is for skforecast v0.22.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.23.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.22.0
+- Version: 0.23.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -76,7 +83,7 @@ skforecast/
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
 ├── foundation/              # FoundationModel, ForecasterFoundation
 │                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL)
-├── stats/                   # Arima, Sarimax, Ets, Arar (sklearn-compatible wrappers)
+├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, DateTimeFeatureTransformer,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
 ├── model_selection/         # backtesting_forecaster, grid/random/bayesian search, TimeSeriesFold
@@ -451,10 +458,12 @@ results, study = bayesian_search_forecaster(
 ## Statistical Models (ARIMA, ETS, ARAR)
 
 Statistical models are wrapped by `ForecasterStats` for a sklearn-compatible interface. Available models: `Arima`, `Sarimax`, `Ets`, `Arar`.
+Autocorrelation utilities are also available in `skforecast.stats`: `acf`, `pacf`, and `calculate_lag_autocorrelation`.
 
 ```python
 from skforecast.recursive import ForecasterStats
 from skforecast.stats import Arima, Ets, Sarimax, Arar
+from skforecast.stats import acf, pacf, calculate_lag_autocorrelation
 
 # ARIMA model (order=(p,d,q), seasonal_order=(P,D,Q), m=seasonal_period)
 forecaster = ForecasterStats(estimator=Arima(order=(1, 1, 1), seasonal_order=(1, 1, 1), m=12))
@@ -623,6 +632,7 @@ from skforecast.metrics import create_mean_pinball_loss
 
 # Statistical models (used with ForecasterStats)
 from skforecast.stats import Arima, Ets, Sarimax, Arar
+from skforecast.stats import acf, pacf, calculate_lag_autocorrelation
 
 # Drift Detection
 from skforecast.drift_detection import RangeDriftDetector
@@ -633,7 +643,6 @@ from skforecast.plot import plot_residuals
 from skforecast.plot import plot_multivariate_time_series_corr
 from skforecast.plot import plot_prediction_distribution
 from skforecast.plot import plot_prediction_intervals
-from skforecast.plot import calculate_lag_autocorrelation
 from skforecast.plot import backtesting_gif_creator
 from skforecast.plot import set_dark_theme
 
@@ -695,5 +704,5 @@ show_datasets_info()
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.22.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.23.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```

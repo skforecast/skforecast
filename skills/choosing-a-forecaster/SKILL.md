@@ -13,6 +13,13 @@ description: >
 
 Use this skill when the user needs help choosing a forecaster, comparing forecaster types (recursive vs direct, single vs multi-series), or understanding which skforecast class fits their problem.
 
+### Related skills
+
+- **After**: `forecasting-single-series` (apply the chosen forecaster to one target series)
+- **After**: `forecasting-multiple-series` (apply the chosen forecaster to several series jointly)
+- **After**: `autocorrelation-and-lag-selection` (analyse the series dynamics before configuring `lags`)
+- **After**: `feature-engineering` (build the input feature set: calendar, rolling, exogenous)
+
 ## Overview
 
 Skforecast is a **machine learning-first** library. The ML forecasters are the primary tools; statistical models (`ForecasterStats`) and naive baselines (`ForecasterEquivalentDate`) serve as comparison benchmarks.

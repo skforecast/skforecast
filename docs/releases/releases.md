@@ -10,11 +10,16 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.23.0 <small>TBD</small> { id="0.23.0" }
+## 0.23.0 <small>In development</small> { id="0.23.0" }
 
 The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Refactored the calendar feature engineering toolkit (<code>[create_datetime_features]</code>, <code>[DateTimeFeatureTransformer]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
+
+
+**Added**
+
++ New functions <code>[acf]</code>, <code>[pacf]</code> and <code>[calculate_lag_autocorrelation]</code> in the <code>[stats]</code> module. Fast ACF and PACF implementations via FFT and Levinson-Durbin, removing the dependency on `statsmodels` for autocorrelation calculations.
 
 
 **Changed**
@@ -26,6 +31,9 @@ The main changes in this release are:
 + Removed the unused experimental `FastOrdinalEncoder`.
 
 + The internal preprocessing submodule was renamed from `skforecast.preprocessing.preprocessing` to `skforecast.preprocessing._preprocessing`. The public API (`from skforecast.preprocessing import …`) is unchanged; only direct imports from the submodule path are affected.
+
+
+**Fixed**
 
 
 ## 0.22.0 <small>Apr 23, 2026</small> { id="0.22.0" }
@@ -1530,6 +1538,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [Sarimax]: ../api/stats.md#skforecast.stats._sarimax.Sarimax
 [Ets]: ../api/stats.md#skforecast.stats._ets.Ets
 [Arar]: ../api/stats.md#skforecast.stats._arar.Arar
+[acf]: ../api/stats.md#skforecast.stats._autocorrelation.acf
+[pacf]: ../api/stats.md#skforecast.stats._autocorrelation.pacf
+[calculate_lag_autocorrelation]: ../api/stats.md#skforecast.stats._autocorrelation.calculate_lag_autocorrelation
 
 <!-- model_selection -->
 [model_selection]: ../api/model_selection.md
@@ -1590,7 +1601,6 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [plot]: ../api/plot.md
 [set_dark_theme]: ../api/plot.md#skforecast.plot.plot.set_dark_theme
 [plot_residuals]: ../api/plot.md#skforecast.plot.plot.plot_residuals
-[calculate_lag_autocorrelation]: ../api/plot.md#skforecast.plot.plot.calculate_lag_autocorrelation
 [plot_prediction_distribution]: ../api/plot.md#skforecast.plot.plot.plot_prediction_distribution
 [plot_prediction_intervals]: ../api/plot.md#skforecast.plot.plot.plot_prediction_intervals
 [backtesting_gif_creator]: ../api/plot.md#skforecast.plot.plot.backtesting_gif_creator

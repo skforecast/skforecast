@@ -5,10 +5,10 @@ This script is the single entry point for producing all derived AI context
 files used by IDEs, the web site, and LLMs.  The source files that are
 maintained by hand are:
 
-  1. tools/ai/llms-base.txt        – core API reference (~730 lines)
-  2. llms.txt                      – public index per llmstxt.org spec (~120 lines)
-  3. skills/*/SKILL.md             – modular Agent Skills (one per directory)
-  4. tools/ai/ai_context_header.md – dev-only header (testing, code style)
+  1. tools/ai/llms-base.txt        - core API reference (~730 lines)
+  2. llms.txt                      - public index per llmstxt.org spec (~120 lines)
+  3. skills/*/SKILL.md             - modular Agent Skills (one per directory)
+  4. tools/ai/ai_context_header.md - dev-only header (testing, code style)
 
 Everything else is generated.
 
@@ -46,6 +46,7 @@ SKILL_ORDER: list[str] = [
     "statistical-models",
     "hyperparameter-optimization",
     "prediction-intervals",
+    "autocorrelation-and-lag-selection",
     "feature-engineering",
     "feature-selection",
     "drift-detection",
@@ -237,24 +238,27 @@ def validate_imports_consistency() -> list[str]:
         # Extract imported names from __init__.py
         exported: set[str] = set()
 
-        # Match "from .X import (A, B, ...)"
+        # Match "from .X import (A, B, ...)" — exclude parent imports (from ..X)
         for match in re.finditer(
-            r"from\s+\.[\w.]*\s+import\s+\(([^)]+)\)", init_text, re.DOTALL
+            r"from\s+\.(?!\.)[\w.]*\s+import\s+\(([^)]+)\)", init_text, re.DOTALL
         ):
             for token in re.findall(r"\b(\w+)\b", match.group(1)):
                 exported.add(token)
 
-        # Match "from .X import A, B, C" (no parentheses)
+        # Match "from .X import A, B, C" (no parentheses) — exclude parent imports
         for match in re.finditer(
-            r"from\s+\.[\w.]*\s+import\s+(?!\()(.+)$", init_text, re.MULTILINE
+            r"from\s+\.(?!\.)[\w.]*\s+import\s+(?!\()(.+)$", init_text, re.MULTILINE
         ):
             for token in re.findall(r"\b(\w+)\b", match.group(1)):
                 exported.add(token)
 
-        # Remove submodule imports ("from . import submod")
-        submod_imports = set(
-            re.findall(r"^from\s+\.\s+import\s+(\w+)", init_text, re.MULTILINE)
-        )
+        # Remove submodule imports ("from . import submod1, submod2, ...")
+        submod_imports: set[str] = set()
+        for submod_match in re.finditer(
+            r"from\s+\.\s+import\s+(.+)$", init_text, re.MULTILINE
+        ):
+            for token in re.findall(r"\b(\w+)\b", submod_match.group(1)):
+                submod_imports.add(token)
         exported -= submod_imports
 
         # Filter: only public, non-private identifiers.
