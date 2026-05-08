@@ -153,6 +153,7 @@ dmypy.json
 
 # Claude Code (local user settings)
 .claude/settings.local.json
+.claude/settings.json
 
 # Docs execution logs
 tools/execute_docs/logs/
