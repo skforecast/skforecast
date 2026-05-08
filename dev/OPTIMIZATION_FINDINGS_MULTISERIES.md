@@ -19,26 +19,39 @@ for level in X_train_series_names_in_:
         mask = X_train['_level_skforecast'].to_numpy() == encoded_value
 ```
 
-**Why it's slow:** For each of K series, scans the full `n_total`-row column to build a mask → O(K·n).
+**Why it's slow:** For each of K series, builds a full boolean array of length n_total → O(K·n) comparisons and K×n memory.
 
-**Fix:** Extract the level-code column **once** before the loop, then build per-level indices in a single pass using `np.argsort` / `np.searchsorted`, or `pd.Series(codes).groupby(...).indices`. Complexity: O(K·n) → O(n + K).
+**⚠️ Benchmark finding (2026-05-08):** Simply extracting `.to_numpy()` before the loop or pre-building a `{code: bool_mask}` dict **does not help** — both approaches still do K×n boolean comparisons and provide only ~1x speedup. The bottleneck is the comparisons themselves, not the pandas overhead.
+
+**Correct fix:** Sort the code array once, then use `np.searchsorted` per level to get row indices directly. This avoids materialising K boolean arrays of length n. Complexity: O(n log n + K log n), returns index slices instead of bool masks.
 
 ```python
-# Before the loop
-if self.encoding != 'onehot':
-    level_codes = X_train['_level_skforecast'].to_numpy()
-    # Build {encoded_value: bool_mask} map once
-    level_mask_map = {
-        v: level_codes == v
-        for v in self.encoding_mapping_.values()
-    }
+# Sort level codes once before the loop
+level_codes = X_train['_level_skforecast'].to_numpy()
+sort_idx     = np.argsort(level_codes, kind='stable')
+sorted_codes = level_codes[sort_idx]
 
 for level in X_train_series_names_in_:
     if self.encoding == 'onehot':
         mask = X_train[level].to_numpy() == 1.
     else:
-        mask = level_mask_map[self.encoding_mapping_[level]]
+        v  = self.encoding_mapping_[level]
+        lo = np.searchsorted(sorted_codes, v, side='left')
+        hi = np.searchsorted(sorted_codes, v, side='right')
+        idx = sort_idx[lo:hi]   # row indices — use y_train[idx], y_pred[idx]
 ```
+
+**Measured speedup (N_per_series=1950):**
+
+| K | OLD (ms) | NEW indices (ms) | Speedup |
+|--:|--:|--:|--:|
+| 50 | 3.5 | 1.2 | 3.1× |
+| 100 | 14.2 | 2.2 | 6.6× |
+| 300 | 149.9 | 5.3 | 28× |
+| 600 | 667.1 | 9.1 | 74× |
+| 1000 | 1828.7 | 13.9 | 132× |
+
+**Note:** this changes the call sites of `_binning_in_sample_residuals` from `y_train[mask]` (bool indexing) to `y_train[idx]` (integer indexing). Both are equivalent.
 
 ---
 
@@ -62,6 +75,15 @@ if self.encoding == 'onehot':
     inv_map = {v: k for k, v in self.encoding_mapping_.items()}
     X_train_series_names_in_ = [inv_map[c] for c in active_codes if c in inv_map]
 ```
+
+**Measured speedup (N_per_series=1950):**
+
+| K | OLD (ms) | NEW (ms) | Speedup |
+|--:|--:|--:|--:|
+| 100 | 11.8 | 5.0 | 2.4× |
+| 300 | 99.5 | 14.7 | 6.8× |
+| 600 | 393.4 | 28.8 | 13.7× |
+| 1000 | 1071.6 | 48.1 | 22.3× |
 
 ---
 
@@ -188,8 +210,8 @@ When `exog is None`, a NaN-filled buffer is still created and later dropped. The
 
 | # | Location | Pattern | Complexity change | Expected gain |
 |---|----------|---------|-------------------|---------------|
-| 1 | `fit()` lines 2069–2083 | Per-level mask rebuild | O(K·n) → O(n+K) | **High** |
-| 2 | `_create_train_X_y` lines 1410–1413 | `.sum()` per onehot col | O(K·n) → O(n) | **High** |
+| 1 | `fit()` lines 2069–2083 | Per-level mask rebuild | O(K·n) → O(n log n + K log n) | **High** (132× at K=1000) |
+| 2 | `_create_train_X_y` lines 1410–1413 | `.sum()` per onehot col | O(K·n) → O(n log n) | **High** (22× at K=1000) |
 | 3 | `_create_train_X_y_single_series` ~991 | Per-series `pd.Series` wrap | O(K) allocs removed | **High** |
 | 4 | `_recursive_predict` lines 2549–2557 | `np.concatenate` in step loop | O(steps) allocs removed | **Medium** |
 | 5 | `_predict_interval_conformal` lines 3315–3321 | `np.vectorize` lambda | Python loop → numpy index | **Medium** |
