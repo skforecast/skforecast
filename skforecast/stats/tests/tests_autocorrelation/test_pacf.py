@@ -1,10 +1,12 @@
 # Unit test pacf
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
 from skforecast.stats import pacf
+from skforecast.exceptions import MissingValuesWarning
 
 
 # ==============================================================================
@@ -31,21 +33,34 @@ def test_pacf_ValueError_when_x_has_fewer_than_2_observations():
         pacf(x, nlags=1)
 
 
+def test_pacf_ValueError_when_x_has_no_finite_values():
+    """
+    Test that pacf raises ValueError when x contains only non-finite values.
+    """
+    x = np.array([np.nan, np.nan, np.nan])
+    err_msg = re.escape("`x` has no finite values.")
+    with pytest.raises(ValueError, match=err_msg):
+        pacf(x, nlags=1)
+
+
 @pytest.mark.parametrize(
     "value",
     [np.nan, np.inf, -np.inf],
     ids=lambda v: f"value={v!r}",
 )
-def test_pacf_ValueError_when_x_contains_non_finite_values(value):
+def test_pacf_MissingValuesWarning_when_x_has_interleaved_non_finite(value):
     """
-    Test that pacf raises ValueError when x contains non-finite values.
+    Test that pacf emits MissingValuesWarning for interleaved non-finite values
+    and still returns a result.
     """
-    x = np.array([1.0, 2.0, value, 4.0])
-    err_msg = re.escape(
-        "`x` contains non-finite values. Remove or impute them before calling `pacf`."
-    )
-    with pytest.raises(ValueError, match=err_msg):
-        pacf(x, nlags=1)
+    x = np.array([1.0, 2.0, value, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0,
+                  11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0])
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = pacf(x, nlags=2)
+    assert any(issubclass(wi.category, MissingValuesWarning) for wi in w)
+    assert isinstance(result, np.ndarray)
+    assert len(result) == 3
 
 
 @pytest.mark.parametrize(
@@ -105,6 +120,40 @@ def test_pacf_ValueError_when_alpha_is_out_of_range(alpha):
     err_msg = re.escape(f"`alpha` must be in (0, 1), got {alpha!r}.")
     with pytest.raises(ValueError, match=err_msg):
         pacf(x, nlags=3, alpha=alpha)
+
+
+# ==============================================================================
+# NaN handling
+# ==============================================================================
+
+def test_pacf_leading_trailing_nans_stripped_silently():
+    """
+    Test that leading and trailing NaNs are removed without a warning and the
+    result equals that of the stripped series passed directly.
+    """
+    core = np.arange(1.0, 21.0)
+    x_with_edges = np.concatenate([[np.nan], core, [np.nan, np.nan]])
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result_edges = pacf(x_with_edges, nlags=4)
+    missing_warns = [wi for wi in w if issubclass(wi.category, MissingValuesWarning)]
+    assert len(missing_warns) == 0
+
+    result_core = pacf(core, nlags=4)
+    np.testing.assert_array_equal(result_edges, result_core)
+
+
+def test_pacf_interleaved_nans_lag0_is_one():
+    """
+    Test that lag-0 PACF is 1.0 even when pairwise deletion is used.
+    """
+    x = np.array([1.0, np.nan, 3.0, 4.0, np.nan, 6.0, 7.0, 8.0, 9.0, 10.0,
+                  11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0])
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        result = pacf(x, nlags=4)
+    assert result[0] == 1.0
 
 
 # ==============================================================================
