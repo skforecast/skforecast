@@ -94,6 +94,42 @@ def _pairwise_acf(x: np.ndarray, n_orig: int, nlags: int) -> np.ndarray:
     return acf_vals
 
 
+def _strip_and_check(
+    x: np.ndarray,
+) -> tuple[np.ndarray, int, int, bool]:
+    """
+    Strip leading/trailing non-finite values and detect interleaved NaN/inf.
+
+    Parameters
+    ----------
+    x : numpy ndarray
+        1-D float array.
+
+    Returns
+    -------
+    x_stripped : numpy ndarray
+    n : int
+        ``len(x_stripped)``.
+    n_finite : int
+        Count of finite values when interleaved NaNs are present, else ``n``.
+    has_interleaved_nan : bool
+    """
+    valid_idx = np.where(np.isfinite(x))[0]
+    if len(valid_idx) == 0:
+        raise ValueError("`x` has no finite values.")
+    x = x[valid_idx[0] : valid_idx[-1] + 1]
+    n = len(x)
+    n_valid = len(valid_idx)
+    if n_valid < 2:
+        raise ValueError(
+            f"`x` must have at least 2 finite observations, got {n_valid}."
+        )
+    has_interleaved_nan = n_valid < n
+    n_finite = n_valid if has_interleaved_nan else n
+    
+    return x, n, n_finite, has_interleaved_nan
+
+
 def acf(
     x: pd.Series | np.ndarray,
     nlags: int | None = None,
@@ -198,18 +234,7 @@ def acf(
             f"`x` must have at least 2 observations, got {n}."
         )
 
-    # Strip leading/trailing non-finite values; detect interleaved NaNs.
-    valid_idx = np.where(np.isfinite(x))[0]
-    if len(valid_idx) == 0:
-        raise ValueError("`x` has no finite values.")
-    x = x[valid_idx[0] : valid_idx[-1] + 1]
-    n = len(x)
-    n_valid = len(valid_idx)
-    if n_valid < 2:
-        raise ValueError(
-            f"`x` must have at least 2 finite observations, got {n_valid}."
-        )
-    has_interleaved_nan = n_valid < n
+    x, n, n_finite, has_interleaved_nan = _strip_and_check(x)
     if has_interleaved_nan:
         warnings.warn(
             "Interleaved NaN/inf detected. Falling back to pairwise deletion "
@@ -218,14 +243,13 @@ def acf(
             stacklevel=2,
         )
 
-    n_eff = n_valid if has_interleaved_nan else n
     if nlags is None:
-        nlags = min(int(10 * math.log10(n_eff)), n_eff - 1)
+        nlags = min(int(10 * math.log10(n_finite)), n_finite - 1)
     if not isinstance(nlags, (int, np.integer)) or nlags < 1:
         raise ValueError(f"`nlags` must be a positive integer, got {nlags!r}.")
-    if nlags >= n_eff:
+    if nlags >= n_finite:
         raise ValueError(
-            f"`nlags` ({nlags}) must be less than len(x) ({n_eff})."
+            f"`nlags` ({nlags}) must be less than len(x) ({n_finite})."
         )
 
     if alpha is not None and not (0.0 < alpha < 1.0):
@@ -238,7 +262,7 @@ def acf(
 
     if adjusted:
         ks = np.arange(nlags + 1, dtype=float)
-        acf_vals *= n_eff / (n_eff - ks)
+        acf_vals *= n_finite / (n_finite - ks)
         acf_vals[0] = 1.0
 
     if alpha is None:
@@ -246,7 +270,7 @@ def acf(
 
     # Bartlett confidence intervals
     z = norm.ppf(1.0 - alpha / 2.0)
-    varacf = np.ones(nlags + 1) / n_eff
+    varacf = np.ones(nlags + 1) / n_finite
     varacf[0] = 0.0
     if nlags > 1:
         varacf[2:] *= 1.0 + 2.0 * np.cumsum(acf_vals[1:-1] ** 2)
@@ -360,18 +384,7 @@ def pacf(
             f"`x` must have at least 2 observations, got {n}."
         )
 
-    # Strip leading/trailing non-finite values; detect interleaved NaNs.
-    valid_idx = np.where(np.isfinite(x))[0]
-    if len(valid_idx) == 0:
-        raise ValueError("`x` has no finite values.")
-    x = x[valid_idx[0] : valid_idx[-1] + 1]
-    n = len(x)
-    n_valid = len(valid_idx)
-    if n_valid < 2:
-        raise ValueError(
-            f"`x` must have at least 2 finite observations, got {n_valid}."
-        )
-    has_interleaved_nan = n_valid < n
+    x, n, n_finite, has_interleaved_nan = _strip_and_check(x)
     if has_interleaved_nan:
         warnings.warn(
             "Interleaved NaN/inf detected. Falling back to pairwise deletion "
@@ -380,19 +393,18 @@ def pacf(
             stacklevel=2,
         )
 
-    n_eff = n_valid if has_interleaved_nan else n
     if nlags is None:
-        if n_eff < 4:
+        if n_finite < 4:
             raise ValueError(
                 f"`x` must have at least 4 observations when `nlags` is None, "
-                f"got {n_eff}."
+                f"got {n_finite}."
             )
-        nlags = min(int(10 * math.log10(n_eff)), n_eff // 2 - 1)
+        nlags = min(int(10 * math.log10(n_finite)), n_finite // 2 - 1)
     if not isinstance(nlags, (int, np.integer)) or nlags < 1:
         raise ValueError(f"`nlags` must be a positive integer, got {nlags!r}.")
-    if nlags >= n_eff // 2:
+    if nlags >= n_finite // 2:
         raise ValueError(
-            f"`nlags` ({nlags}) must be less than len(x) // 2 ({n_eff // 2}). "
+            f"`nlags` ({nlags}) must be less than len(x) // 2 ({n_finite // 2}). "
             "Levinson-Durbin is unreliable when the AR order approaches "
             "half the sample size."
         )
@@ -424,9 +436,9 @@ def pacf(
     if alpha is None:
         return pacf_vals
 
-    # Asymptotic white-noise confidence intervals: ±z_{α/2} / sqrt(n_eff)
+    # Asymptotic white-noise confidence intervals: ±z_{α/2} / sqrt(n_finite)
     z = norm.ppf(1.0 - alpha / 2.0)
-    se = z / np.sqrt(n_eff)
+    se = z / np.sqrt(n_finite)
     confint = np.column_stack((pacf_vals - se, pacf_vals + se))
     confint[0] = pacf_vals[0]  # lag 0: degenerate, no uncertainty
     return pacf_vals, confint
@@ -521,16 +533,8 @@ def calculate_lag_autocorrelation(
     if isinstance(data, pd.DataFrame):
         data = data.iloc[:, 0]
 
-    # Determine the effective n for the n_lags constraint, accounting for
-    # leading/trailing NaNs (stripped) and interleaved NaNs (pairwise n_valid).
     x_arr = data.to_numpy(dtype=float)
-    valid_idx = np.where(np.isfinite(x_arr))[0]
-    if len(valid_idx) == 0:
-        n_for_check = 0
-    else:
-        stripped_n = int(valid_idx[-1]) - int(valid_idx[0]) + 1
-        n_valid = len(valid_idx)
-        n_for_check = n_valid if n_valid < stripped_n else stripped_n
+    _, _, n_for_check, _ = _strip_and_check(x_arr)
 
     if n_lags >= n_for_check // 2:
         raise ValueError(

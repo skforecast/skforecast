@@ -311,3 +311,29 @@ def test_acf_alpha_confint_lower_le_upper():
     x = rng.standard_normal(300)
     _, confint = acf(x, nlags=20, alpha=0.05)
     assert np.all(confint[:, 0] <= confint[:, 1])
+
+
+def test_acf_alpha_pairwise_confint_uses_n_finite():
+    """
+    Test that Bartlett CI half-width uses n_finite (finite count) not stripped
+    length when pairwise deletion is active. At lag 1, varacf[1] = 1/n_finite
+    exactly, so the half-width is z / sqrt(n_finite).
+    """
+    import scipy.stats
+
+    rng = np.random.default_rng(7)
+    base = rng.standard_normal(40)
+    x = np.full(50, np.nan)
+    finite_pos = np.where(np.arange(50) % 5 != 0)[0]  # 40 positions, 10 NaNs at 0,5,...,45
+    x[finite_pos] = base
+
+    n_valid = int(np.isfinite(x).sum())  # 40
+    z = scipy.stats.norm.ppf(0.975)
+    expected_hw = z / np.sqrt(n_valid)
+
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        acf_vals, confint = acf(x, nlags=5, alpha=0.05)
+
+    np.testing.assert_allclose(confint[1, 1] - acf_vals[1], expected_hw, atol=1e-12)
+    np.testing.assert_allclose(acf_vals[1] - confint[1, 0], expected_hw, atol=1e-12)

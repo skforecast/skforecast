@@ -308,6 +308,49 @@ def test_pacf_alpha_confint_lower_le_upper():
     assert np.all(confint[:, 0] <= confint[:, 1])
 
 
+def test_pacf_interleaved_nans_lag_with_few_valid_pairs_returns_nan():
+    """
+    Test that pacf returns NaN for lag 1 when that lag has fewer than 2 valid
+    pairs. Finite values are at even indices only (1.0, 3.0, 5.0, 7.0), so
+    every lag-1 candidate pair straddles a NaN → 0 valid pairs →
+    acf_vals[1] = NaN → pacf_vals[1] = NaN via Levinson-Durbin.
+    n_finite = 4, so nlags=1 satisfies the n_finite // 2 constraint.
+    """
+    x = np.array([1.0, np.nan, 3.0, np.nan, 5.0, np.nan, 7.0])
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        result = pacf(x, nlags=1)
+    assert len(result) == 2
+    assert result[0] == 1.0
+    assert np.isnan(result[1])
+
+
+def test_pacf_alpha_pairwise_confint_uses_n_finite():
+    """
+    Test that asymptotic CI half-width uses n_finite (finite count) not stripped
+    length when pairwise deletion is active. Half-width = z / sqrt(n_finite) for
+    all lags >= 1.
+    """
+    import scipy.stats
+
+    rng = np.random.default_rng(7)
+    base = rng.standard_normal(40)
+    x = np.full(50, np.nan)
+    finite_pos = np.where(np.arange(50) % 5 != 0)[0]  # 40 positions, 10 NaNs at 0,5,...,45
+    x[finite_pos] = base
+
+    n_valid = int(np.isfinite(x).sum())  # 40
+    z = scipy.stats.norm.ppf(0.975)
+    expected_hw = z / np.sqrt(n_valid)
+
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        pacf_vals, confint = pacf(x, nlags=5, alpha=0.05)
+
+    np.testing.assert_allclose(confint[1:, 1] - pacf_vals[1:], expected_hw, atol=1e-12)
+    np.testing.assert_allclose(pacf_vals[1:] - confint[1:, 0], expected_hw, atol=1e-12)
+
+
 def test_pacf_alpha_symmetric_ci_around_pacf_vals():
     """
     Test that the asymptotic CI is symmetric around the PACF value for lags >= 1.
