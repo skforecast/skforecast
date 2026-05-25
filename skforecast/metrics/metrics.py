@@ -432,7 +432,7 @@ def calculate_coverage(
     return coverage
 
 
-def create_mean_pinball_loss(alpha: float) -> callable:
+def create_mean_pinball_loss(alpha: float) -> Callable:
     """
     Create pinball loss, also known as quantile loss, for a given quantile.
     Internally, it uses the `mean_pinball_loss` function from scikit-learn.
