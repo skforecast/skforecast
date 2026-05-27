@@ -431,14 +431,13 @@ class OneStepAheadFold(BaseFold):
         """
 
         info = (
-            f"{'=' * len(type(self).__name__)} \n"
-            f"{type(self).__name__} \n"
-            f"{'=' * len(type(self).__name__)} \n"
-            f"Initial train size = {self.initial_train_size},\n"
-            f"Window size        = {self.window_size},\n"
-            f"Differentiation    = {self.differentiation},\n"
-            f"Return all indexes = {self.return_all_indexes},\n"
-            f"Verbose            = {self.verbose}\n"
+            f"OneStepAheadFold(\n"
+            f"    initial_train_size = {self.initial_train_size},\n"
+            f"    window_size        = {self.window_size},\n"
+            f"    differentiation    = {self.differentiation},\n"
+            f"    return_all_indexes = {self.return_all_indexes},\n"
+            f"    verbose            = {self.verbose},\n"
+            f")"
         )
             
         return info
@@ -817,22 +816,21 @@ class TimeSeriesFold(BaseFold):
         """
 
         info = (
-            f"{'=' * len(type(self).__name__)} \n"
-            f"{type(self).__name__} \n"
-            f"{'=' * len(type(self).__name__)} \n"
-            f"Initial train size    = {self.initial_train_size},\n"
-            f"Steps                 = {self.steps},\n"
-            f"Fold stride           = {self.fold_stride},\n"
-            f"Overlapping folds     = {self.overlapping_folds},\n"
-            f"Window size           = {self.window_size},\n"
-            f"Differentiation       = {self.differentiation},\n"
-            f"Refit                 = {self.refit},\n"
-            f"Fixed train size      = {self.fixed_train_size},\n"
-            f"Gap                   = {self.gap},\n"
-            f"Skip folds            = {self.skip_folds},\n"
-            f"Allow incomplete fold = {self.allow_incomplete_fold},\n"
-            f"Return all indexes    = {self.return_all_indexes},\n"
-            f"Verbose               = {self.verbose}\n"
+            f"TimeSeriesFold(\n"
+            f"    initial_train_size    = {self.initial_train_size},\n"
+            f"    steps                 = {self.steps},\n"
+            f"    fold_stride           = {self.fold_stride},\n"
+            f"    overlapping_folds     = {self.overlapping_folds},\n"
+            f"    window_size           = {self.window_size},\n"
+            f"    differentiation       = {self.differentiation},\n"
+            f"    refit                 = {self.refit},\n"
+            f"    fixed_train_size      = {self.fixed_train_size},\n"
+            f"    gap                   = {self.gap},\n"
+            f"    skip_folds            = {self.skip_folds},\n"
+            f"    allow_incomplete_fold = {self.allow_incomplete_fold},\n"
+            f"    return_all_indexes    = {self.return_all_indexes},\n"
+            f"    verbose               = {self.verbose},\n"
+            f")"
         )
 
         return info
