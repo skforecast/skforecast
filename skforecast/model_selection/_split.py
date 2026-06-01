@@ -820,7 +820,6 @@ class TimeSeriesFold(BaseFold):
             f"    initial_train_size    = {self.initial_train_size},\n"
             f"    steps                 = {self.steps},\n"
             f"    fold_stride           = {self.fold_stride},\n"
-            f"    overlapping_folds     = {self.overlapping_folds},\n"
             f"    window_size           = {self.window_size},\n"
             f"    differentiation       = {self.differentiation},\n"
             f"    refit                 = {self.refit},\n"
