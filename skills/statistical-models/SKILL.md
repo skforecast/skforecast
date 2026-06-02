@@ -73,8 +73,8 @@ predictions_interval = forecaster.predict_interval(
 ## Auto-ARIMA (Automatic Order Selection)
 
 ```python
-# Set order=None to enable automatic order selection
-auto_arima = Arima(order=None, seasonal=True, m=12)
+# Set order=None and seasonal_order=None to enable automatic order selection
+auto_arima = Arima(order=None, seasonal_order=None, m=12)
 forecaster = ForecasterStats(estimator=auto_arima)
 forecaster.fit(y=data['target'])
 
