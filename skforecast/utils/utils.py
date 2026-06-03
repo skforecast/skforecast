@@ -2650,8 +2650,8 @@ def select_n_jobs_fit_forecaster(
     
     - If forecaster_name is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and estimator_name is a linear estimator then `n_jobs = 1`, 
-    otherwise `n_jobs = cpu_count() - 1`.
-    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
+    otherwise `n_jobs = max(1, cpu_count() - 1)`.
+    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = max(1, cpu_count() - 1)`.
     - If estimator is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
     This is because `lightgbm` is highly optimized for gradient boosting and
     parallelizes operations at a very fine-grained level, making additional
@@ -2678,9 +2678,9 @@ def select_n_jobs_fit_forecaster(
         if isinstance(estimator, LinearModel):
             n_jobs = 1
         elif type(estimator).__name__ == 'LGBMRegressor':
-            n_jobs = joblib.cpu_count() - 1 if estimator.n_jobs == 1 else 1
+            n_jobs = max(1, joblib.cpu_count() - 1) if estimator.n_jobs == 1 else 1
         else:
-            n_jobs = joblib.cpu_count() - 1
+            n_jobs = max(1, joblib.cpu_count() - 1)
     else:
         n_jobs = 1
 
