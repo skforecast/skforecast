@@ -29,6 +29,29 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
         forecaster.predict_interval(steps=1, method=method)
 
 
+# TODO: Remove in skforecast 0.24.0 when percentile support is removed.
+@pytest.mark.parametrize("method", 
+                         ['bootstrapping', 'conformal'], 
+                         ids = lambda value: f'method: {value}')
+def test_predict_interval_percentile_and_quantile_scales_are_equivalent(method):
+    """
+    Check that the legacy percentile scale [5, 95] produces the same output as
+    the new quantile scale [0.05, 0.95].
+    """
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
+
+    with pytest.warns(FutureWarning):
+        results_percentile = forecaster.predict_interval(
+            steps=3, method=method, interval=[5, 95], use_binned_residuals=False
+        )
+    results_quantile = forecaster.predict_interval(
+        steps=3, method=method, interval=[0.05, 0.95], use_binned_residuals=False
+    )
+
+    pd.testing.assert_frame_equal(results_percentile, results_quantile)
+
+
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_in_sample_residuals_is_True():
     """
     Test output when estimator is LinearRegression and one step ahead is predicted
@@ -116,7 +139,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.90, (5, 95)], 
+                         [0.90, (0.05, 0.95)], 
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_output_when_with_transform_y(interval):
     """
@@ -183,7 +206,7 @@ def test_predict_interval_output_when_with_transform_y_and_transform_exog():
     
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_interval(
-        steps=5, exog=exog_predict, interval=[5, 95], 
+        steps=5, exog=exog_predict, interval=[0.05, 0.95], 
         use_in_sample_residuals=True, use_binned_residuals=False
     )
 
@@ -208,7 +231,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
     forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
     forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster.predict_interval(
-        steps=5, interval=(5, 95), use_in_sample_residuals=True, use_binned_residuals=True
+        steps=5, interval=(0.05, 0.95), use_in_sample_residuals=True, use_binned_residuals=True
     )
 
     expected = pd.DataFrame(
@@ -235,7 +258,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
     forecaster.fit(y=y, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
     results = forecaster.predict_interval(
-        steps=5, interval=(5, 95), use_in_sample_residuals=False, use_binned_residuals=True
+        steps=5, interval=(0.05, 0.95), use_in_sample_residuals=False, use_binned_residuals=True
     )
 
     expected = pd.DataFrame(
@@ -254,7 +277,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.95, (2.5, 97.5)], 
+                         [0.95, (0.025, 0.975)], 
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_conformal_output_when_with_transform_y(interval):
     """
@@ -292,7 +315,7 @@ def test_predict_interval_conformal_output_when_with_transform_y(interval):
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.95, (2.5, 97.5)], 
+                         [0.95, (0.025, 0.975)], 
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_conformal_output_when_binned_residuals(interval):
     """
