@@ -664,15 +664,15 @@ def select_n_jobs_backtesting(
     - If forecaster is 'ForecasterRecursive' and estimator is a linear estimator, 
     then `n_jobs = 1`.
     - If forecaster is 'ForecasterRecursive' and estimator is not a linear 
-    estimator then `n_jobs = cpu_count() - 1`.
+    estimator then `n_jobs = max(1, cpu_count() - 1)`.
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
-    and `refit = True`, then `n_jobs = cpu_count() - 1`.
+    and `refit = True`, then `n_jobs = max(1, cpu_count() - 1)`.
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and `refit = False`, then `n_jobs = 1`.
-    - If forecaster is 'ForecasterRecursiveMultiSeries', then `n_jobs = cpu_count() - 1`.
+    - If forecaster is 'ForecasterRecursiveMultiSeries', then `n_jobs = max(1, cpu_count() - 1)`.
     - If forecaster is 'ForecasterStats' or 'ForecasterEquivalentDate', 
     then `n_jobs = 1`.
-    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
+    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = max(1, cpu_count() - 1)`.
     - If estimator is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
     This is because `lightgbm` is highly optimized for gradient boosting and
     parallelizes operations at a very fine-grained level, making additional
@@ -711,17 +711,17 @@ def select_n_jobs_backtesting(
             if isinstance(estimator, (LinearModel, LinearClassifierMixin)):
                 n_jobs = 1
             elif type(estimator).__name__ in {'LGBMRegressor', 'LGBMClassifier'}:
-                n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
+                n_jobs = max(1, cpu_count() - 1) if estimator.n_jobs == 1 else 1
             else:
-                n_jobs = cpu_count() - 1
+                n_jobs = max(1, cpu_count() - 1)
         elif forecaster_name in {'ForecasterDirect', 'ForecasterDirectMultiVariate'}:
             # Parallelization is applied during the fitting process.
             n_jobs = 1
         elif forecaster_name in {'ForecasterRecursiveMultiSeries'}:
             if type(estimator).__name__ == 'LGBMRegressor':
-                n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
+                n_jobs = max(1, cpu_count() - 1) if estimator.n_jobs == 1 else 1
             else:
-                n_jobs = cpu_count() - 1
+                n_jobs = max(1, cpu_count() - 1)
         elif forecaster_name in {'ForecasterEquivalentDate'}:
             n_jobs = 1
         else:
