@@ -2343,9 +2343,9 @@ class ForecasterRecursive(ForecasterBase):
             if isinstance(interval, (list, tuple)):
                 interval = _normalize_interval_scale(interval)
                 check_interval(
-                    interval=interval,
-                    ensure_symmetric_intervals=False,
-                    interval_scale='quantile'
+                    interval                   = interval,
+                    ensure_symmetric_intervals = False,
+                    interval_scale             = 'quantile'
                 )
                 interval = np.array(interval)
             else:
@@ -2380,9 +2380,9 @@ class ForecasterRecursive(ForecasterBase):
             if isinstance(interval, (list, tuple)):
                 interval = _normalize_interval_scale(interval)
                 check_interval(
-                    interval=interval,
-                    ensure_symmetric_intervals=True,
-                    interval_scale='quantile'
+                    interval                   = interval,
+                    ensure_symmetric_intervals = True,
+                    interval_scale             = 'quantile'
                 )
                 nominal_coverage = interval[1] - interval[0]
             else:
