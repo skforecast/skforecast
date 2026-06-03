@@ -43,12 +43,12 @@ nav:
       - ARAR: user_guides/forecasting-arar.ipynb
     - Feature Engineering:
       - Exogenous variables: user_guides/exogenous-variables.ipynb
+      - Autocorrelation and lag selection: user_guides/autocorrelation-and-lag-selection.ipynb
       - Window and custom features: user_guides/window-features-and-custom-features.ipynb
       - Categorical features: user_guides/categorical-features.ipynb
       - Calendar features: user_guides/calendar-features.ipynb
       - Data transformation: user_guides/sklearn-transformers-and-pipeline.ipynb
       - Differentiation: user_guides/time-series-differentiation.ipynb
-      - Autocorrelation and lag selection: user_guides/autocorrelation-and-lag-selection.ipynb
       - Handling missing values: user_guides/handling-missing-values.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
       - Sktime pipelines: user_guides/sktime-pipelines.ipynb
