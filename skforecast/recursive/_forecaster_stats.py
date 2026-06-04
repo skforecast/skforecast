@@ -25,6 +25,8 @@ from ..utils import (
     check_predict_input,
     expand_index,
     get_exog_dtypes,
+    _normalize_interval_scale,
+    check_interval,
     transform_series,
     transform_numpy,
     transform_dataframe,
@@ -1168,9 +1170,9 @@ class ForecasterStats():
             If both, `alpha` and `interval` are provided, `alpha` will be used.
         interval : list, tuple, default None
             Confidence of the prediction interval estimated. The values must be
-            symmetric. Sequence of percentiles to compute, which must be between 
-            0 and 100 inclusive. For example, interval of 95% should be as 
-            `interval = [2.5, 97.5]`. If both, `alpha` and `interval` are 
+            symmetric. Sequence of quantiles to compute, which must be between 
+            0 and 1 inclusive. For example, interval of 95% should be as 
+            `interval = [0.025, 0.975]`. If both, `alpha` and `interval` are 
             provided, `alpha` will be used.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
@@ -1192,13 +1194,13 @@ class ForecasterStats():
 
         # If interval and alpha take alpha, if interval transform to alpha
         if alpha is None:
-            if 100 - interval[1] != interval[0]:
-                raise ValueError(
-                    f"When using `interval` in ForecasterStats, it must be symmetrical. "
-                    f"For example, interval of 95% should be as `interval = [2.5, 97.5]`. "
-                    f"Got {interval}."
-                )
-            alpha = 2 * (100 - interval[1]) / 100
+            interval = _normalize_interval_scale(interval=interval)
+            check_interval(
+                interval                   = interval,
+                ensure_symmetric_intervals = True,
+                interval_scale             = 'quantile'
+            )
+            alpha = 2 * (1 - interval[1])
 
         last_window, last_window_exog, exog, prediction_index = (
             self._create_predict_inputs(
