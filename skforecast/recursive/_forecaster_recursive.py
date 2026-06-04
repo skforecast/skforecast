@@ -1619,7 +1619,10 @@ class ForecasterRecursive(ForecasterBase):
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
-        
+
+        if has_lags and not self.lags_are_contiguous:
+            neg_lags = -self.lags
+
         for i in range(steps):
 
             remaining = steps - i
@@ -1628,7 +1631,7 @@ class ForecasterRecursive(ForecasterBase):
                 if self.lags_are_contiguous:
                     X[:n_lags] = last_window[-(remaining + n_lags): -remaining][::-1]
                 else:
-                    X[:n_lags] = last_window[-self.lags - remaining]
+                    X[:n_lags] = last_window[neg_lags - remaining]
             
             if has_window_features:
                 window_data = last_window[i : -remaining]
@@ -1727,6 +1730,9 @@ class ForecasterRecursive(ForecasterBase):
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
 
+        if has_lags and not self.lags_are_contiguous:
+            neg_lags = -self.lags
+
         if use_binned_residuals:
             boot_indices = np.arange(n_boot)
 
@@ -1738,7 +1744,7 @@ class ForecasterRecursive(ForecasterBase):
                 if self.lags_are_contiguous:
                     X[:, :n_lags] = last_window[-(remaining + n_lags): -remaining, :][::-1].T
                 else:
-                    X[:, :n_lags] = last_window[-(self.lags + remaining), :].T
+                    X[:, :n_lags] = last_window[neg_lags - remaining, :].T
             
             if has_window_features:
                 window_data = last_window[:-remaining, :]
