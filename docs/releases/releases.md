@@ -35,6 +35,8 @@ The main changes in this release are:
 
 **Fixed**
 
++ Fix a bug in <code>[ForecasterStats]</code> where the `remove_estimators` method was not deleting the corresponding estimator parameters.
+
 
 ## 0.22.0 <small>Apr 23, 2026</small> { id="0.22.0" }
 
