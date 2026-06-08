@@ -1,1 +1,2 @@
 from ._forecaster_base import ForecasterBase
+from ._multi_estimator_mixin import MultiEstimatorMixin

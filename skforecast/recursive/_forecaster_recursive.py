@@ -411,7 +411,8 @@ class ForecasterRecursive(ForecasterBase):
             "forecaster_name": "ForecasterRecursive",
             "forecaster_task": "regression",
             "forecasting_scope": "single-series",  # single-series | global
-            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
+            "forecasting_strategy": "recursive",  # recursive | direct | deep_learning | foundation
+            "multiple_estimators": False, 
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 

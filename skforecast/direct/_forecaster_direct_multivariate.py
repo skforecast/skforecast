@@ -567,7 +567,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             "forecaster_name": "ForecasterDirectMultiVariate",
             "forecaster_task": "regression",
             "forecasting_scope": "global",  # single-series | global
-            "forecasting_strategy": "direct",  # recursive | direct | deep_learning
+            "forecasting_strategy": "direct",  # recursive | direct | deep_learning | foundation
+            "multiple_estimators": False,
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
