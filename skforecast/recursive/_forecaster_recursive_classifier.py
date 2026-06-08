@@ -398,7 +398,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             "forecaster_name": "ForecasterRecursiveClassifier",
             "forecaster_task": "classification",
             "forecasting_scope": "single-series",  # single-series | global
-            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
+            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning | foundation
+            "multiple_estimators": False,
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
