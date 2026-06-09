@@ -693,7 +693,7 @@ def test_output_backtesting_forecaster_interval_no_exog_no_remainder_with_mocked
                                        exog                    = None,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -754,7 +754,7 @@ def test_output_backtesting_forecaster_interval_no_exog_yes_remainder_with_mocke
                                        exog                    = None,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -815,7 +815,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_no_remainder_with_mocke
                                        exog                    = exog,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -876,7 +876,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_with_mock
                                        exog                    = exog,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -892,9 +892,9 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_with_mock
 @pytest.mark.parametrize("initial_train_size", 
                          [len(y) - 20, "2022-01-30 00:00:00"],
                          ids=lambda init: f'initial_train_size: {init}')
-def test_output_backtesting_forecaster_refit_interval_percentiles_yes_exog(initial_train_size):
+def test_output_backtesting_forecaster_refit_interval_quantiles_yes_exog(initial_train_size):
     """
-    Test output of _backtesting_forecaster with predicted intervals as percentiles.
+    Test output of _backtesting_forecaster with predicted intervals as quantiles.
     """
     y_with_index = y.copy()
     y_with_index.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
@@ -924,7 +924,7 @@ def test_output_backtesting_forecaster_refit_interval_percentiles_yes_exog(initi
             [0.49592041, 0.25591545, 0.46211508, 0.65788551, 0.80186688],
             [0.52061567, 0.23847963, 0.4387499 , 0.69760195, 0.81649697],
             [0.51002945, 0.25031203, 0.45753096, 0.74133217, 0.80883212]]),
-        columns = ['pred', 'p_10', 'p_40', 'p_80', 'p_90'],
+        columns = ['pred', 'q_0.1', 'q_0.4', 'q_0.8', 'q_0.9'],
         index = pd.date_range(start='2022-01-31', periods=20, freq='D')
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3])
@@ -941,7 +941,7 @@ def test_output_backtesting_forecaster_refit_interval_percentiles_yes_exog(initi
                                        exog                    = exog_with_index,
                                        cv                      = cv,
                                        metric                  = 'mean_absolute_error',
-                                       interval                = (10, 40, 80, 90),
+                                       interval                = (0.1, 0.4, 0.8, 0.9),
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 250,
                                        random_state            = 123,
@@ -955,7 +955,7 @@ def test_output_backtesting_forecaster_refit_interval_percentiles_yes_exog(initi
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.90, (5, 95)], 
+                         [0.90, (0.05, 0.95)], 
                          ids = lambda value: f'interval: {value}')
 def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked(interval):
     """
@@ -1027,7 +1027,7 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.90, (5, 95)], 
+                         [0.90, (0.05, 0.95)], 
                          ids = lambda value: f'interval: {value}')
 def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked_ForecasterDirect(interval):
     """
@@ -1148,7 +1148,7 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_no_exog_no_
                                        exog                    = None,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -1217,7 +1217,7 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_binned_no_e
                                        exog                    = None,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -1689,7 +1689,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_gap_with_
                                        exog                    = exog,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        use_in_sample_residuals = True,
@@ -1760,7 +1760,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
                                        exog                    = exog_with_index,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -1840,7 +1840,7 @@ def test_output_backtesting_forecaster_refit_int_interval_yes_exog_yes_remainder
                                        exog                    = exog,
                                        cv                      = cv,
                                        metric                  = ['mean_squared_error', 'mean_absolute_scaled_error'],
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -1917,7 +1917,7 @@ def test_output_backtesting_forecaster_refit_int_interval_yes_exog_not_allow_rem
                                            exog                    = exog_with_index,
                                            cv                      = cv,
                                            metric                  = 'mean_squared_error',
-                                           interval                = [5, 95],
+                                           interval                = [0.05, 0.95],
                                            interval_method         = 'bootstrapping',
                                            n_boot                  = 500,
                                            random_state            = 123,
@@ -2005,7 +2005,7 @@ def test_output_backtesting_forecaster_refit_int_interval_yes_exog_fold_stride_s
                                        exog                    = exog,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
