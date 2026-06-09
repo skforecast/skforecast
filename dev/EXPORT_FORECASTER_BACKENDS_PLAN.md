@@ -94,17 +94,33 @@ Add two module-private helpers next to the save/load functions:
   ranges, handling the dict (multi-series) case symmetrically. Tolerate
   non-datetime indexes (e.g. `RangeIndex`) gracefully.
 
-### 4. Dependencies
+### 4. Dependencies — NO new declared dependencies
 
-- Add `cloudpickle` and `skops` to the `optional_dependencies` dict at
-  [utils.py:49-62](../skforecast/utils/utils.py#L49-L62) under a new extra
-  (e.g. `'serialization'`) **and** mirror them in
-  [pyproject.toml](../pyproject.toml) `[project.optional-dependencies]` (plus
-  `all`/`full`/`test`). A test enforces consistency between the two — keep them
-  in sync.
-- Import `pickle` at the top of utils.py; import `cloudpickle`/`skops` lazily
-  inside the dispatch branches (after `check_optional_dependency`), following the
-  try/except pattern used elsewhere.
+Per the user's constraint, `cloudpickle` and `skops` are **not** added to
+`pyproject.toml` or to the `optional_dependencies` dict
+([utils.py:49-62](../skforecast/utils/utils.py#L49-L62)). The test
+[test_check_optional_dependency.py:24](../skforecast/utils/tests/tests_utils/test_check_optional_dependency.py#L24)
+asserts the dict equals the pyproject extras exactly, so touching either would
+require touching both — we leave them untouched and the test stays green.
+
+Instead, load each optional backend lazily, only when that backend is requested,
+and raise a clear install error if missing:
+
+- `pickle` → import at the top of utils.py (stdlib, always available).
+- `cloudpickle` / `skops` → import *inside* their dispatch branch, wrapped in
+  `try/except ImportError`, raising a tailored message, e.g.:
+  ```python
+  try:
+      import skops.io
+  except ImportError:
+      raise ImportError(
+          "'skops' is required for backend='skops' but is not installed. "
+          "Install it with: pip install skops"
+      )
+  ```
+  (Same for `cloudpickle`.) This mirrors the intent of `check_optional_dependency`
+  but gives an explicit `pip install` instruction without registering the package
+  as a skforecast extra.
 
 ### 5. Tests — [skforecast/utils/tests/tests_utils/test_save_load_forecaster.py](../skforecast/utils/tests/tests_utils/test_save_load_forecaster.py)
 
