@@ -382,12 +382,11 @@ def _evaluate_grid_hyperparameters(
                                  date_literal = 'initial_train_size'
                              )
         cv.set_params({
-            'initial_train_size': initial_train_size,
             'window_size': forecaster_search.window_size,
             'differentiation': forecaster_search.differentiation_max,
             'verbose': verbose
         })
-   
+
     if not isinstance(metric, list):
         metric = [metric] 
     metric = [
@@ -438,7 +437,7 @@ def _evaluate_grid_hyperparameters(
                 sample_weight,
                 fit_kwargs
             ) = forecaster_search._train_test_split_one_step_ahead(
-                y=y, initial_train_size=cv.initial_train_size, exog=exog
+                y=y, initial_train_size=initial_train_size, exog=exog
             )
 
         if show_progress:
@@ -697,7 +696,6 @@ def bayesian_search_forecaster(
                                  date_literal = 'initial_train_size'
                              )
         cv.set_params({
-            'initial_train_size': initial_train_size,
             'window_size': forecaster_search.window_size,
             'differentiation': forecaster_search.differentiation_max,
             'verbose': verbose
@@ -814,7 +812,7 @@ def bayesian_search_forecaster(
                     sample_weight,
                     fit_kwargs
                 ) = forecaster_search._train_test_split_one_step_ahead(
-                    y=y, initial_train_size=cv.initial_train_size, exog=exog
+                    y=y, initial_train_size=initial_train_size, exog=exog
                 )
                 
                 _cached_split[lags_key] = (
@@ -1360,7 +1358,6 @@ def _evaluate_grid_hyperparameters_multiseries(
                                  date_literal = 'initial_train_size'
                              )
         cv.set_params({
-            'initial_train_size': initial_train_size,
             'window_size': forecaster_search.window_size,
             'differentiation': forecaster_search.differentiation_max,
             'verbose': verbose
@@ -1442,7 +1439,7 @@ def _evaluate_grid_hyperparameters_multiseries(
                 sample_weight,
                 fit_kwargs
             ) = forecaster_search._train_test_split_one_step_ahead(
-                series=series, exog=exog, initial_train_size=cv.initial_train_size
+                series=series, exog=exog, initial_train_size=initial_train_size
             )
 
         if show_progress:
@@ -1756,7 +1753,6 @@ def bayesian_search_forecaster_multiseries(
                                  date_literal = 'initial_train_size'
                              )
         cv.set_params({
-            'initial_train_size': initial_train_size,
             'window_size': forecaster_search.window_size,
             'differentiation': forecaster_search.differentiation_max,
             'verbose': verbose
@@ -1913,7 +1909,7 @@ def bayesian_search_forecaster_multiseries(
                     sample_weight,
                     fit_kwargs
                 ) = forecaster_search._train_test_split_one_step_ahead(
-                    series=series, exog=exog, initial_train_size=cv.initial_train_size,
+                    series=series, exog=exog, initial_train_size=initial_train_size,
                 )
                 _cached_split[lags_key] = (
                     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding,

@@ -434,6 +434,8 @@ def test_TimeSeriesFold_split_no_refit_initial_train_size_None_gap(capfd, return
 
     assert out == expected_out
     assert folds == expected
+    assert cv.initial_train_size is None
+    assert cv.initial_train_size_as_int is None
 
 
 @pytest.mark.parametrize("return_all_indexes, expected",
@@ -1346,8 +1348,12 @@ def test_TimeSeriesFold_split_int_and_date_initial_train_size(capfd, initial_tra
             gap                   = 5,
         )
     folds = cv.split(X=y)
-                    
+
     out, _ = capfd.readouterr()
+    # `initial_train_size` is immutable user input; the resolved integer position
+    # is stored in `initial_train_size_as_int` (split() must not mutate the input).
+    assert cv.initial_train_size == initial_train_size
+    assert cv.initial_train_size_as_int == 70
     
     expected_out = (
         "Information of folds\n"
@@ -1375,7 +1381,44 @@ def test_TimeSeriesFold_split_int_and_date_initial_train_size(capfd, initial_tra
 
     assert out == expected_out
     assert folds == expected
-    
+
+
+def test_TimeSeriesFold_split_does_not_mutate_initial_train_size_and_reresolves_date():
+    """
+    Test that split() never mutates `initial_train_size` (immutable user input) and
+    re-resolves a date `initial_train_size` against the current index each time it is
+    called, instead of reusing a stale integer from a previous split on a different
+    index.
+    """
+    initial_train_size = "2022-03-11"
+    cv = TimeSeriesFold(
+             steps              = 7,
+             initial_train_size = initial_train_size,
+             window_size        = 10,
+             gap                = 5,
+             verbose            = False,
+         )
+
+    # Attribute exists and is None before split() is called.
+    assert cv.initial_train_size_as_int is None
+
+    # First index: "2022-03-11" is the 70th observation (position 69 + 1).
+    y = pd.Series(np.arange(100))
+    y.index = pd.date_range(start='2022-01-01', periods=100, freq='D')
+    cv.split(X=y)
+
+    assert cv.initial_train_size == initial_train_size
+    assert cv.initial_train_size_as_int == 70
+
+    # Second index starting earlier: the same date resolves to a later position
+    # (position 79 + 1), proving the integer is re-resolved, not reused.
+    y_shifted = pd.Series(np.arange(120))
+    y_shifted.index = pd.date_range(start='2021-12-22', periods=120, freq='D')
+    cv.split(X=y_shifted)
+
+    assert cv.initial_train_size == initial_train_size
+    assert cv.initial_train_size_as_int == 80
+
 
 @pytest.mark.parametrize("return_all_indexes, expected",
                          [(True, [[0, range(0, 70), range(66, 70), range(70, 81), range(70, 81), True],
