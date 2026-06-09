@@ -440,12 +440,11 @@ class OneStepAheadFold(BaseFold):
 
         info = (
             f"OneStepAheadFold(\n"
-            f"    initial_train_size        = {self.initial_train_size},\n"
-            f"    initial_train_size_as_int = {self.initial_train_size_as_int},\n"
-            f"    window_size               = {self.window_size},\n"
-            f"    differentiation           = {self.differentiation},\n"
-            f"    return_all_indexes        = {self.return_all_indexes},\n"
-            f"    verbose                   = {self.verbose},\n"
+            f"    initial_train_size = {self.initial_train_size},\n"
+            f"    window_size        = {self.window_size},\n"
+            f"    differentiation    = {self.differentiation},\n"
+            f"    return_all_indexes = {self.return_all_indexes},\n"
+            f"    verbose            = {self.verbose},\n"
             f")"
         )
             
@@ -837,19 +836,18 @@ class TimeSeriesFold(BaseFold):
 
         info = (
             f"TimeSeriesFold(\n"
-            f"    initial_train_size        = {self.initial_train_size},\n"
-            f"    initial_train_size_as_int = {self.initial_train_size_as_int},\n"
-            f"    steps                     = {self.steps},\n"
-            f"    fold_stride               = {self.fold_stride},\n"
-            f"    window_size               = {self.window_size},\n"
-            f"    differentiation           = {self.differentiation},\n"
-            f"    refit                     = {self.refit},\n"
-            f"    fixed_train_size          = {self.fixed_train_size},\n"
-            f"    gap                       = {self.gap},\n"
-            f"    skip_folds                = {self.skip_folds},\n"
-            f"    allow_incomplete_fold     = {self.allow_incomplete_fold},\n"
-            f"    return_all_indexes        = {self.return_all_indexes},\n"
-            f"    verbose                   = {self.verbose},\n"
+            f"    initial_train_size    = {self.initial_train_size},\n"
+            f"    steps                 = {self.steps},\n"
+            f"    fold_stride           = {self.fold_stride},\n"
+            f"    window_size           = {self.window_size},\n"
+            f"    differentiation       = {self.differentiation},\n"
+            f"    refit                 = {self.refit},\n"
+            f"    fixed_train_size      = {self.fixed_train_size},\n"
+            f"    gap                   = {self.gap},\n"
+            f"    skip_folds            = {self.skip_folds},\n"
+            f"    allow_incomplete_fold = {self.allow_incomplete_fold},\n"
+            f"    return_all_indexes    = {self.return_all_indexes},\n"
+            f"    verbose               = {self.verbose},\n"
             f")"
         )
 
@@ -1153,10 +1151,11 @@ class TimeSeriesFold(BaseFold):
                 for fold in folds
             ]
 
-        self.initial_train_size_as_int = None if externally_fitted else initial_train_size_as_int
-
         if externally_fitted:
+            self.initial_train_size_as_int = None
             folds[0][5] = False
+        else:
+            self.initial_train_size_as_int = initial_train_size_as_int
 
         if as_pandas:
             if self.window_size is None:

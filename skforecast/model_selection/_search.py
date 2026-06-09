@@ -374,18 +374,12 @@ def _evaluate_grid_hyperparameters(
             suppress_warnings = suppress_warnings
         )
 
-        cv = deepcopy(cv)
         initial_train_size = date_to_index_position(
                                  index        = cv._extract_index(y), 
                                  date_input   = cv.initial_train_size, 
                                  method       = 'validation',
                                  date_literal = 'initial_train_size'
                              )
-        cv.set_params({
-            'window_size': forecaster_search.window_size,
-            'differentiation': forecaster_search.differentiation_max,
-            'verbose': verbose
-        })
 
     if not isinstance(metric, list):
         metric = [metric] 
@@ -688,18 +682,12 @@ def bayesian_search_forecaster(
             suppress_warnings = suppress_warnings
         )
 
-        cv = deepcopy(cv)
         initial_train_size = date_to_index_position(
                                  index        = cv._extract_index(y), 
                                  date_input   = cv.initial_train_size, 
                                  method       = 'validation',
                                  date_literal = 'initial_train_size'
                              )
-        cv.set_params({
-            'window_size': forecaster_search.window_size,
-            'differentiation': forecaster_search.differentiation_max,
-            'verbose': verbose
-        })
     
     if not isinstance(metric, list):
         metric = [metric]
@@ -1357,11 +1345,6 @@ def _evaluate_grid_hyperparameters_multiseries(
                                  method       = 'validation',
                                  date_literal = 'initial_train_size'
                              )
-        cv.set_params({
-            'window_size': forecaster_search.window_size,
-            'differentiation': forecaster_search.differentiation_max,
-            'verbose': verbose
-        })
     
     if aggregate_metric is None:
         aggregate_metric = ['weighted_average', 'average', 'pooling']
@@ -1745,18 +1728,12 @@ def bayesian_search_forecaster_multiseries(
             suppress_warnings = suppress_warnings
         )
 
-        cv = deepcopy(cv)
         initial_train_size = date_to_index_position(
                                  index        = cv._extract_index(series), 
                                  date_input   = cv.initial_train_size, 
                                  method       = 'validation',
                                  date_literal = 'initial_train_size'
                              )
-        cv.set_params({
-            'window_size': forecaster_search.window_size,
-            'differentiation': forecaster_search.differentiation_max,
-            'verbose': verbose
-        })
     
     if aggregate_metric is None:
         aggregate_metric = ['weighted_average', 'average', 'pooling']
