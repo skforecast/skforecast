@@ -2648,11 +2648,7 @@ class ForecasterDirect(ForecasterBase):
             
             if isinstance(interval, (list, tuple)):
                 interval = _normalize_interval_scale(interval)
-                check_interval(
-                    interval                   = interval,
-                    ensure_symmetric_intervals = False,
-                    interval_scale             = 'quantile'
-                )
+                check_interval(interval=interval, ensure_symmetric_intervals=False)
                 interval = np.array(interval)
             else:
                 check_interval(alpha=interval, alpha_literal='interval')
@@ -2685,11 +2681,7 @@ class ForecasterDirect(ForecasterBase):
 
             if isinstance(interval, (list, tuple)):
                 interval = _normalize_interval_scale(interval)
-                check_interval(
-                    interval                   = interval,
-                    ensure_symmetric_intervals = True,
-                    interval_scale             = 'quantile'
-                )
+                check_interval(interval=interval, ensure_symmetric_intervals=True)
                 nominal_coverage = interval[1] - interval[0]
             else:
                 check_interval(alpha=interval, alpha_literal='interval')

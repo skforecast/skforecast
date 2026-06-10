@@ -1174,6 +1174,10 @@ class ForecasterStats():
             0 and 1 inclusive. For example, interval of 95% should be as 
             `interval = [0.025, 0.975]`. If both, `alpha` and `interval` are 
             provided, `alpha` will be used.
+
+            **Changed in version 0.23.0:** `interval` is now expressed as
+            quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+            is deprecated and emits a `FutureWarning`.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -1197,8 +1201,7 @@ class ForecasterStats():
             interval = _normalize_interval_scale(interval=interval)
             check_interval(
                 interval                   = interval,
-                ensure_symmetric_intervals = True,
-                interval_scale             = 'quantile'
+                ensure_symmetric_intervals = True
             )
             alpha = 2 * (1 - interval[1])
 

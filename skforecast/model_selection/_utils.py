@@ -428,8 +428,7 @@ def check_backtesting_input(
                     if len(interval) == 2:
                         check_interval(
                             interval                   = interval,
-                            ensure_symmetric_intervals = False,
-                            interval_scale             = 'quantile'
+                            ensure_symmetric_intervals = False
                         )
                     else:
                         for q in interval:
