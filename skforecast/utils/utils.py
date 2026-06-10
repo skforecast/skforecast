@@ -1020,6 +1020,61 @@ def check_exog_dtypes(
                 )
 
 
+# TODO: Remove in skforecast 0.24.0 when percentile support is removed.
+def _normalize_interval_scale(
+    interval: list[float] | tuple[float]
+) -> list[float]:
+    """
+    Normalize a 2-value interval to the 0-1 quantile scale.
+
+    Detection rules, given the two interval bounds:
+
+    - All values in `[0, 1]`: already quantiles, returned unchanged.
+    - All values in `(1, 100]`: legacy percentiles. They are divided by 100
+    and a `FutureWarning` is emitted.
+    - Mixed (some value `<= 1` and some value `> 1`): the scale is ambiguous
+    and a `ValueError` is raised.
+
+    The value exactly `1` is treated as a quantile (valid upper bound), unless
+    it appears together with another value `> 1` (then it is considered mixed
+    and a `ValueError` is raised).
+
+    Parameters
+    ----------
+    interval : list, tuple
+        Sequence of two interval bounds, either as quantiles (0-1) or as legacy
+        percentiles (0-100).
+
+    Returns
+    -------
+    interval : list
+        Interval bounds expressed as quantiles in the 0-1 scale.
+
+    """
+
+    values = list(interval)
+    any_above_one = any(v > 1 for v in values)
+    any_le_one = any(v <= 1 for v in values)
+
+    if any_above_one and any_le_one:
+        raise ValueError(
+            "`interval` mixes values <= 1 and > 1, so the scale is ambiguous. "
+            "Use quantiles in the [0, 1] range, e.g. `interval=[0.05, 0.95]`."
+        )
+
+    if any_above_one:
+        warnings.warn(
+            "Passing `interval` as percentiles (0-100) is deprecated. Use "
+            "quantiles (0-1) instead. For example, use `interval=[0.05, 0.95]` "
+            "instead of `interval=[5, 95]`. Percentile support will be removed "
+            "in skforecast 0.24.0.",
+            FutureWarning
+        )
+        return [v / 100 for v in values]
+
+    return [float(v) for v in values]
+
+
 def check_interval(
     interval: list[float] | tuple[float] | None = None,
     ensure_symmetric_intervals: bool = False,
@@ -1033,9 +1088,9 @@ def check_interval(
     Parameters
     ----------
     interval : list, tuple, default None
-        Confidence of the prediction interval estimated. Sequence of percentiles
-        to compute, which must be between 0 and 100 inclusive. For example, 
-        interval of 95% should be as `interval = [2.5, 97.5]`.
+        Confidence of the prediction interval estimated. Sequence of bounds to
+        compute. Values must be between 0 and 1 inclusive. For example, interval
+        of 95% should be as `interval = [0.025, 0.975]`.
     ensure_symmetric_intervals : bool, default False
         If True, ensure that the intervals are symmetric.
     quantiles : list, tuple, default None
@@ -1057,24 +1112,24 @@ def check_interval(
         if not isinstance(interval, (list, tuple)):
             raise TypeError(
                 "`interval` must be a `list` or `tuple`. For example, interval of 95% "
-                "should be as `interval = [2.5, 97.5]`."
+                "should be as `interval = [0.025, 0.975]`."
             )
 
         if len(interval) != 2:
             raise ValueError(
                 "`interval` must contain exactly 2 values, respectively the "
                 "lower and upper interval bounds. For example, interval of 95% "
-                "should be as `interval = [2.5, 97.5]`."
+                "should be as `interval = [0.025, 0.975]`."
             )
 
-        if (interval[0] < 0.) or (interval[0] >= 100.):
+        if (interval[0] < 0.) or (interval[0] >= 1.):
             raise ValueError(
-                f"Lower interval bound ({interval[0]}) must be >= 0 and < 100."
+                f"Lower interval bound ({interval[0]}) must be >= 0 and < 1."
             )
 
-        if (interval[1] <= 0.) or (interval[1] > 100.):
+        if (interval[1] <= 0.) or (interval[1] > 1.):
             raise ValueError(
-                f"Upper interval bound ({interval[1]}) must be > 0 and <= 100."
+                f"Upper interval bound ({interval[1]}) must be > 0 and <= 1."
             )
 
         if interval[0] >= interval[1]:
@@ -1083,11 +1138,11 @@ def check_interval(
                 f"upper interval bound ({interval[1]})."
             )
         
-        if ensure_symmetric_intervals and interval[0] + interval[1] != 100:
+        if ensure_symmetric_intervals and interval[0] + interval[1] != 1.:
             raise ValueError(
                 f"Interval must be symmetric, the sum of the lower, ({interval[0]}), "
                 f"and upper, ({interval[1]}), interval bounds must be equal to "
-                f"100. Got {interval[0] + interval[1]}."
+                f"1. Got {interval[0] + interval[1]}."
             )
         
     if quantiles is not None:

@@ -205,7 +205,7 @@ def test_check_predict_input_UnknownLevelWarning_when_ForecasterRecursiveMultiSe
             last_window_exog  = None,
             exog              = None,
             exog_names_in_    = None,
-            interval          = [2.5, 97.5],
+            interval          = [0.025, 0.975],
             alpha             = None,
             max_step          = None,
             levels            = levels,

@@ -26,6 +26,7 @@ from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     check_exog,
     check_interval,
+    _normalize_interval_scale,
     check_predict_input,
     check_residuals_input,
     check_select_fit_kwargs,
@@ -1859,8 +1860,9 @@ class ForecasterRnn(ForecasterBase):
         if method == "conformal":
 
             if isinstance(interval, (list, tuple)):
+                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=True)
-                nominal_coverage = (interval[1] - interval[0]) / 100
+                nominal_coverage = interval[1] - interval[0]
             else:
                 check_interval(alpha=interval, alpha_literal='interval')
                 nominal_coverage = interval
