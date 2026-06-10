@@ -2229,7 +2229,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 1537.6749468304602,
                 3354.2752034001587,
             ],
-            "p_10": [
+            "q_0.1": [
                 1254.3937600463285,
                 2250.0470173812155,
                 2985.320707618097,
@@ -2241,7 +2241,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 1366.3621900495914,
                 1932.690821216753,
             ],
-            "p_50": [
+            "q_0.5": [
                 1467.3747504982232,
                 2677.246109137839,
                 3329.152734925742,
@@ -2253,7 +2253,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 1456.154435701382,
                 2669.958928908045,
             ],
-            "p_90": [
+            "q_0.9": [
                 1662.1929830180393,
                 3379.480213187932,
                 3507.050519419739,
@@ -4413,7 +4413,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                         [0.63726975, 0.45125726, 0.62160023, 0.83192751],
                         [0.54013414, 0.36193754, 0.54426771, 0.72007411],
                         [0.52550978, 0.32075102, 0.52254263, 0.68449266]]),
-        columns = ['pred', 'p_5', 'p_50', 'p_95'],
+        columns = ['pred', 'q_0.05', 'q_0.5', 'q_0.95'],
         index = pd.RangeIndex(start=33, stop=50, step=1)
     )
     expected_predictions.insert(0, 'level', np.tile(['l1'], len(expected_predictions)))

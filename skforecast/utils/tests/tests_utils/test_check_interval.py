@@ -219,7 +219,7 @@ def test_normalize_interval_scale_percentiles_converted_with_warning():
         "Passing `interval` as percentiles (0-100) is deprecated. Use "
         "quantiles (0-1) instead. For example, use `interval=[0.05, 0.95]` "
         "instead of `interval=[5, 95]`. Percentile support will be removed "
-        "in a future version."
+        "in skforecast 0.24.0."
     )
     with pytest.warns(FutureWarning, match = err_msg):
         results = _normalize_interval_scale([5, 95])
