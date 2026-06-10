@@ -1,6 +1,7 @@
 from __future__ import annotations
 from importlib import import_module
 from typing import TYPE_CHECKING
+from ..utils import check_optional_dependency
 
 __all__ = [
     # Model classes
@@ -59,7 +60,6 @@ def __getattr__(name: str):
             raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
     except ModuleNotFoundError as error:
         if error.name == "statsmodels" and name in _STATSMODELS_IMPORTS:
-            from ..utils import check_optional_dependency
             check_optional_dependency(package_name="statsmodels")
         raise
 

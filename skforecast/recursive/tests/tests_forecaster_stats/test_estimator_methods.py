@@ -7,6 +7,7 @@ import pandas as pd
 from skforecast.stats import Sarimax, Arima, Ets
 from skforecast.recursive import ForecasterStats
 
+
 # Test get_estimator
 # ==============================================================================
 def test_get_estimator_raises_KeyError_when_id_not_found():
@@ -152,6 +153,9 @@ def test_remove_estimators_single_id():
         'skforecast.stats._sarimax.Sarimax', 'skforecast.stats._ets.Ets'
     ]
     assert forecaster.estimator_names_ == [None, None]
+    assert list(forecaster.estimator_params_.keys()) == [
+        'skforecast.Sarimax', 'skforecast.Ets'
+    ]
 
 
 def test_remove_estimators_multiple_ids_and_fitted():
@@ -174,6 +178,7 @@ def test_remove_estimators_multiple_ids_and_fitted():
     assert len(forecaster.estimators_) == 1
     assert forecaster.estimator_types == ['skforecast.stats._arima.Arima']
     assert forecaster.estimator_names_ == ['Arima(1,1,1)']
+    assert list(forecaster.estimator_params_.keys()) == ['skforecast.Arima']
 
 
 def test_remove_estimators_with_suffix_and_fitted():
@@ -195,6 +200,9 @@ def test_remove_estimators_with_suffix_and_fitted():
     ]
     assert forecaster.estimator_names_ == [
         'Sarimax(1,0,1)(0,0,0)[0]', 'Sarimax(3,0,1)(0,0,0)[0]'
+    ]
+    assert list(forecaster.estimator_params_.keys()) == [
+        'skforecast.Sarimax', 'skforecast.Sarimax_3'
     ]
 
 

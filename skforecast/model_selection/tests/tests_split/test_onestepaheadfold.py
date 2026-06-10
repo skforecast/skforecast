@@ -215,3 +215,7 @@ def test_OneStepAhead_split_int_and_date_initial_train_size(capfd, initial_train
 
     assert out == expected_out
     assert folds == expected
+    # `initial_train_size` is immutable user input; the resolved integer position
+    # is stored in `initial_train_size_as_int` (split() must not mutate the input).
+    assert cv.initial_train_size == initial_train_size
+    assert cv.initial_train_size_as_int == 70

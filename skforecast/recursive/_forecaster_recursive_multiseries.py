@@ -615,7 +615,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             "forecaster_name": "ForecasterRecursiveMultiSeries",
             "forecaster_task": "regression",
             "forecasting_scope": "global",  # single-series | global
-            "forecasting_strategy": "recursive",  # recursive | direct | deep_learning
+            "forecasting_strategy": "recursive",  # recursive | direct | deep_learning | foundation
+            "multiple_estimators": False, 
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
@@ -2537,6 +2538,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         has_window_features = self.window_features is not None
         has_exog = exog_values_dict is not None
 
+        if has_lags and not self.lags_are_contiguous:
+            neg_lags = -self.lags
+
         for i in range(steps):
 
             remaining = steps - i
@@ -2545,7 +2549,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 if self.lags_are_contiguous:
                     features[:, :n_lags] = last_window[-(remaining + n_lags): -remaining, :][::-1].T
                 else:
-                    features[:, :n_lags] = last_window[-self.lags - remaining, :].transpose()
+                    features[:, :n_lags] = last_window[neg_lags - remaining, :].transpose()
             
             if has_window_features:
                 window_data = last_window[i:-remaining, :]

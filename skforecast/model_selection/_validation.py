@@ -496,7 +496,7 @@ def _backtesting_forecaster(
         forecaster._probabilistic_mode = 'no_binned'
 
     folds = cv.split(X=y, as_pandas=False)
-    initial_train_size = cv.initial_train_size
+    initial_train_size = cv.initial_train_size_as_int
     window_size = cv.window_size
     gap = cv.gap
 
@@ -1252,7 +1252,7 @@ def _backtesting_forecaster_multiseries(
 
     folds = cv.split(X=series, as_pandas=False)
     span_index = cv._extract_index(X=series)
-    initial_train_size = cv.initial_train_size
+    initial_train_size = cv.initial_train_size_as_int
     gap = cv.gap
 
     # Save out-of-sample residuals before any fit() call. Since fit() resets
@@ -1954,7 +1954,7 @@ def _backtesting_stats(
         ]
     
     folds = cv.split(X=y, as_pandas=False)
-    initial_train_size = cv.initial_train_size
+    initial_train_size = cv.initial_train_size_as_int
     steps = cv.steps
     gap = cv.gap
 

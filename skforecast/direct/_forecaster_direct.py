@@ -607,7 +607,8 @@ class ForecasterDirect(ForecasterBase):
             "forecaster_name": "ForecasterDirect",
             "forecaster_task": "regression",
             "forecasting_scope": "single-series",  # single-series | global
-            "forecasting_strategy": "direct",   # recursive | direct | deep_learning
+            "forecasting_strategy": "direct",   # recursive | direct | deep_learning | foundation
+            "multiple_estimators": False,
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
