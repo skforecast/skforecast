@@ -30,9 +30,9 @@ class FoundationModel:
     Scikit-learn compatible interface for foundation time-series models.
 
     Currently supports Amazon Chronos-2, Google TimesFM 2.5, Salesforce
-    Moirai-2 and TabICLv2. For full skforecast ecosystem integration
-    (backtesting, model selection, etc.) use `ForecasterFoundation`
-    instead.
+    Moirai-2, TabICLv2 and TabPFN-TS. For full skforecast ecosystem
+    integration (backtesting, model selection, etc.) use
+    `ForecasterFoundation` instead.
 
     Parameters
     ----------
@@ -58,12 +58,17 @@ class FoundationModel:
 
         - `'soda-inria/tabicl'`
 
+        Prior Labs TabPFN-TS (supports `exog`):
+
+        - `'priorlabs/tabpfn-ts'`
+
         See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
         Valid keys depend on the adapter selected by `model_id`. See the
         corresponding adapter class (`ChronosAdapter`, `TimesFMAdapter`,
-        `MoiraiAdapter`, `TabICLAdapter`) for the full parameter list, or
+        `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`) for the full
+        parameter list, or
         refer to the model documentation linked in the References section
         below.
 
@@ -155,6 +160,12 @@ class FoundationModel:
 
     .. [8] TabICL - Documentation.
            https://tabicl.readthedocs.io/en/latest/
+
+    .. [9] TabPFN-TS - GitHub repository.
+           https://github.com/PriorLabs/tabpfn-time-series
+
+    .. [10] Prior Labs TabPFN - Documentation.
+            https://docs.priorlabs.ai/
 
     """
 
