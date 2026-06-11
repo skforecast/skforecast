@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from skforecast.exceptions import MissingValuesWarning
 from skforecast.preprocessing import TimeSeriesDifferentiator
-from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from skforecast.recursive import ForecasterRecursive
 
 # Fixtures
@@ -180,6 +180,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_None():
         None,
         None,
         None,
+        None,
         ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5'],
         None,
         None
@@ -192,9 +193,10 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_None():
     assert results[4] is None
     assert results[5] is None
     assert results[6] is None
-    assert results[7] == expected[7]
-    assert results[8] is None
+    assert results[7] is None
+    assert results[8] == expected[8]
     assert results[9] is None
+    assert results[10] is None
 
 
 @pytest.mark.parametrize("dtype", 
@@ -220,6 +222,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_float
         ['exog'],
         [],
         None,
+        None,
         ['exog'],
         ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog'],
         {'exog': exog.dtypes},
@@ -232,12 +235,13 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_float
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] is None
-    assert results[6] == expected[6]
+    assert results[6] is None
     assert results[7] == expected[7]
-    for k in results[8].keys():
-        assert results[8][k] == expected[8][k]
+    assert results[8] == expected[8]
     for k in results[9].keys():
         assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
 
 
 @pytest.mark.parametrize("datetime_index", 
@@ -277,6 +281,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_float
         ['exog'],
         [],
         None,
+        None,
         ['exog'],
         ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog'],
         {'exog': exog.dtypes},
@@ -289,12 +294,13 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_float
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] is None
-    assert results[6] == expected[6]
+    assert results[6] is None
     assert results[7] == expected[7]
-    for k in results[8].keys():
-        assert results[8][k] == expected[8][k]
+    assert results[8] == expected[8]
     for k in results[9].keys():
         assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
 
 
 @pytest.mark.parametrize("dtype", 
@@ -322,6 +328,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
         ['exog_1', 'exog_2'],
         [],
         None,
+        None,
         ['exog_1', 'exog_2'],
         ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2'],
         {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes},
@@ -334,12 +341,13 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] is None
-    assert results[6] == expected[6]
+    assert results[6] is None
     assert results[7] == expected[7]
-    for k in results[8].keys():
-        assert results[8][k] == expected[8][k]
+    assert results[8] == expected[8]
     for k in results[9].keys():
         assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
 
 
 @pytest.mark.parametrize("exog_values, dtype", 
@@ -373,10 +381,11 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_bool_
     assert results[3] == ['exog']
     assert results[4] is None
     assert results[5] is None
-    assert results[6] == ['exog']
-    assert results[7] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog']
-    assert results[8] == {'exog': exog.dtypes}
+    assert results[6] is None
+    assert results[7] == ['exog']
+    assert results[8] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog']
     assert results[9] == {'exog': exog.dtypes}
+    assert results[10] == {'exog': exog.dtypes}
 
 
 @pytest.mark.parametrize("v_exog_1   , v_exog_2  , dtype", 
@@ -415,12 +424,13 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_bo
     assert results[3] == ['exog_1', 'exog_2']
     assert results[4] is None
     assert results[5] is None
-    assert results[6] == ['exog_1', 'exog_2']
-    assert results[7] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2']
-    for k in results[8].keys():
-        assert results[8][k] == {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes}[k]
+    assert results[6] is None
+    assert results[7] == ['exog_1', 'exog_2']
+    assert results[8] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2']
     for k in results[9].keys():
         assert results[9][k] == {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes}[k]
+    for k in results[10].keys():
+        assert results[10][k] == {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes}[k]
 
 
 @pytest.mark.parametrize(
@@ -468,12 +478,13 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_categ
     assert results[3] == ['exog']
     assert results[4] == expected_cat_names
     assert results[5] is None
-    assert results[6] == ['exog']
-    assert results[7] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog']
-    for k in results[8].keys():
-        assert results[8][k] == {'exog': exog.dtypes}[k]
+    assert results[6] is None
+    assert results[7] == ['exog']
+    assert results[8] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog']
     for k in results[9].keys():
-        assert results[9][k] == expected_dtypes_out[k]
+        assert results[9][k] == {'exog': exog.dtypes}[k]
+    for k in results[10].keys():
+        assert results[10][k] == expected_dtypes_out[k]
     if categorical_features is not None:
         assert len(forecaster.categorical_encoder.categories_) == 1
         np.testing.assert_array_equal(
@@ -532,12 +543,13 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_ca
     assert results[3] == ['exog_1', 'exog_2']
     assert results[4] == expected_cat_names
     assert results[5] is None
-    assert results[6] == ['exog_1', 'exog_2']
-    assert results[7] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2']
-    for k in results[8].keys():
-        assert results[8][k] == {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes}[k]
+    assert results[6] is None
+    assert results[7] == ['exog_1', 'exog_2']
+    assert results[8] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2']
     for k in results[9].keys():
-        assert results[9][k] == expected_dtypes_out[k]
+        assert results[9][k] == {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes}[k]
+    for k in results[10].keys():
+        assert results[10][k] == expected_dtypes_out[k]
     if categorical_features is not None:
         assert len(forecaster.categorical_encoder.categories_) == 2
         np.testing.assert_array_equal(
@@ -627,12 +639,13 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
     assert results[3] == ['exog_1', 'exog_2', 'exog_3', 'exog_4']
     assert results[4] == expected_cat_names
     assert results[5] is None
-    assert results[6] == ['exog_1', 'exog_2', 'exog_3', 'exog_4']
-    assert results[7] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
-    for k in results[8].keys():
-        assert results[8][k] == exog_dtypes_in[k]
+    assert results[6] is None
+    assert results[7] == ['exog_1', 'exog_2', 'exog_3', 'exog_4']
+    assert results[8] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
     for k in results[9].keys():
-        assert results[9][k] == expected_dtypes_out[k]
+        assert results[9][k] == exog_dtypes_in[k]
+    for k in results[10].keys():
+        assert results[10][k] == expected_dtypes_out[k]
     if categorical_features == 'auto':
         assert len(forecaster.categorical_encoder.categories_) == 1
         np.testing.assert_array_equal(
@@ -684,12 +697,13 @@ def test_create_train_X_y_output_when_exog_is_series_of_string_category(categori
     assert results[3] == ['exog']
     assert results[4] == ['exog']
     assert results[5] is None
-    assert results[6] == ['exog']
-    assert results[7] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog']
-    for k in results[8].keys():
-        assert results[8][k] == {'exog': exog.dtypes}[k]
+    assert results[6] is None
+    assert results[7] == ['exog']
+    assert results[8] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog']
     for k in results[9].keys():
-        assert results[9][k] == {'exog': np.dtype('float64')}[k]
+        assert results[9][k] == {'exog': exog.dtypes}[k]
+    for k in results[10].keys():
+        assert results[10][k] == {'exog': np.dtype('float64')}[k]
     assert len(forecaster.categorical_encoder.categories_) == 1
     np.testing.assert_array_equal(
         forecaster.categorical_encoder.categories_[0],
@@ -730,12 +744,13 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_string_category(categ
     assert results[3] == ['exog_1', 'exog_2']
     assert results[4] == ['exog_1', 'exog_2']
     assert results[5] is None
-    assert results[6] == ['exog_1', 'exog_2']
-    assert results[7] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2']
-    for k in results[8].keys():
-        assert results[8][k] == {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes}[k]
+    assert results[6] is None
+    assert results[7] == ['exog_1', 'exog_2']
+    assert results[8] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2']
     for k in results[9].keys():
-        assert results[9][k] == {'exog_1': np.dtype('float64'), 'exog_2': np.dtype('float64')}[k]
+        assert results[9][k] == {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes}[k]
+    for k in results[10].keys():
+        assert results[10][k] == {'exog_1': np.dtype('float64'), 'exog_2': np.dtype('float64')}[k]
     assert len(forecaster.categorical_encoder.categories_) == 2
     np.testing.assert_array_equal(
         forecaster.categorical_encoder.categories_[0],
@@ -782,16 +797,17 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_float_int_string_cate
     assert results[3] == ['exog_1', 'exog_2', 'exog_3']
     assert results[4] == ['exog_3']
     assert results[5] is None
-    assert results[6] == ['exog_1', 'exog_2', 'exog_3']
-    assert results[7] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2', 'exog_3']
-    for k in results[8].keys():
-        assert results[8][k] == {
+    assert results[6] is None
+    assert results[7] == ['exog_1', 'exog_2', 'exog_3']
+    assert results[8] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2', 'exog_3']
+    for k in results[9].keys():
+        assert results[9][k] == {
             'exog_1': exog['exog_1'].dtypes,
             'exog_2': exog['exog_2'].dtypes,
             'exog_3': exog['exog_3'].dtypes
         }[k]
-    for k in results[9].keys():
-        assert results[9][k] == {
+    for k in results[10].keys():
+        assert results[10][k] == {
             'exog_1': exog['exog_1'].dtypes,
             'exog_2': exog['exog_2'].dtypes,
             'exog_3': np.dtype('float64')
@@ -836,12 +852,13 @@ def test_create_train_X_y_output_when_is_fitted_uses_transform_not_fit_transform
     assert results[3] == ['exog_1', 'exog_2']
     assert results[4] == ['exog_2']
     assert results[5] is None
-    assert results[6] == ['exog_1', 'exog_2']
-    assert results[7] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2']
-    for k in results[8].keys():
-        assert results[8][k] == {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes}[k]
+    assert results[6] is None
+    assert results[7] == ['exog_1', 'exog_2']
+    assert results[8] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2']
     for k in results[9].keys():
-        assert results[9][k] == {'exog_1': np.dtype('float64'), 'exog_2': np.dtype('float64')}[k]
+        assert results[9][k] == {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes}[k]
+    for k in results[10].keys():
+        assert results[10][k] == {'exog_1': np.dtype('float64'), 'exog_2': np.dtype('float64')}[k]
     assert len(forecaster.categorical_encoder.categories_) == 1
     np.testing.assert_array_equal(
         forecaster.categorical_encoder.categories_[0],
@@ -873,6 +890,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_transformer_y_is_Standa
         None,
         None,
         None,
+        None,
         ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5'],
         None,
         None
@@ -885,9 +903,10 @@ def test_create_train_X_y_output_when_y_is_series_10_and_transformer_y_is_Standa
     assert results[4] is None
     assert results[5] is None
     assert results[6] is None
-    assert results[7] == expected[7]
-    assert results[8] is None
+    assert results[7] is None
+    assert results[8] == expected[8]
     assert results[9] is None
+    assert results[10] is None
 
 
 def test_create_train_X_y_output_when_exog_is_None_and_transformer_exog_is_not_None():
@@ -914,6 +933,7 @@ def test_create_train_X_y_output_when_exog_is_None_and_transformer_exog_is_not_N
         None,
         None,
         None,
+        None,
         ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5'],
         None,
         None
@@ -926,9 +946,10 @@ def test_create_train_X_y_output_when_exog_is_None_and_transformer_exog_is_not_N
     assert results[4] is None
     assert results[5] is None
     assert results[6] is None
-    assert results[7] == expected[7]
-    assert results[8] is None
+    assert results[7] is None
+    assert results[8] == expected[8]
     assert results[9] is None
+    assert results[10] is None
 
 
 def test_create_train_X_y_output_when_transformer_y_and_transformer_exog():
@@ -971,6 +992,7 @@ def test_create_train_X_y_output_when_transformer_y_and_transformer_exog():
         ['col_1', 'col_2'],
         [],
         None,
+        None,
         ['col_1', 'col_2_a', 'col_2_b'],
         ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'col_1', 'col_2_a', 'col_2_b'],
         {'col_1': exog['col_1'].dtypes, 'col_2': exog['col_2'].dtypes},
@@ -983,12 +1005,13 @@ def test_create_train_X_y_output_when_transformer_y_and_transformer_exog():
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] is None
-    assert results[6] == expected[6]
+    assert results[6] is None
     assert results[7] == expected[7]
-    for k in results[8].keys():
-        assert results[8][k] == expected[8][k]
+    assert results[8] == expected[8]
     for k in results[9].keys():
         assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
 
 
 @pytest.mark.parametrize(
@@ -1041,12 +1064,13 @@ def test_create_train_X_y_output_when_transformer_exog_is_make_column_transforme
     assert results[3] == ['col_1', 'col_2']
     assert results[4] == ['col_2']
     assert results[5] is None
-    assert results[6] == ['col_1', 'col_2']
-    assert results[7] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'col_1', 'col_2']
-    for k in results[8].keys():
-        assert results[8][k] == {'col_1': exog['col_1'].dtypes, 'col_2': exog['col_2'].dtypes}[k]
+    assert results[6] is None
+    assert results[7] == ['col_1', 'col_2']
+    assert results[8] == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'col_1', 'col_2']
     for k in results[9].keys():
-        assert results[9][k] == {'col_1': np.dtype('float64'), 'col_2': np.dtype('float64')}[k]
+        assert results[9][k] == {'col_1': exog['col_1'].dtypes, 'col_2': exog['col_2'].dtypes}[k]
+    for k in results[10].keys():
+        assert results[10][k] == {'col_1': np.dtype('float64'), 'col_2': np.dtype('float64')}[k]
 
 
 @pytest.mark.parametrize("fit_forecaster", 
@@ -1093,10 +1117,11 @@ def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentia
     assert output_1[5] == output_2[5]
     assert output_1[6] == output_2[6]
     assert output_1[7] == output_2[7]
-    for k in output_1[8].keys():
-        assert output_1[8][k] == output_2[8][k]
+    assert output_1[8] == output_2[8]
     for k in output_1[9].keys():
         assert output_1[9][k] == output_2[9][k]
+    for k in output_1[10].keys():
+        assert output_1[10][k] == output_2[10][k]
 
 
 def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentiation_is_2():
@@ -1138,10 +1163,11 @@ def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentia
     assert output_1[5] == output_2[5]
     assert output_1[6] == output_2[6]
     assert output_1[7] == output_2[7]
-    for k in output_1[8].keys():
-        assert output_1[8][k] == output_2[8][k]
+    assert output_1[8] == output_2[8]
     for k in output_1[9].keys():
         assert output_1[9][k] == output_2[9][k]
+    for k in output_1[10].keys():
+        assert output_1[10][k] == output_2[10][k]
 
 
 def test_create_train_X_y_output_when_window_features_and_exog():
@@ -1179,6 +1205,7 @@ def test_create_train_X_y_output_when_window_features_and_exog():
         ['exog'],
         [],
         ['roll_mean_5', 'roll_median_5', 'roll_sum_6'],
+        None,
         ['exog'],
         ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
          'roll_mean_5', 'roll_median_5', 'roll_sum_6', 'exog'],
@@ -1192,12 +1219,13 @@ def test_create_train_X_y_output_when_window_features_and_exog():
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] == expected[5]
-    assert results[6] == expected[6]
+    assert results[6] is None
     assert results[7] == expected[7]
-    for k in results[8].keys():
-        assert results[8][k] == expected[8][k]
+    assert results[8] == expected[8]
     for k in results[9].keys():
         assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
 
 
 def test_create_train_X_y_output_when_two_window_features_and_exog():
@@ -1236,6 +1264,7 @@ def test_create_train_X_y_output_when_two_window_features_and_exog():
         ['exog'],
         [],
         ['roll_mean_5', 'roll_median_5', 'roll_sum_6'],
+        None,
         ['exog'],
         ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
          'roll_mean_5', 'roll_median_5', 'roll_sum_6', 'exog'],
@@ -1249,12 +1278,13 @@ def test_create_train_X_y_output_when_two_window_features_and_exog():
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] == expected[5]
-    assert results[6] == expected[6]
+    assert results[6] is None
     assert results[7] == expected[7]
-    for k in results[8].keys():
-        assert results[8][k] == expected[8][k]
+    assert results[8] == expected[8]
     for k in results[9].keys():
         assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
 
 
 def test_create_train_X_y_MissingValuesWarning_when_y_has_NaN_in_target_position():
@@ -1297,6 +1327,7 @@ def test_create_train_X_y_MissingValuesWarning_when_y_has_NaN_in_target_position
         ['exog'],
         [],
         None,
+        None,
         ['exog'],
         ['lag_1', 'lag_2', 'lag_3', 'exog'],
         {'exog': np.dtype('float64')},
@@ -1309,12 +1340,13 @@ def test_create_train_X_y_MissingValuesWarning_when_y_has_NaN_in_target_position
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] is None
-    assert results[6] == expected[6]
+    assert results[6] is None
     assert results[7] == expected[7]
-    for k in results[8].keys():
-        assert results[8][k] == expected[8][k]
+    assert results[8] == expected[8]
     for k in results[9].keys():
         assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
 
 
 def test_create_train_X_y_MissingValuesWarning_and_output_when_NaN_in_X_train_and_dropna_from_series_True():
@@ -1356,6 +1388,7 @@ def test_create_train_X_y_MissingValuesWarning_and_output_when_NaN_in_X_train_an
         ['exog_1', 'exog_2'],
         [],
         None,
+        None,
         ['exog_1', 'exog_2'],
         ['lag_1', 'lag_2', 'lag_3', 'exog_1', 'exog_2'],
         {'exog_1': np.dtype('float64'), 'exog_2': np.dtype('float64')},
@@ -1368,12 +1401,13 @@ def test_create_train_X_y_MissingValuesWarning_and_output_when_NaN_in_X_train_an
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] is None
-    assert results[6] == expected[6]
+    assert results[6] is None
     assert results[7] == expected[7]
-    for k in results[8].keys():
-        assert results[8][k] == expected[8][k]
+    assert results[8] == expected[8]
     for k in results[9].keys():
         assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
 
 
 def test_create_train_X_y_MissingValuesWarning_and_output_when_NaN_in_X_train_and_dropna_from_series_False():
@@ -1418,6 +1452,7 @@ def test_create_train_X_y_MissingValuesWarning_and_output_when_NaN_in_X_train_an
         ['exog'],
         [],
         None,
+        None,
         ['exog'],
         ['lag_1', 'lag_2', 'lag_3', 'exog'],
         {'exog': np.dtype('float64')},
@@ -1430,12 +1465,13 @@ def test_create_train_X_y_MissingValuesWarning_and_output_when_NaN_in_X_train_an
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] is None
-    assert results[6] == expected[6]
+    assert results[6] is None
     assert results[7] == expected[7]
-    for k in results[8].keys():
-        assert results[8][k] == expected[8][k]
+    assert results[8] == expected[8]
     for k in results[9].keys():
         assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
 
 
 def test_create_train_X_y_ValueError_when_all_samples_removed_due_to_NaN():
@@ -1496,6 +1532,7 @@ def test_create_train_X_y_output_when_window_features_lags_None_and_exog():
         ['exog'],
         [],
         ['roll_mean_5', 'roll_median_5', 'roll_sum_6'],
+        None,
         ['exog'],
         ['roll_mean_5', 'roll_median_5', 'roll_sum_6', 'exog'],
         {'exog': exog_datetime.dtypes},
@@ -1508,17 +1545,18 @@ def test_create_train_X_y_output_when_window_features_lags_None_and_exog():
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] == expected[5]
-    assert results[6] == expected[6]
+    assert results[6] is None
     assert results[7] == expected[7]
-    for k in results[8].keys():
-        assert results[8][k] == expected[8][k]
+    assert results[8] == expected[8]
     for k in results[9].keys():
         assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
 
 
-def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff():
+def test_create_train_X_y_output_when_window_features_calendar_and_exog_transformers_diff():
     """
-    Test the output of _create_train_X_y when using window_features, exog, 
+    Test the output of _create_train_X_y when using window_features, calendar_features, exog, 
     transformers and differentiation.
     """
     y_datetime = pd.Series(
@@ -1542,32 +1580,38 @@ def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff
     rolling = RollingFeatures(
         stats=['ratio_min_max', 'median'], window_sizes=4
     )
+    calendar = CalendarFeatures(
+        features=['day_of_week', 'weekend'], encoding="cyclical"
+    )
 
     forecaster = ForecasterRecursive(
                      LinearRegression(), 
-                     lags             = [1, 5], 
-                     window_features  = rolling,
-                     transformer_y    = transformer_y,
-                     transformer_exog = transformer_exog,
-                     differentiation  = 2
+                     lags              = [1, 5], 
+                     window_features   = rolling,
+                     calendar_features = calendar,
+                     transformer_y     = transformer_y,
+                     transformer_exog  = transformer_exog,
+                     differentiation   = 2
                  )
     results = forecaster._create_train_X_y(y=y_datetime, exog=exog)
     
     expected = (
         np.array([[-1.56436158, -0.14173746, -0.89489489, -0.27035108,  0.04040264,
-                    0.        ,  1.        ],
+                    0.        ,  1.        ,  1.        , -0.97492791, -0.22252093],
                   [ 1.8635851 , -0.04199628, -0.83943662,  0.62469472, -1.32578962,
-                    0.        ,  1.        ],
+                    0.        ,  1.        ,  1.        , -0.78183148,  0.6234898 ],
                   [-0.24672817, -0.49870587, -0.83943662,  0.75068358,  1.12752513,
-                    0.        ,  1.        ]]),
+                    0.        ,  1.        ,  0.        ,  0.        ,  1.        ]]),
         np.array([1.8635851, -0.24672817, -4.60909217]),
         pd.date_range('2000-01-08', periods=3, freq='D'),
         ['col_1', 'col_2'],
         [],
         ['roll_ratio_min_max_4', 'roll_median_4'],
+        ['weekend', 'day_of_week_sin', 'day_of_week_cos'],
         ['col_1', 'col_2_a', 'col_2_b'],
         ['lag_1', 'lag_5', 'roll_ratio_min_max_4', 'roll_median_4',
-         'col_1', 'col_2_a', 'col_2_b'],
+         'col_1', 'col_2_a', 'col_2_b',
+         'weekend', 'day_of_week_sin', 'day_of_week_cos'],
         {'col_1': exog['col_1'].dtypes, 'col_2': exog['col_2'].dtypes},
         {'col_1': exog['col_1'].dtypes, 'col_2_a': float, 'col_2_b': float}
     )
@@ -1580,7 +1624,8 @@ def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
-    for k in results[8].keys():
-        assert results[8][k] == expected[8][k]
+    assert results[8] == expected[8]
     for k in results[9].keys():
         assert results[9][k] == expected[9][k]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
