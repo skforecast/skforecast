@@ -1926,7 +1926,7 @@ class TabPFNAdapter:
 
     Notes
     -----
-    TabPFN-TS supports arbitrary quantile levels (any float in `[0, 1]`),
+    TabPFN-TS supports arbitrary quantile levels (any float in `(0, 1)`),
     unlike models with fixed quantile sets such as TimesFM or Moirai.
 
     Covariate support is available for *known-future* covariates: extra
