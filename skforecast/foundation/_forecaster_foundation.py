@@ -146,8 +146,9 @@ class ForecasterFoundation:
             "library": "skforecast",
             "forecaster_name": "ForecasterFoundation",
             "forecaster_task": "regression",
-            "forecasting_scope": "single-series|multi-series",
+            "forecasting_scope": "single-series | global",
             "forecasting_strategy": "foundation",
+            "multiple_estimators": False, 
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
@@ -164,8 +165,8 @@ class ForecasterFoundation:
                 "long-format pandas.DataFrame",
                 "dict[str, pandas.Series | pandas.DataFrame | None]",
             ],
-            "handles_missing_values_series": False,
-            "handles_missing_values_exog": False,
+            "handles_missing_values_series": True,
+            "handles_missing_values_exog": True,
 
             "supports_lags": False,
             "supports_window_features": False,

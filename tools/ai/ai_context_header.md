@@ -25,6 +25,13 @@ Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
 Core: numpy>=1.26, pandas>=2.1,<3.0, scikit-learn>=1.4, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
 Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 + seaborn>=0.12,<0.14 (plotting), keras>=3.0,<4.0 (deep learning)
 
+### Python environment
+
+Before running any Python command (tests, scripts, notebooks, `pip install`, etc.)
+for the first time in a session, run `conda env list` and ask which environment to
+use. Do not assume the active environment. Once the user confirms an environment,
+reuse it for the rest of the session without asking again.
+
 ---
 
 # Skforecast — Complete API & Workflow Reference

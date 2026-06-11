@@ -329,7 +329,7 @@ def test_predict_output_when_steps_is_2_in_sample_residuals_is_False_with_fixtur
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.90, [5, 95], (5, 95)], 
+                         [0.90, [0.05, 0.95], (0.05, 0.95)], 
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_output_when_with_transform_series(interval):
     """
@@ -457,7 +457,7 @@ def test_predict_interval_output_when_series_and_exog_dict():
     forecaster.set_in_sample_residuals(series=series_dict_nans_train, exog=exog_dict_nans_train)
     predictions = forecaster.predict_interval(
         steps=5, exog=exog_dict_nans_test, method='bootstrapping', 
-        interval=[5, 95], n_boot=10,  use_in_sample_residuals=True, 
+        interval=[0.05, 0.95], n_boot=10,  use_in_sample_residuals=True, 
         use_binned_residuals=False, suppress_warnings=True
     )
 
@@ -528,7 +528,7 @@ def test_predict_interval_output_when_series_and_exog_dict_unknown_level():
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster.predict_interval(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
-        method='bootstrapping', interval=[5, 95], n_boot=10, 
+        method='bootstrapping', interval=[0.05, 0.95], n_boot=10, 
         use_in_sample_residuals=True, use_binned_residuals=False, suppress_warnings=True
     )
 
@@ -607,7 +607,7 @@ def test_predict_interval_output_when_series_and_exog_dict_unknown_level_binned_
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster.predict_interval(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
-        method='bootstrapping', interval=[5, 95], n_boot=10, 
+        method='bootstrapping', interval=[0.05, 0.95], n_boot=10, 
         use_in_sample_residuals=True, use_binned_residuals=True, suppress_warnings=True
     )
 
@@ -786,7 +786,7 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster.predict_interval(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
-        method='bootstrapping', interval=(5, 95), n_boot=10, 
+        method='bootstrapping', interval=(0.05, 0.95), n_boot=10, 
         use_in_sample_residuals=True, use_binned_residuals=False, suppress_warnings=True
     )
     
@@ -866,7 +866,7 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster.predict_interval(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
-        method='bootstrapping', interval=(5, 95), n_boot=10, 
+        method='bootstrapping', interval=(0.05, 0.95), n_boot=10, 
         use_in_sample_residuals=True, use_binned_residuals=True, suppress_warnings=True
     )
 
@@ -1016,7 +1016,7 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.95, (2.5, 97.5)], 
+                         [0.95, (0.025, 0.975)], 
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_conformal_output_when_series_and_exog_dict(interval):
     """

@@ -17,6 +17,7 @@ from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 
 from .. import __version__
+from ..base import MultiEstimatorMixin
 from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     check_y,
@@ -25,6 +26,8 @@ from ..utils import (
     check_predict_input,
     expand_index,
     get_exog_dtypes,
+    _normalize_interval_scale,
+    check_interval,
     transform_series,
     transform_numpy,
     transform_dataframe,
@@ -33,7 +36,7 @@ from ..utils import (
 )
 
 
-class ForecasterStats():
+class ForecasterStats(MultiEstimatorMixin):
     """
     This class turns statistical models into a Forecaster compatible with the 
     skforecast API. It supports single or multiple statistical models for the 
@@ -218,7 +221,7 @@ class ForecasterStats():
         # aggregates predictions from all estimators.
         self.estimators              = estimator
         self.estimators_             = [clone(est) for est in self.estimators]
-        self.estimator_ids           = self._generate_ids(self.estimators)
+        self.estimator_ids           = self._generate_estimator_ids()
         self.estimator_types         = estimator_types
         self.estimator_names_        = [None] * len(self.estimators)
         self.n_estimators            = len(self.estimators)
@@ -311,7 +314,7 @@ class ForecasterStats():
             "forecaster_name": "ForecasterStats",
             "forecaster_task": "regression",
             "forecasting_scope": "single-series",  # single-series | global
-            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
+            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning | foundation
             "multiple_estimators": True,
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
@@ -335,116 +338,6 @@ class ForecasterStats():
             "probabilistic_methods": ["distribution"],
             "handles_binned_residuals": False
         }
-
-    def _generate_ids(self, estimators: list) -> list[str]:
-        """
-        Generate unique ids for a list of estimators. Handles duplicate ids by 
-        appending a numeric suffix.
-        
-        Parameters
-        ----------
-        estimators : list
-            List of statistical model instances.
-        
-        Returns
-        -------
-        ids : list[str]
-            List of unique ids for each estimator.
-        
-        """
-
-        ids = []
-        id_counts = {}
-        for est in estimators:
-
-            base_id = (
-                f"{type(est).__module__.split('.')[0]}.{type(est).__name__}"
-            )
-            
-            # Track occurrences and add suffix for duplicates
-            if base_id in id_counts:
-                id_counts[base_id] += 1
-                unique_id = f"{base_id}_{id_counts[base_id]}"
-            else:
-                id_counts[base_id] = 1
-                unique_id = base_id
-            
-            ids.append(unique_id)
-        
-        return ids
-
-    def get_estimator(self, id: str) -> object:
-        """
-        Get a specific estimator by its id.
-        
-        Parameters
-        ----------
-        id : str
-            The id of the estimator to retrieve.
-        
-        Returns
-        -------
-        estimator : object
-            The requested estimator instance.
-        
-        """
-        
-        if id not in self.estimator_ids:
-            raise KeyError(
-                f"No estimator with id '{id}'. "
-                f"Available estimators: {self.estimator_ids}"
-            )
-        
-        idx = self.estimator_ids.index(id)
-
-        return self.estimators_[idx]
-    
-    def get_estimator_ids(self) -> list[str]:
-        """
-        Get the ids of all estimators in the forecaster.
-        
-        Returns
-        -------
-        estimator_ids : list[str]
-            List of estimator ids.
-        
-        """
-
-        return self.estimator_ids
-    
-    def remove_estimators(self, ids: str | list[str]) -> None:
-        """
-        Remove one or more estimators by their ids.
-        
-        Parameters
-        ----------
-        ids : str, list[str]
-            The ids of the estimators to remove.
-        
-        Returns
-        -------
-        None
-        
-        """
-
-        if isinstance(ids, str):
-            ids = [ids]
-        
-        missing_ids = [id for id in ids if id not in self.estimator_ids]
-        if missing_ids:
-            raise KeyError(
-                f"No estimator(s) with id '{missing_ids}'. "
-                f"Available estimators: {self.estimator_ids}"
-            )
-            
-        for id in ids:
-            idx = self.estimator_ids.index(id)
-            del self.estimators[idx]
-            del self.estimators_[idx]
-            del self.estimator_ids[idx]
-            del self.estimator_names_[idx]
-            del self.estimator_types[idx]
-            self.n_estimators -= 1
 
     def _preprocess_repr(self) -> tuple[list[str], str]:
         """
@@ -491,7 +384,7 @@ class ForecasterStats():
         """
 
         estimator_params, exog_names_in_ = self._preprocess_repr()
-        params_list = "\n    ".join(estimator_params)
+        estimator_params = "\n    ".join(estimator_params)
 
         info = (
             f"{'=' * len(type(self).__name__)} \n"
@@ -506,7 +399,7 @@ class ForecasterStats():
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
-            f"Estimator parameters: \n    {params_list} \n"
+            f"Estimator parameters: \n    {estimator_params} \n"
             f"fit_kwargs: {self.fit_kwargs} \n"
             f"Creation date: {self.creation_date} \n"
             f"Last fit date: {self.fit_date} \n"
@@ -529,23 +422,9 @@ class ForecasterStats():
         estimator_params, exog_names_in_ = self._preprocess_repr()
         style, unique_id = get_style_repr_html(self.is_fitted)
 
-        # Build estimators list
-        estimators_html = "<ul>"
-        for est_id, est_name in zip(self.estimator_ids, self.estimator_names_):
-            if est_name is not None:
-                estimators_html += f"<li>{est_id}: {est_name}</li>"
-            else:
-                estimators_html += f"<li>{est_id}</li>"
-        estimators_html += "</ul>"
-
-        # Build parameters section
-        if len(estimator_params) == 1:
-            params_html = f"<ul><li>{estimator_params[0]}</li></ul>"
-        else:
-            params_html = "<ul>"
-            for param in estimator_params:
-                params_html += f"<li>{param}</li>"
-            params_html += "</ul>"
+        estimators_html, params_html = self._build_estimators_repr_html(
+            estimator_params=estimator_params
+        )
 
         content = f"""
         <div class="container-{unique_id}">
@@ -1168,10 +1047,14 @@ class ForecasterStats():
             If both, `alpha` and `interval` are provided, `alpha` will be used.
         interval : list, tuple, default None
             Confidence of the prediction interval estimated. The values must be
-            symmetric. Sequence of percentiles to compute, which must be between 
-            0 and 100 inclusive. For example, interval of 95% should be as 
-            `interval = [2.5, 97.5]`. If both, `alpha` and `interval` are 
+            symmetric. Sequence of quantiles to compute, which must be between 
+            0 and 1 inclusive. For example, interval of 95% should be as 
+            `interval = [0.025, 0.975]`. If both, `alpha` and `interval` are 
             provided, `alpha` will be used.
+
+            **Changed in version 0.23.0:** `interval` is now expressed as
+            quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+            is deprecated and emits a `FutureWarning`.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -1192,13 +1075,12 @@ class ForecasterStats():
 
         # If interval and alpha take alpha, if interval transform to alpha
         if alpha is None:
-            if 100 - interval[1] != interval[0]:
-                raise ValueError(
-                    f"When using `interval` in ForecasterStats, it must be symmetrical. "
-                    f"For example, interval of 95% should be as `interval = [2.5, 97.5]`. "
-                    f"Got {interval}."
-                )
-            alpha = 2 * (100 - interval[1]) / 100
+            interval = _normalize_interval_scale(interval=interval)
+            check_interval(
+                interval                   = interval,
+                ensure_symmetric_intervals = True
+            )
+            alpha = 2 * (1 - interval[1])
 
         last_window, last_window_exog, exog, prediction_index = (
             self._create_predict_inputs(
@@ -1569,47 +1451,6 @@ class ForecasterStats():
             raise ValueError("`method` must be either 'standard' or 'lutkepohl'")
 
         return estimator._forecaster.arima_res_.info_criteria(criteria=criteria, method=method)
-
-    def get_estimators_info(self) -> pd.DataFrame:
-        """
-        Get a summary DataFrame with information about all estimators in the 
-        forecaster.
-        
-        Returns
-        -------
-        info : pandas DataFrame
-            DataFrame with columns:
-            - id: Unique identifier for each estimator.
-            - name: Descriptive name (available after fitting).
-            - type: Full qualified type string.
-            - supports_exog: Whether the estimator supports exogenous variables.
-            - supports_interval: Whether the estimator supports prediction intervals.
-            - params: Dictionary of the estimator parameters.
-        
-        """
-
-        supports_exog = [
-            est_type in self.estimators_support_exog 
-            for est_type in self.estimator_types
-        ]
-        supports_interval = [
-            est_type in self.estimators_support_interval 
-            for est_type in self.estimator_types
-        ]
-        params = [
-            str(est_params) for est_params in self.estimator_params_.values()
-        ]
-
-        info = pd.DataFrame({
-            'id': self.estimator_ids,
-            'name': self.estimator_names_,
-            'type': self.estimator_types,
-            'supports_exog': supports_exog,
-            'supports_interval': supports_interval,
-            'params': params
-        })
-
-        return info
 
     def summary(self) -> None:
         """

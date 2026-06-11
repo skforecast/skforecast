@@ -43,6 +43,7 @@ from ..utils import (
     check_predict_input,
     check_residuals_input,
     check_interval,
+    _normalize_interval_scale,
     check_extract_values_and_index,
     input_to_frame,
     exog_to_direct_numpy,
@@ -51,6 +52,7 @@ from ..utils import (
     transform_dataframe,
     select_n_jobs_fit_forecaster,
     configure_estimator_categorical_features,
+    cast_catboost_categorical_columns,
     manage_warnings,
     get_style_repr_html,
     _build_predict_function,
@@ -566,7 +568,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             "forecaster_name": "ForecasterDirectMultiVariate",
             "forecaster_task": "regression",
             "forecasting_scope": "global",  # single-series | global
-            "forecasting_strategy": "direct",  # recursive | direct | deep_learning
+            "forecasting_strategy": "direct",  # recursive | direct | deep_learning | foundation
+            "multiple_estimators": False,
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
@@ -1757,15 +1760,12 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         else:
             fit_kwargs = {**self.fit_kwargs}
 
-        if (
-            'cat_features' in fit_kwargs
-            and type(self.estimators_[step]).__name__ == 'CatBoostRegressor'
-        ):
-            cat_idx = np.array(fit_kwargs['cat_features'])
-            X_train = X_train.astype(object)
-            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
-            X_test = X_test.astype(object)
-            X_test[:, cat_idx] = X_test[:, cat_idx].astype(int)
+        X_train = cast_catboost_categorical_columns(
+            X=X_train, fit_kwargs=fit_kwargs, estimator=self.estimators_[step]
+        )
+        X_test = cast_catboost_categorical_columns(
+            X=X_test, fit_kwargs=fit_kwargs, estimator=self.estimators_[step]
+        )
 
         return (
             X_train, 
@@ -2750,7 +2750,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         method: str = 'conformal',
-        interval: float | list[float] | tuple[float] = [5, 95],
+        interval: float | list[float] | tuple[float] = [0.05, 0.95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
@@ -2789,18 +2789,22 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             intervals [1]_.
             - 'conformal': Employs the conformal prediction split method for 
             interval estimation [2]_.
-        interval : float, list, tuple, default [5, 95]
+        interval : float, list, tuple, default [0.05, 0.95]
             Confidence level of the prediction interval. Interpretation depends 
             on the method used:
             
             - If `float`, represents the nominal (expected) coverage (between 0 
-            and 1). For instance, `interval=0.95` corresponds to `[2.5, 97.5]` 
-            percentiles.
-            - If `list` or `tuple`, defines the exact percentiles to compute, which 
-            must be between 0 and 100 inclusive. For example, interval 
-            of 95% should be as `interval = [2.5, 97.5]`.
+            and 1). For instance, `interval=0.95` corresponds to `[0.025, 0.975]` 
+            quantiles.
+            - If `list` or `tuple`, defines the exact quantiles to compute, which 
+            must be between 0 and 1 inclusive. For example, interval 
+            of 95% should be as `interval = [0.025, 0.975]`.
             - When using `method='conformal'`, the interval must be a float or 
             a list/tuple defining a symmetric interval.
+
+            **Changed in version 0.23.0:** `interval` is now expressed as
+            quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+            is deprecated and emits a `FutureWarning`.
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
@@ -2843,8 +2847,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         if method == "bootstrapping":
             
             if isinstance(interval, (list, tuple)):
+                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=False)
-                interval = np.array(interval) / 100
+                interval = np.array(interval)
             else:
                 check_interval(alpha=interval, alpha_literal='interval')
                 interval = np.array([0.5 - interval / 2, 0.5 + interval / 2])
@@ -2876,8 +2881,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         elif method == 'conformal':
 
             if isinstance(interval, (list, tuple)):
+                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=True)
-                nominal_coverage = (interval[1] - interval[0]) / 100
+                nominal_coverage = interval[1] - interval[0]
             else:
                 check_interval(alpha=interval, alpha_literal='interval')
                 nominal_coverage = interval

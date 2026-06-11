@@ -73,7 +73,7 @@ def test_predict_interval_5_steps_with_int_offset_7_n_offsets_1():
                      n_offsets = 1
                  )
     forecaster.fit(y=y, store_in_sample_residuals=True)
-    predictions = forecaster.predict_interval(steps=5)
+    predictions = forecaster.predict_interval(steps=5, interval=[0.05, 0.95])
 
     expected = pd.DataFrame(
                    data = np.array([

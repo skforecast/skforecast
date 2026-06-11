@@ -26,6 +26,13 @@ Use `ForecasterRnn` when:
 
 **Requirements**: `pip install skforecast[deeplearning]` (installs keras)
 
+### Related skills
+
+- **Before**: `choosing-a-forecaster` (confirm `ForecasterRnn` is the right choice for the data size and pattern)
+- **Before**: `feature-engineering` (RNN models still benefit from cyclical / calendar exogenous features)
+- **After**: `hyperparameter-optimization` (tune RNN architecture and training hyperparameters)
+- **After**: `prediction-intervals` (only conformal intervals are supported for `ForecasterRnn`)
+
 ## Quick Start
 
 ```python

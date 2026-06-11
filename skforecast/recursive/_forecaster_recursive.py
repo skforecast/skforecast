@@ -37,8 +37,10 @@ from ..utils import (
     check_predict_input,
     check_residuals_input,
     check_interval,
+    _normalize_interval_scale,
     check_extract_values_and_index,
     configure_estimator_categorical_features,
+    cast_catboost_categorical_columns,
     input_to_frame,
     date_to_index_position,
     expand_index,
@@ -410,7 +412,8 @@ class ForecasterRecursive(ForecasterBase):
             "forecaster_name": "ForecasterRecursive",
             "forecaster_task": "regression",
             "forecasting_scope": "single-series",  # single-series | global
-            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
+            "forecasting_strategy": "recursive",  # recursive | direct | deep_learning | foundation
+            "multiple_estimators": False, 
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
@@ -1122,15 +1125,12 @@ class ForecasterRecursive(ForecasterBase):
         else:
             fit_kwargs = {**self.fit_kwargs}
 
-        if (
-            'cat_features' in fit_kwargs
-            and type(self.estimator).__name__ == 'CatBoostRegressor'
-        ):
-            cat_idx = np.array(fit_kwargs['cat_features'])
-            X_train = X_train.astype(object)
-            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
-            X_test = X_test.astype(object)
-            X_test[:, cat_idx] = X_test[:, cat_idx].astype(int)
+        X_train = cast_catboost_categorical_columns(
+            X=X_train, fit_kwargs=fit_kwargs, estimator=self.estimator
+        )
+        X_test = cast_catboost_categorical_columns(
+            X=X_test, fit_kwargs=fit_kwargs, estimator=self.estimator
+        )
 
         return X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
 
@@ -1273,16 +1273,9 @@ class ForecasterRecursive(ForecasterBase):
         else:
             fit_kwargs = {**self.fit_kwargs}
 
-        # NOTE: CatBoost requires integer values (not float) for categorical features
-        # when X is a numpy array. This requires converting X_train to object
-        # dtype and casting the categorical columns to int.
-        if (
-            'cat_features' in fit_kwargs
-            and type(self.estimator).__name__ == 'CatBoostRegressor'
-        ):
-            cat_idx = np.array(fit_kwargs['cat_features'])
-            X_train = X_train.astype(object)
-            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
+        X_train = cast_catboost_categorical_columns(
+            X=X_train, fit_kwargs=fit_kwargs, estimator=self.estimator
+        )
 
         if sample_weight is not None:
             self.estimator.fit(
@@ -1628,7 +1621,10 @@ class ForecasterRecursive(ForecasterBase):
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
-        
+
+        if has_lags and not self.lags_are_contiguous:
+            neg_lags = -self.lags
+
         for i in range(steps):
 
             remaining = steps - i
@@ -1637,7 +1633,7 @@ class ForecasterRecursive(ForecasterBase):
                 if self.lags_are_contiguous:
                     X[:n_lags] = last_window[-(remaining + n_lags): -remaining][::-1]
                 else:
-                    X[:n_lags] = last_window[-self.lags - remaining]
+                    X[:n_lags] = last_window[neg_lags - remaining]
             
             if has_window_features:
                 window_data = last_window[i : -remaining]
@@ -1736,6 +1732,9 @@ class ForecasterRecursive(ForecasterBase):
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
 
+        if has_lags and not self.lags_are_contiguous:
+            neg_lags = -self.lags
+
         if use_binned_residuals:
             boot_indices = np.arange(n_boot)
 
@@ -1747,7 +1746,7 @@ class ForecasterRecursive(ForecasterBase):
                 if self.lags_are_contiguous:
                     X[:, :n_lags] = last_window[-(remaining + n_lags): -remaining, :][::-1].T
                 else:
-                    X[:, :n_lags] = last_window[-(self.lags + remaining), :].T
+                    X[:, :n_lags] = last_window[neg_lags - remaining, :].T
             
             if has_window_features:
                 window_data = last_window[:-remaining, :]
@@ -2257,7 +2256,7 @@ class ForecasterRecursive(ForecasterBase):
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         method: str = 'bootstrapping',
-        interval: float | list[float] | tuple[float] = [5, 95],
+        interval: float | list[float] | tuple[float] = [0.05, 0.95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
@@ -2291,18 +2290,22 @@ class ForecasterRecursive(ForecasterBase):
             intervals [1]_.
             - 'conformal': Employs the conformal prediction split method for 
             interval estimation [2]_.
-        interval : float, list, tuple, default [5, 95]
+        interval : float, list, tuple, default [0.05, 0.95]
             Confidence level of the prediction interval. Interpretation depends 
             on the method used:
             
             - If `float`, represents the nominal (expected) coverage (between 0 
-            and 1). For instance, `interval=0.95` corresponds to `[2.5, 97.5]` 
-            percentiles.
-            - If `list` or `tuple`, defines the exact percentiles to compute, which 
-            must be between 0 and 100 inclusive. For example, interval 
-            of 95% should be as `interval = [2.5, 97.5]`.
+            and 1). For instance, `interval=0.95` corresponds to `[0.025, 0.975]` 
+            quantiles.
+            - If `list` or `tuple`, defines the exact quantiles to compute, which 
+            must be between 0 and 1 inclusive. For example, interval 
+            of 95% should be as `interval = [0.025, 0.975]`.
             - When using `method='conformal'`, the interval must be a float or 
             a list/tuple defining a symmetric interval.
+
+            **Changed in version 0.23.0:** `interval` is now expressed as
+            quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+            is deprecated and emits a `FutureWarning`.
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
@@ -2345,8 +2348,9 @@ class ForecasterRecursive(ForecasterBase):
         if method == "bootstrapping":
             
             if isinstance(interval, (list, tuple)):
+                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=False)
-                interval = np.array(interval) / 100
+                interval = np.array(interval)
             else:
                 check_interval(alpha=interval, alpha_literal='interval')
                 interval = np.array([0.5 - interval / 2, 0.5 + interval / 2])
@@ -2377,8 +2381,9 @@ class ForecasterRecursive(ForecasterBase):
         elif method == 'conformal':
 
             if isinstance(interval, (list, tuple)):
+                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=True)
-                nominal_coverage = (interval[1] - interval[0]) / 100
+                nominal_coverage = interval[1] - interval[0]
             else:
                 check_interval(alpha=interval, alpha_literal='interval')
                 nominal_coverage = interval
