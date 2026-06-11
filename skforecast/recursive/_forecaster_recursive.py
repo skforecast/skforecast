@@ -1464,7 +1464,9 @@ class ForecasterRecursive(ForecasterBase):
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         check_inputs: bool = True
-    ) -> tuple[np.ndarray, np.ndarray | None, pd.Index, int, object | None]:
+    ) -> tuple[
+        np.ndarray, np.ndarray | None, np.ndarray | None, pd.Index, int, object | None
+    ]:
         """
         Create the inputs needed for the first iteration of the prediction 
         process. As this is a recursive process, the last window is updated at 
@@ -1510,6 +1512,9 @@ class ForecasterRecursive(ForecasterBase):
             iteration of the prediction (t + 1).
         exog_values : numpy ndarray, None
             Exogenous variable/s included as predictor/s.
+        calendar_values : numpy ndarray, None
+            Calendar features included as predictor/s. `None` if no
+            `calendar_features` is set.
         prediction_index : pandas Index
             Index of the predictions.
         steps: int
@@ -1613,13 +1618,28 @@ class ForecasterRecursive(ForecasterBase):
                                steps = steps,
                            )
 
-        return last_window_values, exog_values, prediction_index, steps, differentiator
+        if self.calendar_features is not None:
+            calendar_values = self.calendar_features.transform(
+                prediction_index
+            ).to_numpy()
+        else:
+            calendar_values = None
+
+        return (
+            last_window_values,
+            exog_values,
+            calendar_values,
+            prediction_index,
+            steps,
+            differentiator
+        )
 
     def _recursive_predict(
         self,
         steps: int,
         last_window_values: np.ndarray,
-        exog_values: np.ndarray | None = None
+        exog_values: np.ndarray | None = None,
+        calendar_values: np.ndarray | None = None
     ) -> np.ndarray:
         """
         Predict n steps ahead. It is an iterative process in which, each prediction,
@@ -1640,6 +1660,8 @@ class ForecasterRecursive(ForecasterBase):
             iteration of the prediction (t + 1).
         exog_values : numpy ndarray, default None
             Exogenous variable/s included as predictor/s.
+        calendar_values : numpy ndarray, default None
+            Calendar features included as predictor/s.
 
         Returns
         -------
@@ -1657,10 +1679,10 @@ class ForecasterRecursive(ForecasterBase):
             else 0
         )
         n_exog = exog_values.shape[1] if exog_values is not None else 0
+        n_calendar = calendar_values.shape[1] if calendar_values is not None else 0
+        n_features = n_lags + n_window_features + n_exog + n_calendar
 
-        X = np.full(
-            shape=(n_lags + n_window_features + n_exog), fill_value=np.nan, dtype=float
-        )
+        X = np.full(shape=(n_features), fill_value=np.nan, dtype=float)
         predictions = np.full(shape=steps, fill_value=np.nan, dtype=float)
         last_window = np.concatenate((last_window_values, predictions))
 
@@ -1669,6 +1691,10 @@ class ForecasterRecursive(ForecasterBase):
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
+        has_calendar = calendar_values is not None
+
+        exog_start = n_lags + n_window_features
+        exog_end = exog_start + n_exog
 
         if has_lags and not self.lags_are_contiguous:
             neg_lags = -self.lags
@@ -1685,7 +1711,7 @@ class ForecasterRecursive(ForecasterBase):
             
             if has_window_features:
                 window_data = last_window[i : -remaining]
-                X[n_lags : n_lags + n_window_features] = np.concatenate(
+                X[n_lags : exog_start] = np.concatenate(
                     [
                         wf.transform(window_data)
                         for wf in self.window_features
@@ -1693,7 +1719,10 @@ class ForecasterRecursive(ForecasterBase):
                 )
             
             if has_exog:
-                X[n_lags + n_window_features:] = exog_values[i]
+                X[exog_start : exog_end] = exog_values[i]
+
+            if has_calendar:
+                X[exog_end:] = calendar_values[i]
         
             pred = predict_fn(X.reshape(1, -1)).item()
             predictions[i] = pred
@@ -1713,7 +1742,8 @@ class ForecasterRecursive(ForecasterBase):
         sampled_residuals: np.ndarray,
         use_binned_residuals: bool,
         n_boot: int,
-        exog_values: np.ndarray | None = None
+        exog_values: np.ndarray | None = None,
+        calendar_values: np.ndarray | None = None
     ) -> np.ndarray:
         """
         Vectorized bootstrap prediction - predict all n_boot iterations per step.
@@ -1744,6 +1774,8 @@ class ForecasterRecursive(ForecasterBase):
             Number of bootstrap iterations.
         exog_values : numpy ndarray, default None
             Exogenous variable/s included as predictor/s.
+        calendar_values : numpy ndarray, default None
+            Calendar features included as predictor/s.
 
         Returns
         -------
@@ -1761,7 +1793,8 @@ class ForecasterRecursive(ForecasterBase):
             else 0
         )
         n_exog = exog_values.shape[1] if exog_values is not None else 0
-        n_features = n_lags + n_window_features + n_exog
+        n_calendar = calendar_values.shape[1] if calendar_values is not None else 0
+        n_features = n_lags + n_window_features + n_exog + n_calendar
 
         # Input matrix for prediction: shape (n_boot, n_features)
         X = np.full((n_boot, n_features), fill_value=np.nan, dtype=float)
@@ -1779,6 +1812,10 @@ class ForecasterRecursive(ForecasterBase):
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
+        has_calendar = calendar_values is not None
+
+        exog_start = n_lags + n_window_features
+        exog_end = exog_start + n_exog
 
         if has_lags and not self.lags_are_contiguous:
             neg_lags = -self.lags
@@ -1800,13 +1837,19 @@ class ForecasterRecursive(ForecasterBase):
                 window_data = last_window[:-remaining, :]
                 # transform accepts 2D: (window_length, n_boot) -> (n_boot, n_stats)
                 # and concatenate along axis=1: (n_boot, total_window_features)
-                X[:, n_lags:n_lags + n_window_features] = np.concatenate(
-                    [wf.transform(window_data) for wf in self.window_features],
+                X[:, n_lags : exog_start] = np.concatenate(
+                    [
+                        wf.transform(window_data) 
+                        for wf in self.window_features
+                    ],
                     axis=1
                 )
             
             if has_exog:
-                X[:, n_lags + n_window_features:] = exog_values[i]
+                X[:, exog_start : exog_end] = exog_values[i]
+
+            if has_calendar:
+                X[:, exog_end:] = calendar_values[i]
         
             pred = predict_fn(X)
             
@@ -1869,6 +1912,7 @@ class ForecasterRecursive(ForecasterBase):
         (
             last_window_values,
             exog_values,
+            calendar_values,
             prediction_index,
             steps,
             _
@@ -1888,7 +1932,8 @@ class ForecasterRecursive(ForecasterBase):
             predictions = self._recursive_predict(
                               steps              = steps,
                               last_window_values = last_window_values,
-                              exog_values        = exog_values
+                              exog_values        = exog_values,
+                              calendar_values    = calendar_values
                           )
 
         X_predict = []
@@ -1915,6 +1960,9 @@ class ForecasterRecursive(ForecasterBase):
 
         if exog is not None:
             X_predict.append(exog_values)
+
+        if self.calendar_features is not None:
+            X_predict.append(calendar_values)
 
         X_predict = pd.DataFrame(
                         data    = np.concatenate(X_predict, axis=1),
@@ -1987,6 +2035,7 @@ class ForecasterRecursive(ForecasterBase):
         (
             last_window_values,
             exog_values,
+            calendar_values,
             prediction_index,
             steps,
             differentiator
@@ -2006,7 +2055,8 @@ class ForecasterRecursive(ForecasterBase):
             predictions = self._recursive_predict(
                               steps              = steps,
                               last_window_values = last_window_values,
-                              exog_values        = exog_values
+                              exog_values        = exog_values,
+                              calendar_values    = calendar_values
                           )
 
         if differentiator is not None:
@@ -2096,6 +2146,7 @@ class ForecasterRecursive(ForecasterBase):
         (
             last_window_values,
             exog_values,
+            calendar_values,
             prediction_index,
             steps,
             differentiator
@@ -2120,15 +2171,21 @@ class ForecasterRecursive(ForecasterBase):
             # Create 3D array with sampled residuals: (n_bins, steps, n_boot)
             n_bins = len(residuals_by_bin)
             sampled_residuals = np.stack(
-                [residuals_by_bin[k][rng.integers(low=0, high=len(residuals_by_bin[k]), size=(steps, n_boot))]
-                 for k in range(n_bins)],
-                axis=0
+                [
+                    residuals_by_bin[k][
+                        rng.integers(
+                            low=0, high=len(residuals_by_bin[k]), size=(steps, n_boot)
+                        )
+                    ]
+                    for k in range(n_bins)
+                ],
+                axis=0,
             )
         else:
             sampled_residuals = residuals[
                 rng.integers(low=0, high=len(residuals), size=(steps, n_boot))
             ]
-        
+
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", 
@@ -2139,6 +2196,7 @@ class ForecasterRecursive(ForecasterBase):
                 steps                = steps,
                 last_window_values   = last_window_values,
                 exog_values          = exog_values,
+                calendar_values      = calendar_values,
                 sampled_residuals    = sampled_residuals,
                 use_binned_residuals = use_binned_residuals,
                 n_boot               = n_boot
@@ -2227,6 +2285,7 @@ class ForecasterRecursive(ForecasterBase):
         (
             last_window_values,
             exog_values,
+            calendar_values,
             prediction_index,
             steps,
             differentiator
@@ -2255,7 +2314,8 @@ class ForecasterRecursive(ForecasterBase):
             predictions = self._recursive_predict(
                               steps              = steps,
                               last_window_values = last_window_values,
-                              exog_values        = exog_values
+                              exog_values        = exog_values,
+                              calendar_values    = calendar_values
                           )
         
         if use_binned_residuals:
