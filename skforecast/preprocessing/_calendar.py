@@ -20,10 +20,10 @@ from ..exceptions import IgnoredArgumentWarning
 
 _FEATURE_KNOWN_CATEGORIES = {
     "month": list(range(1, 13)),
-    "week": list(range(1, 54)),  # 1..53 to handle ISO week 53; see Notes in create_datetime_features
+    "week": list(range(1, 54)),  # 1..53 to handle ISO week 53; see Notes in create_calendar_features
     "day_of_week": list(range(0, 7)),
     "day_of_month": list(range(1, 32)),
-    "day_of_year": list(range(1, 367)),  # 1..366 to handle leap years; see Notes in create_datetime_features
+    "day_of_year": list(range(1, 367)),  # 1..366 to handle leap years; see Notes in create_calendar_features
     "hour": list(range(0, 24)),
     "minute": list(range(0, 60)),
     "second": list(range(0, 60)),
@@ -38,8 +38,8 @@ _SPLINE_ALLOWED_KWARGS = (
 )
 
 
-def create_datetime_features(
-    X: pd.Series | pd.DataFrame,
+def create_calendar_features(
+    X: pd.Series | pd.DataFrame | pd.DatetimeIndex,
     features: list[str] | None = None,
     features_to_encode: list[str] | None = None,
     encoding: str = "cyclical",
@@ -52,8 +52,11 @@ def create_datetime_features(
 
     Parameters
     ----------
-    X : pandas Series, pandas DataFrame
-        Input DataFrame or Series with a datetime index.
+    X : pandas Series, pandas DataFrame, pandas DatetimeIndex
+        Input DataFrame or Series with a datetime index, or a pandas
+        DatetimeIndex directly. When a DatetimeIndex is passed, it is used as
+        the datetime source and there are no original columns to keep, so
+        `keep_original_columns` has no effect.
     features : list, default None
         List of calendar features (strings) to extract from the index. When
         `None`, the following features are extracted: `'year'`, `'month'`,
@@ -104,14 +107,15 @@ def create_datetime_features(
         DataFrame. If False, only the extracted datetime features are
         returned. When `True` and `X` is an unnamed pandas Series
         (`X.name is None`), a `ValueError` is raised; either set `X.name` to
-        a string, or pass `keep_original_columns=False`.
+        a string, or pass `keep_original_columns=False`. When `X` is a pandas
+        DatetimeIndex this argument has no effect, as there are no original
+        columns to keep.
 
     Returns
     -------
     X_new : pandas DataFrame
         DataFrame with the extracted (and optionally encoded) datetime features.
-
-
+    
     Notes
     -----
     The default `max_values` use 53 for `'week'` and 366 for `'day_of_year'`
@@ -153,12 +157,26 @@ def create_datetime_features(
 
     """
 
-    if not isinstance(X, (pd.DataFrame, pd.Series)):
-        raise TypeError("Input `X` must be a pandas Series or DataFrame")
-    if not isinstance(X.index, pd.DatetimeIndex):
-        raise TypeError("Input `X` must have a pandas DatetimeIndex")
+    if not isinstance(X, (pd.DataFrame, pd.Series, pd.DatetimeIndex)):
+        raise TypeError(
+            "Input `X` must be a pandas Series, DataFrame or DatetimeIndex"
+        )
+
+    if isinstance(X, pd.DatetimeIndex):
+        datetime_index = X
+    else:
+        if not isinstance(X.index, pd.DatetimeIndex):
+            raise TypeError("Input `X` must have a pandas DatetimeIndex")
+        datetime_index = X.index
+    
+    if len(X) == 0:
+        raise ValueError("Cannot fit on empty input.")
+    
     if encoding not in ["cyclical", "onehot", "spline", None]:
-        raise ValueError("Encoding must be one of 'cyclical', 'onehot', 'spline' or None")
+        raise ValueError(
+            "Encoding must be one of 'cyclical', 'onehot', 'spline' or None"
+        )
+    
     if isinstance(X, pd.Series) and X.name is None and keep_original_columns:
         raise ValueError(
             "When `keep_original_columns=True`, the input Series must have a "
@@ -204,7 +222,7 @@ def create_datetime_features(
         resolved_max_values.update(max_values)
     max_values = resolved_max_values
 
-    X_new = pd.DataFrame(index=X.index)
+    X_new = pd.DataFrame(index=datetime_index)
 
     not_supported_features = set(features) - set(datetime_attrs.keys())
     if not_supported_features:
@@ -216,7 +234,9 @@ def create_datetime_features(
     for feature in features:
         attr = datetime_attrs[feature]
         X_new[feature] = (
-            attr(X.index) if callable(attr) else getattr(X.index, attr).astype(int)
+            attr(datetime_index)
+            if callable(attr)
+            else getattr(datetime_index, attr).astype(int)
         )
 
     if features_to_encode is not None:
@@ -306,6 +326,7 @@ def create_datetime_features(
         }
         if spline_kwargs is not None:
             resolved_spline_kwargs.update(spline_kwargs)
+        
         n_knots_global = resolved_spline_kwargs.pop("n_knots", None)
         cols_to_drop = []
         spline_cols = {}
@@ -322,21 +343,22 @@ def create_datetime_features(
                 # the last value onto the first (e.g. month 12 = month 1).
                 knots = np.linspace(min_val, min_val + max_val, n_knots).reshape(-1, 1)
                 spt = SplineTransformer(
-                    knots=knots,
-                    **resolved_spline_kwargs,
-                )
+                          knots = knots,
+                          **resolved_spline_kwargs,
+                      )
                 values = X_new[feature].to_numpy().reshape(-1, 1)
                 spline_out = spt.fit_transform(values)
                 col_names = spt.get_feature_names_out([feature])
                 for col_name, col_values in zip(col_names, spline_out.T):
                     spline_cols[col_name] = col_values
                 cols_to_drop.append(feature)
+        
         X_new = X_new.drop(columns=cols_to_drop)
         X_new = pd.concat(
             [X_new, pd.DataFrame(spline_cols, index=X_new.index)], axis=1
         )
 
-    if keep_original_columns:
+    if keep_original_columns and not isinstance(X, pd.DatetimeIndex):
         X_df = X.to_frame() if isinstance(X, pd.Series) else X
         overlapping_cols = set(X_df.columns).intersection(set(X_new.columns))
         if overlapping_cols:
@@ -352,10 +374,15 @@ def create_datetime_features(
     return X_new
 
 
-class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
+class CalendarFeatures(BaseEstimator, TransformerMixin):
     """
     A transformer for extracting datetime features from the DateTime index of a
-    pandas DataFrame or Series. It can also apply encoding to the extracted features.
+    pandas DataFrame or Series, or from a pandas DatetimeIndex directly. It can
+    also apply encoding to the extracted features.
+
+    The allowed features to extract are: `'year'`, `'month'`, `'week'`, `'day_of_week'`,
+    `'day_of_month'`, `'day_of_year'`, `'weekend'`, `'hour'`, `'minute'`, `'second'`,
+    and `'quarter'`. If not specified, all of these features are extracted. 
 
     Parameters
     ----------
@@ -363,9 +390,7 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         List of calendar features (strings) to extract from the index. When
         `None`, the following features are extracted: `'year'`, `'month'`,
         `'week'`, `'day_of_week'`, `'day_of_month'`, `'day_of_year'`,
-        `'weekend'`, `'hour'`, `'minute'`, `'second'`, `'quarter'`. Additional
-        supported features that are not extracted by default can be passed
-        explicitly.
+        `'weekend'`, `'hour'`, `'minute'`, `'second'`, `'quarter'`.
     features_to_encode : list, default None
         List of calendar features (strings) to encode. When `None`, all
         extracted features are encoded. If a feature is not in `features`, a
@@ -412,6 +437,8 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         returned. When `True` and `X` is an unnamed pandas Series
         (`X.name is None`), a `ValueError` is raised at fit/transform time;
         either set `X.name` to a string, or pass `keep_original_columns=False`.
+        When `X` is a pandas DatetimeIndex this argument has no effect, as
+        there are no original columns to keep.
 
     Attributes
     ----------
@@ -434,7 +461,6 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         Whether to keep original columns from the input.
     feature_names_out_ : list
         Names of the output features. Set after calling `fit` or `transform`.
-
 
     Notes
     -----
@@ -487,6 +513,25 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
         keep_original_columns: bool = True,
     ) -> None:
 
+        allowed_features = [
+            "year", "month", "week", "day_of_week", "day_of_month",
+            "day_of_year", "weekend", "hour", "minute", "second", "quarter",
+        ]
+        if features is not None:
+            not_supported_features = set(features) - set(allowed_features)
+            if not_supported_features:
+                raise ValueError(
+                    f"Calendar features {not_supported_features} are not supported. "
+                    f"Supported features are {allowed_features}."
+                )
+        else:
+            features = allowed_features
+    
+        if encoding not in ["cyclical", "onehot", "spline", None]:
+            raise ValueError(
+                "Encoding must be one of 'cyclical', 'onehot', 'spline' or None"
+            )
+
         self.features = features
         self.features_to_encode = features_to_encode
         self.encoding = encoding
@@ -500,49 +545,56 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
 
         Parameters
         ----------
-        X : pandas Series, pandas DataFrame
-            Input DataFrame or Series with a datetime index.
+        X : pandas Series, pandas DataFrame, pandas DatetimeIndex
+            Input DataFrame or Series with a datetime index, or a pandas
+            DatetimeIndex directly.
         y : ignored
             Not used, present for API compatibility.
 
         Returns
         -------
-        self : DateTimeFeatureTransformer
+        self : CalendarFeatures
             Fitted transformer.
 
         """
-        if not isinstance(X, (pd.DataFrame, pd.Series)):
-            raise TypeError("Input `X` must be a pandas Series or DataFrame")
-        if len(X) == 0:
-            raise ValueError("Cannot fit on empty input.")
 
         # Slice to the first 2 rows: the encoding is stateless (column
         # names depend on parameters and the index frequency, not on data
         # values), so any non-empty slice yields the same output schema.
-        result = create_datetime_features(
-            X=X.iloc[:2],
-            features=self.features,
-            features_to_encode=self.features_to_encode,
-            encoding=self.encoding,
-            max_values=self.max_values,
-            spline_kwargs=self.spline_kwargs,
-            keep_original_columns=self.keep_original_columns,
-        )
+        # Non-pandas inputs are passed through unchanged so that
+        # `create_calendar_features` raises the appropriate `TypeError`.
+        if isinstance(X, pd.DatetimeIndex):
+            X_sample = X[:2]
+        elif isinstance(X, (pd.DataFrame, pd.Series)):
+            X_sample = X.iloc[:2]
+        else:
+            X_sample = X
+        
+        result = create_calendar_features(
+                     X                     = X_sample,
+                     features              = self.features,
+                     features_to_encode    = self.features_to_encode,
+                     encoding              = self.encoding,
+                     max_values            = self.max_values,
+                     spline_kwargs         = self.spline_kwargs,
+                     keep_original_columns = self.keep_original_columns,
+                 )
         self.feature_names_out_ = list(result.columns)
 
         return self
 
     def transform(
         self,
-        X: pd.Series | pd.DataFrame
+        X: pd.Series | pd.DataFrame | pd.DatetimeIndex
     ) -> pd.DataFrame:
         """
         Create datetime features from the DateTime index of a pandas DataFrame or Series.
 
         Parameters
         ----------
-        X : pandas Series, pandas DataFrame
-            Input DataFrame or Series with a datetime index.
+        X : pandas Series, pandas DataFrame, pandas DatetimeIndex
+            Input DataFrame or Series with a datetime index, or a pandas
+            DatetimeIndex directly.
 
         Returns
         -------
@@ -551,15 +603,15 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
 
         """
 
-        X_new = create_datetime_features(
-            X=X,
-            features=self.features,
-            features_to_encode=self.features_to_encode,
-            encoding=self.encoding,
-            max_values=self.max_values,
-            spline_kwargs=self.spline_kwargs,
-            keep_original_columns=self.keep_original_columns,
-        )
+        X_new = create_calendar_features(
+                    X                     = X,
+                    features              = self.features,
+                    features_to_encode    = self.features_to_encode,
+                    encoding              = self.encoding,
+                    max_values            = self.max_values,
+                    spline_kwargs         = self.spline_kwargs,
+                    keep_original_columns = self.keep_original_columns,
+                )
 
         return X_new
 
@@ -581,6 +633,7 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
             Names of the output features.
 
         """
+
         check_is_fitted(self, "feature_names_out_")
 
         return self.feature_names_out_
@@ -605,6 +658,7 @@ def _freq_to_timedelta_unit(freq_str: str) -> str:
         Numpy timedelta unit string (e.g. `'D'`, `'h'`, `'m'`).
 
     """
+
     # Strip leading digit multiplier and weekday suffix (e.g. "2h" -> "h", "W-MON" -> "W")
     normalized = freq_str.partition("-")[0].partition("_")[0]
     normalized = re.sub(r"^\d+", "", normalized)
@@ -706,6 +760,7 @@ def calculate_distance_from_holiday(
     `time_since_holiday` are 0, the date is at distance 0 from itself.
 
     """
+
     if not isinstance(X, (pd.DataFrame, pd.Series)):
         raise TypeError(
             "Input `X` must be a pandas Series or pandas DataFrame."

@@ -74,6 +74,12 @@ class ForecasterRecursive(ForecasterBase):
     window_features : object, list, default None
         Instance or list of instances used to create window features. Window features
         are created from the original time series and are included as predictors.
+    calendar_features : object, default None
+        Instance of `CalendarFeatures` used to create calendar features from the
+        datetime index. Calendar features are included as predictors and are
+        generated automatically during both training and prediction. Only supported 
+        when the index of the input data is a `pandas.DatetimeIndex`.
+        **New in version 0.23.0**
     transformer_y : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
@@ -140,6 +146,12 @@ class ForecasterRecursive(ForecasterBase):
         Names of the classes used to create the window features.
     max_size_window_features : int
         Maximum window size required by the window features.
+    calendar_features : object
+        Instance of `CalendarFeatures` used to create calendar features from the
+        datetime index.
+    calendar_features_names : list
+        Names of the calendar features to extract, taken from the `features`
+        attribute of the `calendar_features` object.
     window_size : int
         The window size needed to create the predictors. It is calculated as the 
         maximum value between `max_lag` and `max_size_window_features`. If 
@@ -204,6 +216,9 @@ class ForecasterRecursive(ForecasterBase):
         is equal to `exog_dtypes_in_`.
     X_train_window_features_names_out_ : list
         Names of the window features included in the matrix `X_train` created
+        internally for training.
+    X_train_calendar_features_names_out_ : list
+        Names of the calendar features included in the matrix `X_train` created
         internally for training.
     X_train_exog_names_out_ : list
         Names of the exogenous variables included in the matrix `X_train` created
@@ -278,6 +293,7 @@ class ForecasterRecursive(ForecasterBase):
         estimator: object,
         lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
         window_features: object | list[object] | None = None,
+        calendar_features: object | None = None,
         transformer_y: object | None = None,
         transformer_exog: object | None = None,
         categorical_features: str | list[str] | None = 'auto',
@@ -289,41 +305,46 @@ class ForecasterRecursive(ForecasterBase):
         forecaster_id: str | int | None = None
     ) -> None:
         
-        self.estimator                          = clone(estimator)
-        self.transformer_y                      = transformer_y
-        self.transformer_exog                   = transformer_exog
-        self.categorical_features               = categorical_features
-        self.weight_func                        = weight_func
-        self.source_code_weight_func            = None
-        self.differentiation                    = differentiation
-        self.differentiation_max                = None
-        self.differentiator                     = None
-        self.dropna_from_series                 = dropna_from_series
-        self.last_window_                       = None
-        self.index_type_                        = None
-        self.index_freq_                        = None
-        self.training_range_                    = None
-        self.series_name_in_                    = None
-        self.exog_in_                           = False
-        self.exog_names_in_                     = None
-        self.exog_type_in_                      = None
-        self.exog_dtypes_in_                    = None
-        self.exog_dtypes_out_                   = None
-        self.categorical_features_names_in_     = None
-        self.X_train_window_features_names_out_ = None
-        self.X_train_exog_names_out_            = None
-        self.X_train_features_names_out_        = None
-        self.in_sample_residuals_               = None
-        self.out_sample_residuals_              = None
-        self.in_sample_residuals_by_bin_        = None
-        self.out_sample_residuals_by_bin_       = None
-        self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.is_fitted                          = False
-        self.fit_date                           = None
-        self.skforecast_version                 = __version__
-        self.python_version                     = sys.version.split(" ")[0]
-        self.forecaster_id                      = forecaster_id
-        self._probabilistic_mode                = "binned"
+        self.estimator                            = clone(estimator)
+        self.calendar_features                    = (
+            clone(calendar_features) if calendar_features is not None else None
+        )
+        self.calendar_features_names              = getattr(calendar_features, 'features', None)
+        self.transformer_y                        = transformer_y
+        self.transformer_exog                     = transformer_exog
+        self.categorical_features                 = categorical_features
+        self.weight_func                          = weight_func
+        self.source_code_weight_func              = None
+        self.differentiation                      = differentiation
+        self.differentiation_max                  = None
+        self.differentiator                       = None
+        self.dropna_from_series                   = dropna_from_series
+        self.last_window_                         = None
+        self.index_type_                          = None
+        self.index_freq_                          = None
+        self.training_range_                      = None
+        self.series_name_in_                      = None
+        self.exog_in_                             = False
+        self.exog_names_in_                       = None
+        self.exog_type_in_                        = None
+        self.exog_dtypes_in_                      = None
+        self.exog_dtypes_out_                     = None
+        self.categorical_features_names_in_       = None
+        self.X_train_window_features_names_out_   = None
+        self.X_train_calendar_features_names_out_ = None
+        self.X_train_exog_names_out_              = None
+        self.X_train_features_names_out_          = None
+        self.in_sample_residuals_                 = None
+        self.out_sample_residuals_                = None
+        self.in_sample_residuals_by_bin_          = None
+        self.out_sample_residuals_by_bin_         = None
+        self.creation_date                        = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
+        self.is_fitted                            = False
+        self.fit_date                             = None
+        self.skforecast_version                   = __version__
+        self.python_version                       = sys.version.split(" ")[0]
+        self.forecaster_id                        = forecaster_id
+        self._probabilistic_mode                  = "binned"
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.lags_are_contiguous = (
@@ -425,6 +446,7 @@ class ForecasterRecursive(ForecasterBase):
 
             "supports_lags": True,
             "supports_window_features": True,
+            "supports_calendar_features": True,
             "supports_transformer_series": True,
             "supports_transformer_exog": True,
             "supports_categorical_features": True,
@@ -465,6 +487,7 @@ class ForecasterRecursive(ForecasterBase):
             f"Estimator: {type(self.estimator).__name__} \n"
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
+            f"Calendar features: {self.calendar_features_names} \n"
             f"Window size: {self.window_size} \n"
             f"Series name: {self.series_name_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
@@ -519,6 +542,7 @@ class ForecasterRecursive(ForecasterBase):
                     <li><strong>Estimator:</strong> {type(self.estimator).__name__}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
+                    <li><strong>Calendar features:</strong> {self.calendar_features_names}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
@@ -704,6 +728,7 @@ class ForecasterRecursive(ForecasterBase):
         list[str], 
         list[str], 
         list[str], 
+        list[str], 
         dict[str, type],
         dict[str, type]
     ]:
@@ -733,6 +758,9 @@ class ForecasterRecursive(ForecasterBase):
             Names of the exogenous variables considered as categorical.
         X_train_window_features_names_out_ : list
             Names of the window features included in the matrix `X_train` created
+            internally for training.
+        X_train_calendar_features_names_out_ : list
+            Names of the calendar features included in the matrix `X_train` created
             internally for training.
         X_train_exog_names_out_ : list
             Names of the exogenous variables included in the matrix `X_train` created
@@ -782,6 +810,13 @@ class ForecasterRecursive(ForecasterBase):
         
         y_values, y_index = check_extract_values_and_index(data=y, data_label='`y`')
         train_index = y_index[self.window_size:]
+
+        if self.calendar_features is not None:
+            if not isinstance(train_index, pd.DatetimeIndex):
+                raise TypeError(
+                    "When `calendar_features` is not `None`, the index of `y` must "
+                    "be a pandas DatetimeIndex."
+                )
 
         if self.differentiation is not None:
             if not self.is_fitted:
@@ -911,7 +946,14 @@ class ForecasterRecursive(ForecasterBase):
         if exog is not None:
             X_train.append(exog)
             X_train_features_names_out_.extend(X_train_exog_names_out_)
-        
+
+        X_train_calendar_features_names_out_ = None
+        if self.calendar_features is not None:
+            X_train_calendar = self.calendar_features.fit_transform(train_index).to_numpy()
+            X_train.append(X_train_calendar)
+            X_train_calendar_features_names_out_ = self.calendar_features.feature_names_out_
+            X_train_features_names_out_.extend(X_train_calendar_features_names_out_)
+
         if len(X_train) == 1:
             X_train = X_train[0]
         else:
@@ -968,6 +1010,7 @@ class ForecasterRecursive(ForecasterBase):
             exog_names_in_,
             categorical_features_names_in_,
             X_train_window_features_names_out_,
+            X_train_calendar_features_names_out_,
             X_train_exog_names_out_,
             X_train_features_names_out_,
             exog_dtypes_in_,
@@ -1011,6 +1054,7 @@ class ForecasterRecursive(ForecasterBase):
             X_train,
             y_train,
             train_index,
+            _,
             _,
             _,
             _,
@@ -1089,6 +1133,7 @@ class ForecasterRecursive(ForecasterBase):
             train_index,
             _,
             categorical_features_names_in_,
+            _,
             _,
             _,
             X_train_features_names_out_,
@@ -1226,27 +1271,28 @@ class ForecasterRecursive(ForecasterBase):
 
         # TODO: create a method reset_forecaster() to reset all attributes
         # Reset values in case the forecaster has already been fitted.
-        self.last_window_                       = None
-        self.index_type_                        = None
-        self.index_freq_                        = None
-        self.training_range_                    = None
-        self.series_name_in_                    = None
-        self.exog_in_                           = False
-        self.exog_names_in_                     = None
-        self.exog_type_in_                      = None
-        self.exog_dtypes_in_                    = None
-        self.exog_dtypes_out_                   = None
-        self.categorical_features_names_in_     = None
-        self.X_train_window_features_names_out_ = None
-        self.X_train_exog_names_out_            = None
-        self.X_train_features_names_out_        = None
-        self.in_sample_residuals_               = None
-        self.in_sample_residuals_by_bin_        = None
-        self.out_sample_residuals_              = None
-        self.out_sample_residuals_by_bin_       = None
-        self.binner_intervals_                  = None
-        self.is_fitted                          = False
-        self.fit_date                           = None
+        self.last_window_                         = None
+        self.index_type_                          = None
+        self.index_freq_                          = None
+        self.training_range_                      = None
+        self.series_name_in_                      = None
+        self.exog_in_                             = False
+        self.exog_names_in_                       = None
+        self.exog_type_in_                        = None
+        self.exog_dtypes_in_                      = None
+        self.exog_dtypes_out_                     = None
+        self.categorical_features_names_in_       = None
+        self.X_train_window_features_names_out_   = None
+        self.X_train_calendar_features_names_out_ = None
+        self.X_train_exog_names_out_              = None
+        self.X_train_features_names_out_          = None
+        self.in_sample_residuals_                 = None
+        self.in_sample_residuals_by_bin_          = None
+        self.out_sample_residuals_                = None
+        self.out_sample_residuals_by_bin_         = None
+        self.binner_intervals_                    = None
+        self.is_fitted                            = False
+        self.fit_date                             = None
 
         (
             X_train,
@@ -1255,6 +1301,7 @@ class ForecasterRecursive(ForecasterBase):
             exog_names_in_,
             categorical_features_names_in_,
             X_train_window_features_names_out_,
+            X_train_calendar_features_names_out_,
             X_train_exog_names_out_,
             X_train_features_names_out_,
             exog_dtypes_in_,
@@ -1288,6 +1335,7 @@ class ForecasterRecursive(ForecasterBase):
             self.estimator.fit(X=X_train, y=y_train, **fit_kwargs)
 
         self.X_train_window_features_names_out_ = X_train_window_features_names_out_
+        self.X_train_calendar_features_names_out_ = X_train_calendar_features_names_out_
         self.X_train_features_names_out_ = X_train_features_names_out_
 
         self.is_fitted = True

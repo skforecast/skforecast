@@ -1,14 +1,14 @@
-# Unit test DateTimeFeatureTransformer
+# Unit test CalendarFeatures
 # ==============================================================================
 import pytest
 import re
 import pandas as pd
 import numpy as np
 from sklearn.base import clone
-from skforecast.preprocessing import DateTimeFeatureTransformer, create_datetime_features
+from skforecast.preprocessing import CalendarFeatures, create_calendar_features
 
 # Fixtures
-from .fixtures_preprocessing import features_all_onehot
+from ..tests_preprocessing.fixtures_preprocessing import features_all_onehot
 
 if pd.__version__ < '2.2.0':
     freq_h = "H"
@@ -16,65 +16,66 @@ else:
     freq_h = "h"
 
 
-def test_create_datetime_features_invalid_input_type():
+def test_create_calendar_features_invalid_input_type():
     """
-    Test that DateTimeFeatureTransformer raises a ValueError when input is not 
-    a pandas DataFrame or Series.
+    Test that CalendarFeatures raises a TypeError when input is not 
+    a pandas DataFrame, Series or DatetimeIndex.
     """
-    with pytest.raises(TypeError, match="Input `X` must be a pandas Series or DataFrame"):
-        DateTimeFeatureTransformer().fit_transform([1, 2, 3])
+    err_msg = re.escape(
+        "Input `X` must be a pandas Series, DataFrame or DatetimeIndex"
+    )
+    with pytest.raises(TypeError, match=err_msg):
+        CalendarFeatures().fit_transform([1, 2, 3])
 
 
-def test_create_datetime_features_no_datetime_index():
+def test_create_calendar_features_no_datetime_index():
     """
-    Test that DateTimeFeatureTransformer raises a ValueError when input does not 
+    Test that CalendarFeatures raises a ValueError when input does not 
     have a pandas DatetimeIndex index.
     """
     df = pd.DataFrame({"a": [1, 2, 3]})
     with pytest.raises(TypeError, match="Input `X` must have a pandas DatetimeIndex"):
-        DateTimeFeatureTransformer().fit_transform(df)
+        CalendarFeatures().fit_transform(df)
 
 
-def test_create_datetime_features_invalid_encoding():
+def test_CalendarFeatures_init_ValueError_when_feature_not_supported():
     """
-    Test that DateTimeFeatureTransformer raises a ValueError when encoding is not 
-    one of 'cyclical', 'onehot' or None.
+    Test that CalendarFeatures raises a ValueError at construction time when
+    `features` contains an unsupported feature name.
     """
-    df = pd.DataFrame(
-        np.random.rand(5, 3),
-        columns=["col_1", "col_2", "col_3"],
-        index=pd.date_range(start="1/1/2022", end="1/5/2022", freq="D"),
-    )
-
-    with pytest.raises(
-        ValueError, match="Encoding must be one of 'cyclical', 'onehot', 'spline' or None"
-    ):
-        DateTimeFeatureTransformer(encoding="invalid encoding").fit_transform(df)
-
-
-def test_create_datetime_features_invalid_feature_name():
-    """
-    Test that DateTimeFeatureTransformer raises a ValueError when a feature name is
-    not valid.
-    """
-    df = pd.DataFrame(
-        np.random.rand(5, 3),
-        columns=["col_1", "col_2", "col_3"],
-        index=pd.date_range(start="1/1/2022", end="1/5/2022", freq="D"),
-    )
-
     err_msg = re.escape(
-        "Features {'invalid_feature'} are not supported. Supported features are "
-        "['year', 'month', 'week', 'day_of_week', 'day_of_month', 'day_of_year', "
-        "'weekend', 'hour', 'minute', 'second', 'quarter']."
+        "Calendar features {'invalid_feature'} are not supported. Supported "
+        "features are ['year', 'month', 'week', 'day_of_week', 'day_of_month', "
+        "'day_of_year', 'weekend', 'hour', 'minute', 'second', 'quarter']."
     )
     with pytest.raises(ValueError, match=err_msg):
-        DateTimeFeatureTransformer(features=["invalid_feature"]).fit_transform(df)
+        CalendarFeatures(features=["invalid_feature"])
 
 
-def test_create_datetime_features_output_columns_when_cyclical_encoding():
+def test_CalendarFeatures_init_ValueError_when_encoding_not_valid():
     """
-    Test that DateTimeFeatureTransformer returns the expected columns when encoding is 'cyclical'.
+    Test that CalendarFeatures raises a ValueError at construction time when
+    `encoding` is not one of 'cyclical', 'onehot', 'spline' or None.
+    """
+    err_msg = "Encoding must be one of 'cyclical', 'onehot', 'spline' or None"
+    with pytest.raises(ValueError, match=err_msg):
+        CalendarFeatures(encoding="invalid encoding")
+
+
+def test_CalendarFeatures_init_valid_features_None_does_not_raise():
+    """
+    Test that CalendarFeatures construction with the default `features=None`
+    does not raise and stores the parameters unchanged.
+    """
+    transformer = CalendarFeatures()
+
+    assert transformer.features is None
+    assert transformer.encoding == "cyclical"
+
+
+def test_create_calendar_features_output_columns_when_cyclical_encoding():
+    """
+    Test that CalendarFeatures returns the expected columns when encoding is 'cyclical'.
     """
     df = pd.DataFrame(
         np.random.rand(5, 3),
@@ -82,7 +83,7 @@ def test_create_datetime_features_output_columns_when_cyclical_encoding():
         index=pd.date_range(start="1/1/2022", end="1/5/2022", freq="D"),
     )
 
-    results = DateTimeFeatureTransformer(encoding="cyclical", keep_original_columns=False).fit_transform(df)
+    results = CalendarFeatures(encoding="cyclical", keep_original_columns=False).fit_transform(df)
     expected_features = [
         "year",
         "weekend",
@@ -110,9 +111,9 @@ def test_create_datetime_features_output_columns_when_cyclical_encoding():
     assert len(results) == len(df)
 
 
-def test_create_datetime_features_output_columns_when_onehot_encoding():
+def test_create_calendar_features_output_columns_when_onehot_encoding():
     """
-    Test that DateTimeFeatureTransformer returns the expected columns when encoding is 'onehot'.
+    Test that CalendarFeatures returns the expected columns when encoding is 'onehot'.
     """
     index = pd.date_range(start="2021-01-01", end="2023-01-01", freq=freq_h)
     df = pd.DataFrame(
@@ -121,15 +122,15 @@ def test_create_datetime_features_output_columns_when_onehot_encoding():
         index=index,
     )
 
-    results = DateTimeFeatureTransformer(encoding="onehot", keep_original_columns=False).fit_transform(df)
+    results = CalendarFeatures(encoding="onehot", keep_original_columns=False).fit_transform(df)
 
     assert list(results.columns) == features_all_onehot
     assert len(results) == len(df)
 
 
-def test_create_datetime_features_output_columns_when_None_encoding():
+def test_create_calendar_features_output_columns_when_None_encoding():
     """
-    Test that DateTimeFeatureTransformer returns the expected columns when encoding is 'None'.
+    Test that CalendarFeatures returns the expected columns when encoding is 'None'.
     """
     index = pd.date_range(start="2021-01-01", end="2023-01-01", freq=freq_h)
     df = pd.DataFrame(
@@ -137,7 +138,7 @@ def test_create_datetime_features_output_columns_when_None_encoding():
         columns=["col_1", "col_2", "col_3"],
         index=index,
     )
-    results = DateTimeFeatureTransformer(encoding=None, keep_original_columns=False).fit_transform(df)
+    results = CalendarFeatures(encoding=None, keep_original_columns=False).fit_transform(df)
     expected_features = [
         "year",
         "month",
@@ -155,9 +156,9 @@ def test_create_datetime_features_output_columns_when_None_encoding():
     assert len(results) == len(df)
 
 
-def test_create_datetime_features_output_when_features_year_month_encoding_cyclical():
+def test_create_calendar_features_output_when_features_year_month_encoding_cyclical():
     """
-    Test that DateTimeFeatureTransformer returns the expected columns when features
+    Test that CalendarFeatures returns the expected columns when features
      is ['year', 'month'] and encoding is 'cyclical'.
     """
     df = pd.DataFrame(
@@ -166,7 +167,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
         index=pd.date_range(start="1/1/2022", end="1/5/2022", freq="D"),
     )
 
-    results = DateTimeFeatureTransformer(
+    results = CalendarFeatures(
         features=["year", "month", "weekend"], encoding="cyclical", keep_original_columns=False
     ).fit_transform(df)
     expected = pd.DataFrame(
@@ -207,9 +208,9 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_datetime_features_output_when_features_year_month_encoding_onehot():
+def test_create_calendar_features_output_when_features_year_month_encoding_onehot():
     """
-    Test that DateTimeFeatureTransformer returns the expected columns when features
+    Test that CalendarFeatures returns the expected columns when features
     is ['year', 'month', 'weekend'] and encoding is 'onehot'. All predefined
     categories must be present even when only January dates are in the data.
     """
@@ -220,7 +221,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_oneho
         index=index,
     )
 
-    results = DateTimeFeatureTransformer(
+    results = CalendarFeatures(
         features=["year", "month", "weekend"], encoding="onehot", keep_original_columns=False
     ).fit_transform(df)
 
@@ -241,9 +242,9 @@ def test_create_datetime_features_output_when_features_year_month_encoding_oneho
     assert results.shape == (5, 14)
 
 
-def test_create_datetime_features_output_when_features_year_month_encoding_None():
+def test_create_calendar_features_output_when_features_year_month_encoding_None():
     """
-    Test that DateTimeFeatureTransformer returns the expected columns when features
+    Test that CalendarFeatures returns the expected columns when features
      is ['year', 'month'] and encoding is None.
     """
     df = pd.DataFrame(
@@ -252,7 +253,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_None(
         index=pd.date_range(start="1/1/2022", end="1/5/2022", freq="D"),
     )
 
-    results = DateTimeFeatureTransformer(
+    results = CalendarFeatures(
         features=["year", "month", "weekend"], encoding=None, keep_original_columns=False
     ).fit_transform(
         df,
@@ -288,9 +289,9 @@ def test_create_datetime_features_output_when_features_year_month_encoding_None(
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_datetime_features_output_when_features_year_month_encoding_cyclical_and_custom_max_values():
+def test_create_calendar_features_output_when_features_year_month_encoding_cyclical_and_custom_max_values():
     """
-    Test that DateTimeFeatureTransformer returns the expected columns when features
+    Test that CalendarFeatures returns the expected columns when features
     is ['year', 'month'] and encoding is 'cyclical' with custom max values.
     """
 
@@ -302,7 +303,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
         ),
     )
 
-    results = DateTimeFeatureTransformer(
+    results = CalendarFeatures(
         features=["year", "month", "weekend"],
         encoding="cyclical",
         max_values={"month": 6},
@@ -347,22 +348,22 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_DateTimeFeatureTransformer_get_params_returns_constructor_values():
+def test_CalendarFeatures_get_params_returns_constructor_values():
     """
     Test that get_params returns the exact values passed to __init__, including
     None for defaulted parameters (sklearn BaseEstimator contract).
     """
-    transformer = DateTimeFeatureTransformer()
+    transformer = CalendarFeatures()
     params = transformer.get_params()
 
     assert params == {"features": None, "features_to_encode": None, "encoding": "cyclical", "max_values": None, "spline_kwargs": None, "keep_original_columns": True}
 
 
-def test_DateTimeFeatureTransformer_get_params_returns_custom_values():
+def test_CalendarFeatures_get_params_returns_custom_values():
     """
     Test that get_params returns the custom values passed to __init__.
     """
-    transformer = DateTimeFeatureTransformer(
+    transformer = CalendarFeatures(
         features=["year", "month"],
         encoding="onehot",
         max_values={"month": 6},
@@ -380,7 +381,7 @@ def test_DateTimeFeatureTransformer_get_params_returns_custom_values():
     }
 
 
-def test_DateTimeFeatureTransformer_clone_preserves_none_defaults():
+def test_CalendarFeatures_clone_preserves_none_defaults():
     """
     Test that sklearn clone() round-trips correctly when default (None) params
     are used. The cloned transformer must produce identical output.
@@ -390,7 +391,7 @@ def test_DateTimeFeatureTransformer_clone_preserves_none_defaults():
         columns=["a", "b"],
         index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
     )
-    transformer = DateTimeFeatureTransformer()
+    transformer = CalendarFeatures()
     cloned = clone(transformer)
 
     assert cloned.features is None
@@ -402,11 +403,11 @@ def test_DateTimeFeatureTransformer_clone_preserves_none_defaults():
     )
 
 
-def test_DateTimeFeatureTransformer_set_params_updates_values():
+def test_CalendarFeatures_set_params_updates_values():
     """
     Test that set_params correctly updates transformer parameters.
     """
-    transformer = DateTimeFeatureTransformer()
+    transformer = CalendarFeatures()
     transformer.set_params(features=["year", "month"], encoding="onehot")
 
     assert transformer.features == ["year", "month"]
@@ -414,7 +415,7 @@ def test_DateTimeFeatureTransformer_set_params_updates_values():
     assert transformer.max_values is None
 
 
-def test_DateTimeFeatureTransformer_week_feature_dtype_is_int():
+def test_CalendarFeatures_week_feature_dtype_is_int():
     """
     Test that the 'week' feature is returned as int64, consistent with all
     other extracted features (isocalendar().week returns UInt32 by default).
@@ -424,21 +425,21 @@ def test_DateTimeFeatureTransformer_week_feature_dtype_is_int():
         columns=["value"],
         index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
     )
-    result = DateTimeFeatureTransformer(
+    result = CalendarFeatures(
         features=["week"], encoding=None
     ).fit_transform(df)
 
     assert result["week"].dtype == np.dtype("int64")
 
 
-def test_DateTimeFeatureTransformer_get_feature_names_out_raises_before_transform():
+def test_CalendarFeatures_get_feature_names_out_raises_before_transform():
     """
     Test that get_feature_names_out raises NotFittedError if transform has not
     been called yet.
     """
     from sklearn.exceptions import NotFittedError
 
-    transformer = DateTimeFeatureTransformer()
+    transformer = CalendarFeatures()
     with pytest.raises(NotFittedError):
         transformer.get_feature_names_out()
 
@@ -469,7 +470,7 @@ def test_DateTimeFeatureTransformer_get_feature_names_out_raises_before_transfor
     ],
     ids=["encoding_None", "encoding_cyclical", "encoding_onehot", "encoding_spline"],
 )
-def test_DateTimeFeatureTransformer_get_feature_names_out(encoding, features, expected):
+def test_CalendarFeatures_get_feature_names_out(encoding, features, expected):
     """
     Test that get_feature_names_out returns the correct column names for each
     encoding mode and matches the columns of the transform output.
@@ -479,7 +480,7 @@ def test_DateTimeFeatureTransformer_get_feature_names_out(encoding, features, ex
         columns=["value"],
         index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
     )
-    transformer = DateTimeFeatureTransformer(features=features, encoding=encoding)
+    transformer = CalendarFeatures(features=features, encoding=encoding)
     result = transformer.fit_transform(df)
     names_out = transformer.get_feature_names_out()
 
@@ -487,7 +488,7 @@ def test_DateTimeFeatureTransformer_get_feature_names_out(encoding, features, ex
     assert all(e in names_out for e in expected)
 
 
-def test_DateTimeFeatureTransformer_quarter_feature():
+def test_CalendarFeatures_quarter_feature():
     """
     Test that 'quarter' is correctly extracted and cyclically encoded.
     """
@@ -496,7 +497,7 @@ def test_DateTimeFeatureTransformer_quarter_feature():
         columns=["value"],
         index=pd.date_range(start="2022-01-01", periods=12, freq="MS"),
     )
-    result_none = DateTimeFeatureTransformer(
+    result_none = CalendarFeatures(
         features=["quarter"], encoding=None, keep_original_columns=False
     ).fit_transform(df)
 
@@ -504,16 +505,16 @@ def test_DateTimeFeatureTransformer_quarter_feature():
     assert result_none["quarter"].dtype == np.dtype("int64")
     assert set(result_none["quarter"].unique()).issubset({1, 2, 3, 4})
 
-    result_cyclical = DateTimeFeatureTransformer(
+    result_cyclical = CalendarFeatures(
         features=["quarter"], encoding="cyclical", keep_original_columns=False
     ).fit_transform(df)
 
     assert list(result_cyclical.columns) == ["quarter_sin", "quarter_cos"]
 
 
-def test_create_datetime_features_output_columns_when_spline_encoding():
+def test_create_calendar_features_output_columns_when_spline_encoding():
     """
-    Test that DateTimeFeatureTransformer returns the expected columns when encoding
+    Test that CalendarFeatures returns the expected columns when encoding
     is 'spline'. Features with a max_values entry are replaced by spline columns;
     features without one (year, weekend) are kept as raw integers.
     With default n_knots=max_val+1=13, include_bias=True and periodic extrapolation,
@@ -524,7 +525,7 @@ def test_create_datetime_features_output_columns_when_spline_encoding():
         columns=["value"],
         index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
     )
-    results = DateTimeFeatureTransformer(
+    results = CalendarFeatures(
         features=["year", "month", "weekend"], encoding="spline"
     ).fit_transform(df)
 
@@ -538,7 +539,7 @@ def test_create_datetime_features_output_columns_when_spline_encoding():
     assert len(results) == len(df)
 
 
-def test_create_datetime_features_output_shape_with_custom_spline_kwargs():
+def test_create_calendar_features_output_shape_with_custom_spline_kwargs():
     """
     Test that the number of spline output columns respects a custom n_knots.
     With n_knots=4, include_bias=True (default), periodic extrapolation the formula
@@ -549,7 +550,7 @@ def test_create_datetime_features_output_shape_with_custom_spline_kwargs():
         columns=["value"],
         index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
     )
-    results = DateTimeFeatureTransformer(
+    results = CalendarFeatures(
         features=["month"],
         encoding="spline",
         spline_kwargs={"n_knots": 4},
@@ -562,7 +563,7 @@ def test_create_datetime_features_output_shape_with_custom_spline_kwargs():
     assert len(results) == len(df)
 
 
-def test_create_datetime_features_spline_encoding_expected_values():
+def test_create_calendar_features_spline_encoding_expected_values():
     """
     Test that the spline encoding produces the expected numerical values.
     Uses 4 dates spaced one quarter apart (Jan, Apr, Jul, Oct) with the 'month'
@@ -582,7 +583,7 @@ def test_create_datetime_features_spline_encoding_expected_values():
             ["2022-01-15", "2022-04-15", "2022-07-15", "2022-10-15"]
         ),
     )
-    result = DateTimeFeatureTransformer(
+    result = CalendarFeatures(
         features=["month"], encoding="spline", keep_original_columns=False
     ).fit_transform(df)
 
@@ -613,25 +614,25 @@ def test_create_datetime_features_spline_encoding_expected_values():
     pd.testing.assert_frame_equal(result, expected, atol=1e-6, check_dtype=False)
 
 
-def test_create_datetime_features_accepts_series_input():
+def test_create_calendar_features_accepts_series_input():
     """
-    Test that create_datetime_features accepts a pandas Series with a
+    Test that create_calendar_features accepts a pandas Series with a
     DatetimeIndex, identical to a DataFrame input.
     """
     index = pd.date_range(start="2022-01-01", periods=5, freq="D")
     series = pd.Series(np.random.rand(5), index=index, name="target")
     df = pd.DataFrame({"value": series.values}, index=index)
 
-    result_series = create_datetime_features(series, features=["year", "month"], encoding=None, keep_original_columns=False)
-    result_df = create_datetime_features(df, features=["year", "month"], encoding=None, keep_original_columns=False)
+    result_series = create_calendar_features(series, features=["year", "month"], encoding=None, keep_original_columns=False)
+    result_df = create_calendar_features(df, features=["year", "month"], encoding=None, keep_original_columns=False)
 
     pd.testing.assert_frame_equal(result_series, result_df)
 
 
-def test_create_datetime_features_standalone_invalid_encoding():
+def test_create_calendar_features_standalone_invalid_encoding():
     """
-    Test that create_datetime_features raises ValueError for an invalid encoding
-    when called directly (not via DateTimeFeatureTransformer).
+    Test that create_calendar_features raises ValueError for an invalid encoding
+    when called directly (not via CalendarFeatures).
     """
     series = pd.Series(
         np.random.rand(5),
@@ -640,12 +641,12 @@ def test_create_datetime_features_standalone_invalid_encoding():
     with pytest.raises(
         ValueError, match="Encoding must be one of 'cyclical', 'onehot', 'spline' or None"
     ):
-        create_datetime_features(series, encoding="invalid")
+        create_calendar_features(series, encoding="invalid")
 
 
-def test_DateTimeFeatureTransformer_invalid_features_to_encode():
+def test_CalendarFeatures_invalid_features_to_encode():
     """
-    Test that DateTimeFeatureTransformer raises ValueError when features_to_encode
+    Test that CalendarFeatures raises ValueError when features_to_encode
     contains features not present in features list.
     """
     df = pd.DataFrame(
@@ -656,7 +657,7 @@ def test_DateTimeFeatureTransformer_invalid_features_to_encode():
         ),
     )
 
-    transformer = DateTimeFeatureTransformer(
+    transformer = CalendarFeatures(
         features=["year", "month"],
         features_to_encode=["month", "invalid_feature"]
     )
@@ -666,9 +667,9 @@ def test_DateTimeFeatureTransformer_invalid_features_to_encode():
         transformer.fit_transform(df)
 
 
-def test_DateTimeFeatureTransformer_features_to_encode_cyclical():
+def test_CalendarFeatures_features_to_encode_cyclical():
     """
-    Test that DateTimeFeatureTransformer encodes only features in features_to_encode
+    Test that CalendarFeatures encodes only features in features_to_encode
     when using cyclical encoding.
     """
     df = pd.DataFrame(
@@ -676,7 +677,7 @@ def test_DateTimeFeatureTransformer_features_to_encode_cyclical():
         index=pd.DatetimeIndex(["2022-01-31", "2022-02-28"])
     )
 
-    transformer = DateTimeFeatureTransformer(
+    transformer = CalendarFeatures(
         features=["month", "hour"],
         features_to_encode=["hour"],
         encoding="cyclical",
@@ -693,9 +694,9 @@ def test_DateTimeFeatureTransformer_features_to_encode_cyclical():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_DateTimeFeatureTransformer_features_to_encode_onehot():
+def test_CalendarFeatures_features_to_encode_onehot():
     """
-    Test that DateTimeFeatureTransformer encodes only features in features_to_encode
+    Test that CalendarFeatures encodes only features in features_to_encode
     when using onehot encoding. All 24 hour columns are always generated even
     though only hours 1 and 2 appear in the data.
     """
@@ -704,7 +705,7 @@ def test_DateTimeFeatureTransformer_features_to_encode_onehot():
         index=pd.DatetimeIndex(["2022-01-01 01:00:00", "2022-02-01 02:00:00"])
     )
 
-    transformer = DateTimeFeatureTransformer(
+    transformer = CalendarFeatures(
         features=["month", "hour"],
         features_to_encode=["hour"],
         encoding="onehot",
@@ -725,9 +726,9 @@ def test_DateTimeFeatureTransformer_features_to_encode_onehot():
     assert results.shape == (2, 25)
 
 
-def test_DateTimeFeatureTransformer_features_to_encode_spline():
+def test_CalendarFeatures_features_to_encode_spline():
     """
-    Test that DateTimeFeatureTransformer encodes only features in features_to_encode
+    Test that CalendarFeatures encodes only features in features_to_encode
     when using spline encoding.
     """
     df = pd.DataFrame(
@@ -735,7 +736,7 @@ def test_DateTimeFeatureTransformer_features_to_encode_spline():
         index=pd.DatetimeIndex(["2022-01-01 01:00:00", "2022-02-01 02:00:00"])
     )
 
-    transformer = DateTimeFeatureTransformer(
+    transformer = CalendarFeatures(
         features=["month", "hour"],
         features_to_encode=["hour"],
         encoding="spline",
@@ -751,9 +752,9 @@ def test_DateTimeFeatureTransformer_features_to_encode_spline():
     assert len(results.columns) > 1
 
 
-def test_DateTimeFeatureTransformer_keep_original_columns_True_dataframe():
+def test_CalendarFeatures_keep_original_columns_True_dataframe():
     """
-    Test that DateTimeFeatureTransformer returns original columns when 
+    Test that CalendarFeatures returns original columns when 
     keep_original_columns=True for a DataFrame.
     """
     df = pd.DataFrame(
@@ -761,7 +762,7 @@ def test_DateTimeFeatureTransformer_keep_original_columns_True_dataframe():
         index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
     )
 
-    transformer = DateTimeFeatureTransformer(
+    transformer = CalendarFeatures(
         features=["month"],
         encoding=None,
         keep_original_columns=True
@@ -775,9 +776,9 @@ def test_DateTimeFeatureTransformer_keep_original_columns_True_dataframe():
     assert results["exog_1"].tolist() == [1, 2]
 
 
-def test_DateTimeFeatureTransformer_keep_original_columns_True_series():
+def test_CalendarFeatures_keep_original_columns_True_series():
     """
-    Test that DateTimeFeatureTransformer returns original series as a column when 
+    Test that CalendarFeatures returns original series as a column when 
     keep_original_columns=True for a Series.
     """
     series = pd.Series(
@@ -786,7 +787,7 @@ def test_DateTimeFeatureTransformer_keep_original_columns_True_series():
         index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
     )
 
-    transformer = DateTimeFeatureTransformer(
+    transformer = CalendarFeatures(
         features=["month"],
         encoding=None,
         keep_original_columns=True
@@ -799,9 +800,9 @@ def test_DateTimeFeatureTransformer_keep_original_columns_True_series():
     assert results["target"].tolist() == [1, 2]
 
 
-def test_DateTimeFeatureTransformer_keep_original_columns_True_overlap_error():
+def test_CalendarFeatures_keep_original_columns_True_overlap_error():
     """
-    Test that DateTimeFeatureTransformer raises ValueError when keep_original_columns=True
+    Test that CalendarFeatures raises ValueError when keep_original_columns=True
     and there is a column name overlap with extracted features.
     """
     df = pd.DataFrame(
@@ -809,7 +810,7 @@ def test_DateTimeFeatureTransformer_keep_original_columns_True_overlap_error():
         index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
     )
 
-    transformer = DateTimeFeatureTransformer(
+    transformer = CalendarFeatures(
         features=["month"],
         encoding=None,
         keep_original_columns=True
@@ -838,7 +839,7 @@ def test_DateTimeFeatureTransformer_keep_original_columns_True_overlap_error():
         transformer.fit_transform(series)
 
 
-def test_DateTimeFeatureTransformer_get_feature_names_out_after_fit_before_transform():
+def test_CalendarFeatures_get_feature_names_out_after_fit_before_transform():
     """
     Test that get_feature_names_out() returns the correct column names after
     fit() is called but before transform() is called. This verifies the sklearn
@@ -849,7 +850,7 @@ def test_DateTimeFeatureTransformer_get_feature_names_out_after_fit_before_trans
         columns=["value"],
         index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
     )
-    transformer = DateTimeFeatureTransformer(
+    transformer = CalendarFeatures(
         features=["year", "month"], encoding="cyclical", keep_original_columns=False
     )
     transformer.fit(df)
@@ -862,7 +863,7 @@ def test_DateTimeFeatureTransformer_get_feature_names_out_after_fit_before_trans
     assert names_after_fit == list(result.columns)
 
 
-def test_DateTimeFeatureTransformer_onehot_single_row_generates_all_columns():
+def test_CalendarFeatures_onehot_single_row_generates_all_columns():
     """
     Test that onehot encoding generates all expected columns even when a single
     row is passed to fit_transform. Guards against pd.get_dummies silently
@@ -873,7 +874,7 @@ def test_DateTimeFeatureTransformer_onehot_single_row_generates_all_columns():
     index = pd.DatetimeIndex(["2022-01-05"])  # Wednesday
     df = pd.DataFrame({"value": [1.0]}, index=index)
 
-    result = DateTimeFeatureTransformer(
+    result = CalendarFeatures(
         features=["day_of_week"],
         encoding="onehot",
         keep_original_columns=False,
@@ -885,7 +886,7 @@ def test_DateTimeFeatureTransformer_onehot_single_row_generates_all_columns():
     assert result["day_of_week_0"].iloc[0] == 0  # not Monday
 
 
-def test_DateTimeFeatureTransformer_onehot_year_and_weekend_never_encoded():
+def test_CalendarFeatures_onehot_year_and_weekend_never_encoded():
     """
     Test that year and weekend are never one-hot encoded when encoding='onehot',
     regardless of whether they appear in features_to_encode.
@@ -893,7 +894,7 @@ def test_DateTimeFeatureTransformer_onehot_year_and_weekend_never_encoded():
     index = pd.date_range(start="2022-01-01", periods=7, freq="D")
     df = pd.DataFrame({"value": range(7)}, index=index)
 
-    result = DateTimeFeatureTransformer(
+    result = CalendarFeatures(
         features=["year", "weekend", "month"],
         features_to_encode=["year", "weekend", "month"],
         encoding="onehot",
@@ -913,7 +914,7 @@ def test_DateTimeFeatureTransformer_onehot_year_and_weekend_never_encoded():
     assert len(month_cols) == 12
 
 
-def test_DateTimeFeatureTransformer_fit_empty_input_raises():
+def test_CalendarFeatures_fit_empty_input_raises():
     """
     Test that calling fit on an empty DataFrame or Series raises ValueError
     with a clear message, instead of letting the error surface from inside
@@ -922,16 +923,16 @@ def test_DateTimeFeatureTransformer_fit_empty_input_raises():
     empty_df = pd.DataFrame(
         columns=["value"], index=pd.DatetimeIndex([], name="datetime")
     )
-    transformer = DateTimeFeatureTransformer(features=["month"], encoding="cyclical")
+    transformer = CalendarFeatures(features=["month"], encoding="cyclical")
     with pytest.raises(ValueError, match=r"Cannot fit on empty input\."):
         transformer.fit(empty_df)
 
     empty_series = pd.Series([], dtype=float, index=pd.DatetimeIndex([]), name="y")
     with pytest.raises(ValueError, match=r"Cannot fit on empty input\."):
-        DateTimeFeatureTransformer(features=["month"], encoding="cyclical").fit(empty_series)
+        CalendarFeatures(features=["month"], encoding="cyclical").fit(empty_series)
 
 
-def test_DateTimeFeatureTransformer_transform_does_not_mutate_state():
+def test_CalendarFeatures_transform_does_not_mutate_state():
     """
     Test that `transform()` is a pure operation: it does not modify any
     attribute set by `fit()`. In particular, `feature_names_out_` must be
@@ -942,7 +943,7 @@ def test_DateTimeFeatureTransformer_transform_does_not_mutate_state():
         {"value": [1, 2, 3]},
         index=pd.date_range("2022-01-01", periods=3, freq="D"),
     )
-    t = DateTimeFeatureTransformer(features=["month"], encoding="cyclical")
+    t = CalendarFeatures(features=["month"], encoding="cyclical")
     t.fit(df)
     snapshot = list(t.feature_names_out_)
 

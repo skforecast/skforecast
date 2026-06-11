@@ -67,4 +67,4 @@ the complete reference, including:
 ### Preprocessing
 - `RollingFeatures` — rolling window statistics
 - `TimeSeriesDifferentiator` — differencing
-- `DateTimeFeatureTransformer` — calendar features
+- `CalendarFeatures` — calendar features
