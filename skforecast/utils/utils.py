@@ -2463,11 +2463,11 @@ def save_forecaster(
     elif backend == 'cloudpickle':
         try:
             import cloudpickle
-        except ImportError:
+        except ImportError as exc:
             raise ImportError(
                 "'cloudpickle' is required for backend='cloudpickle' but is not "
                 "installed. Install it with: pip install cloudpickle"
-            )
+            ) from exc
         with open(file_name, 'wb') as file:
             cloudpickle.dump(forecaster, file)
 
@@ -2603,11 +2603,11 @@ def load_forecaster(
     elif backend == 'cloudpickle':
         try:
             import cloudpickle  # noqa: F401 — needed to unpickle cloudpickle files
-        except ImportError:
+        except ImportError as exc:
             raise ImportError(
                 "'cloudpickle' is required for backend='cloudpickle' but is not "
                 "installed. Install it with: pip install cloudpickle"
-            )
+            ) from exc
         with open(file_name, 'rb') as file:
             forecaster = pickle.load(file)
 
