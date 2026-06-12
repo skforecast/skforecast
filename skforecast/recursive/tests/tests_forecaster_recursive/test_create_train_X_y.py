@@ -50,6 +50,23 @@ def test_create_train_X_y_ValueError_when_len_y_less_than_window_size():
         forecaster._create_train_X_y(y=y)
 
 
+def test_create_train_X_y_TypeError_when_calendar_features_and_index_not_datetime():
+    """
+    Test TypeError is raised when calendar_features is not None and the index of 
+    y is not a DatetimeIndex.
+    """
+    y = pd.Series(np.arange(5))
+
+    calendar = CalendarFeatures()
+    forecaster = ForecasterRecursive(LinearRegression(), lags=2, calendar_features=calendar)
+    err_msg = re.escape(
+        "When `calendar_features` is not `None`, the index of `y` must "
+        "be a pandas DatetimeIndex."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        forecaster._create_train_X_y(y=y)
+
+
 def test_create_train_X_y_ValueError_when_categorical_features_columns_not_in_exog():
     """
     Test ValueError is raised when explicit categorical_features list contains

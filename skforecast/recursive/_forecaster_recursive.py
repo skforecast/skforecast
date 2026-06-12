@@ -74,6 +74,8 @@ class ForecasterRecursive(ForecasterBase):
     window_features : object, list, default None
         Instance or list of instances used to create window features. Window features
         are created from the original time series and are included as predictors.
+        Skforecast provides the `RollingFeatures` class, but a custom object can
+        also be passed as long as it implements the required interface.
     calendar_features : object, default None
         Instance of `CalendarFeatures` used to create calendar features from the
         datetime index. Calendar features are included as predictors and are

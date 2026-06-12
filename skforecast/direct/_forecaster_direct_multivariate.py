@@ -88,6 +88,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     window_features : object, list, default None
         Instance or list of instances used to create window features. Window features
         are created from the original time series and are included as predictors.
+        Skforecast provides the `RollingFeatures` class, but a custom object can
+        also be passed as long as it implements the required interface.
     transformer_series : transformer (preprocessor), dict, default `sklearn.preprocessing.StandardScaler`
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and 
