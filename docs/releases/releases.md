@@ -18,6 +18,10 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> New `backend` parameter in <code>[save_forecaster]</code> and <code>[load_forecaster]</code> to select the serialization engine. In addition to the default `'joblib'`, the `'pickle'` and `'cloudpickle'` backends are now supported. The `'cloudpickle'` backend embeds custom functions (e.g. `weight_func`) and user-defined classes (e.g. `window_features`) directly in the saved file, removing the need to export them as separate `.py` files. On load, the backend is inferred automatically from the file extension (`.joblib`, `.pkl`/`.pickle`, `.cloudpickle`) when `backend` is not provided. [User guide](../user_guides/save-load-forecaster.ipynb)
 
++ <span class="badge text-bg-api-change">API Change</span> The `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions is now expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`) instead of percentiles in the 0-100 range. Passing percentiles is still supported but deprecated and emits a `FutureWarning`; support will be removed in a future version.
+
++ <span class="badge text-bg-fix">Fix</span> Fixed parallel execution failure in single-core environments (e.g. Docker with `cpus: '1.0'`). <code>[select_n_jobs_backtesting]</code> and <code>[select_n_jobs_fit_forecaster]</code> now fall back to `n_jobs=1` instead of `0`, which raised `ValueError` in `joblib.Parallel`. ([#1197](https://github.com/skforecast/skforecast/issues/1197))
+
 
 **Added**
 
@@ -38,8 +42,12 @@ The main changes in this release are:
 
 + The internal preprocessing submodule was renamed from `skforecast.preprocessing.preprocessing` to `skforecast.preprocessing._preprocessing`. The public API (`from skforecast.preprocessing import …`) is unchanged; only direct imports from the submodule path are affected.
 
++ The `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions is now expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`) instead of percentiles in the 0-100 range. Passing percentiles is still supported but deprecated and emits a `FutureWarning`; support will be removed in a future version.
+
 
 **Fixed**
+
++ Fixed parallel execution failure in single-core environments (e.g. Docker with `cpus: '1.0'`). <code>[select_n_jobs_backtesting]</code> and <code>[select_n_jobs_fit_forecaster]</code> now fall back to `n_jobs=1` instead of `0`, which raised `ValueError` in `joblib.Parallel`. ([#1197](https://github.com/skforecast/skforecast/issues/1197))
 
 + Fix a bug in <code>[ForecasterStats]</code> where the `remove_estimators` method was not deleting the corresponding estimator parameters.
 

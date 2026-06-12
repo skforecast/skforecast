@@ -59,12 +59,11 @@ def test_predict_interval_ValueError_when_interval_is_not_symmetrical():
     forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y)
     alpha = None
-    interval_not_symmetrical = [5, 97.5] 
+    interval_not_symmetrical = [0.05, 0.975] 
 
     err_msg = re.escape(
-        f"When using `interval` in ForecasterStats, it must be symmetrical. "
-        f"For example, interval of 95% should be as `interval = [2.5, 97.5]`. "
-        f"Got {interval_not_symmetrical}."
+        "Interval must be symmetric, the sum of the lower, (0.05), and upper, (0.975), " 
+        "interval bounds must be equal to 1. Got 1.025."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_interval(
@@ -75,8 +74,8 @@ def test_predict_interval_ValueError_when_interval_is_not_symmetrical():
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [1, 99]), 
-                          (None, [2.5, 97.5])], 
+                         [(0.05, [0.01, 0.99]), 
+                          (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_skforecast_Sarimax(alpha, interval):
     """
@@ -101,8 +100,8 @@ def test_predict_interval_output_ForecasterStats_skforecast_Sarimax(alpha, inter
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [1, 99]), 
-                          (None, [2.5, 97.5])], 
+                         [(0.05, [0.01, 0.99]), 
+                          (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_exog(alpha, interval):
     """
@@ -127,8 +126,8 @@ def test_predict_interval_output_ForecasterStats_with_exog(alpha, interval):
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [1, 99]), 
-                          (None, [2.5, 97.5])], 
+                         [(0.05, [0.01, 0.99]), 
+                          (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 @pytest.mark.skipif(
     platform.system() == 'Darwin',
@@ -201,8 +200,8 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators_exog(alpha,
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [1, 99]), 
-                          (None, [2.5, 97.5])], 
+                         [(0.05, [0.01, 0.99]), 
+                          (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_transform_y(alpha, interval):
     """
@@ -228,8 +227,8 @@ def test_predict_interval_output_ForecasterStats_with_transform_y(alpha, interva
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [1, 99]), 
-                          (None, [2.5, 97.5])], 
+                         [(0.05, [0.01, 0.99]), 
+                          (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 @pytest.mark.skipif(
     platform.system() == 'Darwin',
@@ -304,8 +303,8 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators_exog_transf
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [1, 99]), 
-                          (None, [2.5, 97.5])], 
+                         [(0.05, [0.01, 0.99]), 
+                          (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_transform_y_and_transform_exog(alpha, interval):
     """
@@ -340,8 +339,8 @@ def test_predict_interval_output_ForecasterStats_with_transform_y_and_transform_
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [1, 99]), 
-                          (None, [2.5, 97.5])], 
+                         [(0.05, [0.01, 0.99]), 
+                          (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_last_window(alpha, interval):
     """
@@ -372,8 +371,8 @@ def test_predict_interval_output_ForecasterStats_with_last_window(alpha, interva
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [1, 99]), 
-                          (None, [2.5, 97.5])], 
+                         [(0.05, [0.01, 0.99]), 
+                          (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_last_window_and_exog(alpha, interval):
     """
@@ -406,8 +405,8 @@ def test_predict_interval_output_ForecasterStats_with_last_window_and_exog(alpha
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [1, 99]), 
-                          (None, [2.5, 97.5])], 
+                         [(0.05, [0.01, 0.99]), 
+                          (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_last_window_and_exog_and_transformers(alpha, interval):
     """
