@@ -19,6 +19,7 @@ from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
 import joblib
+import pickle
 import numpy as np
 import pandas as pd
 from scipy.special import comb
@@ -2389,30 +2390,48 @@ def manage_warnings(func: Callable[P, R]) -> Callable[P, R]:
 
 @manage_warnings
 def save_forecaster(
-    forecaster: object, 
+    forecaster: object,
     file_name: str,
-    save_custom_functions: bool = True, 
-    verbose: bool = True,
+    backend: str = 'joblib',
+    save_custom_functions: bool = True,
+    verbose: bool = False,
     suppress_warnings: bool = False
 ) -> None:
     """
-    Save forecaster model using joblib. If custom functions are used to create
-    weights, they are saved as .py files.
+    Save forecaster model to disk. Custom functions used to create weights that
+    are defined in the `'__main__'` namespace (e.g. a notebook or a script run
+    directly) are saved as .py files, since they cannot be re-imported when the
+    forecaster is loaded in a different session. Functions imported from a module
+    are restored automatically and are not exported. When `backend='cloudpickle'`,
+    custom functions are embedded in the saved file and no .py files are created.
 
     Parameters
     ----------
     forecaster : Forecaster
         Forecaster created with skforecast library.
     file_name : str
-        File name given to the object. The save extension will be .joblib.
+        File name given to the object. The file extension is determined by
+        the `backend` argument.
+    backend : str, default 'joblib'
+        Serialization backend used to save the forecaster.
+
+        - If `'joblib'`, the forecaster is saved using joblib (extension
+        `.joblib`).
+        - If `'pickle'`, the forecaster is saved using pickle (extension
+        `.pkl`).
+        - If `'cloudpickle'`, the forecaster is saved using cloudpickle
+        (extension `.cloudpickle`). Custom functions and user-defined classes
+        are embedded in the file, so no separate `.py` files are needed.
+        Requires `cloudpickle` to be installed.
     save_custom_functions : bool, default True
-        If True, save custom functions used in the forecaster (weight_func) as 
-        .py files. Custom functions need to be available in the environment 
-        where the forecaster is going to be loaded.
-    verbose : bool, default True
+        If True, save custom functions used in the forecaster (weight_func) as
+        .py files, but only those defined in the `'__main__'` namespace. These
+        functions need to be available in the environment where the forecaster
+        is going to be loaded. Has no effect when `backend='cloudpickle'`.
+    verbose : bool, default False
         Print summary about the forecaster saved.
     suppress_warnings : bool, default False
-        If `True`, skforecast warnings will be suppressed. See 
+        If `True`, skforecast warnings will be suppressed. See
         skforecast.exceptions.warn_skforecast_categories for more information.
 
     Returns
@@ -2421,45 +2440,95 @@ def save_forecaster(
 
     """
 
-    file_name = Path(file_name).with_suffix('.joblib')
+    valid_backends = {'joblib', 'pickle', 'cloudpickle'}
+    if backend not in valid_backends:
+        raise ValueError(
+            f"Invalid `backend` argument: '{backend}'. Valid options are: "
+            f"{', '.join(repr(b) for b in sorted(valid_backends))}."
+        )
+
+    backend_extensions = {
+        'joblib': '.joblib',
+        'pickle': '.pkl',
+        'cloudpickle': '.cloudpickle'
+    }
+    file_name = Path(file_name).with_suffix(backend_extensions[backend])
 
     # Save forecaster
-    joblib.dump(forecaster, filename=file_name)
-
-    if save_custom_functions:
-        # Save custom functions to create weights
-        if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
-            if isinstance(forecaster.weight_func, dict):
-                for fun in set(forecaster.weight_func.values()):
-                    file_name = fun.__name__ + '.py'
-                    with open(file_name, 'w') as file:
-                        file.write(inspect.getsource(fun))
-            else:
-                file_name = forecaster.weight_func.__name__ + '.py'
-                with open(file_name, 'w') as file:
-                    file.write(inspect.getsource(forecaster.weight_func))
-    else:
-        if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
-            warnings.warn(
-                "Custom function(s) used to create weights are not saved. To save them, "
-                "set `save_custom_functions` to `True`.",
-                SaveLoadSkforecastWarning
+    if backend == 'joblib':
+        joblib.dump(forecaster, filename=file_name)
+    elif backend == 'pickle':
+        with open(file_name, 'wb') as file:
+            pickle.dump(forecaster, file)
+    elif backend == 'cloudpickle':
+        try:
+            import cloudpickle
+        except ImportError:
+            raise ImportError(
+                "'cloudpickle' is required for backend='cloudpickle' but is not "
+                "installed. Install it with: pip install cloudpickle"
             )
+        with open(file_name, 'wb') as file:
+            cloudpickle.dump(forecaster, file)
 
-    if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
-        skforecast_classes = {'RollingFeatures'}
-        custom_classes = set(forecaster.window_features_class_names) - skforecast_classes
-        if custom_classes:
-            warnings.warn(
-                "The Forecaster includes custom user-defined classes in the "
-                "`window_features` argument. These classes are not saved automatically "
-                "when saving the Forecaster. Please ensure you save these classes "
-                "manually and import them before loading the Forecaster.\n"
-                "    Custom classes: " + ', '.join(custom_classes) + "\n"
-                "Visit the documentation for more information: "
-                "https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features",
-                SaveLoadSkforecastWarning
+    if backend != 'cloudpickle':
+        if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
+            funs = (
+                set(forecaster.weight_func.values())
+                if isinstance(forecaster.weight_func, dict)
+                else {forecaster.weight_func}
             )
+            # Only functions defined in the '__main__' namespace (notebook/script)
+            # cannot be re-imported when the forecaster is loaded in a different
+            # session, so they are the only ones that need the .py export / warning.
+            # Functions from importable modules are restored automatically by
+            # joblib/pickle (by reference).
+            main_funs = sorted(
+                (f for f in funs if getattr(f, '__module__', None) == '__main__'),
+                key=lambda f: f.__name__
+            )
+            if main_funs:
+                if save_custom_functions:
+                    saved_files = []
+                    for fun in main_funs:
+                        fun_file_name = fun.__name__ + '.py'
+                        with open(fun_file_name, 'w') as file:
+                            file.write(inspect.getsource(fun))
+                        saved_files.append(fun_file_name)
+                    warnings.warn(
+                        "Custom function(s) used to create weights are defined in "
+                        "the '__main__' namespace and have been saved as: "
+                        f"{', '.join(repr(f) for f in saved_files)}. These files "
+                        "must be imported before loading the forecaster.\n"
+                        "Visit the documentation for more information: "
+                        "https://skforecast.org/latest/user_guides/save-load-forecaster.html"
+                        "#saving-and-loading-a-forecaster-model-with-custom-features",
+                        SaveLoadSkforecastWarning
+                    )
+                else:
+                    warnings.warn(
+                        "Custom function(s) used to create weights are defined in "
+                        "the '__main__' namespace and have not been saved. To save "
+                        "them automatically, set `save_custom_functions=True`. "
+                        "Otherwise, ensure they are importable before loading the "
+                        "forecaster.",
+                        SaveLoadSkforecastWarning
+                    )
+
+        if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
+            skforecast_classes = {'RollingFeatures'}
+            custom_classes = set(forecaster.window_features_class_names) - skforecast_classes
+            if custom_classes:
+                warnings.warn(
+                    "The Forecaster includes custom user-defined classes in the "
+                    "`window_features` argument. These classes are not saved automatically "
+                    "when saving the Forecaster. Please ensure you save these classes "
+                    "manually and import them before loading the Forecaster.\n"
+                    "    Custom classes: " + ', '.join(custom_classes) + "\n"
+                    "Visit the documentation for more information: "
+                    "https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features",
+                    SaveLoadSkforecastWarning
+                )
 
     if verbose:
         forecaster.summary()
@@ -2468,33 +2537,80 @@ def save_forecaster(
 @manage_warnings
 def load_forecaster(
     file_name: str,
+    backend: str | None = None,
     verbose: bool = True,
     suppress_warnings: bool = False
 ) -> object:
     """
-    Load forecaster model using joblib. If the forecaster was saved with 
-    custom user-defined classes as as window features or custom
-    functions to create weights, these objects must be available
-    in the environment where the forecaster is going to be loaded.
+    Load forecaster model from disk. If the forecaster was saved with
+    custom user-defined classes as window features or custom functions
+    to create weights, these objects must be available in the environment
+    where the forecaster is going to be loaded.
 
     Parameters
     ----------
-    file_name: str
+    file_name : str
         Object file name.
-    verbose: bool, default True
+    backend : str, None, default None
+        Serialization backend used to load the forecaster. When `None`, the
+        backend is inferred from the file extension:
+
+        - `.joblib` → `'joblib'`
+        - `.pkl` or `.pickle` → `'pickle'`
+        - `.cloudpickle` → `'cloudpickle'`
+    verbose : bool, default True
         Print summary about the forecaster loaded.
     suppress_warnings : bool, default False
-        If `True`, skforecast warnings will be suppressed. See 
+        If `True`, skforecast warnings will be suppressed. See
         skforecast.exceptions.warn_skforecast_categories for more information.
 
     Returns
     -------
-    forecaster: Forecaster
+    forecaster : Forecaster
         Forecaster created with skforecast library.
-    
+
     """
 
-    forecaster = joblib.load(filename=Path(file_name))
+    extension_backend_map = {
+        '.cloudpickle': 'cloudpickle',
+        '.joblib': 'joblib',
+        '.pkl': 'pickle',
+        '.pickle': 'pickle',
+    }
+    valid_backends = {'joblib', 'pickle', 'cloudpickle'}
+
+    if backend is None:
+        suffix = Path(file_name).suffix.lower()
+        if suffix not in extension_backend_map:
+            raise ValueError(
+                f"Cannot infer backend from file extension '{suffix}'. "
+                f"Recognized extensions: "
+                f"{', '.join(repr(e) for e in sorted(extension_backend_map))}. "
+                f"Provide the `backend` argument explicitly."
+            )
+        backend = extension_backend_map[suffix]
+    elif backend not in valid_backends:
+        raise ValueError(
+            f"Invalid `backend` argument: '{backend}'. Valid options are: "
+            f"{', '.join(repr(b) for b in sorted(valid_backends))}."
+        )
+
+    if backend == 'joblib':
+        forecaster = joblib.load(filename=Path(file_name))
+    elif backend == 'pickle':
+        with open(file_name, 'rb') as file:
+            forecaster = pickle.load(file)
+    elif backend == 'cloudpickle':
+        try:
+            import cloudpickle  # noqa: F401 — needed to unpickle cloudpickle files
+        except ImportError:
+            raise ImportError(
+                "'cloudpickle' is required for backend='cloudpickle' but is not "
+                "installed. Install it with: pip install cloudpickle"
+            )
+        with open(file_name, 'rb') as file:
+            forecaster = pickle.load(file)
+
     forecaster_v = forecaster.skforecast_version
 
     if forecaster_v != __version__:

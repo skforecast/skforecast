@@ -16,10 +16,14 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Refactored the calendar feature engineering toolkit (<code>[create_datetime_features]</code>, <code>[DateTimeFeatureTransformer]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
 
++ <span class="badge text-bg-enhancement">Enhancement</span> New `backend` parameter in <code>[save_forecaster]</code> and <code>[load_forecaster]</code> to select the serialization engine. In addition to the default `'joblib'`, the `'pickle'` and `'cloudpickle'` backends are now supported. The `'cloudpickle'` backend embeds custom functions (e.g. `weight_func`) and user-defined classes (e.g. `window_features`) directly in the saved file, removing the need to export them as separate `.py` files. On load, the backend is inferred automatically from the file extension (`.joblib`, `.pkl`/`.pickle`, `.cloudpickle`) when `backend` is not provided. [User guide](../user_guides/save-load-forecaster.ipynb)
+
 
 **Added**
 
 + New functions <code>[acf]</code>, <code>[pacf]</code> and <code>[calculate_lag_autocorrelation]</code> in the <code>[stats]</code> module. Fast ACF and PACF implementations via FFT and Levinson-Durbin, removing the dependency on `statsmodels` for autocorrelation calculations.
+
++ New `backend` parameter in <code>[save_forecaster]</code> and <code>[load_forecaster]</code> to select the serialization engine. In addition to the default `'joblib'`, the `'pickle'` and `'cloudpickle'` backends are now supported. The `'cloudpickle'` backend embeds custom functions (e.g. `weight_func`) and user-defined classes (e.g. `window_features`) directly in the saved file, removing the need to export them as separate `.py` files. On load, the backend is inferred automatically from the file extension (`.joblib`, `.pkl`/`.pickle`, `.cloudpickle`) when `backend` is not provided. [User guide](../user_guides/save-load-forecaster.ipynb)
 
 
 **Changed**
