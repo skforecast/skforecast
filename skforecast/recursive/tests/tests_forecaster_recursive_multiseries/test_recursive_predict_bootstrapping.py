@@ -6,9 +6,18 @@ from sklearn.linear_model import LinearRegression
 from sklearn.dummy import DummyRegressor
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
-from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
+# Fixtures
+from .fixtures_forecaster_recursive_multiseries import (
+    series_dict_range,
+    series_dict_dt,
+    exog_wide_range,
+    exog_dict_dt,
+    exog_pred_wide_range,
+    exog_pred_dict_dt
+)
 
 series_2 = pd.DataFrame(
     {'1': pd.Series(np.arange(start=0, stop=50)), 
@@ -29,7 +38,7 @@ def test_recursive_predict_bootstrapping_output_with_residuals_zero():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     
@@ -74,7 +83,7 @@ def test_recursive_predict_bootstrapping_output_with_residuals_last_step():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     
@@ -120,7 +129,7 @@ def test_recursive_predict_bootstrapping_output_with_residuals():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     
@@ -167,7 +176,7 @@ def test_recursive_predict_bootstrapping_output_with_residuals_binned():
                  )
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     
@@ -222,7 +231,7 @@ def test_recursive_predict_bootstrapping_multiple_boot_samples_different_residua
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3)
     )
     
@@ -295,7 +304,7 @@ def test_recursive_predict_bootstrapping_with_exog():
         'exog_2': np.arange(200, 203, dtype=float)
     })
     
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3, exog=exog_pred)
     )
     
@@ -344,7 +353,7 @@ def test_recursive_predict_bootstrapping_with_window_features():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3)
     )
     
@@ -393,7 +402,7 @@ def test_recursive_predict_bootstrapping_with_window_features_LGBMRegressor():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3)
     )
     
@@ -445,7 +454,7 @@ def test_recursive_predict_bootstrapping_with_window_features_XGBRegressor():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3)
     )
     
@@ -496,7 +505,7 @@ def test_recursive_predict_bootstrapping_binned_residuals_multiple_boots():
                  )
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3)
     )
     
@@ -549,7 +558,7 @@ def test_recursive_predict_bootstrapping_single_level():
     forecaster.fit(series=series_2)
 
     # Only predict for level '1'
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3, levels=['1'])
     )
     
@@ -578,3 +587,86 @@ def test_recursive_predict_bootstrapping_single_level():
     ])
     
     np.testing.assert_array_almost_equal(predictions, expected)
+
+
+def test_recursive_predict_bootstrapping_with_exog_window_features_and_calendar_same_as_no_forecaster_calendar():
+    """
+    Test _recursive_predict_bootstrapping output with exogenous, window features and calendar features 
+    is the same as when not using calendar_features argument and including calendar 
+    features in exogenous dataframe.
+    """
+
+    exog_dict_dt_calendar = {
+        'l1': exog_dict_dt['l1'].copy(),
+        'l2': exog_dict_dt['l2'].to_frame(),
+    }
+    exog_dict_dt_calendar['l1']['day_of_week'] = exog_dict_dt_calendar['l1'].index.dayofweek
+    exog_dict_dt_calendar['l1']['weekend'] = exog_dict_dt_calendar['l1']['day_of_week'].isin([5, 6]).astype(int)
+    exog_dict_dt_calendar['l2']['day_of_week'] = exog_dict_dt_calendar['l2'].index.dayofweek
+    exog_dict_dt_calendar['l2']['weekend'] = exog_dict_dt_calendar['l2']['day_of_week'].isin([5, 6]).astype(int)
+
+    exog_pred_calendar = {
+        'l1': exog_pred_dict_dt['l1'].copy(),
+        'l2': exog_pred_dict_dt['l2'].to_frame(),
+    }
+    exog_pred_calendar['l1']['day_of_week'] = exog_pred_calendar['l1'].index.dayofweek
+    exog_pred_calendar['l1']['weekend'] = exog_pred_calendar['l1']['day_of_week'].isin([5, 6]).astype(int)
+    exog_pred_calendar['l2']['day_of_week'] = exog_pred_calendar['l2'].index.dayofweek
+    exog_pred_calendar['l2']['weekend'] = exog_pred_calendar['l2']['day_of_week'].isin([5, 6]).astype(int)
+
+    rolling = RollingFeatures(stats=['mean', 'std'], window_sizes=4)
+    calendar = CalendarFeatures(features=['day_of_week', 'weekend'], encoding=None)
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LGBMRegressor(verbose=-1),
+        lags=3,
+        window_features=rolling,
+        calendar_features=calendar
+    )
+    forecaster.fit(series=series_dict_dt, exog=exog_dict_dt)
+
+    forecaster_no_cal = ForecasterRecursiveMultiSeries(
+        LGBMRegressor(verbose=-1),
+        lags=3,
+        window_features=rolling
+    )
+    forecaster_no_cal.fit(series=series_dict_dt, exog=exog_dict_dt_calendar)
+
+    last_window, exog_values_dict, calendar_values, levels, _, _ = (
+        forecaster._create_predict_inputs(steps=10, exog=exog_pred_dict_dt)
+    )
+    last_window_no_cal, exog_values_dict_no_cal, _, levels_no_cal, _, _ = (
+        forecaster_no_cal._create_predict_inputs(steps=10, exog=exog_pred_calendar)
+    )
+    
+    n_boot = 3
+    # sampled_residuals shape: (steps, n_levels, n_boot) - but n_levels=1
+    sampled_residuals = np.zeros((3, 2, n_boot))
+    sampled_residuals[:, 0, 0] = 1.0
+    sampled_residuals[:, 0, 1] = 5.0
+    sampled_residuals[:, 0, 2] = 10.0
+    sampled_residuals[:, 1, 0] = 2.0
+    sampled_residuals[:, 1, 1] = 6.0
+    sampled_residuals[:, 1, 2] = 11.0
+
+    predictions = forecaster._recursive_predict_bootstrapping(
+                      steps                = 3,
+                      levels               = levels,
+                      last_window          = last_window,
+                      n_boot               = n_boot,
+                      sampled_residuals    = sampled_residuals,
+                      use_binned_residuals = False,
+                      exog_values_dict     = exog_values_dict,
+                      calendar_values      = calendar_values
+                  )
+    predictions_no_cal = forecaster_no_cal._recursive_predict_bootstrapping(
+                             steps                = 3,
+                             levels               = levels_no_cal,
+                             last_window          = last_window_no_cal,
+                             n_boot               = n_boot,
+                             sampled_residuals    = sampled_residuals,
+                             use_binned_residuals = False,
+                             exog_values_dict     = exog_values_dict_no_cal,
+                         )
+
+    np.testing.assert_array_almost_equal(predictions, predictions_no_cal)

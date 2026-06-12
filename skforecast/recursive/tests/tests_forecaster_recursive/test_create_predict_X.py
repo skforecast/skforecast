@@ -566,7 +566,7 @@ def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y(
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_when_window_features():
+def test_create_predict_X_when_window_features_calendar_features_and_exog():
     """
     Test the output of create_predict_X when using window_features and exog 
     with datetime index.
