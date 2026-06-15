@@ -24,7 +24,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-fix">Fix</span> Fixed parallel execution failure in single-core environments (e.g. Docker with `cpus: '1.0'`). <code>[select_n_jobs_backtesting]</code> and <code>[select_n_jobs_fit_forecaster]</code> now fall back to `n_jobs=1` instead of `0`, which raised `ValueError` in `joblib.Parallel`. ([#1197](https://github.com/skforecast/skforecast/issues/1197))
 
-+ <span class="badge text-bg-fix">Fix</span> Fixed <code>[TimeSeriesFold]</code> `split` to clamp the start of the last window to zero when `window_size` exceeds `initial_train_size`. Previously a small negative `iloc` start was interpreted by Python as an offset from the end of the index, producing an empty last window and a downstream `TypeError`. This was hit whenever a foundation model's `context_length` exceeded the initial train size during backtesting.
++ <span class="badge text-bg-fix">Fix</span> Fixed <code>[TimeSeriesFold]</code> `split` to clamp the start of the last window to zero when `window_size` exceeds `initial_train_size`. Previously a small negative `iloc` start was interpreted by Python as an offset from the end of the index, producing an empty last window and a downstream `TypeError`. This was hit whenever a foundation model's `context_length` exceeded the initial train size during backtesting. [#1213](https://github.com/skforecast/skforecast/pull/1213)
 
 
 **Added**
@@ -55,7 +55,7 @@ The main changes in this release are:
 
 + Fixed parallel execution failure in single-core environments (e.g. Docker with `cpus: '1.0'`). <code>[select_n_jobs_backtesting]</code> and <code>[select_n_jobs_fit_forecaster]</code> now fall back to `n_jobs=1` instead of `0`, which raised `ValueError` in `joblib.Parallel`. ([#1197](https://github.com/skforecast/skforecast/issues/1197))
 
-+ Fixed <code>[TimeSeriesFold]</code> `split` to clamp the start of the last window to zero when `window_size` exceeds `initial_train_size`. Previously a small negative `iloc` start was interpreted by Python as an offset from the end of the index, producing an empty last window and a downstream `TypeError`. This was hit whenever a foundation model's `context_length` exceeded the initial train size during backtesting.
++ Fixed <code>[TimeSeriesFold]</code> `split` to clamp the start of the last window to zero when `window_size` exceeds `initial_train_size`. Previously a small negative `iloc` start was interpreted by Python as an offset from the end of the index, producing an empty last window and a downstream `TypeError`. This was hit whenever a foundation model's `context_length` exceeded the initial train size during backtesting. [#1213](https://github.com/skforecast/skforecast/pull/1213)
 
 + Fix a bug in <code>[ForecasterStats]</code> where the `remove_estimators` method was not deleting the corresponding estimator parameters.
 
