@@ -1854,12 +1854,629 @@ class TabICLAdapter:
         return future_df
 
 
+class TabPFNAdapter:
+    """
+    Adapter for Prior Labs TabPFN-TS zero-shot time-series foundation models.
+
+    TabPFN-TS frames forecasting as tabular regression: the series is
+    featurized (running index, calendar features, automatically detected
+    seasonal features) and a TabPFN regressor predicts the forecast horizon
+    zero-shot.
+
+    Parameters
+    ----------
+    model_id : str
+        Model ID, e.g. `"priorlabs/tabpfn-ts"`. Used only to resolve this
+        adapter; the underlying checkpoint is controlled by
+        `tabpfn_model_config` (key `model_path`).
+    model : object, default None
+        Pre-instantiated `TabPFNTSPipeline` instance. If `None`, a new
+        instance is created lazily on the first call to `predict`. Intended
+        for testing only.
+    context_length : int, default 32768
+        Maximum number of historical observations to use as context. At fit
+        time only the last `context_length` observations are stored. At
+        predict time, if `context` is longer than `context_length` it is
+        trimmed to this length; if it is shorter, all available observations
+        are used as-is. Defaults to 32768, which matches the TabPFN-TS ship
+        configuration; lower values (e.g. 4096) speed up inference at a small
+        accuracy cost. Must be a positive integer.
+    mode : str, default 'local'
+        Inference mode. `'local'` runs the TabPFN model locally (CUDA > MPS >
+        CPU selected automatically by the library; the checkpoint is
+        downloaded on first use). `'client'` sends the featurized data to the
+        Prior Labs cloud API via `tabpfn-client` (no GPU needed, requires an
+        account/API key).
+    point_estimate : str, default 'median'
+        Method used to aggregate the TabPFN ensemble output into the point
+        forecast. Accepted values: `'mean'`, `'median'`, `'mode'`.
+    tabpfn_model_config : dict, default None
+        Additional configuration forwarded verbatim to the underlying TabPFN
+        regressor (e.g. `model_path`, `device`). If `None`, the library
+        defaults are used.
+    temporal_features : list, default None
+        List of `FeatureGenerator` instances applied to the time series
+        before inference. If `None`, TabPFN-TS uses its default transforms:
+        `[RunningIndexFeature(), CalendarFeature(), AutoSeasonalFeature()]`.
+        Pass an empty list to disable all temporal feature engineering.
+
+    Attributes
+    ----------
+    model_id : str
+        Model ID.
+    context_ : dict
+        Stored training series after fitting.
+    context_exog_ : dict
+        Stored historical exogenous variables after fitting.
+    context_length : int
+        Maximum number of historical observations used as context.
+    mode : str
+        Inference mode, `'local'` or `'client'`.
+    point_estimate : str
+        Point forecast aggregation method.
+    tabpfn_model_config : dict
+        Additional configuration forwarded to the TabPFN regressor.
+    temporal_features : list
+        Temporal feature transforms applied to the series.
+    is_fitted : bool
+        Whether the adapter has been fitted.
+    _model : object
+        Internal `TabPFNTSPipeline` instance. `None` until the first call
+        to `predict`, after which it is cached for reuse.
+
+    Notes
+    -----
+    TabPFN-TS supports arbitrary quantile levels (any float in `(0, 1)`),
+    unlike models with fixed quantile sets such as TimesFM or Moirai.
+
+    Covariate support is available for *known-future* covariates: extra
+    columns present in both the historical context and the forecast horizon
+    are used by the model. Covariates without future values are discarded by
+    the library.
+
+    Series with a `RangeIndex` are accepted. Internally, TabPFN-TS requires
+    datetime timestamps, so a synthetic daily `DatetimeIndex` (starting
+    2000-01-01) is used. Calendar-based transforms (`CalendarFeature`) will
+    not be meaningful for such series; consider passing
+    `temporal_features=[]` or `[RunningIndexFeature()]` in that case.
+
+    References
+    ----------
+    .. [1] https://github.com/PriorLabs/tabpfn-time-series
+    .. [2] https://priorlabs.ai/
+
+    """
+
+    allow_exog: bool = True
+
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        model: Any | None = None,
+        context_length: int = 32768,
+        mode: str = "local",
+        point_estimate: str = "median",
+        tabpfn_model_config: dict[str, Any] | None = None,
+        temporal_features: list[Any] | None = None,
+    ) -> None:
+        """
+        Initialise the adapter.
+
+        Parameters
+        ----------
+        model_id : str
+            Model ID, e.g. `"priorlabs/tabpfn-ts"`.
+        model : object, default None
+            Pre-instantiated `TabPFNTSPipeline` instance. If `None`, a new
+            instance is created lazily on the first call to `predict`.
+            Intended for testing only.
+        context_length : int, default 32768
+            Maximum number of historical observations to retain as context.
+            At `fit` time only the last `context_length` observations of
+            `series` (and `exog`) are stored. At `predict` time, if
+            `context` is longer than `context_length` it is trimmed to
+            this length before inference; if it is shorter, all available
+            observations are passed as-is. Must be a positive integer.
+        mode : str, default 'local'
+            Inference mode. Accepted values: `'local'`, `'client'`.
+        point_estimate : str, default 'median'
+            Method used to aggregate the TabPFN ensemble output into the
+            point forecast. Accepted values: `'mean'`, `'median'`, `'mode'`.
+        tabpfn_model_config : dict, default None
+            Additional configuration forwarded verbatim to the underlying
+            TabPFN regressor.
+        temporal_features : list, default None
+            List of `FeatureGenerator` instances applied before inference.
+            If `None`, TabPFN-TS uses its defaults. Pass `[]` to disable all
+            temporal feature engineering.
+
+        """
+
+        if not isinstance(context_length, int) or context_length < 1:
+            raise ValueError(
+                f"`context_length` must be a positive integer. Got {context_length!r}."
+            )
+        if mode not in ("local", "client"):
+            raise ValueError(
+                f"`mode` must be 'local' or 'client'. Got {mode!r}."
+            )
+        if point_estimate not in ("mean", "median", "mode"):
+            raise ValueError(
+                f"`point_estimate` must be 'mean', 'median' or 'mode'. "
+                f"Got {point_estimate!r}."
+            )
+
+        self.model_id            = model_id
+        self._model              = model
+        self.context_            = None
+        self.context_exog_       = None
+        self.context_length      = context_length
+        self.mode                = mode
+        self.point_estimate      = point_estimate
+        self.tabpfn_model_config = dict(tabpfn_model_config) if tabpfn_model_config else {}
+        self.temporal_features   = temporal_features
+        self.is_fitted           = False
+
+    def get_params(self) -> dict:
+        """
+        Return the adapter's constructor parameters.
+
+        Returns
+        -------
+        params : dict
+            Keys: `model_id`, `context_length`, `mode`, `point_estimate`,
+            `tabpfn_model_config`, `temporal_features`. `tabpfn_model_config`
+            is returned as `None` when no additional config was set (i.e.
+            when the internal dict is empty).
+
+        """
+        return {
+            "model_id":            self.model_id,
+            "context_length":      self.context_length,
+            "mode":                self.mode,
+            "point_estimate":      self.point_estimate,
+            "tabpfn_model_config": self.tabpfn_model_config or None,
+            "temporal_features":   self.temporal_features,
+        }
+
+    def set_params(self, **params) -> TabPFNAdapter:
+        """
+        Set adapter parameters. Resets the model when any parameter changes,
+        since the `TabPFNTSPipeline` is instantiated lazily on the first
+        `predict` call using the current adapter state.
+
+        Parameters
+        ----------
+        **params :
+            Valid keys: `model_id`, `context_length`, `mode`,
+            `point_estimate`, `tabpfn_model_config`, `temporal_features`.
+
+        Returns
+        -------
+        self : TabPFNAdapter
+
+        """
+
+        valid = {
+            "model_id", "context_length", "mode", "point_estimate",
+            "tabpfn_model_config", "temporal_features",
+        }
+        invalid = set(params) - valid
+        if invalid:
+            raise ValueError(
+                f"Invalid parameter(s) for TabPFNAdapter: {sorted(invalid)}. "
+                f"Valid parameters are: {sorted(valid)}."
+            )
+
+        validated = {}
+        for key, value in params.items():
+            if key == "context_length":
+                if not isinstance(value, int) or value < 1:
+                    raise ValueError(
+                        f"`context_length` must be a positive integer. Got {value!r}."
+                    )
+                validated[key] = value
+            elif key == "mode":
+                if value not in ("local", "client"):
+                    raise ValueError(
+                        f"`mode` must be 'local' or 'client'. Got {value!r}."
+                    )
+                validated[key] = value
+            elif key == "point_estimate":
+                if value not in ("mean", "median", "mode"):
+                    raise ValueError(
+                        f"`point_estimate` must be 'mean', 'median' or 'mode'. "
+                        f"Got {value!r}."
+                    )
+                validated[key] = value
+            elif key == "tabpfn_model_config":
+                validated[key] = dict(value) if value else {}
+            else:
+                validated[key] = value
+
+        actually_changed = {
+            k: v for k, v in validated.items()
+            if getattr(self, k) != v
+        }
+        if actually_changed:
+            self._model = None
+            for key, value in actually_changed.items():
+                setattr(self, key, value)
+
+        return self
+
+    def fit(
+        self,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+    ) -> TabPFNAdapter:
+        """
+        Store the training series and optional historical exogenous variables.
+        No model training occurs since TabPFN-TS is a zero-shot inference
+        model.
+
+        All input normalization and validation is performed upstream by
+        `FoundationModel`; this method receives canonical dicts only.
+
+        Parameters
+        ----------
+        context : dict pandas Series
+            Normalized training series, one entry per series.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series historical exogenous variables (past covariates).
+
+        Returns
+        -------
+        self : TabPFNAdapter
+
+        """
+
+        self.context_      = context
+        self.context_exog_ = context_exog
+        self.is_fitted     = True
+
+        return self
+
+    def predict(
+        self,
+        steps: int,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float] | None,
+    ) -> dict[str, np.ndarray]:
+        """
+        Generate predictions using TabPFN-TS.
+
+        All input normalization, validation, and context trimming is
+        performed upstream by `FoundationModel`; this method receives
+        pre-processed dicts only.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        context : dict pandas Series
+            Per-series context windows (already trimmed to
+            `context_length`).
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series past covariates (already trimmed).
+        exog : dict pandas DataFrame, pandas Series, or None
+            Per-series future covariates for the forecast horizon.
+        quantiles : list of float or None
+            Quantile levels to return. If `None`, a point forecast is
+            produced (shape `(steps, 1)`). Accepts any float in `[0, 1]`.
+
+        Returns
+        -------
+        predictions : dict
+            Keys are series names. Each value is a 2-D numpy ndarray of
+            shape `(steps, n_quantiles)`.
+
+        """
+
+        self._load_model()
+
+        quantile_list = list(quantiles) if quantiles is not None else None
+        tabpfn_quantiles = (
+            quantile_list
+            if quantile_list is not None
+            else [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        )
+
+        series_names_in = list(context.keys())
+
+        first_series = next(iter(context.values()))
+        is_datetime = isinstance(first_series.index, pd.DatetimeIndex)
+
+        if not is_datetime:
+            warnings.warn(
+                "TabPFNAdapter received series with a non-DatetimeIndex. "
+                "TabPFN-TS requires datetime timestamps internally; a "
+                "synthetic daily DatetimeIndex (starting 2000-01-01) will be "
+                "used. Calendar-based temporal features (CalendarFeature) "
+                "will not be meaningful for integer-indexed data. Consider "
+                "passing `temporal_features=[]` to disable calendar feature "
+                "transforms.",
+                # stacklevel=3: TabPFNAdapter.predict → FoundationModel.predict → user
+                stacklevel=3,
+            )
+
+        context_df = self._build_context_df(
+                         series_names = series_names_in,
+                         context      = context,
+                         context_exog = context_exog,
+                         is_datetime  = is_datetime
+                     )
+
+        future_df = self._build_future_df(
+                        series_names = series_names_in,
+                        context      = context,
+                        exog         = exog,
+                        steps        = steps,
+                        is_datetime  = is_datetime
+                    )
+
+        result_df = self._model.predict_df(
+                        context_df = context_df,
+                        future_df  = future_df,
+                        quantiles  = tabpfn_quantiles,
+                    )
+
+        # result_df is a DataFrame with MultiIndex (item_id, timestamp).
+        # columns: "target" (str) and quantile levels as float column names.
+        predictions: dict[str, np.ndarray] = {}
+        for name in series_names_in:
+            group = result_df.loc[name]  # DataFrame indexed by timestamp
+            if quantile_list is None:
+                predictions[name] = group["target"].to_numpy().reshape(-1, 1)
+            else:
+                predictions[name] = group[quantile_list].to_numpy()
+
+        return predictions
+
+    def _load_model(self) -> None:
+        """
+        Load the `TabPFNTSPipeline` into `self._model` if not already set.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ImportError
+            If `tabpfn-time-series` is not installed.
+
+        Notes
+        -----
+        The pipeline is imported lazily from `tabpfn_time_series` and
+        instantiated with the current adapter parameters. This method is a
+        no-op when `self._model` is already populated (either by a prior
+        call or by the `model` test-injection parameter).
+        """
+
+        if self._model is not None:
+            return
+        try:
+            from tabpfn_time_series import TabPFNMode, TabPFNTSPipeline
+        except ImportError as exc:
+            raise ImportError(
+                "tabpfn-time-series is required for TabPFNAdapter. "
+                "Install it with `pip install tabpfn-time-series`."
+            ) from exc
+
+        kwargs: dict[str, Any] = {
+            "max_context_length": self.context_length,
+            "tabpfn_mode": (
+                TabPFNMode.LOCAL if self.mode == "local" else TabPFNMode.CLIENT
+            ),
+            "tabpfn_output_selection": self.point_estimate,
+        }
+        if self.tabpfn_model_config:
+            kwargs["tabpfn_model_config"] = self.tabpfn_model_config
+        if self.temporal_features is not None:
+            kwargs["temporal_features"] = self.temporal_features
+
+        self._model = TabPFNTSPipeline(**kwargs)
+
+    def _get_timestamps(
+        self, series: pd.Series, is_datetime: bool
+    ) -> pd.DatetimeIndex:
+        """
+        Return datetime timestamps for a context series.
+
+        For `DatetimeIndex` series the original index is returned. For
+        `RangeIndex` series a synthetic daily `DatetimeIndex` starting at
+        2000-01-01 is created so that TabPFN-TS's requirement for datetime
+        timestamps is satisfied.
+
+        Parameters
+        ----------
+        series : pandas Series
+            The context series.
+        is_datetime : bool
+            Whether the series has a `DatetimeIndex`.
+
+        Returns
+        -------
+        timestamps : pandas DatetimeIndex
+            Datetime timestamps aligned with the series values.
+
+        """
+
+        if is_datetime:
+            return series.index
+
+        return pd.date_range("2000-01-01", periods=len(series), freq="D")
+
+    def _get_future_timestamps(
+        self, series: pd.Series, steps: int, is_datetime: bool
+    ) -> pd.DatetimeIndex:
+        """
+        Return datetime timestamps for the forecast horizon.
+
+        For `DatetimeIndex` series the horizon is appended at the inferred
+        frequency. For `RangeIndex` series the synthetic daily timeline
+        (2000-01-01 + len(context) days) is extended by `steps` days.
+
+        Parameters
+        ----------
+        series : pandas Series
+            The context series (used to determine the end timestamp and
+            frequency).
+        steps : int
+            Number of steps ahead.
+        is_datetime : bool
+            Whether the series has a `DatetimeIndex`.
+
+        Returns
+        -------
+        timestamps : pandas DatetimeIndex
+            Datetime timestamps for the `steps` forecast steps.
+
+        """
+
+        if is_datetime:
+            freq = series.index.freq
+            if freq is None:
+                freq = pd.tseries.frequencies.to_offset(
+                    pd.infer_freq(series.index)
+                )
+            timestamps = pd.date_range(
+                             start   = series.index[-1] + freq,
+                             periods = steps,
+                             freq    = freq,
+                         )
+        else:
+            n = len(series)
+            timestamps = pd.date_range(
+                             start   = pd.Timestamp("2000-01-01") + pd.Timedelta(days=n),
+                             periods = steps,
+                             freq    = "D",
+                         )
+
+        return timestamps
+
+    def _build_context_df(
+        self,
+        series_names: list,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | None] | None,
+        is_datetime: bool,
+    ) -> pd.DataFrame:
+        """
+        Build a long-format context DataFrame expected by TabPFN-TS.
+
+        Each series' observations become rows with `item_id`, `timestamp`,
+        `target`, and optional exogenous covariate columns.
+
+        Parameters
+        ----------
+        series_names : list
+            Ordered list of series names.
+        context : dict pandas Series
+            Per-series context windows.
+        context_exog : dict or None
+            Per-series historical exogenous variables.
+        is_datetime : bool
+            Whether the series have a `DatetimeIndex`.
+
+        Returns
+        -------
+        context_df : pandas DataFrame
+            Long-format DataFrame with columns `item_id`, `timestamp`,
+            `target`, and any exogenous columns.
+
+        """
+
+        context_df = []
+        for name in series_names:
+            series = context[name]
+            n = len(series)
+            part = pd.DataFrame({
+                "item_id":   np.full(n, name),
+                "timestamp": np.asarray(self._get_timestamps(series, is_datetime)),
+                "target":    series.to_numpy(dtype=float),
+            })
+            exog_entry = (
+                context_exog.get(name) if context_exog is not None else None
+            )
+            if exog_entry is not None:
+                part = pd.concat(
+                    [part, exog_entry.reset_index(drop=True)], axis=1
+                )
+            context_df.append(part)
+
+        context_df = pd.concat(context_df, ignore_index=True)
+
+        return context_df
+
+    def _build_future_df(
+        self,
+        series_names: list,
+        context: dict[str, pd.Series],
+        exog: dict[str, pd.DataFrame | None] | None,
+        steps: int,
+        is_datetime: bool,
+    ) -> pd.DataFrame:
+        """
+        Build a long-format future DataFrame expected by TabPFN-TS.
+
+        Each series' forecast horizon becomes rows with `item_id`,
+        `timestamp`, and optional future exogenous covariate columns.
+
+        Parameters
+        ----------
+        series_names : list
+            Ordered list of series names.
+        context : dict pandas Series
+            Per-series context windows (used to derive future timestamps).
+        exog : dict or None
+            Per-series future exogenous variables covering the forecast
+            horizon.
+        steps : int
+            Number of steps ahead.
+        is_datetime : bool
+            Whether the series have a `DatetimeIndex`.
+
+        Returns
+        -------
+        future_df : pandas DataFrame
+            Long-format DataFrame with columns `item_id`, `timestamp`, and
+            any future exogenous columns.
+
+        """
+
+        future_df = []
+        for name in series_names:
+            series = context[name]
+            part = pd.DataFrame({
+                "item_id":   np.full(steps, name),
+                "timestamp": np.asarray(
+                    self._get_future_timestamps(series, steps, is_datetime)
+                ),
+            })
+            future_exog = exog.get(name) if exog is not None else None
+            if future_exog is not None:
+                part = pd.concat(
+                    [part, future_exog.reset_index(drop=True)], axis=1
+                )
+            future_df.append(part)
+
+        future_df = pd.concat(future_df, ignore_index=True)
+
+        return future_df
+
+
 _ADAPTER_REGISTRY: dict[str, type] = {
     "amazon/chronos":    ChronosAdapter,
     "autogluon/chronos": ChronosAdapter,
     "google/timesfm":    TimesFMAdapter,
     "Salesforce/moirai": MoiraiAdapter,
     "soda-inria/tabicl": TabICLAdapter,
+    "priorlabs/tabpfn":  TabPFNAdapter,
     # "ibm/TTM": TTMAdapter,
 }
 

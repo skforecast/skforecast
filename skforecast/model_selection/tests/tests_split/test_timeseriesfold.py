@@ -1549,3 +1549,38 @@ def test_TimeSeriesFold_split_no_refit_gap_allow_incomplete_fold_True_fold_strid
 
     assert out == expected_out
     assert folds == expected
+
+
+@pytest.mark.parametrize(
+    "window_size",
+    [71, 80, 150],
+    ids=lambda ws: f"window_size={ws}"
+)
+def test_TimeSeriesFold_split_window_size_greater_than_initial_train_size(window_size):
+    """
+    Test that when window_size is greater than initial_train_size (e.g. a
+    large context_length for ForecasterFoundation on a short series), the
+    last window is clamped to all available history instead of producing an
+    empty partition (regression test: a small negative iloc start was
+    interpreted as an offset from the end, yielding an empty last window and
+    a TypeError downstream).
+    """
+    y = pd.Series(
+        np.arange(100, dtype=float),
+        index=pd.date_range("2022-01-01", periods=100, freq="D"),
+    )
+    cv = TimeSeriesFold(
+        steps=10,
+        initial_train_size=70,
+        refit=False,
+        window_size=window_size,
+    )
+    folds = cv.split(X=y, as_pandas=False)
+
+    assert len(folds) == 3
+    # Last window of the first fold covers all available history
+    assert folds[0][2] == [0, 70]
+    # Subsequent folds keep at most window_size trailing observations
+    for fold in folds[1:]:
+        lw_start, lw_end = fold[2]
+        assert lw_start == max(0, lw_end - window_size)

@@ -75,6 +75,23 @@ The model is compiled lazily for the exact requested `steps` (up to
 | `tabicl_config`      | dict  | `None`   | Extra kwargs forwarded to `TabICLRegressor` at inference time.                   |
 | `temporal_features`  | list  | `None`   | `TimeTransform` instances applied before inference. `None` = TabICL defaults; `[]` = disable all. |
 
+## TabPFNAdapter — Prior Labs TabPFN-TS
+
+- **`model_id` prefix**: `priorlabs/tabpfn`
+- **`allow_exog`**: `True` (known-future covariates; covariates without
+  future values are discarded by the library)
+- **Quantiles**: any value in `(0, 1)`
+
+| Parameter             | Type  | Default    | Description                                                                      |
+|-----------------------|-------|------------|----------------------------------------------------------------------------------|
+| `model_id`            | str   | —          | Model ID (e.g. `priorlabs/tabpfn-ts`). Used only for adapter resolution.         |
+| `model`               | obj   | `None`     | Pre-instantiated `TabPFNTSPipeline`. If `None`, created lazily on first predict. |
+| `context_length`      | int   | `32768`    | Max historical observations kept as context. Lower (e.g. 4096) for faster inference. |
+| `mode`                | str   | `'local'`  | `'local'` (on-device inference, CUDA > MPS > CPU) or `'client'` (Prior Labs cloud API, no GPU needed). |
+| `point_estimate`      | str   | `'median'` | Ensemble aggregation for the point forecast: `'mean'`, `'median'` or `'mode'`.   |
+| `tabpfn_model_config` | dict  | `None`     | Extra config forwarded to the underlying TabPFN regressor (e.g. `model_path`, `device`). |
+| `temporal_features`   | list  | `None`     | `FeatureGenerator` instances applied before inference. `None` = TabPFN-TS defaults; `[]` = disable all. |
+
 ## Common Behavior
 
 All adapters implement the same minimal interface:
@@ -85,6 +102,7 @@ All adapters implement the same minimal interface:
   name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
 
-Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`) are
-imported **lazily** inside the adapter method that needs them, so only the
-backend for the adapter you actually use needs to be installed.
+Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`,
+`tabpfn-time-series`) are imported **lazily** inside the adapter method that
+needs them, so only the backend for the adapter you actually use needs to be
+installed.

@@ -38,7 +38,7 @@ the complete reference, including:
 - `ForecasterStats` — statistical models (ARIMA, ETS, SARIMAX, ARAR)
 - `ForecasterEquivalentDate` — baseline using past offsets
 - `ForecasterRnn` — deep learning (RNN/LSTM/GRU)
-- `ForecasterFoundation` — zero-shot with foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL)
+- `ForecasterFoundation` — zero-shot with foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS)
 - `FoundationModel` — low-level foundation model wrapper used by `ForecasterFoundation`
 
 ### Forecaster Methods
