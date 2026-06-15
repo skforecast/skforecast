@@ -327,6 +327,7 @@ class ForecasterStats(MultiEstimatorMixin):
 
             "supports_lags": False,
             "supports_window_features": False,
+            "supports_calendar_features": False,
             "supports_transformer_series": True,
             "supports_transformer_exog": True,
             "supports_categorical_features": False,

@@ -18,7 +18,7 @@ from lightgbm import LGBMRegressor
 
 from ....exceptions import DataTransformationWarning
 from ....utils import transform_numpy
-from ....preprocessing import RollingFeatures
+from ....preprocessing import RollingFeatures, CalendarFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
@@ -1226,9 +1226,12 @@ def test_create_predict_X_same_predictions_as_predict():
     the same predictions as predict method when passing to the estimator predict 
     method.
     """
-
+    
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=[5, 5])
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
+    calendar = CalendarFeatures(
+        features=['day_of_week', 'weekend'], encoding="cyclical"
+    )
 
     forecaster = ForecasterRecursiveMultiSeries(
         estimator          = LGBMRegressor(
@@ -1236,6 +1239,7 @@ def test_create_predict_X_same_predictions_as_predict():
         ),
         lags               = [1, 5],
         window_features    = [rolling, rolling_2],
+        calendar_features  = calendar,
         encoding           = 'ordinal',
         dropna_from_series = False,
         transformer_series = None,
@@ -1273,6 +1277,9 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
 
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=[5, 5])
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
+    calendar = CalendarFeatures(
+        features=['month', 'weekend'], encoding="cyclical"
+    )
 
     forecaster = ForecasterRecursiveMultiSeries(
         estimator          = LGBMRegressor(
@@ -1280,6 +1287,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
         ),
         lags               = [1, 5],
         window_features    = [rolling, rolling_2],
+        calendar_features  = calendar,
         encoding           = 'ordinal',
         dropna_from_series = False,
         transformer_series = StandardScaler(),
@@ -1342,6 +1350,9 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff(differen
 
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=[5, 5])
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
+    calendar = CalendarFeatures(
+        features=['month', 'weekend'], encoding="onehot"
+    )
 
     forecaster = ForecasterRecursiveMultiSeries(
         estimator          = LGBMRegressor(
@@ -1349,6 +1360,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff(differen
         ),
         lags               = [1, 5],
         window_features    = [rolling, rolling_2],
+        calendar_features  = calendar,
         encoding           = 'ordinal',
         dropna_from_series = False,
         transformer_series = StandardScaler(),

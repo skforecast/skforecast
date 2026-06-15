@@ -20,8 +20,7 @@ from lightgbm import LGBMRegressor
 
 from copy import deepcopy
 from skforecast.exceptions import IgnoredArgumentWarning
-from skforecast.preprocessing import RollingFeatures
-from skforecast.preprocessing import TimeSeriesDifferentiator
+from skforecast.preprocessing import RollingFeatures, TimeSeriesDifferentiator
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures

@@ -14,7 +14,7 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the calendar feature engineering toolkit (<code>[create_datetime_features]</code>, <code>[DateTimeFeatureTransformer]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the calendar feature engineering toolkit (<code>[create_calendar_features]</code>, <code>[CalendarFeatures]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
 
 + <span class="badge text-bg-api-change">API Change</span> The `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions is now expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`) instead of percentiles in the 0-100 range. Passing percentiles is still supported but deprecated and emits a `FutureWarning`; support will be removed in a future version.
 
@@ -28,7 +28,7 @@ The main changes in this release are:
 
 **Changed**
 
-+ Refactored the calendar feature engineering toolkit (<code>[create_datetime_features]</code>, <code>[DateTimeFeatureTransformer]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
++ Refactored the calendar feature engineering toolkit (<code>[create_calendar_features]</code>, <code>[CalendarFeatures]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
 
 + <code>[calculate_distance_from_holiday]</code> moved from <code>[experimental]</code> to <code>[preprocessing]</code>. The function now accepts a `pandas.Series` or `pandas.DataFrame`, infers the time unit from the index frequency, renames its output columns to `time_to_holiday` and `time_since_holiday`, no longer mutates the input, requires `holiday_column` to be passed explicitly when `X` is a DataFrame, and emits a `UserWarning` while filling with `False` when the holiday column contains NaN values.
 
@@ -1591,8 +1591,8 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [TimeSeriesDifferentiator]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.TimeSeriesDifferentiator
 [QuantileBinner]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.QuantileBinner
 [ConformalIntervalCalibrator]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.ConformalIntervalCalibrator
-[create_datetime_features]: ../api/preprocessing.md#skforecast.preprocessing._calendar.create_datetime_features
-[DateTimeFeatureTransformer]: ../api/preprocessing.md#skforecast.preprocessing._calendar.DateTimeFeatureTransformer
+[create_calendar_features]: ../api/preprocessing.md#skforecast.preprocessing._calendar.create_calendar_features
+[CalendarFeatures]: ../api/preprocessing.md#skforecast.preprocessing._calendar.CalendarFeatures
 [calculate_distance_from_holiday]: ../api/preprocessing.md#skforecast.preprocessing._calendar.calculate_distance_from_holiday
 
 <!-- drift_detection -->

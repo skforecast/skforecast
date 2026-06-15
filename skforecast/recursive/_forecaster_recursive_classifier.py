@@ -61,6 +61,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     window_features : object, list, default None
         Instance or list of instances used to create window features. Window features
         are created from the original time series and are included as predictors.
+        Skforecast provides the `RollingFeatures` class, but a custom object can
+        also be passed as long as it implements the required interface.
     features_encoding : str, default 'auto'
         Encoding method for features derived from the time series (lags and 
         window features that return class values):

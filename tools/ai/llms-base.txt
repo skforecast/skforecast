@@ -40,7 +40,7 @@ skforecast/
 ├── foundation/              # FoundationModel, ForecasterFoundation
 │                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL)
 ├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
-├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, DateTimeFeatureTransformer,
+├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
 ├── model_selection/         # backtesting_forecaster, grid/random/bayesian search, TimeSeriesFold
 ├── feature_selection/       # select_features, select_features_multiseries
@@ -556,8 +556,8 @@ from skforecast.model_selection import OneStepAheadFold
 from skforecast.preprocessing import RollingFeatures
 from skforecast.preprocessing import RollingFeaturesClassification
 from skforecast.preprocessing import TimeSeriesDifferentiator
-from skforecast.preprocessing import DateTimeFeatureTransformer
-from skforecast.preprocessing import create_datetime_features
+from skforecast.preprocessing import CalendarFeatures
+from skforecast.preprocessing import create_calendar_features
 from skforecast.preprocessing import calculate_distance_from_holiday
 from skforecast.preprocessing import QuantileBinner
 from skforecast.preprocessing import ConformalIntervalCalibrator

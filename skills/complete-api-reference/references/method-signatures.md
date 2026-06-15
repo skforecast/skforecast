@@ -931,7 +931,7 @@ TimeSeriesDifferentiator(
     window_size=None         # int | None
 )
 
-DateTimeFeatureTransformer(
+CalendarFeatures(
     features=None,           # list[str] | None, e.g. ['year', 'month', 'day_of_week', 'hour']
     encoding='cyclical',     # 'cyclical' | 'onehot' | None
     max_values=None          # dict[str, int] | None, max values for cyclical encoding

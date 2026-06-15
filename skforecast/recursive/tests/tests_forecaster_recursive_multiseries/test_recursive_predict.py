@@ -10,14 +10,17 @@ from sklearn.linear_model import Ridge
 from sklearn.linear_model import LinearRegression
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
-from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
 from .fixtures_forecaster_recursive_multiseries import (
     series_dict_range,
+    series_dict_dt,
     exog_wide_range,
-    exog_pred_wide_range
+    exog_dict_dt,
+    exog_pred_wide_range,
+    exog_pred_dict_dt
 )
 
 series_2 = pd.DataFrame(
@@ -42,7 +45,7 @@ def test_recursive_predict_output_when_estimator_is_LinearRegression(encoding):
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -80,7 +83,7 @@ def test_recursive_predict_output_when_estimator_is_Ridge_StandardScaler(encodin
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -115,7 +118,7 @@ def test_recursive_predict_output_when_estimator_is_Ridge_StandardScaler_encodin
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -166,7 +169,7 @@ def test_recursive_predict_output_when_with_transform_series_and_transform_exog_
                  )
     forecaster.fit(series=series_dict_range_nan, exog=exog_wide_range)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5, exog=exog_pred_wide_range)
     )
     predictions = forecaster._recursive_predict(
@@ -208,7 +211,7 @@ def test_recursive_predict_output_with_window_features_LGBMRegressor():
                  )
     forecaster.fit(series=series_dict_range, exog=exog_wide_range)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5, exog=exog_pred_wide_range)
     )
     predictions = forecaster._recursive_predict(
@@ -250,7 +253,7 @@ def test_recursive_predict_output_with_window_features_XGBRegressor():
                  )
     forecaster.fit(series=series_dict_range, exog=exog_wide_range)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5, exog=exog_pred_wide_range)
     )
     predictions = forecaster._recursive_predict(
@@ -292,7 +295,7 @@ def test_recursive_predict_output_with_two_window_features():
                  )
     forecaster.fit(series=series_dict_range, exog=exog_wide_range)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=5, exog=exog_pred_wide_range)
     )
     predictions = forecaster._recursive_predict(
@@ -311,3 +314,70 @@ def test_recursive_predict_output_with_two_window_features():
                )
 
     np.testing.assert_array_almost_equal(predictions, expected)
+
+
+def test_recursive_predict_with_exog_window_features_and_calendar_same_as_no_forecaster_calendar():
+    """
+    Test _recursive_predict output with exogenous, window features and calendar features 
+    is the same as when not using calendar_features argument and including calendar 
+    features in exogenous dataframe.
+    """
+
+    exog_dict_dt_calendar = {
+        'l1': exog_dict_dt['l1'].copy(),
+        'l2': exog_dict_dt['l2'].to_frame(),
+    }
+    exog_dict_dt_calendar['l1']['day_of_week'] = exog_dict_dt_calendar['l1'].index.dayofweek
+    exog_dict_dt_calendar['l1']['weekend'] = exog_dict_dt_calendar['l1']['day_of_week'].isin([5, 6]).astype(int)
+    exog_dict_dt_calendar['l2']['day_of_week'] = exog_dict_dt_calendar['l2'].index.dayofweek
+    exog_dict_dt_calendar['l2']['weekend'] = exog_dict_dt_calendar['l2']['day_of_week'].isin([5, 6]).astype(int)
+
+    exog_pred_calendar = {
+        'l1': exog_pred_dict_dt['l1'].copy(),
+        'l2': exog_pred_dict_dt['l2'].to_frame(),
+    }
+    exog_pred_calendar['l1']['day_of_week'] = exog_pred_calendar['l1'].index.dayofweek
+    exog_pred_calendar['l1']['weekend'] = exog_pred_calendar['l1']['day_of_week'].isin([5, 6]).astype(int)
+    exog_pred_calendar['l2']['day_of_week'] = exog_pred_calendar['l2'].index.dayofweek
+    exog_pred_calendar['l2']['weekend'] = exog_pred_calendar['l2']['day_of_week'].isin([5, 6]).astype(int)
+
+    rolling = RollingFeatures(stats=['mean', 'std'], window_sizes=4)
+    calendar = CalendarFeatures(features=['day_of_week', 'weekend'], encoding=None)
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LGBMRegressor(verbose=-1),
+        lags=3,
+        window_features=rolling,
+        calendar_features=calendar
+    )
+    forecaster.fit(series=series_dict_dt, exog=exog_dict_dt)
+
+    forecaster_no_cal = ForecasterRecursiveMultiSeries(
+        LGBMRegressor(verbose=-1),
+        lags=3,
+        window_features=rolling
+    )
+    forecaster_no_cal.fit(series=series_dict_dt, exog=exog_dict_dt_calendar)
+
+    last_window, exog_values_dict, calendar_values, levels, _, _ = (
+        forecaster._create_predict_inputs(steps=10, exog=exog_pred_dict_dt)
+    )
+    last_window_no_cal, exog_values_dict_no_cal, _, levels_no_cal, _, _ = (
+        forecaster_no_cal._create_predict_inputs(steps=10, exog=exog_pred_calendar)
+    )
+
+    predictions = forecaster._recursive_predict(
+                      steps            = 10,
+                      levels           = levels,
+                      last_window      = last_window,
+                      exog_values_dict = exog_values_dict,
+                      calendar_values  = calendar_values
+                  )
+    predictions_no_cal = forecaster_no_cal._recursive_predict(
+                             steps            = 10,
+                             levels           = levels_no_cal,
+                             last_window      = last_window_no_cal,
+                             exog_values_dict = exog_values_dict_no_cal,
+                         )
+
+    np.testing.assert_array_almost_equal(predictions, predictions_no_cal)

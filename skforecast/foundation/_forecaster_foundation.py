@@ -170,6 +170,7 @@ class ForecasterFoundation:
 
             "supports_lags": False,
             "supports_window_features": False,
+            "supports_calendar_features": False,
             "supports_transformer_series": False,
             "supports_transformer_exog": False,
             "supports_categorical_features": True,

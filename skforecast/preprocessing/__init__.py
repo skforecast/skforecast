@@ -11,7 +11,7 @@ from ._preprocessing import (
 )
 
 from ._calendar import (
-    DateTimeFeatureTransformer,
-    create_datetime_features,
+    CalendarFeatures,
+    create_calendar_features,
     calculate_distance_from_holiday
 )

@@ -157,7 +157,7 @@ Once you have chosen a forecaster, follow these steps to get started:
 
 1. **Define your problem**: 1 series → `ForecasterRecursive`; multiple series → `ForecasterRecursiveMultiSeries`
 2. **Choose an estimator**: LightGBM (`LGBMRegressor`) is the best starting point — fast, handles categoricals, good defaults
-3. **Add features**: Use `RollingFeatures` (rolling mean, std, min, max) and `DateTimeFeatureTransformer` or `create_datetime_features` as exogenous variables
+3. **Add features**: Use `RollingFeatures` (rolling mean, std, min, max) and `CalendarFeatures` or `create_calendar_features` as exogenous variables
 4. **Handle non-stationarity**: Use the `differentiation` parameter instead of manual differencing
 5. **Evaluate with backtesting**: `backtesting_forecaster` + `TimeSeriesFold` for realistic multi-step evaluation
 6. **Tune hyperparameters**: `bayesian_search_forecaster` (Optuna-based) — can include `lags` in the search space

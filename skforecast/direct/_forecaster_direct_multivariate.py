@@ -88,6 +88,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     window_features : object, list, default None
         Instance or list of instances used to create window features. Window features
         are created from the original time series and are included as predictors.
+        Skforecast provides the `RollingFeatures` class, but a custom object can
+        also be passed as long as it implements the required interface.
+    calendar_features : object, default None
+        Instance of `CalendarFeatures` used to create calendar features from the
+        datetime index. Calendar features are included as predictors and are
+        generated automatically during both training and prediction. Only supported 
+        when the index of the input data is a `pandas.DatetimeIndex`.
+        **New in version 0.23.0**
     transformer_series : transformer (preprocessor), dict, default `sklearn.preprocessing.StandardScaler`
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and 
@@ -177,6 +185,12 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Names of the classes used to create the window features.
     max_size_window_features : int
         Maximum window size required by the window features.
+    calendar_features : object
+        Instance of `CalendarFeatures` used to create calendar features from the
+        datetime index.
+    calendar_features_names : list
+        Names of the calendar features to extract, taken from the `features`
+        attribute of the `calendar_features` object.
     window_size : int
         The window size needed to create the predictors. It is calculated as the 
         maximum value between `max_lag` and `max_size_window_features`. If 
@@ -255,6 +269,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         `series_names_in_`.
     X_train_window_features_names_out_ : list
         Names of the window features included in the matrix `X_train` created
+        internally for training.
+    X_train_calendar_features_names_out_ : list
+        Names of the calendar features included in the matrix `X_train` created
         internally for training.
     X_train_exog_names_out_ : list
         Names of the exogenous variables included in the matrix `X_train` created
@@ -367,6 +384,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         steps: int,
         lags: int | list[int] | np.ndarray[int] | range[int] | dict[str, int | list] | None = None,
         window_features: object | list[object] | None = None,
+        calendar_features: object | None = None,
         transformer_series: object | dict[str, object] | None = StandardScaler(),
         transformer_exog: object | None = None,
         categorical_features: str | list[str] | None = 'auto',
@@ -379,51 +397,56 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         forecaster_id: str | int | None = None
     ) -> None:
         
-        self.estimator                          = clone(estimator)
-        self.level                              = level
-        self.lags_                              = None
-        self.transformer_series                 = transformer_series
-        self.transformer_series_                = None
-        self.transformer_exog                   = transformer_exog
-        self.categorical_features               = categorical_features
-        self.weight_func                        = weight_func
-        self.source_code_weight_func            = None
-        self.differentiation                    = differentiation
-        self.differentiation_max                = None
-        self.differentiator                     = None
-        self.differentiator_                    = None
-        self.dropna_from_series                 = dropna_from_series
-        self.last_window_                       = None
-        self.index_type_                        = None
-        self.index_freq_                        = None
-        self.training_range_                    = None
-        self.series_names_in_                   = None
-        self.exog_in_                           = False
-        self.exog_names_in_                     = None
-        self.exog_type_in_                      = None
-        self.exog_dtypes_in_                    = None
-        self.exog_dtypes_out_                   = None
-        self.categorical_features_names_in_     = None
-        self.X_train_series_names_in_           = None
-        self.X_train_window_features_names_out_ = None
-        self.X_train_exog_names_out_            = None
-        self.X_train_direct_exog_names_out_     = None
-        self.X_train_features_names_out_        = None
-        self.X_train_direct_features_names_out_ = None
-        self.in_sample_residuals_               = None
-        self.out_sample_residuals_              = None
-        self.in_sample_residuals_by_bin_        = None
-        self.out_sample_residuals_by_bin_       = None
-        self.filter_train_X_y_index_cache_      = {}
-        self.filter_train_X_y_columns_cache_    = {}
-        self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.is_fitted                          = False
-        self.fit_date                           = None
-        self.skforecast_version                 = __version__
-        self.python_version                     = sys.version.split(" ")[0]
-        self.forecaster_id                      = forecaster_id
-        self._probabilistic_mode                = "binned"
-        self.encoding                           = None   # Ignored in this forecaster
+        self.estimator                            = clone(estimator)
+        self.calendar_features                    = (
+            clone(calendar_features) if calendar_features is not None else None
+        )
+        self.calendar_features_names              = getattr(calendar_features, 'features', None)
+        self.level                                = level
+        self.lags_                                = None
+        self.transformer_series                   = transformer_series
+        self.transformer_series_                  = None
+        self.transformer_exog                     = transformer_exog
+        self.categorical_features                 = categorical_features
+        self.weight_func                          = weight_func
+        self.source_code_weight_func              = None
+        self.differentiation                      = differentiation
+        self.differentiation_max                  = None
+        self.differentiator                       = None
+        self.differentiator_                      = None
+        self.dropna_from_series                   = dropna_from_series
+        self.last_window_                         = None
+        self.index_type_                          = None
+        self.index_freq_                          = None
+        self.training_range_                      = None
+        self.series_names_in_                     = None
+        self.exog_in_                             = False
+        self.exog_names_in_                       = None
+        self.exog_type_in_                        = None
+        self.exog_dtypes_in_                      = None
+        self.exog_dtypes_out_                     = None
+        self.categorical_features_names_in_       = None
+        self.X_train_series_names_in_             = None
+        self.X_train_window_features_names_out_   = None
+        self.X_train_calendar_features_names_out_ = None
+        self.X_train_exog_names_out_              = None
+        self.X_train_direct_exog_names_out_       = None
+        self.X_train_features_names_out_          = None
+        self.X_train_direct_features_names_out_   = None
+        self.in_sample_residuals_                 = None
+        self.out_sample_residuals_                = None
+        self.in_sample_residuals_by_bin_          = None
+        self.out_sample_residuals_by_bin_         = None
+        self.filter_train_X_y_index_cache_        = {}
+        self.filter_train_X_y_columns_cache_      = {}
+        self.creation_date                        = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
+        self.is_fitted                            = False
+        self.fit_date                             = None
+        self.skforecast_version                   = __version__
+        self.python_version                       = sys.version.split(" ")[0]
+        self.forecaster_id                        = forecaster_id
+        self._probabilistic_mode                  = "binned"
+        self.encoding                             = None   # Ignored in this forecaster
 
         if not isinstance(level, str):
             raise TypeError(
@@ -581,6 +604,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
             "supports_lags": True,
             "supports_window_features": True,
+            "supports_calendar_features": True,
             "supports_transformer_series": True,
             "supports_transformer_exog": True,
             "supports_categorical_features": True,
@@ -625,6 +649,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             f"Target series (level): {self.level} \n"
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
+            f"Calendar features: {self.calendar_features_names} \n"
             f"Window size: {self.window_size} \n"
             f"Maximum steps to predict: {self.max_step} \n"
             f"Multivariate series: {series_names_in_} \n"
@@ -683,6 +708,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     <li><strong>Target series (level):</strong> {self.level}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
+                    <li><strong>Calendar features:</strong> {self.calendar_features_names}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Maximum steps to predict:</strong> {self.max_step}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>

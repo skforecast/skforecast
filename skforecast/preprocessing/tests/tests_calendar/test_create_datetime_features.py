@@ -1,14 +1,14 @@
-# Unit test create_datetime_features
+# Unit test create_calendar_features
 # ==============================================================================
 import pytest
 import re
 import pandas as pd
 import numpy as np
-from skforecast.preprocessing import create_datetime_features
+from skforecast.preprocessing import create_calendar_features
 from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
-from .fixtures_preprocessing import features_all_onehot
+from ..tests_preprocessing.fixtures_preprocessing import features_all_onehot
 
 if pd.__version__ < '2.2.0':
     freq_h = "H"
@@ -16,28 +16,128 @@ else:
     freq_h = "h"
 
 
-def test_create_datetime_features_invalid_input_type():
+def test_create_calendar_features_invalid_input_type():
     """
-    Test that create_datetime_features raises a ValueError when input is not 
-    a pandas DataFrame or Series.
+    Test that create_calendar_features raises a TypeError when input is not 
+    a pandas DataFrame, Series or DatetimeIndex.
     """
-    with pytest.raises(TypeError, match="Input `X` must be a pandas Series or DataFrame"):
-        create_datetime_features([1, 2, 3])
+    err_msg = re.escape(
+        "Input `X` must be a pandas Series, DataFrame or DatetimeIndex"
+    )
+    with pytest.raises(TypeError, match=err_msg):
+        create_calendar_features([1, 2, 3])
 
 
-def test_create_datetime_features_no_datetime_index():
+def test_create_calendar_features_no_datetime_index():
     """
-    Test that create_datetime_features raises a ValueError when input does not 
+    Test that create_calendar_features raises a ValueError when input does not 
     have a pandas DatetimeIndex index.
     """
     df = pd.DataFrame({"a": [1, 2, 3]})
     with pytest.raises(TypeError, match="Input `X` must have a pandas DatetimeIndex"):
-        create_datetime_features(df, keep_original_columns=False)
+        create_calendar_features(df, keep_original_columns=False)
 
 
-def test_create_datetime_features_invalid_encoding():
+def test_create_calendar_features_empty_datetimeindex_raises():
     """
-    Test that create_datetime_features raises a ValueError when encoding is not 
+    Test that create_calendar_features raises a ValueError when an empty
+    DatetimeIndex is passed.
+    """
+    with pytest.raises(ValueError, match="Cannot fit on empty input."):
+        create_calendar_features(pd.DatetimeIndex([]))
+
+
+@pytest.mark.parametrize(
+    "X",
+    [
+        pd.DataFrame(
+            np.random.rand(5, 3),
+            columns=["col_1", "col_2", "col_3"],
+            index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
+        ),
+        pd.Series(
+            np.random.rand(5),
+            name="y",
+            index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
+        ),
+        pd.date_range(start="2022-01-01", periods=5, freq="D"),
+    ],
+    ids=["dataframe", "series", "datetimeindex"],
+)
+def test_create_calendar_features_output_equivalent_across_input_types(X):
+    """
+    Test that create_calendar_features returns the same output for a DataFrame,
+    a Series and a DatetimeIndex input when keep_original_columns=False.
+    """
+    results = create_calendar_features(
+        X,
+        features=["year", "month", "weekend"],
+        encoding="cyclical",
+        keep_original_columns=False,
+    )
+    expected = pd.DataFrame(
+        {
+            "year": {
+                pd.Timestamp("2022-01-01 00:00:00"): 2022,
+                pd.Timestamp("2022-01-02 00:00:00"): 2022,
+                pd.Timestamp("2022-01-03 00:00:00"): 2022,
+                pd.Timestamp("2022-01-04 00:00:00"): 2022,
+                pd.Timestamp("2022-01-05 00:00:00"): 2022,
+            },
+            "weekend": {
+                pd.Timestamp("2022-01-01 00:00:00"): 1,
+                pd.Timestamp("2022-01-02 00:00:00"): 1,
+                pd.Timestamp("2022-01-03 00:00:00"): 0,
+                pd.Timestamp("2022-01-04 00:00:00"): 0,
+                pd.Timestamp("2022-01-05 00:00:00"): 0,
+            },
+            "month_sin": {
+                pd.Timestamp("2022-01-01 00:00:00"): 0.49999999999999994,
+                pd.Timestamp("2022-01-02 00:00:00"): 0.49999999999999994,
+                pd.Timestamp("2022-01-03 00:00:00"): 0.49999999999999994,
+                pd.Timestamp("2022-01-04 00:00:00"): 0.49999999999999994,
+                pd.Timestamp("2022-01-05 00:00:00"): 0.49999999999999994,
+            },
+            "month_cos": {
+                pd.Timestamp("2022-01-01 00:00:00"): 0.8660254037844387,
+                pd.Timestamp("2022-01-02 00:00:00"): 0.8660254037844387,
+                pd.Timestamp("2022-01-03 00:00:00"): 0.8660254037844387,
+                pd.Timestamp("2022-01-04 00:00:00"): 0.8660254037844387,
+                pd.Timestamp("2022-01-05 00:00:00"): 0.8660254037844387,
+            },
+        }
+    ).asfreq("D").astype(
+        {'year': int, 'weekend': int}
+    )
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_create_calendar_features_datetimeindex_keep_original_columns_ignored():
+    """
+    Test that keep_original_columns has no effect when X is a DatetimeIndex,
+    since there are no original columns to keep. Both True and False produce
+    the same output and neither raises.
+    """
+    index = pd.date_range(start="2022-01-01", periods=3, freq="D")
+
+    results_true = create_calendar_features(
+        index, features=["month"], encoding=None, keep_original_columns=True
+    )
+    results_false = create_calendar_features(
+        index, features=["month"], encoding=None, keep_original_columns=False
+    )
+    expected = pd.DataFrame(
+        {"month": [1, 1, 1]}, index=index
+    ).astype({"month": int})
+
+    pd.testing.assert_frame_equal(results_true, expected)
+    pd.testing.assert_frame_equal(results_false, expected)
+
+
+def test_create_calendar_features_invalid_encoding():
+    """
+    Test that create_calendar_features raises a ValueError when encoding is not 
     one of 'cyclical', 'onehot' or None.
     """
     df = pd.DataFrame(
@@ -49,12 +149,12 @@ def test_create_datetime_features_invalid_encoding():
     with pytest.raises(
         ValueError, match="Encoding must be one of 'cyclical', 'onehot', 'spline' or None"
     ):
-        create_datetime_features(df, encoding="invalid encoding")
+        create_calendar_features(df, encoding="invalid encoding")
 
 
-def test_create_datetime_features_invalid_feature_name():
+def test_create_calendar_features_invalid_feature_name():
     """
-    Test that create_datetime_features raises a ValueError when a feature name is not valid.
+    Test that create_calendar_features raises a ValueError when a feature name is not valid.
     """
     df = pd.DataFrame(
         np.random.rand(5, 3),
@@ -68,12 +168,12 @@ def test_create_datetime_features_invalid_feature_name():
         "'weekend', 'hour', 'minute', 'second', 'quarter']."
     )
     with pytest.raises(ValueError, match=err_msg):
-        create_datetime_features(df, features=["invalid_feature"])
+        create_calendar_features(df, features=["invalid_feature"])
 
 
-def test_create_datetime_features_output_columns_when_cyclical_encoding():
+def test_create_calendar_features_output_columns_when_cyclical_encoding():
     """
-    Test that create_datetime_features returns the expected columns when encoding is 'cyclical'.
+    Test that create_calendar_features returns the expected columns when encoding is 'cyclical'.
     """
     df = pd.DataFrame(
         np.random.rand(5, 3),
@@ -81,7 +181,7 @@ def test_create_datetime_features_output_columns_when_cyclical_encoding():
         index=pd.date_range(start="1/1/2022", end="1/5/2022", freq="D"),
     )
 
-    results = create_datetime_features(df, encoding="cyclical", keep_original_columns=False)
+    results = create_calendar_features(df, encoding="cyclical", keep_original_columns=False)
     expected_features = [
         "year",
         "weekend",
@@ -107,9 +207,9 @@ def test_create_datetime_features_output_columns_when_cyclical_encoding():
     assert len(results) == len(df)
 
 
-def test_create_datetime_features_output_columns_when_onehot_encoding():
+def test_create_calendar_features_output_columns_when_onehot_encoding():
     """
-    Test that create_datetime_features returns the expected columns when encoding is 'onehot'.
+    Test that create_calendar_features returns the expected columns when encoding is 'onehot'.
     """
     index = pd.date_range(start="2021-01-01", end="2023-01-01", freq=freq_h)
     df = pd.DataFrame(
@@ -118,15 +218,15 @@ def test_create_datetime_features_output_columns_when_onehot_encoding():
             index=index,
         )
 
-    results = create_datetime_features(df, encoding="onehot", keep_original_columns=False)
+    results = create_calendar_features(df, encoding="onehot", keep_original_columns=False)
 
     assert list(results.columns) == features_all_onehot
     assert len(results) == len(df)
 
 
-def test_create_datetime_features_output_columns_when_None_encoding():
+def test_create_calendar_features_output_columns_when_None_encoding():
     """
-    Test that create_datetime_features returns the expected columns when encoding is 'None'.
+    Test that create_calendar_features returns the expected columns when encoding is 'None'.
     """
     index = pd.date_range(start="2021-01-01", end="2023-01-01", freq=freq_h)
     df = pd.DataFrame(
@@ -134,7 +234,7 @@ def test_create_datetime_features_output_columns_when_None_encoding():
         columns=["col_1", "col_2", "col_3"],
         index=index,
     )
-    results = create_datetime_features(df, encoding=None, keep_original_columns=False)
+    results = create_calendar_features(df, encoding=None, keep_original_columns=False)
     expected_features = [
         "year",
         "month",
@@ -152,9 +252,9 @@ def test_create_datetime_features_output_columns_when_None_encoding():
     assert len(results) == len(df)
 
 
-def test_create_datetime_features_output_when_features_year_month_encoding_cyclical():
+def test_create_calendar_features_output_when_features_year_month_encoding_cyclical():
     """
-    Test that create_datetime_features returns the expected columns when features
+    Test that create_calendar_features returns the expected columns when features
      is ['year', 'month'] and encoding is 'cyclical'.
     """
     df = pd.DataFrame(
@@ -163,7 +263,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
         index=pd.date_range(start="1/1/2022", end="1/5/2022", freq="D"),
     )
 
-    results = create_datetime_features(
+    results = create_calendar_features(
         df, features=["year", "month", "weekend"], encoding="cyclical", keep_original_columns=False
     )
     expected = pd.DataFrame(
@@ -204,9 +304,9 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_datetime_features_output_when_features_year_month_encoding_onehot():
+def test_create_calendar_features_output_when_features_year_month_encoding_onehot():
     """
-    Test that create_datetime_features returns the expected columns when features
+    Test that create_calendar_features returns the expected columns when features
     is ['year', 'month', 'weekend'] and encoding is 'onehot'. All predefined
     categories must be present even when only January dates are in the data.
     """
@@ -217,7 +317,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_oneho
         index=index,
     )
 
-    results = create_datetime_features(
+    results = create_calendar_features(
         df, features=["year", "month", "weekend"], encoding="onehot", keep_original_columns=False
     )
 
@@ -238,9 +338,9 @@ def test_create_datetime_features_output_when_features_year_month_encoding_oneho
     assert results.shape == (5, 14)
 
 
-def test_create_datetime_features_output_when_features_year_month_encoding_None():
+def test_create_calendar_features_output_when_features_year_month_encoding_None():
     """
-    Test that create_datetime_features returns the expected columns when features
+    Test that create_calendar_features returns the expected columns when features
      is ['year', 'month'] and encoding is None.
     """
     df = pd.DataFrame(
@@ -249,7 +349,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_None(
         index=pd.date_range(start="1/1/2022", end="1/5/2022", freq="D"),
     )
 
-    results = create_datetime_features(
+    results = create_calendar_features(
         df, features=["year", "month", "weekend"], encoding=None, keep_original_columns=False
     )
     expected = pd.DataFrame(
@@ -283,9 +383,9 @@ def test_create_datetime_features_output_when_features_year_month_encoding_None(
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_datetime_features_output_when_features_year_month_encoding_cyclical_and_custom_max_values():
+def test_create_calendar_features_output_when_features_year_month_encoding_cyclical_and_custom_max_values():
     """
-    Test that create_datetime_features returns the expected columns when features
+    Test that create_calendar_features returns the expected columns when features
     is ['year', 'month'] and encoding is 'cyclical' with custom max values.
     """
 
@@ -297,7 +397,7 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
         ),
     )
 
-    results = create_datetime_features(
+    results = create_calendar_features(
         df,
         features=["year", "month", "weekend"],
         encoding="cyclical",
@@ -343,9 +443,9 @@ def test_create_datetime_features_output_when_features_year_month_encoding_cycli
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_datetime_features_invalid_features_to_encode():
+def test_create_calendar_features_invalid_features_to_encode():
     """
-    Test that create_datetime_features raises ValueError when features_to_encode
+    Test that create_calendar_features raises ValueError when features_to_encode
     contains features not present in features list.
     """
     df = pd.DataFrame(
@@ -358,16 +458,16 @@ def test_create_datetime_features_invalid_features_to_encode():
 
     err_msg = re.escape("Features {'invalid_feature'} are not present in `features`.")
     with pytest.raises(ValueError, match=err_msg):
-        create_datetime_features(
+        create_calendar_features(
             df,
             features=["year", "month"],
             features_to_encode=["month", "invalid_feature"]
         )
 
 
-def test_create_datetime_features_features_to_encode_cyclical():
+def test_create_calendar_features_features_to_encode_cyclical():
     """
-    Test that create_datetime_features encodes only features in features_to_encode
+    Test that create_calendar_features encodes only features in features_to_encode
     when using cyclical encoding.
     """
     df = pd.DataFrame(
@@ -375,7 +475,7 @@ def test_create_datetime_features_features_to_encode_cyclical():
         index=pd.DatetimeIndex(["2022-01-31", "2022-02-28"])
     )
 
-    results = create_datetime_features(
+    results = create_calendar_features(
         df,
         features=["month", "hour"],
         features_to_encode=["hour"],
@@ -392,9 +492,9 @@ def test_create_datetime_features_features_to_encode_cyclical():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_datetime_features_features_to_encode_onehot():
+def test_create_calendar_features_features_to_encode_onehot():
     """
-    Test that create_datetime_features encodes only features in features_to_encode
+    Test that create_calendar_features encodes only features in features_to_encode
     when using onehot encoding. All 24 hour columns are always generated even
     though only hours 1 and 2 appear in the data.
     """
@@ -403,7 +503,7 @@ def test_create_datetime_features_features_to_encode_onehot():
         index=pd.DatetimeIndex(["2022-01-01 01:00:00", "2022-02-01 02:00:00"])
     )
 
-    results = create_datetime_features(
+    results = create_calendar_features(
         df,
         features=["month", "hour"],
         features_to_encode=["hour"],
@@ -424,9 +524,9 @@ def test_create_datetime_features_features_to_encode_onehot():
     assert results.shape == (2, 25)
 
 
-def test_create_datetime_features_features_to_encode_spline():
+def test_create_calendar_features_features_to_encode_spline():
     """
-    Test that create_datetime_features encodes only features in features_to_encode
+    Test that create_calendar_features encodes only features in features_to_encode
     when using spline encoding.
     """
     df = pd.DataFrame(
@@ -434,7 +534,7 @@ def test_create_datetime_features_features_to_encode_spline():
         index=pd.DatetimeIndex(["2022-01-01 01:00:00", "2022-02-01 02:00:00"])
     )
 
-    results = create_datetime_features(
+    results = create_calendar_features(
         df,
         features=["month", "hour"],
         features_to_encode=["hour"],
@@ -452,9 +552,9 @@ def test_create_datetime_features_features_to_encode_spline():
     assert len(results.columns) > 1
 
 
-def test_create_datetime_features_keep_original_columns_True_dataframe():
+def test_create_calendar_features_keep_original_columns_True_dataframe():
     """
-    Test that create_datetime_features returns original columns when 
+    Test that create_calendar_features returns original columns when 
     keep_original_columns=True for a DataFrame.
     """
     df = pd.DataFrame(
@@ -462,7 +562,7 @@ def test_create_datetime_features_keep_original_columns_True_dataframe():
         index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
     )
 
-    results = create_datetime_features(
+    results = create_calendar_features(
         df,
         features=["month"],
         encoding=None,
@@ -476,9 +576,9 @@ def test_create_datetime_features_keep_original_columns_True_dataframe():
     assert results["exog_1"].tolist() == [1, 2]
 
 
-def test_create_datetime_features_keep_original_columns_True_series():
+def test_create_calendar_features_keep_original_columns_True_series():
     """
-    Test that create_datetime_features returns original series as a column when 
+    Test that create_calendar_features returns original series as a column when 
     keep_original_columns=True for a Series.
     """
     series = pd.Series(
@@ -487,7 +587,7 @@ def test_create_datetime_features_keep_original_columns_True_series():
         index=pd.DatetimeIndex(["2022-01-01", "2022-02-01"])
     )
 
-    results = create_datetime_features(
+    results = create_calendar_features(
         series,
         features=["month"],
         encoding=None,
@@ -500,9 +600,9 @@ def test_create_datetime_features_keep_original_columns_True_series():
     assert results["target"].tolist() == [1, 2]
 
 
-def test_create_datetime_features_keep_original_columns_True_overlap_error():
+def test_create_calendar_features_keep_original_columns_True_overlap_error():
     """
-    Test that create_datetime_features raises ValueError when keep_original_columns=True
+    Test that create_calendar_features raises ValueError when keep_original_columns=True
     and there is a column name overlap with extracted features.
     """
     df = pd.DataFrame(
@@ -516,7 +616,7 @@ def test_create_datetime_features_keep_original_columns_True_overlap_error():
         "avoid extracting these features."
     )
     with pytest.raises(ValueError, match=err_msg):
-        create_datetime_features(
+        create_calendar_features(
             df,
             features=["month"],
             encoding=None,
@@ -535,7 +635,7 @@ def test_create_datetime_features_keep_original_columns_True_overlap_error():
         "avoid extracting these features."
     )
     with pytest.raises(ValueError, match=err_msg_series):
-        create_datetime_features(
+        create_calendar_features(
             series,
             features=["month"],
             encoding=None,
@@ -543,7 +643,7 @@ def test_create_datetime_features_keep_original_columns_True_overlap_error():
         )
 
 
-def test_create_datetime_features_onehot_single_row_generates_all_columns():
+def test_create_calendar_features_onehot_single_row_generates_all_columns():
     """
     Test that onehot encoding always generates all expected columns even when
     only a single row (or a subset of categories) is present in the input.
@@ -554,7 +654,7 @@ def test_create_datetime_features_onehot_single_row_generates_all_columns():
     index = pd.DatetimeIndex(["2022-01-04"])  # Tuesday
     df = pd.DataFrame({"value": [1.0]}, index=index)
 
-    result = create_datetime_features(
+    result = create_calendar_features(
         df,
         features=["day_of_week"],
         encoding="onehot",
@@ -568,7 +668,7 @@ def test_create_datetime_features_onehot_single_row_generates_all_columns():
     assert len(result) == 1
 
 
-def test_create_datetime_features_onehot_all_columns_present_regardless_of_data():
+def test_create_calendar_features_onehot_all_columns_present_regardless_of_data():
     """
     Test that onehot encoding produces the full set of columns for known-bounded
     features (month, week, day_of_week, day_of_month, day_of_year, hour, minute,
@@ -578,7 +678,7 @@ def test_create_datetime_features_onehot_all_columns_present_regardless_of_data(
     index = pd.date_range(start="2022-01-01", end="2022-01-31", freq="D")
     df = pd.DataFrame({"value": range(len(index))}, index=index)
 
-    result = create_datetime_features(
+    result = create_calendar_features(
         df,
         features=["month", "weekend"],
         encoding="onehot",
@@ -591,7 +691,7 @@ def test_create_datetime_features_onehot_all_columns_present_regardless_of_data(
     assert result["weekend"].dtype == np.dtype("int64")
 
 
-def test_create_datetime_features_onehot_year_and_weekend_never_encoded():
+def test_create_calendar_features_onehot_year_and_weekend_never_encoded():
     """
     Test that year and weekend are never one-hot encoded when encoding='onehot',
     regardless of whether they appear in features_to_encode.
@@ -599,7 +699,7 @@ def test_create_datetime_features_onehot_year_and_weekend_never_encoded():
     index = pd.date_range(start="2022-01-01", periods=7, freq="D")
     df = pd.DataFrame({"value": range(7)}, index=index)
 
-    result = create_datetime_features(
+    result = create_calendar_features(
         df,
         features=["year", "weekend", "month"],
         features_to_encode=["year", "weekend", "month"],
@@ -620,7 +720,7 @@ def test_create_datetime_features_onehot_year_and_weekend_never_encoded():
     assert len(month_cols) == 12
 
 
-def test_create_datetime_features_warns_when_features_to_encode_not_encodable():
+def test_create_calendar_features_warns_when_features_to_encode_not_encodable():
     """
     Test that IgnoredArgumentWarning is raised when features_to_encode contains
     features that cannot be encoded with the chosen encoding (e.g. 'year' with
@@ -634,7 +734,7 @@ def test_create_datetime_features_warns_when_features_to_encode_not_encodable():
         IgnoredArgumentWarning,
         match=r"Features \['year'\] cannot be encoded with encoding='cyclical'",
     ):
-        create_datetime_features(
+        create_calendar_features(
             df,
             features=["year", "month"],
             features_to_encode=["year"],
@@ -643,7 +743,7 @@ def test_create_datetime_features_warns_when_features_to_encode_not_encodable():
         )
 
 
-def test_create_datetime_features_max_values_merge_with_defaults():
+def test_create_calendar_features_max_values_merge_with_defaults():
     """
     Test that user-provided max_values is merged with defaults: keys not in user
     input fall back to defaults, so other cyclical features are still encoded.
@@ -652,7 +752,7 @@ def test_create_datetime_features_max_values_merge_with_defaults():
         {"value": range(5)},
         index=pd.date_range(start="2022-01-01", periods=5, freq="h"),
     )
-    result = create_datetime_features(
+    result = create_calendar_features(
         df,
         features=["month", "hour"],
         encoding="cyclical",
@@ -671,7 +771,7 @@ def test_create_datetime_features_max_values_merge_with_defaults():
     np.testing.assert_allclose(result["hour_sin"].iloc[0], 0.0, atol=1e-12)
 
 
-def test_create_datetime_features_spline_kwargs_blocked_knots_raises():
+def test_create_calendar_features_spline_kwargs_blocked_knots_raises():
     """
     Test that passing 'knots' in spline_kwargs raises ValueError because knots
     are computed internally from max_values.
@@ -684,7 +784,7 @@ def test_create_datetime_features_spline_kwargs_blocked_knots_raises():
         ValueError,
         match=r"Keys \['knots'\] are not allowed in `spline_kwargs`",
     ):
-        create_datetime_features(
+        create_calendar_features(
             df,
             features=["month"],
             encoding="spline",
@@ -693,7 +793,7 @@ def test_create_datetime_features_spline_kwargs_blocked_knots_raises():
         )
 
 
-def test_create_datetime_features_spline_kwargs_blocked_sparse_output_raises():
+def test_create_calendar_features_spline_kwargs_blocked_sparse_output_raises():
     """
     Test that passing 'sparse_output' in spline_kwargs raises ValueError because
     it is incompatible with the DataFrame output.
@@ -706,7 +806,7 @@ def test_create_datetime_features_spline_kwargs_blocked_sparse_output_raises():
         ValueError,
         match=r"Keys \['sparse_output'\] are not allowed in `spline_kwargs`",
     ):
-        create_datetime_features(
+        create_calendar_features(
             df,
             features=["month"],
             encoding="spline",
@@ -715,7 +815,7 @@ def test_create_datetime_features_spline_kwargs_blocked_sparse_output_raises():
         )
 
 
-def test_create_datetime_features_spline_kwargs_unknown_key_raises():
+def test_create_calendar_features_spline_kwargs_unknown_key_raises():
     """
     Test that passing an unknown key (typo) in spline_kwargs raises ValueError
     listing the allowed keys.
@@ -728,7 +828,7 @@ def test_create_datetime_features_spline_kwargs_unknown_key_raises():
         ValueError,
         match=r"Unknown keys in `spline_kwargs`: \['degrees'\]",
     ):
-        create_datetime_features(
+        create_calendar_features(
             df,
             features=["month"],
             encoding="spline",
@@ -737,7 +837,7 @@ def test_create_datetime_features_spline_kwargs_unknown_key_raises():
         )
 
 
-def test_create_datetime_features_spline_kwargs_extrapolation_forwarded():
+def test_create_calendar_features_spline_kwargs_extrapolation_forwarded():
     """
     Test that 'extrapolation' is actually forwarded to SplineTransformer.
     Passing an invalid value should raise from sklearn — proving the kwarg is
@@ -748,7 +848,7 @@ def test_create_datetime_features_spline_kwargs_extrapolation_forwarded():
         index=pd.date_range(start="2022-01-01", periods=5, freq="D"),
     )
     with pytest.raises(ValueError):
-        create_datetime_features(
+        create_calendar_features(
             df,
             features=["month"],
             encoding="spline",
@@ -757,7 +857,7 @@ def test_create_datetime_features_spline_kwargs_extrapolation_forwarded():
         )
 
 
-def test_create_datetime_features_unnamed_series_keep_original_raises():
+def test_create_calendar_features_unnamed_series_keep_original_raises():
     """
     Test that passing an unnamed Series with keep_original_columns=True raises
     ValueError, since pd.concat would otherwise produce a column literally named '0'.
@@ -771,10 +871,10 @@ def test_create_datetime_features_unnamed_series_keep_original_raises():
         ValueError,
         match=r"the input Series must have a name",
     ):
-        create_datetime_features(series, keep_original_columns=True)
+        create_calendar_features(series, keep_original_columns=True)
 
 
-def test_create_datetime_features_unnamed_series_keep_original_false_ok():
+def test_create_calendar_features_unnamed_series_keep_original_false_ok():
     """
     Test that passing an unnamed Series with keep_original_columns=False works
     without error.
@@ -784,7 +884,7 @@ def test_create_datetime_features_unnamed_series_keep_original_false_ok():
         index=pd.date_range(start="2022-01-01", periods=3, freq="D"),
     )
     assert series.name is None
-    result = create_datetime_features(
+    result = create_calendar_features(
         series, features=["month"], encoding=None, keep_original_columns=False
     )
     assert isinstance(result, pd.DataFrame)
@@ -792,7 +892,7 @@ def test_create_datetime_features_unnamed_series_keep_original_false_ok():
     assert "month" in result.columns
 
 
-def test_create_datetime_features_onehot_week_53_and_day_of_year_366():
+def test_create_calendar_features_onehot_week_53_and_day_of_year_366():
     """
     Test that 2020-12-31 (ISO week 53, day-of-year 366 in leap year 2020)
     produces a 1 in the week_53 and day_of_year_366 onehot columns and 0 in
@@ -802,7 +902,7 @@ def test_create_datetime_features_onehot_week_53_and_day_of_year_366():
         {"value": [0]},
         index=pd.DatetimeIndex(["2020-12-31"]),
     )
-    result = create_datetime_features(
+    result = create_calendar_features(
         df,
         features=["week", "day_of_year"],
         encoding="onehot",
@@ -818,7 +918,7 @@ def test_create_datetime_features_onehot_week_53_and_day_of_year_366():
     assert sum(result[c].iloc[0] for c in doy_cols) == 1
 
 
-def test_create_datetime_features_cyclical_uses_period_53_and_366():
+def test_create_calendar_features_cyclical_uses_period_53_and_366():
     """
     Test that cyclical encoding for week and day_of_year uses periods 53 and
     366 respectively. For value=period, sin(2π) must be 0 and cos(2π) must
@@ -830,7 +930,7 @@ def test_create_datetime_features_cyclical_uses_period_53_and_366():
         {"value": [0]},
         index=pd.DatetimeIndex(["2020-12-31"]),
     )
-    result = create_datetime_features(
+    result = create_calendar_features(
         df,
         features=["week", "day_of_year"],
         encoding="cyclical",
@@ -843,7 +943,7 @@ def test_create_datetime_features_cyclical_uses_period_53_and_366():
     np.testing.assert_allclose(result["day_of_year_cos"].iloc[0], 1.0, atol=1e-12)
 
 
-def test_create_datetime_features_onehot_non_leap_year_keeps_max_columns_zero():
+def test_create_calendar_features_onehot_non_leap_year_keeps_max_columns_zero():
     """
     Test that in a non-leap year without ISO week 53 (2022), the columns
     week_53 and day_of_year_366 still exist in the output (categorical
@@ -853,7 +953,7 @@ def test_create_datetime_features_onehot_non_leap_year_keeps_max_columns_zero():
         {"value": range(365)},
         index=pd.date_range(start="2022-01-01", periods=365, freq="D"),
     )
-    result = create_datetime_features(
+    result = create_calendar_features(
         df,
         features=["week", "day_of_year"],
         encoding="onehot",
@@ -865,7 +965,7 @@ def test_create_datetime_features_onehot_non_leap_year_keeps_max_columns_zero():
     assert (result["day_of_year_366"] == 0).all()
 
 
-def test_create_datetime_features_spline_month_12_distinct_from_month_1():
+def test_create_calendar_features_spline_month_12_distinct_from_month_1():
     """
     Regression test for the knot-placement bug. With the old formula
     `linspace(min_val, max_val, n_knots)` the periodic spline period for
@@ -877,7 +977,7 @@ def test_create_datetime_features_spline_month_12_distinct_from_month_1():
         {"value": [1.0, 2.0]},
         index=pd.DatetimeIndex(["2022-01-15", "2022-12-15"]),
     )
-    result = create_datetime_features(
+    result = create_calendar_features(
         df, features=["month"], encoding="spline", keep_original_columns=False
     )
     jan = result.iloc[0].to_numpy()
@@ -888,7 +988,7 @@ def test_create_datetime_features_spline_month_12_distinct_from_month_1():
     )
 
 
-def test_create_datetime_features_spline_week_53_continuity():
+def test_create_calendar_features_spline_week_53_continuity():
     """
     Verify that with the corrected knot placement, week 53 sits between
     week 52 and week 1 in spline space — the cyclical neighborhood is
@@ -902,7 +1002,7 @@ def test_create_datetime_features_spline_week_53_continuity():
         {"value": [1.0, 2.0, 3.0]},
         index=pd.DatetimeIndex(["2020-12-21", "2020-12-28", "2021-01-04"]),
     )
-    result = create_datetime_features(
+    result = create_calendar_features(
         df, features=["week"], encoding="spline", keep_original_columns=False
     )
     week_52 = result.iloc[0].to_numpy()
@@ -926,7 +1026,7 @@ def test_create_datetime_features_spline_week_53_continuity():
     assert dist_53_to_52 < dist_52_to_1
 
 
-def test_create_datetime_features_spline_day_of_year_366_continuity():
+def test_create_calendar_features_spline_day_of_year_366_continuity():
     """
     Verify that with the corrected knot placement, day_of_year 366 sits
     between day 365 and day 1 in spline space — analogous to the week 53
@@ -938,7 +1038,7 @@ def test_create_datetime_features_spline_day_of_year_366_continuity():
         {"value": [1.0, 2.0, 3.0]},
         index=pd.DatetimeIndex(["2020-12-30", "2020-12-31", "2021-01-01"]),
     )
-    result = create_datetime_features(
+    result = create_calendar_features(
         df,
         features=["day_of_year"],
         encoding="spline",
@@ -958,7 +1058,7 @@ def test_create_datetime_features_spline_day_of_year_366_continuity():
     np.testing.assert_allclose(dist_366_to_365, dist_366_to_1, atol=1e-6)
 
 
-def test_create_datetime_features_max_values_unknown_key_warns():
+def test_create_calendar_features_max_values_unknown_key_warns():
     """
     Test that unknown keys in `max_values` (typos like 'mnth' instead of
     'month') trigger an `IgnoredArgumentWarning` listing valid keys, are
@@ -972,7 +1072,7 @@ def test_create_datetime_features_max_values_unknown_key_warns():
         IgnoredArgumentWarning,
         match=r"Unknown keys in `max_values`: \['mnth'\]",
     ):
-        result = create_datetime_features(
+        result = create_calendar_features(
             df,
             features=["month"],
             encoding="cyclical",
@@ -984,7 +1084,7 @@ def test_create_datetime_features_max_values_unknown_key_warns():
     assert "month_cos" in result.columns
 
 
-def test_create_datetime_features_cyclical_respects_features_order():
+def test_create_calendar_features_cyclical_respects_features_order():
     """
     Output cyclical-encoded columns must appear in the order given by
     `features`, not in the internal `_DEFAULT_MAX_VALUES` insertion order.
@@ -996,7 +1096,7 @@ def test_create_datetime_features_cyclical_respects_features_order():
         {"value": [0, 1, 2]},
         index=pd.date_range("2022-01-01", periods=3, freq="h"),
     )
-    result = create_datetime_features(
+    result = create_calendar_features(
         df,
         features=["hour", "month"],
         encoding="cyclical",
@@ -1007,7 +1107,7 @@ def test_create_datetime_features_cyclical_respects_features_order():
     ]
 
 
-def test_create_datetime_features_onehot_respects_features_order():
+def test_create_calendar_features_onehot_respects_features_order():
     """
     Output onehot dummy columns must appear grouped by feature in the order
     given by `features`. `features=['quarter', 'month']` puts quarter
@@ -1018,7 +1118,7 @@ def test_create_datetime_features_onehot_respects_features_order():
         {"value": [0, 1, 2]},
         index=pd.date_range("2022-01-01", periods=3, freq="h"),
     )
-    result = create_datetime_features(
+    result = create_calendar_features(
         df,
         features=["quarter", "month"],
         encoding="onehot",
@@ -1033,7 +1133,7 @@ def test_create_datetime_features_onehot_respects_features_order():
     assert quarter_last < month_first
 
 
-def test_create_datetime_features_spline_respects_features_order():
+def test_create_calendar_features_spline_respects_features_order():
     """
     Output spline-encoded columns must appear grouped by feature in the
     order given by `features`. `features=['hour', 'month']` reverses the
@@ -1043,7 +1143,7 @@ def test_create_datetime_features_spline_respects_features_order():
         {"value": [0, 1, 2]},
         index=pd.date_range("2022-01-01", periods=3, freq="h"),
     )
-    result = create_datetime_features(
+    result = create_calendar_features(
         df,
         features=["hour", "month"],
         encoding="spline",
@@ -1058,7 +1158,7 @@ def test_create_datetime_features_spline_respects_features_order():
     assert hour_last < month_first
 
 
-def test_create_datetime_features_onehot_non_encoded_appear_before_dummies():
+def test_create_calendar_features_onehot_non_encoded_appear_before_dummies():
     """
     With encoding='onehot' and a mix of encodable and non-encodable features,
     non-encoded features (year, weekend) must appear first in `features`
@@ -1069,7 +1169,7 @@ def test_create_datetime_features_onehot_non_encoded_appear_before_dummies():
         {"value": [0, 1, 2]},
         index=pd.date_range("2022-01-01", periods=3, freq="h"),
     )
-    result = create_datetime_features(
+    result = create_calendar_features(
         df,
         features=["month", "year", "hour", "weekend"],
         encoding="onehot",
@@ -1087,7 +1187,7 @@ def test_create_datetime_features_onehot_non_encoded_appear_before_dummies():
     assert month_last < hour_first
 
 
-def test_create_datetime_features_warns_when_max_values_with_onehot():
+def test_create_calendar_features_warns_when_max_values_with_onehot():
     """
     Test that passing `max_values` together with `encoding='onehot'` triggers
     an IgnoredArgumentWarning, since onehot uses the fixed known-category set
@@ -1097,7 +1197,7 @@ def test_create_datetime_features_warns_when_max_values_with_onehot():
     s = pd.Series([1, 2, 3], index=idx, name="y")
 
     with pytest.warns(IgnoredArgumentWarning, match=r"max_values.*onehot"):
-        result = create_datetime_features(
+        result = create_calendar_features(
             s,
             features=["month"],
             encoding="onehot",
@@ -1111,7 +1211,7 @@ def test_create_datetime_features_warns_when_max_values_with_onehot():
     assert len(month_cols) == 12
 
 
-def test_create_datetime_features_no_onehot_warning_with_cyclical_encoding():
+def test_create_calendar_features_no_onehot_warning_with_cyclical_encoding():
     """
     Test that `max_values` with `encoding='cyclical'` does NOT trigger the
     onehot-specific IgnoredArgumentWarning.
@@ -1123,7 +1223,7 @@ def test_create_datetime_features_no_onehot_warning_with_cyclical_encoding():
 
     with _warnings.catch_warnings():
         _warnings.simplefilter("error", IgnoredArgumentWarning)
-        create_datetime_features(
+        create_calendar_features(
             s,
             features=["month"],
             encoding="cyclical",
