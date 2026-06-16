@@ -410,7 +410,7 @@ def test_create_predict_inputs_when_categorical_features_auto_and_explicit_no_tr
     assert results[5] is None
 
 
-def test_create_predict_inputs_when_categorical_features_auto_with_transformer_exog():
+def test_create_predict_inputs_when_calendar_and_categorical_features_auto_with_transformer_exog():
     """
     Test _create_predict_inputs when using internal categorical encoding
     (`categorical_features='auto'`) together with `transformer_exog`

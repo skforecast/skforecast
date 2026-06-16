@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from skforecast.direct import ForecasterDirect
 
 
@@ -432,3 +432,51 @@ def test_filter_train_X_y_for_step_output_when_no_nans_unchanged():
 
     pd.testing.assert_frame_equal(X_step, expected_X)
     pd.testing.assert_series_equal(y_step, expected_y)
+
+
+def test_filter_train_X_y_for_step_with_calendar_features_same_as_exog():
+    """
+    Test that filter_train_X_y_for_step produces the same training matrices
+    when calendar features are created within the forecaster (calendar_features)
+    as when they are manually created and passed as exogenous variables.
+    `encoding=None` is used in CalendarFeatures so the column order is preserved.
+    """
+    y_datetime = pd.Series(
+        np.arange(15), index=pd.date_range('2000-01-01', periods=15, freq='D'),
+        name='y', dtype=float
+    )
+    exog_datetime = pd.Series(
+        np.arange(100, 115), index=pd.date_range('2000-01-01', periods=15, freq='D'),
+        name='exog', dtype=float
+    )
+
+    exog_calendar = exog_datetime.to_frame()
+    exog_calendar['day_of_week'] = exog_calendar.index.dayofweek.astype(float)
+    exog_calendar['weekend'] = exog_calendar['day_of_week'].isin([5, 6]).astype(float)
+
+    rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[5, 6])
+    calendar = CalendarFeatures(features=['day_of_week', 'weekend'], encoding=None)
+
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), steps=2, lags=5,
+        window_features=rolling, calendar_features=calendar
+    )
+    X_train, y_train = forecaster.create_train_X_y(y=y_datetime, exog=exog_datetime)
+
+    forecaster_no_cal = ForecasterDirect(
+        estimator=LinearRegression(), steps=2, lags=5, window_features=rolling
+    )
+    X_train_no_cal, y_train_no_cal = forecaster_no_cal.create_train_X_y(
+        y=y_datetime, exog=exog_calendar
+    )
+
+    for step in [1, 2]:
+        results = forecaster.filter_train_X_y_for_step(
+            step=step, X_train=X_train, y_train=y_train
+        )
+        results_no_cal = forecaster_no_cal.filter_train_X_y_for_step(
+            step=step, X_train=X_train_no_cal, y_train=y_train_no_cal
+        )
+
+        pd.testing.assert_frame_equal(results[0], results_no_cal[0])
+        pd.testing.assert_series_equal(results[1], results_no_cal[1])

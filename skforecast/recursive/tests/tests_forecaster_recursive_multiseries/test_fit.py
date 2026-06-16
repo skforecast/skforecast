@@ -15,14 +15,16 @@ from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
 
 from skforecast.exceptions import MissingExogWarning
-from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
 from .fixtures_forecaster_recursive_multiseries import (
     series_wide_range,
     series_dict_range,
+    series_dict_dt,
     exog_wide_range,
+    exog_wide_dt,
     exog_dict_range
 )
 
@@ -111,13 +113,18 @@ def test_forecaster_series_exog_features_stored():
     """
     Test forecaster stores series and exog features after fitting.
     """
+
     rolling = RollingFeatures(
         stats=['ratio_min_max', 'median'], window_sizes=4
     )
-    forecaster = ForecasterRecursiveMultiSeries(
-        LinearRegression(), lags=3, window_features=rolling, transformer_exog=transformer_exog
+    calendar = CalendarFeatures(
+        features=['day_of_week', 'weekend'], encoding="cyclical"
     )
-    forecaster.fit(series=series_dict_range, exog=exog_wide_range)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, window_features=rolling, 
+        calendar_features=calendar, transformer_exog=transformer_exog
+    )
+    forecaster.fit(series=series_dict_dt, exog=exog_wide_dt)
 
     series_names_in_ = ['l1', 'l2']
     exog_in_ = True
@@ -136,10 +143,12 @@ def test_forecaster_series_exog_features_stored():
     categorical_features_names_in_ = []
     X_train_series_names_in_ = ['l1', 'l2']
     X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
+    X_train_calendar_features_names_out_ = ['weekend', 'day_of_week_sin', 'day_of_week_cos']
     X_train_exog_names_out_ = ['exog_1', 'exog_2_a', 'exog_2_b']
     X_train_features_names_out_ = [
         'lag_1', 'lag_2', 'lag_3', 'roll_ratio_min_max_4', 'roll_median_4', 
-        '_level_skforecast', 'exog_1', 'exog_2_a', 'exog_2_b'
+        '_level_skforecast', 'exog_1', 'exog_2_a', 'exog_2_b', 
+        'weekend', 'day_of_week_sin', 'day_of_week_cos'
     ]
     
     assert forecaster.series_names_in_ == series_names_in_
@@ -151,6 +160,7 @@ def test_forecaster_series_exog_features_stored():
     assert forecaster.categorical_features_names_in_ == categorical_features_names_in_
     assert forecaster.X_train_series_names_in_ == X_train_series_names_in_
     assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
+    assert forecaster.X_train_calendar_features_names_out_ == X_train_calendar_features_names_out_
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
     assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
 

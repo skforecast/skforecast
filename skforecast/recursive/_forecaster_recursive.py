@@ -956,6 +956,15 @@ class ForecasterRecursive(ForecasterBase):
             X_train_calendar_features_names_out_ = self.calendar_features.feature_names_out_
             X_train_features_names_out_.extend(X_train_calendar_features_names_out_)
 
+        if len(X_train_features_names_out_) != len(set(X_train_features_names_out_)):
+            duplicated_names = [
+                name for name in set(X_train_features_names_out_)
+                if X_train_features_names_out_.count(name) > 1
+            ]
+            raise ValueError(
+                f"Duplicated feature names detected in X_train: {duplicated_names}."
+            )
+
         if len(X_train) == 1:
             X_train = X_train[0]
         else:
@@ -1019,10 +1028,12 @@ class ForecasterRecursive(ForecasterBase):
             exog_dtypes_out_
         )
     
+    @manage_warnings
     def create_train_X_y(
         self,
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
+        suppress_warnings: bool = False
     ) -> tuple[pd.DataFrame, pd.Series]:
         """
         Create training matrices from univariate time series and exogenous
@@ -1035,6 +1046,10 @@ class ForecasterRecursive(ForecasterBase):
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `y` and their indexes must be aligned.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the creation
+            of the training matrices. See skforecast.exceptions.warn_skforecast_categories 
+            for more information.
 
         Returns
         -------
@@ -2831,11 +2846,13 @@ class ForecasterRecursive(ForecasterBase):
 
         self.fit_kwargs = check_select_fit_kwargs(self.estimator, fit_kwargs=fit_kwargs)
 
+    @manage_warnings
     def set_in_sample_residuals(
         self,
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> None:
         """
         Set in-sample residuals in case they were not calculated during the
@@ -2868,6 +2885,10 @@ class ForecasterRecursive(ForecasterBase):
             that y[i] is regressed on exog[i].
         random_state : int, default 123
             Sets a seed to the random sampling for reproducible output.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the sampling 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------

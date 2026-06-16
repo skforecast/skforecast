@@ -1417,6 +1417,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             X_train = X_train[0]
 
+        X_train_features_names_out_ = X_train.columns.to_list()
+        if len(X_train_features_names_out_) != len(set(X_train_features_names_out_)):
+            duplicated_names = [
+                name for name in set(X_train_features_names_out_)
+                if X_train_features_names_out_.count(name) > 1
+            ]
+            raise ValueError(
+                f"Duplicated feature names detected in X_train: {duplicated_names}."
+            )
+
         if y_train.isna().to_numpy().any():
             mask = y_train.notna().to_numpy()
             y_train = y_train.iloc[mask]

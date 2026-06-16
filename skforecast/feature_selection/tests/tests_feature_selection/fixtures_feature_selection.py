@@ -770,3 +770,13 @@ exog_multiseries = pd.DataFrame({
           0.76451127,  0.37253453,  0.37938831,  0.12500821,  0.30680189])
      ),
 })
+
+# Multi-series fixtures with a DatetimeIndex for calendar feature selection tests
+series_wide_datetime = pd.DataFrame(
+    {
+        'l1': y_feature_selection.to_numpy(),
+        'l2': np.roll(y_feature_selection.to_numpy(), 7),
+    },
+    index = pd.date_range(start='2020-01-01', periods=500, freq=freq)
+)
+series_dict_datetime = series_wide_datetime.copy().to_dict(orient='series')
