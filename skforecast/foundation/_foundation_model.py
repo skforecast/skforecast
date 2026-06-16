@@ -58,12 +58,17 @@ class FoundationModel:
 
         - `'soda-inria/tabicl'`
 
+        The Forecasting Company T0 (supports `exog`):
+
+        - `'theforecastingcompany/t0-alpha'`
+
         See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
         Valid keys depend on the adapter selected by `model_id`. See the
         corresponding adapter class (`ChronosAdapter`, `TimesFMAdapter`,
-        `MoiraiAdapter`, `TabICLAdapter`) for the full parameter list, or
+        `MoiraiAdapter`, `TabICLAdapter`, `T0Adapter`) for the full
+        parameter list, or
         refer to the model documentation linked in the References section
         below.
 
@@ -155,6 +160,12 @@ class FoundationModel:
 
     .. [8] TabICL - Documentation.
            https://tabicl.readthedocs.io/en/latest/
+
+    .. [9] The Forecasting Company T0 - GitHub repository.
+           https://github.com/theforecastingcompany/tfc-t0
+
+    .. [10] The Forecasting Company T0 - HuggingFace model card.
+           https://huggingface.co/theforecastingcompany/t0-alpha
 
     """
 

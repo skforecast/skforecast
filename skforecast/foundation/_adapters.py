@@ -1854,12 +1854,418 @@ class TabICLAdapter:
         return future_df
 
 
+class T0Adapter:
+    """
+    Adapter for The Forecasting Company T0 foundation models.
+
+    Parameters
+    ----------
+    model_id : str
+        HuggingFace model ID, e.g. "theforecastingcompany/t0-alpha".
+    model : T0Forecaster, default None
+        Pre-loaded model instance. If `None`, the model is loaded lazily
+        on the first call to `predict`.
+    context_length : int, default 8192
+        Maximum number of historical observations to use as context. At fit
+        time only the last `context_length` observations are stored. At
+        predict time, if `context` is longer than `context_length` it is
+        trimmed to this length; if it is shorter, all available observations
+        are used as-is. Must be a positive integer.
+    device_map : str, default 'auto'
+        Device placement for the model. `"auto"` selects the best
+        available accelerator (CUDA > MPS > CPU). Also accepts explicit
+        values such as `"cuda"`, `"mps"`, or `"cpu"`.
+    torch_dtype : object, default None
+        Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).
+        When `None` the model keeps its default `float32` weights.
+
+    Attributes
+    ----------
+    model_id : str
+        HuggingFace model ID.
+    context_ : dict
+        Stored training series after fitting.
+    context_exog_ : dict
+        Stored historical exogenous variables after fitting.
+    context_length : int
+        Maximum number of historical observations used as context.
+    device_map : str
+        Device map string for model loading.
+    torch_dtype : object
+        Torch dtype for model loading.
+    is_fitted : bool
+        Whether the adapter has been fitted.
+
+    Notes
+    -----
+    T0 conditions on covariates that are known over both the context and the
+    forecast horizon (future-known covariates). skforecast exogenous variables
+    map exactly onto this channel: their historical values (`context_exog`,
+    aligned to the context) are concatenated with their future values (`exog`,
+    aligned to the horizon) to form the `[context + horizon]` covariate stream
+    that T0 expects. Covariates must be numeric; encode categoricals as numbers
+    before passing them. A series with no future exog is forecast without
+    covariates.
+
+    References
+    ----------
+    .. [1] https://huggingface.co/theforecastingcompany/t0-alpha
+    .. [2] https://github.com/theforecastingcompany/tfc-t0
+
+    """
+
+    allow_exog: bool = True
+
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        model: Any | None = None,
+        context_length: int = 8192,
+        device_map: str = "auto",
+        torch_dtype: Any | None = None,
+    ) -> None:
+        """
+        Initialise the adapter.
+
+        Parameters
+        ----------
+        model_id : str
+            HuggingFace model ID, e.g. "theforecastingcompany/t0-alpha".
+        model : T0Forecaster, default None
+            Pre-loaded model instance. If `None`, the model is loaded
+            lazily on the first call to `predict`.
+        context_length : int, default 8192
+            Maximum number of historical observations to retain as context.
+            At `fit` time only the last `context_length` observations of
+            `series` (and `exog`) are stored. At `predict` time, if `context`
+            is longer than `context_length` it is trimmed to this length
+            before inference; if it is shorter, all available observations
+            are passed as-is. Must be a positive integer.
+        device_map : str, default 'auto'
+            Device placement for the model. `"auto"` selects the best
+            available accelerator (CUDA > MPS > CPU). Also accepts explicit
+            values such as `"cuda"`, `"mps"`, or `"cpu"`.
+        torch_dtype : object, default None
+            Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).
+            When `None` the model keeps its default `float32` weights.
+
+        """
+
+        if not isinstance(context_length, int) or context_length < 1:
+            raise ValueError(
+                f"`context_length` must be a positive integer. Got {context_length!r}."
+            )
+
+        self.model_id       = model_id
+        self._model         = model
+        self.context_       = None
+        self.context_exog_  = None
+        self.context_length = context_length
+        self.device_map     = device_map
+        self.torch_dtype    = torch_dtype
+        self.is_fitted      = False
+
+    def get_params(self) -> dict:
+        """
+        Return the adapter's constructor parameters.
+
+        Returns
+        -------
+        params : dict
+            Keys: `model_id`, `context_length`, `device_map`, `torch_dtype`.
+
+        """
+        return {
+            'model_id':       self.model_id,
+            'context_length': self.context_length,
+            'device_map':     self.device_map,
+            'torch_dtype':    self.torch_dtype,
+        }
+
+    def set_params(self, **params) -> T0Adapter:
+        """
+        Set adapter parameters. Resets the model when a device, dtype, or
+        model_id param changes, since those are baked into the loaded model.
+
+        Parameters
+        ----------
+        **params :
+            Valid keys: `model_id`, `context_length`, `device_map`,
+            `torch_dtype`.
+
+        Returns
+        -------
+        self : T0Adapter
+
+        """
+
+        valid = {'model_id', 'context_length', 'device_map', 'torch_dtype'}
+        invalid = set(params) - valid
+        if invalid:
+            raise ValueError(
+                f"Invalid parameter(s) for T0Adapter: {sorted(invalid)}. "
+                f"Valid parameters are: {sorted(valid)}."
+            )
+
+        model_reset_keys = {'model_id', 'device_map', 'torch_dtype'}
+        if params.keys() & model_reset_keys:
+            self._model = None
+
+        for key, value in params.items():
+            if key == 'context_length':
+                if not isinstance(value, int) or value < 1:
+                    raise ValueError(
+                        f"`context_length` must be a positive integer. Got {value!r}."
+                    )
+                self.context_length = value
+            else:
+                setattr(self, key, value)
+
+        return self
+
+    def fit(
+        self,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+    ) -> T0Adapter:
+        """
+        Store the training series and optional historical exogenous variables.
+        No model training occurs since T0 is a zero-shot inference model.
+
+        All input normalization and validation is performed upstream by
+        `FoundationModel`; this method receives canonical dicts only.
+
+        Parameters
+        ----------
+        context : dict pandas Series
+            Normalized training series, one entry per series.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series historical exogenous variables (past covariates).
+
+        Returns
+        -------
+        self : T0Adapter
+
+        """
+
+        self.context_ = context
+        self.context_exog_ = context_exog
+        self.is_fitted = True
+
+        return self
+
+    def predict(
+        self,
+        steps: int,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        exog: dict[str, pd.DataFrame | pd.Series | None],
+        quantiles: list[float] | tuple[float] | None
+    ) -> dict[str, np.ndarray]:
+        """
+        Generate predictions using the T0 model.
+
+        All input normalization, validation, and context trimming is
+        performed upstream by `FoundationModel`; this method receives
+        pre-processed dicts only.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        context : dict
+            Per-series context windows (already trimmed to `context_length`).
+        context_exog : dict
+            Per-series past covariates (already trimmed).
+        exog : dict
+            Per-series future covariates for the forecast horizon.
+        quantiles : list of float or None
+            Quantile levels to return, in the requested order. If `None`, a
+            point forecast (median, quantile 0.5) is produced.
+
+        Returns
+        -------
+        predictions : dict
+            Keys are series names. Each value is a 2-D array of shape
+            `(steps, n_quantiles)` with columns ordered to match `quantiles`.
+
+        """
+
+        # NOTE: the model is loaded lazily here so that the adapter can be
+        # instantiated and fitted without requiring tfc-t0 to be installed.
+        self._load_model()
+
+        requested = list(quantiles) if quantiles is not None else [0.5]
+        # T0 requires sorted, unique levels in (0, 1); query those, then
+        # reindex the columns back to the order the caller asked for.
+        query_levels = sorted(set(requested))
+
+        predictions: dict[str, np.ndarray] = {}
+        for name in context:
+            context_array = np.asarray(context[name].to_numpy(), dtype=np.float32)
+            future_covariates = self._build_future_covariates(
+                context_exog = context_exog[name] if context_exog is not None else None,
+                exog         = exog[name] if exog is not None else None,
+                context_length = context_array.shape[0],
+                steps        = steps,
+            )
+
+            forecast = self._model.predict(
+                context           = context_array[np.newaxis, :],
+                horizon           = steps,
+                quantiles         = query_levels,
+                future_covariates = future_covariates,
+            )
+
+            q_arr = forecast.quantiles[0]
+            if hasattr(q_arr, "detach"):
+                q_arr = q_arr.detach().cpu().numpy()
+            else:
+                q_arr = np.asarray(q_arr)
+
+            column_for = [query_levels.index(q) for q in requested]
+            predictions[name] = q_arr[:, column_for]
+
+        return predictions
+
+    def _load_model(self) -> None:
+        """
+        Load the T0 model into `self._model` if not already set.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ImportError
+            If `tfc-t0` is not installed.
+
+        Notes
+        -----
+        The model is imported lazily from `t0` and loaded via
+        `T0Forecaster.from_pretrained`, then moved to the resolved device and
+        switched to eval mode. This method is a no-op when `self._model` is
+        already populated.
+
+        """
+
+        if self._model is not None:
+            return
+        try:
+            from t0 import T0Forecaster
+        except ImportError as exc:
+            raise ImportError(
+                "tfc-t0 is required for T0Adapter. "
+                "Install it with `pip install tfc-t0`."
+            ) from exc
+
+        device = _resolve_torch_device(self.device_map)
+        model = T0Forecaster.from_pretrained(self.model_id).to(device)
+        if self.torch_dtype is not None:
+            model = model.to(self.torch_dtype)
+        self._model = model.eval()
+
+    def _build_future_covariates(
+        self,
+        context_exog: pd.DataFrame | pd.Series | None,
+        exog: pd.DataFrame | pd.Series | None,
+        context_length: int,
+        steps: int,
+    ) -> np.ndarray | None:
+        """
+        Assemble T0's `[1, n_covariates, context_length + steps]` covariate
+        array from past and future exogenous values.
+
+        For each future exog column the historical values (from `context_exog`,
+        aligned to the context) are concatenated with the future values (from
+        `exog`, covering the horizon). Columns present only in `exog` have
+        their context portion filled with NaN, which T0 treats as missing.
+
+        Parameters
+        ----------
+        context_exog : pandas DataFrame, pandas Series, default None
+            Historical exogenous values aligned to the context window.
+        exog : pandas DataFrame, pandas Series, default None
+            Future-known exogenous values covering the forecast horizon. Must
+            have exactly `steps` rows.
+        context_length : int
+            Length of the context window the covariates are aligned to.
+        steps : int
+            Number of forecast steps.
+
+        Returns
+        -------
+        future_covariates : numpy ndarray or None
+            Array of shape `(1, n_covariates, context_length + steps)`, or
+            `None` when no future exog is provided.
+
+        """
+
+        if exog is None:
+            return None
+
+        future_df = exog if isinstance(exog, pd.DataFrame) else exog.to_frame()
+        past_df = None
+        if context_exog is not None:
+            past_df = (
+                context_exog
+                if isinstance(context_exog, pd.DataFrame)
+                else context_exog.to_frame()
+            )
+
+        covariates = []
+        for col in future_df.columns:
+            future_values = self._to_float_array(future_df[col])
+            if past_df is not None and col in past_df.columns:
+                past_values = self._to_float_array(past_df[col])
+            else:
+                past_values = np.full(context_length, np.nan, dtype=np.float32)
+            covariates.append(np.concatenate([past_values, future_values]))
+
+        return np.stack(covariates)[np.newaxis, ...]
+
+    @staticmethod
+    def _to_float_array(col_data: pd.Series) -> np.ndarray:
+        """
+        Convert a numeric or boolean covariate column to a `float32` array.
+
+        Parameters
+        ----------
+        col_data : pandas Series
+            A single covariate column.
+
+        Returns
+        -------
+        col_array : numpy ndarray
+            1-D `float32` array.
+
+        Raises
+        ------
+        ValueError
+            If the column is neither numeric nor boolean. T0 only conditions
+            on numeric covariates; categoricals must be encoded as numbers.
+
+        """
+
+        if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
+            return col_data.astype(np.float32).to_numpy()
+
+        raise ValueError(
+            f"T0Adapter supports only numeric covariates. Column "
+            f"{col_data.name!r} has dtype {col_data.dtype}. Encode categorical "
+            f"covariates as numeric values before passing them."
+        )
+
+
 _ADAPTER_REGISTRY: dict[str, type] = {
     "amazon/chronos":    ChronosAdapter,
     "autogluon/chronos": ChronosAdapter,
     "google/timesfm":    TimesFMAdapter,
     "Salesforce/moirai": MoiraiAdapter,
     "soda-inria/tabicl": TabICLAdapter,
+    "theforecastingcompany/t0": T0Adapter,
     # "ibm/TTM": TTMAdapter,
 }
 

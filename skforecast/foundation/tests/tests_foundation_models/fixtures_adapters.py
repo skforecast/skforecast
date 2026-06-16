@@ -249,6 +249,48 @@ def prepare_predict_args(adapter, steps, context=None, context_exog=None,
     return ctx, ctx_exog, future_exog
 
 
+# Fake T0 forecast / model
+# ==============================================================================
+class FakeT0Forecast:
+    """
+    Fake ``t0.Forecast`` returned by ``FakeT0Forecaster.predict``.
+
+    ``quantiles`` has shape ``(B, horizon, Q)`` and every entry on the last
+    axis equals its quantile level, making column-order assertions trivial.
+    """
+
+    def __init__(self, horizon, quantiles):
+        q_values = np.array(quantiles, dtype=float)
+        self.quantiles = np.broadcast_to(
+            q_values, (1, horizon, len(quantiles))
+        ).copy()
+        self.quantile_levels = tuple(quantiles)
+
+
+class FakeT0Forecaster:
+    """
+    Fake ``t0.T0Forecaster`` for testing without torch/tfc-t0.
+
+    Records the last call arguments (notably ``future_covariates``) for
+    inspection and returns a `FakeT0Forecast`.
+    """
+
+    def __init__(self):
+        self.last_context = None
+        self.last_horizon = None
+        self.last_quantiles = None
+        self.last_future_covariates = None
+
+    def predict(self, context, horizon, quantiles, future_covariates=None):
+        self.last_context = np.asarray(context)
+        self.last_horizon = horizon
+        self.last_quantiles = list(quantiles)
+        self.last_future_covariates = (
+            None if future_covariates is None else np.asarray(future_covariates)
+        )
+        return FakeT0Forecast(horizon, quantiles)
+
+
 # Fake TabICL forecaster
 # ==============================================================================
 class FakeTabICLForecaster:
