@@ -1909,8 +1909,8 @@ class T0Adapter:
 
     References
     ----------
-    .. [1] https://huggingface.co/theforecastingcompany/t0-alpha
-    .. [2] https://github.com/theforecastingcompany/tfc-t0
+    .. [1] https://github.com/theforecastingcompany/tfc-t0
+    .. [2] https://huggingface.co/theforecastingcompany/t0-alpha
 
     """
 
@@ -2101,33 +2101,42 @@ class T0Adapter:
         # reindex the columns back to the order the caller asked for.
         query_levels = sorted(set(requested))
 
-        predictions: dict[str, np.ndarray] = {}
-        for name in context:
-            context_array = np.asarray(context[name].to_numpy(), dtype=np.float32)
-            future_covariates = self._build_future_covariates(
-                context_exog = context_exog[name] if context_exog is not None else None,
-                exog         = exog[name] if exog is not None else None,
-                context_length = context_array.shape[0],
-                steps        = steps,
-            )
+        series_names = list(context.keys())
+        arrays = [np.asarray(context[name].to_numpy(), dtype=np.float32) for name in series_names]
+        lengths = [a.shape[0] for a in arrays]
+        context_length = max(lengths)
 
-            forecast = self._model.predict(
-                context           = context_array[np.newaxis, :],
-                horizon           = steps,
-                quantiles         = query_levels,
-                future_covariates = future_covariates,
-            )
+        # All series are forecast in a single batched call. Series shorter than
+        # the longest are left-padded with NaN, which T0 treats as MISSING; the
+        # forecast origin therefore aligns at the end of the window for every
+        # series.
+        context_batch = np.full((len(series_names), context_length), np.nan, dtype=np.float32)
+        for row, array in zip(context_batch, arrays):
+            row[context_length - array.shape[0]:] = array
 
-            q_arr = forecast.quantiles[0]
-            if hasattr(q_arr, "detach"):
-                q_arr = q_arr.detach().cpu().numpy()
-            else:
-                q_arr = np.asarray(q_arr)
+        future_covariates = self._build_future_covariates(
+            series_names   = series_names,
+            context_exog   = context_exog,
+            exog           = exog,
+            context_length = context_length,
+            steps          = steps,
+        )
 
-            column_for = [query_levels.index(q) for q in requested]
-            predictions[name] = q_arr[:, column_for]
+        forecast = self._model.predict(
+            context           = context_batch,
+            horizon           = steps,
+            quantiles         = query_levels,
+            future_covariates = future_covariates,
+        )
 
-        return predictions
+        q_arr = forecast.quantiles
+        if hasattr(q_arr, "detach"):
+            q_arr = q_arr.detach().cpu().numpy()
+        else:
+            q_arr = np.asarray(q_arr)
+
+        column_for = [query_levels.index(q) for q in requested]
+        return {name: q_arr[i][:, column_for] for i, name in enumerate(series_names)}
 
     def _load_model(self) -> None:
         """
@@ -2169,62 +2178,83 @@ class T0Adapter:
 
     def _build_future_covariates(
         self,
-        context_exog: pd.DataFrame | pd.Series | None,
-        exog: pd.DataFrame | pd.Series | None,
+        series_names: list[str],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         context_length: int,
         steps: int,
     ) -> np.ndarray | None:
         """
-        Assemble T0's `[1, n_covariates, context_length + steps]` covariate
-        array from past and future exogenous values.
+        Assemble T0's batched `[n_series, n_covariates, context_length + steps]`
+        covariate array from per-series past and future exogenous values.
 
-        For each future exog column the historical values (from `context_exog`,
-        aligned to the context) are concatenated with the future values (from
-        `exog`, covering the horizon). Columns present only in `exog` have
-        their context portion filled with NaN, which T0 treats as missing.
+        Covariate columns are pooled across all series (first-seen order). For
+        each series and column the historical values (from `context_exog`) are
+        placed flush against the forecast origin and the future values (from
+        `exog`) cover the horizon. Every unfilled cell — a padded timestep, or a
+        column/series that lacks that covariate — stays NaN, which T0 treats as
+        missing.
 
         Parameters
         ----------
-        context_exog : pandas DataFrame, pandas Series, default None
-            Historical exogenous values aligned to the context window.
-        exog : pandas DataFrame, pandas Series, default None
-            Future-known exogenous values covering the forecast horizon. Must
-            have exactly `steps` rows.
+        series_names : list of str
+            Series order defining the batch rows.
+        context_exog : dict or None
+            Per-series historical exogenous values aligned to each context.
+        exog : dict or None
+            Per-series future-known exogenous values covering the horizon.
         context_length : int
-            Length of the context window the covariates are aligned to.
+            Width of the (left-padded) context window.
         steps : int
             Number of forecast steps.
 
         Returns
         -------
         future_covariates : numpy ndarray or None
-            Array of shape `(1, n_covariates, context_length + steps)`, or
-            `None` when no future exog is provided.
+            Array of shape `(n_series, n_covariates, context_length + steps)`,
+            or `None` when no series has future exog.
 
         """
 
         if exog is None:
             return None
 
-        future_df = exog if isinstance(exog, pd.DataFrame) else exog.to_frame()
-        past_df = None
-        if context_exog is not None:
-            past_df = (
-                context_exog
-                if isinstance(context_exog, pd.DataFrame)
-                else context_exog.to_frame()
-            )
+        future_frames = {
+            name: (e if isinstance(e, pd.DataFrame) else e.to_frame())
+            for name, e in exog.items()
+            if e is not None
+        }
+        if not future_frames:
+            return None
 
-        covariates = []
-        for col in future_df.columns:
-            future_values = self._to_float_array(future_df[col])
-            if past_df is not None and col in past_df.columns:
-                past_values = self._to_float_array(past_df[col])
-            else:
-                past_values = np.full(context_length, np.nan, dtype=np.float32)
-            covariates.append(np.concatenate([past_values, future_values]))
+        columns: list[str] = []
+        for frame in future_frames.values():
+            for col in frame.columns:
+                if col not in columns:
+                    columns.append(col)
 
-        return np.stack(covariates)[np.newaxis, ...]
+        total_length = context_length + steps
+        covariates = np.full(
+            (len(series_names), len(columns), total_length), np.nan, dtype=np.float32
+        )
+        column_index = {col: j for j, col in enumerate(columns)}
+        for row, name in enumerate(series_names):
+            future_df = future_frames.get(name)
+            if future_df is None:
+                continue
+            past_df = None
+            if context_exog is not None and context_exog.get(name) is not None:
+                ctx = context_exog[name]
+                past_df = ctx if isinstance(ctx, pd.DataFrame) else ctx.to_frame()
+            for col in future_df.columns:
+                j = column_index[col]
+                future_values = self._to_float_array(future_df[col])
+                covariates[row, j, context_length:context_length + future_values.shape[0]] = future_values
+                if past_df is not None and col in past_df.columns:
+                    past_values = self._to_float_array(past_df[col])
+                    covariates[row, j, context_length - past_values.shape[0]:context_length] = past_values
+
+        return covariates
 
     @staticmethod
     def _to_float_array(col_data: pd.Series) -> np.ndarray:

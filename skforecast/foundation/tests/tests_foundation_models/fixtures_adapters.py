@@ -259,10 +259,10 @@ class FakeT0Forecast:
     axis equals its quantile level, making column-order assertions trivial.
     """
 
-    def __init__(self, horizon, quantiles):
+    def __init__(self, batch_size, horizon, quantiles):
         q_values = np.array(quantiles, dtype=float)
         self.quantiles = np.broadcast_to(
-            q_values, (1, horizon, len(quantiles))
+            q_values, (batch_size, horizon, len(quantiles))
         ).copy()
         self.quantile_levels = tuple(quantiles)
 
@@ -282,13 +282,14 @@ class FakeT0Forecaster:
         self.last_future_covariates = None
 
     def predict(self, context, horizon, quantiles, future_covariates=None):
-        self.last_context = np.asarray(context)
+        context = np.asarray(context)
+        self.last_context = context
         self.last_horizon = horizon
         self.last_quantiles = list(quantiles)
         self.last_future_covariates = (
             None if future_covariates is None else np.asarray(future_covariates)
         )
-        return FakeT0Forecast(horizon, quantiles)
+        return FakeT0Forecast(context.shape[0], horizon, quantiles)
 
 
 # Fake TabICL forecaster
