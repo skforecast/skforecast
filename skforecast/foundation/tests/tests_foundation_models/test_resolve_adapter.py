@@ -7,6 +7,7 @@ from skforecast.foundation._adapters import (
     TimesFMAdapter,
     MoiraiAdapter,
     TabICLAdapter,
+    TabPFNAdapter,
     _resolve_adapter,
     _ADAPTER_REGISTRY,
 )
@@ -23,6 +24,7 @@ from skforecast.foundation._adapters import (
         ("google/timesfm-2.5-200m-flax", TimesFMAdapter),
         ("Salesforce/moirai-2-base", MoiraiAdapter),
         ("soda-inria/tabicl", TabICLAdapter),
+        ("priorlabs/tabpfn-ts", TabPFNAdapter),
     ],
     ids=lambda x: str(x),
 )
@@ -56,6 +58,7 @@ def test_ADAPTER_REGISTRY_contains_all_expected_entries():
         "google/timesfm":    TimesFMAdapter,
         "Salesforce/moirai": MoiraiAdapter,
         "soda-inria/tabicl": TabICLAdapter,
+        "priorlabs/tabpfn":  TabPFNAdapter,
     }
     for prefix, cls in expected.items():
         assert prefix in _ADAPTER_REGISTRY
