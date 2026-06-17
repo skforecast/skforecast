@@ -120,11 +120,11 @@ def check_backtesting_input(
         method to use. The following options are supported:
 
         - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
-        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
-        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
-        be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
-        50 and 90) as `interval = [10, 50, 90]`.
+        For instance, `interval=0.95` corresponds to `[0.025, 0.975]` quantiles.
+        - If `list` or `tuple`: Sequence of quantiles to compute, each value must 
+        be between 0 and 1 inclusive. For example, a 95% confidence interval can 
+        be specified as `interval = [0.025, 0.975]` or multiple quantiles (e.g. 0.1, 
+        0.5 and 0.9) as `interval = [0.1, 0.5, 0.9]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.

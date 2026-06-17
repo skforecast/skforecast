@@ -695,6 +695,10 @@ def backtesting_forecaster(
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
+
+        **Changed in version 0.23.0:** `interval` is now expressed as
+        quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+        is deprecated and emits a `FutureWarning`.
     interval_method : str, default 'bootstrapping'
         Technique used to estimate prediction intervals. Available options:
 
@@ -1480,6 +1484,10 @@ def backtesting_forecaster_multiseries(
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
+
+        **Changed in version 0.23.0:** `interval` is now expressed as
+        quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+        is deprecated and emits a `FutureWarning`.
     interval_method : str, default 'conformal'
         Technique used to estimate prediction intervals. Available options:
 
@@ -2133,6 +2141,10 @@ def backtesting_stats(
         0 and 1 inclusive. For example, interval of 95% should be as 
         `interval = [0.025, 0.975]`. If both, `alpha` and `interval` are 
         provided, `alpha` will be used.
+
+        **Changed in version 0.23.0:** `interval` is now expressed as
+        quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+        is deprecated and emits a `FutureWarning`.
     freeze_params : bool, default True
         Determines whether to freeze the model parameters after the first fit
         for estimators that perform automatic model selection.
