@@ -41,7 +41,7 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.90, [5, 95], (5, 95)], 
+                         [0.90, [0.05, 0.95], (0.05, 0.95)], 
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_output_when_in_sample_residuals_exog_and_transformer(interval):
     """
@@ -102,7 +102,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                     steps                   = 2,
                     exog                    = exog_predict,
                     method                  = 'bootstrapping',
-                    interval                = [5, 95],
+                    interval                = [0.05, 0.95],
                     n_boot                  = n_boot,
                     use_in_sample_residuals = False,
                     use_binned_residuals    = False
@@ -133,7 +133,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
     results = forecaster.predict_interval(
-        steps=5, method='bootstrapping', interval=(5, 95), 
+        steps=5, method='bootstrapping', interval=(0.05, 0.95), 
         use_in_sample_residuals=True, use_binned_residuals=True
     )
 
@@ -170,7 +170,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
 
     results = forecaster.predict_interval(
-        steps=5, method='bootstrapping', interval=(5, 95), 
+        steps=5, method='bootstrapping', interval=(0.05, 0.95), 
         use_in_sample_residuals=False, use_binned_residuals=True
     )
 
