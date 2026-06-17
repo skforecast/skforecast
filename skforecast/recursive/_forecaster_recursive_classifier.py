@@ -1542,8 +1542,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 window_size     = self.window_size,
                 last_window     = last_window,
                 exog            = exog,
-                exog_names_in_  = self.exog_names_in_,
-                interval        = None
+                exog_names_in_  = self.exog_names_in_
             )
 
         # NOTE: NaNs are checked in check_predict_input, it creates a warning if found.

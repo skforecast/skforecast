@@ -2369,7 +2369,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 last_window      = last_window,
                 exog             = exog,
                 exog_names_in_   = self.exog_names_in_,
-                interval         = None,
                 levels           = levels,
                 series_names_in_ = self.series_names_in_,
                 encoding         = self.encoding
