@@ -842,7 +842,7 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
         'cv': cv,
         'metric': 'mean_absolute_error',
         'y': y,
-        'interval': [10, 90],
+        'interval': [0.1, 0.9],
         'interval_method': 'bootstrapping',
         'n_boot': 500,
         'use_in_sample_residuals': True,
@@ -852,7 +852,7 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
         'suppress_warnings': False
     }
 
-    kwargs['interval'] = {'10': 10, '90': 90}
+    kwargs['interval'] = {'10': 0.1, '90': 0.9}
     kwargs['interval_method'] = 'conformal'
     err_msg = re.escape(
         f"When `interval_method` is 'conformal', `interval` must "
@@ -862,7 +862,7 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(**kwargs)
 
-    kwargs['interval'] = {'10': 10, '90': 90}
+    kwargs['interval'] = {'10': 0.1, '90': 0.9}
     kwargs['interval_method'] = 'bootstrapping'
     err_msg = re.escape(
         f"When `interval_method` is 'bootstrapping', `interval` "
@@ -952,7 +952,7 @@ def test_check_backtesting_input_ValueError_when_interval_and_ForecasterRecursiv
             cv                = cv,
             metric            = 'mean_absolute_error',
             y                 = y,
-            interval         = [10, 90],
+            interval         = [0.1, 0.9],
             show_progress     = False,
             suppress_warnings = False
         )

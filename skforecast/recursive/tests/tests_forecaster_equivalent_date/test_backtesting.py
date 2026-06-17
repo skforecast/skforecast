@@ -74,7 +74,7 @@ def test_backtesting_with_ForecasterEquivalentDate_interval(initial_train_size):
         y               = y,
         cv              = cv,
         metric          = 'mean_absolute_error',
-        interval        = [10, 90],
+        interval        = [0.1, 0.9],
         interval_method = 'conformal',
         verbose         = False,
         n_jobs          = 'auto'

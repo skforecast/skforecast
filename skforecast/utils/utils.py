@@ -1184,8 +1184,6 @@ def check_predict_input(
     last_window_exog: pd.Series | pd.DataFrame | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     exog_names_in_: list[str] | None = None,
-    interval: list[float] | None = None,
-    alpha: float | None = None,
     max_step: int | None = None,
     levels: str | list[str] | None = None,
     levels_forecaster: str | list[str] | None = None,
@@ -1224,12 +1222,6 @@ def check_predict_input(
         Exogenous variable/s included as predictor/s.
     exog_names_in_ : list, default None
         Names of the exogenous variables used during training.
-    interval : list, tuple, default None
-        Confidence of the prediction interval estimated. Sequence of percentiles
-        to compute, which must be between 0 and 100 inclusive. For example, 
-        interval of 95% should be as `interval = [2.5, 97.5]`.
-    alpha : float, default None
-        The confidence intervals used in ForecasterStats are (1 - alpha) %.
     max_step: int, default None
         Maximum number of steps allowed (`ForecasterDirect` and 
         `ForecasterDirectMultiVariate`).
@@ -1275,9 +1267,6 @@ def check_predict_input(
                 f"the value of steps defined when initializing the forecaster. "
                 f"Got {max(steps)}, but the maximum is {max_step}."
             )
-
-    if interval is not None or alpha is not None:
-        check_interval(interval=interval, alpha=alpha)
 
     if forecaster_name in ['ForecasterRecursiveMultiSeries', 'ForecasterRnn']:
         if not isinstance(levels, (type(None), str, list)):

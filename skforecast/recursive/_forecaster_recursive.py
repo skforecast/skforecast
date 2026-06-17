@@ -1566,8 +1566,7 @@ class ForecasterRecursive(ForecasterBase):
                 window_size     = self.window_size,
                 last_window     = last_window,
                 exog            = exog,
-                exog_names_in_  = self.exog_names_in_,
-                interval        = None
+                exog_names_in_  = self.exog_names_in_
             )
 
             if predict_probabilistic:

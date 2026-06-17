@@ -701,9 +701,7 @@ class ForecasterStats(MultiEstimatorMixin):
             last_window      = last_window_check,
             last_window_exog = last_window_exog,
             exog             = exog,
-            exog_names_in_   = self.exog_names_in_,
-            interval         = None,
-            alpha            = None
+            exog_names_in_   = self.exog_names_in_
         )
 
         if last_window is None and last_window_exog is not None:

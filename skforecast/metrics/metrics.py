@@ -356,6 +356,9 @@ def crps_from_quantiles(
             "The number of predicted quantiles and quantile levels must be equal."
         )
 
+    if np.any((quantile_levels < 0) | (quantile_levels > 1)):
+        raise ValueError("All quantile levels must be between 0 and 1.")
+
     sorted_indices = np.argsort(pred_quantiles)
     pred_quantiles = pred_quantiles[sorted_indices]
     quantile_levels = quantile_levels[sorted_indices]

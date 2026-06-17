@@ -64,6 +64,20 @@ def test_crps_from_quantiles_raises_error_when_quantile_levels_and_pred_quantile
         crps_from_quantiles(y_true, pred_quantiles, quantile_levels)
 
 
+def test_crps_from_quantiles_raises_error_when_quantile_levels_out_of_range():
+    """
+    This test verifies that the function `crps_from_quantiles` raises a
+    `ValueError` when any value in `quantile_levels` is not between 0 and 1.
+    """
+    y_true = 1
+    pred_quantiles = np.array([1, 2, 3])
+    quantile_levels = np.array([0.1, 0.5, 1.5])
+
+    err_msg = re.escape("All quantile levels must be between 0 and 1.")
+    with pytest.raises(ValueError, match = err_msg):
+        crps_from_quantiles(y_true, pred_quantiles, quantile_levels)
+
+
 def test_crps_from_quantiles_output():
     """
     This test verifies that the function `crps_from_quantiles` output.
