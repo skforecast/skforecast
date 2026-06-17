@@ -14,13 +14,19 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
++ <span class="badge text-bg-feature">Feature</span> New `calendar_features` parameter in all ML Forecasters (<code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>). Users can now pass a <code>[CalendarFeatures]</code> instance to delegate the automatic creation of calendar features (e.g. month, day of week, hour) from the datetime index to the forecaster. Calendar features are generated during both training and prediction, requiring no manual feature engineering.
+
 + <span class="badge text-bg-feature">Feature</span> New <code>TabPFNAdapter</code> in the <code>foundation</code> module for zero-shot forecasting with **TabPFN-TS** (Prior Labs), registered under the `'priorlabs/tabpfn'` `model_id` prefix. The adapter supports known-future exogenous variables, arbitrary quantiles in the 0-1 range, local and cloud-API inference modes, and lazy import of the `tabpfn-time-series` backend. This brings the number of foundation model adapters available out of the box to five. Thanks to the [Prior Labs](https://priorlabs.ai) team for contributing this adapter. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1206](https://github.com/skforecast/skforecast/issues/1206), [#1213](https://github.com/skforecast/skforecast/pull/1213))
 
-+ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the calendar feature engineering toolkit (<code>[create_calendar_features]</code>, <code>[CalendarFeatures]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
++ <span class="badge text-bg-feature">Feature</span> New functions <code>[acf]</code>, <code>[pacf]</code> and <code>[calculate_lag_autocorrelation]</code> in the <code>[stats]</code> module. Fast ACF and PACF implementations via FFT and Levinson-Durbin, removing the dependency on `statsmodels` for autocorrelation calculations.
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the calendar feature engineering toolkit (<code>[CalendarFeatures]</code>, <code>[create_calendar_features]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
 
 + <span class="badge text-bg-enhancement">Enhancement</span> New `backend` parameter in <code>[save_forecaster]</code> and <code>[load_forecaster]</code> to select the serialization engine. In addition to the default `'joblib'`, the `'pickle'` and `'cloudpickle'` backends are now supported. The `'cloudpickle'` backend embeds custom functions (e.g. `weight_func`) and user-defined classes (e.g. `window_features`) directly in the saved file, removing the need to export them as separate `.py` files. On load, the backend is inferred automatically from the file extension (`.joblib`, `.pkl`/`.pickle`, `.cloudpickle`) when `backend` is not provided. [User guide](../user_guides/save-load-forecaster.ipynb)
 
 + <span class="badge text-bg-api-change">API Change</span> The `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions is now expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`) instead of percentiles in the 0-100 range. Passing percentiles is still supported but deprecated and emits a `FutureWarning`; support will be removed in a future version.
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[select_features]</code> and <code>[select_features_multiseries]</code> now support calendar features. The `select_only` argument accepts the new value `'calendar'` (and a list combining `'autoreg'`, `'exog'` and `'calendar'`), and both functions return a fourth element, `selected_calendar_features`, with the selected calendar features at the source-feature level (e.g. `month`). Calendar features are evaluated at the encoded-column level (e.g. `month_sin`, `month_cos`) and a source feature is kept whenever at least one of its encoded columns is selected.
 
 + <span class="badge text-bg-fix">Fix</span> Fixed parallel execution failure in single-core environments (e.g. Docker with `cpus: '1.0'`). <code>[select_n_jobs_backtesting]</code> and <code>[select_n_jobs_fit_forecaster]</code> now fall back to `n_jobs=1` instead of `0`, which raised `ValueError` in `joblib.Parallel`. ([#1197](https://github.com/skforecast/skforecast/issues/1197))
 
@@ -28,6 +34,8 @@ The main changes in this release are:
 
 
 **Added**
+
++ New `calendar_features` parameter in all ML Forecasters (<code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>). Users can now pass a <code>[CalendarFeatures]</code> instance to delegate the automatic creation of calendar features (e.g. month, day of week, hour) from the datetime index to the forecaster. Calendar features are generated during both training and prediction, requiring no manual feature engineering. Only supported when the index of the input data is a `pandas.DatetimeIndex`.
 
 + New <code>TabPFNAdapter</code> in the <code>foundation</code> module wrapping `tabpfn-time-series` (`TabPFNTSPipeline`), registered under the `'priorlabs/tabpfn'` `model_id` prefix. Supports known-future exogenous variables, arbitrary quantiles in the 0-1 range, local and cloud-API inference modes, and lazy backend import. Includes a `FakeTabPFNTSPipeline` fixture and a full mock-based test suite mirroring the TabICL adapter tests. Contributed by the [Prior Labs](https://priorlabs.ai) team. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1206](https://github.com/skforecast/skforecast/issues/1206), [#1213](https://github.com/skforecast/skforecast/pull/1213))
 
@@ -38,7 +46,11 @@ The main changes in this release are:
 
 **Changed**
 
-+ Refactored the calendar feature engineering toolkit (<code>[create_calendar_features]</code>, <code>[CalendarFeatures]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
++ The `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions is now expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`) instead of percentiles in the 0-100 range. Passing percentiles is still supported but deprecated and emits a `FutureWarning`; support will be removed in a future version.
+
++ Refactored the calendar feature engineering toolkit (<code>[CalendarFeatures]</code>, <code>[create_calendar_features]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
+
++ <code>[select_features]</code> and <code>[select_features_multiseries]</code> now support calendar features. The `select_only` argument accepts the new value `'calendar'` (and a list combining `'autoreg'`, `'exog'` and `'calendar'`), and both functions return a fourth element, `selected_calendar_features`, with the selected calendar features at the source-feature level (e.g. `month`). Calendar features are evaluated at the encoded-column level (e.g. `month_sin`, `month_cos`) and a source feature is kept whenever at least one of its encoded columns is selected. A `ValueError` is now raised when the group(s) requested in `select_only` contain no features to evaluate.
 
 + <code>[calculate_distance_from_holiday]</code> moved from <code>[experimental]</code> to <code>[preprocessing]</code>. The function now accepts a `pandas.Series` or `pandas.DataFrame`, infers the time unit from the index frequency, renames its output columns to `time_to_holiday` and `time_since_holiday`, no longer mutates the input, requires `holiday_column` to be passed explicitly when `X` is a DataFrame, and emits a `UserWarning` while filling with `False` when the holiday column contains NaN values.
 
@@ -47,8 +59,6 @@ The main changes in this release are:
 + The `verbose` argument of <code>[save_forecaster]</code> now defaults to `False` (previously `True`), so saving a forecaster no longer prints its summary unless explicitly requested. `load_forecaster` is unchanged (`verbose=True`).
 
 + The internal preprocessing submodule was renamed from `skforecast.preprocessing.preprocessing` to `skforecast.preprocessing._preprocessing`. The public API (`from skforecast.preprocessing import …`) is unchanged; only direct imports from the submodule path are affected.
-
-+ The `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions is now expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`) instead of percentiles in the 0-100 range. Passing percentiles is still supported but deprecated and emits a `FutureWarning`; support will be removed in a future version.
 
 
 **Fixed**

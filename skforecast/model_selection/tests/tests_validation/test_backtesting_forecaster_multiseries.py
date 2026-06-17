@@ -19,9 +19,8 @@ from skforecast.exceptions import MissingValuesWarning
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
-from skforecast.model_selection import backtesting_forecaster_multiseries
-from skforecast.model_selection._split import TimeSeriesFold
-from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeatures, CalendarFeatures
+from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster_multiseries
 
 # Fixtures
 from ....recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
@@ -1423,6 +1422,8 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     when series and exog are dictionaries and window features
     (mocked done in Skforecast v0.14.0).
     """
+    
+    calendar_features = CalendarFeatures(features=None, encoding='cyclical')
     window_features = RollingFeatures(
         stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
         window_sizes = 10,
@@ -1433,6 +1434,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         ),
         lags=14,
         window_features=window_features,
+        calendar_features=calendar_features,
         encoding='ordinal',
         dropna_from_series=False,
         transformer_series=StandardScaler(),
@@ -1462,23 +1464,23 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     expected_metrics = pd.DataFrame(
         data={
         'levels': ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
-        'mean_absolute_error': [203.9468527, 1105.40996716,
-                                np.nan, 253.89651216, 792.72364223]
+        'mean_absolute_error': [197.4426792965976, 1123.7500895650828,
+                                np.nan, 215.874037507144, 798.9231777202583]
         },
         columns=['levels', 'mean_absolute_error']
     )
     expected_predictions = pd.DataFrame(
         data=np.array([
-            [1298.57461037, 2667.47526192, 2542.97100542, 8411.2157276 ],
-            [1304.25805669, 2487.352452  , 2229.55427308, 8500.56915202],
-            [1344.1446645 , 2636.37058144, 2199.05843636, 8440.88224657],
-            [1379.38364674, 2544.32608586, 2236.41755734, 8116.99208078],
-            [1338.09366426, 2314.51247115, 2187.52526646, 8190.43433684],
-            [1151.17626597, 1901.63671417, 2181.09966124, 6262.31416544],
-            [ 948.94468539, 1683.47114395,        np.nan, 5937.21928644],
-            [1348.71328768, 1948.01948249,        np.nan, 8391.00440651],
-            [1384.41932734, 2515.20885091,        np.nan, 8542.34427233],
-            [1402.03041386, 2542.16541225,        np.nan, 8359.17989861]
+            [1362.3772043831839, 2650.4121485162887, 2601.3590133753246, 8232.449465996913],
+            [1386.7053034205337, 2549.4772349363006, 2221.8395116110737, 8586.998650831141],
+            [1344.2834104647056, 2488.6155219496636, 2218.3072808857155, 8437.709118098515],
+            [1349.5434554866815, 2474.6089894780753, 2194.71948342545  , 8211.15859653767 ],
+            [1305.8442120760528, 2233.053524037524 , 2241.035103903514 , 8283.634177357675],
+            [1121.0315165817246, 1816.9767347600011, 2025.2072827127067, 6461.242486140136],
+            [ 970.1494577697417, 1736.4660473126357,             np.nan, 5848.850920056675],
+            [1262.5468893096588, 1814.8289212169555,             np.nan, 7866.153624730496],
+            [1352.3120812968323, 2228.756037627495 ,             np.nan, 8710.330441150685],
+            [1345.587641132347 , 2315.8212596049802,             np.nan, 8622.130056898437]
         ]),
         index=pd.date_range('2016-08-01', periods=10, freq='D'),
         columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
@@ -3692,6 +3694,8 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     fixed_train_size with window features with mocked 
     (mocked done in Skforecast v0.14.0).
     """
+
+    calendar_features = CalendarFeatures(features=None, encoding='cyclical')
     window_features = RollingFeatures(
         stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
         window_sizes = 3,
@@ -3702,6 +3706,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                      level              = 'l2',
                      lags               = 2,
                      window_features    = window_features,
+                     calendar_features  = calendar_features,
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
@@ -3724,11 +3729,12 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                            )
     
     expected_metric = pd.DataFrame({'levels': ['l2'],
-                                    'mean_absolute_error': [0.23856556]})
+                                    'mean_absolute_error': [0.31695055796593363]})
     expected_predictions = pd.DataFrame({
-        'l2': np.array([0.55657737, 0.37891865, 0.43460762, 0.58417451, 0.59388689,
-                        0.55074551, 0.3267003 , 0.33008016, 0.40918253, 0.5313121 ,
-                        0.43536832, 0.5907553])},
+        'l2': np.array([0.97201136233334  , 0.5480159798840707, 0.48061614124414953,
+                        0.6962089185493014, 0.5829518264030495, 0.5115582045625912 ,
+                        0.27862886639702594, 0.24355861627925168, 0.38162616955441964,
+                        0.6443413896298333, 0.6400506761184649 , 0.6904204687003446 ])},
         index=pd.DatetimeIndex(
                     ['2020-02-08', '2020-02-09', '2020-02-10', '2020-02-11', 
                      '2020-02-12', '2020-02-13', '2020-02-14', '2020-02-15', 

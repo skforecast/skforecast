@@ -14,7 +14,7 @@ from sklearn.linear_model import LinearRegression
 from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
-from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.exceptions import MissingValuesWarning
 
@@ -66,31 +66,47 @@ def test_forecaster_series_exog_features_stored():
     """
     Test forecaster stores series and exog features after fitting.
     """
+
+    series_datetime = series_fixtures.copy()
+    series_datetime.index = pd.date_range(start='2022-01-01', periods=len(series_fixtures), freq='D')
+    exog_datetime = exog.copy()
+    exog_datetime.index = pd.date_range(start='2022-01-01', periods=len(exog), freq='D')
+
     rolling = RollingFeatures(
         stats=['ratio_min_max', 'median'], window_sizes=4
     )
+    calendar = CalendarFeatures(
+        features=['day_of_week', 'weekend'], encoding="cyclical"
+    )
+
     forecaster = ForecasterDirectMultiVariate(
-                     estimator        = LinearRegression(), 
-                     level            = 'l1',
-                     steps            = 2,
-                     lags             = 3,
-                     window_features  = rolling,
-                     transformer_exog = transformer_exog
+                     estimator         = LinearRegression(), 
+                     level             = 'l1',
+                     steps             = 2,
+                     lags              = 3,
+                     window_features   = rolling,
+                     calendar_features = calendar,
+                     transformer_exog  = transformer_exog
                  )
-    forecaster.fit(series=series_fixtures, exog=exog)
+    forecaster.fit(series=series_datetime, exog=exog_datetime)
 
     series_names_in_ = ['l1', 'l2']
     exog_in_ = True
-    exog_type_in_ = type(exog)
+    exog_type_in_ = type(exog_datetime)
     exog_names_in_ = ['exog_1', 'exog_2']
-    exog_dtypes_in_ = {'exog_1': exog['exog_1'].dtype, 'exog_2': exog['exog_2'].dtype}
+    exog_dtypes_in_ = {'exog_1': exog_datetime['exog_1'].dtype, 'exog_2': exog_datetime['exog_2'].dtype}
     # All floats
-    exog_dtypes_out_ = {'exog_1': exog['exog_1'].dtype, 'exog_2_a': exog['exog_1'].dtype, 'exog_2_b': exog['exog_1'].dtype}
+    exog_dtypes_out_ = {
+        'exog_1': exog_datetime['exog_1'].dtype, 
+        'exog_2_a': exog_datetime['exog_1'].dtype, 
+        'exog_2_b': exog_datetime['exog_1'].dtype
+    }
     X_train_series_names_in_ = ['l1', 'l2']
     X_train_window_features_names_out_ = [
         'l1_roll_ratio_min_max_4', 'l1_roll_median_4',
         'l2_roll_ratio_min_max_4', 'l2_roll_median_4'
     ]
+    X_train_calendar_features_names_out_ = ['weekend', 'day_of_week_sin', 'day_of_week_cos']
     X_train_exog_names_out_ = ['exog_1', 'exog_2_a', 'exog_2_b']
     X_train_direct_exog_names_out_ = [
         'exog_1_step_1', 'exog_2_a_step_1', 'exog_2_b_step_1',
@@ -99,13 +115,16 @@ def test_forecaster_series_exog_features_stored():
     X_train_features_names_out_ = [
         'l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_roll_ratio_min_max_4', 'l1_roll_median_4',
         'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_roll_ratio_min_max_4', 'l2_roll_median_4',
-        'exog_1', 'exog_2_a', 'exog_2_b', 
+        'exog_1', 'exog_2_a', 'exog_2_b',
+        'weekend', 'day_of_week_sin', 'day_of_week_cos'
     ]
     X_train_direct_features_names_out_ = [
         'l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_roll_ratio_min_max_4', 'l1_roll_median_4',
         'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_roll_ratio_min_max_4', 'l2_roll_median_4',
         'exog_1_step_1', 'exog_2_a_step_1', 'exog_2_b_step_1', 
-        'exog_1_step_2', 'exog_2_a_step_2', 'exog_2_b_step_2'
+        'exog_1_step_2', 'exog_2_a_step_2', 'exog_2_b_step_2',
+        'weekend_step_1', 'day_of_week_sin_step_1', 'day_of_week_cos_step_1',
+        'weekend_step_2', 'day_of_week_sin_step_2', 'day_of_week_cos_step_2'
     ]
     
     assert forecaster.series_names_in_ == series_names_in_
@@ -116,6 +135,7 @@ def test_forecaster_series_exog_features_stored():
     assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
     assert forecaster.X_train_series_names_in_ == X_train_series_names_in_
     assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
+    assert forecaster.X_train_calendar_features_names_out_ == X_train_calendar_features_names_out_
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
     assert forecaster.X_train_direct_exog_names_out_ == X_train_direct_exog_names_out_
     assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
@@ -261,7 +281,7 @@ def test_fit_in_sample_residuals_by_bin_stored(n_jobs):
     forecaster.fit(series=series_fixtures, store_in_sample_residuals=True)
 
     expected_1 = {
-        'l1' : np.array([
+        'l1': np.array([
                     0.61351689,  0.71846659, -0.46065047,  1.8740517 ,  0.35951685,
                     0.36635782, -0.3225934 , -0.86465358,  0.82252715, -0.2741012 ,
                     -1.70423914, -0.33664349,  1.16033533, -1.66552242, -1.26639479,
@@ -341,7 +361,7 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned(n_jobs):
 
     expected = {'l1': None}
     expected_binner_intervals_ = {
-        'l1' :{
+        'l1': {
             0: (-0.8032116858231456, -0.13623943835630237),
             1: (-0.13623943835630237, 0.17856930169525217),
             2: (0.17856930169525217, 0.8498028419581619)

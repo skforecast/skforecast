@@ -67,6 +67,33 @@ def test_create_train_X_y_TypeError_when_calendar_features_and_index_not_datetim
         forecaster._create_train_X_y(y=y)
 
 
+def test_create_train_X_y_ValueError_when_calendar_feature_name_duplicated_with_exog():
+    """
+    Test ValueError is raised when a calendar feature has the same name as an
+    exogenous variable, producing duplicated feature names.
+    """
+    y = pd.Series(
+        np.arange(10, dtype=float),
+        index=pd.date_range('2000-01-01', periods=10, freq='D'),
+        name='y'
+    )
+    exog = pd.Series(
+        np.arange(100, 110, dtype=float),
+        index=pd.date_range('2000-01-01', periods=10, freq='D'),
+        name='day_of_week'
+    )
+
+    calendar = CalendarFeatures(features=['day_of_week'], encoding=None)
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(), lags=2, calendar_features=calendar
+    )
+    err_msg = re.escape(
+        "Duplicated feature names detected in X_train: ['day_of_week']."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_train_X_y(y=y, exog=exog)
+
+
 def test_create_train_X_y_ValueError_when_categorical_features_columns_not_in_exog():
     """
     Test ValueError is raised when explicit categorical_features list contains

@@ -13,8 +13,7 @@ from sklearn.compose import make_column_transformer
 from sklearn.compose import make_column_selector
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
-from skforecast.preprocessing import RollingFeatures
-from skforecast.preprocessing import TimeSeriesDifferentiator
+from skforecast.preprocessing import RollingFeatures, TimeSeriesDifferentiator, CalendarFeatures
 from skforecast.direct import ForecasterDirect
 
 # Fixtures
@@ -491,9 +490,9 @@ def test_create_predict_inputs_output_with_2_window_features():
     assert results[4] is None
 
 
-def test_create_predict_inputs_output_window_features_and_no_lags():
+def test_create_predict_inputs_output_window_features_no_lags_and_calendar_features():
     """
-    Test _create_predict_inputs output with window_features and no lags.
+    Test _create_predict_inputs output with window_features, no lags and calendar_features.
     """
     y_datetime = pd.Series(
         np.arange(50), index=pd.date_range('2020-01-01', periods=50, freq='D'),
@@ -502,17 +501,20 @@ def test_create_predict_inputs_output_window_features_and_no_lags():
     rolling = RollingFeatures(
         stats=['mean', 'median', 'sum'], window_sizes=[4, 5, 6]
     )
+    calendar = CalendarFeatures(features=['day_of_week', 'weekend'], encoding=None)
+
     forecaster = ForecasterDirect(
-        estimator=LinearRegression(), steps=3, lags=None, window_features=rolling
+        estimator=LinearRegression(), steps=3, lags=None, 
+        window_features=rolling, calendar_features=calendar
     )
     forecaster.fit(y=y_datetime)
     results = forecaster._create_predict_inputs()
 
     expected = (
-        [np.array([[47.5, 47., 279.]]),
-         np.array([[47.5, 47., 279.]]),
-         np.array([[47.5, 47., 279.]])],
-        ['roll_mean_4', 'roll_median_5', 'roll_sum_6'],
+        [np.array([[47.5, 47., 279., 3., 0.]]),
+         np.array([[47.5, 47., 279., 4., 0.]]),
+         np.array([[47.5, 47., 279., 5., 1.]])],
+        ['roll_mean_4', 'roll_median_5', 'roll_sum_6', 'day_of_week', 'weekend'],
         [1, 2, 3],
         pd.date_range(start='2020-02-20', periods=3, freq='D')
     )
@@ -669,7 +671,7 @@ def test_create_predict_inputs_when_categorical_features_auto_and_explicit_no_tr
     assert results[4] is None
 
 
-def test_create_predict_inputs_when_categorical_features_auto_with_transformer_exog():
+def test_create_predict_inputs_when_calendar_and_categorical_features_auto_with_transformer_exog():
     """
     Test _create_predict_inputs when using internal categorical encoding
     (`categorical_features='auto'`) together with `transformer_exog`
@@ -677,56 +679,67 @@ def test_create_predict_inputs_when_categorical_features_auto_with_transformer_e
     copy is NOT needed because `transformer_exog` already returns a new
     DataFrame.
     """
-    df_exog = pd.DataFrame(
+
+    y_categorical_dt = y_categorical.copy()
+    y_categorical_dt.index = pd.date_range(start='2020-01-01', periods=len(y_categorical), freq='D')
+    df_exog_dt = pd.DataFrame(
         {'exog_1': exog_categorical,
          'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
          'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
     )
+    df_exog_dt.index = pd.date_range(start='2020-01-01', periods=len(df_exog_dt), freq='D')
 
-    exog_predict = df_exog.copy()
-    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+    exog_predict_dt = df_exog_dt.copy()
+    exog_predict_dt.index = pd.date_range(start='2020-02-20', periods=len(exog_predict_dt), freq='D')
 
     transformer_exog = make_column_transformer(
                            (StandardScaler(), make_column_selector(dtype_include=np.number)),
                            remainder='passthrough',
                            verbose_feature_names_out=False,
                        ).set_output(transform='pandas')
+    
+    calendar = CalendarFeatures(
+        features=['day_of_week', 'weekend'], encoding="onehot"
+    )
 
     forecaster = ForecasterDirect(
                      estimator            = LinearRegression(),
                      lags                 = 5,
                      steps                = 10,
+                     calendar_features    = calendar,
                      transformer_y        = None,
                      transformer_exog     = transformer_exog,
                      categorical_features = 'auto'
                  )
-    forecaster.fit(y=y_categorical, exog=df_exog)
-    results = forecaster._create_predict_inputs(steps=10, exog=exog_predict)
+    forecaster.fit(y=y_categorical_dt, exog=df_exog_dt)
+    results = forecaster._create_predict_inputs(steps=10, exog=exog_predict_dt)
 
     expected = (
         [np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
-                    -1.47636391,  0.,  0.]]),
+                    -1.47636391,  0.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.]]),
          np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
-                     1.26277054,  1.,  1.]]),
+                     1.26277054,  1.,  1.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.]]),
          np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
-                     0.3961342,   2.,  2.]]),
+                     0.3961342,   2.,  2.,  1.,  0.,  0.,  0.,  0.,  0.,  1.,  0.]]),
          np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
-                     0.17104495,  3.,  3.]]),
+                     0.17104495,  3.,  3.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  1.]]),
          np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
-                    -0.61417373,  4.,  4.]]),
+                    -0.61417373,  4.,  4.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.]]),
          np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
-                    -0.76416192,  0.,  0.]]),
+                    -0.76416192,  0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.]]),
          np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
-                    -0.325949,    1.,  1.]]),
+                    -0.325949,    1.,  1.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.]]),
          np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
-                     0.69981558,  2.,  2.]]),
+                     0.69981558,  2.,  2.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.]]),
          np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
-                     1.45340838,  3.,  3.]]),
+                     1.45340838,  3.,  3.,  0.,  0.,  0.,  0.,  0.,  1.,  0.,  0.]]),
          np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
-                     0.03657206,  4.,  4.]])],
-        ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2', 'exog_3'],
+                     0.03657206,  4.,  4.,  1.,  0.,  0.,  0.,  0.,  0.,  1.,  0.]])],
+        ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2', 'exog_3',
+         'weekend', 'day_of_week_0', 'day_of_week_1', 'day_of_week_2',
+         'day_of_week_3', 'day_of_week_4', 'day_of_week_5', 'day_of_week_6'],
         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        pd.RangeIndex(start=50, stop=60, step=1)
+        pd.date_range(start='2020-02-20', periods=10, freq='D')
     )
 
     for step in range(len(expected[0])):
