@@ -3,8 +3,8 @@ name: foundation-forecasting
 description: >
   Zero-shot time series forecasting with pre-trained foundation models
   (Amazon Chronos-2, Google TimesFM 2.5, Salesforce Moirai-2, Soda-INRIA TabICL,
-  Prior Labs TabPFN-TS) via ForecasterFoundation and FoundationModel. Covers
-  single and multi-series
+  Prior Labs TabPFN-TS, The Forecasting Company T0) via ForecasterFoundation and
+  FoundationModel. Covers single and multi-series
   workflows, exogenous variables, prediction intervals / quantiles, and
   backtesting. Use when the user wants forecasts without task-specific
   training, cold-start baselines, or pre-trained generalist models.
@@ -14,9 +14,7 @@ description: >
 
 ## References
 
-See [references/adapter-parameters.md](references/adapter-parameters.md) for
-the per-adapter constructor parameters of `ChronosAdapter`,
-`TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, and `TabPFNAdapter`.
+See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, and `T0Adapter`.
 
 ## When to Use
 
@@ -26,21 +24,18 @@ Use `ForecasterFoundation` when:
 - You need to forecast **cold-start** series (new product, new sensor).
 - You want to compare against pre-trained generalist models.
 
-Foundation models are **pre-trained on massive corpora** — `fit()` does not
-train them; it only stores the recent context and metadata.
+Foundation models are **pre-trained on massive corpora** — `fit()` does not train them; it only stores the recent context and metadata.
 
 ## Installation
 
-Foundation model backends are **not** bundled with skforecast. Install only
-the backend(s) you need:
+Foundation model backends are **not** bundled with skforecast. Install only the backend(s) you need:
 
 ```bash
 pip install chronos-forecasting                                 # For Chronos-2
 pip install git+https://github.com/google-research/timesfm.git  # For TimesFM 2.5
 pip install uni2ts                                              # For Moirai-2
 pip install tabicl[forecast]                                    # For TabICL
-pip install tabpfn-time-series                                  # For TabPFN-TS
-```
+pip install tabpfn-time-series                                  # For TabPFN-TSpip install tfc-t0                                             # For T0```
 
 Models are downloaded from HuggingFace on first use.
 
@@ -96,10 +91,9 @@ model = FoundationModel(
 )
 ```
 
-## With Exogenous Variables (Chronos-2, TabICL and TabPFN-TS)
+## With Exogenous Variables (Chronos-2, TabICL, TabPFN-TS and T0)
 
-Chronos-2, TabICL and TabPFN-TS (`allow_exog=True`) accept exogenous
-variables. TimesFM 2.5 and Moirai-2 ignore them.
+Chronos-2, TabICL, TabPFN-TS and T0 (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them.
 
 ```python
 # Historical + future exog (must cover the forecast horizon)
@@ -110,8 +104,7 @@ predictions = forecaster.predict(steps=24, exog=exog_test)
 
 ## Prediction Intervals and Quantiles
 
-Foundation models output native quantile forecasts — no bootstrapping or
-conformal calibration is required.
+Foundation models output native quantile forecasts — no bootstrapping or conformal calibration is required.
 
 ```python
 # Interval (lower/upper bounds from the model's quantiles)
@@ -129,9 +122,7 @@ predictions = forecaster.predict_quantiles(
 # Columns: ['level', 'q_0.1', 'q_0.5', 'q_0.9']
 ```
 
-For TimesFM 2.5 and Moirai-2, requested quantiles must be a subset of
-`[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. Chronos-2, TabICL and
-TabPFN-TS support any quantile in `(0, 1)`.
+For TimesFM 2.5 and Moirai-2, requested quantiles must be a subset of `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. Chronos-2, TabICL, TabPFN-TS and TFC-T0 support any quantile in `(0, 1)`.
 
 ## Choosing a Model
 
@@ -142,16 +133,13 @@ TabPFN-TS support any quantile in `(0, 1)`.
 | `Salesforce/moirai-2.0-*` (Salesforce) | No   | 2048            | Multivariate pretraining, probabilistic forecasts |
 | `soda-inria/tabicl` (Soda-INRIA)       | Yes  | 4096            | Tabular in-context learning, exog-aware           |
 | `priorlabs/tabpfn-ts` (Prior Labs)     | Yes  | 32768           | Tabular foundation model, exog-aware, long context |
+| `theforecastingcompany/t0` (TFC)       | Yes  | 8192            | Probabilistic forecasts, exog-aware (future covariates) |
 
-The adapter is resolved automatically from the `model_id` prefix — no need
-to import adapter classes directly.
+The adapter is resolved automatically from the `model_id` prefix — no need to import adapter classes directly.
 
 ## Backtesting
 
-Use the dedicated `backtesting_foundation` function — it is the only
-backtester that accepts a `ForecasterFoundation`. Refit is always disabled
-internally (the loaded model weights are preserved across folds) and
-probabilistic output is requested via `quantiles`, not `interval`.
+Use the dedicated `backtesting_foundation` function — it is the only backtester that accepts a `ForecasterFoundation`. Refit is always disabled internally (the loaded model weights are preserved across folds) and probabilistic output is requested via `quantiles`, not `interval`.
 
 ```python
 from skforecast.model_selection import backtesting_foundation, TimeSeriesFold
@@ -190,16 +178,9 @@ automatically to the last `context_length` observations.
 
 ## Common Pitfalls
 
-1. **Expecting `fit()` to train the model**: it only stores context. The
-   weights come from HuggingFace.
-2. **Index without frequency**: call `series.asfreq('h')` (or similar)
-   before `fit` — skforecast requires a frequency.
-3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2,
-   TabICL and TabPFN-TS support exogenous variables.
-4. **Requesting unsupported quantiles**: TimesFM 2.5 and Moirai-2 are
-   restricted to the nine deciles `0.1 … 0.9`.
-5. **Large model downloads**: first call can be slow; consider using
-   smaller variants (`*-small`) for experimentation.
-6. **Forgetting to install the backend**: each foundation model requires
-   its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`,
-   `tabpfn-time-series`). Install only the one(s) you need.
+1. **Expecting `fit()` to train the model**: it only stores context. The weights come from HuggingFace.
+2. **Index without frequency**: call `series.asfreq('h')` (or similar) before `fit` — skforecast requires a frequency.
+3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2, TabICL, TabPFN-TS and TFC-T0 support exogenous variables.
+4. **Requesting unsupported quantiles**: TimesFM 2.5 and Moirai-2 are restricted to the nine deciles `0.1 … 0.9`.
+5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
+6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`). Install only the one(s) you need.

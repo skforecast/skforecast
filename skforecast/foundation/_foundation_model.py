@@ -30,9 +30,9 @@ class FoundationModel:
     Scikit-learn compatible interface for foundation time-series models.
 
     Currently supports Amazon Chronos-2, Google TimesFM 2.5, Salesforce
-    Moirai-2, TabICLv2 and TabPFN-TS. For full skforecast ecosystem
-    integration (backtesting, model selection, etc.) use
-    `ForecasterFoundation` instead.
+    Moirai-2, TabICLv2, TabPFN-TS, and TFC-T0. For full skforecast ecosystem
+    integration (backtesting, model selection, etc.) use `ForecasterFoundation` 
+    instead.
 
     Parameters
     ----------

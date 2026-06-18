@@ -42,7 +42,7 @@ skforecast/
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
 ├── foundation/              # FoundationModel, ForecasterFoundation
-│                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL)
+│                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0)
 ├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
@@ -63,7 +63,7 @@ skforecast/
 - **Forecasters inheriting from `ForecasterBase`**: ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterRecursiveClassifier, ForecasterDirect, ForecasterDirectMultiVariate, ForecasterRnn
 - **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate, ForecasterFoundation
 - Statistical models in `stats/` are wrapped by `ForecasterStats` (in `recursive/`)
-- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`) resolved from the HuggingFace `model_id`
+- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`) resolved from the HuggingFace `model_id`
 - `model_selection/` functions work with all forecaster types
 - `preprocessing/` classes can be passed to forecasters via `transformer_y`, `transformer_exog`, `window_features`
 
@@ -77,7 +77,7 @@ skforecast/
 | ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
 | ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
 | ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
-| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL) |
+| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
 
@@ -439,7 +439,7 @@ forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 
 ## Foundation Models (Zero-Shot)
 
-Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`). Models are downloaded from HuggingFace on first use.
+Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`). Models are downloaded from HuggingFace on first use.
 
 `FoundationModel` is the low-level interface; `ForecasterFoundation` wraps it to integrate with the rest of the skforecast ecosystem (backtesting, model selection, uniform `predict` / `predict_interval` / `predict_quantiles` API).
 
@@ -473,6 +473,8 @@ Supported adapters (selected automatically from `model_id`):
 | TimesFMAdapter (Google) | `google/timesfm` | No | 512 | `[0.1, 0.2, …, 0.9]` |
 | MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, …, 0.9]` |
 | TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (past & future covariates) | 4096 | Any in `(0, 1)` |
+| TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
+| T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
 
 Key points:
 - `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
@@ -2239,9 +2241,7 @@ metric (best first). Access the best Optuna trial with `study.best_trial`.
 
 ## References
 
-See [references/interval-compatibility.md](references/interval-compatibility.md) for
-the complete compatibility matrix: which forecaster supports which method,
-parameter differences, binned residuals support, and common error patterns.
+See [references/interval-compatibility.md](references/interval-compatibility.md) for the complete compatibility matrix: which forecaster supports which method, parameter differences, binned residuals support, and common error patterns.
 
 ## When to Use
 
@@ -2320,9 +2320,7 @@ predictions = forecaster.predict_interval(
 
 ## Foundation Model Intervals
 
-`ForecasterFoundation` returns intervals and quantiles directly from the
-underlying foundation model's native quantile output — no bootstrapping
-or conformal calibration required.
+`ForecasterFoundation` returns intervals and quantiles directly from the underlying foundation model's native quantile output — no bootstrapping or conformal calibration required.
 
 ```python
 from skforecast.foundation import FoundationModel, ForecasterFoundation
@@ -2338,9 +2336,7 @@ predictions = forecaster.predict_quantiles(
 )
 ```
 
-TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, …, 0.9]`;
-Chronos-2 and TabICL accept any quantile in `(0, 1)`. See the
-`foundation-forecasting` skill for details.
+TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, …, 0.9]`; Chronos-2, TabICL, TabPFN-TS and TFC-T0 accept any quantile in `(0, 1)`. See the `foundation-forecasting` skill for details.
 
 ## During Backtesting
 
@@ -4279,9 +4275,7 @@ predictions = forecaster.predict_interval(
 
 ## References
 
-See [references/adapter-parameters.md](references/adapter-parameters.md) for
-the per-adapter constructor parameters of `ChronosAdapter`,
-`TimesFMAdapter`, `MoiraiAdapter`, and `TabICLAdapter`.
+See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, and `T0Adapter`.
 
 ## When to Use
 
@@ -4291,20 +4285,18 @@ Use `ForecasterFoundation` when:
 - You need to forecast **cold-start** series (new product, new sensor).
 - You want to compare against pre-trained generalist models.
 
-Foundation models are **pre-trained on massive corpora** — `fit()` does not
-train them; it only stores the recent context and metadata.
+Foundation models are **pre-trained on massive corpora** — `fit()` does not train them; it only stores the recent context and metadata.
 
 ## Installation
 
-Foundation model backends are **not** bundled with skforecast. Install only
-the backend(s) you need:
+Foundation model backends are **not** bundled with skforecast. Install only the backend(s) you need:
 
 ```bash
 pip install chronos-forecasting                                 # For Chronos-2
 pip install git+https://github.com/google-research/timesfm.git  # For TimesFM 2.5
 pip install uni2ts                                              # For Moirai-2
 pip install tabicl[forecast]                                    # For TabICL
-```
+pip install tabpfn-time-series                                  # For TabPFN-TSpip install tfc-t0                                             # For T0```
 
 Models are downloaded from HuggingFace on first use.
 
@@ -4360,10 +4352,9 @@ model = FoundationModel(
 )
 ```
 
-## With Exogenous Variables (Chronos-2 and TabICL)
+## With Exogenous Variables (Chronos-2, TabICL, TabPFN-TS and T0)
 
-Chronos-2 and TabICL (`allow_exog=True`) accept exogenous variables.
-TimesFM 2.5 and Moirai-2 ignore them.
+Chronos-2, TabICL, TabPFN-TS and T0 (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them.
 
 ```python
 # Historical + future exog (must cover the forecast horizon)
@@ -4374,8 +4365,7 @@ predictions = forecaster.predict(steps=24, exog=exog_test)
 
 ## Prediction Intervals and Quantiles
 
-Foundation models output native quantile forecasts — no bootstrapping or
-conformal calibration is required.
+Foundation models output native quantile forecasts — no bootstrapping or conformal calibration is required.
 
 ```python
 # Interval (lower/upper bounds from the model's quantiles)
@@ -4393,9 +4383,7 @@ predictions = forecaster.predict_quantiles(
 # Columns: ['level', 'q_0.1', 'q_0.5', 'q_0.9']
 ```
 
-For TimesFM 2.5 and Moirai-2, requested quantiles must be a subset of
-`[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. Chronos-2 and TabICL
-support any quantile in `(0, 1)`.
+For TimesFM 2.5 and Moirai-2, requested quantiles must be a subset of `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. Chronos-2, TabICL, TabPFN-TS and TFC-T0 support any quantile in `(0, 1)`.
 
 ## Choosing a Model
 
@@ -4405,16 +4393,14 @@ support any quantile in `(0, 1)`.
 | `google/timesfm-2.5-*` (Google)        | No   | 512             | Long-horizon point/quantile forecasts             |
 | `Salesforce/moirai-2.0-*` (Salesforce) | No   | 2048            | Multivariate pretraining, probabilistic forecasts |
 | `soda-inria/tabicl` (Soda-INRIA)       | Yes  | 4096            | Tabular in-context learning, exog-aware           |
+| `priorlabs/tabpfn-ts` (Prior Labs)     | Yes  | 32768           | Tabular foundation model, exog-aware, long context |
+| `theforecastingcompany/t0` (TFC)       | Yes  | 8192            | Probabilistic forecasts, exog-aware (future covariates) |
 
-The adapter is resolved automatically from the `model_id` prefix — no need
-to import adapter classes directly.
+The adapter is resolved automatically from the `model_id` prefix — no need to import adapter classes directly.
 
 ## Backtesting
 
-Use the dedicated `backtesting_foundation` function — it is the only
-backtester that accepts a `ForecasterFoundation`. Refit is always disabled
-internally (the loaded model weights are preserved across folds) and
-probabilistic output is requested via `quantiles`, not `interval`.
+Use the dedicated `backtesting_foundation` function — it is the only backtester that accepts a `ForecasterFoundation`. Refit is always disabled internally (the loaded model weights are preserved across folds) and probabilistic output is requested via `quantiles`, not `interval`.
 
 ```python
 from skforecast.model_selection import backtesting_foundation, TimeSeriesFold
@@ -4453,28 +4439,19 @@ automatically to the last `context_length` observations.
 
 ## Common Pitfalls
 
-1. **Expecting `fit()` to train the model**: it only stores context. The
-   weights come from HuggingFace.
-2. **Index without frequency**: call `series.asfreq('h')` (or similar)
-   before `fit` — skforecast requires a frequency.
-3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2
-   and TabICL support exogenous variables.
-4. **Requesting unsupported quantiles**: TimesFM 2.5 and Moirai-2 are
-   restricted to the nine deciles `0.1 … 0.9`.
-5. **Large model downloads**: first call can be slow; consider using
-   smaller variants (`*-small`) for experimentation.
-6. **Forgetting to install the backend**: each foundation model requires
-   its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`).
-   Install only the one(s) you need.
+1. **Expecting `fit()` to train the model**: it only stores context. The weights come from HuggingFace.
+2. **Index without frequency**: call `series.asfreq('h')` (or similar) before `fit` — skforecast requires a frequency.
+3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2, TabICL, TabPFN-TS and TFC-T0 support exogenous variables.
+4. **Requesting unsupported quantiles**: TimesFM 2.5 and Moirai-2 are restricted to the nine deciles `0.1 … 0.9`.
+5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
+6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`). Install only the one(s) you need.
 
 ---
 ### Reference: adapter-parameters
 
 # Foundation Adapter Parameters
 
-`FoundationModel` resolves the adapter automatically from `model_id`. All
-keyword arguments passed to `FoundationModel(...)` beyond `model_id` are
-forwarded to the chosen adapter's `__init__`.
+`FoundationModel` resolves the adapter automatically from `model_id`. All keyword arguments passed to `FoundationModel(...)` beyond `model_id` are forwarded to the chosen adapter's `__init__`.
 
 ```python
 from skforecast.foundation import FoundationModel
@@ -4492,15 +4469,15 @@ model = FoundationModel(
 - **`allow_exog`**: `True` (past and future covariates)
 - **Quantiles**: any value in `(0, 1)`
 
-| Parameter        | Type    | Default  | Description                                                                         |
-|------------------|---------|----------|-------------------------------------------------------------------------------------|
-| `model_id`       | str     | —        | HuggingFace model ID (e.g. `autogluon/chronos-2-small`).                            |
-| `pipeline`       | object  | `None`   | Pre-loaded `BaseChronosPipeline`. If `None`, loaded lazily on first `predict`.      |
-| `context_length` | int     | `8192`   | Max historical observations kept as context.                                        |
-| `predict_kwargs` | dict    | `None`   | Extra kwargs forwarded to the pipeline's `predict_quantiles`.                       |
-| `device_map`     | str     | `'auto'` | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`.          |
-| `torch_dtype`    | object  | `None`   | Torch dtype for `from_pretrained` (e.g. `torch.bfloat16`).                          |
-| `cross_learning` | bool    | `False`  | If `True`, shares information across series in multi-series batches.                |
+| Parameter        | Type    | Default  | Description                                                                    |
+|------------------|---------|----------|--------------------------------------------------------------------------------|
+| `model_id`       | str     | —        | HuggingFace model ID (e.g. `autogluon/chronos-2-small`).                       |
+| `pipeline`       | object  | `None`   | Pre-loaded `BaseChronosPipeline`. If `None`, loaded lazily on first `predict`. |
+| `context_length` | int     | `8192`   | Max historical observations kept as context.                                   |
+| `predict_kwargs` | dict    | `None`   | Extra kwargs forwarded to the pipeline's `predict_quantiles`.                  |
+| `device_map`     | str     | `'auto'` | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`.     |
+| `torch_dtype`    | object  | `None`   | Torch dtype for `from_pretrained` (e.g. `torch.bfloat16`).                     |
+| `cross_learning` | bool    | `False`  | If `True`, shares information across series in multi-series batches.           |
 
 ## TimesFMAdapter — Google TimesFM 2.5
 
@@ -4508,16 +4485,15 @@ model = FoundationModel(
 - **`allow_exog`**: `False`
 - **Supported quantiles**: `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`
 
-| Parameter                | Type | Default | Description                                                           |
-|--------------------------|------|---------|-----------------------------------------------------------------------|
-| `model_id`               | str  | —       | HuggingFace model ID (e.g. `google/timesfm-2.5-200m-pytorch`).        |
-| `model`                  | obj  | `None`  | Pre-loaded & compiled TimesFM model. If `None`, loaded lazily.        |
-| `context_length`         | int  | `512`   | Max historical observations kept as context.                          |
-| `max_horizon`            | int  | `512`   | Max forecast horizon. `predict(steps=...)` must be ≤ this.            |
-| `forecast_config_kwargs` | dict | `None`  | Extra kwargs forwarded to `timesfm.ForecastConfig` at compile time.   |
+| Parameter                | Type | Default | Description                                                         |
+|--------------------------|------|---------|---------------------------------------------------------------------|
+| `model_id`               | str  | —       | HuggingFace model ID (e.g. `google/timesfm-2.5-200m-pytorch`).      |
+| `model`                  | obj  | `None`  | Pre-loaded & compiled TimesFM model. If `None`, loaded lazily.      |
+| `context_length`         | int  | `512`   | Max historical observations kept as context.                        |
+| `max_horizon`            | int  | `512`   | Max forecast horizon. `predict(steps=...)` must be ≤ this.          |
+| `forecast_config_kwargs` | dict | `None`  | Extra kwargs forwarded to `timesfm.ForecastConfig` at compile time. |
 
-The model is compiled lazily for the exact requested `steps` (up to
-`max_horizon`) to avoid unnecessary decode iterations.
+The model is compiled lazily for the exact requested `steps` (up to `max_horizon`) to avoid unnecessary decode iterations.
 
 ## MoiraiAdapter — Salesforce Moirai-2
 
@@ -4547,19 +4523,47 @@ The model is compiled lazily for the exact requested `steps` (up to
 | `tabicl_config`      | dict  | `None`   | Extra kwargs forwarded to `TabICLRegressor` at inference time.                   |
 | `temporal_features`  | list  | `None`   | `TimeTransform` instances applied before inference. `None` = TabICL defaults; `[]` = disable all. |
 
+## TabPFNAdapter — Prior Labs TabPFN-TS
+
+- **`model_id` prefix**: `priorlabs/tabpfn`
+- **`allow_exog`**: `True` (known-future covariates; covariates without future values are discarded by the library)
+- **Quantiles**: any value in `(0, 1)`
+
+| Parameter             | Type  | Default    | Description                                                                      |
+|-----------------------|-------|------------|----------------------------------------------------------------------------------|
+| `model_id`            | str   | —          | Model ID (e.g. `priorlabs/tabpfn-ts`). Used only for adapter resolution.         |
+| `model`               | obj   | `None`     | Pre-instantiated `TabPFNTSPipeline`. If `None`, created lazily on first predict. |
+| `context_length`      | int   | `32768`    | Max historical observations kept as context. Lower (e.g. 4096) for faster inference. |
+| `mode`                | str   | `'local'`  | `'local'` (on-device inference, CUDA > MPS > CPU) or `'client'` (Prior Labs cloud API, no GPU needed). |
+| `point_estimate`      | str   | `'median'` | Ensemble aggregation for the point forecast: `'mean'`, `'median'` or `'mode'`.   |
+| `tabpfn_model_config` | dict  | `None`     | Extra config forwarded to the underlying TabPFN regressor (e.g. `model_path`, `device`). |
+| `temporal_features`   | list  | `None`     | `FeatureGenerator` instances applied before inference. `None` = TabPFN-TS defaults; `[]` = disable all. |
+
+## T0Adapter — The Forecasting Company T0
+
+- **`model_id` prefix**: `theforecastingcompany/t0`
+- **`allow_exog`**: `True` (future-known covariates; historical and known-future values are concatenated into the `[context + horizon]` covariate stream)
+- **Quantiles**: any value in `(0, 1)` (native levels `0.1, 0.25, 0.5, 0.75, 0.9`; other levels are produced by inference-time interpolation)
+
+| Parameter        | Type   | Default  | Description                                                                |
+|------------------|--------|----------|----------------------------------------------------------------------------|
+| `model_id`       | str    | —        | HuggingFace model ID (e.g. `theforecastingcompany/t0-alpha`).             |
+| `model`          | obj    | `None`   | Pre-loaded `T0Forecaster`. If `None`, loaded lazily on first `predict`.    |
+| `context_length` | int    | `8192`   | Max historical observations kept as context.                               |
+| `device_map`     | str    | `'auto'` | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`. |
+| `torch_dtype`    | object | `None`   | Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).           |
+
+Point forecasts use the median (quantile `0.5`). Covariates must be numeric; encode categoricals as numbers before passing them. A series with no future exog is forecast without covariates.
+
 ## Common Behavior
 
 All adapters implement the same minimal interface:
 
 - `fit(series, exog=None)` — stores context and metadata; no training.
-- `predict(steps, context, context_exog, exog, quantiles)` — returns a
-  `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series
-  name.
+- `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
 
-Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`) are
-imported **lazily** inside the adapter method that needs them, so only the
-backend for the adapter you actually use needs to be installed.
+Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.
 
 ================================================================================
 # SKILL: choosing-a-forecaster
@@ -4598,7 +4602,7 @@ Skforecast is a **machine learning-first** library. The ML forecasters are the p
 | **General purpose** (start here) | `ForecasterRecursive` | Default choice. One model, recursive multi-step. Works with any sklearn-compatible estimator (LightGBM, XGBoost, CatBoost, RandomForest, etc.). Supports lags, window features, exog, differentiation, transformers, weight functions, and all probabilistic prediction methods (bootstrapping, conformal, quantiles, distributions) |
 | **Horizon-dependent patterns** (e.g., predicting at 1h vs 24h requires different relationships) | `ForecasterDirect` | Trains one independent model per step — no error propagation. Better when the predictive relationship changes significantly across the forecast horizon. Requires `steps` at init; parallelizable with `n_jobs` |
 | **Statistical baseline** | `ForecasterStats` | Wraps ARIMA, SARIMAX, ETS, ARAR. Use as a benchmark to compare against ML models, or when the series is very short (< 200 obs) and ML overfits |
-| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL). `fit()` only stores context — no training. Good baseline and cold-start option. See the `foundation-forecasting` skill |
+| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0). `fit()` only stores context — no training. Good baseline and cold-start option. See the `foundation-forecasting` skill |
 | **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Use as a sanity-check baseline |
 
 ## Step 2b — Multiple Series
@@ -4608,7 +4612,7 @@ Skforecast is a **machine learning-first** library. The ML forecasters are the p
 | **Forecast many series with a shared model** (start here) | `ForecasterRecursiveMultiSeries` | One global model learns cross-series patterns. Supports DataFrame or dict input (dict allows series with different date ranges). Encoding options: `'ordinal'` (default), `'ordinal_category'`, `'onehot'`, `None`. Supports per-series transformers, per-series differentiation, series_weights |
 | **Other series are features for one target** | `ForecasterDirectMultiVariate` | All series become input features to predict a single `level`. Per-series lags via dict (`{'sales': [1,7], 'price': [1]}`). One model per step — no error propagation |
 | **Deep learning / complex nonlinear patterns** | `ForecasterRnn` | Keras-based RNN/LSTM/GRU. Single model outputs all steps and levels simultaneously via 3D tensors. Only conformal intervals (no bootstrapping). Requires keras |
-| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL. `fit()` only stores context. Native quantile intervals. Chronos-2 and TabICL support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
+| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0. `fit()` only stores context. Native quantile intervals. Chronos-2, TabICL, TabPFN-TS, and TFC-T0 support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
 
 ## Decision Flowchart
 
@@ -4641,7 +4645,7 @@ How many series?
         └─► ForecasterRnn
 
 Zero-shot / no training data / cold-start (single or multi-series)?
-    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL)
+    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0)
 ```
 
 ## Key Comparisons
@@ -4967,7 +4971,7 @@ the complete reference, including:
 - `ForecasterStats` — statistical models (ARIMA, ETS, SARIMAX, ARAR)
 - `ForecasterEquivalentDate` — baseline using past offsets
 - `ForecasterRnn` — deep learning (RNN/LSTM/GRU)
-- `ForecasterFoundation` — zero-shot with foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL)
+- `ForecasterFoundation` — zero-shot with foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0)
 - `FoundationModel` — low-level foundation model wrapper used by `ForecasterFoundation`
 
 ### Forecaster Methods
@@ -5155,10 +5159,12 @@ FoundationModel(
     **kwargs,                  # Forwarded to the resolved adapter. Common keys:
                                #   context_length : int
                                #   device_map / device : 'auto' | 'cuda' | 'mps' | 'cpu'
-                               #   torch_dtype : object (Chronos-2 only)
+                               #   torch_dtype : object (Chronos-2, T0)
                                #   cross_learning : bool (Chronos-2 only)
                                #   max_horizon, forecast_config_kwargs (TimesFM 2.5)
                                #   point_estimate, tabicl_config, temporal_features (TabICL)
+                               #   mode, point_estimate, tabpfn_model_config, temporal_features (TabPFN-TS)
+                               #   (T0 uses only context_length, device_map, torch_dtype)
 )
 
 ForecasterFoundation(
