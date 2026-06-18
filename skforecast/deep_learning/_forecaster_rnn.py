@@ -26,6 +26,7 @@ from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     check_exog,
     check_interval,
+    _normalize_interval_scale,
     check_predict_input,
     check_residuals_input,
     check_select_fit_kwargs,
@@ -416,7 +417,8 @@ class ForecasterRnn(ForecasterBase):
             "forecaster_name": "ForecasterRnn",
             "forecaster_task": "regression",
             "forecasting_scope": "global",  # single-series | global
-            "forecasting_strategy": "deep_learning",  # recursive | direct | deep_learning
+            "forecasting_strategy": "deep_learning",  # recursive | direct | deep_learning | foundation
+            "multiple_estimators": False,
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
@@ -428,6 +430,7 @@ class ForecasterRnn(ForecasterBase):
 
             "supports_lags": True,
             "supports_window_features": False,
+            "supports_calendar_features": False,
             "supports_transformer_series": True,
             "supports_transformer_exog": True,
             "supports_categorical_features": False,
@@ -1858,8 +1861,9 @@ class ForecasterRnn(ForecasterBase):
         if method == "conformal":
 
             if isinstance(interval, (list, tuple)):
+                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=True)
-                nominal_coverage = (interval[1] - interval[0]) / 100
+                nominal_coverage = interval[1] - interval[0]
             else:
                 check_interval(alpha=interval, alpha_literal='interval')
                 nominal_coverage = interval

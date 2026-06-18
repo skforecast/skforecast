@@ -19,6 +19,7 @@ from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
 import joblib
+import pickle
 import numpy as np
 import pandas as pd
 from scipy.special import comb
@@ -630,6 +631,119 @@ def configure_estimator_categorical_features(
     return fit_kwargs
 
 
+def cast_catboost_categorical_columns(
+    X: np.ndarray,
+    fit_kwargs: dict[str, object],
+    estimator: object,
+) -> np.ndarray:
+    """
+    Cast categorical columns of `X` to integer dtype as required by CatBoost
+    when `X` is a numpy array.
+
+    NaN values produced by the internal `OrdinalEncoder`
+    (`unknown_value=np.nan`, `encoded_missing_value=np.nan`) are filled with
+    `-1` before casting. `-1` cannot collide with the encoder's output range
+    (`0..n-1`) and is treated by CatBoost as a novel category.
+
+    No-op if `cat_features` is not in `fit_kwargs` or the estimator (or the
+    last step of a Pipeline) is not a CatBoost model.
+
+    Parameters
+    ----------
+    X : numpy ndarray
+        Training or test matrix with categorical columns at the indices
+        listed in `fit_kwargs['cat_features']`.
+    fit_kwargs : dict
+        Keyword arguments to pass to `estimator.fit`. Must contain the key
+        `'cat_features'` (a list of int indices) for the cast to run.
+    estimator : object
+        Estimator the matrix will be passed to. The cast only runs if this
+        is a CatBoost estimator (or a `Pipeline` whose last step is).
+
+    Returns
+    -------
+    X : numpy ndarray
+        Matrix with categorical columns cast to int and NaNs replaced by
+        `-1`. Returned unchanged if the cast does not apply.
+
+    """
+
+    if 'cat_features' not in fit_kwargs:
+        return X
+
+    target_estimator = estimator
+    if isinstance(target_estimator, Pipeline):
+        target_estimator = target_estimator[-1]
+    if type(target_estimator).__module__.split('.')[0] != 'catboost':
+        return X
+
+    cat_idx = np.asarray(fit_kwargs['cat_features'])
+    X = X.astype(object)
+    cat_block = np.asarray(X[:, cat_idx], dtype=float)
+    X[:, cat_idx] = np.nan_to_num(cat_block, nan=-1).astype(int)
+
+    return X
+
+
+def cast_catboost_categorical_columns_dataframe(
+    X: pd.DataFrame,
+    fit_kwargs: dict[str, object],
+    estimator: object,
+    feature_names: list[str],
+) -> pd.DataFrame:
+    """
+    Cast categorical columns of `X` to integer dtype as required by CatBoost
+    when `X` is a pandas DataFrame.
+
+    Two dtypes are supported for categorical columns:
+    * `pandas.Categorical` — converted via `.cat.codes` (NaN -> -1 by default).
+    * float (with NaN from the `OrdinalEncoder`) — `fillna(-1).astype(int)`.
+
+    No-op if `cat_features` is not in `fit_kwargs` or the estimator (or the
+    last step of a Pipeline) is not a CatBoost model.
+
+    Parameters
+    ----------
+    X : pandas DataFrame
+        Training matrix.
+    fit_kwargs : dict
+        Keyword arguments to pass to `estimator.fit`. Must contain the key
+        `'cat_features'` (a list of int indices) for the cast to run.
+    estimator : object
+        Estimator the matrix will be passed to. The cast only runs if this
+        is a CatBoost estimator (or a `Pipeline` whose last step is).
+    feature_names : list of str
+        Column names of `X` in positional order; used to translate the
+        integer indices in `fit_kwargs['cat_features']` to column labels.
+
+    Returns
+    -------
+    X : pandas DataFrame
+        DataFrame with categorical columns cast to int. Returned unchanged
+        if the cast does not apply.
+
+    """
+
+    if 'cat_features' not in fit_kwargs:
+        return X
+
+    target_estimator = estimator
+    if isinstance(target_estimator, Pipeline):
+        target_estimator = target_estimator[-1]
+    if type(target_estimator).__module__.split('.')[0] != 'catboost':
+        return X
+
+    X = X.copy()
+    cat_cols = [feature_names[i] for i in fit_kwargs['cat_features']]
+    for col in cat_cols:
+        if hasattr(X[col].dtype, 'categories'):
+            X[col] = X[col].cat.codes.astype(int)
+        else:
+            X[col] = X[col].fillna(-1).astype(int)
+
+    return X
+
+
 def _get_estimator_categorical_set_params(
     forecaster: object
 ) -> dict[str, object]:
@@ -907,6 +1021,61 @@ def check_exog_dtypes(
                 )
 
 
+# TODO: Remove in skforecast 0.24.0 when percentile support is removed.
+def _normalize_interval_scale(
+    interval: list[float] | tuple[float]
+) -> list[float]:
+    """
+    Normalize a 2-value interval to the 0-1 quantile scale.
+
+    Detection rules, given the two interval bounds:
+
+    - All values in `[0, 1]`: already quantiles, returned unchanged.
+    - All values in `(1, 100]`: legacy percentiles. They are divided by 100
+    and a `FutureWarning` is emitted.
+    - Mixed (some value `<= 1` and some value `> 1`): the scale is ambiguous
+    and a `ValueError` is raised.
+
+    The value exactly `1` is treated as a quantile (valid upper bound), unless
+    it appears together with another value `> 1` (then it is considered mixed
+    and a `ValueError` is raised).
+
+    Parameters
+    ----------
+    interval : list, tuple
+        Sequence of two interval bounds, either as quantiles (0-1) or as legacy
+        percentiles (0-100).
+
+    Returns
+    -------
+    interval : list
+        Interval bounds expressed as quantiles in the 0-1 scale.
+
+    """
+
+    values = list(interval)
+    any_above_one = any(v > 1 for v in values)
+    any_le_one = any(v <= 1 for v in values)
+
+    if any_above_one and any_le_one:
+        raise ValueError(
+            "`interval` mixes values <= 1 and > 1, so the scale is ambiguous. "
+            "Use quantiles in the [0, 1] range, e.g. `interval=[0.05, 0.95]`."
+        )
+
+    if any_above_one:
+        warnings.warn(
+            "Passing `interval` as percentiles (0-100) is deprecated. Use "
+            "quantiles (0-1) instead. For example, use `interval=[0.05, 0.95]` "
+            "instead of `interval=[5, 95]`. Percentile support will be removed "
+            "in skforecast 0.24.0.",
+            FutureWarning
+        )
+        return [v / 100 for v in values]
+
+    return [float(v) for v in values]
+
+
 def check_interval(
     interval: list[float] | tuple[float] | None = None,
     ensure_symmetric_intervals: bool = False,
@@ -920,9 +1089,9 @@ def check_interval(
     Parameters
     ----------
     interval : list, tuple, default None
-        Confidence of the prediction interval estimated. Sequence of percentiles
-        to compute, which must be between 0 and 100 inclusive. For example, 
-        interval of 95% should be as `interval = [2.5, 97.5]`.
+        Confidence of the prediction interval estimated. Sequence of bounds to
+        compute. Values must be between 0 and 1 inclusive. For example, interval
+        of 95% should be as `interval = [0.025, 0.975]`.
     ensure_symmetric_intervals : bool, default False
         If True, ensure that the intervals are symmetric.
     quantiles : list, tuple, default None
@@ -944,24 +1113,24 @@ def check_interval(
         if not isinstance(interval, (list, tuple)):
             raise TypeError(
                 "`interval` must be a `list` or `tuple`. For example, interval of 95% "
-                "should be as `interval = [2.5, 97.5]`."
+                "should be as `interval = [0.025, 0.975]`."
             )
 
         if len(interval) != 2:
             raise ValueError(
                 "`interval` must contain exactly 2 values, respectively the "
                 "lower and upper interval bounds. For example, interval of 95% "
-                "should be as `interval = [2.5, 97.5]`."
+                "should be as `interval = [0.025, 0.975]`."
             )
 
-        if (interval[0] < 0.) or (interval[0] >= 100.):
+        if (interval[0] < 0.) or (interval[0] >= 1.):
             raise ValueError(
-                f"Lower interval bound ({interval[0]}) must be >= 0 and < 100."
+                f"Lower interval bound ({interval[0]}) must be >= 0 and < 1."
             )
 
-        if (interval[1] <= 0.) or (interval[1] > 100.):
+        if (interval[1] <= 0.) or (interval[1] > 1.):
             raise ValueError(
-                f"Upper interval bound ({interval[1]}) must be > 0 and <= 100."
+                f"Upper interval bound ({interval[1]}) must be > 0 and <= 1."
             )
 
         if interval[0] >= interval[1]:
@@ -970,11 +1139,11 @@ def check_interval(
                 f"upper interval bound ({interval[1]})."
             )
         
-        if ensure_symmetric_intervals and interval[0] + interval[1] != 100:
+        if ensure_symmetric_intervals and interval[0] + interval[1] != 1.:
             raise ValueError(
                 f"Interval must be symmetric, the sum of the lower, ({interval[0]}), "
                 f"and upper, ({interval[1]}), interval bounds must be equal to "
-                f"100. Got {interval[0] + interval[1]}."
+                f"1. Got {interval[0] + interval[1]}."
             )
         
     if quantiles is not None:
@@ -2276,30 +2445,48 @@ def manage_warnings(func: Callable[P, R]) -> Callable[P, R]:
 
 @manage_warnings
 def save_forecaster(
-    forecaster: object, 
+    forecaster: object,
     file_name: str,
-    save_custom_functions: bool = True, 
-    verbose: bool = True,
+    backend: str = 'joblib',
+    save_custom_functions: bool = True,
+    verbose: bool = False,
     suppress_warnings: bool = False
 ) -> None:
     """
-    Save forecaster model using joblib. If custom functions are used to create
-    weights, they are saved as .py files.
+    Save forecaster model to disk. Custom functions used to create weights that
+    are defined in the `'__main__'` namespace (e.g. a notebook or a script run
+    directly) are saved as .py files, since they cannot be re-imported when the
+    forecaster is loaded in a different session. Functions imported from a module
+    are restored automatically and are not exported. When `backend='cloudpickle'`,
+    custom functions are embedded in the saved file and no .py files are created.
 
     Parameters
     ----------
     forecaster : Forecaster
         Forecaster created with skforecast library.
     file_name : str
-        File name given to the object. The save extension will be .joblib.
+        File name given to the object. The file extension is determined by
+        the `backend` argument.
+    backend : str, default 'joblib'
+        Serialization backend used to save the forecaster.
+
+        - If `'joblib'`, the forecaster is saved using joblib (extension
+        `.joblib`).
+        - If `'pickle'`, the forecaster is saved using pickle (extension
+        `.pkl`).
+        - If `'cloudpickle'`, the forecaster is saved using cloudpickle
+        (extension `.cloudpickle`). Custom functions and user-defined classes
+        are embedded in the file, so no separate `.py` files are needed.
+        Requires `cloudpickle` to be installed.
     save_custom_functions : bool, default True
-        If True, save custom functions used in the forecaster (weight_func) as 
-        .py files. Custom functions need to be available in the environment 
-        where the forecaster is going to be loaded.
-    verbose : bool, default True
+        If True, save custom functions used in the forecaster (weight_func) as
+        .py files, but only those defined in the `'__main__'` namespace. These
+        functions need to be available in the environment where the forecaster
+        is going to be loaded. Has no effect when `backend='cloudpickle'`.
+    verbose : bool, default False
         Print summary about the forecaster saved.
     suppress_warnings : bool, default False
-        If `True`, skforecast warnings will be suppressed. See 
+        If `True`, skforecast warnings will be suppressed. See
         skforecast.exceptions.warn_skforecast_categories for more information.
 
     Returns
@@ -2308,45 +2495,95 @@ def save_forecaster(
 
     """
 
-    file_name = Path(file_name).with_suffix('.joblib')
+    valid_backends = {'joblib', 'pickle', 'cloudpickle'}
+    if backend not in valid_backends:
+        raise ValueError(
+            f"Invalid `backend` argument: '{backend}'. Valid options are: "
+            f"{', '.join(repr(b) for b in sorted(valid_backends))}."
+        )
+
+    backend_extensions = {
+        'joblib': '.joblib',
+        'pickle': '.pkl',
+        'cloudpickle': '.cloudpickle'
+    }
+    file_name = Path(file_name).with_suffix(backend_extensions[backend])
 
     # Save forecaster
-    joblib.dump(forecaster, filename=file_name)
+    if backend == 'joblib':
+        joblib.dump(forecaster, filename=file_name)
+    elif backend == 'pickle':
+        with open(file_name, 'wb') as file:
+            pickle.dump(forecaster, file)
+    elif backend == 'cloudpickle':
+        try:
+            import cloudpickle
+        except ImportError as exc:
+            raise ImportError(
+                "'cloudpickle' is required for backend='cloudpickle' but is not "
+                "installed. Install it with: pip install cloudpickle"
+            ) from exc
+        with open(file_name, 'wb') as file:
+            cloudpickle.dump(forecaster, file)
 
-    if save_custom_functions:
-        # Save custom functions to create weights
+    if backend != 'cloudpickle':
         if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
-            if isinstance(forecaster.weight_func, dict):
-                for fun in set(forecaster.weight_func.values()):
-                    file_name = fun.__name__ + '.py'
-                    with open(file_name, 'w') as file:
-                        file.write(inspect.getsource(fun))
-            else:
-                file_name = forecaster.weight_func.__name__ + '.py'
-                with open(file_name, 'w') as file:
-                    file.write(inspect.getsource(forecaster.weight_func))
-    else:
-        if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
-            warnings.warn(
-                "Custom function(s) used to create weights are not saved. To save them, "
-                "set `save_custom_functions` to `True`.",
-                SaveLoadSkforecastWarning
+            funs = (
+                set(forecaster.weight_func.values())
+                if isinstance(forecaster.weight_func, dict)
+                else {forecaster.weight_func}
             )
+            # Only functions defined in the '__main__' namespace (notebook/script)
+            # cannot be re-imported when the forecaster is loaded in a different
+            # session, so they are the only ones that need the .py export / warning.
+            # Functions from importable modules are restored automatically by
+            # joblib/pickle (by reference).
+            main_funs = sorted(
+                (f for f in funs if getattr(f, '__module__', None) == '__main__'),
+                key=lambda f: f.__name__
+            )
+            if main_funs:
+                if save_custom_functions:
+                    saved_files = []
+                    for fun in main_funs:
+                        fun_file_name = fun.__name__ + '.py'
+                        with open(fun_file_name, 'w') as file:
+                            file.write(inspect.getsource(fun))
+                        saved_files.append(fun_file_name)
+                    warnings.warn(
+                        "Custom function(s) used to create weights are defined in "
+                        "the '__main__' namespace and have been saved as: "
+                        f"{', '.join(repr(f) for f in saved_files)}. These files "
+                        "must be imported before loading the forecaster.\n"
+                        "Visit the documentation for more information: "
+                        "https://skforecast.org/latest/user_guides/save-load-forecaster.html"
+                        "#saving-and-loading-a-forecaster-model-with-custom-features",
+                        SaveLoadSkforecastWarning
+                    )
+                else:
+                    warnings.warn(
+                        "Custom function(s) used to create weights are defined in "
+                        "the '__main__' namespace and have not been saved. To save "
+                        "them automatically, set `save_custom_functions=True`. "
+                        "Otherwise, ensure they are importable before loading the "
+                        "forecaster.",
+                        SaveLoadSkforecastWarning
+                    )
 
-    if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
-        skforecast_classes = {'RollingFeatures'}
-        custom_classes = set(forecaster.window_features_class_names) - skforecast_classes
-        if custom_classes:
-            warnings.warn(
-                "The Forecaster includes custom user-defined classes in the "
-                "`window_features` argument. These classes are not saved automatically "
-                "when saving the Forecaster. Please ensure you save these classes "
-                "manually and import them before loading the Forecaster.\n"
-                "    Custom classes: " + ', '.join(custom_classes) + "\n"
-                "Visit the documentation for more information: "
-                "https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features",
-                SaveLoadSkforecastWarning
-            )
+        if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
+            skforecast_classes = {'RollingFeatures'}
+            custom_classes = set(forecaster.window_features_class_names) - skforecast_classes
+            if custom_classes:
+                warnings.warn(
+                    "The Forecaster includes custom user-defined classes in the "
+                    "`window_features` argument. These classes are not saved automatically "
+                    "when saving the Forecaster. Please ensure you save these classes "
+                    "manually and import them before loading the Forecaster.\n"
+                    "    Custom classes: " + ', '.join(custom_classes) + "\n"
+                    "Visit the documentation for more information: "
+                    "https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features",
+                    SaveLoadSkforecastWarning
+                )
 
     if verbose:
         forecaster.summary()
@@ -2355,33 +2592,80 @@ def save_forecaster(
 @manage_warnings
 def load_forecaster(
     file_name: str,
+    backend: str | None = None,
     verbose: bool = True,
     suppress_warnings: bool = False
 ) -> object:
     """
-    Load forecaster model using joblib. If the forecaster was saved with 
-    custom user-defined classes as as window features or custom
-    functions to create weights, these objects must be available
-    in the environment where the forecaster is going to be loaded.
+    Load forecaster model from disk. If the forecaster was saved with
+    custom user-defined classes as window features or custom functions
+    to create weights, these objects must be available in the environment
+    where the forecaster is going to be loaded.
 
     Parameters
     ----------
-    file_name: str
+    file_name : str
         Object file name.
-    verbose: bool, default True
+    backend : str, None, default None
+        Serialization backend used to load the forecaster. When `None`, the
+        backend is inferred from the file extension:
+
+        - `.joblib` → `'joblib'`
+        - `.pkl` or `.pickle` → `'pickle'`
+        - `.cloudpickle` → `'cloudpickle'`
+    verbose : bool, default True
         Print summary about the forecaster loaded.
     suppress_warnings : bool, default False
-        If `True`, skforecast warnings will be suppressed. See 
+        If `True`, skforecast warnings will be suppressed. See
         skforecast.exceptions.warn_skforecast_categories for more information.
 
     Returns
     -------
-    forecaster: Forecaster
+    forecaster : Forecaster
         Forecaster created with skforecast library.
-    
+
     """
 
-    forecaster = joblib.load(filename=Path(file_name))
+    extension_backend_map = {
+        '.cloudpickle': 'cloudpickle',
+        '.joblib': 'joblib',
+        '.pkl': 'pickle',
+        '.pickle': 'pickle',
+    }
+    valid_backends = {'joblib', 'pickle', 'cloudpickle'}
+
+    if backend is None:
+        suffix = Path(file_name).suffix.lower()
+        if suffix not in extension_backend_map:
+            raise ValueError(
+                f"Cannot infer backend from file extension '{suffix}'. "
+                f"Recognized extensions: "
+                f"{', '.join(repr(e) for e in sorted(extension_backend_map))}. "
+                f"Provide the `backend` argument explicitly."
+            )
+        backend = extension_backend_map[suffix]
+    elif backend not in valid_backends:
+        raise ValueError(
+            f"Invalid `backend` argument: '{backend}'. Valid options are: "
+            f"{', '.join(repr(b) for b in sorted(valid_backends))}."
+        )
+
+    if backend == 'joblib':
+        forecaster = joblib.load(filename=Path(file_name))
+    elif backend == 'pickle':
+        with open(file_name, 'rb') as file:
+            forecaster = pickle.load(file)
+    elif backend == 'cloudpickle':
+        try:
+            import cloudpickle  # noqa: F401 — needed to unpickle cloudpickle files
+        except ImportError as exc:
+            raise ImportError(
+                "'cloudpickle' is required for backend='cloudpickle' but is not "
+                "installed. Install it with: pip install cloudpickle"
+            ) from exc
+        with open(file_name, 'rb') as file:
+            forecaster = pickle.load(file)
+
     forecaster_v = forecaster.skforecast_version
 
     if forecaster_v != __version__:
@@ -2537,8 +2821,8 @@ def select_n_jobs_fit_forecaster(
     
     - If forecaster_name is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and estimator_name is a linear estimator then `n_jobs = 1`, 
-    otherwise `n_jobs = cpu_count() - 1`.
-    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
+    otherwise `n_jobs = max(1, cpu_count() - 1)`.
+    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = max(1, cpu_count() - 1)`.
     - If estimator is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
     This is because `lightgbm` is highly optimized for gradient boosting and
     parallelizes operations at a very fine-grained level, making additional
@@ -2565,9 +2849,9 @@ def select_n_jobs_fit_forecaster(
         if isinstance(estimator, LinearModel):
             n_jobs = 1
         elif type(estimator).__name__ == 'LGBMRegressor':
-            n_jobs = joblib.cpu_count() - 1 if estimator.n_jobs == 1 else 1
+            n_jobs = max(1, joblib.cpu_count() - 1) if estimator.n_jobs == 1 else 1
         else:
-            n_jobs = joblib.cpu_count() - 1
+            n_jobs = max(1, joblib.cpu_count() - 1)
     else:
         n_jobs = 1
 

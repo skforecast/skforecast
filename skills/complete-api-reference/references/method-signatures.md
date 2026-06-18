@@ -156,6 +156,7 @@ FoundationModel(
                                #   cross_learning : bool (Chronos-2 only)
                                #   max_horizon, forecast_config_kwargs (TimesFM 2.5)
                                #   point_estimate, tabicl_config, temporal_features (TabICL)
+                               #   mode, point_estimate, tabpfn_model_config, temporal_features (TabPFN-TS)
 )
 
 ForecasterFoundation(
@@ -931,7 +932,7 @@ TimeSeriesDifferentiator(
     window_size=None         # int | None
 )
 
-DateTimeFeatureTransformer(
+CalendarFeatures(
     features=None,           # list[str] | None, e.g. ['year', 'month', 'day_of_week', 'hour']
     encoding='cyclical',     # 'cyclical' | 'onehot' | None
     max_values=None          # dict[str, int] | None, max values for cyclical encoding

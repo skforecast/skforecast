@@ -4,7 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from ...preprocessing import reshape_series_exog_dict_to_long
+from ..._preprocessing import reshape_series_exog_dict_to_long
 
 
 def test_reshape_series_exog_dict_to_long_raises_ValueError_when_both_None():

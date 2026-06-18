@@ -1,6 +1,6 @@
 # Skforecast
 
-> Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. Works with any scikit-learn compatible estimator (LightGBM, XGBoost, CatBoost, Keras, etc.). Version 0.22.0+. Python 3.10-3.14. BSD-3-Clause.
+> Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. Works with any scikit-learn compatible estimator (LightGBM, XGBoost, CatBoost, Keras, etc.). Version 0.23.0+. Python 3.10-3.14. BSD-3-Clause.
 
 - [Documentation](https://skforecast.org/latest/): Full documentation site
 - [PyPI](https://pypi.org/project/skforecast/): pip install skforecast
@@ -33,7 +33,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [Hyperparameter tuning](https://skforecast.org/latest/user_guides/hyperparameter-tuning-and-lags-selection.html): Grid, random, and Bayesian search for model optimization
 - [Exogenous variables](https://skforecast.org/latest/user_guides/exogenous-variables.html): Adding external features to forecasting models
 - [Window and custom features](https://skforecast.org/latest/user_guides/window-features-and-custom-features.html): Rolling statistics and custom feature engineering
-- [Calendar features](https://skforecast.org/latest/user_guides/calendar-features.html): Date and time-based features with DateTimeFeatureTransformer
+- [Calendar features](https://skforecast.org/latest/user_guides/calendar-features.html): Date and time-based features with CalendarFeatures
 - [Categorical features](https://skforecast.org/latest/user_guides/categorical-features.html): Native categorical support with LightGBM, XGBoost, CatBoost
 - [Classification forecasting](https://skforecast.org/latest/user_guides/autoregressive-classification-forecasting.html): Classification-based forecasting for categorical time series
 - [Handling missing values](https://skforecast.org/latest/user_guides/handling-missing-values.html): Strategies for training and forecasting with incomplete data
@@ -87,7 +87,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 ## API Reference
 
 - [model_selection](https://skforecast.org/latest/api/model_selection.html): backtesting_forecaster, grid/random/bayesian search, TimeSeriesFold, OneStepAheadFold
-- [preprocessing](https://skforecast.org/latest/api/preprocessing.html): RollingFeatures, TimeSeriesDifferentiator, DateTimeFeatureTransformer, QuantileBinner
+- [preprocessing](https://skforecast.org/latest/api/preprocessing.html): RollingFeatures, TimeSeriesDifferentiator, CalendarFeatures, QuantileBinner
 - [feature_selection](https://skforecast.org/latest/api/feature_selection.html): select_features, select_features_multiseries
 - [stats](https://skforecast.org/latest/api/stats.html): Arima, Sarimax, Ets, Arar model classes
 - [FoundationModel](https://skforecast.org/latest/api/foundationmodel): Estimator used by ForecasterFoundation to run zero-shot foundation models; delegates model-specific execution to low-level adapters for Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL

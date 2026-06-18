@@ -349,3 +349,72 @@ class FakeTabICLForecaster:
             data[q] = [r[q] for r in rows]
 
         return pd.DataFrame(data, index=index)
+
+
+# Fake TabPFN-TS pipeline
+# ==============================================================================
+class FakeTabPFNTSPipeline:
+    """
+    Fake TabPFNTSPipeline for testing without tabpfn-time-series.
+
+    `predict_df()` mirrors the real signature (`future_df` and
+    `prediction_length` are mutually exclusive) and returns a DataFrame
+    with a (item_id, timestamp) MultiIndex where:
+
+    - ``"target"`` column = 0.0 for every step.
+    - Each quantile column ``q`` = ``q`` (quantile value itself) for every
+      step, making assertions straightforward.
+
+    Records the last call arguments for inspection.
+    """
+
+    def __init__(
+        self,
+        max_context_length=32768,
+        temporal_features=None,
+        tabpfn_mode=None,
+        tabpfn_output_selection="median",
+        tabpfn_model_config=None,
+    ):
+        self.max_context_length = max_context_length
+        self.temporal_features = temporal_features
+        self.tabpfn_mode = tabpfn_mode
+        self.tabpfn_output_selection = tabpfn_output_selection
+        self.tabpfn_model_config = tabpfn_model_config or {}
+        self.last_context_df = None
+        self.last_future_df = None
+        self.last_quantiles = None
+
+    def predict_df(
+        self, context_df, future_df=None, prediction_length=None, quantiles=None
+    ):
+        if (future_df is None) == (prediction_length is None):
+            raise ValueError(
+                "Provide exactly one of future_df or prediction_length"
+            )
+
+        self.last_context_df = context_df.copy()
+        self.last_future_df = future_df.copy() if future_df is not None else None
+        self.last_quantiles = list(quantiles) if quantiles is not None else None
+
+        if quantiles is None:
+            quantiles = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+        # Build a MultiIndex (item_id, timestamp) result DataFrame.
+        idx_tuples = []
+        rows = []
+        for item_id in future_df["item_id"].unique():
+            item_rows = future_df[future_df["item_id"] == item_id]
+            for _, row in item_rows.iterrows():
+                idx_tuples.append((item_id, row["timestamp"]))
+                r = {"target": 0.0}
+                for q in quantiles:
+                    r[q] = float(q)
+                rows.append(r)
+
+        index = pd.MultiIndex.from_tuples(idx_tuples, names=["item_id", "timestamp"])
+        data = {"target": [r["target"] for r in rows]}
+        for q in quantiles:
+            data[q] = [r[q] for r in rows]
+
+        return pd.DataFrame(data, index=index)

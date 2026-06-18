@@ -25,6 +25,12 @@ Use prediction intervals to quantify forecast uncertainty. Skforecast offers thr
 | **Conformal** | All ML forecasters | Distribution-free intervals via conformal prediction |
 | **Built-in** | ForecasterStats (ARIMA, ETS) | Parametric intervals from the statistical model |
 
+### Related skills
+
+- **Before**: `forecasting-single-series` / `forecasting-multiple-series` (have a fitted forecaster before adding intervals)
+- **Before**: `hyperparameter-optimization` (interval calibration assumes a tuned point forecaster)
+- **After**: `drift-detection` (monitor whether residual assumptions still hold once the model is in production)
+
 ## Bootstrapping Method
 
 ```python
@@ -105,7 +111,7 @@ predictions = forecaster.predict_quantiles(
 ```
 
 TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, …, 0.9]`;
-Chronos-2 and TabICL accept any quantile in `(0, 1)`. See the
+Chronos-2, TabICL and TabPFN-TS accept any quantile in `(0, 1)`. See the
 `foundation-forecasting` skill for details.
 
 ## During Backtesting

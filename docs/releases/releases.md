@@ -10,6 +10,66 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.23.0 <small>In development</small> { id="0.23.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span> New `calendar_features` parameter in all ML Forecasters (<code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>). Users can now pass a <code>[CalendarFeatures]</code> instance to delegate the automatic creation of calendar features (e.g. month, day of week, hour) from the datetime index to the forecaster. Calendar features are generated during both training and prediction, requiring no manual feature engineering.
+
++ <span class="badge text-bg-feature">Feature</span> New <code>TabPFNAdapter</code> in the <code>foundation</code> module for zero-shot forecasting with **TabPFN-TS** (Prior Labs), registered under the `'priorlabs/tabpfn'` `model_id` prefix. The adapter supports known-future exogenous variables, arbitrary quantiles in the 0-1 range, local and cloud-API inference modes, and lazy import of the `tabpfn-time-series` backend. This brings the number of foundation model adapters available out of the box to five. Thanks to the [Prior Labs](https://priorlabs.ai) team for contributing this adapter. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1206](https://github.com/skforecast/skforecast/issues/1206), [#1213](https://github.com/skforecast/skforecast/pull/1213))
+
++ <span class="badge text-bg-feature">Feature</span> New functions <code>[acf]</code>, <code>[pacf]</code> and <code>[calculate_lag_autocorrelation]</code> in the <code>[stats]</code> module. Fast ACF and PACF implementations via FFT and Levinson-Durbin, removing the dependency on `statsmodels` for autocorrelation calculations.
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the calendar feature engineering toolkit (<code>[CalendarFeatures]</code>, <code>[create_calendar_features]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
+
++ <span class="badge text-bg-enhancement">Enhancement</span> New `backend` parameter in <code>[save_forecaster]</code> and <code>[load_forecaster]</code> to select the serialization engine. In addition to the default `'joblib'`, the `'pickle'` and `'cloudpickle'` backends are now supported. The `'cloudpickle'` backend embeds custom functions (e.g. `weight_func`) and user-defined classes (e.g. `window_features`) directly in the saved file, removing the need to export them as separate `.py` files. On load, the backend is inferred automatically from the file extension (`.joblib`, `.pkl`/`.pickle`, `.cloudpickle`) when `backend` is not provided. [User guide](../user_guides/save-load-forecaster.ipynb)
+
++ <span class="badge text-bg-api-change">API Change</span> The `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions is now expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`) instead of percentiles in the 0-100 range. Passing percentiles is still supported but deprecated and emits a `FutureWarning`; support will be removed in a future version.
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[select_features]</code> and <code>[select_features_multiseries]</code> now support calendar features. The `select_only` argument accepts the new value `'calendar'` (and a list combining `'autoreg'`, `'exog'` and `'calendar'`), and both functions return a fourth element, `selected_calendar_features`, with the selected calendar features at the source-feature level (e.g. `month`). Calendar features are evaluated at the encoded-column level (e.g. `month_sin`, `month_cos`) and a source feature is kept whenever at least one of its encoded columns is selected.
+
++ <span class="badge text-bg-fix">Fix</span> Fixed parallel execution failure in single-core environments (e.g. Docker with `cpus: '1.0'`). <code>[select_n_jobs_backtesting]</code> and <code>[select_n_jobs_fit_forecaster]</code> now fall back to `n_jobs=1` instead of `0`, which raised `ValueError` in `joblib.Parallel`. ([#1197](https://github.com/skforecast/skforecast/issues/1197))
+
++ <span class="badge text-bg-fix">Fix</span> Fixed <code>[TimeSeriesFold]</code> `split` to clamp the start of the last window to zero when `window_size` exceeds `initial_train_size`. Previously a small negative `iloc` start was interpreted by Python as an offset from the end of the index, producing an empty last window and a downstream `TypeError`. This was hit whenever a foundation model's `context_length` exceeded the initial train size during backtesting. [#1213](https://github.com/skforecast/skforecast/pull/1213)
+
+
+**Added**
+
++ New `calendar_features` parameter in all ML Forecasters (<code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>). Users can now pass a <code>[CalendarFeatures]</code> instance to delegate the automatic creation of calendar features (e.g. month, day of week, hour) from the datetime index to the forecaster. Calendar features are generated during both training and prediction, requiring no manual feature engineering. Only supported when the index of the input data is a `pandas.DatetimeIndex`.
+
++ New <code>TabPFNAdapter</code> in the <code>foundation</code> module wrapping `tabpfn-time-series` (`TabPFNTSPipeline`), registered under the `'priorlabs/tabpfn'` `model_id` prefix. Supports known-future exogenous variables, arbitrary quantiles in the 0-1 range, local and cloud-API inference modes, and lazy backend import. Includes a `FakeTabPFNTSPipeline` fixture and a full mock-based test suite mirroring the TabICL adapter tests. Contributed by the [Prior Labs](https://priorlabs.ai) team. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1206](https://github.com/skforecast/skforecast/issues/1206), [#1213](https://github.com/skforecast/skforecast/pull/1213))
+
++ New functions <code>[acf]</code>, <code>[pacf]</code> and <code>[calculate_lag_autocorrelation]</code> in the <code>[stats]</code> module. Fast ACF and PACF implementations via FFT and Levinson-Durbin, removing the dependency on `statsmodels` for autocorrelation calculations.
+
++ New `backend` parameter in <code>[save_forecaster]</code> and <code>[load_forecaster]</code> to select the serialization engine. In addition to the default `'joblib'`, the `'pickle'` and `'cloudpickle'` backends are now supported. The `'cloudpickle'` backend embeds custom functions (e.g. `weight_func`) and user-defined classes (e.g. `window_features`) directly in the saved file, removing the need to export them as separate `.py` files. On load, the backend is inferred automatically from the file extension (`.joblib`, `.pkl`/`.pickle`, `.cloudpickle`) when `backend` is not provided. [User guide](../user_guides/save-load-forecaster.ipynb)
+
+
+**Changed**
+
++ The `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions is now expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`) instead of percentiles in the 0-100 range. Passing percentiles is still supported but deprecated and emits a `FutureWarning`; support will be removed in a future version.
+
++ Refactored the calendar feature engineering toolkit (<code>[CalendarFeatures]</code>, <code>[create_calendar_features]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
+
++ <code>[select_features]</code> and <code>[select_features_multiseries]</code> now support calendar features. The `select_only` argument accepts the new value `'calendar'` (and a list combining `'autoreg'`, `'exog'` and `'calendar'`), and both functions return a fourth element, `selected_calendar_features`, with the selected calendar features at the source-feature level (e.g. `month`). Calendar features are evaluated at the encoded-column level (e.g. `month_sin`, `month_cos`) and a source feature is kept whenever at least one of its encoded columns is selected. A `ValueError` is now raised when the group(s) requested in `select_only` contain no features to evaluate.
+
++ <code>[calculate_distance_from_holiday]</code> moved from <code>[experimental]</code> to <code>[preprocessing]</code>. The function now accepts a `pandas.Series` or `pandas.DataFrame`, infers the time unit from the index frequency, renames its output columns to `time_to_holiday` and `time_since_holiday`, no longer mutates the input, requires `holiday_column` to be passed explicitly when `X` is a DataFrame, and emits a `UserWarning` while filling with `False` when the holiday column contains NaN values.
+
++ Removed the unused experimental `FastOrdinalEncoder`.
+
++ The `verbose` argument of <code>[save_forecaster]</code> now defaults to `False` (previously `True`), so saving a forecaster no longer prints its summary unless explicitly requested. `load_forecaster` is unchanged (`verbose=True`).
+
++ The internal preprocessing submodule was renamed from `skforecast.preprocessing.preprocessing` to `skforecast.preprocessing._preprocessing`. The public API (`from skforecast.preprocessing import …`) is unchanged; only direct imports from the submodule path are affected.
+
+
+**Fixed**
+
++ Fixed parallel execution failure in single-core environments (e.g. Docker with `cpus: '1.0'`). <code>[select_n_jobs_backtesting]</code> and <code>[select_n_jobs_fit_forecaster]</code> now fall back to `n_jobs=1` instead of `0`, which raised `ValueError` in `joblib.Parallel`. ([#1197](https://github.com/skforecast/skforecast/issues/1197))
+
++ Fixed <code>[TimeSeriesFold]</code> `split` to clamp the start of the last window to zero when `window_size` exceeds `initial_train_size`. Previously a small negative `iloc` start was interpreted by Python as an offset from the end of the index, producing an empty last window and a downstream `TypeError`. This was hit whenever a foundation model's `context_length` exceeded the initial train size during backtesting. [#1213](https://github.com/skforecast/skforecast/pull/1213)
+
++ Fix a bug in <code>[ForecasterStats]</code> where the `remove_estimators` method was not deleting the corresponding estimator parameters.
+
+
 ## 0.22.0 <small>Apr 23, 2026</small> { id="0.22.0" }
 
 The main changes in this release are:
@@ -1512,6 +1572,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [Sarimax]: ../api/stats.md#skforecast.stats._sarimax.Sarimax
 [Ets]: ../api/stats.md#skforecast.stats._ets.Ets
 [Arar]: ../api/stats.md#skforecast.stats._arar.Arar
+[acf]: ../api/stats.md#skforecast.stats._autocorrelation.acf
+[pacf]: ../api/stats.md#skforecast.stats._autocorrelation.pacf
+[calculate_lag_autocorrelation]: ../api/stats.md#skforecast.stats._autocorrelation.calculate_lag_autocorrelation
 
 <!-- model_selection -->
 [model_selection]: ../api/model_selection.md
@@ -1543,15 +1606,18 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- preprocessing -->
 [preprocessing]: ../api/preprocessing.md
-[RollingFeatures]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.RollingFeatures
-[RollingFeaturesClassification]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.RollingFeaturesClassification
-[reshape_series_wide_to_long]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.reshape_series_wide_to_long
-[reshape_series_long_to_dict]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict
-[reshape_exog_long_to_dict]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.reshape_exog_long_to_dict
-[reshape_series_exog_dict_to_long]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.reshape_series_exog_dict_to_long
-[TimeSeriesDifferentiator]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
-[QuantileBinner]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.QuantileBinner
-[ConformalIntervalCalibrator]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
+[RollingFeatures]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.RollingFeatures
+[RollingFeaturesClassification]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.RollingFeaturesClassification
+[reshape_series_wide_to_long]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.reshape_series_wide_to_long
+[reshape_series_long_to_dict]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.reshape_series_long_to_dict
+[reshape_exog_long_to_dict]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.reshape_exog_long_to_dict
+[reshape_series_exog_dict_to_long]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.reshape_series_exog_dict_to_long
+[TimeSeriesDifferentiator]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.TimeSeriesDifferentiator
+[QuantileBinner]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.QuantileBinner
+[ConformalIntervalCalibrator]: ../api/preprocessing.md#skforecast.preprocessing._preprocessing.ConformalIntervalCalibrator
+[create_calendar_features]: ../api/preprocessing.md#skforecast.preprocessing._calendar.create_calendar_features
+[CalendarFeatures]: ../api/preprocessing.md#skforecast.preprocessing._calendar.CalendarFeatures
+[calculate_distance_from_holiday]: ../api/preprocessing.md#skforecast.preprocessing._calendar.calculate_distance_from_holiday
 
 <!-- drift_detection -->
 [drift_detection]: ../api/drift_detection.md
@@ -1569,7 +1635,6 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [plot]: ../api/plot.md
 [set_dark_theme]: ../api/plot.md#skforecast.plot.plot.set_dark_theme
 [plot_residuals]: ../api/plot.md#skforecast.plot.plot.plot_residuals
-[calculate_lag_autocorrelation]: ../api/plot.md#skforecast.plot.plot.calculate_lag_autocorrelation
 [plot_prediction_distribution]: ../api/plot.md#skforecast.plot.plot.plot_prediction_distribution
 [plot_prediction_intervals]: ../api/plot.md#skforecast.plot.plot.plot_prediction_intervals
 [backtesting_gif_creator]: ../api/plot.md#skforecast.plot.plot.backtesting_gif_creator
@@ -1583,7 +1648,6 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- experimental -->
 [experimental]: ../api/experimental.md
 [TimeSeriesSplitter]: ../api/experimental.md#skforecast.experimental._splitter.TimeSeriesSplitter
-[calculate_distance_from_holiday]: ../api/experimental.md#skforecast.experimental._experimental.calculate_distance_from_holiday
 
 <!-- datasets -->
 [datasets]: ../api/datasets.md
@@ -1593,6 +1657,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- exceptions -->
 [exceptions]: ../api/exceptions.md
+[IgnoredArgumentWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.IgnoredArgumentWarning
 
 <!-- OLD -->
 [ForecasterAutoreg]: https://skforecast.org/0.13.0/api/forecasterautoreg
@@ -1603,8 +1668,6 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterAutoregMultiVariate]: https://skforecast.org/0.13.0/api/forecastermultivariate
 [model_selection_multiseries]: https://skforecast.org/0.13.0/api/model_selection_multiseries
 [model_selection_sarimax]: https://skforecast.org/0.13.0/api/model_selection_sarimax
-[DateTimeFeatureTransformer]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.DateTimeFeatureTransformer
-[create_datetime_features]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.create_datetime_features
 [series_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
 [exog_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
 [ForecasterSarimax]: https://skforecast.org/0.19.0/api/forecastersarimax.html

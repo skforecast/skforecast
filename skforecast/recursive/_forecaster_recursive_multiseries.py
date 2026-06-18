@@ -48,7 +48,9 @@ from ..utils import (
     check_predict_input,
     check_residuals_input,
     check_interval,
+    _normalize_interval_scale,
     configure_estimator_categorical_features,
+    cast_catboost_categorical_columns_dataframe,
     input_to_frame,
     expand_index,
     transform_numpy,
@@ -82,6 +84,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     window_features : object, list, default None
         Instance or list of instances used to create window features. Window features
         are created from the original time series and are included as predictors.
+        Skforecast provides the `RollingFeatures` class, but a custom object can
+        also be passed as long as it implements the required interface.
+    calendar_features : object, default None
+        Instance of `CalendarFeatures` used to create calendar features from the
+        datetime index. Calendar features are included as predictors and are
+        generated automatically during both training and prediction. Only supported 
+        when the index of the input data is a `pandas.DatetimeIndex`.
+        **New in version 0.23.0**
     encoding : str, None, default 'ordinal'
         Encoding used to identify the different series. 
         
@@ -184,6 +194,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Names of the classes used to create the window features.
     max_size_window_features : int
         Maximum window size required by the window features.
+    calendar_features : object
+        Instance of `CalendarFeatures` used to create calendar features from the
+        datetime index.
+    calendar_features_names : list
+        Names of the calendar features to extract, taken from the `features`
+        attribute of the `calendar_features` object.
     window_size : int
         The window size needed to create the predictors. It is calculated as the 
         maximum value between `max_lag` and `max_size_window_features`. If 
@@ -296,6 +312,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     X_train_window_features_names_out_ : list
         Names of the window features included in the matrix `X_train` created
         internally for training.
+    X_train_calendar_features_names_out_ : list
+        Names of the calendar features included in the matrix `X_train` created
+        internally for training.
     X_train_exog_names_out_ : list
         Names of the exogenous variables included in the matrix `X_train` created
         internally for training. It can be different from `exog_names_in_` if
@@ -387,6 +406,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         estimator: object,
         lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
         window_features: object | list[object] | None = None,
+        calendar_features: object | None = None,
         encoding: str | None = 'ordinal',
         transformer_series: object | dict[str, object] | None = None,
         transformer_exog: object | None = None,
@@ -400,49 +420,54 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         forecaster_id: str | int | None = None
     ) -> None:
 
-        self.estimator                          = clone(estimator)
-        self.encoding                           = encoding
-        self.encoding_mapping_                  = {}
-        self.transformer_series                 = transformer_series
-        self.transformer_series_                = None
-        self.transformer_exog                   = transformer_exog
-        self.categorical_features               = categorical_features
-        self.weight_func                        = weight_func
-        self.weight_func_                       = None
-        self.source_code_weight_func            = None
-        self.series_weights                     = series_weights
-        self.series_weights_                    = None
-        self.differentiation                    = differentiation
-        self.differentiation_max                = None
-        self.differentiator                     = None
-        self.differentiator_                    = None
-        self.dropna_from_series                 = dropna_from_series
-        self.last_window_                       = None
-        self.index_type_                        = None
-        self.index_freq_                        = None
-        self.training_range_                    = None
-        self.series_names_in_                   = None
-        self.exog_in_                           = False
-        self.exog_names_in_                     = None
-        self.exog_type_in_                      = None
-        self.exog_dtypes_in_                    = None
-        self.exog_dtypes_out_                   = None
-        self.categorical_features_names_in_     = None
-        self.X_train_series_names_in_           = None
-        self.X_train_window_features_names_out_ = None
-        self.X_train_exog_names_out_            = None
-        self.X_train_features_names_out_        = None
-        self.in_sample_residuals_               = None
-        self.in_sample_residuals_by_bin_        = None
-        self.out_sample_residuals_              = None
-        self.out_sample_residuals_by_bin_       = None
-        self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.is_fitted                          = False
-        self.fit_date                           = None
-        self.skforecast_version                 = __version__
-        self.python_version                     = sys.version.split(" ")[0]
-        self.forecaster_id                      = forecaster_id
-        self._probabilistic_mode                = "binned"
+        self.estimator                            = clone(estimator)
+        self.calendar_features                    = (
+            clone(calendar_features) if calendar_features is not None else None
+        )
+        self.calendar_features_names              = getattr(calendar_features, 'features', None)
+        self.encoding                             = encoding
+        self.encoding_mapping_                    = {}
+        self.transformer_series                   = transformer_series
+        self.transformer_series_                  = None
+        self.transformer_exog                     = transformer_exog
+        self.categorical_features                 = categorical_features
+        self.weight_func                          = weight_func
+        self.weight_func_                         = None
+        self.source_code_weight_func              = None
+        self.series_weights                       = series_weights
+        self.series_weights_                      = None
+        self.differentiation                      = differentiation
+        self.differentiation_max                  = None
+        self.differentiator                       = None
+        self.differentiator_                      = None
+        self.dropna_from_series                   = dropna_from_series
+        self.last_window_                         = None
+        self.index_type_                          = None
+        self.index_freq_                          = None
+        self.training_range_                      = None
+        self.series_names_in_                     = None
+        self.exog_in_                             = False
+        self.exog_names_in_                       = None
+        self.exog_type_in_                        = None
+        self.exog_dtypes_in_                      = None
+        self.exog_dtypes_out_                     = None
+        self.categorical_features_names_in_       = None
+        self.X_train_series_names_in_             = None
+        self.X_train_window_features_names_out_   = None
+        self.X_train_calendar_features_names_out_ = None
+        self.X_train_exog_names_out_              = None
+        self.X_train_features_names_out_          = None
+        self.in_sample_residuals_                 = None
+        self.in_sample_residuals_by_bin_          = None
+        self.out_sample_residuals_                = None
+        self.out_sample_residuals_by_bin_         = None
+        self.creation_date                        = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
+        self.is_fitted                            = False
+        self.fit_date                             = None
+        self.skforecast_version                   = __version__
+        self.python_version                       = sys.version.split(" ")[0]
+        self.forecaster_id                        = forecaster_id
+        self._probabilistic_mode                  = "binned"
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.lags_are_contiguous = (
@@ -613,7 +638,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             "forecaster_name": "ForecasterRecursiveMultiSeries",
             "forecaster_task": "regression",
             "forecasting_scope": "global",  # single-series | global
-            "forecasting_strategy": "recursive",  # recursive | direct | deep_learning
+            "forecasting_strategy": "recursive",  # recursive | direct | deep_learning | foundation
+            "multiple_estimators": False, 
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
@@ -625,6 +651,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
             "supports_lags": True,
             "supports_window_features": True,
+            "supports_calendar_features": True,
             "allowed_encoding": ["ordinal", "ordinal_category", "onehot", None],
             "supports_transformer_series": True,
             "supports_transformer_exog": True,
@@ -670,6 +697,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             f"Estimator: {type(self.estimator).__name__} \n"
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
+            f"Calendar features: {self.calendar_features_names} \n"
             f"Window size: {self.window_size} \n"
             f"Series encoding: {self.encoding} \n"
             f"Series names (levels): {series_names_in_} \n"
@@ -729,6 +757,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     <li><strong>Estimator:</strong> {type(self.estimator).__name__}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
+                    <li><strong>Calendar features:</strong> {self.calendar_features_names}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Series encoding:</strong> {self.encoding}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
@@ -1045,6 +1074,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         list[str],
         list[str],
         list[str],
+        list[str], 
         list[str],
         dict[str, type],
         dict[str, type],
@@ -1089,6 +1119,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Names of the exogenous variables considered as categorical.
         X_train_window_features_names_out_ : list
             Names of the window features included in the matrix `X_train` created
+            internally for training.
+        X_train_calendar_features_names_out_ : list
+            Names of the calendar features included in the matrix `X_train` created
             internally for training.
         X_train_exog_names_out_ : list
             Names of the exogenous variables included in the matrix `X_train` created
@@ -1143,6 +1176,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 f" Got      : {series_names_in_}\n"
                 f" Expected : {self.series_names_in_}"
             )
+        
+        if self.calendar_features is not None:
+            if not isinstance(series_indexes[series_names_in_[0]], pd.DatetimeIndex):
+                raise TypeError(
+                    "When `calendar_features` is not `None`, the index of `series` "
+                    "must be a pandas DatetimeIndex."
+                )
 
         exog_dict = {serie: None for serie in series_names_in_}
         exog_names_in_ = None
@@ -1360,11 +1400,32 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 X_train.append(X_train_exog)
                 X_train_exog_names_out_ = X_train_exog.columns.to_list()
                 exog_dtypes_out_ = get_exog_dtypes(exog=X_train_exog)
-            
+
+        X_train_calendar_features_names_out_ = None
+        if self.calendar_features is not None:
+            # Calendar features are computed once per unique date and then expanded
+            # back to the full train index. Since series can share dates, this avoids
+            # recomputing identical calendar values for duplicated timestamps.
+            unique_index = train_index.unique()
+            X_train_calendar = self.calendar_features.fit_transform(unique_index)
+            X_train_calendar = X_train_calendar.reindex(train_index)
+            X_train.append(X_train_calendar)
+            X_train_calendar_features_names_out_ = self.calendar_features.feature_names_out_
+        
         if len(X_train) > 1:
             X_train = pd.concat(X_train, axis=1, copy=False)
         else:
             X_train = X_train[0]
+
+        X_train_features_names_out_ = X_train.columns.to_list()
+        if len(X_train_features_names_out_) != len(set(X_train_features_names_out_)):
+            duplicated_names = [
+                name for name in set(X_train_features_names_out_)
+                if X_train_features_names_out_.count(name) > 1
+            ]
+            raise ValueError(
+                f"Duplicated feature names detected in X_train: {duplicated_names}."
+            )
 
         if y_train.isna().to_numpy().any():
             mask = y_train.notna().to_numpy()
@@ -1454,6 +1515,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             exog_names_in_,
             categorical_features_names_in_,
             X_train_window_features_names_out_,
+            X_train_calendar_features_names_out_,
             X_train_exog_names_out_,
             exog_dtypes_in_,
             exog_dtypes_out_,
@@ -1948,30 +2010,31 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         # TODO: create a method reset_forecaster() to reset all attributes
         # Reset values in case the forecaster has already been fitted.
-        self.last_window_                       = None
-        self.index_type_                        = None
-        self.index_freq_                        = None
-        self.training_range_                    = None
-        self.series_names_in_                   = None
-        self.exog_in_                           = False
-        self.exog_names_in_                     = None
-        self.exog_type_in_                      = None
-        self.exog_dtypes_in_                    = None
-        self.exog_dtypes_out_                   = None
-        self.categorical_features_names_in_     = None
-        self.X_train_series_names_in_           = None
-        self.X_train_window_features_names_out_ = None
-        self.X_train_exog_names_out_            = None
-        self.X_train_features_names_out_        = None
-        self.encoding_mapping_                  = {}
-        self.in_sample_residuals_               = None
-        self.in_sample_residuals_by_bin_        = None
-        self.out_sample_residuals_              = None
-        self.out_sample_residuals_by_bin_       = None
-        self.binner                             = {}
-        self.binner_intervals_                  = {}
-        self.is_fitted                          = False
-        self.fit_date                           = None
+        self.last_window_                         = None
+        self.index_type_                          = None
+        self.index_freq_                          = None
+        self.training_range_                      = None
+        self.series_names_in_                     = None
+        self.exog_in_                             = False
+        self.exog_names_in_                       = None
+        self.exog_type_in_                        = None
+        self.exog_dtypes_in_                      = None
+        self.exog_dtypes_out_                     = None
+        self.categorical_features_names_in_       = None
+        self.X_train_series_names_in_             = None
+        self.X_train_window_features_names_out_   = None
+        self.X_train_calendar_features_names_out_ = None
+        self.X_train_exog_names_out_              = None
+        self.X_train_features_names_out_          = None
+        self.encoding_mapping_                    = {}
+        self.in_sample_residuals_                 = None
+        self.in_sample_residuals_by_bin_          = None
+        self.out_sample_residuals_                = None
+        self.out_sample_residuals_by_bin_         = None
+        self.binner                               = {}
+        self.binner_intervals_                    = {}
+        self.is_fitted                            = False
+        self.fit_date                             = None
 
         (
             X_train,
@@ -1982,6 +2045,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             exog_names_in_,
             categorical_features_names_in_,
             X_train_window_features_names_out_,
+            X_train_calendar_features_names_out_,
             X_train_exog_names_out_,
             exog_dtypes_in_,
             exog_dtypes_out_,
@@ -2017,22 +2081,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             fit_kwargs = {**self.fit_kwargs}
 
-        # NOTE: CatBoost requires integer values (not float) for categorical features.
-        # When X is passed as a DataFrame. Categorical columns may have:
-        #   - Categorical dtype: from ordinal_category encoding (_level_skforecast).
-        #     Converted via .cat.codes (NaN -> -1 by default).
-        #   - float dtype with NaN: from OrdinalEncoder applied to exog categoricals
-        #     (encoded_missing_value=np.nan). NaN is filled with -1 before casting.
-        if (
-            'cat_features' in fit_kwargs
-            and type(self.estimator).__name__ == 'CatBoostRegressor'
-        ):
-            cat_cols = [X_train_features_names_out_[i] for i in fit_kwargs['cat_features']]
-            for col in cat_cols:
-                if hasattr(X_train_estimator[col].dtype, 'categories'):
-                    X_train_estimator[col] = X_train_estimator[col].cat.codes.astype(int)
-                else:
-                    X_train_estimator[col] = X_train_estimator[col].fillna(-1).astype(int)
+        X_train_estimator = cast_catboost_categorical_columns_dataframe(
+            X              = X_train_estimator,
+            fit_kwargs     = fit_kwargs,
+            estimator      = self.estimator,
+            feature_names  = X_train_features_names_out_,
+        )
 
         if sample_weight is not None:
             self.estimator.fit(
@@ -2047,6 +2101,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.series_names_in_ = series_names_in_
         self.X_train_series_names_in_ = X_train_series_names_in_
         self.X_train_window_features_names_out_ = X_train_window_features_names_out_
+        self.X_train_calendar_features_names_out_ = X_train_calendar_features_names_out_
         self.X_train_features_names_out_ = X_train_features_names_out_
 
         self.is_fitted = True
@@ -2247,6 +2302,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Exogenous variable/s included as predictor/s for each series in 
             each step. The keys are the steps and the values are numpy arrays
             where each column is an exog and each row a series (level).
+        calendar_values : numpy ndarray, None
+            Calendar features included as predictor/s. As they depend only on the
+            datetime index, the same values are shared by all series (levels).
+            Each row corresponds to a prediction step and each column to a
+            calendar feature. `None` if `calendar_features` is not used.
         levels : list
             Names of the series (levels) to be predicted.
         prediction_index : pandas Index
@@ -2335,6 +2395,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                index = last_window.index,
                                steps = steps
                            )
+
+        # Calendar features depend only on the datetime index, so a single set of
+        # values is computed and later shared (broadcast) across all series (levels).
+        if self.calendar_features is not None:
+            calendar_values = self.calendar_features.transform(
+                prediction_index
+            ).to_numpy()
+        else:
+            calendar_values = None
 
         if exog is not None:
             if isinstance(exog, dict):
@@ -2458,14 +2527,22 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             exog_values_dict = None
 
-        return last_window, exog_values_dict, levels, prediction_index, differentiators
+        return (
+            last_window,
+            exog_values_dict,
+            calendar_values,
+            levels,
+            prediction_index,
+            differentiators
+        )
 
     def _recursive_predict(
         self,
         steps: int,
         levels: list,
         last_window: pd.DataFrame,
-        exog_values_dict: dict[str, np.ndarray] | None = None
+        exog_values_dict: dict[str, np.ndarray] | None = None,
+        calendar_values: np.ndarray | None = None
     ) -> np.ndarray:
         """
         Predict n steps for one or multiple levels. It is an iterative process
@@ -2490,6 +2567,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Exogenous variable/s included as predictor/s for each series in 
             each step. The keys are the steps and the values are numpy arrays
             where each column is an exog and each row a series (level).
+        calendar_values : numpy ndarray, default None
+            Calendar features included as predictor/s. As they depend only on the
+            datetime index, the same values are shared by all series (levels).
+            Each row corresponds to a prediction step and each column to a
+            calendar feature.
 
         Returns
         -------
@@ -2509,6 +2591,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         n_autoreg = n_lags + n_window_features
         n_exog = len(self.X_train_exog_names_out_) if exog_values_dict is not None else 0
+        n_calendar = calendar_values.shape[1] if calendar_values is not None else 0
 
         if self.encoding is not None:
             if self.encoding == "onehot":
@@ -2527,7 +2610,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             levels_encoded_shape = 0
 
-        features_shape = n_autoreg + levels_encoded_shape + n_exog
+        features_shape = n_autoreg + levels_encoded_shape + n_exog + n_calendar
         features = np.full(
             shape=(n_levels, features_shape), fill_value=np.nan, order='F', dtype=float
         )
@@ -2544,6 +2627,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values_dict is not None
+        has_calendar = calendar_values is not None
+
+        exog_start = n_autoreg + levels_encoded_shape
+        exog_end = exog_start + n_exog
+
+        if has_lags and not self.lags_are_contiguous:
+            neg_lags = -self.lags
 
         for i in range(steps):
 
@@ -2553,7 +2643,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 if self.lags_are_contiguous:
                     features[:, :n_lags] = last_window[-(remaining + n_lags): -remaining, :][::-1].T
                 else:
-                    features[:, :n_lags] = last_window[-self.lags - remaining, :].transpose()
+                    features[:, :n_lags] = last_window[neg_lags - remaining, :].transpose()
             
             if has_window_features:
                 window_data = last_window[i:-remaining, :]
@@ -2566,7 +2656,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 )
             
             if has_exog:
-                features[:, -n_exog:] = exog_values_dict[i + 1]
+                features[:, exog_start:exog_end] = exog_values_dict[i + 1]
+
+            if has_calendar:
+                # Same calendar row is broadcast across all series (levels).
+                features[:, exog_end:] = calendar_values[i]
 
             pred = predict_fn(features)
 
@@ -2593,6 +2687,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         sampled_residuals: np.ndarray,
         use_binned_residuals: bool,
         exog_values_dict: dict[str, np.ndarray] | None = None,
+        calendar_values: np.ndarray | None = None,
     ) -> np.ndarray:
         """
         Vectorized bootstrap prediction for multiple series. Instead of looping
@@ -2631,6 +2726,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         exog_values_dict : dict, default None
             Exogenous variables indexed by step. Each key is a step (1 to steps),
             and each value is a numpy array of shape (n_levels, n_exog).
+        calendar_values : numpy ndarray, default None
+            Calendar features included as predictor/s. As they depend only on the
+            datetime index, the same values are shared by all series (levels) and
+            bootstrap samples. Each row corresponds to a prediction step and each
+            column to a calendar feature.
 
         Returns
         -------
@@ -2650,6 +2750,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         n_autoreg = n_lags + n_window_features
         n_exog = len(self.X_train_exog_names_out_) if exog_values_dict is not None else 0
+        n_calendar = calendar_values.shape[1] if calendar_values is not None else 0
 
         # Total samples per step: n_boot × n_levels
         # Row ordering: [level0_boot0, level1_boot0, ..., levelN_boot0, level0_boot1, ...]
@@ -2675,7 +2776,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             levels_encoded_shape = 0
 
-        features_shape = n_autoreg + levels_encoded_shape + n_exog
+        features_shape = n_autoreg + levels_encoded_shape + n_exog + n_calendar
         features = np.full(
             shape=(n_samples, features_shape), fill_value=np.nan, order='F', dtype=float
         )
@@ -2701,6 +2802,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
         has_exog = exog_values_dict is not None
+        has_calendar = calendar_values is not None
+
+        exog_start = n_autoreg + levels_encoded_shape
+        exog_end = exog_start + n_exog
 
         if use_binned_residuals:
             boot_indices = np.arange(n_boot)
@@ -2738,7 +2843,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
             if has_exog:
                 # Reshape (n_levels, n_exog) to (n_boot × n_levels, n_exog)
-                features[:, -n_exog:] = np.tile(exog_values_dict[step + 1], (n_boot, 1))
+                features[:, exog_start:exog_end] = np.tile(exog_values_dict[step + 1], (n_boot, 1))
+
+            if has_calendar:
+                # Same calendar row is broadcast across all series and bootstrap samples.
+                features[:, exog_end:] = calendar_values[step]
 
             pred = predict_fn(features)
 
@@ -2822,6 +2931,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         (
             last_window,
             exog_values_dict,
+            calendar_values,
             levels,
             prediction_index,
             _
@@ -2843,7 +2953,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                               steps            = steps,
                               levels           = levels,
                               last_window      = last_window,
-                              exog_values_dict = exog_values_dict
+                              exog_values_dict = exog_values_dict,
+                              calendar_values  = calendar_values
                           )
         
         if self.lags is not None:
@@ -2903,6 +3014,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 for j in range(steps):
                     exog_cols[j, :] = exog_values_dict[j + 1][i, :]
                 X_predict_level.append(exog_cols)
+
+            if calendar_values is not None:
+                # Calendar features are shared by all series (levels).
+                X_predict_level.append(calendar_values)
 
             X_predict.append(np.concatenate(X_predict_level, axis=1))
 
@@ -2996,6 +3111,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         (
             last_window,
             exog_values_dict,
+            calendar_values,
             levels,
             prediction_index,
             differentiators
@@ -3017,7 +3133,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                               steps            = steps,
                               levels           = levels,
                               last_window      = last_window,
-                              exog_values_dict = exog_values_dict
+                              exog_values_dict = exog_values_dict,
+                              calendar_values  = calendar_values
                           )
         
         for i, level in enumerate(levels):
@@ -3114,6 +3231,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         (
             last_window,
             exog_values_dict,
+            calendar_values,
             levels,
             prediction_index,
             differentiators
@@ -3181,6 +3299,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 sampled_residuals    = sampled_residuals,
                 use_binned_residuals = use_binned_residuals,
                 exog_values_dict     = exog_values_dict,
+                calendar_values      = calendar_values,
             )
 
         for i, level in enumerate(levels):
@@ -3277,6 +3396,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         (
             last_window,
             exog_values_dict,
+            calendar_values,
             levels,
             prediction_index,
             differentiators
@@ -3307,7 +3427,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                               steps            = steps,
                               levels           = levels,
                               last_window      = last_window,
-                              exog_values_dict = exog_values_dict
+                              exog_values_dict = exog_values_dict,
+                              calendar_values  = calendar_values
                           )
         
         n_levels = len(levels)
@@ -3387,7 +3508,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         method: str = 'conformal',
-        interval: float | list[float] | tuple[float] = [5, 95],
+        interval: float | list[float] | tuple[float] = [0.05, 0.95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
@@ -3421,18 +3542,22 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             intervals [1]_.
             - 'conformal': Employs the conformal prediction split method for 
             interval estimation [2]_.
-        interval : float, list, tuple, default [5, 95]
+        interval : float, list, tuple, default [0.05, 0.95]
             Confidence level of the prediction interval. Interpretation depends 
             on the method used:
             
             - If `float`, represents the nominal (expected) coverage (between 0 
-            and 1). For instance, `interval=0.95` corresponds to `[2.5, 97.5]` 
-            percentiles.
-            - If `list` or `tuple`, defines the exact percentiles to compute, which 
-            must be between 0 and 100 inclusive. For example, interval 
-            of 95% should be as `interval = [2.5, 97.5]`.
+            and 1). For instance, `interval=0.95` corresponds to `[0.025, 0.975]` 
+            quantiles.
+            - If `list` or `tuple`, defines the exact quantiles to compute, which 
+            must be between 0 and 1 inclusive. For example, interval 
+            of 95% should be as `interval = [0.025, 0.975]`.
             - When using `method='conformal'`, the interval must be a float or 
             a list/tuple defining a symmetric interval.
+
+            **Changed in version 0.23.0:** `interval` is now expressed as
+            quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+            is deprecated and emits a `FutureWarning`.
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
@@ -3446,7 +3571,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
-            **New in version 0.15.0**
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
         suppress_warnings : bool, default False
@@ -3474,8 +3598,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if method == "bootstrapping":
             
             if isinstance(interval, (list, tuple)):
+                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=False)
-                interval = np.array(interval) / 100
+                interval = np.array(interval)
             else:
                 check_interval(alpha=interval, alpha_literal='interval')
                 interval = np.array([0.5 - interval / 2, 0.5 + interval / 2])
@@ -3511,8 +3636,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         elif method == 'conformal':
 
             if isinstance(interval, (list, tuple)):
+                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=True)
-                nominal_coverage = (interval[1] - interval[0]) / 100
+                nominal_coverage = interval[1] - interval[0]
             else:
                 check_interval(alpha=interval, alpha_literal='interval')
                 nominal_coverage = interval

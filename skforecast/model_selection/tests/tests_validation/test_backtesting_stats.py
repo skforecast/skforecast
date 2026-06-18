@@ -645,8 +645,8 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_list_of_me
     
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [1, 99]), 
-                          (None, [2.5, 97.5])], 
+                         [(0.05, [0.01, 0.99]), 
+                          (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_output_backtesting_stats_no_refit_yes_exog_interval_with_mocked(alpha, interval):
     """
@@ -704,8 +704,8 @@ def test_output_backtesting_stats_no_refit_yes_exog_interval_with_mocked(alpha, 
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [1, 99]), 
-                          (None, [2.5, 97.5])], 
+                         [(0.05, [0.01, 0.99]), 
+                          (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_output_backtesting_stats_yes_refit_yes_exog_interval_with_mocked(alpha, interval):
     """
@@ -763,8 +763,8 @@ def test_output_backtesting_stats_yes_refit_yes_exog_interval_with_mocked(alpha,
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [1, 99]), 
-                          (None, [2.5, 97.5])], 
+                         [(0.05, [0.01, 0.99]), 
+                          (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_interval_with_mocked(alpha, interval):
     """

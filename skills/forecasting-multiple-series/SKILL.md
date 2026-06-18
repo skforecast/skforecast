@@ -14,6 +14,14 @@ description: >
 - **ForecasterRecursiveMultiSeries**: A single global model learns patterns across many series. Each series is predicted independently but the model shares parameters. Best default for multi-series.
 - **ForecasterDirectMultiVariate**: Uses values from multiple series as input features to predict one target series. Use when series are strongly correlated and influence each other.
 
+### Related skills
+
+- **Before**: `choosing-a-forecaster` (decide between MultiSeries, MultiVariate, Rnn, or Foundation for multi-series problems)
+- **Before**: `autocorrelation-and-lag-selection` (analyse representative series to inform the shared `lags` argument)
+- **Before**: `feature-engineering` (build per-series exogenous and rolling features)
+- **After**: `hyperparameter-optimization` (tune the global model across series)
+- **After**: `prediction-intervals` (add intervals to the multi-series forecasts)
+
 ## Data Formats
 
 ForecasterRecursiveMultiSeries accepts three input formats:

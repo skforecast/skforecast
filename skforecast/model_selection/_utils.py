@@ -18,7 +18,11 @@ from tqdm.auto import tqdm
 
 from ..exceptions import IgnoredArgumentWarning, OneStepAheadValidationWarning
 from ..metrics import add_y_train_argument, _any_metric_needs_y_train, _get_metric
-from ..utils import check_interval, date_to_index_position
+from ..utils import (
+    check_interval,
+    date_to_index_position,
+    cast_catboost_categorical_columns_dataframe,
+)
 
 
 def initialize_lags_grid(
@@ -421,20 +425,17 @@ def check_backtesting_input(
                         f"`fit`) or the string 'bootstrapping'. Got {type(interval)}."
                     )
                 if isinstance(interval, (list, tuple)):
-                    for i in interval:
-                        if not isinstance(i, (int, float)):
-                            raise TypeError(
-                                f"`interval` must be a list or tuple of floats. "
-                                f"Got {type(i)} in {interval}."
-                            )
                     if len(interval) == 2:
-                        check_interval(interval=interval)
+                        check_interval(
+                            interval                   = interval,
+                            ensure_symmetric_intervals = False
+                        )
                     else:
                         for q in interval:
-                            if (q < 0.) or (q > 100.):
+                            if (q < 0.) or (q > 1.):
                                 raise ValueError(
                                     f"When `interval` is a list or tuple, all values must be "
-                                    f"between 0 and 100 inclusive. Got {q} in {interval}."
+                                    f"between 0 and 1 inclusive. Got {q} in {interval}."
                                 )
                 elif isinstance(interval, float):
                     if (interval <= 0.) or (interval >= 1.):
@@ -660,15 +661,15 @@ def select_n_jobs_backtesting(
     - If forecaster is 'ForecasterRecursive' and estimator is a linear estimator, 
     then `n_jobs = 1`.
     - If forecaster is 'ForecasterRecursive' and estimator is not a linear 
-    estimator then `n_jobs = cpu_count() - 1`.
+    estimator then `n_jobs = max(1, cpu_count() - 1)`.
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
-    and `refit = True`, then `n_jobs = cpu_count() - 1`.
+    and `refit = True`, then `n_jobs = max(1, cpu_count() - 1)`.
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and `refit = False`, then `n_jobs = 1`.
-    - If forecaster is 'ForecasterRecursiveMultiSeries', then `n_jobs = cpu_count() - 1`.
+    - If forecaster is 'ForecasterRecursiveMultiSeries', then `n_jobs = max(1, cpu_count() - 1)`.
     - If forecaster is 'ForecasterStats' or 'ForecasterEquivalentDate', 
     then `n_jobs = 1`.
-    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
+    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = max(1, cpu_count() - 1)`.
     - If estimator is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
     This is because `lightgbm` is highly optimized for gradient boosting and
     parallelizes operations at a very fine-grained level, making additional
@@ -707,17 +708,17 @@ def select_n_jobs_backtesting(
             if isinstance(estimator, (LinearModel, LinearClassifierMixin)):
                 n_jobs = 1
             elif type(estimator).__name__ in {'LGBMRegressor', 'LGBMClassifier'}:
-                n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
+                n_jobs = max(1, cpu_count() - 1) if estimator.n_jobs == 1 else 1
             else:
-                n_jobs = cpu_count() - 1
+                n_jobs = max(1, cpu_count() - 1)
         elif forecaster_name in {'ForecasterDirect', 'ForecasterDirectMultiVariate'}:
             # Parallelization is applied during the fitting process.
             n_jobs = 1
         elif forecaster_name in {'ForecasterRecursiveMultiSeries'}:
             if type(estimator).__name__ == 'LGBMRegressor':
-                n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
+                n_jobs = max(1, cpu_count() - 1) if estimator.n_jobs == 1 else 1
             else:
-                n_jobs = cpu_count() - 1
+                n_jobs = max(1, cpu_count() - 1)
         elif forecaster_name in {'ForecasterEquivalentDate'}:
             n_jobs = 1
         else:
@@ -1503,29 +1504,18 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     # ==========================================================================
     # X_train_encoding and X_test_encoding are series identifiers for each row 
     # of X_train and X_test, respectively.
-    if (
-        'cat_features' in fit_kwargs
-        and type(forecaster.estimator).__name__ == 'CatBoostRegressor'
-    ):
-        # NOTE: CatBoost requires integer values (not float) for categorical features
-        # when X is passed as a DataFrame. Categorical columns may have:
-        #   - Categorical dtype: from ordinal_category encoding (_level_skforecast).
-        #     Converted via .cat.codes (NaN -> -1 by default).
-        #   - float dtype with NaN: from OrdinalEncoder applied to categorical exogs
-        #     (encoded_missing_value=np.nan). NaN is filled with -1 before casting.
-        # NOTE: Copies of X_train and X_test are needed because the cast to int
-        # mutates the DataFrame in place. Without copies, the original DataFrames
-        # (generated once by `_train_test_split_one_step_ahead`) would be corrupted
-        # for subsequent iterations of the hyperparameter search.
-        X_train = X_train.copy()
-        X_test = X_test.copy()
-        cat_cols = [X_train.columns[i] for i in fit_kwargs['cat_features']]
-        for df in (X_train, X_test):
-            for col in cat_cols:
-                if hasattr(df[col].dtype, 'categories'):
-                    df[col] = df[col].cat.codes.astype(int)
-                else:
-                    df[col] = df[col].fillna(-1).astype(int)
+    # NOTE: The utility copies internally, so the original X_train and X_test
+    # generated once by `_train_test_split_one_step_ahead` are not mutated and
+    # remain reusable across hyperparameter search iterations.
+    feature_names = X_train.columns.to_list()
+    X_train = cast_catboost_categorical_columns_dataframe(
+        X=X_train, fit_kwargs=fit_kwargs,
+        estimator=forecaster.estimator, feature_names=feature_names,
+    )
+    X_test = cast_catboost_categorical_columns_dataframe(
+        X=X_test, fit_kwargs=fit_kwargs,
+        estimator=forecaster.estimator, feature_names=feature_names,
+    )
 
     if sample_weight is not None:
         forecaster.estimator.fit(

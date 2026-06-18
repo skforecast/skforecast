@@ -168,3 +168,52 @@ def test_grid_search_forecaster_equivalence_backtesting_one_step_ahead(
     )
 
     pd.testing.assert_frame_equal(results_backtesting, results_one_step_ahead)
+
+
+@pytest.mark.parametrize("forecaster", forecasters)
+def test_grid_search_forecaster_one_step_ahead_date_initial_train_size_equivalence(
+    forecaster,
+):
+    """
+    Test that grid_search_forecaster with OneStepAheadFold returns identical results
+    whether `initial_train_size` is given as an integer or as the equivalent date.
+    """
+    metrics = ["mean_absolute_error", "mean_squared_error"]
+    n_validation = 12
+    initial_train_size_int = len(y) - n_validation  # 38
+    lags_grid = [2, 4]
+    param_grid = {"alpha": [0.01, 0.1, 1]}
+
+    # Datetime-indexed copy so a date `initial_train_size` is valid. Position 37
+    # (the 38th observation) is 2020-02-07; `date_to_index_position` resolves it to 38.
+    y_datetime = y.copy()
+    y_datetime.index = pd.date_range(start='2020-01-01', periods=len(y), freq='D')
+
+    cv_int = OneStepAheadFold(initial_train_size=initial_train_size_int)
+    cv_date = OneStepAheadFold(initial_train_size="2020-02-07")
+
+    results_int = grid_search_forecaster(
+        forecaster=forecaster,
+        y=y_datetime,
+        cv=cv_int,
+        lags_grid=lags_grid,
+        param_grid=param_grid,
+        metric=metrics,
+        return_best=False,
+        verbose=False,
+    )
+    results_date = grid_search_forecaster(
+        forecaster=forecaster,
+        y=y_datetime,
+        cv=cv_date,
+        lags_grid=lags_grid,
+        param_grid=param_grid,
+        metric=metrics,
+        return_best=False,
+        verbose=False,
+    )
+
+    pd.testing.assert_frame_equal(results_int, results_date)
+    # `initial_train_size` must remain the raw user input on the (deep-copied) cv objects.
+    assert cv_int.initial_train_size == initial_train_size_int
+    assert cv_date.initial_train_size == "2020-02-07"

@@ -138,7 +138,7 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog_and_interval
                          cv                   = cv,
                          levels               = ['1', '2'],
                          metric               = 'mean_absolute_error', 
-                         interval             = [5, 95],
+                         interval             = [0.05, 0.95],
                          interval_method      = "conformal",
                          use_binned_residuals = use_binned_residuals,
                          verbose              = False

@@ -5,8 +5,9 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Optional, Tuple, Dict, Literal, List
+from typing import Optional, Tuple, Dict, Literal, List, Any
 import numpy as np
 from numpy.typing import NDArray
 from numba import njit
@@ -14,7 +15,15 @@ from scipy.optimize import minimize, minimize_scalar
 from scipy.stats import norm, jarque_bera, shapiro
 import warnings
 import math
-from statsmodels.tsa.seasonal import seasonal_decompose
+
+from ...utils import check_optional_dependency
+
+try:
+    from statsmodels.tsa.seasonal import seasonal_decompose
+except ModuleNotFoundError as error:
+    if error.name == "statsmodels":
+        check_optional_dependency(package_name="statsmodels")
+    raise
 
 ERROR_TYPES = {"N": 0, "A": 1, "M": 2}
 TREND_TYPES = {"N": 0, "A": 1, "M": 2}
@@ -36,7 +45,7 @@ def _admissible_jit(alpha: float, beta: float, gamma: float, phi: float, m: int)
         if np.isnan(alpha):
             return True
 
-        if alpha < 1.0 - 1.0/phi or alpha > 1.0 + 1.0/phi:
+        if alpha < 1.0 - 1.0 / phi or alpha > 1.0 + 1.0 / phi:
             return False
 
         if not np.isnan(beta):
@@ -47,12 +56,12 @@ def _admissible_jit(alpha: float, beta: float, gamma: float, phi: float, m: int)
         if np.isnan(alpha):
             return False
         beta_val = 0.0 if np.isnan(beta) else beta
-        lower_gamma = max(1.0 - 1.0/phi - alpha, 0.0)
-        upper_gamma = 1.0 + 1.0/phi - alpha
+        lower_gamma = max(1.0 - 1.0 / phi - alpha, 0.0)
+        upper_gamma = 1.0 + 1.0 / phi - alpha
         if gamma < lower_gamma or gamma > upper_gamma:
             return False
 
-        alpha_lower = 1.0 - 1.0/phi - gamma * (1.0 - m + phi + phi * m) / (2.0 * phi * m)
+        alpha_lower = 1.0 - 1.0 / phi - gamma * (1.0 - m + phi + phi * m) / (2.0 * phi * m)
         if alpha < alpha_lower:
             return False
 
@@ -204,7 +213,8 @@ class ETSParams:
     @staticmethod
     def from_vector(x: NDArray[np.float64], config: ETSConfig) -> 'ETSParams':
         idx = 0
-        alpha = x[idx]; idx += 1
+        alpha = x[idx]
+        idx += 1
         beta = x[idx] if config.trend != "N" else 0.0
         if config.trend != "N":
             idx += 1
@@ -282,9 +292,23 @@ class BoxCoxTransform:
 
 
 @njit(cache=True, fastmath=True)
-def _ets_step(l: float, b: float, s: NDArray[np.float64], y: float,
-              m: int, error: int, trend: int, season: int,
-              alpha: float, beta: float, gamma: float, phi: float) -> Tuple:  # pragma: no cover
+def _ets_step(
+    l: float, 
+    b: float, 
+    s: NDArray[np.float64], 
+    y: float,
+    m: int, 
+    error: int, 
+    trend: int, 
+    season: int,
+    alpha: float, 
+    beta: float, 
+    gamma: float, 
+    phi: float
+) -> Tuple:  # pragma: no cover
+    """
+    Perform one step of the ETS state space model update and forecasting.
+    """
     TOL = 1e-10
 
     if trend == 0:
@@ -301,9 +325,9 @@ def _ets_step(l: float, b: float, s: NDArray[np.float64], y: float,
     if season == 0:
         yhat = q
     elif season == 1:
-        yhat = q + s[m-1]
+        yhat = q + s[m - 1]
     else:
-        yhat = q * s[m-1]
+        yhat = q * s[m - 1]
 
     if abs(yhat) < TOL:
         yhat = TOL
@@ -315,9 +339,9 @@ def _ets_step(l: float, b: float, s: NDArray[np.float64], y: float,
     if season == 0:
         p = y
     elif season == 1:
-        p = y - s[m-1]
+        p = y - s[m - 1]
     else:
-        p = y / max(s[m-1], TOL)
+        p = y / max(s[m - 1], TOL)
     l_new = q + alpha * (p - q)
     b_new = b
     if trend == 1:
@@ -335,11 +359,11 @@ def _ets_step(l: float, b: float, s: NDArray[np.float64], y: float,
             t = y - q
         else:
             t = y / max(q, TOL)
-        new_seasonal = s[m-1] + gamma * (t - s[m-1])
+        new_seasonal = s[m - 1] + gamma * (t - s[m - 1])
         s_new[0] = new_seasonal
 
         for i in range(1, m):
-            s_new[i] = s[i-1]
+            s_new[i] = s[i - 1]
     else:
         s_new = s  # No copy needed for non-seasonal models
 
@@ -369,8 +393,9 @@ def _ets_likelihood(y: NDArray[np.float64], init_states: NDArray[np.float64],
     sum_log_yhat = 0.0
 
     for i in range(n):
-        l, b, s, yhat, e = _ets_step(l, b, s, y[i], m, error, trend, season,
-                                      alpha, beta, gamma, phi)
+        l, b, s, yhat, e = _ets_step(
+            l, b, s, y[i], m, error, trend, season, alpha, beta, gamma, phi
+        )
 
         if yhat < -99998:
             return np.inf, residuals, fitted, init_states
@@ -945,8 +970,16 @@ def ets(y: NDArray[np.float64],
 
 
 @njit(cache=True, fastmath=True)
-def _forecast_ets(l: float, b: float, s: NDArray[np.float64],
-                  h: int, m: int, trend: int, season: int, phi: float) -> NDArray[np.float64]:  # pragma: no cover
+def _forecast_ets(
+    l: float, 
+    b: float, 
+    s: NDArray[np.float64],
+    h: int, 
+    m: int, 
+    trend: int, 
+    season: int, 
+    phi: float
+) -> NDArray[np.float64]:  # pragma: no cover
     """Generate h-step ahead forecasts"""
     forecasts = np.zeros(h)
     phi_sum = phi
@@ -1003,7 +1036,7 @@ def _compute_prediction_variance(model: ETSModel, h: int) -> NDArray[np.float64]
 
         elif trend == "A" and season == "N" and not damped:
             var = sigma * (1 + (steps - 1) * (alpha**2 + alpha * beta * steps +
-                          (1/6) * beta**2 * steps * (2 * steps - 1)))
+                          (1 / 6) * beta**2 * steps * (2 * steps - 1)))
 
         elif trend == "A" and season == "N" and damped:
             exp1 = (beta * phi * steps) / (1 - phi)**2
@@ -1018,7 +1051,7 @@ def _compute_prediction_variance(model: ETSModel, h: int) -> NDArray[np.float64]
 
         elif trend == "A" and season == "A" and not damped:
             hm = np.floor((steps - 1) / m)
-            exp1 = alpha**2 + alpha * beta * steps + (1/6) * beta**2 * steps * (2 * steps - 1)
+            exp1 = alpha**2 + alpha * beta * steps + (1 / 6) * beta**2 * steps * (2 * steps - 1)
             exp2 = 2 * alpha + gamma + beta * m * (hm + 1)
             var = sigma * (1 + (steps - 1) * exp1 + gamma * hm * exp2)
 
@@ -1055,7 +1088,9 @@ def forecast_ets(model: ETSModel, h: int = 10, bias_adjust: bool = True,
         - 'mean': Point forecasts
         - 'lower_XX': Lower bounds for XX% intervals (if level provided)
         - 'upper_XX': Upper bounds for XX% intervals (if level provided)
+    
     """
+
     l = model.states[0]
     b = model.states[1] if model.config.trend != "N" else 0.0
 
@@ -1101,8 +1136,8 @@ def forecast_ets(model: ETSModel, h: int = 10, bias_adjust: bool = True,
             try:
                 simulations = simulate_ets(model, h=h, n_sim=1000)
                 for lv in level:
-                    result[f'lower_{int(lv)}'] = np.percentile(simulations, 50 - lv/2, axis=0)
-                    result[f'upper_{int(lv)}'] = np.percentile(simulations, 50 + lv/2, axis=0)
+                    result[f'lower_{int(lv)}'] = np.percentile(simulations, 50 - lv / 2, axis=0)
+                    result[f'upper_{int(lv)}'] = np.percentile(simulations, 50 + lv / 2, axis=0)
             except ValueError as e:
                 import warnings
                 warnings.warn(
@@ -1166,17 +1201,19 @@ def simulate_ets(model: ETSModel, h: int = 10, n_sim: int = 1000) -> NDArray[np.
     return simulations
 
 
-def auto_ets(y: NDArray[np.float64],
-             m: int = 1,
-             seasonal: bool = True,
-             trend: Optional[bool] = None,
-             damped: Optional[bool] = None,
-             ic: Literal["aic", "aicc", "bic"] = "aicc",
-             allow_multiplicative: bool = True,
-             allow_multiplicative_trend: bool = False,
-             lambda_auto: bool = False,
-             max_models: Optional[int] = None,
-             verbose: bool = False) -> ETSModel:
+def auto_ets(
+    y: NDArray[np.float64],
+    m: int = 1,
+    seasonal: bool = True,
+    trend: Optional[bool] = None,
+    damped: Optional[bool] = None,
+    ic: Literal["aic", "aicc", "bic"] = "aicc",
+    allow_multiplicative: bool = True,
+    allow_multiplicative_trend: bool = False,
+    lambda_auto: bool = False,
+    max_models: Optional[int] = None,
+    verbose: bool = False
+) -> ETSModel:
     """
     Automatic ETS model selection
 
@@ -1350,7 +1387,7 @@ def auto_ets(y: NDArray[np.float64],
     return best_model
 
 
-def residual_diagnostics(model: ETSModel) -> Dict[str, any]:
+def residual_diagnostics(model: ETSModel) -> Dict[str, Any]:
     """
     Compute residual diagnostics for ETS model
 
@@ -1369,7 +1406,9 @@ def residual_diagnostics(model: ETSModel) -> Dict[str, any]:
         - jarque_bera_p: Jarque-Bera test p-value (>0.05 suggests normality)
         - shapiro_p: Shapiro-Wilk test p-value (>0.05 suggests normality)
         - acf: Autocorrelation function (first 10 lags)
+
     """
+
     residuals = model.residuals
     n = len(residuals)
 
@@ -1400,7 +1439,7 @@ def residual_diagnostics(model: ETSModel) -> Dict[str, any]:
         c_lag = np.sum(residuals_centered[:-lag] * residuals_centered[lag:]) / n
         acf[lag] = c_lag / c0
 
-    lb_stat = n * (n + 2) * np.sum(acf[1:max_lag+1] ** 2 / (n - np.arange(1, max_lag+1)))
+    lb_stat = n * (n + 2) * np.sum(acf[1:max_lag + 1] ** 2 / (n - np.arange(1, max_lag + 1)))
     from scipy.stats import chi2
     lb_p = 1 - chi2.cdf(lb_stat, max_lag)
 

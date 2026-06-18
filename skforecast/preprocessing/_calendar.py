@@ -1,0 +1,877 @@
+################################################################################
+#                                Calendar Features                             #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
+# coding=utf-8
+
+from __future__ import annotations
+import inspect
+import re
+import warnings
+import pandas as pd
+import numpy as np
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import SplineTransformer
+from sklearn.utils.validation import check_is_fitted
+
+from ..exceptions import IgnoredArgumentWarning
+
+
+_FEATURE_KNOWN_CATEGORIES = {
+    "month": list(range(1, 13)),
+    "week": list(range(1, 54)),  # 1..53 to handle ISO week 53; see Notes in create_calendar_features
+    "day_of_week": list(range(0, 7)),
+    "day_of_month": list(range(1, 32)),
+    "day_of_year": list(range(1, 367)),  # 1..366 to handle leap years; see Notes in create_calendar_features
+    "hour": list(range(0, 24)),
+    "minute": list(range(0, 60)),
+    "second": list(range(0, 60)),
+    "quarter": list(range(1, 5)),
+}
+_DEFAULT_MAX_VALUES = {k: len(v) for k, v in _FEATURE_KNOWN_CATEGORIES.items()}
+_DEFAULT_MIN_VALUES = {k: v[0] for k, v in _FEATURE_KNOWN_CATEGORIES.items()}
+
+_SPLINE_BLOCKED_KWARGS = {"knots", "sparse_output"}
+_SPLINE_ALLOWED_KWARGS = (
+    set(inspect.signature(SplineTransformer).parameters) - _SPLINE_BLOCKED_KWARGS
+)
+
+
+def create_calendar_features(
+    X: pd.Series | pd.DataFrame | pd.DatetimeIndex,
+    features: list[str] | None = None,
+    features_to_encode: list[str] | None = None,
+    encoding: str = "cyclical",
+    max_values: dict[str, int] | None = None,
+    spline_kwargs: dict | None = None,
+    keep_original_columns: bool = True,
+) -> pd.DataFrame:
+    """
+    Extract datetime features from the DateTime index of a pandas DataFrame or Series.
+
+    Parameters
+    ----------
+    X : pandas Series, pandas DataFrame, pandas DatetimeIndex
+        Input DataFrame or Series with a datetime index, or a pandas
+        DatetimeIndex directly. When a DatetimeIndex is passed, it is used as
+        the datetime source and there are no original columns to keep, so
+        `keep_original_columns` has no effect.
+    features : list, default None
+        List of calendar features (strings) to extract from the index. When
+        `None`, the following features are extracted: `'year'`, `'month'`,
+        `'week'`, `'day_of_week'`, `'day_of_month'`, `'day_of_year'`,
+        `'weekend'`, `'hour'`, `'minute'`, `'second'`, `'quarter'`.
+    features_to_encode : list, default None
+        List of calendar features (strings) to encode. When `None`, all
+        extracted features are encoded. If a feature is not in `features`, a
+        `ValueError` is raised. If the explicit list contains features that
+        cannot be encoded with the chosen `encoding` (e.g. `'year'` or
+        `'weekend'`, which are never encodable), an `IgnoredArgumentWarning`
+        is issued and those features are kept as raw integers.
+    encoding : str, default 'cyclical'
+        Encoding method for the extracted features. Options are `None`,
+        `'cyclical'`, `'onehot'` or `'spline'`. Features that cannot be
+        encoded under the chosen mode are kept as raw integers. By default,
+        `'year'` and `'weekend'` are never encoded. `'onehot'` excludes them
+        via the known-category set, while `'cyclical'` and `'spline'` exclude
+        them via `max_values`.
+    max_values : dict, default None
+        Dictionary of maximum values for the cyclical and spline encoding.
+        User-provided values are merged with the defaults: keys passed by
+        the user override the corresponding default, and missing keys fall
+        back to the defaults `{'month': 12, 'week': 53, 'day_of_week': 7,
+        'day_of_month': 31, 'day_of_year': 366, 'hour': 24, 'minute': 60,
+        'second': 60, 'quarter': 4}`. For example, passing
+        `max_values={'month': 6}` overrides only `month`; the other features
+        keep their defaults. Features that are not in the defaults (e.g.
+        `'year'`, `'weekend'`) are left as raw integers.
+    spline_kwargs : dict, default None
+        Additional keyword arguments for the spline encoding. Only used when
+        `encoding='spline'`. When `None`, defaults to `{'degree': 3,
+        'include_bias': True, 'extrapolation': 'periodic'}`; `n_knots`
+        defaults to `max_values[feature] + 1` per feature, which produces one
+        spline column per distinct period value (analogous to a smooth
+        one-hot encoding). Knots are placed uniformly over `[min_val,
+        min_val + max_val]` (e.g. 1-13 for month, 0-24 for hour), giving a
+        periodic period of exactly `max_val` for both 0-indexed and
+        1-indexed features and keeping the encoding stateless and consistent
+        between training and prediction. Any keyword argument accepted by
+        `sklearn.preprocessing.SplineTransformer` is allowed (e.g. `n_knots`,
+        `degree`, `include_bias`, `extrapolation`, `order`) except
+        `knots` (computed internally from `max_values`) and `sparse_output`
+        (incompatible with the DataFrame output). Passing either of these or
+        an unknown key raises `ValueError`.
+    keep_original_columns : bool, default True
+        If True, the original columns of `X` are kept in the output
+        DataFrame. If False, only the extracted datetime features are
+        returned. When `True` and `X` is an unnamed pandas Series
+        (`X.name is None`), a `ValueError` is raised; either set `X.name` to
+        a string, or pass `keep_original_columns=False`. When `X` is a pandas
+        DatetimeIndex this argument has no effect, as there are no original
+        columns to keep.
+
+    Returns
+    -------
+    X_new : pandas DataFrame
+        DataFrame with the extracted (and optionally encoded) datetime features.
+    
+    Notes
+    -----
+    The default `max_values` use 53 for `'week'` and 366 for `'day_of_year'`
+    to accommodate the maximum possible values across all calendar years:
+    ISO week 53 occurs in some years (e.g. 2015, 2020, 2026) and
+    day-of-year 366 occurs in leap years. Because the encoding must be
+    stateless (the same for any year, without prior knowledge of whether it
+    is a leap year or contains ISO week 53), the period is fixed at the
+    maximum-possible value. This implies:
+
+    - Onehot: the `week_53` and `day_of_year_366` columns are always
+      present in the output and equal 0 for rows whose year never reaches
+      those values. This guarantees a consistent column schema across
+      training and prediction.
+    - Cyclical / spline: in years where the maximum value is reached,
+      the cyclical wrap-around is exact (e.g. `sin(2π·366/366) = 0` matches
+      `sin(2π·0/366) = 0`). In years where it is not, there is a one-step
+      "phantom gap" between the highest observed value and 1. The
+      cyclical distance is two steps instead of one. This residual
+      asymmetry is numerically small (≈ 1.7% for `day_of_year`, ≈ 12% for
+      `week`) and is strictly preferable to the alternative (period
+      52 / 365), which would silently collapse week 53 onto week 1 and day
+      366 onto day 1 in years where those values occur.
+
+    For high-cardinality features such as `day_of_year` (366 columns) or
+    `day_of_month` (31 columns), `encoding='cyclical'` (2 columns per
+    feature) or `'spline'` (≈ `max_val` columns per feature, but dense
+    rather than sparse) are typically more memory-efficient than
+    `'onehot'`, especially on multi-year hourly or sub-daily data.
+
+    Output column order: encoded features appear in the order given by
+    `features`. Non-encoded extracted features (e.g. `'year'` or
+    `'weekend'`, which are never encoded) appear first in the output, in
+    `features`-list order; encoded features follow, also in
+    `features`-list order. For example, with
+    `features=['year', 'month', 'weekend', 'hour']` and
+    `encoding='cyclical'` the output columns are
+    `[year, weekend, month_sin, month_cos, hour_sin, hour_cos]`.
+
+    """
+
+    if not isinstance(X, (pd.DataFrame, pd.Series, pd.DatetimeIndex)):
+        raise TypeError(
+            "Input `X` must be a pandas Series, DataFrame or DatetimeIndex"
+        )
+
+    if isinstance(X, pd.DatetimeIndex):
+        datetime_index = X
+    else:
+        if not isinstance(X.index, pd.DatetimeIndex):
+            raise TypeError("Input `X` must have a pandas DatetimeIndex")
+        datetime_index = X.index
+    
+    if len(X) == 0:
+        raise ValueError("Cannot fit on empty input.")
+    
+    if encoding not in ["cyclical", "onehot", "spline", None]:
+        raise ValueError(
+            "Encoding must be one of 'cyclical', 'onehot', 'spline' or None"
+        )
+    
+    if isinstance(X, pd.Series) and X.name is None and keep_original_columns:
+        raise ValueError(
+            "When `keep_original_columns=True`, the input Series must have a "
+            "name (`X.name`). Either set `X.name` to a string, or pass "
+            "`keep_original_columns=False`."
+        )
+
+    datetime_attrs = {
+        "year": "year",
+        "month": "month",
+        "week": lambda idx: idx.isocalendar().week.astype(int),
+        "day_of_week": "dayofweek",
+        "day_of_month": "day",
+        "day_of_year": "dayofyear",
+        "weekend": lambda idx: (idx.dayofweek >= 5).astype(int),
+        "hour": "hour",
+        "minute": "minute",
+        "second": "second",
+        "quarter": "quarter",
+    }
+    if features is None:
+        features = list(datetime_attrs.keys())
+
+    resolved_max_values = _DEFAULT_MAX_VALUES.copy()
+    if max_values is not None:
+        unknown = set(max_values) - set(_DEFAULT_MAX_VALUES)
+        if unknown:
+            warnings.warn(
+                f"Unknown keys in `max_values`: {sorted(unknown)}. "
+                f"Valid keys: {sorted(_DEFAULT_MAX_VALUES)}. Unknown keys "
+                f"are ignored.",
+                IgnoredArgumentWarning,
+            )
+            max_values = {k: v for k, v in max_values.items() if k not in unknown}
+        if max_values and encoding == "onehot":
+            warnings.warn(
+                "`max_values` is ignored when `encoding='onehot'`; onehot "
+                "uses the fixed known-category set. Pass "
+                "`encoding='cyclical'` or `encoding='spline'` for "
+                "`max_values` to take effect.",
+                IgnoredArgumentWarning,
+            )
+        resolved_max_values.update(max_values)
+    max_values = resolved_max_values
+
+    X_new = pd.DataFrame(index=datetime_index)
+
+    not_supported_features = set(features) - set(datetime_attrs.keys())
+    if not_supported_features:
+        raise ValueError(
+            f"Features {not_supported_features} are not supported. "
+            f"Supported features are {list(datetime_attrs.keys())}."
+        )
+
+    for feature in features:
+        attr = datetime_attrs[feature]
+        X_new[feature] = (
+            attr(datetime_index)
+            if callable(attr)
+            else getattr(datetime_index, attr).astype(int)
+        )
+
+    if features_to_encode is not None:
+        not_supported_features_to_encode = set(features_to_encode) - set(features)
+        if not_supported_features_to_encode:
+            raise ValueError(
+                f"Features {not_supported_features_to_encode} are not present in `features`."
+            )
+
+        if encoding is not None:
+            if encoding == "onehot":
+                encodable = set(_FEATURE_KNOWN_CATEGORIES.keys())
+            else:  # encoding in ("cyclical", "spline")
+                encodable = set(max_values.keys())
+            not_encodable = [f for f in features_to_encode if f not in encodable]
+            if not_encodable:
+                warnings.warn(
+                    f"Features {not_encodable} cannot be encoded with "
+                    f"encoding={encoding!r}. Encodable features for this encoding "
+                    f"are: {sorted(encodable)}. These features will be kept as "
+                    f"raw integers.",
+                    IgnoredArgumentWarning,
+                )
+    else:
+        features_to_encode = features
+
+    if encoding == "cyclical":
+        cols_to_drop = []
+        for feature in features:
+            if feature in features_to_encode and feature in max_values:
+                max_val = max_values[feature]
+                X_new[f"{feature}_sin"] = np.sin(2 * np.pi * X_new[feature] / max_val)
+                X_new[f"{feature}_cos"] = np.cos(2 * np.pi * X_new[feature] / max_val)
+                cols_to_drop.append(feature)
+        X_new = X_new.drop(columns=cols_to_drop)
+    elif encoding == "onehot":
+        effective_encode = [
+            f for f in features
+            if f in features_to_encode and f in _FEATURE_KNOWN_CATEGORIES
+        ]
+        for feature in effective_encode:
+            X_new[feature] = pd.Categorical(
+                X_new[feature],
+                categories=_FEATURE_KNOWN_CATEGORIES[feature],
+            )
+        if effective_encode:
+            X_new = pd.get_dummies(
+                X_new, columns=effective_encode, drop_first=False, sparse=False, dtype=int
+            )
+            # Match the cyclical / spline ordering: non-encoded features
+            # first (in `features` order), then encoded dummies grouped per
+            # feature (also in `features` order). `pd.get_dummies` keeps
+            # non-encoded columns at their original position, so the dummies
+            # are otherwise interleaved.
+            non_encoded = [f for f in features if f not in effective_encode]
+            encoded_cols = [
+                f"{feature}_{cat}"
+                for feature in effective_encode
+                for cat in _FEATURE_KNOWN_CATEGORIES[feature]
+            ]
+            X_new = X_new[non_encoded + encoded_cols]
+    elif encoding == "spline":
+        if spline_kwargs is not None:
+            invalid = set(spline_kwargs) - _SPLINE_ALLOWED_KWARGS
+            if invalid:
+                blocked_passed = invalid & _SPLINE_BLOCKED_KWARGS
+                unknown = invalid - _SPLINE_BLOCKED_KWARGS
+                msgs = []
+                if blocked_passed:
+                    msgs.append(
+                        f"Keys {sorted(blocked_passed)} are not allowed in "
+                        f"`spline_kwargs`: `knots` is computed internally from "
+                        f"`max_values`, and `sparse_output` is incompatible "
+                        f"with the DataFrame output."
+                    )
+                if unknown:
+                    msgs.append(
+                        f"Unknown keys in `spline_kwargs`: {sorted(unknown)}. "
+                        f"Allowed keys: {sorted(_SPLINE_ALLOWED_KWARGS)}."
+                    )
+                raise ValueError(" ".join(msgs))
+
+        resolved_spline_kwargs = {
+            "degree": 3,
+            "include_bias": True,
+            "extrapolation": "periodic",
+        }
+        if spline_kwargs is not None:
+            resolved_spline_kwargs.update(spline_kwargs)
+        
+        n_knots_global = resolved_spline_kwargs.pop("n_knots", None)
+        cols_to_drop = []
+        spline_cols = {}
+        for feature in features:
+            if feature in features_to_encode and feature in max_values:
+                max_val = max_values[feature]
+                n_knots = n_knots_global if n_knots_global is not None else max_val + 1
+                min_val = _DEFAULT_MIN_VALUES.get(feature, 0)
+                # Knots span [min_val, min_val + max_val] so that the periodic
+                # period is exactly `max_val` for both 0-indexed (e.g. hour:
+                # [0..24]) and 1-indexed features (e.g. month: [1..13]). With
+                # the alternative `linspace(min_val, max_val, ...)`, 1-indexed
+                # features would have period `max_val - min_val`, collapsing
+                # the last value onto the first (e.g. month 12 = month 1).
+                knots = np.linspace(min_val, min_val + max_val, n_knots).reshape(-1, 1)
+                spt = SplineTransformer(
+                          knots = knots,
+                          **resolved_spline_kwargs,
+                      )
+                values = X_new[feature].to_numpy().reshape(-1, 1)
+                spline_out = spt.fit_transform(values)
+                col_names = spt.get_feature_names_out([feature])
+                for col_name, col_values in zip(col_names, spline_out.T):
+                    spline_cols[col_name] = col_values
+                cols_to_drop.append(feature)
+        
+        X_new = X_new.drop(columns=cols_to_drop)
+        X_new = pd.concat(
+            [X_new, pd.DataFrame(spline_cols, index=X_new.index)], axis=1
+        )
+
+    if keep_original_columns and not isinstance(X, pd.DatetimeIndex):
+        X_df = X.to_frame() if isinstance(X, pd.Series) else X
+        overlapping_cols = set(X_df.columns).intersection(set(X_new.columns))
+        if overlapping_cols:
+            container = "Series" if isinstance(X, pd.Series) else "DataFrame"
+            rename_target = "Series" if isinstance(X, pd.Series) else "columns"
+            raise ValueError(
+                f"The following extracted feature names already exist in the input "
+                f"{container}: {list(overlapping_cols)}. To avoid duplicate columns, "
+                f"rename the original {rename_target} or avoid extracting these features."
+            )
+        X_new = pd.concat([X_df, X_new], axis=1)
+
+    return X_new
+
+
+class CalendarFeatures(BaseEstimator, TransformerMixin):
+    """
+    A transformer for extracting datetime features from the DateTime index of a
+    pandas DataFrame or Series, or from a pandas DatetimeIndex directly. It can
+    also apply encoding to the extracted features.
+
+    The allowed features to extract are: `'year'`, `'month'`, `'week'`, `'day_of_week'`,
+    `'day_of_month'`, `'day_of_year'`, `'weekend'`, `'hour'`, `'minute'`, `'second'`,
+    and `'quarter'`. If not specified, all of these features are extracted. 
+
+    Parameters
+    ----------
+    features : list, default None
+        List of calendar features (strings) to extract from the index. When
+        `None`, the following features are extracted: `'year'`, `'month'`,
+        `'week'`, `'day_of_week'`, `'day_of_month'`, `'day_of_year'`,
+        `'weekend'`, `'hour'`, `'minute'`, `'second'`, `'quarter'`.
+    features_to_encode : list, default None
+        List of calendar features (strings) to encode. When `None`, all
+        extracted features are encoded. If a feature is not in `features`, a
+        `ValueError` is raised at fit/transform time. If the explicit list
+        contains features that cannot be encoded with the chosen `encoding`
+        (e.g. `'year'` or `'weekend'`, which are never encodable), an
+        `IgnoredArgumentWarning` is issued and those features are kept as raw
+        integers.
+    encoding : str, default 'cyclical'
+        Encoding method for the extracted features. Options are `None`,
+        `'cyclical'`, `'onehot'` or `'spline'`. Features that cannot be
+        encoded under the chosen mode are kept as raw integers. By default,
+        `'year'` and `'weekend'` are never encoded. `'onehot'` excludes them
+        via the known-category set, while `'cyclical'` and `'spline'` exclude
+        them via `max_values`.
+    max_values : dict, default None
+        Dictionary of maximum values for the cyclical and spline encoding.
+        User-provided values are merged with the defaults: keys passed by
+        the user override the corresponding default, and missing keys fall
+        back to the defaults `{'month': 12, 'week': 53, 'day_of_week': 7,
+        'day_of_month': 31, 'day_of_year': 366, 'hour': 24, 'minute': 60,
+        'second': 60, 'quarter': 4}`. For example, passing
+        `max_values={'month': 6}` overrides only `month`; the other features
+        keep their defaults. Features that are not in the defaults (e.g.
+        `'year'`, `'weekend'`) are left as raw integers.
+    spline_kwargs : dict, default None
+        Additional keyword arguments for the spline encoding. Only used when
+        `encoding='spline'`. When `None`, defaults to `{'degree': 3,
+        'include_bias': True, 'extrapolation': 'periodic'}`; `n_knots`
+        defaults to `max_values[feature] + 1` per feature. Knots are placed
+        uniformly over `[min_val, min_val + max_val]` (e.g. 1-13 for month,
+        0-24 for hour), giving a periodic period of exactly `max_val` for
+        both 0-indexed and 1-indexed features and ensuring consistent
+        encoding across training and prediction. Any keyword argument
+        accepted by
+        `sklearn.preprocessing.SplineTransformer` is allowed (e.g. `n_knots`,
+        `degree`, `include_bias`, `extrapolation`, `order`) except
+        `knots` (computed internally from `max_values`) and `sparse_output`
+        (incompatible with the DataFrame output). Passing either of these or
+        an unknown key raises `ValueError` at fit/transform time.
+    keep_original_columns : bool, default True
+        If True, the original columns of `X` are kept in the output
+        DataFrame. If False, only the extracted datetime features are
+        returned. When `True` and `X` is an unnamed pandas Series
+        (`X.name is None`), a `ValueError` is raised at fit/transform time;
+        either set `X.name` to a string, or pass `keep_original_columns=False`.
+        When `X` is a pandas DatetimeIndex this argument has no effect, as
+        there are no original columns to keep.
+
+    Attributes
+    ----------
+    features : list, None
+        List of calendar features to extract from the index. `None` means the
+        default features are used.
+    features_to_encode : list, None
+        List of calendar features to encode. `None` means all extracted
+        features are encoded.
+    encoding : str
+        Encoding method for the extracted features.
+    max_values : dict, None
+        Dictionary of maximum values for the cyclical and spline encoding of
+        calendar features. `None` means the default values are used.
+    spline_kwargs : dict, None
+        Keyword arguments for the spline encoding. `None` means the default
+        values are used (`degree=3`, `include_bias=True`,
+        `extrapolation='periodic'`, `n_knots=max_val+1` per feature).
+    keep_original_columns : bool
+        Whether to keep original columns from the input.
+    feature_names_out_ : list
+        Names of the output features. Set after calling `fit` or `transform`.
+
+    Notes
+    -----
+    The default `max_values` use 53 for `'week'` and 366 for `'day_of_year'`
+    to accommodate the maximum possible values across all calendar years:
+    ISO week 53 occurs in some years (e.g. 2015, 2020, 2026) and
+    day-of-year 366 occurs in leap years. Because the encoding must be
+    stateless (the same for any year, without prior knowledge of whether it
+    is a leap year or contains ISO week 53), the period is fixed at the
+    maximum-possible value. This implies:
+
+    - Onehot: the `week_53` and `day_of_year_366` columns are always
+      present in the output and equal 0 for rows whose year never reaches
+      those values. This guarantees a consistent column schema across
+      training and prediction.
+    - Cyclical / spline: in years where the maximum value is reached,
+      the cyclical wrap-around is exact (e.g. `sin(2π·366/366) = 0` matches
+      `sin(2π·0/366) = 0`). In years where it is not, there is a one-step
+      "phantom gap" between the highest observed value and 1. The
+      cyclical distance is two steps instead of one. This residual
+      asymmetry is numerically small (≈ 1.7% for `day_of_year`, ≈ 12% for
+      `week`) and is strictly preferable to the alternative (period
+      52 / 365), which would silently collapse week 53 onto week 1 and day
+      366 onto day 1 in years where those values occur.
+
+    For high-cardinality features such as `day_of_year` (366 columns) or
+    `day_of_month` (31 columns), `encoding='cyclical'` (2 columns per
+    feature) or `'spline'` (≈ `max_val` columns per feature, but dense
+    rather than sparse) are typically more memory-efficient than
+    `'onehot'`, especially on multi-year hourly or sub-daily data.
+
+    Output column order: encoded features appear in the order given by
+    `features`. Non-encoded extracted features (e.g. `'year'` or
+    `'weekend'`, which are never encoded) appear first in the output, in
+    `features`-list order; encoded features follow, also in
+    `features`-list order. For example, with
+    `features=['year', 'month', 'weekend', 'hour']` and
+    `encoding='cyclical'` the output columns are
+    `[year, weekend, month_sin, month_cos, hour_sin, hour_cos]`.
+
+    """
+
+    def __init__(
+        self,
+        features: list[str] | None = None,
+        features_to_encode: list[str] | None = None,
+        encoding: str = "cyclical",
+        max_values: dict[str, int] | None = None,
+        spline_kwargs: dict | None = None,
+        keep_original_columns: bool = True,
+    ) -> None:
+
+        allowed_features = [
+            "year", "month", "week", "day_of_week", "day_of_month",
+            "day_of_year", "weekend", "hour", "minute", "second", "quarter",
+        ]
+        if features is not None:
+            not_supported_features = set(features) - set(allowed_features)
+            if not_supported_features:
+                raise ValueError(
+                    f"Calendar features {not_supported_features} are not supported. "
+                    f"Supported features are {allowed_features}."
+                )
+        else:
+            features = allowed_features
+    
+        if encoding not in ["cyclical", "onehot", "spline", None]:
+            raise ValueError(
+                "Encoding must be one of 'cyclical', 'onehot', 'spline' or None"
+            )
+
+        self.features = features
+        self.features_to_encode = features_to_encode
+        self.encoding = encoding
+        self.max_values = max_values
+        self.spline_kwargs = spline_kwargs
+        self.keep_original_columns = keep_original_columns
+
+    def fit(self, X, y=None):
+        """
+        Fit the transformer by computing the output feature names.
+
+        Parameters
+        ----------
+        X : pandas Series, pandas DataFrame, pandas DatetimeIndex
+            Input DataFrame or Series with a datetime index, or a pandas
+            DatetimeIndex directly.
+        y : ignored
+            Not used, present for API compatibility.
+
+        Returns
+        -------
+        self : CalendarFeatures
+            Fitted transformer.
+
+        """
+
+        # Slice to the first 2 rows: the encoding is stateless (column
+        # names depend on parameters and the index frequency, not on data
+        # values), so any non-empty slice yields the same output schema.
+        # Non-pandas inputs are passed through unchanged so that
+        # `create_calendar_features` raises the appropriate `TypeError`.
+        if isinstance(X, pd.DatetimeIndex):
+            X_sample = X[:2]
+        elif isinstance(X, (pd.DataFrame, pd.Series)):
+            X_sample = X.iloc[:2]
+        else:
+            X_sample = X
+        
+        result = create_calendar_features(
+                     X                     = X_sample,
+                     features              = self.features,
+                     features_to_encode    = self.features_to_encode,
+                     encoding              = self.encoding,
+                     max_values            = self.max_values,
+                     spline_kwargs         = self.spline_kwargs,
+                     keep_original_columns = self.keep_original_columns,
+                 )
+        self.feature_names_out_ = list(result.columns)
+
+        return self
+
+    def transform(
+        self,
+        X: pd.Series | pd.DataFrame | pd.DatetimeIndex
+    ) -> pd.DataFrame:
+        """
+        Create datetime features from the DateTime index of a pandas DataFrame or Series.
+
+        Parameters
+        ----------
+        X : pandas Series, pandas DataFrame, pandas DatetimeIndex
+            Input DataFrame or Series with a datetime index, or a pandas
+            DatetimeIndex directly.
+
+        Returns
+        -------
+        X_new : pandas DataFrame
+            DataFrame with the extracted (and optionally encoded) datetime features.
+
+        """
+
+        X_new = create_calendar_features(
+                    X                     = X,
+                    features              = self.features,
+                    features_to_encode    = self.features_to_encode,
+                    encoding              = self.encoding,
+                    max_values            = self.max_values,
+                    spline_kwargs         = self.spline_kwargs,
+                    keep_original_columns = self.keep_original_columns,
+                )
+
+        return X_new
+
+    def get_feature_names_out(
+        self,
+        input_features: list[str] | None = None
+    ) -> list[str]:
+        """
+        Get the names of the output features.
+
+        Parameters
+        ----------
+        input_features : list, default None
+            Ignored. Present for API compatibility with sklearn.
+
+        Returns
+        -------
+        feature_names_out_ : list
+            Names of the output features.
+
+        """
+
+        check_is_fitted(self, "feature_names_out_")
+
+        return self.feature_names_out_
+
+
+def _freq_to_timedelta_unit(freq_str: str) -> str:
+    """
+    Map a pandas frequency string to a numpy timedelta unit.
+
+    Coarser-than-hourly frequencies (daily, weekly, monthly, etc.) always map to
+    days because holiday dates are calendar dates and sub-daily distances to them
+    are always expressed as whole days.
+
+    Parameters
+    ----------
+    freq_str : str
+        Pandas frequency string (e.g. `'D'`, `'h'`, `'2min'`, `'W-MON'`).
+
+    Returns
+    -------
+    unit : str
+        Numpy timedelta unit string (e.g. `'D'`, `'h'`, `'m'`).
+
+    """
+
+    # Strip leading digit multiplier and weekday suffix (e.g. "2h" -> "h", "W-MON" -> "W")
+    normalized = freq_str.partition("-")[0].partition("_")[0]
+    normalized = re.sub(r"^\d+", "", normalized)
+
+    _coarse = {
+        "YE", "YS", "Y", "A", "AS", "QE", "QS", "Q",
+        "ME", "MS", "M", "BM", "BMS", "BME", "CBM", "CBMS", "CBME",
+        "W", "D", "B", "C",
+    }
+    if normalized in _coarse:
+        unit = "D"
+    elif normalized in {"h", "H"}:
+        unit = "h"
+    elif normalized in {"min", "T"}:
+        unit = "m"
+    elif normalized in {"s", "S"}:
+        unit = "s"
+    elif normalized in {"ms", "L"}:
+        unit = "ms"
+    elif normalized in {"us", "U"}:
+        unit = "us"
+    elif normalized in {"ns", "N"}:
+        unit = "ns"
+    else:
+        unit = "h"  # default to hours if frequency is unknown
+
+    return unit
+
+
+def calculate_distance_from_holiday(
+    X: pd.DataFrame | pd.Series,
+    holiday_column: str | None = None,
+    date_column: str | None = None,
+    fill_na: int | float = 0,
+) -> pd.DataFrame:
+    """
+    Calculate the number of periods to the next and since the last holiday.
+
+    The time unit used for the calculation (days, hours, minutes, …) is inferred
+    from the frequency of the index when `date_column=None`, and is always days
+    when a date column is used instead. Output columns are always named
+    `time_to_holiday` and `time_since_holiday` regardless of the unit.
+
+    Parameters
+    ----------
+    X : pandas Series, pandas DataFrame
+        Input data containing the holiday indicator. When a Series is passed,
+        its values are used directly as the holiday indicator (boolean or 0/1)
+        and `holiday_column` is ignored. When a DataFrame is passed,
+        `holiday_column` must be specified.
+    holiday_column : str, None, default None
+        Name of the boolean column indicating holidays (`True` or `1` on holiday
+        dates, `False` or `0` otherwise). Required when `X` is a pandas
+        DataFrame. Ignored when `X` is a pandas Series.
+    date_column : str, None, default None
+        Name of the column containing dates to use as reference. When `None`,
+        the index is used and must be a pandas DatetimeIndex.
+    fill_na : int, float, default 0
+        Value used to fill rows where no previous or next holiday exists (i.e.
+        before the first holiday or after the last). Must be an `int`, a
+        `numpy.integer`, or `numpy.nan`. Booleans and other floats are
+        rejected because the output columns have `Int64` dtype. Pass
+        `numpy.nan` to keep those entries as `pd.NA`.
+
+    Returns
+    -------
+    result : pandas DataFrame
+        DataFrame with two new columns and the same index as `X`:
+
+        - `time_to_holiday`: periods until the next holiday.
+        - `time_since_holiday`: periods since the last holiday.
+
+    Notes
+    -----
+    When `date_column` is specified, the unit is always days regardless of the
+    data frequency, because no index frequency information is available.
+
+    When `date_column=None`, the time unit is inferred from the index frequency:
+
+    - Daily or coarser (weekly, monthly, …): days
+    - Hourly: hours
+    - Minute: minutes
+    - Second: seconds
+    - Millisecond: milliseconds
+    - Microsecond: microseconds
+    - Nanosecond: nanoseconds
+
+    When the index has no frequency set, `pd.infer_freq` is attempted. If the
+    frequency still cannot be determined (e.g. irregular spacing or fewer than
+    three observations), the unit defaults to hours and a `UserWarning` is
+    issued.
+
+    In `date_column` mode, fractional days (from arbitrary intra-day
+    timestamps) are truncated, not rounded e.g. a distance of 0.99
+    days is reported as 0. To preserve sub-day precision, use the
+    index-based mode with an appropriate frequency (`'h'`, `'min'`, etc.).
+
+    When a row corresponds to a holiday, both `time_to_holiday` and
+    `time_since_holiday` are 0, the date is at distance 0 from itself.
+
+    """
+
+    if not isinstance(X, (pd.DataFrame, pd.Series)):
+        raise TypeError(
+            "Input `X` must be a pandas Series or pandas DataFrame."
+        )
+
+    if isinstance(fill_na, bool) or not (
+        isinstance(fill_na, (int, np.integer))
+        or (isinstance(fill_na, (float, np.floating)) and np.isnan(fill_na))
+    ):
+        raise TypeError(
+            "`fill_na` must be an int, np.integer, or numpy.nan, "
+            f"got {type(fill_na).__name__}={fill_na!r}. The output columns "
+            "have `Int64` dtype, so floats other than NaN cannot be used."
+        )
+
+    if isinstance(X, pd.Series):
+        if holiday_column is not None:
+            warnings.warn(
+                "`holiday_column` is ignored when `X` is a pandas Series. "
+                "The Series values are used directly as the holiday indicator.",
+                IgnoredArgumentWarning,
+                stacklevel=2,
+            )
+        col_name = X.name if X.name is not None else "is_holiday"
+        X = X.rename(col_name).to_frame()
+        holiday_column = col_name
+    else:
+        if holiday_column is None:
+            raise ValueError(
+                "`holiday_column` must be specified when `X` is a pandas DataFrame."
+            )
+        if holiday_column not in X.columns:
+            raise ValueError(
+                f"`holiday_column='{holiday_column}'` is not a column of `X`. "
+                f"Available columns: {list(X.columns)}."
+            )
+
+    if date_column is not None:
+        if date_column not in X.columns:
+            raise ValueError(
+                f"`date_column='{date_column}'` is not a column of `X`. "
+                f"Available columns: {list(X.columns)}."
+            )
+        if pd.to_datetime(X[date_column], errors="coerce").isna().any():
+            raise ValueError(
+                f"`date_column='{date_column}'` contains NaN or unparseable "
+                f"values. All entries must be valid datetimes."
+            )
+
+    if X[holiday_column].isna().any():
+        warnings.warn(
+            f"`{holiday_column}` contains NaN values. "
+            f"They are filled with `False` (treated as non-holidays) "
+            f"before computing distances.",
+            UserWarning,
+            stacklevel=2,
+        )
+        X = X.copy()
+        with pd.option_context("future.no_silent_downcasting", True):
+            X[holiday_column] = X[holiday_column].fillna(False).astype(bool)
+
+    if date_column is None:
+        if not isinstance(X.index, pd.DatetimeIndex):
+            raise TypeError(
+                "When `date_column=None`, the index must be a pandas DatetimeIndex."
+            )
+        dates = X.index.to_numpy()
+        holiday_dates = X.index[X[holiday_column].astype(bool)].to_numpy()
+
+        freq_str = X.index.freqstr if X.index.freq is not None else None
+        if freq_str is None:
+            freq_str = pd.infer_freq(X.index)
+        if freq_str is None:
+            warnings.warn(
+                "Could not determine the frequency of the index. "
+                "The output column unit defaults to 'hours'. To avoid this "
+                "warning, either set `X.index.freq = pd.infer_freq(X.index)` "
+                "or pass an index with a known frequency.",
+                UserWarning,
+                stacklevel=2,
+            )
+            freq_str = 'h'
+        unit = _freq_to_timedelta_unit(freq_str)
+    else:
+        dates = pd.to_datetime(X[date_column]).to_numpy()
+        holiday_dates = pd.to_datetime(
+            X.loc[X[holiday_column].astype(bool), date_column]
+        ).to_numpy()
+        unit = 'D'
+
+    holiday_dates_sorted = np.sort(holiday_dates)
+
+    # Periods until the next holiday
+    next_idx = np.searchsorted(holiday_dates_sorted, dates, side='left')
+    has_next = next_idx < len(holiday_dates_sorted)
+    to_holiday = np.full(len(dates), np.nan)
+    to_holiday[has_next] = (
+        holiday_dates_sorted[next_idx[has_next]] - dates[has_next]
+    ).astype(f'timedelta64[{unit}]').astype(int)
+
+    # Periods since the last holiday
+    prev_idx = np.searchsorted(holiday_dates_sorted, dates, side='right') - 1
+    has_prev = prev_idx >= 0
+    since_holiday = np.full(len(dates), np.nan)
+    since_holiday[has_prev] = (
+        dates[has_prev] - holiday_dates_sorted[prev_idx[has_prev]]
+    ).astype(f'timedelta64[{unit}]').astype(int)
+
+    to_col = pd.Series(to_holiday, index=X.index, dtype="Int64").fillna(fill_na)
+    since_col = pd.Series(since_holiday, index=X.index, dtype="Int64").fillna(fill_na)
+
+    return pd.DataFrame(
+        {"time_to_holiday": to_col, "time_since_holiday": since_col}
+    )

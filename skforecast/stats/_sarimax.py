@@ -11,9 +11,16 @@ import inspect
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, RegressorMixin
-from statsmodels.tsa.statespace.sarimax import SARIMAX
 
+from ..utils import check_optional_dependency
 from ._utils import check_is_fitted
+
+try:
+    from statsmodels.tsa.statespace.sarimax import SARIMAX
+except ModuleNotFoundError as error:
+    if error.name == "statsmodels":
+        check_optional_dependency(package_name="statsmodels")
+    raise
 
 
 class Sarimax(BaseEstimator, RegressorMixin):

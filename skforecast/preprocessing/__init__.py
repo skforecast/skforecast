@@ -1,7 +1,5 @@
-from .preprocessing import (
+from ._preprocessing import (
     TimeSeriesDifferentiator,
-    DateTimeFeatureTransformer,
-    create_datetime_features,
     reshape_series_wide_to_long,
     reshape_series_long_to_dict,
     reshape_exog_long_to_dict,
@@ -10,4 +8,10 @@ from .preprocessing import (
     RollingFeaturesClassification,
     QuantileBinner,
     ConformalIntervalCalibrator,
+)
+
+from ._calendar import (
+    CalendarFeatures,
+    create_calendar_features,
+    calculate_distance_from_holiday
 )

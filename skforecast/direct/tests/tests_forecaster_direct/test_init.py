@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import OrdinalEncoder
-from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from skforecast.direct import ForecasterDirect
 
 
@@ -93,6 +93,36 @@ def test_init_window_size_correctly_stored(lags, window_features, expected):
     else:
         assert forecaster.window_features_names is None
         assert forecaster.window_features_class_names is None
+
+
+@pytest.mark.parametrize("include_calendar", 
+                         [True, False], 
+                         ids = lambda cf: f'include_calendar: {cf}')
+def test_init_calendar_features_correctly_stored(include_calendar):
+    """
+    Test calendar_features is correctly stored when passed.
+    """
+    if include_calendar:
+        calendar_features = CalendarFeatures(features=None)
+    else:
+        calendar_features = None
+
+    forecaster = ForecasterDirect(
+                     estimator         = LinearRegression(),
+                     steps             = 3,
+                     lags              = 5,
+                     calendar_features = calendar_features
+                 )
+    
+    if calendar_features:
+        assert isinstance(forecaster.calendar_features, CalendarFeatures)
+        assert forecaster.calendar_features_names == [
+            "year", "month", "week", "day_of_week", "day_of_month",
+            "day_of_year", "weekend", "hour", "minute", "second", "quarter",
+        ]
+    else:
+        assert forecaster.calendar_features is None
+        assert forecaster.calendar_features_names is None
 
 
 @pytest.mark.parametrize("dif", 

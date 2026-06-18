@@ -16,6 +16,14 @@ Use this workflow when you have **one time series** and want to predict its futu
 - **ForecasterRecursive**: Default choice. Uses its own predictions as inputs for multi-step forecasting. Works with any sklearn-compatible regressor.
 - **ForecasterDirect**: Trains one model per forecast step. Better when the relationship between lags and target changes across the horizon.
 
+### Related skills
+
+- **Before**: `choosing-a-forecaster` (decide between Recursive and Direct based on the data)
+- **Before**: `autocorrelation-and-lag-selection` (pick the `lags` argument from ACF/PACF analysis)
+- **Before**: `feature-engineering` (assemble the rolling, calendar, and exogenous features)
+- **After**: `hyperparameter-optimization` (tune the forecaster once a baseline is trained)
+- **After**: `prediction-intervals` (add bootstrap or conformal intervals on top of the point forecasts)
+
 ## Complete Workflow
 
 ```python

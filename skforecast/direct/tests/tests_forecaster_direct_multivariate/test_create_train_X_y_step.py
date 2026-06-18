@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from skforecast.direct import ForecasterDirectMultiVariate
 
 
@@ -31,13 +31,14 @@ def test_create_train_X_y_step_output_when_exog_is_None(step, expected_y):
         estimator=LinearRegression(), level='l1', lags=3, steps=3,
         transformer_series=None
     )
-    X_train_autoreg, X_train_exog, y_train, *_ = forecaster._create_train_X_y(
-        series=series
+    X_train_autoreg, X_train_exog, X_train_calendar, y_train, *_ = (
+        forecaster._create_train_X_y(series=series)
     )
 
     X_step, y_step = forecaster._create_train_X_y_step(
         X_train_autoreg=X_train_autoreg,
         X_train_exog=X_train_exog,
+        X_train_calendar=X_train_calendar,
         y_train=y_train,
         step=step,
     )
@@ -51,6 +52,7 @@ def test_create_train_X_y_step_output_when_exog_is_None(step, expected_y):
     )
 
     assert X_train_exog is None
+    assert X_train_calendar is None
     np.testing.assert_array_almost_equal(X_step, expected_X)
     np.testing.assert_array_almost_equal(y_step, expected_y)
 
@@ -102,12 +104,13 @@ def test_create_train_X_y_step_output_when_lags_3_steps_2_and_exog(
         estimator=LinearRegression(), level='l1', lags=3, steps=2,
         transformer_series=None
     )
-    X_train_autoreg, X_train_exog, y_train, *_ = forecaster._create_train_X_y(
-        series=series, exog=exog
+    X_train_autoreg, X_train_exog, X_train_calendar, y_train, *_ = (
+        forecaster._create_train_X_y(series=series, exog=exog)
     )
     X_step, y_step = forecaster._create_train_X_y_step(
         X_train_autoreg=X_train_autoreg,
         X_train_exog=X_train_exog,
+        X_train_calendar=X_train_calendar,
         y_train=y_train,
         step=step,
     )
@@ -190,12 +193,13 @@ def test_create_train_X_y_step_output_when_lags_3_steps_3_and_multiple_exog(
         estimator=LinearRegression(), level='l1', lags=3, steps=3,
         transformer_series=None
     )
-    X_train_autoreg, X_train_exog, y_train, *_ = forecaster._create_train_X_y(
-        series=series, exog=exog
+    X_train_autoreg, X_train_exog, X_train_calendar, y_train, *_ = (
+        forecaster._create_train_X_y(series=series, exog=exog)
     )
     X_step, y_step = forecaster._create_train_X_y_step(
         X_train_autoreg=X_train_autoreg,
         X_train_exog=X_train_exog,
+        X_train_calendar=X_train_calendar,
         y_train=y_train,
         step=step,
     )
@@ -262,12 +266,13 @@ def test_create_train_X_y_step_output_when_window_features_and_exog(
         estimator=LinearRegression(), steps=2, level='l1', lags=5,
         window_features=rolling, transformer_series=None
     )
-    X_train_autoreg, X_train_exog, y_train, *_ = forecaster._create_train_X_y(
-        series=series, exog=exog
+    X_train_autoreg, X_train_exog, X_train_calendar, y_train, *_ = (
+        forecaster._create_train_X_y(series=series, exog=exog)
     )
     X_step, y_step = forecaster._create_train_X_y_step(
         X_train_autoreg=X_train_autoreg,
         X_train_exog=X_train_exog,
+        X_train_calendar=X_train_calendar,
         y_train=y_train,
         step=step,
     )
@@ -323,12 +328,13 @@ def test_create_train_X_y_step_output_when_lags_dict_with_None(
         estimator=LinearRegression(), level='l2',
         lags={'l1': None, 'l2': 3}, steps=2, transformer_series=None
     )
-    X_train_autoreg, X_train_exog, y_train, *_ = forecaster._create_train_X_y(
-        series=series, exog=exog
+    X_train_autoreg, X_train_exog, X_train_calendar, y_train, *_ = (
+        forecaster._create_train_X_y(series=series, exog=exog)
     )
     X_step, y_step = forecaster._create_train_X_y_step(
         X_train_autoreg=X_train_autoreg,
         X_train_exog=X_train_exog,
+        X_train_calendar=X_train_calendar,
         y_train=y_train,
         step=step,
     )
@@ -357,7 +363,7 @@ def test_create_train_X_y_step_matches_filter_train_X_y_for_step():
     )
 
     # Private path (numpy)
-    X_train_autoreg, X_train_exog, y_train_private, *_ = (
+    X_train_autoreg, X_train_exog, X_train_calendar, y_train_private, *_ = (
         forecaster._create_train_X_y(series=series, exog=exog)
     )
 
@@ -370,6 +376,7 @@ def test_create_train_X_y_step_matches_filter_train_X_y_for_step():
         X_step_private, y_step_private = forecaster._create_train_X_y_step(
             X_train_autoreg=X_train_autoreg,
             X_train_exog=X_train_exog,
+            X_train_calendar=X_train_calendar,
             y_train=y_train_private,
             step=step,
         )
@@ -383,3 +390,67 @@ def test_create_train_X_y_step_matches_filter_train_X_y_for_step():
         np.testing.assert_array_almost_equal(
             y_step_private, y_step_public.to_numpy()
         )
+
+
+def test_create_train_X_y_step_with_calendar_features_same_as_exog():
+    """
+    Test that _create_train_X_y_step produces the same training matrices
+    when calendar features are created within the forecaster (calendar_features)
+    as when they are manually created and passed as exogenous variables.
+    `encoding=None` is used in CalendarFeatures so the column order is preserved.
+    """
+    series = pd.DataFrame(
+        {'l1': np.arange(15, dtype=float),
+         'l2': np.arange(50, 65, dtype=float)},
+        index=pd.date_range('2000-01-01', periods=15, freq='D')
+    )
+    exog_datetime = pd.Series(
+        np.arange(100, 115), index=pd.date_range('2000-01-01', periods=15, freq='D'),
+        name='exog', dtype=float
+    )
+
+    exog_calendar = exog_datetime.to_frame()
+    exog_calendar['day_of_week'] = exog_calendar.index.dayofweek.astype(float)
+    exog_calendar['weekend'] = exog_calendar['day_of_week'].isin([5, 6]).astype(float)
+
+    rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[5, 6])
+    calendar = CalendarFeatures(features=['day_of_week', 'weekend'], encoding=None)
+
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', steps=2, lags=5,
+        window_features=rolling, calendar_features=calendar
+    )
+    X_train_autoreg, X_train_exog, X_train_calendar, y_train, *_ = (
+        forecaster._create_train_X_y(series=series, exog=exog_datetime)
+    )
+
+    forecaster_no_cal = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', steps=2, lags=5,
+        window_features=rolling
+    )
+    (
+        X_train_autoreg_no_cal,
+        X_train_exog_no_cal,
+        X_train_calendar_no_cal,
+        y_train_no_cal,
+        *_,
+    ) = forecaster_no_cal._create_train_X_y(series=series, exog=exog_calendar)
+
+    for step in [1, 2]:
+        X_step, y_step = forecaster._create_train_X_y_step(
+            X_train_autoreg=X_train_autoreg,
+            X_train_exog=X_train_exog,
+            X_train_calendar=X_train_calendar,
+            y_train=y_train,
+            step=step,
+        )
+        X_step_no_cal, y_step_no_cal = forecaster_no_cal._create_train_X_y_step(
+            X_train_autoreg=X_train_autoreg_no_cal,
+            X_train_exog=X_train_exog_no_cal,
+            X_train_calendar=X_train_calendar_no_cal,
+            y_train=y_train_no_cal,
+            step=step,
+        )
+
+        np.testing.assert_array_almost_equal(X_step, X_step_no_cal)
+        np.testing.assert_array_almost_equal(y_step, y_step_no_cal)
