@@ -11,9 +11,7 @@ description: >
 
 ## References
 
-See [references/interval-compatibility.md](references/interval-compatibility.md) for
-the complete compatibility matrix: which forecaster supports which method,
-parameter differences, binned residuals support, and common error patterns.
+See [references/interval-compatibility.md](references/interval-compatibility.md) for the complete compatibility matrix: which forecaster supports which method, parameter differences, binned residuals support, and common error patterns.
 
 ## When to Use
 
@@ -92,9 +90,7 @@ predictions = forecaster.predict_interval(
 
 ## Foundation Model Intervals
 
-`ForecasterFoundation` returns intervals and quantiles directly from the
-underlying foundation model's native quantile output — no bootstrapping
-or conformal calibration required.
+`ForecasterFoundation` returns intervals and quantiles directly from the underlying foundation model's native quantile output — no bootstrapping or conformal calibration required.
 
 ```python
 from skforecast.foundation import FoundationModel, ForecasterFoundation
@@ -110,9 +106,7 @@ predictions = forecaster.predict_quantiles(
 )
 ```
 
-TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, …, 0.9]`;
-Chronos-2, TabICL and TabPFN-TS accept any quantile in `(0, 1)`. See the
-`foundation-forecasting` skill for details.
+TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, …, 0.9]`; Chronos-2, TabICL, TabPFN-TS and TFC-T0 accept any quantile in `(0, 1)`. See the `foundation-forecasting` skill for details.
 
 ## During Backtesting
 

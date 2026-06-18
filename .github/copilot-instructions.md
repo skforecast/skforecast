@@ -82,7 +82,7 @@ skforecast/
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
 ├── foundation/              # FoundationModel, ForecasterFoundation
-│                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS)
+│                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0)
 ├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
@@ -103,7 +103,7 @@ skforecast/
 - **Forecasters inheriting from `ForecasterBase`**: ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterRecursiveClassifier, ForecasterDirect, ForecasterDirectMultiVariate, ForecasterRnn
 - **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate, ForecasterFoundation
 - Statistical models in `stats/` are wrapped by `ForecasterStats` (in `recursive/`)
-- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`) resolved from the HuggingFace `model_id`
+- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`) resolved from the HuggingFace `model_id`
 - `model_selection/` functions work with all forecaster types
 - `preprocessing/` classes can be passed to forecasters via `transformer_y`, `transformer_exog`, `window_features`
 
@@ -117,7 +117,7 @@ skforecast/
 | ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
 | ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
 | ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
-| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS) |
+| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
 
@@ -479,7 +479,7 @@ forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 
 ## Foundation Models (Zero-Shot)
 
-Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`). Models are downloaded from HuggingFace on first use.
+Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`). Models are downloaded from HuggingFace on first use.
 
 `FoundationModel` is the low-level interface; `ForecasterFoundation` wraps it to integrate with the rest of the skforecast ecosystem (backtesting, model selection, uniform `predict` / `predict_interval` / `predict_quantiles` API).
 
@@ -513,7 +513,8 @@ Supported adapters (selected automatically from `model_id`):
 | TimesFMAdapter (Google) | `google/timesfm` | No | 512 | `[0.1, 0.2, …, 0.9]` |
 | MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, …, 0.9]` |
 | TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (past & future covariates) | 4096 | Any in `(0, 1)` |
-| TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn-ts` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
+| TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
+| T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
 
 Key points:
 - `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.

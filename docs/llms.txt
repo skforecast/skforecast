@@ -18,7 +18,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [ForecasterDirectMultiVariate](https://skforecast.org/latest/api/forecasterdirectmultivariate): Multivariate forecasting using multiple series as input features
 - [ForecasterRnn](https://skforecast.org/latest/api/forecasterrnn): Deep learning forecasting with RNN/LSTM architectures
 - [ForecasterStats](https://skforecast.org/latest/api/forecasterstats): Statistical models (ARIMA, SARIMAX, ETS, ARAR) with sklearn-compatible interface
-- [ForecasterFoundation](https://skforecast.org/latest/api/forecasterfoundation): Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL)
+- [ForecasterFoundation](https://skforecast.org/latest/api/forecasterfoundation): Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0)
 - [ForecasterRecursiveClassifier](https://skforecast.org/latest/api/forecasterrecursiveclassifier): Classification-based forecasting for categorical time series
 - [ForecasterEquivalentDate](https://skforecast.org/latest/api/forecasterequivalentdate): Baseline forecaster using equivalent past dates
 
@@ -59,7 +59,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 
 ## Foundation Models
 
-- [Forecasting with foundation models](https://skforecast.org/latest/user_guides/foundation-forecasting-models.html): Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL)
+- [Forecasting with foundation models](https://skforecast.org/latest/user_guides/foundation-forecasting-models.html): Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0)
 
 ## Deep Learning
 
@@ -90,7 +90,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [preprocessing](https://skforecast.org/latest/api/preprocessing.html): RollingFeatures, TimeSeriesDifferentiator, CalendarFeatures, QuantileBinner
 - [feature_selection](https://skforecast.org/latest/api/feature_selection.html): select_features, select_features_multiseries
 - [stats](https://skforecast.org/latest/api/stats.html): Arima, Sarimax, Ets, Arar model classes
-- [FoundationModel](https://skforecast.org/latest/api/foundationmodel): Estimator used by ForecasterFoundation to run zero-shot foundation models; delegates model-specific execution to low-level adapters for Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL
+- [FoundationModel](https://skforecast.org/latest/api/foundationmodel): Estimator used by ForecasterFoundation to run zero-shot foundation models; delegates model-specific execution to low-level adapters for Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL / TabPFN-Ts, TFC-T0
 - [ForecasterFoundation](https://skforecast.org/latest/api/forecasterfoundation): High-level zero-shot forecaster integrated with skforecast backtesting and prediction intervals
 - [drift_detection](https://skforecast.org/latest/api/drift_detection.html): RangeDriftDetector, PopulationDriftDetector
 - [metrics](https://skforecast.org/latest/api/metrics.html): MASE, RMSSE, sMAPE, CRPS, pinball loss, coverage

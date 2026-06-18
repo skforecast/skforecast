@@ -6,3 +6,4 @@
 ::: skforecast.foundation._adapters.MoiraiAdapter
 ::: skforecast.foundation._adapters.TabICLAdapter
 ::: skforecast.foundation._adapters.TabPFNAdapter
+::: skforecast.foundation._adapters.T0Adapter
