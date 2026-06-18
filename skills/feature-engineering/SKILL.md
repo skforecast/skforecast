@@ -2,16 +2,23 @@
 name: feature-engineering
 description: >
     Creates features for time series forecasting: calendar features with
-    skforecast's `CalendarFeatures` (cyclical, onehot, or spline
-    encoding), holiday distance features with `calculate_distance_from_holiday`,
-    rolling statistics with `RollingFeatures`, differencing, and categorical
-    exogenous variables. Use when the user wants to improve model accuracy
-    through feature engineering or asks about exogenous variable creation.
+    skforecast's `CalendarFeatures` (cyclical, onehot, or spline encoding) —
+    either delegated to the forecaster via the `calendar_features` parameter or
+    built manually as exog — holiday distance features with
+    `calculate_distance_from_holiday`, rolling statistics with `RollingFeatures`,
+    differencing, and categorical exogenous variables. Use when the user wants to
+    improve model accuracy through feature engineering or asks about exogenous
+    variable creation.
 ---
 
 # Feature Engineering
 
 ## References
+
+See [references/calendar-features-reference.md](references/calendar-features-reference.md)
+for the complete `CalendarFeatures` constructor, all supported features and
+encodings, the delegated (`calendar_features` parameter) vs. manual (`exog`)
+workflows, per-forecaster support, and gotchas.
 
 See [references/rolling-stats-reference.md](references/rolling-stats-reference.md) for
 the complete `RollingFeatures` constructor, all 9 available statistics,
@@ -33,135 +40,85 @@ holiday distance features, rolling statistics, differencing, or data scaling.
 
 | Tool | Module | Purpose |
 |------|--------|---------|
-| `CalendarFeatures` | `skforecast.preprocessing` | Sklearn-compatible transformer: extract calendar features from a `DatetimeIndex` and (optionally) encode them. Use as `transformer_exog` or in a `Pipeline`. |
+| `calendar_features` param | skforecast ML forecasters | **Delegated** calendar features: pass a `CalendarFeatures` instance and the forecaster generates them at train and predict — no manual exog. **New in 0.23.0.** |
+| `CalendarFeatures` | `skforecast.preprocessing` | Sklearn-compatible transformer: extract calendar features from a `DatetimeIndex` and (optionally) encode them. Pass to `calendar_features`, use as `transformer_exog`, or in a `Pipeline`. |
 | `create_calendar_features` | `skforecast.preprocessing` | Function form of the same logic, for one-shot use without a transformer. |
 | `calculate_distance_from_holiday` | `skforecast.preprocessing` | Periods to next / since last holiday |
 | `RollingFeatures` | `skforecast.preprocessing` | Rolling window statistics (mean, std, min, max, etc.) |
 | `differentiation` param | skforecast forecasters | Make non-stationary series stationary |
 
-> All calendar tools are built into skforecast — no `feature_engine` (or any
-> other extra) dependency is required.
-
 ## Calendar Features
 
-`CalendarFeatures` extracts features from a `DatetimeIndex` and, in
-the same `fit_transform` call, applies the chosen encoding. The result is a
-single DataFrame ready to pass as `exog`. Because it is sklearn-compatible, it
-can be used as `transformer_exog` in any forecaster or inside a `Pipeline` /
-`ColumnTransformer`.
+There are **two ways** to add calendar features (month, day of week, hour, …).
+Both use the `CalendarFeatures` class; they differ in who builds the features.
 
-### Supported features
+| Workflow | How | When to use |
+|----------|-----|-------------|
+| **Delegated** (new in 0.23.0) | Pass a `CalendarFeatures` instance to the forecaster's `calendar_features` parameter. The forecaster generates the features at train **and** predict — no manual exog. | The 4 supported forecasters: `ForecasterRecursive`, `ForecasterRecursiveMultiSeries`, `ForecasterDirect`, `ForecasterDirectMultiVariate`. |
+| **Manual** | Build features with `CalendarFeatures.fit_transform` / `create_calendar_features` and pass them as `exog` (or wire `CalendarFeatures` as `transformer_exog`). | Forecasters without `calendar_features` support (`ForecasterRecursiveClassifier`, `ForecasterRnn`, `ForecasterStats`, `ForecasterFoundation`, `ForecasterEquivalentDate`), or when the features live inside a `Pipeline` / `ColumnTransformer`. |
 
-`'year'`, `'month'`, `'week'`, `'day_of_week'`, `'day_of_month'`,
-`'day_of_year'`, `'weekend'`, `'hour'`, `'minute'`, `'second'`, `'quarter'`.
+> Full constructor, all features/encodings, per-forecaster support, and gotchas:
+> [references/calendar-features-reference.md](references/calendar-features-reference.md).
 
-By default all are extracted; pass `features=[...]` to subset.
+**Supported features:** `'year'`, `'month'`, `'week'`, `'day_of_week'`,
+`'day_of_month'`, `'day_of_year'`, `'weekend'`, `'hour'`, `'minute'`,
+`'second'`, `'quarter'`. **Encodings:** `'cyclical'` (default, sin/cos pair),
+`'onehot'`, `'spline'`, `None`. `'year'` and `'weekend'` are never encoded.
 
-### Supported encodings
+### Delegated — `calendar_features` parameter (preferred when supported)
 
-| `encoding` | Output | Notes |
-|-----------|--------|-------|
-| `'cyclical'` (default) | `{feature}_sin`, `{feature}_cos` | sin/cos pair per cyclical feature |
-| `'onehot'` | One column per known category (e.g. `month_1` … `month_12`) | Stable schema across train / predict |
-| `'spline'` | `≈ max_val` columns per feature, periodic B-splines | Smooth alternative to onehot |
-| `None` | Raw integer columns | No transformation |
+The forecaster builds the calendar features from the datetime index during both
+training and prediction. You do **not** build or pass a calendar `exog`, and you
+do **not** need to cover the forecast horizon manually.
 
-`'year'` and `'weekend'` are **never** encoded (they are not cyclical) and are
-always kept as raw integers regardless of `encoding`.
+```python
+from lightgbm import LGBMRegressor
+from skforecast.preprocessing import CalendarFeatures
+from skforecast.recursive import ForecasterRecursive
 
-### Basic usage — `CalendarFeatures`
+calendar = CalendarFeatures(
+    features=['month', 'day_of_week', 'hour'],
+    encoding='cyclical',                 # 'cyclical' | 'onehot' | 'spline' | None
+    keep_original_columns=False,
+)
+
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+    calendar_features=calendar,          # requires a pandas DatetimeIndex
+)
+forecaster.fit(y=y_train)                # calendar features built automatically
+predictions = forecaster.predict(steps=24)   # calendar features built automatically
+```
+
+Requires a `DatetimeIndex` (otherwise `TypeError`). Calendar features are added
+as predictors alongside lags, window features, and any `exog`.
+
+### Manual — build calendar features as exog
+
+For forecasters without the `calendar_features` parameter, or for use in a
+`Pipeline`:
 
 ```python
 import pandas as pd
 from skforecast.preprocessing import CalendarFeatures
 
-# Data must have a DatetimeIndex with frequency set
-data = data.asfreq('h')
+data = data.asfreq('h')                  # DatetimeIndex with frequency set
 
 calendar_transformer = CalendarFeatures(
     features=['month', 'week', 'day_of_week', 'hour'],
-    encoding='cyclical',                 # 'cyclical' | 'onehot' | 'spline' | None
-    keep_original_columns=False,         # True merges with X's columns
-)
-exog_calendar = calendar_transformer.fit_transform(data)
-# Columns: month_sin, month_cos, week_sin, week_cos,
-#          day_of_week_sin, day_of_week_cos, hour_sin, hour_cos
-
-# After fit, the resulting column names are available via the sklearn API
-calendar_transformer.get_feature_names_out()
-```
-
-Defaults for `max_values` (`{'month': 12, 'week': 53, 'day_of_week': 7,
-'day_of_month': 31, 'day_of_year': 366, 'hour': 24, 'minute': 60, 'second': 60,
-'quarter': 4}`) handle leap years and ISO week 53 correctly. Override only the
-keys you need:
-
-```python
-calendar_transformer = CalendarFeatures(
-    features=['month', 'hour'],
-    encoding='cyclical',
-    max_values={'month': 6},   # Custom semester period; hour keeps default 24
-)
-exog_calendar = calendar_transformer.fit_transform(data)
-```
-
-### Onehot and spline encoding
-
-```python
-# Onehot — stable column schema (e.g. month_1 … month_12 always present)
-calendar_transformer = CalendarFeatures(
-    features=['month', 'day_of_week'],
-    encoding='onehot',
-    keep_original_columns=False,
-)
-exog_calendar = calendar_transformer.fit_transform(data)
-
-# Spline — smooth periodic B-splines, ≈ max_val columns per feature
-calendar_transformer = CalendarFeatures(
-    features=['day_of_year'],
-    encoding='spline',
-    spline_kwargs={'degree': 3, 'n_knots': 12},   # optional
-    keep_original_columns=False,
-)
-exog_calendar = calendar_transformer.fit_transform(data)
-```
-
-`spline_kwargs` accepts any argument of `sklearn.preprocessing.SplineTransformer`
-**except** `knots` (computed internally from `max_values`) and `sparse_output`
-(incompatible with the DataFrame output).
-
-### Encoding only some features
-
-Use `features_to_encode` to extract a feature but leave it as a raw integer:
-
-```python
-calendar_transformer = CalendarFeatures(
-    features=['year', 'month', 'hour'],
-    features_to_encode=['month', 'hour'],   # 'year' kept as raw int
-    encoding='cyclical',
-)
-exog_calendar = calendar_transformer.fit_transform(data)
-```
-
-### Function form — `create_calendar_features`
-
-For one-shot use without instantiating a transformer, the same logic is
-exposed as a function:
-
-```python
-from skforecast.preprocessing import create_calendar_features
-
-exog_calendar = create_calendar_features(
-    X=data,
-    features=['month', 'day_of_week', 'hour'],
     encoding='cyclical',
     keep_original_columns=False,
 )
+exog_calendar = calendar_transformer.fit_transform(data)
+# Columns: month_sin, month_cos, week_sin, week_cos, ...
+
+# The exog passed to predict() must cover the entire forecast horizon.
 ```
 
-All parameters match `CalendarFeatures`. Prefer the transformer when
-you want to fit / re-apply the same configuration, plug it into a `Pipeline`,
-or pass it as `transformer_exog`.
+The function form `create_calendar_features(X=data, ...)` does the same in one
+shot without a transformer. See the reference for `max_values`, `spline_kwargs`,
+and `features_to_encode` options.
 
 ## Holiday Distance Features
 
@@ -193,18 +150,6 @@ Combine with calendar features into a single `exog`:
 ```python
 exog = pd.concat([exog_calendar, holiday_dist], axis=1)
 ```
-
-## Cyclical / Onehot / Spline — Choosing an Encoding
-
-| Encoding | Columns per feature | Best for |
-|----------|---------------------|----------|
-| `'cyclical'` | 2 (sin + cos) | Compact, smooth — good default for tree and linear models |
-| `'onehot'` | `max_val` | Stable schema; tree models can split on individual categories |
-| `'spline'` | `≈ max_val` (dense) | Smooth + flexible; useful for high-cardinality features (`day_of_year`) when memory allows |
-| `None` | 1 | Tree models that benefit from raw ordinal values |
-
-For high-cardinality features (`day_of_year` → 366, `day_of_month` → 31),
-`'cyclical'` or `'spline'` are typically more memory-efficient than `'onehot'`.
 
 ## Rolling Features (Window Statistics)
 
@@ -441,13 +386,42 @@ forecaster.fit(y=y_train, exog=exog.loc[y_train.index])
 predictions = forecaster.predict(steps=10, exog=exog.loc[forecast_index])
 ```
 
+### Variant — delegate calendar features to the forecaster
+
+On a forecaster that supports `calendar_features`, drop the manual calendar exog
+and let the forecaster build it at train and predict time. Only the
+non-calendar exog (holiday + external) is passed manually:
+
+```python
+calendar = CalendarFeatures(
+    features=['month', 'day_of_week', 'hour'],
+    encoding='cyclical',
+    keep_original_columns=False,
+)
+
+exog = pd.concat([exog_external, exog_holiday], axis=1)   # no calendar columns here
+
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=[1, 2, 3, 7, 14, 24],
+    window_features=rolling,
+    calendar_features=calendar,          # built automatically at fit/predict
+    transformer_y=StandardScaler(),
+    differentiation=1,
+)
+forecaster.fit(y=y_train, exog=exog.loc[y_train.index])
+predictions = forecaster.predict(steps=10, exog=exog.loc[forecast_index])
+```
+
 ## Common Mistakes
 
 1. **Not encoding cyclical features**: Using raw integers for hour/month/day_of_week loses the cyclical relationship (hour 23 appears far from hour 0). Use `encoding='cyclical'` (or `'onehot'` / `'spline'`).
-2. **Forgetting frequency on index**: `CalendarFeatures` requires a `DatetimeIndex`; `calculate_distance_from_holiday` (index mode) infers the time unit from the frequency. Always set `data.asfreq('h')` (or similar) first.
-3. **Not covering forecast horizon with exog**: Calendar / holiday features for `predict()` must include future dates covering the entire forecast horizon.
-4. **Overriding `max_values` for `'week'` or `'day_of_year'`**: The defaults (53, 366) are intentional — they handle ISO week 53 and leap years correctly. Use the smaller value (52 / 365) only if you have verified your data never reaches the maximum.
-5. **Over-engineering features**: Start with lags only, then add rolling features and calendar features incrementally. Validate each addition with backtesting.
-6. **Rolling window larger than lags without checking training size**: The forecaster's `window_size` is `max(max_lag, max_size_window_features)`. A 30-step rolling window with `lags=7` drops the first 30 rows of training data and requires `last_window` of length ≥ 30 at predict time.
-7. **Colliding feature names across multiple `RollingFeatures`**: When passing `window_features=[wf1, wf2]`, names like `roll_mean_7` produced by both instances overwrite each other. Override with `features_names=[...]` on at least one instance.
-8. **Forgetting that window features run on the differenced series**: With `differentiation=1`, `roll_mean_7` is the mean of seven changes, not seven raw values. Adjust interpretation accordingly.
+2. **Forgetting frequency on index**: `CalendarFeatures` (and the `calendar_features` parameter) requires a `DatetimeIndex`; `calculate_distance_from_holiday` (index mode) infers the time unit from the frequency. Always set `data.asfreq('h')` (or similar) first.
+3. **Not covering forecast horizon with calendar/holiday exog (manual path only)**: When building calendar features manually as `exog`, the `predict()` exog must include future dates covering the entire forecast horizon. With the delegated `calendar_features` parameter this is handled automatically.
+4. **Mixing the delegated and manual calendar paths for the same features**: Passing `calendar_features=` *and* also adding manually-built calendar columns with the same names to `exog` raises `ValueError: Duplicated feature names detected in X_train`. Pick one path per feature.
+5. **Using `calendar_features` on an unsupported forecaster**: Only `ForecasterRecursive`, `ForecasterRecursiveMultiSeries`, `ForecasterDirect`, and `ForecasterDirectMultiVariate` accept it. For `ForecasterRecursiveClassifier`, `ForecasterRnn`, `ForecasterStats`, `ForecasterFoundation`, and `ForecasterEquivalentDate`, build calendar features manually as `exog`.
+6. **Overriding `max_values` for `'week'` or `'day_of_year'`**: The defaults (53, 366) are intentional — they handle ISO week 53 and leap years correctly. Use the smaller value (52 / 365) only if you have verified your data never reaches the maximum.
+7. **Over-engineering features**: Start with lags only, then add rolling features and calendar features incrementally. Validate each addition with backtesting.
+8. **Rolling window larger than lags without checking training size**: The forecaster's `window_size` is `max(max_lag, max_size_window_features) (+ differentiation)`. A 30-step rolling window with `lags=7` drops the first 30 rows of training data and requires `last_window` of length ≥ 30 at predict time.
+9. **Colliding feature names across multiple `RollingFeatures`**: When passing `window_features=[wf1, wf2]`, names like `roll_mean_7` produced by both instances overwrite each other. Override with `features_names=[...]` on at least one instance.
+10. **Forgetting that window features run on the differenced series**: With `differentiation=1`, `roll_mean_7` is the mean of seven changes, not seven raw values. Adjust interpretation accordingly.
