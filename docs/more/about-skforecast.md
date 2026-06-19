@@ -51,8 +51,6 @@ Special mention to the main contributors who have significantly impacted the lib
 |:--------------------------:|:------------------------------------------------------------:|
 | Fernando Carazo Melo       | [@FernandoCarazoMelo](https://github.com/FernandoCarazoMelo) |
 | Resul Akay (taf-society)   | [@taf-society](https://github.com/taf-society)               |
-| Noah Hollmann (Prior Labs) | [@noahho](https://github.com/noahho)                         |
-| ggprior (Prior Labs)       | [@ggprior](https://github.com/ggprior)                       |
 
 
 ## Contributors
