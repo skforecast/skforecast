@@ -8,13 +8,20 @@ import pytest
 import inspect
 import numpy as np
 import pandas as pd
+import warnings
 from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+import skops.io
+from skops.io.exceptions import UntrustedTypesFoundException
 
 from .... import __version__
 from ....recursive import ForecasterRecursive
 from ....recursive import ForecasterRecursiveMultiSeries
+from ....recursive import ForecasterRecursiveClassifier
 from ....recursive import ForecasterStats
+from ....direct import ForecasterDirect
+from ....direct import ForecasterDirectMultiVariate
 from ....stats import Arima
 from ...utils import save_forecaster
 from ...utils import load_forecaster
@@ -226,9 +233,8 @@ def test_save_forecaster_module_weight_func_no_py_no_warning(save_custom_functio
                  )
     forecaster.fit(series=series)
 
-    import warnings as _warnings
-    with _warnings.catch_warnings():
-        _warnings.simplefilter('error', SaveLoadSkforecastWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', SaveLoadSkforecastWarning)
         save_forecaster(
             forecaster=forecaster,
             file_name='forecaster.joblib',
@@ -298,7 +304,7 @@ def test_save_forecaster_ValueError_when_invalid_backend():
     forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     err_msg = re.escape(
         "Invalid `backend` argument: 'invalid_backend'. "
-        "Valid options are: 'cloudpickle', 'joblib', 'pickle'."
+        "Valid options are: 'cloudpickle', 'joblib', 'pickle', 'skops'."
     )
     with pytest.raises(ValueError, match=err_msg):
         save_forecaster(
@@ -315,7 +321,7 @@ def test_load_forecaster_ValueError_when_invalid_backend():
     """
     err_msg = re.escape(
         "Invalid `backend` argument: 'invalid_backend'. "
-        "Valid options are: 'cloudpickle', 'joblib', 'pickle'."
+        "Valid options are: 'cloudpickle', 'joblib', 'pickle', 'skops'."
     )
     with pytest.raises(ValueError, match=err_msg):
         load_forecaster(file_name='forecaster.joblib', backend='invalid_backend')
@@ -328,8 +334,8 @@ def test_load_forecaster_ValueError_when_unrecognized_extension():
     """
     err_msg = re.escape(
         "Cannot infer backend from file extension '.xyz'. "
-        "Recognized extensions: '.cloudpickle', '.joblib', '.pickle', '.pkl'. "
-        "Provide the `backend` argument explicitly."
+        "Recognized extensions: '.cloudpickle', '.joblib', '.pickle', '.pkl', "
+        "'.skops'. Provide the `backend` argument explicitly."
     )
     with pytest.raises(ValueError, match=err_msg):
         load_forecaster(file_name='forecaster.xyz')
@@ -345,7 +351,12 @@ def test_load_forecaster_backend_auto_detection():
     y = pd.Series(rng.normal(size=100))
     forecaster.fit(y=y)
 
-    backends = [('joblib', '.joblib'), ('pickle', '.pkl'), ('cloudpickle', '.cloudpickle')]
+    backends = [
+        ('joblib', '.joblib'),
+        ('pickle', '.pkl'),
+        ('cloudpickle', '.cloudpickle'),
+        ('skops', '.skops'),
+    ]
     for backend, extension in backends:
         save_forecaster(
             forecaster=forecaster,
@@ -354,7 +365,9 @@ def test_load_forecaster_backend_auto_detection():
             verbose=False,
         )
         file_path = 'forecaster_autodetect' + extension
-        forecaster_loaded = load_forecaster(file_name=file_path, backend=None, verbose=False)
+        forecaster_loaded = load_forecaster(
+            file_name=file_path, backend=None, trusted=True, verbose=False
+        )
         os.remove(file_path)
         assert forecaster_loaded.skforecast_version == forecaster.skforecast_version
 
@@ -395,6 +408,22 @@ def _build_fitted_forecaster_recursive():
     return forecaster
 
 
+def _build_fitted_forecaster_recursive_datetime():
+    """
+    Build and fit a ForecasterRecursive on a DatetimeIndex series (DataFrame
+    `last_window_` with a DatetimeIndex, DatetimeIndex `training_range_`).
+    """
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(), lags=3, transformer_y=StandardScaler()
+    )
+    rng = np.random.default_rng(12345)
+    idx = pd.date_range('2020-01-01', periods=100, freq='D')
+    y = pd.Series(rng.normal(size=100), index=idx)
+    forecaster.fit(y=y)
+
+    return forecaster
+
+
 def _build_fitted_forecaster_multiseries():
     """
     Build and fit a ForecasterRecursiveMultiSeries (dict `last_window_`, dict
@@ -426,6 +455,55 @@ def _build_fitted_forecaster_stats():
     return forecaster
 
 
+def _build_fitted_forecaster_direct():
+    """
+    Build and fit a ForecasterDirect (DataFrame `last_window_`, Index
+    `training_range_`).
+    """
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), steps=5, lags=3, transformer_y=StandardScaler()
+    )
+    rng = np.random.default_rng(12345)
+    y = pd.Series(rng.normal(size=100))
+    forecaster.fit(y=y)
+
+    return forecaster
+
+
+def _build_fitted_forecaster_direct_multivariate():
+    """
+    Build and fit a ForecasterDirectMultiVariate (DataFrame `last_window_`,
+    Index `training_range_`).
+    """
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(),
+        level='serie_1',
+        steps=5,
+        lags=3,
+        transformer_series=StandardScaler(),
+    )
+    rng = np.random.default_rng(12345)
+    series = pd.DataFrame(
+        {'serie_1': rng.normal(size=100), 'serie_2': rng.normal(size=100)}
+    )
+    forecaster.fit(series=series)
+
+    return forecaster
+
+
+def _build_fitted_forecaster_classifier():
+    """
+    Build and fit a ForecasterRecursiveClassifier (DataFrame `last_window_`,
+    Index `training_range_`).
+    """
+    forecaster = ForecasterRecursiveClassifier(estimator=LogisticRegression(), lags=3)
+    rng = np.random.default_rng(12345)
+    y = pd.Series(rng.choice(['a', 'b', 'c'], size=100))
+    forecaster.fit(y=y)
+
+    return forecaster
+
+
 @pytest.mark.parametrize(
     "build_forecaster",
     [
@@ -445,10 +523,9 @@ def test_save_and_load_forecaster_round_trip(backend, extension, build_forecaste
     Test that forecasters of different types round-trip through the pickle and
     cloudpickle backends. Covers the `last_window_` shapes (DataFrame for single
     series, dict for multi-series, Series for ForecasterStats) and the
-    `training_range_` shapes (Index and dict of Index) that the future skops
-    backend must decompose and reconstruct, plus functional equivalence of the
-    predictions. Deep attribute equality for the default joblib backend is
-    covered by `test_save_and_load_forecaster_persistence`.
+    `training_range_` shapes (Index and dict of Index), plus functional
+    equivalence of the predictions. Deep attribute equality for the default
+    joblib backend is covered by `test_save_and_load_forecaster_persistence`.
     """
     forecaster = build_forecaster()
     predictions = forecaster.predict(steps=5)
@@ -467,7 +544,7 @@ def test_save_and_load_forecaster_round_trip(backend, extension, build_forecaste
 
     # Functional equivalence: the loaded forecaster predicts identically.
     _assert_attribute_equal(predictions, forecaster_loaded.predict(steps=5))
-    # Shape-bearing attributes that the future skops backend must reconstruct.
+    # Shape-bearing attributes (`last_window_`, `training_range_`).
     _assert_attribute_equal(forecaster.last_window_, forecaster_loaded.last_window_)
     _assert_attribute_equal(forecaster.training_range_, forecaster_loaded.training_range_)
 
@@ -494,9 +571,8 @@ def test_save_forecaster_cloudpickle_no_py_file_for_weight_func(weight_func):
                  )
     forecaster.fit(series=series)
 
-    import warnings as _warnings
-    with _warnings.catch_warnings():
-        _warnings.simplefilter('error', SaveLoadSkforecastWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', SaveLoadSkforecastWarning)
         save_forecaster(
             forecaster=forecaster,
             file_name='forecaster_cloudpickle_wf',
@@ -529,9 +605,8 @@ def test_save_forecaster_cloudpickle_no_warning_for_window_features():
                      window_features = window_features
                  )
 
-    import warnings as _warnings
-    with _warnings.catch_warnings():
-        _warnings.simplefilter('error', SaveLoadSkforecastWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', SaveLoadSkforecastWarning)
         save_forecaster(
             forecaster=forecaster,
             file_name='forecaster_cloudpickle_wf2',
@@ -591,3 +666,128 @@ def test_save_and_load_forecaster_cloudpickle_embeds_local_weight_func():
     pd.testing.assert_series_equal(
         predictions_before, forecaster_loaded.predict(steps=5)
     )
+
+
+@pytest.mark.parametrize(
+    "build_forecaster",
+    [
+        _build_fitted_forecaster_recursive,
+        _build_fitted_forecaster_recursive_datetime,
+        _build_fitted_forecaster_multiseries,
+        _build_fitted_forecaster_direct,
+        _build_fitted_forecaster_direct_multivariate,
+        _build_fitted_forecaster_classifier,
+    ],
+    ids=[
+        'ForecasterRecursive',
+        'ForecasterRecursive_datetime',
+        'ForecasterRecursiveMultiSeries',
+        'ForecasterDirect',
+        'ForecasterDirectMultiVariate',
+        'ForecasterRecursiveClassifier',
+    ]
+)
+def test_save_and_load_forecaster_round_trip_skops(build_forecaster):
+    """
+    Test that forecasters with a scikit-learn estimator round-trip through the
+    skops backend. Covers the `last_window_`/`training_range_` shapes (DataFrame
+    and Index for single series, dict of each for multi-series) that skops must
+    decompose and reconstruct, functional equivalence of the predictions, and
+    that `save_forecaster` does not mutate the in-memory forecaster.
+    """
+    forecaster = build_forecaster()
+    predictions = forecaster.predict(steps=5)
+    last_window_before = forecaster.last_window_
+    training_range_before = forecaster.training_range_
+
+    file_base = f'forecaster_round_trip_skops_{type(forecaster).__name__}'
+    save_forecaster(
+        forecaster=forecaster, file_name=file_base, backend='skops', verbose=False
+    )
+    expected_file = file_base + '.skops'
+    assert os.path.exists(expected_file)
+
+    # save_forecaster must not mutate the in-memory forecaster: the decomposed
+    # attributes are restored to the original objects after the dump.
+    assert forecaster.last_window_ is last_window_before
+    assert forecaster.training_range_ is training_range_before
+
+    forecaster_loaded = load_forecaster(
+        file_name=expected_file, backend='skops', trusted=True, verbose=False
+    )
+    os.remove(expected_file)
+
+    # Functional equivalence: the loaded forecaster predicts identically.
+    _assert_attribute_equal(predictions, forecaster_loaded.predict(steps=5))
+    # Shape-bearing attributes that the skops backend reconstructs.
+    _assert_attribute_equal(forecaster.last_window_, forecaster_loaded.last_window_)
+    _assert_attribute_equal(forecaster.training_range_, forecaster_loaded.training_range_)
+
+
+def test_load_forecaster_skops_raises_when_untrusted_by_default():
+    """
+    Test that load_forecaster with backend='skops' and the default
+    `trusted=False` raises UntrustedTypesFoundException, listing the untrusted
+    types, instead of silently trusting the whole file.
+    """
+
+    forecaster = _build_fitted_forecaster_recursive()
+    file_base = 'forecaster_skops_untrusted'
+    save_forecaster(
+        forecaster=forecaster, file_name=file_base, backend='skops', verbose=False
+    )
+    expected_file = file_base + '.skops'
+
+    err_msg = re.escape(
+        "skops does not load these types unless you explicitly trust them."
+    )
+    with pytest.raises(UntrustedTypesFoundException, match=err_msg) as excinfo:
+        load_forecaster(file_name=expected_file, backend='skops', verbose=False)
+
+    # The skops-generated part of the message lists the actual untrusted types.
+    assert 'ForecasterRecursive' in str(excinfo.value)
+
+    os.remove(expected_file)
+
+
+def test_load_forecaster_skops_trusted_list():
+    """
+    Test that load_forecaster with backend='skops' loads the forecaster when the
+    untrusted types are passed explicitly as a list to `trusted`, and that the
+    loaded forecaster predicts identically.
+    """
+
+    forecaster = _build_fitted_forecaster_recursive()
+    predictions = forecaster.predict(steps=5)
+    file_base = 'forecaster_skops_trusted_list'
+    save_forecaster(
+        forecaster=forecaster, file_name=file_base, backend='skops', verbose=False
+    )
+    expected_file = file_base + '.skops'
+
+    trusted = skops.io.get_untrusted_types(file=expected_file)
+    forecaster_loaded = load_forecaster(
+        file_name=expected_file, backend='skops', trusted=trusted, verbose=False
+    )
+    os.remove(expected_file)
+
+    _assert_attribute_equal(predictions, forecaster_loaded.predict(steps=5))
+
+
+def test_save_forecaster_NotImplementedError_when_skops_unsupported():
+    """
+    Test that backend='skops' raises NotImplementedError for forecaster types
+    whose underlying estimator skops cannot serialize (e.g. ForecasterStats,
+    which wraps a statsmodels model).
+    """
+    forecaster = _build_fitted_forecaster_stats()
+    err_msg = re.escape(
+        "backend='skops' is not supported for ForecasterStats."
+    )
+    with pytest.raises(NotImplementedError, match=err_msg):
+        save_forecaster(
+            forecaster=forecaster,
+            file_name='forecaster',
+            backend='skops',
+            verbose=False,
+        )

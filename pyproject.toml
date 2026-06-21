@@ -119,6 +119,7 @@ test = [
     "keras>=3.0, <4.0",
     "torch>=2.4, <2.12",
     "cloudpickle>=3.0",
+    "skops>=0.14",
     "tomli>=2.0",
     "pandas[parquet]>=2.1"
 ]

@@ -2443,6 +2443,230 @@ def manage_warnings(func: Callable[P, R]) -> Callable[P, R]:
     return wrapper
 
 
+def _decompose_index(index: pd.Index) -> dict[str, Any]:
+    """
+    Decompose a pandas Index into a plain dict that skops can serialize.
+
+    `DatetimeIndex` values are stored as ISO strings together with their
+    frequency, a `RangeIndex` stores its `start`, `stop`, and `step`, and any
+    other index type stores its values as a list.
+
+    Parameters
+    ----------
+    index : pandas Index
+        Index to decompose.
+
+    Returns
+    -------
+    payload : dict
+        Plain dict representation of the index. The `index_type` key
+        (`'datetime'`, `'range'`, or `'other'`) selects how it is rebuilt.
+
+    """
+
+    if isinstance(index, pd.DatetimeIndex):
+        payload = {
+            'index_type': 'datetime',
+            'index': [str(ts) for ts in index],
+            'freq': index.freqstr,
+            'index_name': index.name,
+        }
+    elif isinstance(index, pd.RangeIndex):
+        payload = {
+            'index_type': 'range',
+            'range': [index.start, index.stop, index.step],
+            'index_name': index.name,
+        }
+    else:
+        payload = {
+            'index_type': 'other',
+            'index': index.to_list(),
+            'index_name': index.name,
+        }
+
+    return payload
+
+
+def _compose_index(payload: dict[str, Any]) -> pd.Index:
+    """
+    Rebuild a pandas Index from the dict produced by `_decompose_index`.
+
+    Parameters
+    ----------
+    payload : dict
+        Plain dict representation of the index, as returned by
+        `_decompose_index`.
+
+    Returns
+    -------
+    index : pandas Index
+        Reconstructed index, matching the original type: `DatetimeIndex` (with
+        its frequency restored), `RangeIndex`, or a generic `Index`.
+
+    """
+
+    if payload['index_type'] == 'datetime':
+        index = pd.DatetimeIndex(
+            pd.to_datetime(payload['index']),
+            freq=payload['freq'],
+            name=payload['index_name'],
+        )
+    elif payload['index_type'] == 'range':
+        start, stop, step = payload['range']
+        index = pd.RangeIndex(
+            start=start, stop=stop, step=step, name=payload['index_name']
+        )
+    else:
+        index = pd.Index(payload['index'], name=payload['index_name'])
+
+    return index
+
+
+def _decompose_pandas_object(
+    obj: pd.Series | pd.DataFrame | pd.Index
+) -> dict[str, Any]:
+    """
+    Decompose a pandas object into a plain dict that skops can serialize.
+
+    The values are kept as a numpy array (serialized natively by skops, preserving
+    dtype) and the index is decomposed with `_decompose_index`. The `object_type`
+    marker records the original type so `_compose_pandas_object` can invert it.
+
+    Note that `to_numpy()` collapses a DataFrame to a single dtype, so per-column
+    dtypes are not preserved. This is fine for the attributes this is used on
+    (`last_window_` is homogeneous numeric, `training_range_` is an Index).
+
+    Parameters
+    ----------
+    obj : pandas Series, pandas DataFrame, pandas Index
+        Object to decompose.
+
+    Returns
+    -------
+    payload : dict
+        Plain dict representation of `obj`.
+
+    """
+
+    if isinstance(obj, pd.DataFrame):
+        payload = {
+            'object_type': 'DataFrame',
+            'data': obj.to_numpy(),
+            'columns': obj.columns.to_list(),
+            **_decompose_index(obj.index),
+        }
+    elif isinstance(obj, pd.Series):
+        payload = {
+            'object_type': 'Series',
+            'data': obj.to_numpy(),
+            'name': obj.name,
+            **_decompose_index(obj.index),
+        }
+    else:
+        payload = {
+            'object_type': 'Index',
+            **_decompose_index(obj),
+        }
+
+    return payload
+
+
+def _compose_pandas_object(
+    payload: dict[str, Any]
+) -> pd.Series | pd.DataFrame | pd.Index:
+    """
+    Rebuild a pandas object from the dict produced by `_decompose_pandas_object`.
+
+    Parameters
+    ----------
+    payload : dict
+        Plain dict representation of the pandas object, including the
+        `object_type` type marker.
+
+    Returns
+    -------
+    obj : pandas Series, pandas DataFrame, pandas Index
+        Reconstructed pandas object, matching the original type.
+
+    """
+
+    index = _compose_index(payload)
+
+    if payload['object_type'] == 'DataFrame':
+        obj = pd.DataFrame(
+            data=payload['data'], index=index, columns=payload['columns']
+        )
+    elif payload['object_type'] == 'Series':
+        obj = pd.Series(data=payload['data'], index=index, name=payload['name'])
+    else:
+        obj = index
+
+    return obj
+
+
+def _skops_decompose_forecaster(forecaster: object) -> None:
+    """
+    Replace the index-backed pandas attributes of a forecaster with plain dicts
+    so it can be serialized with skops.
+
+    Operates in place on `last_window_` and `training_range_`, which may be a
+    pandas object (single-series forecasters) or a dict of pandas objects
+    (multi-series forecasters). The caller is responsible for restoring the
+    original values afterwards.
+
+    Parameters
+    ----------
+    forecaster : Forecaster
+        Forecaster created with skforecast library.
+
+    Returns
+    -------
+    None
+
+    """
+
+    for attr in ('last_window_', 'training_range_'):
+        value = getattr(forecaster, attr, None)
+        if isinstance(value, dict):
+            value = {k: _decompose_pandas_object(v) for k, v in value.items()}
+        elif isinstance(value, (pd.Series, pd.DataFrame, pd.Index)):
+            value = _decompose_pandas_object(value)
+        else:
+            continue
+        setattr(forecaster, attr, value)
+
+
+def _skops_reconstruct_forecaster(forecaster: object) -> None:
+    """
+    Rebuild the index-backed pandas attributes of a forecaster decomposed by
+    `_skops_decompose_forecaster`.
+
+    Operates in place on `last_window_` and `training_range_`. The `object_type`
+    marker key distinguishes a single decomposed object from a multi-series dict
+    of decomposed objects.
+
+    Parameters
+    ----------
+    forecaster : Forecaster
+        Forecaster loaded from a skops file.
+
+    Returns
+    -------
+    None
+
+    """
+
+    for attr in ('last_window_', 'training_range_'):
+        value = getattr(forecaster, attr, None)
+        if not isinstance(value, dict):
+            continue
+        if 'object_type' in value:
+            value = _compose_pandas_object(value)
+        else:
+            value = {k: _compose_pandas_object(v) for k, v in value.items()}
+        setattr(forecaster, attr, value)
+
+
 @manage_warnings
 def save_forecaster(
     forecaster: object,
@@ -2478,6 +2702,14 @@ def save_forecaster(
         (extension `.cloudpickle`). Custom functions and user-defined classes
         are embedded in the file, so no separate `.py` files are needed.
         Requires `cloudpickle` to be installed.
+        - If `'skops'`, the forecaster is saved using skops (extension
+        `.skops`), a secure format that does not execute arbitrary code on
+        load. The `last_window_` and `training_range_` attributes are
+        decomposed into plain types before saving and rebuilt on load, since
+        skops cannot serialize pandas objects. Not supported for
+        `ForecasterStats`, `ForecasterRnn`, or `ForecasterFoundation`, whose
+        underlying estimators (statsmodels, Keras, or a foundation model) embed
+        objects that skops cannot serialize. Requires `skops` to be installed.
     save_custom_functions : bool, default True
         If True, save custom functions used in the forecaster (weight_func) as
         .py files, but only those defined in the `'__main__'` namespace. These
@@ -2495,7 +2727,7 @@ def save_forecaster(
 
     """
 
-    valid_backends = {'joblib', 'pickle', 'cloudpickle'}
+    valid_backends = {'joblib', 'pickle', 'cloudpickle', 'skops'}
     if backend not in valid_backends:
         raise ValueError(
             f"Invalid `backend` argument: '{backend}'. Valid options are: "
@@ -2505,7 +2737,8 @@ def save_forecaster(
     backend_extensions = {
         'joblib': '.joblib',
         'pickle': '.pkl',
-        'cloudpickle': '.cloudpickle'
+        'cloudpickle': '.cloudpickle',
+        'skops': '.skops'
     }
     file_name = Path(file_name).with_suffix(backend_extensions[backend])
 
@@ -2525,6 +2758,36 @@ def save_forecaster(
             ) from exc
         with open(file_name, 'wb') as file:
             cloudpickle.dump(forecaster, file)
+    elif backend == 'skops':
+        unsupported_forecasters = {
+            'ForecasterStats', 'ForecasterRnn', 'ForecasterFoundation'
+        }
+        if type(forecaster).__name__ in unsupported_forecasters:
+            raise NotImplementedError(
+                f"backend='skops' is not supported for {type(forecaster).__name__}. "
+                f"Its underlying estimator (statsmodels, Keras, or a foundation "
+                f"model) embeds objects that skops cannot serialize. Use "
+                f"backend='joblib', 'pickle', or 'cloudpickle' instead."
+            )
+        try:
+            import skops.io
+        except ImportError as exc:
+            raise ImportError(
+                "'skops' is required for backend='skops' but is not installed. "
+                "Install it with: pip install skops"
+            ) from exc
+        # NOTE: `last_window_` and `training_range_` are decomposed before the
+        # dump and restored.
+        originals = {
+            a: getattr(forecaster, a, None)
+            for a in ('last_window_', 'training_range_')
+        }
+        try:
+            _skops_decompose_forecaster(forecaster)
+            skops.io.dump(forecaster, file_name)
+        finally:
+            for a, v in originals.items():
+                setattr(forecaster, a, v)
 
     if backend != 'cloudpickle':
         if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
@@ -2533,7 +2796,7 @@ def save_forecaster(
                 if isinstance(forecaster.weight_func, dict)
                 else {forecaster.weight_func}
             )
-            # Only functions defined in the '__main__' namespace (notebook/script)
+            # NOTE: Only functions defined in the '__main__' namespace (notebook/script)
             # cannot be re-imported when the forecaster is loaded in a different
             # session, so they are the only ones that need the .py export / warning.
             # Functions from importable modules are restored automatically by
@@ -2593,6 +2856,7 @@ def save_forecaster(
 def load_forecaster(
     file_name: str,
     backend: str | None = None,
+    trusted: bool | list[str] = False,
     verbose: bool = True,
     suppress_warnings: bool = False
 ) -> object:
@@ -2610,9 +2874,26 @@ def load_forecaster(
         Serialization backend used to load the forecaster. When `None`, the
         backend is inferred from the file extension:
 
-        - `.joblib` → `'joblib'`
-        - `.pkl` or `.pickle` → `'pickle'`
-        - `.cloudpickle` → `'cloudpickle'`
+        - `.joblib` : `'joblib'`
+        - `.pkl` or `.pickle` : `'pickle'`
+        - `.cloudpickle` : `'cloudpickle'`
+        - `.skops` : `'skops'`
+    trusted : bool, list, default False
+        Types that skops is allowed to reconstruct when loading the file. Only
+        used when `backend='skops'`, ignored otherwise. Controls the `trusted`
+        argument of `skops.io.load`:
+
+        - If `False`, only skops' built-in safe types are trusted. Because all
+        skforecast forecasters contain types that are not trusted by default,
+        loading raises an `UntrustedTypesFoundException` listing them. This is
+        the secure default: review the listed types before trusting them.
+        - If a list of str, additionally trust those type names. Obtain the
+        candidate list with `skops.io.get_untrusted_types(file=file_name)` and
+        pass it after reviewing it.
+        - If `True`, trust every type found in the file. Use this only for files
+        from a source you trust, as it removes skops' security guarantee.
+
+        **New in version 0.23.0**
     verbose : bool, default True
         Print summary about the forecaster loaded.
     suppress_warnings : bool, default False
@@ -2631,8 +2912,9 @@ def load_forecaster(
         '.joblib': 'joblib',
         '.pkl': 'pickle',
         '.pickle': 'pickle',
+        '.skops': 'skops',
     }
-    valid_backends = {'joblib', 'pickle', 'cloudpickle'}
+    valid_backends = {'joblib', 'pickle', 'cloudpickle', 'skops'}
 
     if backend is None:
         suffix = Path(file_name).suffix.lower()
@@ -2665,6 +2947,41 @@ def load_forecaster(
             ) from exc
         with open(file_name, 'rb') as file:
             forecaster = pickle.load(file)
+    elif backend == 'skops':
+        try:
+            import skops.io
+            from skops.io.exceptions import UntrustedTypesFoundException
+        except ImportError as exc:
+            raise ImportError(
+                "'skops' is required for backend='skops' but is not installed. "
+                "Install it with: pip install skops"
+            ) from exc
+        # skops is the secure backend: by default (`trusted=False`) only its
+        # built-in safe types are loaded and any other type must be reviewed and
+        # trusted explicitly. `skops.io.load` only accepts a list of type names
+        # (or None), so the friendly `trusted` argument is mapped here: `False`
+        # -> None (strict), `True` -> all types found in the file, list -> as is.
+        # `last_window_` and `training_range_` are rebuilt from the plain types
+        # stored by `save_forecaster`.
+        if trusted is False:
+            trusted_types = None
+        elif trusted is True:
+            trusted_types = skops.io.get_untrusted_types(file=file_name)
+        else:
+            trusted_types = trusted
+        try:
+            forecaster = skops.io.load(file=file_name, trusted=trusted_types)
+        except UntrustedTypesFoundException as exc:
+            exc.args = (
+                f"{exc.args[0]}\n"
+                f"skops does not load these types unless you explicitly trust them. "
+                f"To review the full list of untrusted types in the file, run "
+                f"`skops.io.get_untrusted_types(file='{file_name}')`. If you trust the "
+                f"source of '{file_name}', reload with `load_forecaster(..., trusted=True)` "
+                f"to trust them all, or pass the reviewed list via `trusted=[...]`.",
+            )
+            raise
+        _skops_reconstruct_forecaster(forecaster)
 
     forecaster_v = forecaster.skforecast_version
 
