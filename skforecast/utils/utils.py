@@ -2459,27 +2459,27 @@ def _decompose_index(index: pd.Index) -> dict[str, Any]:
     Returns
     -------
     payload : dict
-        Plain dict representation of the index. The `index_type` key
+        Plain dict representation of the index. The `index_type_` key
         (`'datetime'`, `'range'`, or `'other'`) selects how it is rebuilt.
 
     """
 
     if isinstance(index, pd.DatetimeIndex):
         payload = {
-            'index_type': 'datetime',
+            'index_type_': 'datetime',
             'index': [str(ts) for ts in index],
             'freq': index.freqstr,
             'index_name': index.name,
         }
     elif isinstance(index, pd.RangeIndex):
         payload = {
-            'index_type': 'range',
+            'index_type_': 'range',
             'range': [index.start, index.stop, index.step],
             'index_name': index.name,
         }
     else:
         payload = {
-            'index_type': 'other',
+            'index_type_': 'other',
             'index': index.to_list(),
             'index_name': index.name,
         }
@@ -2505,13 +2505,13 @@ def _compose_index(payload: dict[str, Any]) -> pd.Index:
 
     """
 
-    if payload['index_type'] == 'datetime':
+    if payload['index_type_'] == 'datetime':
         index = pd.DatetimeIndex(
             pd.to_datetime(payload['index']),
             freq=payload['freq'],
             name=payload['index_name'],
         )
-    elif payload['index_type'] == 'range':
+    elif payload['index_type_'] == 'range':
         start, stop, step = payload['range']
         index = pd.RangeIndex(
             start=start, stop=stop, step=step, name=payload['index_name']
@@ -2529,7 +2529,7 @@ def _decompose_pandas_object(
     Decompose a pandas object into a plain dict that skops can serialize.
 
     The values are kept as a numpy array (serialized natively by skops, preserving
-    dtype) and the index is decomposed with `_decompose_index`. The `object_type`
+    dtype) and the index is decomposed with `_decompose_index`. The `object_type_`
     marker records the original type so `_compose_pandas_object` can invert it.
 
     Note that `to_numpy()` collapses a DataFrame to a single dtype, so per-column
@@ -2550,21 +2550,21 @@ def _decompose_pandas_object(
 
     if isinstance(obj, pd.DataFrame):
         payload = {
-            'object_type': 'DataFrame',
+            'object_type_': 'DataFrame',
             'data': obj.to_numpy(),
             'columns': obj.columns.to_list(),
             **_decompose_index(obj.index),
         }
     elif isinstance(obj, pd.Series):
         payload = {
-            'object_type': 'Series',
+            'object_type_': 'Series',
             'data': obj.to_numpy(),
             'name': obj.name,
             **_decompose_index(obj.index),
         }
     else:
         payload = {
-            'object_type': 'Index',
+            'object_type_': 'Index',
             **_decompose_index(obj),
         }
 
@@ -2581,7 +2581,7 @@ def _compose_pandas_object(
     ----------
     payload : dict
         Plain dict representation of the pandas object, including the
-        `object_type` type marker.
+        `object_type_` type marker.
 
     Returns
     -------
@@ -2592,11 +2592,11 @@ def _compose_pandas_object(
 
     index = _compose_index(payload)
 
-    if payload['object_type'] == 'DataFrame':
+    if payload['object_type_'] == 'DataFrame':
         obj = pd.DataFrame(
             data=payload['data'], index=index, columns=payload['columns']
         )
-    elif payload['object_type'] == 'Series':
+    elif payload['object_type_'] == 'Series':
         obj = pd.Series(data=payload['data'], index=index, name=payload['name'])
     else:
         obj = index
@@ -2641,7 +2641,7 @@ def _skops_reconstruct_forecaster(forecaster: object) -> None:
     Rebuild the index-backed pandas attributes of a forecaster decomposed by
     `_skops_decompose_forecaster`.
 
-    Operates in place on `last_window_` and `training_range_`. The `object_type`
+    Operates in place on `last_window_` and `training_range_`. The `object_type_`
     marker key distinguishes a single decomposed object from a multi-series dict
     of decomposed objects.
 
@@ -2660,7 +2660,7 @@ def _skops_reconstruct_forecaster(forecaster: object) -> None:
         value = getattr(forecaster, attr, None)
         if not isinstance(value, dict):
             continue
-        if 'object_type' in value:
+        if 'object_type_' in value and 'index_type_' in value:
             value = _compose_pandas_object(value)
         else:
             value = {k: _compose_pandas_object(v) for k, v in value.items()}

@@ -23,7 +23,7 @@ from ....recursive import ForecasterRecursiveMultiSeries
         (
             pd.date_range('2020-01-01', periods=4, freq='MS', name='dt'),
             {
-                'index_type': 'datetime',
+                'index_type_': 'datetime',
                 'index': [
                     '2020-01-01 00:00:00',
                     '2020-02-01 00:00:00',
@@ -36,15 +36,15 @@ from ....recursive import ForecasterRecursiveMultiSeries
         ),
         (
             pd.RangeIndex(2, 12, 2, name='r'),
-            {'index_type': 'range', 'range': [2, 12, 2], 'index_name': 'r'},
+            {'index_type_': 'range', 'range': [2, 12, 2], 'index_name': 'r'},
         ),
         (
             pd.Index([10, 20, 30], name='x'),
-            {'index_type': 'other', 'index': [10, 20, 30], 'index_name': 'x'},
+            {'index_type_': 'other', 'index': [10, 20, 30], 'index_name': 'x'},
         ),
         (
             pd.Index(['a', 'b', 'c']),
-            {'index_type': 'other', 'index': ['a', 'b', 'c'], 'index_name': None},
+            {'index_type_': 'other', 'index': ['a', 'b', 'c'], 'index_name': None},
         ),
     ],
     ids=['datetime', 'range', 'other_int', 'other_object']
@@ -98,7 +98,7 @@ def test_decompose_compose_pandas_object_round_trip_dataframe_datetime():
     payload = _decompose_pandas_object(df)
     rebuilt = _compose_pandas_object(payload)
 
-    assert payload['object_type'] == 'DataFrame'
+    assert payload['object_type_'] == 'DataFrame'
     assert isinstance(payload['data'], np.ndarray)
     pd.testing.assert_frame_equal(rebuilt, df)
 
@@ -116,7 +116,7 @@ def test_decompose_compose_pandas_object_round_trip_dataframe_range():
     payload = _decompose_pandas_object(df)
     rebuilt = _compose_pandas_object(payload)
 
-    assert payload['object_type'] == 'DataFrame'
+    assert payload['object_type_'] == 'DataFrame'
     assert isinstance(payload['data'], np.ndarray)
     pd.testing.assert_frame_equal(rebuilt, df)
 
@@ -135,7 +135,7 @@ def test_decompose_compose_pandas_object_round_trip_series():
     payload = _decompose_pandas_object(series)
     rebuilt = _compose_pandas_object(payload)
 
-    assert payload['object_type'] == 'Series'
+    assert payload['object_type_'] == 'Series'
     assert isinstance(payload['data'], np.ndarray)
     pd.testing.assert_series_equal(rebuilt, series)
 
@@ -151,7 +151,7 @@ def test_decompose_compose_pandas_object_round_trip_index():
     payload = _decompose_pandas_object(index)
     rebuilt = _compose_pandas_object(payload)
 
-    assert payload['object_type'] == 'Index'
+    assert payload['object_type_'] == 'Index'
     assert 'data' not in payload
     pd.testing.assert_index_equal(rebuilt, index)
 
@@ -175,9 +175,9 @@ def test_skops_decompose_reconstruct_forecaster_single_series():
     _skops_decompose_forecaster(forecaster)
 
     assert isinstance(forecaster.last_window_, dict)
-    assert forecaster.last_window_['object_type'] == 'DataFrame'
+    assert forecaster.last_window_['object_type_'] == 'DataFrame'
     assert isinstance(forecaster.training_range_, dict)
-    assert forecaster.training_range_['object_type'] == 'Index'
+    assert forecaster.training_range_['object_type_'] == 'Index'
 
     _skops_reconstruct_forecaster(forecaster)
 
@@ -206,11 +206,11 @@ def test_skops_decompose_reconstruct_forecaster_multiseries():
     _skops_decompose_forecaster(forecaster)
 
     assert isinstance(forecaster.last_window_, dict)
-    assert 'object_type' not in forecaster.last_window_
-    assert all(v['object_type'] == 'Series' for v in forecaster.last_window_.values())
+    assert 'object_type_' not in forecaster.last_window_
+    assert all(v['object_type_'] == 'Series' for v in forecaster.last_window_.values())
     assert isinstance(forecaster.training_range_, dict)
-    assert 'object_type' not in forecaster.training_range_
-    assert all(v['object_type'] == 'Index' for v in forecaster.training_range_.values())
+    assert 'object_type_' not in forecaster.training_range_
+    assert all(v['object_type_'] == 'Index' for v in forecaster.training_range_.values())
 
     _skops_reconstruct_forecaster(forecaster)
 
