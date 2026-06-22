@@ -1176,7 +1176,7 @@ class ForecasterStats(MultiEstimatorMixin):
         preds = estimator.predict_interval(
             steps    = steps,
             exog     = exog,
-            level    = [100 * (1 - alpha)],
+            level    = [1 - alpha],
             as_frame = False
         )
         return preds

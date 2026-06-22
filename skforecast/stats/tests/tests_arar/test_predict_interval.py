@@ -130,11 +130,11 @@ def test_predict_interval_output_as_frame():
     y = ar1_series(120)
     est = Arar()
     est.fit(y)
-    result = est.predict_interval(steps=8, level=(80, 95), as_frame=True)
+    result = est.predict_interval(steps=8, level=(0.8, 0.95), as_frame=True)
     
     assert isinstance(result, pd.DataFrame)
     assert result.shape == (8, 5)
-    assert list(result.columns) == ['mean', 'lower_80', 'upper_80', 'lower_95', 'upper_95']
+    assert list(result.columns) == ['mean', 'lower_0.8', 'upper_0.8', 'lower_0.95', 'upper_0.95']
     assert result.index.name == 'step'
     assert list(result.index) == list(range(1, 9))
     
@@ -161,18 +161,18 @@ def test_predict_interval_output_as_frame():
         3.08470208, 2.94271456, 2.77932986, 2.24957451
     ])
     
-    np.testing.assert_array_almost_equal(result['lower_80'].values, expected_lower_80, decimal=6)
-    np.testing.assert_array_almost_equal(result['upper_80'].values, expected_upper_80, decimal=6)
-    np.testing.assert_array_almost_equal(result['lower_95'].values, expected_lower_95, decimal=6)
-    np.testing.assert_array_almost_equal(result['upper_95'].values, expected_upper_95, decimal=6)
+    np.testing.assert_array_almost_equal(result['lower_0.8'].values, expected_lower_80, decimal=6)
+    np.testing.assert_array_almost_equal(result['upper_0.8'].values, expected_upper_80, decimal=6)
+    np.testing.assert_array_almost_equal(result['lower_0.95'].values, expected_lower_95, decimal=6)
+    np.testing.assert_array_almost_equal(result['upper_0.95'].values, expected_upper_95, decimal=6)
     
-    assert np.all(result['lower_80'] < result['mean'])
-    assert np.all(result['mean'] < result['upper_80'])
-    assert np.all(result['lower_95'] < result['mean'])
-    assert np.all(result['mean'] < result['upper_95'])
+    assert np.all(result['lower_0.8'] < result['mean'])
+    assert np.all(result['mean'] < result['upper_0.8'])
+    assert np.all(result['lower_0.95'] < result['mean'])
+    assert np.all(result['mean'] < result['upper_0.95'])
     
-    assert np.all(result['lower_95'] < result['lower_80'])
-    assert np.all(result['upper_95'] > result['upper_80'])
+    assert np.all(result['lower_0.95'] < result['lower_0.8'])
+    assert np.all(result['upper_0.95'] > result['upper_0.8'])
 
 
 def test_predict_interval_output_as_array():
@@ -182,10 +182,10 @@ def test_predict_interval_output_as_array():
     y = ar1_series(120)
     est = Arar()
     est.fit(y)
-    result = est.predict_interval(steps=8, level=(80, 95), as_frame=False)
+    result = est.predict_interval(steps=8, level=(0.8, 0.95), as_frame=False)
     
     assert isinstance(result, np.ndarray)
-    # columns: mean, lower_80, upper_80, lower_95, upper_95
+    # columns: mean, lower_0.8, upper_0.8, lower_0.95, upper_0.95
     assert result.shape == (8, 5)
     
     expected_mean = np.array([
@@ -224,9 +224,9 @@ def test_reduce_memory_preserves_predict_interval():
     y = ar1_series(100)
     est = Arar()
     est.fit(y)
-    result_before = est.predict_interval(steps=10, level=(80, 95), as_frame=True)
+    result_before = est.predict_interval(steps=10, level=(0.8, 0.95), as_frame=True)
     est.reduce_memory()
-    result_after = est.predict_interval(steps=10, level=(80, 95), as_frame=True)
+    result_after = est.predict_interval(steps=10, level=(0.8, 0.95), as_frame=True)
     
     pd.testing.assert_frame_equal(result_before, result_after)
 
@@ -255,11 +255,11 @@ def test_arar_predict_interval_with_multiple_exog_features():
         np.arange(10) / n + 1.0
     ])
     
-    result = model.predict_interval(steps=10, exog=exog_future, level=(95,), as_frame=True)
+    result = model.predict_interval(steps=10, exog=exog_future, level=(0.95,), as_frame=True)
     
     assert isinstance(result, pd.DataFrame)
     assert result.shape == (10, 3)
-    assert list(result.columns) == ['mean', 'lower_95', 'upper_95']
+    assert list(result.columns) == ['mean', 'lower_0.95', 'upper_0.95']
     
     expected_mean = np.array([
         -1.17765989, 0.05214722, 0.77938843, 0.79109465, 0.04091216,
@@ -276,8 +276,8 @@ def test_arar_predict_interval_with_multiple_exog_features():
         2.69134161, 1.99197776, 0.11972741, -0.85001106, -2.33342205
     ])
     
-    np.testing.assert_array_almost_equal(result['lower_95'].values, expected_lower_95, decimal=6)
-    np.testing.assert_array_almost_equal(result['upper_95'].values, expected_upper_95, decimal=6)
+    np.testing.assert_array_almost_equal(result['lower_0.95'].values, expected_lower_95, decimal=6)
+    np.testing.assert_array_almost_equal(result['upper_0.95'].values, expected_upper_95, decimal=6)
     
-    assert np.all(result['lower_95'] < result['mean'])
-    assert np.all(result['mean'] < result['upper_95'])
+    assert np.all(result['lower_0.95'] < result['mean'])
+    assert np.all(result['mean'] < result['upper_0.95'])

@@ -35,11 +35,11 @@ def test_reduce_memory_preserves_predictions():
     model = Arar()
     model.fit(y)
     pred_before = model.predict(steps=24)
-    pred_interval_before = model.predict_interval(steps=24, level=[80, 95])
+    pred_interval_before = model.predict_interval(steps=24, level=[0.8, 0.95])
     
     model.reduce_memory()
     pred_after = model.predict(steps=24)
-    pred_interval_after = model.predict_interval(steps=24, level=[80, 95])
+    pred_interval_after = model.predict_interval(steps=24, level=[0.8, 0.95])
     
     np.testing.assert_allclose(pred_before, pred_after)
     pd.testing.assert_frame_equal(pred_interval_before, pred_interval_after)
