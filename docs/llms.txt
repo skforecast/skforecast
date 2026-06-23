@@ -7,6 +7,7 @@
 - [Repository](https://github.com/skforecast/skforecast): Source code on GitHub
 - [Quick start](https://skforecast.org/latest/quick-start/quick-start-skforecast.html): Step-by-step introduction to get started
 - [Full LLM context](https://skforecast.org/latest/llms-full.txt): Complete API reference, workflows, and examples for LLMs
+- [Workflow guides](https://skforecast.org/latest/llms-full.txt): End-to-end skill guides (single/multi-series, statistical and foundation models, prediction intervals, hyperparameter tuning, feature engineering and selection, drift detection, troubleshooting) bundled in the full LLM context
 
 Skforecast supports recursive and direct multi-step forecasting strategies, global models for multiple series, statistical models (ARIMA, ETS, SARIMAX), deep learning (RNN/LSTM), probabilistic forecasting with prediction intervals, and hyperparameter tuning with backtesting. It works with any scikit-learn compatible regressor. Install with `pip install skforecast`.
 
