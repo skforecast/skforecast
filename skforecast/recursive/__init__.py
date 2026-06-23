@@ -3,3 +3,11 @@ from ._forecaster_recursive import ForecasterRecursive
 from ._forecaster_recursive_classifier import ForecasterRecursiveClassifier
 from ._forecaster_recursive_multiseries import ForecasterRecursiveMultiSeries
 from ._forecaster_stats import ForecasterStats
+
+__all__ = [
+    "ForecasterEquivalentDate",
+    "ForecasterRecursive",
+    "ForecasterRecursiveClassifier",
+    "ForecasterRecursiveMultiSeries",
+    "ForecasterStats",
+]

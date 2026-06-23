@@ -23,6 +23,7 @@ Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
 - PEP 8 compliant (max line length 88, enforced by ruff)
 - Double quotes for strings (ruff `quote-style = "double"`)
 - Relative imports within package
+- When generating code comments, docstrings, and documentation, do not use en dashes (–), or em dashes (—). Use commas, colons, semicolons, or parentheses for punctuation instead.
 
 ### Dependencies
 
