@@ -32,6 +32,7 @@ These are the most frequent errors. Violating any of these rules is always wrong
 - NEVER use double backticks (`` `` ``) for any inline code or value. Always single backticks.
 - NEVER add docstrings, comments, or type annotations to code you did not change.
 - NEVER invent parameters or attributes that do not exist in the actual code.
+- NEVER use en dashes (–) or em dashes (—) when generating code comments, docstrings, and documentation. Use commas, colons, semicolons, or parentheses for punctuation instead.
 
 ## Section Order
 
