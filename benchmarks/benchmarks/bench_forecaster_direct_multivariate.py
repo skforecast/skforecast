@@ -138,7 +138,6 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir, run_id=None):
                 last_window      = forecaster.last_window_,
                 exog             = exog,
                 exog_names_in_   = forecaster.exog_names_in_,
-                interval         = None,
                 max_step         = forecaster.max_step,
                 series_names_in_ = forecaster.X_train_series_names_in_
             )
@@ -154,7 +153,6 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir, run_id=None):
                 last_window      = forecaster.last_window_,
                 exog             = exog,
                 exog_names_in_   = forecaster.exog_names_in_,
-                interval         = None,
                 max_steps        = forecaster.steps,
                 series_names_in_ = forecaster.X_train_series_names_in_
             )
@@ -173,7 +171,7 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir, run_id=None):
         forecaster.predict_interval(
             steps=STEPS,
             exog=exog,
-            interval=[5, 95],
+            interval=[0.05, 0.95],
             method='conformal',
             suppress_warnings=True
         )
@@ -219,7 +217,7 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir, run_id=None):
                 forecaster=forecaster,
                 series=series,
                 exog=exog,
-                interval=[5, 95],
+                interval=[0.05, 0.95],
                 interval_method='conformal',
                 cv=cv,
                 metric='mean_squared_error',
