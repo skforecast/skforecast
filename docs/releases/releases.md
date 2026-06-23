@@ -28,6 +28,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-api-change">API Change</span> The `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions is now expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`) instead of percentiles in the 0-100 range. Passing percentiles is still supported but deprecated and emits a `FutureWarning`; support will be removed in a future version.
 
++ <span class="badge text-bg-api-change">API Change</span> The `level` argument of the `predict_interval` method of the statistical estimators (<code>[Arima]</code>, <code>[Arar]</code>, <code>[Ets]</code>) is now expressed as quantiles in the 0-1 range (e.g. `level=[0.05, 0.95]`) instead of percentiles in the 0-100 range. Passing percentiles is still supported but deprecated and emits a `FutureWarning`; support will be removed in a future version.
+
 + <span class="badge text-bg-api-change">API Change</span> <code>[select_features]</code> and <code>[select_features_multiseries]</code> now support calendar features. The `select_only` argument accepts the new value `'calendar'` (and a list combining `'autoreg'`, `'exog'` and `'calendar'`), and both functions return a fourth element, `selected_calendar_features`, with the selected calendar features at the source-feature level (e.g. `month`). Calendar features are evaluated at the encoded-column level (e.g. `month_sin`, `month_cos`) and a source feature is kept whenever at least one of its encoded columns is selected.
 
 + <span class="badge text-bg-fix">Fix</span> Fixed parallel execution failure in single-core environments (e.g. Docker with `cpus: '1.0'`). <code>[select_n_jobs_backtesting]</code> and <code>[select_n_jobs_fit_forecaster]</code> now fall back to `n_jobs=1` instead of `0`, which raised `ValueError` in `joblib.Parallel`. ([#1197](https://github.com/skforecast/skforecast/issues/1197))
@@ -52,17 +54,19 @@ The main changes in this release are:
 
 + The `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions is now expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`) instead of percentiles in the 0-100 range. Passing percentiles is still supported but deprecated and emits a `FutureWarning`; support will be removed in a future version.
 
++ The `level` argument of the `predict_interval` method of the statistical estimators (<code>[Arima]</code>, <code>[Arar]</code>, <code>[Ets]</code>) is now expressed as quantiles in the 0-1 range (e.g. `level=[0.05, 0.95]`) instead of percentiles in the 0-100 range. Passing percentiles is still supported but deprecated and emits a `FutureWarning`; support will be removed in a future version.
+
 + Refactored the calendar feature engineering toolkit (<code>[CalendarFeatures]</code>, <code>[create_calendar_features]</code>) with new `'cyclical'`, `'onehot'`, and `'spline'` encodings, fine-grained `max_values` overrides per feature, `spline_kwargs` for spline customisation, and a `keep_original_columns` option. ISO week 53 and leap-year day-of-year 366 are now handled in a fully stateless way. An <code>[IgnoredArgumentWarning]</code> is emitted when `max_values` is passed together with `encoding='onehot'`, since onehot uses a fixed known-category set.
 
 + <code>[select_features]</code> and <code>[select_features_multiseries]</code> now support calendar features. The `select_only` argument accepts the new value `'calendar'` (and a list combining `'autoreg'`, `'exog'` and `'calendar'`), and both functions return a fourth element, `selected_calendar_features`, with the selected calendar features at the source-feature level (e.g. `month`). Calendar features are evaluated at the encoded-column level (e.g. `month_sin`, `month_cos`) and a source feature is kept whenever at least one of its encoded columns is selected. A `ValueError` is now raised when the group(s) requested in `select_only` contain no features to evaluate.
 
 + <code>[calculate_distance_from_holiday]</code> moved from <code>[experimental]</code> to <code>[preprocessing]</code>. The function now accepts a `pandas.Series` or `pandas.DataFrame`, infers the time unit from the index frequency, renames its output columns to `time_to_holiday` and `time_since_holiday`, no longer mutates the input, requires `holiday_column` to be passed explicitly when `X` is a DataFrame, and emits a `UserWarning` while filling with `False` when the holiday column contains NaN values.
 
-+ Removed the unused experimental `FastOrdinalEncoder`.
-
 + The `verbose` argument of <code>[save_forecaster]</code> now defaults to `False` (previously `True`), so saving a forecaster no longer prints its summary unless explicitly requested. `load_forecaster` is unchanged (`verbose=True`).
 
 + The internal preprocessing submodule was renamed from `skforecast.preprocessing.preprocessing` to `skforecast.preprocessing._preprocessing`. The public API (`from skforecast.preprocessing import …`) is unchanged; only direct imports from the submodule path are affected.
+
++ Removed the unused experimental `FastOrdinalEncoder`.
 
 
 **Fixed**
