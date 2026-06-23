@@ -741,7 +741,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     <li><strong>Multivariate series:</strong> {series_names_in_}</li>
                     <li><strong>Training range:</strong> {self.training_range_.to_list() if self.is_fitted else 'Not fitted'}</li>
                     <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
-                    <li><strong>Training index frequency:</strong> {self.index_freq_ if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index frequency:</strong> {self.index_freq_.freqstr if hasattr(self.index_freq_, 'freqstr') else str(self.index_freq_) if self.is_fitted else 'Not fitted'}</li>
                 </ul>
             </details>
             <details>
