@@ -580,7 +580,7 @@ class ForecasterFoundation:
                 <ul>
                     <li><strong>Context range:</strong> {context_range_html}</li>
                     <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
-                    <li><strong>Training index frequency:</strong> {self.index_freq_ if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index frequency:</strong> {html.escape(str(self.index_freq_)) if self.is_fitted else 'Not fitted'}</li>
                 </ul>
             </details>
             <details>
