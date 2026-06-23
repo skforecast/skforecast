@@ -23,13 +23,13 @@ def test_estimator_predict_interval():
     est.fit(y)
 
     # Test with as_frame=True
-    df = est.predict_interval(steps=5, level=(80, 95), as_frame=True)
+    df = est.predict_interval(steps=5, level=(0.8, 0.95), as_frame=True)
     assert isinstance(df, pd.DataFrame)
     assert "mean" in df.columns
-    assert "lower_80" in df.columns
-    assert "upper_80" in df.columns
-    assert "lower_95" in df.columns
-    assert "upper_95" in df.columns
+    assert "lower_0.8" in df.columns
+    assert "upper_0.8" in df.columns
+    assert "lower_0.95" in df.columns
+    assert "upper_0.95" in df.columns
     assert len(df) == 5
     
     expected_mean = np.array([-0.21174572, -0.2703575, -0.32896928, -0.38758106, -0.44619284])
@@ -39,10 +39,10 @@ def test_estimator_predict_interval():
     expected_upper_95 = np.array([2.42222262, 2.37949843, 2.33967094, 2.30293734, 2.26947834])
     
     np.testing.assert_array_almost_equal(df['mean'].values, expected_mean, decimal=8)
-    np.testing.assert_array_almost_equal(df['lower_80'].values, expected_lower_80, decimal=6)
-    np.testing.assert_array_almost_equal(df['upper_80'].values, expected_upper_80, decimal=6)
-    np.testing.assert_array_almost_equal(df['lower_95'].values, expected_lower_95, decimal=6)
-    np.testing.assert_array_almost_equal(df['upper_95'].values, expected_upper_95, decimal=6)
+    np.testing.assert_array_almost_equal(df['lower_0.8'].values, expected_lower_80, decimal=6)
+    np.testing.assert_array_almost_equal(df['upper_0.8'].values, expected_upper_80, decimal=6)
+    np.testing.assert_array_almost_equal(df['lower_0.95'].values, expected_lower_95, decimal=6)
+    np.testing.assert_array_almost_equal(df['upper_0.95'].values, expected_upper_95, decimal=6)
 
 
 def test_predict_interval_values_contain_point_forecast():
@@ -52,15 +52,15 @@ def test_predict_interval_values_contain_point_forecast():
     est.fit(y)
 
     pred_point = est.predict(steps=10)
-    pred_interval = est.predict_interval(steps=10, level=(80, 95), as_frame=True)
+    pred_interval = est.predict_interval(steps=10, level=(0.8, 0.95), as_frame=True)
     
     np.testing.assert_allclose(pred_point, pred_interval['mean'].values, rtol=1e-10)
-    assert np.all(pred_interval['lower_80'] < pred_interval['mean'])
-    assert np.all(pred_interval['mean'] < pred_interval['upper_80'])
-    assert np.all(pred_interval['lower_95'] < pred_interval['mean'])
-    assert np.all(pred_interval['mean'] < pred_interval['upper_95'])
+    assert np.all(pred_interval['lower_0.8'] < pred_interval['mean'])
+    assert np.all(pred_interval['mean'] < pred_interval['upper_0.8'])
+    assert np.all(pred_interval['lower_0.95'] < pred_interval['mean'])
+    assert np.all(pred_interval['mean'] < pred_interval['upper_0.95'])
     
     # 95% intervals should be wider than 80% intervals
-    width_80 = pred_interval['upper_80'] - pred_interval['lower_80']
-    width_95 = pred_interval['upper_95'] - pred_interval['lower_95']
+    width_80 = pred_interval['upper_0.8'] - pred_interval['lower_0.8']
+    width_95 = pred_interval['upper_0.95'] - pred_interval['lower_0.95']
     assert np.all(width_95 > width_80)
