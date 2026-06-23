@@ -9,7 +9,6 @@ from __future__ import annotations
 from typing import Callable
 import warnings
 import sys
-import html
 import numpy as np
 import pandas as pd
 import inspect
@@ -791,7 +790,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     <li><strong>Series names (levels):</strong> {series_names_in_}</li>
                     <li><strong>Training range:</strong> {training_range_}</li>
                     <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
-                    <li><strong>Training index frequency:</strong> {html.escape(str(self.index_freq_)) if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index frequency:</strong> {self.index_freq_.freqstr if hasattr(self.index_freq_, 'freqstr') else str(self.index_freq_) if self.is_fitted else 'Not fitted'}</li>
                 </ul>
             </details>
             <details>

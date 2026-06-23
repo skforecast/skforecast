@@ -9,7 +9,6 @@ from __future__ import annotations
 from typing import Callable, Any
 import warnings
 import sys
-import html
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
@@ -539,7 +538,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 <ul>
                     <li><strong>Training range:</strong> {self.training_range_.to_list() if self.is_fitted else 'Not fitted'}</li>
                     <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
-                    <li><strong>Training index frequency:</strong> {html.escape(str(self.index_freq_)) if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index frequency:</strong> {self.index_freq_.freqstr if hasattr(self.index_freq_, 'freqstr') else str(self.index_freq_) if self.is_fitted else 'Not fitted'}</li>
                 </ul>
             </details>
             <details>
