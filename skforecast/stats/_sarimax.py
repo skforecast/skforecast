@@ -465,7 +465,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         return_conf_int : bool, default False
             Whether to get the confidence intervals of the forecasts.
         alpha : float, default 0.05
-            The confidence intervals for the forecasts are (1 - alpha) %.
+            The confidence intervals for the forecasts are (1 - alpha).
 
         Returns
         -------

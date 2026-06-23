@@ -17,7 +17,7 @@ from .exponential_smoothing._ets_base import (
     auto_ets,
     forecast_ets
 )
-from ._utils import check_is_fitted, check_memory_reduced
+from ._utils import check_is_fitted, check_memory_reduced, _normalize_level
 
 
 class Ets(BaseEstimator, RegressorMixin):
@@ -391,7 +391,7 @@ class Ets(BaseEstimator, RegressorMixin):
     def predict_interval(
         self,
         steps: int = 1,
-        level: list[float] | tuple[float, ...] = (80, 95),
+        level: list[float] | tuple[float, ...] = (0.8, 0.95),
         as_frame: bool = True,
         exog: Any = None,
     ) -> np.ndarray | pd.DataFrame:
@@ -402,8 +402,13 @@ class Ets(BaseEstimator, RegressorMixin):
         ----------
         steps : int, default 1
             Forecast horizon.
-        level : list or tuple of float, default (80, 95)
-            Confidence levels in percent.
+        level : list or tuple of float, default (0.8, 0.95)
+            Confidence levels expressed as coverage proportions in the (0, 1]
+            range (e.g., 0.8 for 80% intervals).
+
+            **Changed in version 0.23.0:** `level` is now expressed as coverage
+            proportions (0-1) instead of percentiles (0-100). Passing percentiles
+            is deprecated and emits a `FutureWarning`.
         as_frame : bool, default True
             If True, return a tidy DataFrame with columns 'mean', 'lower_<L>',
             'upper_<L>' for each level L. If False, return a NumPy ndarray.
@@ -421,21 +426,23 @@ class Ets(BaseEstimator, RegressorMixin):
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
 
+        level = _normalize_level(level)
+        level_pct = [lv * 100 for lv in level]
+
         raw_preds = forecast_ets(
             self.model_,
             h           = steps,
             bias_adjust = self.bias_adjust,
-            level       = list(level)
+            level       = level_pct
         )
 
-        levels = list(level) if level is not None else []
-        n_levels = len(levels)
+        n_levels = len(level)
         mean = np.asarray(raw_preds["mean"])
 
         predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
         predictions[:, 0] = mean
-        for i, lv in enumerate(levels):
-            lv_int = int(lv)
+        for i, lv_pct in enumerate(level_pct):
+            lv_int = int(lv_pct)
             lower_key = f"lower_{lv_int}"
             upper_key = f"upper_{lv_int}"
             lower_arr = np.asarray(raw_preds[lower_key])
@@ -445,10 +452,9 @@ class Ets(BaseEstimator, RegressorMixin):
 
         if as_frame:
             col_names = ["mean"]
-            for level in levels:
-                level = int(level)
-                col_names.append(f"lower_{level}")
-                col_names.append(f"upper_{level}")
+            for lvl in level:
+                col_names.append(f"lower_{lvl}")
+                col_names.append(f"upper_{lvl}")
             
             predictions = pd.DataFrame(
                 predictions, columns=col_names, index=pd.RangeIndex(1, steps + 1, name="step")

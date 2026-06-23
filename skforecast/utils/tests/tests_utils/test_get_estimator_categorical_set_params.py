@@ -40,12 +40,19 @@ def test_returns_empty_dict_for_unsupported_estimators(estimator):
 # ==============================================================================
 def test_xgboost_returns_default_values_before_configure():
     """
-    Test that a fresh XGBRegressor (feature_types=None, enable_categorical=False)
-    returns those defaults in the dict.
+    Test that a fresh XGBRegressor returns its current `feature_types` and
+    `enable_categorical` values in the dict. The expected values are read from
+    the estimator itself so the test is robust to changes in XGBoost defaults
+    (e.g. `enable_categorical` defaults to True from XGBoost 3.3.0).
     """
-    forecaster = ForecasterRecursive(estimator=XGBRegressor(), lags=2)
+    estimator = XGBRegressor()
+    params = estimator.get_params()
+    forecaster = ForecasterRecursive(estimator=estimator, lags=2)
     result = _get_estimator_categorical_set_params(forecaster)
-    assert result == {'feature_types': None, 'enable_categorical': False}
+    assert result == {
+        'feature_types': params.get('feature_types'),
+        'enable_categorical': params.get('enable_categorical', False),
+    }
 
 
 def test_xgboost_returns_feature_types_after_set_params():

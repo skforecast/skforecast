@@ -69,7 +69,10 @@ def test_CalendarFeatures_init_valid_features_None_does_not_raise():
     """
     transformer = CalendarFeatures()
 
-    assert transformer.features is None
+    assert transformer.features == [
+        "year", "month", "week", "day_of_week", "day_of_month",
+        "day_of_year", "weekend", "hour", "minute", "second", "quarter",
+    ]
     assert transformer.encoding == "cyclical"
 
 
@@ -356,7 +359,19 @@ def test_CalendarFeatures_get_params_returns_constructor_values():
     transformer = CalendarFeatures()
     params = transformer.get_params()
 
-    assert params == {"features": None, "features_to_encode": None, "encoding": "cyclical", "max_values": None, "spline_kwargs": None, "keep_original_columns": True}
+    expected_params = {
+        "features": [
+            "year", "month", "week", "day_of_week", "day_of_month",
+            "day_of_year", "weekend", "hour", "minute", "second", "quarter",
+        ],
+        "features_to_encode": None,
+        "encoding": "cyclical",
+        "max_values": None,
+        "spline_kwargs": None,
+        "keep_original_columns": True,
+    }
+
+    assert params == expected_params
 
 
 def test_CalendarFeatures_get_params_returns_custom_values():
@@ -394,9 +409,14 @@ def test_CalendarFeatures_clone_preserves_none_defaults():
     transformer = CalendarFeatures()
     cloned = clone(transformer)
 
-    assert cloned.features is None
+    assert cloned.features == [
+        "year", "month", "week", "day_of_week", "day_of_month",
+        "day_of_year", "weekend", "hour", "minute", "second", "quarter",
+    ]
     assert cloned.encoding == "cyclical"
     assert cloned.max_values is None
+    assert cloned.spline_kwargs is None
+    assert cloned.keep_original_columns is True
 
     pd.testing.assert_frame_equal(
         transformer.fit_transform(df), cloned.fit_transform(df)
@@ -413,6 +433,8 @@ def test_CalendarFeatures_set_params_updates_values():
     assert transformer.features == ["year", "month"]
     assert transformer.encoding == "onehot"
     assert transformer.max_values is None
+    assert transformer.spline_kwargs is None
+    assert transformer.keep_original_columns is True
 
 
 def test_CalendarFeatures_week_feature_dtype_is_int():
