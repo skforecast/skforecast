@@ -46,6 +46,7 @@ def create_calendar_features(
     max_values: dict[str, int] | None = None,
     spline_kwargs: dict | None = None,
     keep_original_columns: bool = True,
+    tol: float | None = 1e-12,
 ) -> pd.DataFrame:
     """
     Extract datetime features from the DateTime index of a pandas DataFrame or Series.
@@ -110,12 +111,19 @@ def create_calendar_features(
         a string, or pass `keep_original_columns=False`. When `X` is a pandas
         DatetimeIndex this argument has no effect, as there are no original
         columns to keep.
+    tol : float, None, default 1e-12
+        Absolute tolerance for clamping near-zero values produced by cyclical
+        encoding to exactly 0. Floating point arithmetic can produce values
+        such as -2.4e-16 instead of 0 (e.g. sin(2*pi*12/12)). When not None,
+        any sin or cos value whose absolute value is smaller than `tol` is
+        replaced with 0.0. Set to None to disable clamping. Only used when
+        `encoding='cyclical'`.
 
     Returns
     -------
     X_new : pandas DataFrame
         DataFrame with the extracted (and optionally encoded) datetime features.
-    
+
     Notes
     -----
     The default `max_values` use 53 for `'week'` and 366 for `'day_of_year'`
@@ -268,8 +276,13 @@ def create_calendar_features(
         for feature in features:
             if feature in features_to_encode and feature in max_values:
                 max_val = max_values[feature]
-                X_new[f"{feature}_sin"] = np.sin(2 * np.pi * X_new[feature] / max_val)
-                X_new[f"{feature}_cos"] = np.cos(2 * np.pi * X_new[feature] / max_val)
+                sin_vals = np.sin(2 * np.pi * X_new[feature] / max_val)
+                cos_vals = np.cos(2 * np.pi * X_new[feature] / max_val)
+                if tol is not None:
+                    sin_vals = np.where(np.abs(sin_vals) < tol, 0.0, sin_vals)
+                    cos_vals = np.where(np.abs(cos_vals) < tol, 0.0, cos_vals)
+                X_new[f"{feature}_sin"] = sin_vals
+                X_new[f"{feature}_cos"] = cos_vals
                 cols_to_drop.append(feature)
         X_new = X_new.drop(columns=cols_to_drop)
     elif encoding == "onehot":
@@ -439,6 +452,13 @@ class CalendarFeatures(BaseEstimator, TransformerMixin):
         either set `X.name` to a string, or pass `keep_original_columns=False`.
         When `X` is a pandas DatetimeIndex this argument has no effect, as
         there are no original columns to keep.
+    tol : float, None, default 1e-12
+        Absolute tolerance for clamping near-zero values produced by cyclical
+        encoding to exactly 0. Floating point arithmetic can produce values
+        such as -2.4e-16 instead of 0 (e.g. sin(2*pi*12/12)). When not None,
+        any sin or cos value whose absolute value is smaller than `tol` is
+        replaced with 0.0. Set to None to disable clamping. Only used when
+        `encoding='cyclical'`.
 
     Attributes
     ----------
@@ -459,6 +479,9 @@ class CalendarFeatures(BaseEstimator, TransformerMixin):
         `extrapolation='periodic'`, `n_knots=max_val+1` per feature).
     keep_original_columns : bool
         Whether to keep original columns from the input.
+    tol : float, None
+        Absolute tolerance for clamping near-zero cyclical encoding values.
+        `None` means clamping is disabled.
     feature_names_out_ : list
         Names of the output features. Set after calling `fit` or `transform`.
 
@@ -511,6 +534,7 @@ class CalendarFeatures(BaseEstimator, TransformerMixin):
         max_values: dict[str, int] | None = None,
         spline_kwargs: dict | None = None,
         keep_original_columns: bool = True,
+        tol: float | None = 1e-12,
     ) -> None:
 
         allowed_features = [
@@ -538,6 +562,7 @@ class CalendarFeatures(BaseEstimator, TransformerMixin):
         self.max_values = max_values
         self.spline_kwargs = spline_kwargs
         self.keep_original_columns = keep_original_columns
+        self.tol = tol
 
     def fit(self, X, y=None):
         """
@@ -578,6 +603,7 @@ class CalendarFeatures(BaseEstimator, TransformerMixin):
                      max_values            = self.max_values,
                      spline_kwargs         = self.spline_kwargs,
                      keep_original_columns = self.keep_original_columns,
+                     tol                   = self.tol,
                  )
         self.feature_names_out_ = list(result.columns)
 
@@ -611,6 +637,7 @@ class CalendarFeatures(BaseEstimator, TransformerMixin):
                     max_values            = self.max_values,
                     spline_kwargs         = self.spline_kwargs,
                     keep_original_columns = self.keep_original_columns,
+                    tol                   = self.tol,
                 )
 
         return X_new
