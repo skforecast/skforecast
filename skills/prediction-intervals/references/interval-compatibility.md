@@ -1,5 +1,19 @@
 # Prediction Intervals — Compatibility Reference
 
+## Interval Scale: Quantiles (Changed in 0.23.0)
+
+Since skforecast 0.23.0, `interval` is expressed as **quantiles in `[0, 1]`**,
+not percentiles in `[0, 100]`.
+
+| Input | Behavior |
+|-------|----------|
+| All values in `[0, 1]`, e.g. `[0.05, 0.95]` | Treated as quantiles (recommended). |
+| Single `float`, e.g. `0.9` | Nominal coverage; expands to symmetric quantiles `[0.05, 0.95]`. |
+| All values in `(1, 100]`, e.g. `[5, 95]` | Legacy percentiles. Converted to quantiles with a `FutureWarning`. Removed in 0.25.0. |
+| Mixed scale, e.g. `[0.05, 95]` | `ValueError` — ambiguous scale. |
+
+`predict_quantiles(quantiles=...)` already used the 0-1 scale and is unaffected.
+
 ## Method Compatibility by Forecaster
 
 | Forecaster | `'bootstrapping'` | `'conformal'` | Built-in (parametric) | Default method |
@@ -21,7 +35,7 @@
 forecaster.predict_interval(
     steps,
     method='bootstrapping',          # or 'conformal'
-    interval=[5, 95],                # percentiles → 90% interval
+    interval=[0.05, 0.95],           # quantiles → 90% interval (or a float, e.g. 0.9)
     n_boot=250,                      # only used with method='bootstrapping'
     use_in_sample_residuals=True,
     use_binned_residuals=True,
@@ -35,7 +49,7 @@ forecaster.predict_interval(
 forecaster.predict_interval(
     steps,
     alpha=0.05,                      # significance level → 95% interval
-    interval=None,                   # list[float] | None — alternative to alpha
+    interval=None,                   # list[float] | None — quantiles, alternative to alpha
 )
 # NOTE: No `method`, `n_boot`, `use_in_sample_residuals`, `use_binned_residuals`,
 #       or `random_state` parameters.
@@ -48,7 +62,7 @@ forecaster.predict_interval(
 forecaster.predict_interval(
     steps,
     method='conformal',              # only valid value
-    interval=[5, 95],
+    interval=[0.05, 0.95],
     use_in_sample_residuals=True,
     use_binned_residuals=True,
     random_state=None,               # Any, accepted but ignored
@@ -65,7 +79,7 @@ forecaster.predict_interval(
     steps=None,
     levels=None,
     method='conformal',              # only valid value
-    interval=[5, 95],
+    interval=[0.05, 0.95],
     use_in_sample_residuals=True,
     use_binned_residuals=True,       # bool, selects residuals by predicted value level
     n_boot=None,                     # Any, accepted but ignored
@@ -137,7 +151,7 @@ because residual variance often depends on the prediction magnitude.
 
 | Method | Available in | Description |
 |--------|-------------|-------------|
-| `predict_interval()` | All except Classifier | Lower/upper bounds at given percentiles |
+| `predict_interval()` | All except Classifier | Lower/upper bounds at given quantiles |
 | `predict_quantiles()` | Recursive, Direct, RecursiveMultiSeries, DirectMultiVariate | Arbitrary quantile predictions |
 | `predict_dist()` | Recursive, Direct, RecursiveMultiSeries, DirectMultiVariate | Fit a scipy distribution to bootstrapped predictions |
 | `predict_proba()` | RecursiveClassifier only | Class probabilities |
@@ -177,6 +191,8 @@ forecaster.predict_dist(
 | Error | Cause | Fix |
 |-------|-------|-----|
 | "No in-sample residuals stored" | `store_in_sample_residuals=False` in `fit()` | Set `store_in_sample_residuals=True` |
+| `FutureWarning` about percentiles | `interval` passed as percentiles, e.g. `[5, 95]` | Use quantiles, e.g. `interval=[0.05, 0.95]` (removed in 0.25.0) |
+| `ValueError` about ambiguous scale | `interval` mixes quantile and percentile values, e.g. `[0.05, 95]` | Use a single scale, e.g. `interval=[0.05, 0.95]` |
 | `method='bootstrapping'` on ForecasterRnn | Bootstrapping not supported | Use `method='conformal'` |
 | `method='bootstrapping'` on ForecasterEquivalentDate | Bootstrapping not supported | Use `method='conformal'` |
 | Using `alpha` on ML forecasters | Only `ForecasterStats` accepts `alpha` | Use `interval=[lo, hi]` instead |

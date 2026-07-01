@@ -2,14 +2,14 @@
 <!-- Source: tools/ai/llms-base.txt + tools/ai/ai_context_header.md -->
 <!-- Regenerate with: python tools/ai/generate_ai_context_files.py -->
 
-# Skforecast — Development Context
+# Skforecast: Development Context
 
 ## For Contributors Working Inside This Repository
 
 ### Testing
 
 ```bash
-pytest skforecast/recursive/tests/ -vv           # Run a specific module's tests
+pytest skforecast/recursive/tests/ -vv            # Run a specific module's tests
 pytest --cov=skforecast --cov-report=html         # Coverage report
 pytest -n auto                                    # Parallel execution (pytest-xdist)
 ```
@@ -28,7 +28,7 @@ Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
 ### Dependencies
 
 Core: numpy>=1.26, pandas>=2.1,<3.0, scikit-learn>=1.4, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
-Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 + seaborn>=0.12,<0.14 (plotting), keras>=3.0,<4.0 (deep learning)
+Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 (plotting), keras>=3.0,<4.0 (deep learning)
 
 ### Python environment
 
@@ -39,7 +39,7 @@ reuse it for the rest of the session without asking again.
 
 ---
 
-# Skforecast — Complete API & Workflow Reference
+# Skforecast: Complete API & Workflow Reference
 
 (The content below is the full `llms-base.txt` and applies to any user of skforecast)
 
@@ -131,7 +131,7 @@ from sklearn.ensemble import RandomForestRegressor
 from skforecast.recursive import ForecasterRecursive
 from skforecast.model_selection import backtesting_forecaster, TimeSeriesFold
 
-# Load data — y must be a pandas Series with DatetimeIndex and frequency set
+# Load data: y must be a pandas Series with DatetimeIndex and frequency set
 data = pd.read_csv('data.csv', index_col='date', parse_dates=True)
 data = data.asfreq('h')  # IMPORTANT: always set frequency before using skforecast
 
@@ -225,12 +225,12 @@ forecaster.fit(y=y_train, exog=exog_train)
 
 | Method | API | Best for |
 |--------|-----|----------|
-| Built-in `categorical_features` | `categorical_features='auto'` or `list` | Gradient boosting (LightGBM, XGBoost, CatBoost, HistGBR) — simplest workflow |
+| Built-in `categorical_features` | `categorical_features='auto'` or `list` | Gradient boosting (LightGBM, XGBoost, CatBoost, HistGBR), simplest workflow |
 | One-hot / Ordinal encoding | `transformer_exog` | Linear models, SVMs, non-gradient-boosting trees |
 | Target encoding | Outside forecaster | High-cardinality features (applied manually to avoid leakage) |
 
 **`categorical_features` and `transformer_exog` interaction:**
-`transformer_exog` is applied **before** `categorical_features` detection. They can be used together — e.g., scale numeric columns with `transformer_exog` while `categorical_features='auto'` handles the categorical ones. Avoid applying both mechanisms to the same columns.
+`transformer_exog` is applied **before** `categorical_features` detection. They can be used together, e.g., scale numeric columns with `transformer_exog` while `categorical_features='auto'` handles the categorical ones. Avoid applying both mechanisms to the same columns.
 
 ```python
 from sklearn.compose import make_column_transformer
@@ -271,10 +271,10 @@ When `y`, `series`, or `exog` contain interspersed NaN values, the training matr
 
 | Scenario | Recommended strategy |
 |:---------|:---------------------|
-| Using LightGBM, CatBoost, XGBoost (hist), or HistGradientBoosting | `dropna_from_series=False` — let the estimator handle NaNs. No data loss. |
-| Estimator does not support NaN (RandomForest, LinearRegression, SVR...) | `dropna_from_series=True` — drop incomplete rows before fitting. |
-| Few or small gaps in the series | `dropna_from_series=True` — simple and data loss is negligible. |
-| Large gaps, need to preserve all training data | Imputation + `weight_func` — fill NaNs and down-weight imputed observations. |
+| Using LightGBM, CatBoost, XGBoost (hist), or HistGradientBoosting | `dropna_from_series=False`: let the estimator handle NaNs. No data loss. |
+| Estimator does not support NaN (RandomForest, LinearRegression, SVR...) | `dropna_from_series=True`: drop incomplete rows before fitting. |
+| Few or small gaps in the series | `dropna_from_series=True`: simple and data loss is negligible. |
+| Large gaps, need to preserve all training data | Imputation + `weight_func`: fill NaNs and down-weight imputed observations. |
 | Multi-series with different lengths | `ForecasterRecursiveMultiSeries` with `dropna_from_series=True`. |
 
 ```python
@@ -284,7 +284,7 @@ from lightgbm import LGBMRegressor
 forecaster = ForecasterRecursive(
     estimator=LGBMRegressor(random_state=123, verbose=-1),
     lags=14,
-    dropna_from_series=False,  # Default — NaN rows kept for NaN-tolerant estimators
+    dropna_from_series=False,  # Default: NaN rows kept for NaN-tolerant estimators
 )
 forecaster.fit(y=y_train, suppress_warnings=True)  # Suppress MissingValuesWarning
 
@@ -319,9 +319,10 @@ forecaster = ForecasterRecursive(
 
 ```python
 # Predict with confidence intervals
+# Since v0.23.0 `interval` is expressed as quantiles in (0, 1), not percentiles
 predictions = forecaster.predict_interval(
     steps=10,
-    interval=[10, 90],  # 80% prediction interval
+    interval=[0.1, 0.9],  # 80% prediction interval
     method='bootstrapping',  # or 'conformal'
     n_boot=500
 )
@@ -349,7 +350,7 @@ metric, predictions = backtesting_forecaster(
     cv=cv,                                      # TimeSeriesFold with CV configuration
     metric='mean_absolute_error',               # Metric(s): str, callable, or list
     exog=exog,                                  # Exogenous variables (optional)
-    interval=[10, 90],                          # Prediction intervals as percentiles (optional)
+    interval=[0.1, 0.9],                        # Prediction intervals as quantiles in (0, 1) (optional)
     interval_method='bootstrapping',            # 'bootstrapping' or 'conformal'
     n_boot=250,                                 # Bootstrap iterations (only if method='bootstrapping')
     use_in_sample_residuals=True,               # Use training residuals for intervals
@@ -432,7 +433,7 @@ from skforecast.model_selection import bayesian_search_forecaster, TimeSeriesFol
 
 cv = TimeSeriesFold(steps=12, initial_train_size=len(data) - 100, refit=False)
 
-# Bayesian Search — lags can be included in search_space
+# Bayesian Search: lags can be included in search_space
 def search_space(trial):
     return {
         'lags': trial.suggest_categorical('lags', [3, 5, [1, 2, 3, 20]]),
@@ -497,11 +498,11 @@ forecaster = ForecasterFoundation(estimator=model)
 forecaster.fit(series=data['target'])  # Only stores context; no training
 predictions = forecaster.predict(steps=24)  # Long-format: columns ['level', 'pred']
 
-# Prediction intervals (native quantile output — no bootstrapping needed)
-predictions = forecaster.predict_interval(steps=24, interval=[10, 90])
+# Prediction intervals (native quantile output, no bootstrapping needed)
+predictions = forecaster.predict_interval(steps=24, interval=[0.1, 0.9])
 predictions = forecaster.predict_quantiles(steps=24, quantiles=[0.1, 0.5, 0.9])
 
-# Multi-series (global zero-shot model) — pass a wide DataFrame
+# Multi-series (global zero-shot model): pass a wide DataFrame
 forecaster.fit(series=series_df)
 predictions = forecaster.predict(steps=24, levels=['series_1', 'series_2'])
 ```
@@ -511,17 +512,17 @@ Supported adapters (selected automatically from `model_id`):
 | Adapter | `model_id` prefix | Exog | Default `context_length` | Quantiles |
 |---------|-------------------|------|--------------------------|-----------|
 | ChronosAdapter (Amazon) | `autogluon/chronos` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
-| TimesFMAdapter (Google) | `google/timesfm` | No | 512 | `[0.1, 0.2, …, 0.9]` |
-| MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, …, 0.9]` |
+| TimesFMAdapter (Google) | `google/timesfm` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
+| MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
 | TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (past & future covariates) | 4096 | Any in `(0, 1)` |
 | TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
 | T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
 
 Key points:
 - `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
-- The index must have a frequency (`data.asfreq(...)`) — same requirement as other skforecast forecasters.
+- The index must have a frequency (`data.asfreq(...)`), same requirement as other skforecast forecasters.
 - `predict(..., context=...)` lets you override the stored context (used internally by backtesting).
-- Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. Refit is always disabled internally — model weights are preserved across folds since there is no per-fold training.
+- Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. Refit is always disabled internally, model weights are preserved across folds since there is no per-fold training.
 
 ## Feature Selection
 
@@ -552,14 +553,14 @@ Two drift detection tools for monitoring data distribution changes during deploy
 ```python
 from skforecast.drift_detection import RangeDriftDetector, PopulationDriftDetector
 
-# RangeDriftDetector — lightweight, checks out-of-range values vs training ranges
+# RangeDriftDetector: lightweight, checks out-of-range values vs training ranges
 detector = RangeDriftDetector()
 detector.fit(series=y_train, exog=exog_train)
 flag_out_of_range, out_of_range_series, out_of_range_exog = detector.predict(
     last_window=new_data, exog=new_exog
 )
 
-# PopulationDriftDetector — statistical tests (KS, Chi-Square, Jensen-Shannon)
+# PopulationDriftDetector: statistical tests (KS, Chi-Square, Jensen-Shannon)
 detector = PopulationDriftDetector(chunk_size=100, threshold=3, threshold_method='std')
 detector.fit(X=reference_data)
 results, summary = detector.predict(X=new_data)
@@ -680,7 +681,7 @@ from skforecast.datasets import fetch_dataset, show_datasets_info
 data = fetch_dataset(name='h2o')             # Monthly, single series
 data = fetch_dataset(name='items_sales')     # Daily, 3 series (multi-series)
 data = fetch_dataset(name='bike_sharing')    # Hourly, with exogenous variables
-data = fetch_dataset(name='store_sales')     # Daily, 50 products × 10 stores
+data = fetch_dataset(name='store_sales')     # Daily, 50 products x 10 stores
 data = fetch_dataset(name='h2o_exog')        # Monthly, with exogenous variables
 
 # See all available datasets
@@ -689,7 +690,7 @@ show_datasets_info()
 
 ## Tips for Best Results
 
-1. **Always set frequency**: Use `data.asfreq('h')` or similar — skforecast requires a DatetimeIndex with frequency
+1. **Always set frequency**: Use `data.asfreq('h')` or similar, skforecast requires a DatetimeIndex with frequency
 2. **Handle missing values**: Use `dropna_from_series=True` to drop NaN rows, or `dropna_from_series=False` (default) with NaN-tolerant estimators (LightGBM, CatBoost, HistGradientBoosting)
 3. **Scale data**: Use `transformer_y` for better model performance
 4. **Use backtesting**: Always validate with realistic train/test splits

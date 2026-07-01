@@ -36,6 +36,17 @@ holiday distance features, rolling statistics, differencing, or data scaling.
 - **After**: `feature-selection` (prune redundant features with `select_features` after engineering)
 - **After**: `hyperparameter-optimization` (jointly tune the engineered configuration and the estimator hyperparameters)
 
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| Do not mix the delegated (`calendar_features=`) and manual (`CalendarFeatures` as exog) paths for the same features | `ValueError` on duplicate feature names | Choose one path per feature set |
+| Manual calendar / holiday exog must cover the full forecast horizon | `predict()` exog error or truncated forecast | Generate exog for all future dates before predicting |
+| Cyclical calendar features need sin/cos (or spline) encoding | Hour 23 treated as far from hour 0, degrading the model | Use `encoding='cyclical'` (or spline) for periodic features |
+| `window_features` are computed on the differenced series when `differentiation` is set | `roll_mean_7` is a mean of changes, not of raw values | Account for differencing when interpreting or scaling window features |
+
 ## Overview
 
 | Tool | Module | Purpose |

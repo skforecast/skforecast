@@ -26,6 +26,17 @@ Use `ForecasterFoundation` when:
 
 Foundation models are **pre-trained on massive corpora** — `fit()` does not train them; it only stores the recent context and metadata.
 
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| `fit()` stores context only; it never trains the model | Expecting training to happen or weights to update | Treat the model as pre-trained; evaluate with `backtesting_foundation` |
+| Only Chronos-2, TabICL, TabPFN-TS, and T0 use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `exog` silently dropped, no error raised | Pick an exog-capable adapter when covariates matter |
+| TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]` | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
+| Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
+
 ## Installation
 
 Foundation model backends are **not** bundled with skforecast. Install only the backend(s) you need:
@@ -110,7 +121,7 @@ Foundation models output native quantile forecasts — no bootstrapping or confo
 # Interval (lower/upper bounds from the model's quantiles)
 predictions = forecaster.predict_interval(
     steps=24,
-    interval=[10, 90],   # 80% prediction interval
+    interval=[0.1, 0.9],   # 80% prediction interval (quantiles, 0-1 scale)
 )
 # Columns: ['level', 'pred', 'lower_bound', 'upper_bound']
 

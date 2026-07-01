@@ -101,8 +101,8 @@ Always loaded:
   └─ .github/copilot-instructions.md        (global API + code style)
 
 Loaded when file pattern matches:
-  └─ .github/instructions/docstrings.md      (when editing *.py)
-  └─ .github/instructions/testing.md         (when editing tests/)
+  └─ .github/instructions/docstrings.instructions.md   (when editing *.py)
+  └─ .github/instructions/testing.instructions.md      (when editing tests/)
 
 Loaded on demand by AI agent:
   └─ skills/*/SKILL.md                       (topic-specific workflows)
@@ -128,11 +128,11 @@ These are the only files you edit directly:
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `tools/ai/llms-base.txt` | ~650 | Core API reference: all forecasters, imports, examples, workflows |
-| `tools/ai/ai_context_header.md` | ~30 | Dev-only context: testing commands, code style, dependencies |
+| `tools/ai/llms-base.txt` | ~670 | Core API reference: all forecasters, imports, examples, workflows |
+| `tools/ai/ai_context_header.md` | ~40 | Dev-only context: testing commands, code style, dependencies |
 | `llms.txt` (root) | ~120 | Public index per [llmstxt.org](https://llmstxt.org) spec with links to docs |
-| `skills/*/SKILL.md` | 13 skills | Modular workflow guides, one per topic |
-| `skills/*/references/*.md` | 7 files | Supplementary reference tables for some skills |
+| `skills/*/SKILL.md` | 16 skills | Modular workflow guides, one per topic |
+| `skills/*/references/*.md` | 9 files | Supplementary reference tables for some skills |
 | `.github/instructions/*.md` | 2 files | Pattern-matched coding conventions |
 | `.github/prompts/*.md` | 2 files | Reusable review checklists |
 
@@ -144,26 +144,29 @@ All marked with `<!-- AUTO-GENERATED -->` header and tracked in `.gitattributes`
 |------|--------|---------|
 | `.github/copilot-instructions.md` | header + llms-base | IDE context for GitHub Copilot |
 | `AGENTS.md` | header + llms-base | IDE context for Claude Code, Codex, Aider |
-| `llms-full.txt` | llms-base + 13 skills | Complete LLM reference (~5000 lines) |
+| `llms-full.txt` | llms-base + 16 skills | Complete LLM reference (~5000 lines) |
 | `docs/llms.txt` | copy of root `llms.txt` | Served at skforecast.org/latest/llms.txt |
 | `docs/llms-full.txt` | copy of `llms-full.txt` | Served at skforecast.org/latest/llms-full.txt |
 
 ## Skills
 
-13 self-contained workflow guides in `skills/`. Each has a `SKILL.md` with YAML frontmatter (`name`, `description`) and optional `references/` subfolder.
+16 self-contained workflow guides in `skills/`. Each has a `SKILL.md` with YAML frontmatter (`name`, `description`) and optional `references/` subfolder.
 
 | Skill | References | Topic |
 |-------|-----------|-------|
 | `forecasting-single-series` | — | ForecasterRecursive / ForecasterDirect |
 | `forecasting-multiple-series` | — | ForecasterRecursiveMultiSeries global model |
 | `statistical-models` | `model-parameters.md` | ARIMA, SARIMAX, ETS, ARAR |
+| `metric-selection` | `metric-compatibility.md` | Choosing evaluation metrics (MASE, RMSSE, CRPS) |
+| `backtesting-configuration` | — | TimeSeriesFold / OneStepAheadFold configuration |
 | `hyperparameter-optimization` | `search-parameters.md` | Grid, random, Bayesian search |
 | `prediction-intervals` | `interval-compatibility.md` | Bootstrapping, conformal, quantile |
-| `feature-engineering` | `rolling-stats-reference.md` | RollingFeatures, calendar features |
+| `autocorrelation-and-lag-selection` | — | ACF / PACF analysis and lag selection |
+| `feature-engineering` | `rolling-stats-reference.md`, `calendar-features-reference.md` | RollingFeatures, calendar features |
 | `feature-selection` | — | RFECV, SelectFromModel |
 | `drift-detection` | — | RangeDriftDetector, PopulationDriftDetector |
 | `deep-learning-forecasting` | `architecture-options.md` | ForecasterRnn, LSTM/GRU |
-| `foundation-forecasting` | `adapter-parameters.md` | ForecasterFoundation, Chronos-2, TimesFM 2.5, Moirai-2, TabICL |
+| `foundation-forecasting` | `adapter-parameters.md` | ForecasterFoundation, Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0 |
 | `choosing-a-forecaster` | — | Decision guide for forecaster selection |
 | `troubleshooting-common-errors` | — | Common mistakes and fixes |
 | `complete-api-reference` | `method-signatures.md` | All constructor and method signatures |
@@ -222,7 +225,7 @@ skforecast/
 │   │   ├── SKILL.md
 │   │   └── references/
 │   │       └── method-signatures.md
-│   └── ... (10 more skills)
+│   └── ... (14 more skills)
 ├── tools/ai/
 │   ├── README.md                         # This file
 │   ├── llms-base.txt                     # Core API reference (source)
