@@ -320,7 +320,7 @@ forecaster.predict(
     check_inputs=True         # bool
 ) -> pd.DataFrame             # Long-format: columns ['level', 'pred']
 # Also:
-#   predict_interval(steps, ..., interval=[10, 90]) -> ['level','pred','lower_bound','upper_bound']
+#   predict_interval(steps, ..., interval=[0.1, 0.9]) -> ['level','pred','lower_bound','upper_bound']
 #   predict_quantiles(steps, ..., quantiles=[0.1, 0.5, 0.9]) -> ['level','q_0.1','q_0.5','q_0.9']
 ```
 
@@ -333,7 +333,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.Series | pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     method='bootstrapping',             # 'bootstrapping' | 'conformal'
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     n_boot=250,                         # int, number of bootstrap samples
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
@@ -348,7 +348,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | dict | None
     method='conformal',                 # 'bootstrapping' | 'conformal'
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     n_boot=250,                         # int
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
@@ -362,7 +362,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.Series | pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     method='bootstrapping',             # 'bootstrapping' | 'conformal'
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     n_boot=250,                         # int
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
@@ -376,7 +376,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     method='conformal',                 # 'bootstrapping' | 'conformal'
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     n_boot=250,                         # int
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
@@ -391,7 +391,7 @@ forecaster.predict_interval(
     last_window_exog=None,              # pd.Series | pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     alpha=0.05,                         # float, significance level
-    interval=None,                      # list[float] | tuple[float] | None
+    interval=None,                      # list[float] | tuple[float] | None, quantiles 0-1
     suppress_warnings=False             # bool
 ) -> pd.DataFrame
 
@@ -400,7 +400,7 @@ forecaster.predict_interval(
     steps,                              # int (required)
     last_window=None,                   # pd.Series | None
     method='conformal',                 # only 'conformal' supported
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
     random_state=None,                  # Any, ignored (API compatibility)
@@ -416,7 +416,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     method='conformal',                 # only 'conformal' supported
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
     suppress_warnings=False,            # bool

@@ -30,6 +30,17 @@ Use statistical models when:
 - **After**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals via the `interval_method` argument)
 - **After**: `hyperparameter-optimization` (tune ARIMA `order` / `seasonal_order` via grid search)
 
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| Backtest and tune with `backtesting_stats` and `grid_search_stats`, not the ML variants | `backtesting_forecaster` / `grid_search_forecaster` raises on `ForecasterStats` | Call `backtesting_stats` / `grid_search_stats` |
+| `Arima` takes a 3-tuple `seasonal_order=(P, D, Q)` plus `m`; `Sarimax` takes a 4-tuple `(P, D, Q, m)` | Wrong model order or `TypeError` | Use `Arima(order=(p,d,q), seasonal_order=(P,D,Q), m=12)` |
+| `Ets` uses `model='AAA'` + `m`, not `error=` / `trend=` / `seasonal=` | Deprecated-argument error | Use `Ets(model='AAA', m=12)` (A/M/N/Z per position) |
+| Seasonal models require `m` | Seasonality silently ignored | Pass `m=<seasonal period>` to `Arima` / `Ets` |
+
 ## Available Models
 
 | Model | Class | Description |
@@ -66,7 +77,7 @@ predictions = forecaster.predict(steps=12)
 #    no bootstrapping needed). Accepts both `interval` and `alpha`.
 predictions_interval = forecaster.predict_interval(
     steps=12,
-    interval=[10, 90],  # or use alpha=0.2 for 80% interval
+    interval=[0.1, 0.9],  # quantiles (0-1). Or use alpha=0.2 for 80% interval
 )
 ```
 

@@ -22,6 +22,17 @@ description: >
 - **After**: `hyperparameter-optimization` (tune the global model across series)
 - **After**: `prediction-intervals` (add intervals to the multi-series forecasts)
 
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| Use `backtesting_forecaster_multiseries` and the `*_multiseries` search functions | `backtesting_forecaster` / `grid_search_forecaster` raises on a multi-series forecaster | Call the `_multiseries` variant with `series=` instead of `y=` |
+| `ForecasterDirectMultiVariate` defaults to `transformer_series=StandardScaler()` | Series are scaled unexpectedly (other forecasters default to `None`) | Pass `transformer_series=None` explicitly if you do not want scaling |
+| `exog` format must match the `series` format (both wide, or both dict) | Index / format mismatch during fit or predict | Convert exog to the same layout as `series` before fitting |
+| Regressors with native categorical support need `encoding='ordinal_category'` | Categoricals silently encoded as plain ordinals, degrading the model | Set `encoding='ordinal_category'` for LightGBM / CatBoost / XGBoost / HistGBR |
+
 ## Data Formats
 
 ForecasterRecursiveMultiSeries accepts three input formats:

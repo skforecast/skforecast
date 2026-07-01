@@ -32,6 +32,16 @@ Use hyperparameter search after establishing a baseline forecaster to improve pr
 - **Before**: `feature-selection` (run the search on a reduced feature set to make it tractable)
 - **After**: `prediction-intervals` (add uncertainty quantification once the configuration is fixed)
 
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| The search refits the forecaster in place with the best params when `return_best=True` (the default) | With `return_best=False`, the forecaster keeps its pre-search params | Rely on the default, or refit with the best params from the results table |
+| Use the `*_multiseries` / `*_stats` search variant matching the forecaster type | Search function raises on the wrong forecaster type | Call e.g. `bayesian_search_forecaster_multiseries` / `grid_search_stats` |
+| Include `lags` in the Bayesian `search_space()` | Suboptimal search; the highest-impact parameter stays fixed | Add `trial.suggest_categorical('lags', [...])` to the search space |
+
 ## Bayesian Search (Recommended)
 
 Always prefer Bayesian search as the default strategy. It uses Optuna to intelligently explore the search space.

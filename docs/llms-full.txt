@@ -90,7 +90,7 @@ from sklearn.ensemble import RandomForestRegressor
 from skforecast.recursive import ForecasterRecursive
 from skforecast.model_selection import backtesting_forecaster, TimeSeriesFold
 
-# Load data — y must be a pandas Series with DatetimeIndex and frequency set
+# Load data: y must be a pandas Series with DatetimeIndex and frequency set
 data = pd.read_csv('data.csv', index_col='date', parse_dates=True)
 data = data.asfreq('h')  # IMPORTANT: always set frequency before using skforecast
 
@@ -184,12 +184,12 @@ forecaster.fit(y=y_train, exog=exog_train)
 
 | Method | API | Best for |
 |--------|-----|----------|
-| Built-in `categorical_features` | `categorical_features='auto'` or `list` | Gradient boosting (LightGBM, XGBoost, CatBoost, HistGBR) — simplest workflow |
+| Built-in `categorical_features` | `categorical_features='auto'` or `list` | Gradient boosting (LightGBM, XGBoost, CatBoost, HistGBR), simplest workflow |
 | One-hot / Ordinal encoding | `transformer_exog` | Linear models, SVMs, non-gradient-boosting trees |
 | Target encoding | Outside forecaster | High-cardinality features (applied manually to avoid leakage) |
 
 **`categorical_features` and `transformer_exog` interaction:**
-`transformer_exog` is applied **before** `categorical_features` detection. They can be used together — e.g., scale numeric columns with `transformer_exog` while `categorical_features='auto'` handles the categorical ones. Avoid applying both mechanisms to the same columns.
+`transformer_exog` is applied **before** `categorical_features` detection. They can be used together, e.g., scale numeric columns with `transformer_exog` while `categorical_features='auto'` handles the categorical ones. Avoid applying both mechanisms to the same columns.
 
 ```python
 from sklearn.compose import make_column_transformer
@@ -230,10 +230,10 @@ When `y`, `series`, or `exog` contain interspersed NaN values, the training matr
 
 | Scenario | Recommended strategy |
 |:---------|:---------------------|
-| Using LightGBM, CatBoost, XGBoost (hist), or HistGradientBoosting | `dropna_from_series=False` — let the estimator handle NaNs. No data loss. |
-| Estimator does not support NaN (RandomForest, LinearRegression, SVR...) | `dropna_from_series=True` — drop incomplete rows before fitting. |
-| Few or small gaps in the series | `dropna_from_series=True` — simple and data loss is negligible. |
-| Large gaps, need to preserve all training data | Imputation + `weight_func` — fill NaNs and down-weight imputed observations. |
+| Using LightGBM, CatBoost, XGBoost (hist), or HistGradientBoosting | `dropna_from_series=False`: let the estimator handle NaNs. No data loss. |
+| Estimator does not support NaN (RandomForest, LinearRegression, SVR...) | `dropna_from_series=True`: drop incomplete rows before fitting. |
+| Few or small gaps in the series | `dropna_from_series=True`: simple and data loss is negligible. |
+| Large gaps, need to preserve all training data | Imputation + `weight_func`: fill NaNs and down-weight imputed observations. |
 | Multi-series with different lengths | `ForecasterRecursiveMultiSeries` with `dropna_from_series=True`. |
 
 ```python
@@ -243,7 +243,7 @@ from lightgbm import LGBMRegressor
 forecaster = ForecasterRecursive(
     estimator=LGBMRegressor(random_state=123, verbose=-1),
     lags=14,
-    dropna_from_series=False,  # Default — NaN rows kept for NaN-tolerant estimators
+    dropna_from_series=False,  # Default: NaN rows kept for NaN-tolerant estimators
 )
 forecaster.fit(y=y_train, suppress_warnings=True)  # Suppress MissingValuesWarning
 
@@ -278,9 +278,10 @@ forecaster = ForecasterRecursive(
 
 ```python
 # Predict with confidence intervals
+# Since v0.23.0 `interval` is expressed as quantiles in (0, 1), not percentiles
 predictions = forecaster.predict_interval(
     steps=10,
-    interval=[10, 90],  # 80% prediction interval
+    interval=[0.1, 0.9],  # 80% prediction interval
     method='bootstrapping',  # or 'conformal'
     n_boot=500
 )
@@ -308,7 +309,7 @@ metric, predictions = backtesting_forecaster(
     cv=cv,                                      # TimeSeriesFold with CV configuration
     metric='mean_absolute_error',               # Metric(s): str, callable, or list
     exog=exog,                                  # Exogenous variables (optional)
-    interval=[10, 90],                          # Prediction intervals as percentiles (optional)
+    interval=[0.1, 0.9],                        # Prediction intervals as quantiles in (0, 1) (optional)
     interval_method='bootstrapping',            # 'bootstrapping' or 'conformal'
     n_boot=250,                                 # Bootstrap iterations (only if method='bootstrapping')
     use_in_sample_residuals=True,               # Use training residuals for intervals
@@ -391,7 +392,7 @@ from skforecast.model_selection import bayesian_search_forecaster, TimeSeriesFol
 
 cv = TimeSeriesFold(steps=12, initial_train_size=len(data) - 100, refit=False)
 
-# Bayesian Search — lags can be included in search_space
+# Bayesian Search: lags can be included in search_space
 def search_space(trial):
     return {
         'lags': trial.suggest_categorical('lags', [3, 5, [1, 2, 3, 20]]),
@@ -456,11 +457,11 @@ forecaster = ForecasterFoundation(estimator=model)
 forecaster.fit(series=data['target'])  # Only stores context; no training
 predictions = forecaster.predict(steps=24)  # Long-format: columns ['level', 'pred']
 
-# Prediction intervals (native quantile output — no bootstrapping needed)
-predictions = forecaster.predict_interval(steps=24, interval=[10, 90])
+# Prediction intervals (native quantile output, no bootstrapping needed)
+predictions = forecaster.predict_interval(steps=24, interval=[0.1, 0.9])
 predictions = forecaster.predict_quantiles(steps=24, quantiles=[0.1, 0.5, 0.9])
 
-# Multi-series (global zero-shot model) — pass a wide DataFrame
+# Multi-series (global zero-shot model): pass a wide DataFrame
 forecaster.fit(series=series_df)
 predictions = forecaster.predict(steps=24, levels=['series_1', 'series_2'])
 ```
@@ -470,17 +471,17 @@ Supported adapters (selected automatically from `model_id`):
 | Adapter | `model_id` prefix | Exog | Default `context_length` | Quantiles |
 |---------|-------------------|------|--------------------------|-----------|
 | ChronosAdapter (Amazon) | `autogluon/chronos` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
-| TimesFMAdapter (Google) | `google/timesfm` | No | 512 | `[0.1, 0.2, …, 0.9]` |
-| MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, …, 0.9]` |
+| TimesFMAdapter (Google) | `google/timesfm` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
+| MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
 | TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (past & future covariates) | 4096 | Any in `(0, 1)` |
 | TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
 | T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
 
 Key points:
 - `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
-- The index must have a frequency (`data.asfreq(...)`) — same requirement as other skforecast forecasters.
+- The index must have a frequency (`data.asfreq(...)`), same requirement as other skforecast forecasters.
 - `predict(..., context=...)` lets you override the stored context (used internally by backtesting).
-- Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. Refit is always disabled internally — model weights are preserved across folds since there is no per-fold training.
+- Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. Refit is always disabled internally, model weights are preserved across folds since there is no per-fold training.
 
 ## Feature Selection
 
@@ -511,14 +512,14 @@ Two drift detection tools for monitoring data distribution changes during deploy
 ```python
 from skforecast.drift_detection import RangeDriftDetector, PopulationDriftDetector
 
-# RangeDriftDetector — lightweight, checks out-of-range values vs training ranges
+# RangeDriftDetector: lightweight, checks out-of-range values vs training ranges
 detector = RangeDriftDetector()
 detector.fit(series=y_train, exog=exog_train)
 flag_out_of_range, out_of_range_series, out_of_range_exog = detector.predict(
     last_window=new_data, exog=new_exog
 )
 
-# PopulationDriftDetector — statistical tests (KS, Chi-Square, Jensen-Shannon)
+# PopulationDriftDetector: statistical tests (KS, Chi-Square, Jensen-Shannon)
 detector = PopulationDriftDetector(chunk_size=100, threshold=3, threshold_method='std')
 detector.fit(X=reference_data)
 results, summary = detector.predict(X=new_data)
@@ -639,7 +640,7 @@ from skforecast.datasets import fetch_dataset, show_datasets_info
 data = fetch_dataset(name='h2o')             # Monthly, single series
 data = fetch_dataset(name='items_sales')     # Daily, 3 series (multi-series)
 data = fetch_dataset(name='bike_sharing')    # Hourly, with exogenous variables
-data = fetch_dataset(name='store_sales')     # Daily, 50 products × 10 stores
+data = fetch_dataset(name='store_sales')     # Daily, 50 products x 10 stores
 data = fetch_dataset(name='h2o_exog')        # Monthly, with exogenous variables
 
 # See all available datasets
@@ -648,7 +649,7 @@ show_datasets_info()
 
 ## Tips for Best Results
 
-1. **Always set frequency**: Use `data.asfreq('h')` or similar — skforecast requires a DatetimeIndex with frequency
+1. **Always set frequency**: Use `data.asfreq('h')` or similar, skforecast requires a DatetimeIndex with frequency
 2. **Handle missing values**: Use `dropna_from_series=True` to drop NaN rows, or `dropna_from_series=False` (default) with NaN-tolerant estimators (LightGBM, CatBoost, HistGradientBoosting)
 3. **Scale data**: Use `transformer_y` for better model performance
 4. **Use backtesting**: Always validate with realistic train/test splits
@@ -689,6 +690,17 @@ Use this workflow when you have **one time series** and want to predict its futu
 - **Before**: `feature-engineering` (assemble the rolling, calendar, and exogenous features)
 - **After**: `hyperparameter-optimization` (tune the forecaster once a baseline is trained)
 - **After**: `prediction-intervals` (add bootstrap or conformal intervals on top of the point forecasts)
+
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| Set the index frequency before fitting | `ValueError: ... must be a DatetimeIndex with frequency` | Call `data = data.asfreq('h')` (or the correct alias) on `y` and `exog` |
+| `exog` passed to `predict()` must cover every future step | `exog` length / index error, or the forecast stops short | Slice exog to the full horizon: one row per step, dates matching the forecast |
+| Fit with `store_in_sample_residuals=True` before `predict_interval(method='bootstrapping')` | `No in-sample residuals stored` / empty residuals | Refit: `forecaster.fit(y=y_train, store_in_sample_residuals=True)` |
+| Split chronologically, never shuffle | Over-optimistic metrics, leakage | Use a time-ordered split (`TimeSeriesFold`); do not random-split |
 
 ## Complete Workflow
 
@@ -747,11 +759,11 @@ metric, predictions_bt = backtesting_forecaster(
 print(f"MAE: {metric}")
 
 # 7. Prediction intervals
-# Default interval is [5, 95] (90%). Here [10, 90] creates an 80% interval.
+# Default interval is [0.05, 0.95] (90%). Here [0.1, 0.9] creates an 80% interval.
 forecaster.fit(y=y_train, store_in_sample_residuals=True)
 predictions_interval = forecaster.predict_interval(
     steps=10,
-    interval=[10, 90],          # 80% prediction interval
+    interval=[0.1, 0.9],        # 80% prediction interval (quantiles, 0-1 scale)
     method='bootstrapping',
     n_boot=500,
 )
@@ -811,6 +823,17 @@ predictions = forecaster.predict(exog=exog_test)
 - **Before**: `feature-engineering` (build per-series exogenous and rolling features)
 - **After**: `hyperparameter-optimization` (tune the global model across series)
 - **After**: `prediction-intervals` (add intervals to the multi-series forecasts)
+
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| Use `backtesting_forecaster_multiseries` and the `*_multiseries` search functions | `backtesting_forecaster` / `grid_search_forecaster` raises on a multi-series forecaster | Call the `_multiseries` variant with `series=` instead of `y=` |
+| `ForecasterDirectMultiVariate` defaults to `transformer_series=StandardScaler()` | Series are scaled unexpectedly (other forecasters default to `None`) | Pass `transformer_series=None` explicitly if you do not want scaling |
+| `exog` format must match the `series` format (both wide, or both dict) | Index / format mismatch during fit or predict | Convert exog to the same layout as `series` before fitting |
+| Regressors with native categorical support need `encoding='ordinal_category'` | Categoricals silently encoded as plain ordinals, degrading the model | Set `encoding='ordinal_category'` for LightGBM / CatBoost / XGBoost / HistGBR |
 
 ## Data Formats
 
@@ -964,6 +987,17 @@ Use statistical models when:
 - **After**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals via the `interval_method` argument)
 - **After**: `hyperparameter-optimization` (tune ARIMA `order` / `seasonal_order` via grid search)
 
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| Backtest and tune with `backtesting_stats` and `grid_search_stats`, not the ML variants | `backtesting_forecaster` / `grid_search_forecaster` raises on `ForecasterStats` | Call `backtesting_stats` / `grid_search_stats` |
+| `Arima` takes a 3-tuple `seasonal_order=(P, D, Q)` plus `m`; `Sarimax` takes a 4-tuple `(P, D, Q, m)` | Wrong model order or `TypeError` | Use `Arima(order=(p,d,q), seasonal_order=(P,D,Q), m=12)` |
+| `Ets` uses `model='AAA'` + `m`, not `error=` / `trend=` / `seasonal=` | Deprecated-argument error | Use `Ets(model='AAA', m=12)` (A/M/N/Z per position) |
+| Seasonal models require `m` | Seasonality silently ignored | Pass `m=<seasonal period>` to `Arima` / `Ets` |
+
 ## Available Models
 
 | Model | Class | Description |
@@ -1000,7 +1034,7 @@ predictions = forecaster.predict(steps=12)
 #    no bootstrapping needed). Accepts both `interval` and `alpha`.
 predictions_interval = forecaster.predict_interval(
     steps=12,
-    interval=[10, 90],  # or use alpha=0.2 for 80% interval
+    interval=[0.1, 0.9],  # quantiles (0-1). Or use alpha=0.2 for 80% interval
 )
 ```
 
@@ -1816,13 +1850,64 @@ In search functions, use `aggregate_metric` to select which to report (default: 
 
 # Backtesting Configuration
 
+## When to Use
+
+Use this skill to translate a deployment scenario (retraining cadence, forecast
+horizon, data budget, ingestion delay) into `TimeSeriesFold` parameters.
+`TimeSeriesFold` is the cross-validation strategy passed via the `cv` argument to
+`backtesting_forecaster` (and its multi-series / stats variants) and to the
+hyperparameter search functions.
+
+```python
+from skforecast.model_selection import backtesting_forecaster, TimeSeriesFold
+
+cv = TimeSeriesFold(
+    steps=7,                       # forecast horizon
+    initial_train_size=365,        # first training window (required)
+    refit=False,                   # train once (default)
+    fixed_train_size=True,         # rolling window (default)
+    gap=0,
+)
+
+metric, predictions = backtesting_forecaster(
+    forecaster=forecaster,
+    y=data['target'],
+    cv=cv,
+    metric='mean_absolute_error',
+)
+```
+
+For fast hyperparameter tuning where multi-step realism is not required, use
+`OneStepAheadFold` instead: it validates one step ahead (no recursive
+prediction), so it is much faster but less representative of multi-step
+performance. Use `TimeSeriesFold` for realistic multi-step backtesting.
+
+### Related skills
+
+- **Before**: `forecasting-single-series` / `forecasting-multiple-series` (have a fitted forecaster before backtesting)
+- **With**: `metric-selection` (choose the metric(s) backtesting reports)
+- **With**: `hyperparameter-optimization` (the same `cv` object drives the search functions)
+- **After**: `prediction-intervals` (add `interval=` / `interval_method=` to backtest uncertainty)
+
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| `initial_train_size` must be provided (the API default is `None`, which only works when reusing an already-fitted forecaster) | `ValueError` / no training in the first fold | Pass an int, date string, or Timestamp, e.g. `initial_train_size=len(y) - 100` |
+| `initial_train_size` does not accept a float fraction | `ValueError`: must be int, date string, Timestamp, or None | Convert fractions to an int, e.g. `int(len(data) * 0.7)` |
+| Configuration must yield at least 2 folds | Single-fold or empty backtest | Ensure `initial_train_size + gap + 2 * steps <= n_observations` |
+| `refit=True` retrains every fold (slow path); the default is `refit=False` | Backtest much slower than expected | Use `refit=False` or an int cadence (e.g. `refit=7`) unless per-fold retraining is required |
+| `gap`, `steps`, and `fold_stride` count observations, not calendar time | Off-by-frequency delays | Convert the delay to the series frequency (e.g. 2 days at daily freq = `gap=2`) |
+
 ## TimeSeriesFold Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `initial_train_size` | int, float, str | 70% of data | Observations for initial training. Float = fraction, str = date. |
-| `refit` | bool, int | True | Refit every fold (True), never (False), or every n folds (int). |
-| `fixed_train_size` | bool | False | Fixed (rolling) window vs expanding window. |
+| `initial_train_size` | int, str, pd.Timestamp | None (required) | Observations for initial training. Int = count, str/Timestamp = last training date. A common starting point is `int(len(data) * 0.7)`. |
+| `refit` | bool, int | False | Refit every fold (True), train once (False, default), or every n folds (int). |
+| `fixed_train_size` | bool | True | Rolling fixed window (True, default) vs expanding window (False). |
 | `gap` | int | 0 | Observations between training end and test start. |
 | `fold_stride` | int, None | None (= steps) | Distance between consecutive test set starts. |
 | `skip_folds` | int, list, None | None | Skip folds to reduce compute. Int = keep every n-th. |
@@ -1830,7 +1915,7 @@ In search functions, use `aggregate_metric` to select which to report (default: 
 
 ## Constraints
 
-- Must produce **at least 2 folds**: `initial_train_size + 2 * steps <= n_observations`
+- Must produce **at least 2 folds**: `initial_train_size + gap + 2 * steps <= n_observations`
 - `initial_train_size` must be large enough for the model to learn patterns (at minimum 2× the lag order for ML models, or 2× steps for statistical models)
 - `gap` simulates real-world delay between data availability and forecast usage
 - When `fixed_train_size=True`, the window rolls forward (oldest data discarded). Use for concept drift or when old data is less relevant.
@@ -1845,8 +1930,7 @@ In search functions, use `aggregate_metric` to select which to report (default: 
 | Retrain every time new data arrives | `refit=True` |
 | Retrain weekly (with daily forecasts, steps=1) | `refit=7` |
 | Retrain monthly (with daily forecasts, steps=7) | `refit=4` (every 4 folds × 7 steps ≈ monthly) |
-| Never retrain (fixed model) | `refit=False` |
-| Train once, evaluate across time | `refit=False, fixed_train_size=False` |
+| Never retrain / train once, evaluate across time | `refit=False` (`fixed_train_size` has no effect without refit) |
 
 ### Data freshness vs volume
 
@@ -1868,11 +1952,11 @@ In search functions, use `aggregate_metric` to select which to report (default: 
 
 | Scenario | Configuration |
 |----------|--------------|
-| Default (balanced) | 70% of data |
+| Default (balanced) | `int(len(data) * 0.7)` |
 | Maximize evaluation coverage | Minimum viable: `2 * max_lag` or `2 * steps` |
-| Maximize training data | `n_observations - 2 * steps` (minimum 2 folds) |
+| Maximize training data | `n_observations - gap - 2 * steps` (minimum 2 folds) |
 | Start from specific date | `initial_train_size="2023-01-01"` |
-| Conservative (large training set) | 80% of data |
+| Conservative (large training set) | `int(len(data) * 0.8)` |
 
 ### Fold stride (test set overlap)
 
@@ -1894,8 +1978,7 @@ fold_stride = None  # Non-overlapping weeks
 
 ### "I want to simulate deploying once and seeing how the model degrades"
 ```
-refit = False
-fixed_train_size = True  # Fixed training window
+refit = False  # Train once; fixed_train_size has no effect without refit
 gap = 0
 ```
 
@@ -1914,8 +1997,7 @@ skip_folds = 2  # Keep every 2nd fold
 ### "I want maximum evaluation coverage with a 12-step horizon"
 ```
 initial_train_size = <minimum viable>  # 2 * max_lag
-refit = False  # Faster
-fixed_train_size = False
+refit = False  # Faster; trains once, fixed_train_size has no effect
 fold_stride = 1  # Sliding window (many overlapping folds)
 ```
 
@@ -1947,6 +2029,16 @@ Use hyperparameter search after establishing a baseline forecaster to improve pr
 - **Before**: `autocorrelation-and-lag-selection` (narrow the `lags` search space to a statistically informed candidate set)
 - **Before**: `feature-selection` (run the search on a reduced feature set to make it tractable)
 - **After**: `prediction-intervals` (add uncertainty quantification once the configuration is fixed)
+
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| The search refits the forecaster in place with the best params when `return_best=True` (the default) | With `return_best=False`, the forecaster keeps its pre-search params | Rely on the default, or refit with the best params from the results table |
+| Use the `*_multiseries` / `*_stats` search variant matching the forecaster type | Search function raises on the wrong forecaster type | Call e.g. `bayesian_search_forecaster_multiseries` / `grid_search_stats` |
+| Include `lags` in the Bayesian `search_space()` | Suboptimal search; the highest-impact parameter stays fixed | Add `trial.suggest_categorical('lags', [...])` to the search space |
 
 ## Bayesian Search (Recommended)
 
@@ -2348,25 +2440,59 @@ metric (best first). Access the best Optuna trial with `study.best_trial`.
 
 # Prediction Intervals
 
-## References
-
-See [references/interval-compatibility.md](references/interval-compatibility.md) for the complete compatibility matrix: which forecaster supports which method, parameter differences, binned residuals support, and common error patterns.
-
 ## When to Use
 
 Use prediction intervals to quantify forecast uncertainty. Skforecast offers three methods:
 
 | Method | Forecasters | Description |
 |--------|-------------|-------------|
-| **Bootstrapping** | Recursive, Direct | Resample from training residuals |
-| **Conformal** | All ML forecasters | Distribution-free intervals via conformal prediction |
+| **Bootstrapping** | Recursive, Direct, RecursiveMultiSeries, DirectMultiVariate | Resample from training residuals |
+| **Conformal** | All ML forecasters (incl. RNN, EquivalentDate) | Distribution-free intervals via conformal prediction |
 | **Built-in** | ForecasterStats (ARIMA, ETS) | Parametric intervals from the statistical model |
+
+### Choosing a method
+
+- **Conformal**: distribution-free, fast, and gives a single symmetric coverage
+  guarantee. The default for multi-series forecasters and the only option for
+  `ForecasterRnn` / `ForecasterEquivalentDate`. Prefer it when you need a quick,
+  well-calibrated interval and do not need the full predictive distribution.
+- **Bootstrapping**: resamples residuals to build the full predictive
+  distribution, so it also powers `predict_quantiles()` and `predict_dist()`.
+  Prefer it when you need arbitrary quantiles, a fitted distribution, or
+  asymmetric intervals. Needs enough stored residuals to be reliable.
+- **Built-in**: parametric intervals from the statistical model itself
+  (`ForecasterStats`). No residual management required.
 
 ### Related skills
 
 - **Before**: `forecasting-single-series` / `forecasting-multiple-series` (have a fitted forecaster before adding intervals)
 - **Before**: `hyperparameter-optimization` (interval calibration assumes a tuned point forecaster)
 - **After**: `drift-detection` (monitor whether residual assumptions still hold once the model is in production)
+
+## Intervals Are Quantiles (Changed in 0.23.0)
+
+Since skforecast 0.23.0, `interval` is expressed as **quantiles in `[0, 1]`**, not
+percentiles in `[0, 100]`. For example, an 80% interval is `interval=[0.1, 0.9]`
+(the default is `[0.05, 0.95]` = 90%).
+
+- `interval` also accepts a single `float` as nominal coverage: `interval=0.95`
+  is equivalent to `interval=[0.025, 0.975]`.
+- Passing percentiles (e.g. `[10, 90]`) still works but emits a `FutureWarning`
+  and will be removed in skforecast 0.25.0.
+- Mixing scales (e.g. `[0.1, 90]`) raises a `ValueError` (ambiguous scale).
+- `predict_quantiles(quantiles=...)` was already on the 0-1 scale and is unchanged.
+
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| Fit with `store_in_sample_residuals=True` before `predict_interval(method='bootstrapping')` | `No in-sample residuals stored` | Refit: `forecaster.fit(y=y_train, store_in_sample_residuals=True)` |
+| Multi-series forecasters default to `method='conformal'`, not `'bootstrapping'` | Bootstrapping silently not applied on `ForecasterRecursiveMultiSeries` / `ForecasterDirectMultiVariate` | Pass `method='bootstrapping'` explicitly when that is what you want |
+| ML forecasters accept `interval=`; only `ForecasterStats` accepts `alpha=` | `TypeError` / unexpected argument | Use `interval=[lower, upper]` for ML forecasters |
+| `interval` must be quantiles in `[0, 1]`, not percentiles | `FutureWarning` (percentiles deprecated, removed in 0.25.0) | Use `interval=[0.1, 0.9]` instead of `interval=[10, 90]` |
+| Do not mix quantile and percentile scales in one `interval` | `ValueError`: scale is ambiguous | Use a single scale, e.g. `interval=[0.05, 0.95]` |
 
 ## Bootstrapping Method
 
@@ -2384,7 +2510,7 @@ forecaster.fit(y=y_train, store_in_sample_residuals=True)
 
 predictions = forecaster.predict_interval(
     steps=10,
-    interval=[10, 90],              # Percentiles → 80% interval (default is [5, 95] = 90%)
+    interval=[0.1, 0.9],             # Quantiles → 80% interval (default is [0.05, 0.95] = 90%)
     method='bootstrapping',
     n_boot=250,                      # Number of bootstrap samples (default)
     use_in_sample_residuals=True,    # Use training residuals
@@ -2402,7 +2528,7 @@ forecaster.fit(y=y_train, store_in_sample_residuals=True)
 
 predictions = forecaster.predict_interval(
     steps=10,
-    interval=[10, 90],
+    interval=[0.1, 0.9],
     method='conformal',
     use_in_sample_residuals=True,    # Uses in_sample_residuals_ stored during fit
     use_binned_residuals=True,
@@ -2423,7 +2549,7 @@ forecaster.fit(y=y_train)
 # Uses parametric intervals from statsmodels — different interface
 predictions = forecaster.predict_interval(
     steps=12,
-    interval=[10, 90],         # Or use alpha=0.05 for 95% interval
+    interval=[0.1, 0.9],       # Quantiles → 80% interval. Equivalently, alpha=0.2
 )
 ```
 
@@ -2439,7 +2565,7 @@ forecaster = ForecasterFoundation(
 )
 forecaster.fit(series=y_train)
 
-predictions = forecaster.predict_interval(steps=24, interval=[10, 90])
+predictions = forecaster.predict_interval(steps=24, interval=[0.1, 0.9])
 predictions = forecaster.predict_quantiles(
     steps=24, quantiles=[0.1, 0.5, 0.9]
 )
@@ -2463,7 +2589,7 @@ metric, predictions = backtesting_forecaster(
     y=data['target'],
     cv=cv,
     metric='mean_absolute_error',
-    interval=[10, 90],
+    interval=[0.1, 0.9],
     interval_method='bootstrapping',   # or 'conformal'
     n_boot=250,
     use_in_sample_residuals=True,
@@ -2481,7 +2607,7 @@ from skforecast.recursive import ForecasterRecursiveMultiSeries
 predictions = forecaster_multi.predict_interval(
     steps=10,
     levels=['series_1', 'series_2'],
-    interval=[10, 90],
+    interval=[0.1, 0.9],
     method='conformal',
 )
 ```
@@ -2507,7 +2633,7 @@ forecaster.set_out_sample_residuals(
 # Now use them for intervals
 predictions = forecaster.predict_interval(
     steps=10,
-    interval=[10, 90],
+    interval=[0.1, 0.9],
     method='bootstrapping',
     use_in_sample_residuals=False,  # Use out-of-sample residuals
 )
@@ -2523,20 +2649,65 @@ coverage = calculate_coverage(
     lower_bound=predictions['lower_bound'],
     upper_bound=predictions['upper_bound'],
 )
-print(f"Coverage: {coverage:.2%}")  # Should be close to 0.80 for [10, 90] interval
+print(f"Coverage: {coverage:.2%}")  # Should be close to 0.80 for [0.1, 0.9] interval
 ```
+
+## Beyond Intervals
+
+For bootstrapping-capable ML forecasters (Recursive, Direct, RecursiveMultiSeries,
+DirectMultiVariate), two richer probabilistic outputs build on the same residual
+resampling:
+
+```python
+# Arbitrary quantiles — returns one column per quantile (q_0.05, q_0.5, q_0.95)
+predictions = forecaster.predict_quantiles(
+    steps=10,
+    quantiles=[0.05, 0.5, 0.95],
+    n_boot=250,
+)
+
+# Fit a scipy distribution to the bootstrapped predictions
+from scipy.stats import norm
+
+predictions = forecaster.predict_dist(
+    steps=10,
+    distribution=norm,   # any scipy.stats distribution
+    n_boot=250,
+)
+```
+
+See [references/interval-compatibility.md](references/interval-compatibility.md) for the full method/forecaster support matrix.
 
 ## Common Mistakes
 
-1. **Forgetting `store_in_sample_residuals=True`**: Required in `fit()` before using `predict_interval(method='bootstrapping')`.
-2. **Wrong default method for multi-series**: `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate` default to `method='conformal'`, not `'bootstrapping'`.
-3. **Mixing `alpha` and `interval`**: `ForecasterStats` supports both `alpha` (e.g., `alpha=0.05` for 95% interval) and `interval=[lo, hi]`. ML forecasters only support `interval`.
-4. **Not evaluating coverage**: Always check if actual coverage matches nominal interval width.
+1. **Passing percentiles instead of quantiles**: Since 0.23.0, `interval` is on the 0-1 scale. Use `interval=[0.1, 0.9]`, not `[10, 90]` (percentiles are deprecated and emit a `FutureWarning`, removed in 0.25.0). Mixing scales, e.g. `[0.1, 90]`, raises a `ValueError`.
+2. **Forgetting `store_in_sample_residuals=True`**: Required in `fit()` before using `predict_interval(method='bootstrapping')`.
+3. **Wrong default method for multi-series**: `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate` default to `method='conformal'`, not `'bootstrapping'`.
+4. **Mixing `alpha` and `interval`**: `ForecasterStats` supports both `alpha` (e.g., `alpha=0.05` for 95% interval) and `interval=[lo, hi]` (quantiles). ML forecasters only support `interval`.
+5. **Not evaluating coverage**: Always check if actual coverage matches nominal interval width.
+
+## References
+
+See [references/interval-compatibility.md](references/interval-compatibility.md) for the complete compatibility matrix: which forecaster supports which method, parameter differences, binned residuals support, and common error patterns.
 
 ---
 ### Reference: interval-compatibility
 
 # Prediction Intervals — Compatibility Reference
+
+## Interval Scale: Quantiles (Changed in 0.23.0)
+
+Since skforecast 0.23.0, `interval` is expressed as **quantiles in `[0, 1]`**,
+not percentiles in `[0, 100]`.
+
+| Input | Behavior |
+|-------|----------|
+| All values in `[0, 1]`, e.g. `[0.05, 0.95]` | Treated as quantiles (recommended). |
+| Single `float`, e.g. `0.9` | Nominal coverage; expands to symmetric quantiles `[0.05, 0.95]`. |
+| All values in `(1, 100]`, e.g. `[5, 95]` | Legacy percentiles. Converted to quantiles with a `FutureWarning`. Removed in 0.25.0. |
+| Mixed scale, e.g. `[0.05, 95]` | `ValueError` — ambiguous scale. |
+
+`predict_quantiles(quantiles=...)` already used the 0-1 scale and is unaffected.
 
 ## Method Compatibility by Forecaster
 
@@ -2559,7 +2730,7 @@ print(f"Coverage: {coverage:.2%}")  # Should be close to 0.80 for [10, 90] inter
 forecaster.predict_interval(
     steps,
     method='bootstrapping',          # or 'conformal'
-    interval=[5, 95],                # percentiles → 90% interval
+    interval=[0.05, 0.95],           # quantiles → 90% interval (or a float, e.g. 0.9)
     n_boot=250,                      # only used with method='bootstrapping'
     use_in_sample_residuals=True,
     use_binned_residuals=True,
@@ -2573,7 +2744,7 @@ forecaster.predict_interval(
 forecaster.predict_interval(
     steps,
     alpha=0.05,                      # significance level → 95% interval
-    interval=None,                   # list[float] | None — alternative to alpha
+    interval=None,                   # list[float] | None — quantiles, alternative to alpha
 )
 # NOTE: No `method`, `n_boot`, `use_in_sample_residuals`, `use_binned_residuals`,
 #       or `random_state` parameters.
@@ -2586,7 +2757,7 @@ forecaster.predict_interval(
 forecaster.predict_interval(
     steps,
     method='conformal',              # only valid value
-    interval=[5, 95],
+    interval=[0.05, 0.95],
     use_in_sample_residuals=True,
     use_binned_residuals=True,
     random_state=None,               # Any, accepted but ignored
@@ -2603,7 +2774,7 @@ forecaster.predict_interval(
     steps=None,
     levels=None,
     method='conformal',              # only valid value
-    interval=[5, 95],
+    interval=[0.05, 0.95],
     use_in_sample_residuals=True,
     use_binned_residuals=True,       # bool, selects residuals by predicted value level
     n_boot=None,                     # Any, accepted but ignored
@@ -2675,7 +2846,7 @@ because residual variance often depends on the prediction magnitude.
 
 | Method | Available in | Description |
 |--------|-------------|-------------|
-| `predict_interval()` | All except Classifier | Lower/upper bounds at given percentiles |
+| `predict_interval()` | All except Classifier | Lower/upper bounds at given quantiles |
 | `predict_quantiles()` | Recursive, Direct, RecursiveMultiSeries, DirectMultiVariate | Arbitrary quantile predictions |
 | `predict_dist()` | Recursive, Direct, RecursiveMultiSeries, DirectMultiVariate | Fit a scipy distribution to bootstrapped predictions |
 | `predict_proba()` | RecursiveClassifier only | Class probabilities |
@@ -2715,6 +2886,8 @@ forecaster.predict_dist(
 | Error | Cause | Fix |
 |-------|-------|-----|
 | "No in-sample residuals stored" | `store_in_sample_residuals=False` in `fit()` | Set `store_in_sample_residuals=True` |
+| `FutureWarning` about percentiles | `interval` passed as percentiles, e.g. `[5, 95]` | Use quantiles, e.g. `interval=[0.05, 0.95]` (removed in 0.25.0) |
+| `ValueError` about ambiguous scale | `interval` mixes quantile and percentile values, e.g. `[0.05, 95]` | Use a single scale, e.g. `interval=[0.05, 0.95]` |
 | `method='bootstrapping'` on ForecasterRnn | Bootstrapping not supported | Use `method='conformal'` |
 | `method='bootstrapping'` on ForecasterEquivalentDate | Bootstrapping not supported | Use `method='conformal'` |
 | Using `alpha` on ML forecasters | Only `ForecasterStats` accepts `alpha` | Use `interval=[lo, hi]` instead |
@@ -2909,6 +3082,17 @@ holiday distance features, rolling statistics, differencing, or data scaling.
 - **Before**: `autocorrelation-and-lag-selection` (use ACF/PACF to choose a candidate set of lags before adding rolling and calendar features)
 - **After**: `feature-selection` (prune redundant features with `select_features` after engineering)
 - **After**: `hyperparameter-optimization` (jointly tune the engineered configuration and the estimator hyperparameters)
+
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| Do not mix the delegated (`calendar_features=`) and manual (`CalendarFeatures` as exog) paths for the same features | `ValueError` on duplicate feature names | Choose one path per feature set |
+| Manual calendar / holiday exog must cover the full forecast horizon | `predict()` exog error or truncated forecast | Generate exog for all future dates before predicting |
+| Cyclical calendar features need sin/cos (or spline) encoding | Hour 23 treated as far from hour 0, degrading the model | Use `encoding='cyclical'` (or spline) for periodic features |
+| `window_features` are computed on the differenced series when `differentiation` is set | `roll_mean_7` is a mean of changes, not of raw values | Account for differencing when interpreting or scaling window features |
 
 ## Overview
 
@@ -4148,6 +4332,17 @@ Use `ForecasterRnn` when:
 - **After**: `hyperparameter-optimization` (tune RNN architecture and training hyperparameters)
 - **After**: `prediction-intervals` (only conformal intervals are supported for `ForecasterRnn`)
 
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| `lags` in `ForecasterRnn` must match `create_and_compile_model(..., lags=...)` | Input shape mismatch error during fit | Use the same `lags` value in both calls |
+| `ForecasterRnn` supports only `method='conformal'` for intervals | Error when calling `predict_interval(method='bootstrapping')` | Use `method='conformal'` |
+| Pass `exog` to `create_and_compile_model` if exog is used in `fit()` / `predict()` | Architecture mismatch or failure when predicting with exog | Build the model with the same `exog` you train on |
+| Scale inputs with `transformer_series=MinMaxScaler()` | Poor convergence; RNNs are scale-sensitive | Always set a scaler on `transformer_series` |
+
 ## Quick Start
 
 ```python
@@ -4314,7 +4509,7 @@ forecaster.fit(series=series, store_in_sample_residuals=True)
 predictions = forecaster.predict_interval(
     steps=24,
     method='conformal',           # Only 'conformal' supported
-    interval=[10, 90],
+    interval=[0.1, 0.9],
     use_in_sample_residuals=True,
     use_binned_residuals=True,    # Better calibration with binned residuals
 )
@@ -4584,7 +4779,7 @@ forecaster.fit(series=series, store_in_sample_residuals=True)
 predictions = forecaster.predict_interval(
     steps=24,
     method='conformal',           # only valid method
-    interval=[10, 90],
+    interval=[0.1, 0.9],
     use_in_sample_residuals=True,
     use_binned_residuals=True,    # Better calibration with binned residuals
 )
@@ -4611,6 +4806,17 @@ Use `ForecasterFoundation` when:
 - You want to compare against pre-trained generalist models.
 
 Foundation models are **pre-trained on massive corpora** — `fit()` does not train them; it only stores the recent context and metadata.
+
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| `fit()` stores context only; it never trains the model | Expecting training to happen or weights to update | Treat the model as pre-trained; evaluate with `backtesting_foundation` |
+| Only Chronos-2, TabICL, TabPFN-TS, and T0 use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `exog` silently dropped, no error raised | Pick an exog-capable adapter when covariates matter |
+| TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]` | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
+| Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
 
 ## Installation
 
@@ -4696,7 +4902,7 @@ Foundation models output native quantile forecasts — no bootstrapping or confo
 # Interval (lower/upper bounds from the model's quantiles)
 predictions = forecaster.predict_interval(
     steps=24,
-    interval=[10, 90],   # 80% prediction interval
+    interval=[0.1, 0.9],   # 80% prediction interval (quantiles, 0-1 scale)
 )
 # Columns: ['level', 'pred', 'lower_bound', 'upper_bound']
 
@@ -5056,6 +5262,8 @@ Once you have chosen a forecaster, follow these steps to get started:
 ================================================================================
 
 # Troubleshooting Common Errors
+
+This skill is the full pitfall catalog. The highest-risk skills also carry a focused `## Stop Conditions` table at the top (forecasting-single-series, forecasting-multiple-series, prediction-intervals, statistical-models, foundation-forecasting, feature-engineering, deep-learning-forecasting, hyperparameter-optimization); this skill remains the canonical source they point back to.
 
 ## Deprecated Import Paths
 
@@ -5652,7 +5860,7 @@ forecaster.predict(
     check_inputs=True         # bool
 ) -> pd.DataFrame             # Long-format: columns ['level', 'pred']
 # Also:
-#   predict_interval(steps, ..., interval=[10, 90]) -> ['level','pred','lower_bound','upper_bound']
+#   predict_interval(steps, ..., interval=[0.1, 0.9]) -> ['level','pred','lower_bound','upper_bound']
 #   predict_quantiles(steps, ..., quantiles=[0.1, 0.5, 0.9]) -> ['level','q_0.1','q_0.5','q_0.9']
 ```
 
@@ -5665,7 +5873,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.Series | pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     method='bootstrapping',             # 'bootstrapping' | 'conformal'
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     n_boot=250,                         # int, number of bootstrap samples
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
@@ -5680,7 +5888,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | dict | None
     method='conformal',                 # 'bootstrapping' | 'conformal'
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     n_boot=250,                         # int
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
@@ -5694,7 +5902,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.Series | pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     method='bootstrapping',             # 'bootstrapping' | 'conformal'
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     n_boot=250,                         # int
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
@@ -5708,7 +5916,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     method='conformal',                 # 'bootstrapping' | 'conformal'
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     n_boot=250,                         # int
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
@@ -5723,7 +5931,7 @@ forecaster.predict_interval(
     last_window_exog=None,              # pd.Series | pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     alpha=0.05,                         # float, significance level
-    interval=None,                      # list[float] | tuple[float] | None
+    interval=None,                      # list[float] | tuple[float] | None, quantiles 0-1
     suppress_warnings=False             # bool
 ) -> pd.DataFrame
 
@@ -5732,7 +5940,7 @@ forecaster.predict_interval(
     steps,                              # int (required)
     last_window=None,                   # pd.Series | None
     method='conformal',                 # only 'conformal' supported
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
     random_state=None,                  # Any, ignored (API compatibility)
@@ -5748,7 +5956,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     method='conformal',                 # only 'conformal' supported
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
     suppress_warnings=False,            # bool
