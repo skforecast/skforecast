@@ -53,7 +53,6 @@ optional_dependencies = {
     ],
     'plotting': [
         'matplotlib>=3.7, <3.11', 
-        'seaborn>=0.12, <0.14', 
         'statsmodels>=0.13, <0.15'
     ],
         'deeplearning': [
@@ -1021,7 +1020,7 @@ def check_exog_dtypes(
                 )
 
 
-# TODO: Remove in skforecast 0.24.0 when percentile support is removed.
+# TODO: Remove in skforecast 0.25.0 when percentile support is removed.
 def _normalize_interval_scale(
     interval: list[float] | tuple[float]
 ) -> list[float]:
@@ -1068,7 +1067,7 @@ def _normalize_interval_scale(
             "Passing `interval` as percentiles (0-100) is deprecated. Use "
             "quantiles (0-1) instead. For example, use `interval=[0.05, 0.95]` "
             "instead of `interval=[5, 95]`. Percentile support will be removed "
-            "in skforecast 0.24.0.",
+            "in skforecast 0.25.0.",
             FutureWarning
         )
         return [v / 100 for v in values]
