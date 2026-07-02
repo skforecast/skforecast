@@ -801,7 +801,7 @@ def backtesting_forecaster(
             f"`model_selection` module."
         )
     
-    # TODO: Remove in skforecast 0.24.0 when percentile support is removed.
+    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
     if isinstance(interval, (list, tuple)):
         interval = _normalize_interval_scale(interval)
     
@@ -1605,7 +1605,7 @@ def backtesting_forecaster_multiseries(
                           exog_dict         = exog_dict
                       )
     
-    # TODO: Remove in skforecast 0.24.0 when percentile support is removed.
+    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
     if isinstance(interval, (list, tuple)):
         interval = _normalize_interval_scale(interval)
 
@@ -2216,7 +2216,7 @@ def backtesting_stats(
             "`model_selection` module."
         )
     
-    # TODO: Remove in skforecast 0.24.0 when percentile support is removed.
+    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
     if isinstance(interval, (list, tuple)):
         interval = _normalize_interval_scale(interval)
     

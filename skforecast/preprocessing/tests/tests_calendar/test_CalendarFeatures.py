@@ -369,6 +369,7 @@ def test_CalendarFeatures_get_params_returns_constructor_values():
         "max_values": None,
         "spline_kwargs": None,
         "keep_original_columns": True,
+        'tol': 1e-12
     }
 
     assert params == expected_params
@@ -382,7 +383,8 @@ def test_CalendarFeatures_get_params_returns_custom_values():
         features=["year", "month"],
         encoding="onehot",
         max_values={"month": 6},
-        keep_original_columns=False
+        keep_original_columns=False,
+        tol=1e-10
     )
     params = transformer.get_params()
 
@@ -393,6 +395,7 @@ def test_CalendarFeatures_get_params_returns_custom_values():
         "max_values": {"month": 6},
         "spline_kwargs": None,
         "keep_original_columns": False,
+        'tol': 1e-10
     }
 
 
