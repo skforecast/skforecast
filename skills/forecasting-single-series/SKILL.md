@@ -24,6 +24,17 @@ Use this workflow when you have **one time series** and want to predict its futu
 - **After**: `hyperparameter-optimization` (tune the forecaster once a baseline is trained)
 - **After**: `prediction-intervals` (add bootstrap or conformal intervals on top of the point forecasts)
 
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| Set the index frequency before fitting | `ValueError: ... must be a DatetimeIndex with frequency` | Call `data = data.asfreq('h')` (or the correct alias) on `y` and `exog` |
+| `exog` passed to `predict()` must cover every future step | `exog` length / index error, or the forecast stops short | Slice exog to the full horizon: one row per step, dates matching the forecast |
+| Fit with `store_in_sample_residuals=True` before `predict_interval(method='bootstrapping')` | `No in-sample residuals stored` / empty residuals | Refit: `forecaster.fit(y=y_train, store_in_sample_residuals=True)` |
+| Split chronologically, never shuffle | Over-optimistic metrics, leakage | Use a time-ordered split (`TimeSeriesFold`); do not random-split |
+
 ## Complete Workflow
 
 ```python
@@ -81,11 +92,11 @@ metric, predictions_bt = backtesting_forecaster(
 print(f"MAE: {metric}")
 
 # 7. Prediction intervals
-# Default interval is [5, 95] (90%). Here [10, 90] creates an 80% interval.
+# Default interval is [0.05, 0.95] (90%). Here [0.1, 0.9] creates an 80% interval.
 forecaster.fit(y=y_train, store_in_sample_residuals=True)
 predictions_interval = forecaster.predict_interval(
     steps=10,
-    interval=[10, 90],          # 80% prediction interval
+    interval=[0.1, 0.9],        # 80% prediction interval (quantiles, 0-1 scale)
     method='bootstrapping',
     n_boot=500,
 )

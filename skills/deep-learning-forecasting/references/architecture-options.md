@@ -230,7 +230,7 @@ forecaster.fit(series=series, store_in_sample_residuals=True)
 predictions = forecaster.predict_interval(
     steps=24,
     method='conformal',           # only valid method
-    interval=[10, 90],
+    interval=[0.1, 0.9],
     use_in_sample_residuals=True,
     use_binned_residuals=True,    # Better calibration with binned residuals
 )
