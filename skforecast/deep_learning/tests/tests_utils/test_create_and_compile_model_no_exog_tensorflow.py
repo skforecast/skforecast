@@ -251,7 +251,7 @@ def test__create_and_compile_model_no_exog_model_with_custom_compile_kwargs():
     )
     
     assert model.loss.name == "mean_squared_error"
-    assert model.optimizer.name == "adam"
+    assert isinstance(model.optimizer, Adam)
 
 
 @pytest.mark.parametrize("dense_units", 

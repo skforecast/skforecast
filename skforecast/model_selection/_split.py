@@ -659,11 +659,24 @@ class OneStepAheadFold(BaseFold):
 
 class TimeSeriesFold(BaseFold):
     """
-    Class to split time series data into train and test folds. 
-    When used within a backtesting or hyperparameter search, the arguments
-    'initial_train_size', 'window_size' and 'differentiation' are not required
-    as they are automatically set by the backtesting or hyperparameter search
-    functions.
+    Generate the train and test folds used for time series cross-validation with
+    a rolling or expanding window scheme. Starting from `initial_train_size`, the
+    origin advances `fold_stride` observations in each fold and `steps` observations
+    are forecasted ahead, optionally leaving a `gap` between the training data and
+    the forecast horizon.
+
+    This is the cross-validation strategy expected by the backtesting functions
+    (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, ...) and by the
+    hyperparameter search functions (`grid_search_forecaster`,
+    `random_search_forecaster`, `bayesian_search_forecaster`, ...), where it is
+    passed through the `cv` argument. The `split` method can also be called directly
+    to inspect the resulting folds.
+
+    The user always provides `initial_train_size` (it can only be `None` when reusing
+    an already fitted forecaster). The arguments `window_size` and `differentiation`
+    are taken from the forecaster automatically when the object is used inside a
+    backtesting or hyperparameter search, so they do not need to be set manually in
+    that context.
 
     Parameters
     ----------

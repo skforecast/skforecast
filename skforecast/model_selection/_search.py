@@ -631,7 +631,7 @@ def bayesian_search_forecaster(
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' for regression tasks or
         'maximize' for classification tasks, and a 
-        `TPESampler(multivariate=True, group=True, consider_endpoints=True, seed=random_state)` 
+        `TPESampler(multivariate=True, group=True, seed=random_state)` 
         sampler is used during optimization.
     kwargs_study_optimize : dict, default None
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
@@ -845,7 +845,7 @@ def bayesian_search_forecaster(
                 message='.*multivariate.*|.*group.*'
             )
             kwargs_create_study['sampler'] = TPESampler(
-                multivariate=True, group=True, consider_endpoints=True, seed=random_state
+                multivariate=True, group=True, seed=random_state
             )
 
     kwargs_study_optimize = kwargs_study_optimize.copy() if kwargs_study_optimize is not None else {}
@@ -1662,7 +1662,7 @@ def bayesian_search_forecaster_multiseries(
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' for regression tasks or
         'maximize' for classification tasks, and a 
-        `TPESampler(multivariate=True, group=True, consider_endpoints=True, seed=random_state)` 
+        `TPESampler(multivariate=True, group=True, seed=random_state)` 
         sampler is used during optimization.
     kwargs_study_optimize : dict, default None
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
@@ -1947,7 +1947,7 @@ def bayesian_search_forecaster_multiseries(
                 message='.*multivariate.*|.*group.*'
             )
             kwargs_create_study['sampler'] = TPESampler(
-                multivariate=True, group=True, consider_endpoints=True, seed=random_state
+                multivariate=True, group=True, seed=random_state
             )
     
     kwargs_study_optimize = kwargs_study_optimize.copy() if kwargs_study_optimize is not None else {}

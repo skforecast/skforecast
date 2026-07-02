@@ -29,7 +29,7 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
         forecaster.predict_interval(steps=1, method=method)
 
 
-# TODO: Remove in skforecast 0.24.0 when percentile support is removed.
+# TODO: Remove in skforecast 0.25.0 when percentile support is removed.
 @pytest.mark.parametrize("method", 
                          ['bootstrapping', 'conformal'], 
                          ids = lambda value: f'method: {value}')

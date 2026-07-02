@@ -57,7 +57,7 @@ def _normalize_level(
             "Passing `level` as percentiles (0-100) is deprecated. Use coverage "
             "proportions (0-1) instead. For example, use `level=[0.8, 0.95]` "
             "instead of `level=[80, 95]`. Percentile support will be removed in "
-            "skforecast 0.24.0.",
+            "skforecast 0.25.0.",
             FutureWarning
         )
         return [v / 100 for v in values]
