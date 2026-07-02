@@ -12,6 +12,7 @@ from pathlib import Path
 import warnings
 import numpy as np
 import pandas as pd
+from scipy.stats import gaussian_kde
 from ..utils import check_optional_dependency, input_to_frame
 from ..exceptions import IgnoredArgumentWarning
 
@@ -19,7 +20,6 @@ try:
     import matplotlib
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation, PillowWriter
-    import seaborn as sns
     from statsmodels.graphics.tsaplots import plot_acf
 except Exception as e:
     package_name = str(e).split(" ")[-1].replace("'", "")
@@ -73,7 +73,22 @@ def plot_residuals(
     ax3 = plt.subplot(gs[1, 1])
     
     ax1.plot(residuals)
-    sns.histplot(residuals, kde=True, bins=30, ax=ax2)
+    residuals_kde = np.asarray(residuals, dtype=float)
+    residuals_kde = residuals_kde[~np.isnan(residuals_kde)]
+    hist_color = "C0"
+    _, bin_edges, _ = ax2.hist(
+        residuals_kde,
+        bins=30,
+        facecolor=matplotlib.colors.to_rgba(hist_color, 0.5),
+        edgecolor=matplotlib.rcParams["patch.edgecolor"],
+        linewidth=0.5,
+    )
+    if residuals_kde.size > 1 and np.ptp(residuals_kde) > 0:
+        kde = gaussian_kde(residuals_kde)
+        x_kde = np.linspace(bin_edges[0], bin_edges[-1], 200)
+        bin_width = bin_edges[1] - bin_edges[0]
+        ax2.plot(x_kde, kde(x_kde) * residuals_kde.size * bin_width, color=hist_color)
+    ax2.set_ylabel("Count")
     plot_acf(residuals, ax=ax3, lags=60)
     
     ax1.set_title("Residuals")
@@ -112,14 +127,33 @@ def plot_multivariate_time_series_corr(
         fig, ax = plt.subplots(1, 1, **fig_kw)
     else:
         fig = ax.get_figure()
-    
-    sns.heatmap(
-        corr,
-        annot=True,
-        linewidths=.5,
-        ax=ax,
-        cmap=sns.color_palette("viridis", as_cmap=True)
-    )
+
+    values = corr.to_numpy()
+    im = ax.imshow(values, cmap='viridis', aspect='auto')
+    fig.colorbar(im, ax=ax)
+
+    ax.set_xticks(np.arange(corr.shape[1]))
+    ax.set_yticks(np.arange(corr.shape[0]))
+    ax.set_xticklabels(corr.columns)
+    ax.set_yticklabels(corr.index)
+
+    # Minor ticks to draw separating grid lines between cells
+    ax.set_xticks(np.arange(corr.shape[1] + 1) - 0.5, minor=True)
+    ax.set_yticks(np.arange(corr.shape[0] + 1) - 0.5, minor=True)
+    ax.grid(which='minor', color='w', linewidth=0.5)
+    ax.tick_params(which='minor', bottom=False, left=False)
+
+    # Annotate each cell, choosing text color for contrast with the background
+    for i in range(values.shape[0]):
+        for j in range(values.shape[1]):
+            value = values[i, j]
+            r, g, b, _ = im.cmap(im.norm(value))
+            luminance = 0.299 * r + 0.587 * g + 0.114 * b
+            ax.text(
+                j, i, f"{value:.2g}",
+                ha='center', va='center',
+                color='white' if luminance < 0.5 else 'black'
+            )
 
     ax.set_xlabel('Time series')
     
@@ -154,7 +188,7 @@ def plot_prediction_distribution(
     """
 
     index = bootstrapping_predictions.index.astype(str).to_list()[::-1]
-    palette = sns.cubehelix_palette(len(index), rot=-.25, light=.7, reverse=False)
+    palette = plt.get_cmap('cubehelix')(np.linspace(0.15, 0.7, len(index)))
     fig, axs = plt.subplots(len(index), 1, sharex=True, **fig_kw)
     if not isinstance(axs, np.ndarray):
         axs = np.array([axs])

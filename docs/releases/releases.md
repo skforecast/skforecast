@@ -68,6 +68,8 @@ The main changes in this release are:
 
 + Removed the unused experimental `FastOrdinalEncoder`.
 
++ Removed `seaborn` as an optional dependency. The plotting functions in the <code>[plot]</code> module now rely only on `matplotlib`.
+
 
 **Fixed**
 

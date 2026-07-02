@@ -53,7 +53,6 @@ optional_dependencies = {
     ],
     'plotting': [
         'matplotlib>=3.7, <3.11', 
-        'seaborn>=0.12, <0.14',
         'statsmodels>=0.13, <0.15'
     ],
         'deeplearning': [

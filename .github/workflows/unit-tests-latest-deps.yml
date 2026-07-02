@@ -34,7 +34,7 @@ jobs:
         python -m pip install -e ".[test]"
         python -m pip install --upgrade \
           numpy pandas scikit-learn scipy optuna joblib numba tqdm rich \
-          statsmodels matplotlib seaborn lightgbm xgboost
+          statsmodels matplotlib lightgbm xgboost
 
     - name: Show environment info
       run: |
