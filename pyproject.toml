@@ -75,14 +75,14 @@ plotting = [
 ]
 
 deeplearning = [
-    "keras>=3.0, <4.0",
+    "keras>=3.12.3, <4.0",
     "matplotlib>=3.7, <3.11",
 ]
 
 all = [
     "matplotlib>=3.7, <3.11",
     "statsmodels>=0.13, <0.15",
-    "keras>=3.0, <4.0",
+    "keras>=3.12.3, <4.0",
     'tensorflow>=2.18, <2.22; python_version < "3.14"',
     "torch>=2.4, <2.12"
 ]
@@ -113,7 +113,7 @@ test = [
     "lightgbm>=4.0, <5.0",
     "xgboost>=2.1, <4.0",
     "catboost>=1.2, <2.0",
-    "keras>=3.0, <4.0",
+    "keras>=3.12.3, <4.0",
     "torch>=2.4, <2.12",
     "cloudpickle>=3.0",
     "skops>=0.14",
