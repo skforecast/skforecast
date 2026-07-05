@@ -29,7 +29,8 @@ from ..utils import (
     check_preprocess_exog_multiseries,
     align_series_and_exog_multiseries,
     manage_warnings,
-    deepcopy_forecaster
+    deepcopy_forecaster,
+    _normalize_interval_scale
 )
 from ..foundation._utils import check_preprocess_series_foundation
 
@@ -224,14 +225,10 @@ def _fit_predict_forecaster(
                     pred = forecaster.predict_bootstrapping(**kwargs_interval)
                 elif isinstance(interval, (float, list, tuple)):
                     if isinstance(interval, float):
-                        quantiles = [0.5 - interval / 2, 0.5 + interval / 2]
-                    else:
-                        quantiles = [q / 100 for q in interval]
-                    pred = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
-                    if len(quantiles) == 2:
+                        interval = [0.5 - interval / 2, 0.5 + interval / 2]
+                    pred = forecaster.predict_quantiles(quantiles=interval, **kwargs_interval)
+                    if len(interval) == 2:
                         pred.columns = ['lower_bound', 'upper_bound']
-                    else:
-                        pred.columns = [f'p_{p}' for p in interval]
                 else:
                     pred = forecaster.predict_dist(distribution=interval, **kwargs_interval)
                 
@@ -341,11 +338,11 @@ def _backtesting_forecaster(
         method to use. The following options are supported:
 
         - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
-        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
-        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
-        be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
-        50 and 90) as `interval = [10, 50, 90]`.
+        For instance, `interval=0.95` corresponds to `[0.025, 0.975]` quantiles.
+        - If `list` or `tuple`: Sequence of quantiles to compute, each value must 
+        be between 0 and 1 inclusive. For example, a 95% confidence interval can 
+        be specified as `interval = [0.025, 0.975]` or multiple quantiles (e.g. 0.1, 
+        0.5 and 0.9) as `interval = [0.1, 0.5, 0.9]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
@@ -402,8 +399,8 @@ def _backtesting_forecaster(
         
         - For `float`: Columns `lower_bound` and `upper_bound`.
         - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
-        - For `list` or `tuple` with multiple percentiles: One column per percentile 
-        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `list` or `tuple` with multiple quantiles: One column per quantile 
+        (e.g., `q_0.1`, `q_0.5`, `q_0.9`).
         - For `'bootstrapping'`: One column per bootstrapping iteration 
         (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
         - For `scipy.stats` distribution objects: One column for each estimated 
@@ -499,7 +496,7 @@ def _backtesting_forecaster(
         forecaster._probabilistic_mode = 'no_binned'
 
     folds = cv.split(X=y, as_pandas=False)
-    initial_train_size = cv.initial_train_size
+    initial_train_size = cv.initial_train_size_as_int
     window_size = cv.window_size
     gap = cv.gap
 
@@ -689,15 +686,19 @@ def backtesting_forecaster(
         method to use. The following options are supported:
 
         - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
-        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
-        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
-        be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
-        50 and 90) as `interval = [10, 50, 90]`.
+        For instance, `interval=0.95` corresponds to `[0.025, 0.975]` quantiles.
+        - If `list` or `tuple`: Sequence of quantiles to compute, each value must 
+        be between 0 and 1 inclusive. For example, a 95% confidence interval can 
+        be specified as `interval = [0.025, 0.975]` or multiple quantiles (e.g. 0.1, 
+        0.5 and 0.9) as `interval = [0.1, 0.5, 0.9]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
+
+        **Changed in version 0.23.0:** `interval` is now expressed as
+        quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+        is deprecated and emits a `FutureWarning`.
     interval_method : str, default 'bootstrapping'
         Technique used to estimate prediction intervals. Available options:
 
@@ -750,8 +751,8 @@ def backtesting_forecaster(
         
         - For `float`: Columns `lower_bound` and `upper_bound`.
         - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
-        - For `list` or `tuple` with multiple percentiles: One column per percentile 
-        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `list` or `tuple` with multiple quantiles: One column per quantile 
+        (e.g., `q_0.1`, `q_0.5`, `q_0.9`).
         - For `'bootstrapping'`: One column per bootstrapping iteration 
         (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
         - For `scipy.stats` distribution objects: One column for each estimated 
@@ -799,6 +800,10 @@ def backtesting_forecaster(
             f"types of forecasters use the other functions available in the "
             f"`model_selection` module."
         )
+    
+    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
+    if isinstance(interval, (list, tuple)):
+        interval = _normalize_interval_scale(interval)
     
     check_backtesting_input(
         forecaster              = forecaster,
@@ -962,14 +967,10 @@ def _fit_predict_forecaster_multiseries(
                 pred = forecaster.predict_bootstrapping(**kwargs_interval)
             elif isinstance(interval, (float, list, tuple)):
                 if isinstance(interval, float):
-                    quantiles = [0.5 - interval / 2, 0.5 + interval / 2]
-                else:
-                    quantiles = [q / 100 for q in interval]
-                pred = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
-                if len(quantiles) == 2:
+                    interval = [0.5 - interval / 2, 0.5 + interval / 2]
+                pred = forecaster.predict_quantiles(quantiles=interval, **kwargs_interval)
+                if len(interval) == 2:
                     pred.columns = ['level', 'lower_bound', 'upper_bound']
-                else:
-                    pred.columns = ['level'] + [f'p_{p}' for p in interval]
             else:
                 pred = forecaster.predict_dist(distribution=interval, **kwargs_interval)
              
@@ -1089,11 +1090,11 @@ def _backtesting_forecaster_multiseries(
         method to use. The following options are supported:
 
         - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
-        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
-        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
-        be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
-        50 and 90) as `interval = [10, 50, 90]`.
+        For instance, `interval=0.95` corresponds to `[0.025, 0.975]` quantiles.
+        - If `list` or `tuple`: Sequence of quantiles to compute, each value must 
+        be between 0 and 1 inclusive. For example, a 95% confidence interval can 
+        be specified as `interval = [0.025, 0.975]` or multiple quantiles (e.g. 0.1, 
+        0.5 and 0.9) as `interval = [0.1, 0.5, 0.9]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
@@ -1152,8 +1153,8 @@ def _backtesting_forecaster_multiseries(
         
         - For `float`: Columns `lower_bound` and `upper_bound`.
         - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
-        - For `list` or `tuple` with multiple percentiles: One column per percentile 
-        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `list` or `tuple` with multiple quantiles: One column per quantile 
+        (e.g., `q_0.1`, `q_0.5`, `q_0.9`).
         - For `'bootstrapping'`: One column per bootstrapping iteration 
         (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
         - For `scipy.stats` distribution objects: One column for each estimated 
@@ -1255,7 +1256,7 @@ def _backtesting_forecaster_multiseries(
 
     folds = cv.split(X=series, as_pandas=False)
     span_index = cv._extract_index(X=series)
-    initial_train_size = cv.initial_train_size
+    initial_train_size = cv.initial_train_size_as_int
     gap = cv.gap
 
     # Save out-of-sample residuals before any fit() call. Since fit() resets
@@ -1474,15 +1475,19 @@ def backtesting_forecaster_multiseries(
         method to use. The following options are supported:
 
         - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
-        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
-        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
-        be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
-        50 and 90) as `interval = [10, 50, 90]`.
+        For instance, `interval=0.95` corresponds to `[0.025, 0.975]` quantiles.
+        - If `list` or `tuple`: Sequence of quantiles to compute, each value must 
+        be between 0 and 1 inclusive. For example, a 95% confidence interval can 
+        be specified as `interval = [0.025, 0.975]` or multiple quantiles (e.g. 0.1, 
+        0.5 and 0.9) as `interval = [0.1, 0.5, 0.9]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
+
+        **Changed in version 0.23.0:** `interval` is now expressed as
+        quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+        is deprecated and emits a `FutureWarning`.
     interval_method : str, default 'conformal'
         Technique used to estimate prediction intervals. Available options:
 
@@ -1537,8 +1542,8 @@ def backtesting_forecaster_multiseries(
         
         - For `float`: Columns `lower_bound` and `upper_bound`.
         - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
-        - For `list` or `tuple` with multiple percentiles: One column per percentile 
-        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `list` or `tuple` with multiple quantiles: One column per quantile 
+        (e.g., `q_0.1`, `q_0.5`, `q_0.9`).
         - For `'bootstrapping'`: One column per bootstrapping iteration 
         (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
         - For `scipy.stats` distribution objects: One column for each estimated 
@@ -1599,6 +1604,10 @@ def backtesting_forecaster_multiseries(
                           exog              = exog,
                           exog_dict         = exog_dict
                       )
+    
+    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
+    if isinstance(interval, (list, tuple)):
+        interval = _normalize_interval_scale(interval)
 
     check_backtesting_input(
         forecaster              = forecaster,
@@ -1819,9 +1828,9 @@ def _backtesting_stats(
         If both, `alpha` and `interval` are provided, `alpha` will be used.
     interval : list, tuple, default None
         Confidence of the prediction interval estimated. The values must be
-        symmetric. Sequence of percentiles to compute, which must be between 
-        0 and 100 inclusive. For example, interval of 95% should be as 
-        `interval = [2.5, 97.5]`. If both, `alpha` and `interval` are 
+        symmetric. Sequence of quantiles to compute, which must be between 
+        0 and 1 inclusive. For example, interval of 95% should be as 
+        `interval = [0.025, 0.975]`. If both, `alpha` and `interval` are 
         provided, `alpha` will be used.
     freeze_params : bool, default True
         Determines whether to freeze the model parameters after the first fit
@@ -1953,7 +1962,7 @@ def _backtesting_stats(
         ]
     
     folds = cv.split(X=y, as_pandas=False)
-    initial_train_size = cv.initial_train_size
+    initial_train_size = cv.initial_train_size_as_int
     steps = cv.steps
     gap = cv.gap
 
@@ -2128,10 +2137,14 @@ def backtesting_stats(
         If both, `alpha` and `interval` are provided, `alpha` will be used.
     interval : list, tuple, default None
         Confidence of the prediction interval estimated. The values must be
-        symmetric. Sequence of percentiles to compute, which must be between 
-        0 and 100 inclusive. For example, interval of 95% should be as 
-        `interval = [2.5, 97.5]`. If both, `alpha` and `interval` are 
+        symmetric. Sequence of quantiles to compute, which must be between 
+        0 and 1 inclusive. For example, interval of 95% should be as 
+        `interval = [0.025, 0.975]`. If both, `alpha` and `interval` are 
         provided, `alpha` will be used.
+
+        **Changed in version 0.23.0:** `interval` is now expressed as
+        quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+        is deprecated and emits a `FutureWarning`.
     freeze_params : bool, default True
         Determines whether to freeze the model parameters after the first fit
         for estimators that perform automatic model selection.
@@ -2202,6 +2215,10 @@ def backtesting_stats(
             "types of forecasters use the other functions available in the "
             "`model_selection` module."
         )
+    
+    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
+    if isinstance(interval, (list, tuple)):
+        interval = _normalize_interval_scale(interval)
     
     check_backtesting_input(
         forecaster        = forecaster,

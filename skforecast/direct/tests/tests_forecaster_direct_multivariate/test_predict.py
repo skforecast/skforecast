@@ -18,8 +18,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
 
-from skforecast.preprocessing import RollingFeatures
-from skforecast.preprocessing import TimeSeriesDifferentiator
+from skforecast.preprocessing import RollingFeatures, TimeSeriesDifferentiator, CalendarFeatures
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.exceptions import MissingValuesWarning
 
@@ -994,3 +993,59 @@ def test_predict_output_when_last_window_argument_has_NaN():
                )
 
     pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_with_exog_window_features_and_calendar():
+    """
+    Test predict output with exogenous, window features and calendar features
+    is the same as when not using calendar_features argument and including
+    calendar features in the exogenous dataframe.
+    """
+    series_dt = pd.DataFrame(
+        {'l1': series['l1'].values,
+         'l2': series['l2'].values},
+        index=pd.date_range(start='2020-01-01', periods=len(series), freq='D')
+    )
+    exog_dt = pd.Series(
+        exog['exog_1'].values, index=series_dt.index, name='exog_1'
+    )
+    exog_predict_dt = pd.Series(
+        exog_predict['exog_1'].values[:10],
+        index=pd.date_range(start='2020-02-20', periods=10, freq='D'),
+        name='exog_1'
+    )
+
+    exog_calendar = exog_dt.to_frame()
+    exog_calendar['day_of_week'] = exog_calendar.index.dayofweek
+    exog_calendar['weekend'] = exog_calendar['day_of_week'].isin([5, 6]).astype(int)
+    exog_predict_calendar = exog_predict_dt.to_frame()
+    exog_predict_calendar['day_of_week'] = exog_predict_calendar.index.dayofweek
+    exog_predict_calendar['weekend'] = (
+        exog_predict_calendar['day_of_week'].isin([5, 6]).astype(int)
+    )
+
+    rolling = RollingFeatures(stats=['mean', 'std'], window_sizes=4)
+    calendar = CalendarFeatures(features=['day_of_week', 'weekend'], encoding=None)
+
+    forecaster = ForecasterDirectMultiVariate(
+        LGBMRegressor(verbose=-1, random_state=123),
+        level='l1',
+        steps=10,
+        lags=3,
+        window_features=rolling,
+        calendar_features=calendar
+    )
+    forecaster.fit(series=series_dt, exog=exog_dt)
+    predictions = forecaster.predict(steps=10, exog=exog_predict_dt)
+
+    forecaster_no_cal = ForecasterDirectMultiVariate(
+        LGBMRegressor(verbose=-1, random_state=123),
+        level='l1',
+        steps=10,
+        lags=3,
+        window_features=rolling
+    )
+    forecaster_no_cal.fit(series=series_dt, exog=exog_calendar)
+    predictions_no_cal = forecaster_no_cal.predict(steps=10, exog=exog_predict_calendar)
+
+    pd.testing.assert_frame_equal(predictions, predictions_no_cal)

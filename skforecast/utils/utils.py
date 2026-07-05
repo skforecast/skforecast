@@ -19,6 +19,7 @@ from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
 import joblib
+import pickle
 import numpy as np
 import pandas as pd
 from scipy.special import comb
@@ -50,14 +51,13 @@ optional_dependencies = {
     'stats': [
         'statsmodels>=0.13, <0.15'
     ],
-    'deeplearning': [
-        'keras>=3.0, <4.0',
-        'matplotlib>=3.7, <3.11',
-    ],
     'plotting': [
         'matplotlib>=3.7, <3.11', 
-        'seaborn>=0.12, <0.14', 
         'statsmodels>=0.13, <0.15'
+    ],
+        'deeplearning': [
+        'keras>=3.0, <4.0',
+        'matplotlib>=3.7, <3.11',
     ]
 }
 
@@ -630,6 +630,119 @@ def configure_estimator_categorical_features(
     return fit_kwargs
 
 
+def cast_catboost_categorical_columns(
+    X: np.ndarray,
+    fit_kwargs: dict[str, object],
+    estimator: object,
+) -> np.ndarray:
+    """
+    Cast categorical columns of `X` to integer dtype as required by CatBoost
+    when `X` is a numpy array.
+
+    NaN values produced by the internal `OrdinalEncoder`
+    (`unknown_value=np.nan`, `encoded_missing_value=np.nan`) are filled with
+    `-1` before casting. `-1` cannot collide with the encoder's output range
+    (`0..n-1`) and is treated by CatBoost as a novel category.
+
+    No-op if `cat_features` is not in `fit_kwargs` or the estimator (or the
+    last step of a Pipeline) is not a CatBoost model.
+
+    Parameters
+    ----------
+    X : numpy ndarray
+        Training or test matrix with categorical columns at the indices
+        listed in `fit_kwargs['cat_features']`.
+    fit_kwargs : dict
+        Keyword arguments to pass to `estimator.fit`. Must contain the key
+        `'cat_features'` (a list of int indices) for the cast to run.
+    estimator : object
+        Estimator the matrix will be passed to. The cast only runs if this
+        is a CatBoost estimator (or a `Pipeline` whose last step is).
+
+    Returns
+    -------
+    X : numpy ndarray
+        Matrix with categorical columns cast to int and NaNs replaced by
+        `-1`. Returned unchanged if the cast does not apply.
+
+    """
+
+    if 'cat_features' not in fit_kwargs:
+        return X
+
+    target_estimator = estimator
+    if isinstance(target_estimator, Pipeline):
+        target_estimator = target_estimator[-1]
+    if type(target_estimator).__module__.split('.')[0] != 'catboost':
+        return X
+
+    cat_idx = np.asarray(fit_kwargs['cat_features'])
+    X = X.astype(object)
+    cat_block = np.asarray(X[:, cat_idx], dtype=float)
+    X[:, cat_idx] = np.nan_to_num(cat_block, nan=-1).astype(int)
+
+    return X
+
+
+def cast_catboost_categorical_columns_dataframe(
+    X: pd.DataFrame,
+    fit_kwargs: dict[str, object],
+    estimator: object,
+    feature_names: list[str],
+) -> pd.DataFrame:
+    """
+    Cast categorical columns of `X` to integer dtype as required by CatBoost
+    when `X` is a pandas DataFrame.
+
+    Two dtypes are supported for categorical columns:
+    * `pandas.Categorical` — converted via `.cat.codes` (NaN -> -1 by default).
+    * float (with NaN from the `OrdinalEncoder`) — `fillna(-1).astype(int)`.
+
+    No-op if `cat_features` is not in `fit_kwargs` or the estimator (or the
+    last step of a Pipeline) is not a CatBoost model.
+
+    Parameters
+    ----------
+    X : pandas DataFrame
+        Training matrix.
+    fit_kwargs : dict
+        Keyword arguments to pass to `estimator.fit`. Must contain the key
+        `'cat_features'` (a list of int indices) for the cast to run.
+    estimator : object
+        Estimator the matrix will be passed to. The cast only runs if this
+        is a CatBoost estimator (or a `Pipeline` whose last step is).
+    feature_names : list of str
+        Column names of `X` in positional order; used to translate the
+        integer indices in `fit_kwargs['cat_features']` to column labels.
+
+    Returns
+    -------
+    X : pandas DataFrame
+        DataFrame with categorical columns cast to int. Returned unchanged
+        if the cast does not apply.
+
+    """
+
+    if 'cat_features' not in fit_kwargs:
+        return X
+
+    target_estimator = estimator
+    if isinstance(target_estimator, Pipeline):
+        target_estimator = target_estimator[-1]
+    if type(target_estimator).__module__.split('.')[0] != 'catboost':
+        return X
+
+    X = X.copy()
+    cat_cols = [feature_names[i] for i in fit_kwargs['cat_features']]
+    for col in cat_cols:
+        if hasattr(X[col].dtype, 'categories'):
+            X[col] = X[col].cat.codes.astype(int)
+        else:
+            X[col] = X[col].fillna(-1).astype(int)
+
+    return X
+
+
 def _get_estimator_categorical_set_params(
     forecaster: object
 ) -> dict[str, object]:
@@ -907,6 +1020,61 @@ def check_exog_dtypes(
                 )
 
 
+# TODO: Remove in skforecast 0.25.0 when percentile support is removed.
+def _normalize_interval_scale(
+    interval: list[float] | tuple[float]
+) -> list[float]:
+    """
+    Normalize a 2-value interval to the 0-1 quantile scale.
+
+    Detection rules, given the two interval bounds:
+
+    - All values in `[0, 1]`: already quantiles, returned unchanged.
+    - All values in `(1, 100]`: legacy percentiles. They are divided by 100
+    and a `FutureWarning` is emitted.
+    - Mixed (some value `<= 1` and some value `> 1`): the scale is ambiguous
+    and a `ValueError` is raised.
+
+    The value exactly `1` is treated as a quantile (valid upper bound), unless
+    it appears together with another value `> 1` (then it is considered mixed
+    and a `ValueError` is raised).
+
+    Parameters
+    ----------
+    interval : list, tuple
+        Sequence of two interval bounds, either as quantiles (0-1) or as legacy
+        percentiles (0-100).
+
+    Returns
+    -------
+    interval : list
+        Interval bounds expressed as quantiles in the 0-1 scale.
+
+    """
+
+    values = list(interval)
+    any_above_one = any(v > 1 for v in values)
+    any_le_one = any(v <= 1 for v in values)
+
+    if any_above_one and any_le_one:
+        raise ValueError(
+            "`interval` mixes values <= 1 and > 1, so the scale is ambiguous. "
+            "Use quantiles in the [0, 1] range, e.g. `interval=[0.05, 0.95]`."
+        )
+
+    if any_above_one:
+        warnings.warn(
+            "Passing `interval` as percentiles (0-100) is deprecated. Use "
+            "quantiles (0-1) instead. For example, use `interval=[0.05, 0.95]` "
+            "instead of `interval=[5, 95]`. Percentile support will be removed "
+            "in skforecast 0.25.0.",
+            FutureWarning
+        )
+        return [v / 100 for v in values]
+
+    return [float(v) for v in values]
+
+
 def check_interval(
     interval: list[float] | tuple[float] | None = None,
     ensure_symmetric_intervals: bool = False,
@@ -920,9 +1088,9 @@ def check_interval(
     Parameters
     ----------
     interval : list, tuple, default None
-        Confidence of the prediction interval estimated. Sequence of percentiles
-        to compute, which must be between 0 and 100 inclusive. For example, 
-        interval of 95% should be as `interval = [2.5, 97.5]`.
+        Confidence of the prediction interval estimated. Sequence of bounds to
+        compute. Values must be between 0 and 1 inclusive. For example, interval
+        of 95% should be as `interval = [0.025, 0.975]`.
     ensure_symmetric_intervals : bool, default False
         If True, ensure that the intervals are symmetric.
     quantiles : list, tuple, default None
@@ -944,24 +1112,24 @@ def check_interval(
         if not isinstance(interval, (list, tuple)):
             raise TypeError(
                 "`interval` must be a `list` or `tuple`. For example, interval of 95% "
-                "should be as `interval = [2.5, 97.5]`."
+                "should be as `interval = [0.025, 0.975]`."
             )
 
         if len(interval) != 2:
             raise ValueError(
                 "`interval` must contain exactly 2 values, respectively the "
                 "lower and upper interval bounds. For example, interval of 95% "
-                "should be as `interval = [2.5, 97.5]`."
+                "should be as `interval = [0.025, 0.975]`."
             )
 
-        if (interval[0] < 0.) or (interval[0] >= 100.):
+        if (interval[0] < 0.) or (interval[0] >= 1.):
             raise ValueError(
-                f"Lower interval bound ({interval[0]}) must be >= 0 and < 100."
+                f"Lower interval bound ({interval[0]}) must be >= 0 and < 1."
             )
 
-        if (interval[1] <= 0.) or (interval[1] > 100.):
+        if (interval[1] <= 0.) or (interval[1] > 1.):
             raise ValueError(
-                f"Upper interval bound ({interval[1]}) must be > 0 and <= 100."
+                f"Upper interval bound ({interval[1]}) must be > 0 and <= 1."
             )
 
         if interval[0] >= interval[1]:
@@ -970,11 +1138,11 @@ def check_interval(
                 f"upper interval bound ({interval[1]})."
             )
         
-        if ensure_symmetric_intervals and interval[0] + interval[1] != 100:
+        if ensure_symmetric_intervals and interval[0] + interval[1] != 1.:
             raise ValueError(
                 f"Interval must be symmetric, the sum of the lower, ({interval[0]}), "
                 f"and upper, ({interval[1]}), interval bounds must be equal to "
-                f"100. Got {interval[0] + interval[1]}."
+                f"1. Got {interval[0] + interval[1]}."
             )
         
     if quantiles is not None:
@@ -1015,8 +1183,6 @@ def check_predict_input(
     last_window_exog: pd.Series | pd.DataFrame | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     exog_names_in_: list[str] | None = None,
-    interval: list[float] | None = None,
-    alpha: float | None = None,
     max_step: int | None = None,
     levels: str | list[str] | None = None,
     levels_forecaster: str | list[str] | None = None,
@@ -1055,12 +1221,6 @@ def check_predict_input(
         Exogenous variable/s included as predictor/s.
     exog_names_in_ : list, default None
         Names of the exogenous variables used during training.
-    interval : list, tuple, default None
-        Confidence of the prediction interval estimated. Sequence of percentiles
-        to compute, which must be between 0 and 100 inclusive. For example, 
-        interval of 95% should be as `interval = [2.5, 97.5]`.
-    alpha : float, default None
-        The confidence intervals used in ForecasterStats are (1 - alpha) %.
     max_step: int, default None
         Maximum number of steps allowed (`ForecasterDirect` and 
         `ForecasterDirectMultiVariate`).
@@ -1106,9 +1266,6 @@ def check_predict_input(
                 f"the value of steps defined when initializing the forecaster. "
                 f"Got {max(steps)}, but the maximum is {max_step}."
             )
-
-    if interval is not None or alpha is not None:
-        check_interval(interval=interval, alpha=alpha)
 
     if forecaster_name in ['ForecasterRecursiveMultiSeries', 'ForecasterRnn']:
         if not isinstance(levels, (type(None), str, list)):
@@ -2274,32 +2431,282 @@ def manage_warnings(func: Callable[P, R]) -> Callable[P, R]:
     return wrapper
 
 
+def _decompose_index(index: pd.Index) -> dict[str, Any]:
+    """
+    Decompose a pandas Index into a plain dict that skops can serialize.
+
+    `DatetimeIndex` values are stored as ISO strings together with their
+    frequency, a `RangeIndex` stores its `start`, `stop`, and `step`, and any
+    other index type stores its values as a list.
+
+    Parameters
+    ----------
+    index : pandas Index
+        Index to decompose.
+
+    Returns
+    -------
+    payload : dict
+        Plain dict representation of the index. The `index_type_` key
+        (`'datetime'`, `'range'`, or `'other'`) selects how it is rebuilt.
+
+    """
+
+    if isinstance(index, pd.DatetimeIndex):
+        payload = {
+            'index_type_': 'datetime',
+            'index': [str(ts) for ts in index],
+            'freq': index.freqstr,
+            'index_name': index.name,
+        }
+    elif isinstance(index, pd.RangeIndex):
+        payload = {
+            'index_type_': 'range',
+            'range': [index.start, index.stop, index.step],
+            'index_name': index.name,
+        }
+    else:
+        payload = {
+            'index_type_': 'other',
+            'index': index.to_list(),
+            'index_name': index.name,
+        }
+
+    return payload
+
+
+def _compose_index(payload: dict[str, Any]) -> pd.Index:
+    """
+    Rebuild a pandas Index from the dict produced by `_decompose_index`.
+
+    Parameters
+    ----------
+    payload : dict
+        Plain dict representation of the index, as returned by
+        `_decompose_index`.
+
+    Returns
+    -------
+    index : pandas Index
+        Reconstructed index, matching the original type: `DatetimeIndex` (with
+        its frequency restored), `RangeIndex`, or a generic `Index`.
+
+    """
+
+    if payload['index_type_'] == 'datetime':
+        index = pd.DatetimeIndex(
+            pd.to_datetime(payload['index']),
+            freq=payload['freq'],
+            name=payload['index_name'],
+        )
+    elif payload['index_type_'] == 'range':
+        start, stop, step = payload['range']
+        index = pd.RangeIndex(
+            start=start, stop=stop, step=step, name=payload['index_name']
+        )
+    else:
+        index = pd.Index(payload['index'], name=payload['index_name'])
+
+    return index
+
+
+def _decompose_pandas_object(
+    obj: pd.Series | pd.DataFrame | pd.Index
+) -> dict[str, Any]:
+    """
+    Decompose a pandas object into a plain dict that skops can serialize.
+
+    The values are kept as a numpy array (serialized natively by skops, preserving
+    dtype) and the index is decomposed with `_decompose_index`. The `object_type_`
+    marker records the original type so `_compose_pandas_object` can invert it.
+
+    Note that `to_numpy()` collapses a DataFrame to a single dtype, so per-column
+    dtypes are not preserved. This is fine for the attributes this is used on
+    (`last_window_` is homogeneous numeric, `training_range_` is an Index).
+
+    Parameters
+    ----------
+    obj : pandas Series, pandas DataFrame, pandas Index
+        Object to decompose.
+
+    Returns
+    -------
+    payload : dict
+        Plain dict representation of `obj`.
+
+    """
+
+    if isinstance(obj, pd.DataFrame):
+        payload = {
+            'object_type_': 'DataFrame',
+            'data': obj.to_numpy(),
+            'columns': obj.columns.to_list(),
+            **_decompose_index(obj.index),
+        }
+    elif isinstance(obj, pd.Series):
+        payload = {
+            'object_type_': 'Series',
+            'data': obj.to_numpy(),
+            'name': obj.name,
+            **_decompose_index(obj.index),
+        }
+    else:
+        payload = {
+            'object_type_': 'Index',
+            **_decompose_index(obj),
+        }
+
+    return payload
+
+
+def _compose_pandas_object(
+    payload: dict[str, Any]
+) -> pd.Series | pd.DataFrame | pd.Index:
+    """
+    Rebuild a pandas object from the dict produced by `_decompose_pandas_object`.
+
+    Parameters
+    ----------
+    payload : dict
+        Plain dict representation of the pandas object, including the
+        `object_type_` type marker.
+
+    Returns
+    -------
+    obj : pandas Series, pandas DataFrame, pandas Index
+        Reconstructed pandas object, matching the original type.
+
+    """
+
+    index = _compose_index(payload)
+
+    if payload['object_type_'] == 'DataFrame':
+        obj = pd.DataFrame(
+            data=payload['data'], index=index, columns=payload['columns']
+        )
+    elif payload['object_type_'] == 'Series':
+        obj = pd.Series(data=payload['data'], index=index, name=payload['name'])
+    else:
+        obj = index
+
+    return obj
+
+
+def _skops_decompose_forecaster(forecaster: object) -> None:
+    """
+    Replace the index-backed pandas attributes of a forecaster with plain dicts
+    so it can be serialized with skops.
+
+    Operates in place on `last_window_` and `training_range_`, which may be a
+    pandas object (single-series forecasters) or a dict of pandas objects
+    (multi-series forecasters). The caller is responsible for restoring the
+    original values afterwards.
+
+    Parameters
+    ----------
+    forecaster : Forecaster
+        Forecaster created with skforecast library.
+
+    Returns
+    -------
+    None
+
+    """
+
+    for attr in ('last_window_', 'training_range_'):
+        value = getattr(forecaster, attr, None)
+        if isinstance(value, dict):
+            value = {k: _decompose_pandas_object(v) for k, v in value.items()}
+        elif isinstance(value, (pd.Series, pd.DataFrame, pd.Index)):
+            value = _decompose_pandas_object(value)
+        else:
+            continue
+        setattr(forecaster, attr, value)
+
+
+def _skops_reconstruct_forecaster(forecaster: object) -> None:
+    """
+    Rebuild the index-backed pandas attributes of a forecaster decomposed by
+    `_skops_decompose_forecaster`.
+
+    Operates in place on `last_window_` and `training_range_`. The `object_type_`
+    marker key distinguishes a single decomposed object from a multi-series dict
+    of decomposed objects.
+
+    Parameters
+    ----------
+    forecaster : Forecaster
+        Forecaster loaded from a skops file.
+
+    Returns
+    -------
+    None
+
+    """
+
+    for attr in ('last_window_', 'training_range_'):
+        value = getattr(forecaster, attr, None)
+        if not isinstance(value, dict):
+            continue
+        if 'object_type_' in value and 'index_type_' in value:
+            value = _compose_pandas_object(value)
+        else:
+            value = {k: _compose_pandas_object(v) for k, v in value.items()}
+        setattr(forecaster, attr, value)
+
+
 @manage_warnings
 def save_forecaster(
-    forecaster: object, 
+    forecaster: object,
     file_name: str,
-    save_custom_functions: bool = True, 
-    verbose: bool = True,
+    backend: str = 'joblib',
+    save_custom_functions: bool = True,
+    verbose: bool = False,
     suppress_warnings: bool = False
 ) -> None:
     """
-    Save forecaster model using joblib. If custom functions are used to create
-    weights, they are saved as .py files.
+    Save forecaster model to disk. Custom functions used to create weights that
+    are defined in the `'__main__'` namespace (e.g. a notebook or a script run
+    directly) are saved as .py files, since they cannot be re-imported when the
+    forecaster is loaded in a different session. Functions imported from a module
+    are restored automatically and are not exported. When `backend='cloudpickle'`,
+    custom functions are embedded in the saved file and no .py files are created.
 
     Parameters
     ----------
     forecaster : Forecaster
         Forecaster created with skforecast library.
     file_name : str
-        File name given to the object. The save extension will be .joblib.
+        File name given to the object. The file extension is determined by
+        the `backend` argument.
+    backend : str, default 'joblib'
+        Serialization backend used to save the forecaster.
+
+        - If `'joblib'`, the forecaster is saved using joblib (extension
+        `.joblib`).
+        - If `'pickle'`, the forecaster is saved using pickle (extension
+        `.pkl`).
+        - If `'cloudpickle'`, the forecaster is saved using cloudpickle
+        (extension `.cloudpickle`). Custom functions and user-defined classes
+        are embedded in the file, so no separate `.py` files are needed.
+        Requires `cloudpickle` to be installed.
+        - If `'skops'`, the forecaster is saved using skops (extension
+        `.skops`), a secure format that does not execute arbitrary code on
+        load. The `last_window_` and `training_range_` attributes are
+        decomposed into plain types before saving and rebuilt on load, since
+        skops cannot serialize pandas objects. Not supported for
+        `ForecasterStats`, `ForecasterRnn`, or `ForecasterFoundation`, whose
+        underlying estimators (statsmodels, Keras, or a foundation model) embed
+        objects that skops cannot serialize. Requires `skops` to be installed.
     save_custom_functions : bool, default True
-        If True, save custom functions used in the forecaster (weight_func) as 
-        .py files. Custom functions need to be available in the environment 
-        where the forecaster is going to be loaded.
-    verbose : bool, default True
+        If True, save custom functions used in the forecaster (weight_func) as
+        .py files, but only those defined in the `'__main__'` namespace. These
+        functions need to be available in the environment where the forecaster
+        is going to be loaded. Has no effect when `backend='cloudpickle'`.
+    verbose : bool, default False
         Print summary about the forecaster saved.
     suppress_warnings : bool, default False
-        If `True`, skforecast warnings will be suppressed. See 
+        If `True`, skforecast warnings will be suppressed. See
         skforecast.exceptions.warn_skforecast_categories for more information.
 
     Returns
@@ -2308,45 +2715,126 @@ def save_forecaster(
 
     """
 
-    file_name = Path(file_name).with_suffix('.joblib')
+    valid_backends = {'joblib', 'pickle', 'cloudpickle', 'skops'}
+    if backend not in valid_backends:
+        raise ValueError(
+            f"Invalid `backend` argument: '{backend}'. Valid options are: "
+            f"{', '.join(repr(b) for b in sorted(valid_backends))}."
+        )
+
+    backend_extensions = {
+        'joblib': '.joblib',
+        'pickle': '.pkl',
+        'cloudpickle': '.cloudpickle',
+        'skops': '.skops'
+    }
+    file_name = Path(file_name).with_suffix(backend_extensions[backend])
 
     # Save forecaster
-    joblib.dump(forecaster, filename=file_name)
-
-    if save_custom_functions:
-        # Save custom functions to create weights
-        if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
-            if isinstance(forecaster.weight_func, dict):
-                for fun in set(forecaster.weight_func.values()):
-                    file_name = fun.__name__ + '.py'
-                    with open(file_name, 'w') as file:
-                        file.write(inspect.getsource(fun))
-            else:
-                file_name = forecaster.weight_func.__name__ + '.py'
-                with open(file_name, 'w') as file:
-                    file.write(inspect.getsource(forecaster.weight_func))
-    else:
-        if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
-            warnings.warn(
-                "Custom function(s) used to create weights are not saved. To save them, "
-                "set `save_custom_functions` to `True`.",
-                SaveLoadSkforecastWarning
+    if backend == 'joblib':
+        joblib.dump(forecaster, filename=file_name)
+    elif backend == 'pickle':
+        with open(file_name, 'wb') as file:
+            pickle.dump(forecaster, file)
+    elif backend == 'cloudpickle':
+        try:
+            import cloudpickle
+        except ImportError as exc:
+            raise ImportError(
+                "'cloudpickle' is required for backend='cloudpickle' but is not "
+                "installed. Install it with: pip install cloudpickle"
+            ) from exc
+        with open(file_name, 'wb') as file:
+            cloudpickle.dump(forecaster, file)
+    elif backend == 'skops':
+        unsupported_forecasters = {
+            'ForecasterStats', 'ForecasterRnn', 'ForecasterFoundation'
+        }
+        if type(forecaster).__name__ in unsupported_forecasters:
+            raise NotImplementedError(
+                f"backend='skops' is not supported for {type(forecaster).__name__}. "
+                f"Its underlying estimator (statsmodels, Keras, or a foundation "
+                f"model) embeds objects that skops cannot serialize. Use "
+                f"backend='joblib', 'pickle', or 'cloudpickle' instead."
             )
+        try:
+            import skops.io
+        except ImportError as exc:
+            raise ImportError(
+                "'skops' is required for backend='skops' but is not installed. "
+                "Install it with: pip install skops"
+            ) from exc
+        # NOTE: `last_window_` and `training_range_` are decomposed before the
+        # dump and restored.
+        originals = {
+            a: getattr(forecaster, a, None)
+            for a in ('last_window_', 'training_range_')
+        }
+        try:
+            _skops_decompose_forecaster(forecaster)
+            skops.io.dump(forecaster, file_name)
+        finally:
+            for a, v in originals.items():
+                setattr(forecaster, a, v)
 
-    if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
-        skforecast_classes = {'RollingFeatures'}
-        custom_classes = set(forecaster.window_features_class_names) - skforecast_classes
-        if custom_classes:
-            warnings.warn(
-                "The Forecaster includes custom user-defined classes in the "
-                "`window_features` argument. These classes are not saved automatically "
-                "when saving the Forecaster. Please ensure you save these classes "
-                "manually and import them before loading the Forecaster.\n"
-                "    Custom classes: " + ', '.join(custom_classes) + "\n"
-                "Visit the documentation for more information: "
-                "https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features",
-                SaveLoadSkforecastWarning
+    if backend != 'cloudpickle':
+        if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
+            funs = (
+                set(forecaster.weight_func.values())
+                if isinstance(forecaster.weight_func, dict)
+                else {forecaster.weight_func}
             )
+            # NOTE: Only functions defined in the '__main__' namespace (notebook/script)
+            # cannot be re-imported when the forecaster is loaded in a different
+            # session, so they are the only ones that need the .py export / warning.
+            # Functions from importable modules are restored automatically by
+            # joblib/pickle (by reference).
+            main_funs = sorted(
+                (f for f in funs if getattr(f, '__module__', None) == '__main__'),
+                key=lambda f: f.__name__
+            )
+            if main_funs:
+                if save_custom_functions:
+                    saved_files = []
+                    for fun in main_funs:
+                        fun_file_name = fun.__name__ + '.py'
+                        with open(fun_file_name, 'w') as file:
+                            file.write(inspect.getsource(fun))
+                        saved_files.append(fun_file_name)
+                    warnings.warn(
+                        "Custom function(s) used to create weights are defined in "
+                        "the '__main__' namespace and have been saved as: "
+                        f"{', '.join(repr(f) for f in saved_files)}. These files "
+                        "must be imported before loading the forecaster.\n"
+                        "Visit the documentation for more information: "
+                        "https://skforecast.org/latest/user_guides/save-load-forecaster.html"
+                        "#saving-and-loading-a-forecaster-model-with-custom-features",
+                        SaveLoadSkforecastWarning
+                    )
+                else:
+                    warnings.warn(
+                        "Custom function(s) used to create weights are defined in "
+                        "the '__main__' namespace and have not been saved. To save "
+                        "them automatically, set `save_custom_functions=True`. "
+                        "Otherwise, ensure they are importable before loading the "
+                        "forecaster.",
+                        SaveLoadSkforecastWarning
+                    )
+
+        if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
+            skforecast_classes = {'RollingFeatures'}
+            custom_classes = set(forecaster.window_features_class_names) - skforecast_classes
+            if custom_classes:
+                warnings.warn(
+                    "The Forecaster includes custom user-defined classes in the "
+                    "`window_features` argument. These classes are not saved automatically "
+                    "when saving the Forecaster. Please ensure you save these classes "
+                    "manually and import them before loading the Forecaster.\n"
+                    "    Custom classes: " + ', '.join(custom_classes) + "\n"
+                    "Visit the documentation for more information: "
+                    "https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features",
+                    SaveLoadSkforecastWarning
+                )
 
     if verbose:
         forecaster.summary()
@@ -2355,33 +2843,134 @@ def save_forecaster(
 @manage_warnings
 def load_forecaster(
     file_name: str,
+    backend: str | None = None,
+    trusted: bool | list[str] = False,
     verbose: bool = True,
     suppress_warnings: bool = False
 ) -> object:
     """
-    Load forecaster model using joblib. If the forecaster was saved with 
-    custom user-defined classes as as window features or custom
-    functions to create weights, these objects must be available
-    in the environment where the forecaster is going to be loaded.
+    Load forecaster model from disk. If the forecaster was saved with
+    custom user-defined classes as window features or custom functions
+    to create weights, these objects must be available in the environment
+    where the forecaster is going to be loaded.
 
     Parameters
     ----------
-    file_name: str
+    file_name : str
         Object file name.
-    verbose: bool, default True
+    backend : str, None, default None
+        Serialization backend used to load the forecaster. When `None`, the
+        backend is inferred from the file extension:
+
+        - `.joblib` : `'joblib'`
+        - `.pkl` or `.pickle` : `'pickle'`
+        - `.cloudpickle` : `'cloudpickle'`
+        - `.skops` : `'skops'`
+    trusted : bool, list, default False
+        Types that skops is allowed to reconstruct when loading the file. Only
+        used when `backend='skops'`, ignored otherwise. Controls the `trusted`
+        argument of `skops.io.load`:
+
+        - If `False`, only skops' built-in safe types are trusted. Because all
+        skforecast forecasters contain types that are not trusted by default,
+        loading raises an `UntrustedTypesFoundException` listing them. This is
+        the secure default: review the listed types before trusting them.
+        - If a list of str, additionally trust those type names. Obtain the
+        candidate list with `skops.io.get_untrusted_types(file=file_name)` and
+        pass it after reviewing it.
+        - If `True`, trust every type found in the file. Use this only for files
+        from a source you trust, as it removes skops' security guarantee.
+
+        **New in version 0.23.0**
+    verbose : bool, default True
         Print summary about the forecaster loaded.
     suppress_warnings : bool, default False
-        If `True`, skforecast warnings will be suppressed. See 
+        If `True`, skforecast warnings will be suppressed. See
         skforecast.exceptions.warn_skforecast_categories for more information.
 
     Returns
     -------
-    forecaster: Forecaster
+    forecaster : Forecaster
         Forecaster created with skforecast library.
-    
+
     """
 
-    forecaster = joblib.load(filename=Path(file_name))
+    extension_backend_map = {
+        '.cloudpickle': 'cloudpickle',
+        '.joblib': 'joblib',
+        '.pkl': 'pickle',
+        '.pickle': 'pickle',
+        '.skops': 'skops',
+    }
+    valid_backends = {'joblib', 'pickle', 'cloudpickle', 'skops'}
+
+    if backend is None:
+        suffix = Path(file_name).suffix.lower()
+        if suffix not in extension_backend_map:
+            raise ValueError(
+                f"Cannot infer backend from file extension '{suffix}'. "
+                f"Recognized extensions: "
+                f"{', '.join(repr(e) for e in sorted(extension_backend_map))}. "
+                f"Provide the `backend` argument explicitly."
+            )
+        backend = extension_backend_map[suffix]
+    elif backend not in valid_backends:
+        raise ValueError(
+            f"Invalid `backend` argument: '{backend}'. Valid options are: "
+            f"{', '.join(repr(b) for b in sorted(valid_backends))}."
+        )
+
+    if backend == 'joblib':
+        forecaster = joblib.load(filename=Path(file_name))
+    elif backend == 'pickle':
+        with open(file_name, 'rb') as file:
+            forecaster = pickle.load(file)
+    elif backend == 'cloudpickle':
+        try:
+            import cloudpickle  # noqa: F401 — needed to unpickle cloudpickle files
+        except ImportError as exc:
+            raise ImportError(
+                "'cloudpickle' is required for backend='cloudpickle' but is not "
+                "installed. Install it with: pip install cloudpickle"
+            ) from exc
+        with open(file_name, 'rb') as file:
+            forecaster = pickle.load(file)
+    elif backend == 'skops':
+        try:
+            import skops.io
+            from skops.io.exceptions import UntrustedTypesFoundException
+        except ImportError as exc:
+            raise ImportError(
+                "'skops' is required for backend='skops' but is not installed. "
+                "Install it with: pip install skops"
+            ) from exc
+        # skops is the secure backend: by default (`trusted=False`) only its
+        # built-in safe types are loaded and any other type must be reviewed and
+        # trusted explicitly. `skops.io.load` only accepts a list of type names
+        # (or None), so the friendly `trusted` argument is mapped here: `False`
+        # -> None (strict), `True` -> all types found in the file, list -> as is.
+        # `last_window_` and `training_range_` are rebuilt from the plain types
+        # stored by `save_forecaster`.
+        if trusted is False:
+            trusted_types = None
+        elif trusted is True:
+            trusted_types = skops.io.get_untrusted_types(file=file_name)
+        else:
+            trusted_types = trusted
+        try:
+            forecaster = skops.io.load(file=file_name, trusted=trusted_types)
+        except UntrustedTypesFoundException as exc:
+            exc.args = (
+                f"{exc.args[0]}\n"
+                f"skops does not load these types unless you explicitly trust them. "
+                f"To review the full list of untrusted types in the file, run "
+                f"`skops.io.get_untrusted_types(file='{file_name}')`. If you trust the "
+                f"source of '{file_name}', reload with `load_forecaster(..., trusted=True)` "
+                f"to trust them all, or pass the reviewed list via `trusted=[...]`.",
+            )
+            raise
+        _skops_reconstruct_forecaster(forecaster)
+
     forecaster_v = forecaster.skforecast_version
 
     if forecaster_v != __version__:
@@ -2537,8 +3126,8 @@ def select_n_jobs_fit_forecaster(
     
     - If forecaster_name is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and estimator_name is a linear estimator then `n_jobs = 1`, 
-    otherwise `n_jobs = cpu_count() - 1`.
-    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
+    otherwise `n_jobs = max(1, cpu_count() - 1)`.
+    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = max(1, cpu_count() - 1)`.
     - If estimator is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
     This is because `lightgbm` is highly optimized for gradient boosting and
     parallelizes operations at a very fine-grained level, making additional
@@ -2565,9 +3154,9 @@ def select_n_jobs_fit_forecaster(
         if isinstance(estimator, LinearModel):
             n_jobs = 1
         elif type(estimator).__name__ == 'LGBMRegressor':
-            n_jobs = joblib.cpu_count() - 1 if estimator.n_jobs == 1 else 1
+            n_jobs = max(1, joblib.cpu_count() - 1) if estimator.n_jobs == 1 else 1
         else:
-            n_jobs = joblib.cpu_count() - 1
+            n_jobs = max(1, joblib.cpu_count() - 1)
     else:
         n_jobs = 1
 

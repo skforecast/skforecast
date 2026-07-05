@@ -124,8 +124,7 @@ def run_benchmark_ForecasterRecursive(output_dir, run_id=None):
             window_size     = forecaster.window_size,
             last_window     = forecaster.last_window_,
             exog            = exog,
-            exog_names_in_  = forecaster.exog_names_in_,
-            interval        = None
+            exog_names_in_  = forecaster.exog_names_in_
         )
 
     def ForecasterRecursive__create_predict_inputs(forecaster, exog):
@@ -142,7 +141,7 @@ def run_benchmark_ForecasterRecursive(output_dir, run_id=None):
         forecaster.predict_interval(
             steps=STEPS,
             exog=exog,
-            interval=[5, 95],
+            interval=[0.05, 0.95],
             method='conformal'
         )
         
@@ -172,7 +171,7 @@ def run_benchmark_ForecasterRecursive(output_dir, run_id=None):
                 forecaster=forecaster,
                 y=y,
                 exog=exog,
-                interval=[5, 95],
+                interval=[0.05, 0.95],
                 interval_method='conformal',
                 cv=cv,
                 metric='mean_squared_error',

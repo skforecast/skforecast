@@ -41,7 +41,7 @@ def test_predict_interval_NotFittedError_when_not_fitted_and_no_context():
 
 @pytest.mark.parametrize(
     "interval",
-    [[10], [10, 50, 90], [90, 10], [50, 50], [-5, 90], [10, 105]],
+    [[0.1], [0.1, 0.5, 0.9], [0.9, 0.1], [0.5, 0.5], [-0.05, 0.9], [0.1, 1.05]],
     ids=[
         "one_element",
         "three_elements",
@@ -71,7 +71,7 @@ def test_predict_interval_output_when_single_series():
     """
     forecaster = make_forecaster()
     forecaster.fit(series=y)
-    result = forecaster.predict_interval(steps=5, interval=[10, 90])
+    result = forecaster.predict_interval(steps=5, interval=[0.1, 0.9])
 
     assert isinstance(result, pd.DataFrame)
     assert list(result.columns) == ["level", "pred", "lower_bound", "upper_bound"]
@@ -94,7 +94,7 @@ def test_predict_interval_custom_percentiles():
     """
     forecaster = make_forecaster()
     forecaster.fit(series=y)
-    result = forecaster.predict_interval(steps=3, interval=[5, 95])
+    result = forecaster.predict_interval(steps=3, interval=[0.05, 0.95])
 
     np.testing.assert_array_almost_equal(
         result["lower_bound"].values, [0.05] * 3
@@ -111,7 +111,7 @@ def test_predict_interval_with_float_interval():
     """
     forecaster = make_forecaster()
     forecaster.fit(series=y)
-    # interval=0.8 → [(0.5-0.4)*100, (0.5+0.4)*100] = [10, 90]
+    # interval=0.8 → [(0.5-0.4), (0.5+0.4)] = [0.1, 0.9]
     result = forecaster.predict_interval(steps=3, interval=0.8)
 
     assert list(result.columns) == ["level", "pred", "lower_bound", "upper_bound"]
@@ -126,7 +126,7 @@ def test_predict_interval_with_float_interval():
 
 @pytest.mark.parametrize(
     "interval",
-    [[10, 90], [5, 95], [25, 75]],
+    [[0.1, 0.9], [0.05, 0.95], [0.25, 0.75]],
     ids=lambda v: f"interval={v}",
 )
 def test_predict_interval_lower_le_pred_le_upper(interval):
@@ -214,7 +214,7 @@ def test_predict_interval_with_context_and_exog():
     forecaster_no_exog = make_forecaster()
     forecaster_no_exog.fit(series=y)
     result_idx = forecaster_no_exog.predict_interval(
-        steps=4, interval=[10, 90], context=y_lw
+        steps=4, interval=[0.1, 0.9], context=y_lw
     )
     expected_index = pd.date_range(
         start=y_lw.index[-1] + y_lw.index.freq,

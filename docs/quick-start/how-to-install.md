@@ -18,7 +18,7 @@ pip install skforecast
 Specific version:
 
 ```bash
-pip install skforecast==0.22.0
+pip install skforecast==0.23.0
 ```
 
 Latest (unstable):
@@ -66,7 +66,6 @@ pip install skforecast[plotting]
 ```
 
 + matplotlib>=3.7, <3.11
-+ seaborn>=0.12, <0.14
 + statsmodels>=0.13, <0.15
 
 

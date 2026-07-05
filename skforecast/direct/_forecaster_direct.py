@@ -40,6 +40,7 @@ from ..utils import (
     check_predict_input,
     check_residuals_input,
     check_interval,
+    _normalize_interval_scale,
     input_to_frame,
     exog_to_direct_numpy,
     expand_index,
@@ -50,6 +51,7 @@ from ..utils import (
     _build_predict_function,
     manage_warnings,
     configure_estimator_categorical_features,
+    cast_catboost_categorical_columns,
     scale_correction_factor_differentiation
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -60,6 +62,7 @@ def _fit_one_step_estimator(
     estimator: object,
     X_train_autoreg: np.ndarray,
     X_train_exog: np.ndarray | None,
+    X_train_calendar: np.ndarray | None,
     y_train: dict,
     train_index: dict,
     X_train_features_names_out_: list[str],
@@ -84,6 +87,9 @@ def _fit_one_step_estimator(
     X_train_exog : numpy ndarray, None
         Processed exogenous variables without direct expansion created with
         the `_create_train_X_y` method. `None` if no exogenous variables.
+    X_train_calendar : numpy ndarray, None
+        Calendar features without direct expansion created with the
+        `_create_train_X_y` method. `None` if no calendar features.
     y_train : dict
         Dict created with the `_create_train_X_y` method, y_train.
     train_index : dict
@@ -107,10 +113,11 @@ def _fit_one_step_estimator(
     """
 
     X_train_step, y_train_step = forecaster._create_train_X_y_step(
-                                     X_train_autoreg = X_train_autoreg,
-                                     X_train_exog    = X_train_exog,
-                                     y_train         = y_train,
-                                     step            = step,
+                                     X_train_autoreg  = X_train_autoreg,
+                                     X_train_exog     = X_train_exog,
+                                     X_train_calendar = X_train_calendar,
+                                     y_train          = y_train,
+                                     step             = step,
                                  )
     X_train_step, y_train_step, train_index_step = (
         forecaster._filter_nan_X_y_step(
@@ -131,16 +138,9 @@ def _fit_one_step_estimator(
     else:
         fit_kwargs = {**forecaster.fit_kwargs}
 
-    # NOTE: CatBoost requires integer values (not float) for categorical features
-    # when X is a numpy array. This requires converting X_train_step to object
-    # dtype and casting the categorical columns to int.
-    if (
-        'cat_features' in fit_kwargs
-        and type(estimator).__name__ == 'CatBoostRegressor'
-    ):
-        cat_idx = np.array(fit_kwargs['cat_features'])
-        X_train_step = X_train_step.astype(object)
-        X_train_step[:, cat_idx] = X_train_step[:, cat_idx].astype(int)
+    X_train_step = cast_catboost_categorical_columns(
+        X=X_train_step, fit_kwargs=fit_kwargs, estimator=estimator
+    )
 
     if sample_weight is not None:
         estimator.fit(
@@ -194,6 +194,14 @@ class ForecasterDirect(ForecasterBase):
     window_features : object, list, default None
         Instance or list of instances used to create window features. Window features
         are created from the original time series and are included as predictors.
+        Skforecast provides the `RollingFeatures` class, but a custom object can
+        also be passed as long as it implements the required interface.
+    calendar_features : object, default None
+        Instance of `CalendarFeatures` used to create calendar features from the
+        datetime index. Calendar features are included as predictors and are
+        generated automatically during both training and prediction. Only supported 
+        when the index of the input data is a `pandas.DatetimeIndex`.
+        **New in version 0.23.0**
     transformer_y : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
@@ -276,6 +284,12 @@ class ForecasterDirect(ForecasterBase):
         Names of the classes used to create the window features.
     max_size_window_features : int
         Maximum window size required by the window features.
+    calendar_features : object
+        Instance of `CalendarFeatures` used to create calendar features from the
+        datetime index.
+    calendar_features_names : list
+        Names of the calendar features to extract, taken from the `features`
+        attribute of the `calendar_features` object.
     window_size : int
         The window size needed to create the predictors. It is calculated as the 
         maximum value between `max_lag` and `max_size_window_features`. If 
@@ -340,6 +354,9 @@ class ForecasterDirect(ForecasterBase):
         is equal to `exog_dtypes_in_`.
     X_train_window_features_names_out_ : list
         Names of the window features included in the matrix `X_train` created
+        internally for training.
+    X_train_calendar_features_names_out_ : list
+        Names of the calendar features included in the matrix `X_train` created
         internally for training.
     X_train_exog_names_out_ : list
         Names of the exogenous variables included in the matrix `X_train` created
@@ -446,6 +463,7 @@ class ForecasterDirect(ForecasterBase):
         steps: int,
         lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
         window_features: object | list[object] | None = None,
+        calendar_features: object | None = None,
         transformer_y: object | None = None,
         transformer_exog: object | None = None,
         categorical_features: str | list[str] | None = 'auto',
@@ -458,45 +476,50 @@ class ForecasterDirect(ForecasterBase):
         forecaster_id: str | int | None = None
     ) -> None:
         
-        self.estimator                          = clone(estimator)
-        self.transformer_y                      = transformer_y
-        self.transformer_exog                   = transformer_exog
-        self.categorical_features               = categorical_features
-        self.weight_func                        = weight_func
-        self.source_code_weight_func            = None
-        self.differentiation                    = differentiation
-        self.differentiation_max                = None
-        self.differentiator                     = None
-        self.dropna_from_series                 = dropna_from_series
-        self.last_window_                       = None
-        self.index_type_                        = None
-        self.index_freq_                        = None
-        self.training_range_                    = None
-        self.series_name_in_                    = None
-        self.exog_in_                           = False
-        self.exog_names_in_                     = None
-        self.exog_type_in_                      = None
-        self.exog_dtypes_in_                    = None
-        self.exog_dtypes_out_                   = None
-        self.categorical_features_names_in_     = None
-        self.X_train_window_features_names_out_ = None
-        self.X_train_exog_names_out_            = None
-        self.X_train_direct_exog_names_out_     = None
-        self.X_train_features_names_out_        = None
-        self.X_train_direct_features_names_out_ = None
-        self.in_sample_residuals_               = None
-        self.out_sample_residuals_              = None
-        self.in_sample_residuals_by_bin_        = None
-        self.out_sample_residuals_by_bin_       = None
-        self.filter_train_X_y_index_cache_      = {}
-        self.filter_train_X_y_columns_cache_    = {}
-        self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.is_fitted                          = False
-        self.fit_date                           = None
-        self.skforecast_version                 = __version__
-        self.python_version                     = sys.version.split(" ")[0]
-        self.forecaster_id                      = forecaster_id
-        self._probabilistic_mode                = "binned"
+        self.estimator                            = clone(estimator)
+        self.calendar_features                    = (
+            clone(calendar_features) if calendar_features is not None else None
+        )
+        self.calendar_features_names              = getattr(calendar_features, 'features', None)
+        self.transformer_y                        = transformer_y
+        self.transformer_exog                     = transformer_exog
+        self.categorical_features                 = categorical_features
+        self.weight_func                          = weight_func
+        self.source_code_weight_func              = None
+        self.differentiation                      = differentiation
+        self.differentiation_max                  = None
+        self.differentiator                       = None
+        self.dropna_from_series                   = dropna_from_series
+        self.last_window_                         = None
+        self.index_type_                          = None
+        self.index_freq_                          = None
+        self.training_range_                      = None
+        self.series_name_in_                      = None
+        self.exog_in_                             = False
+        self.exog_names_in_                       = None
+        self.exog_type_in_                        = None
+        self.exog_dtypes_in_                      = None
+        self.exog_dtypes_out_                     = None
+        self.categorical_features_names_in_       = None
+        self.X_train_window_features_names_out_   = None
+        self.X_train_calendar_features_names_out_ = None
+        self.X_train_exog_names_out_              = None
+        self.X_train_direct_exog_names_out_       = None
+        self.X_train_features_names_out_          = None
+        self.X_train_direct_features_names_out_   = None
+        self.in_sample_residuals_                 = None
+        self.out_sample_residuals_                = None
+        self.in_sample_residuals_by_bin_          = None
+        self.out_sample_residuals_by_bin_         = None
+        self.filter_train_X_y_index_cache_        = {}
+        self.filter_train_X_y_columns_cache_      = {}
+        self.creation_date                        = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
+        self.is_fitted                            = False
+        self.fit_date                             = None
+        self.skforecast_version                   = __version__
+        self.python_version                       = sys.version.split(" ")[0]
+        self.forecaster_id                        = forecaster_id
+        self._probabilistic_mode                  = "binned"
 
         if not isinstance(steps, int):
             raise TypeError(
@@ -612,7 +635,8 @@ class ForecasterDirect(ForecasterBase):
             "forecaster_name": "ForecasterDirect",
             "forecaster_task": "regression",
             "forecasting_scope": "single-series",  # single-series | global
-            "forecasting_strategy": "direct",   # recursive | direct | deep_learning
+            "forecasting_strategy": "direct",   # recursive | direct | deep_learning | foundation
+            "multiple_estimators": False,
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
@@ -624,6 +648,7 @@ class ForecasterDirect(ForecasterBase):
 
             "supports_lags": True,
             "supports_window_features": True,
+            "supports_calendar_features": True,
             "supports_transformer_series": True,
             "supports_transformer_exog": True,
             "supports_categorical_features": True,
@@ -664,6 +689,7 @@ class ForecasterDirect(ForecasterBase):
             f"Estimator: {type(self.estimator).__name__} \n"
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
+            f"Calendar features: {self.calendar_features_names} \n"
             f"Window size: {self.window_size} \n"
             f"Maximum steps to predict: {self.max_step} \n"
             f"Series name: {self.series_name_in_} \n"
@@ -719,6 +745,7 @@ class ForecasterDirect(ForecasterBase):
                     <li><strong>Estimator:</strong> {type(self.estimator).__name__}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
+                    <li><strong>Calendar features:</strong> {self.calendar_features_names}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Maximum steps to predict:</strong> {self.max_step}</li>
                     <li><strong>Series name:</strong> {self.series_name_in_}</li>
@@ -750,7 +777,7 @@ class ForecasterDirect(ForecasterBase):
                 <ul>
                     <li><strong>Training range:</strong> {self.training_range_.to_list() if self.is_fitted else 'Not fitted'}</li>
                     <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
-                    <li><strong>Training index frequency:</strong> {self.index_freq_ if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index frequency:</strong> {self.index_freq_.freqstr if hasattr(self.index_freq_, 'freqstr') else str(self.index_freq_) if self.is_fitted else 'Not fitted'}</li>
                 </ul>
             </details>
             <details>
@@ -897,6 +924,7 @@ class ForecasterDirect(ForecasterBase):
     ) -> tuple[
         np.ndarray,
         np.ndarray | None,
+        np.ndarray | None,
         dict[int, np.ndarray], 
         dict[int, pd.Index],
         list[str], 
@@ -929,6 +957,10 @@ class ForecasterDirect(ForecasterBase):
             Processed exogenous variables without direct expansion, shape
             (n_train + max_step - 1, exog_cols). `None` if no exogenous
             variables are used.
+        X_train_calendar : numpy ndarray, None
+            Calendar features without direct expansion, shape
+            (n_train + max_step - 1, calendar_cols). `None` if no calendar
+            features are used.
         y_train : dict
             Values of the time series related to each row of `X_train_autoreg`
             for each step in the form {step: y_step_[i]}.
@@ -994,6 +1026,13 @@ class ForecasterDirect(ForecasterBase):
             )
         
         y_values, y_index = check_extract_values_and_index(data=y, data_label='`y`')
+
+        if self.calendar_features is not None:
+            if not isinstance(y_index, pd.DatetimeIndex):
+                raise TypeError(
+                    "When `calendar_features` is not `None`, the index of `y` must "
+                    "be a pandas DatetimeIndex."
+                )
 
         if self.differentiation is not None:
             if not self.is_fitted:
@@ -1134,6 +1173,11 @@ class ForecasterDirect(ForecasterBase):
 
         # NOTE: Need here for filter_train_X_y_for_step to work without fitting
         self.X_train_window_features_names_out_ = X_train_window_features_names_out_
+        
+        if len(X_train_autoreg) == 1:
+            X_train_autoreg = X_train_autoreg[0]
+        else:
+            X_train_autoreg = np.concatenate(X_train_autoreg, axis=1)
 
         X_train_exog = None
         if exog is not None:
@@ -1152,14 +1196,46 @@ class ForecasterDirect(ForecasterBase):
 
             X_train_features_names_out_.extend(X_train_exog_names_out_)
             X_train_direct_features_names_out_.extend(X_train_direct_exog_names_out_)
-        
-        if len(X_train_autoreg) == 1:
-            X_train_autoreg = X_train_autoreg[0]
-        else:
-            X_train_autoreg = np.concatenate(X_train_autoreg, axis=1)
+
+        X_train_calendar = None
+        if self.calendar_features is not None:
+            # NOTE: Calendar features are kept without direct expansion to save
+            # memory. Each step slices its corresponding rows in
+            # _create_train_X_y_step. They are computed on the index aligned
+            # with `X_train_exog` (`y_index` without the first `window_size`
+            # observations).
+            calendar_index = y_index[self.window_size:]
+            X_train_calendar = (
+                self.calendar_features.fit_transform(calendar_index).to_numpy()
+            )
+            X_train_calendar_features_names_out_ = (
+                self.calendar_features.feature_names_out_
+            )
+            X_train_direct_calendar_names_out_ = [
+                f"{col}_step_{i + 1}"
+                for i in range(self.max_step)
+                for col in X_train_calendar_features_names_out_
+            ]
+
+            # NOTE: Need here for filter_train_X_y_for_step to work without fitting
+            self.X_train_calendar_features_names_out_ = X_train_calendar_features_names_out_
+
+            X_train_features_names_out_.extend(X_train_calendar_features_names_out_)
+            X_train_direct_features_names_out_.extend(X_train_direct_calendar_names_out_)
+
+        if len(X_train_features_names_out_) != len(set(X_train_features_names_out_)):
+            duplicated_names = [
+                name for name in set(X_train_features_names_out_)
+                if X_train_features_names_out_.count(name) > 1
+            ]
+            raise ValueError(
+                f"Duplicated feature names detected in X_train: {duplicated_names}."
+            )
 
         any_nan_y = np.isnan(y_train).any()
         if any_nan_y:
+            # NOTE: NaN values in `y_train` are warned here but dropped in the 
+            # `_filter_nan_X_y_step` method during the training of each step.
             warnings.warn(
                 "NaNs detected in `y_train`. They have been dropped because the "
                 "target variable cannot have NaN values. Same rows have been "
@@ -1183,6 +1259,8 @@ class ForecasterDirect(ForecasterBase):
 
         if any_nan_X:
             if self.dropna_from_series:
+                # NOTE: NaN values in `X_train` are warned here but dropped in the 
+                # `_filter_nan_X_y_step` method during the training of each step.
                 warnings.warn(
                     "NaNs detected in `X_train`. They have been dropped. If "
                     "you want to keep them, set `forecaster.dropna_from_series = False`. "
@@ -1201,6 +1279,7 @@ class ForecasterDirect(ForecasterBase):
         return (
             X_train_autoreg,
             X_train_exog,
+            X_train_calendar,
             y_train,
             train_index,
             exog_names_in_,
@@ -1216,14 +1295,15 @@ class ForecasterDirect(ForecasterBase):
         self,
         X_train_autoreg: np.ndarray,
         X_train_exog: np.ndarray | None,
+        X_train_calendar: np.ndarray | None,
         y_train: dict,
         step: int,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Create the training matrix and target for a specific step by
-        concatenating the autoregressive features with the exogenous
-        variable slice aligned to that step. This avoids expanding the
-        full exog into a direct matrix of shape (n, exog_cols * steps).
+        concatenating the autoregressive features with the exogenous and
+        calendar slices aligned to that step. This avoids expanding the
+        full exog/calendar into a direct matrix of shape (n, cols * steps).
 
         Parameters
         ----------
@@ -1234,6 +1314,10 @@ class ForecasterDirect(ForecasterBase):
             Processed exogenous variables without direct expansion, shape
             (n_train + max_step - 1, exog_cols). `None` if no exogenous
             variables are used.
+        X_train_calendar : numpy ndarray, None
+            Calendar features without direct expansion, shape
+            (n_train + max_step - 1, calendar_cols). `None` if no calendar
+            features are used.
         y_train : dict
             Target values per step in the form {step: array(n_train,)}.
         step : int
@@ -1243,22 +1327,27 @@ class ForecasterDirect(ForecasterBase):
         -------
         X_train_step : numpy ndarray
             Training matrix for the step, shape
-            (n_train, n_autoreg + exog_cols).
+            (n_train, n_autoreg + exog_cols + calendar_cols).
         y_train_step : numpy ndarray
             Target values for the step, shape (n_train,).
 
         """
 
         y_train_step = y_train[step]
-        n_train = X_train_autoreg.shape[0]
 
-        if X_train_exog is None:
+        if X_train_exog is None and X_train_calendar is None:
             # NOTE: All steps share the same X_train_autoreg array. Callers
             # must not modify it in-place to avoid corrupting other steps.
             return X_train_autoreg, y_train_step
-
-        exog_step = X_train_exog[step - 1 : step - 1 + n_train, :]
-        X_train_step = np.concatenate([X_train_autoreg, exog_step], axis=1)
+        
+        n_train = X_train_autoreg.shape[0]
+        X_train_step = [X_train_autoreg]
+        if X_train_exog is not None:
+            X_train_step.append(X_train_exog[step - 1 : step - 1 + n_train, :])
+        if X_train_calendar is not None:
+            X_train_step.append(X_train_calendar[step - 1 : step - 1 + n_train, :])
+        
+        X_train_step = np.concatenate(X_train_step, axis=1)
 
         return X_train_step, y_train_step
 
@@ -1321,10 +1410,12 @@ class ForecasterDirect(ForecasterBase):
 
         return X_train_step, y_train_step, train_index_step
 
+    @manage_warnings
     def create_train_X_y(
         self,
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
+        suppress_warnings: bool = False
     ) -> tuple[pd.DataFrame, dict[int, pd.Series]]:
         """
         Create training matrices from univariate time series and exogenous
@@ -1338,6 +1429,10 @@ class ForecasterDirect(ForecasterBase):
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `y` and their indexes must be aligned.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the creation
+            of the training matrices. See skforecast.exceptions.warn_skforecast_categories 
+            for more information.
 
         Returns
         -------
@@ -1363,6 +1458,7 @@ class ForecasterDirect(ForecasterBase):
         (
             X_train_autoreg,
             X_train_exog,
+            X_train_calendar,
             y_train,
             train_index,
             _,
@@ -1374,15 +1470,22 @@ class ForecasterDirect(ForecasterBase):
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
 
+        X_train = [X_train_autoreg]
         if X_train_exog is not None:
             exog_direct, _ = exog_to_direct_numpy(
                 exog=X_train_exog, steps=self.max_step
             )
-            X_train = np.concatenate(
-                [X_train_autoreg, exog_direct], axis=1
+            X_train.append(exog_direct)
+        if X_train_calendar is not None:
+            calendar_direct, _ = exog_to_direct_numpy(
+                exog=X_train_calendar, steps=self.max_step
             )
+            X_train.append(calendar_direct)
+
+        if len(X_train) == 1:
+            X_train = X_train[0]
         else:
-            X_train = X_train_autoreg
+            X_train = np.concatenate(X_train, axis=1)
 
         X_train = pd.DataFrame(
                       data    = X_train,
@@ -1453,20 +1556,42 @@ class ForecasterDirect(ForecasterBase):
 
         y_train_step = y_train[step]
 
-        if not self.exog_in_:
+        has_exog = self.exog_in_
+        has_calendar = self.calendar_features is not None
+        if not has_exog and not has_calendar:
             X_train_step = X_train
         else:
             if step not in self.filter_train_X_y_index_cache_:
+
                 n_lags = len(self.lags) if self.lags is not None else 0
                 n_window_features = (
                     len(self.X_train_window_features_names_out_) if self.window_features is not None else 0
                 )
-                idx_columns_autoreg = np.arange(n_lags + n_window_features)
-                n_exog = len(self.X_train_direct_exog_names_out_) // self.max_step
-                idx_columns_exog = (
-                    np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
-                )
-                idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
+                n_autoreg = n_lags + n_window_features
+                idx_columns = [np.arange(n_autoreg)]
+                offset = n_autoreg
+
+                if has_exog:
+                    n_exog = len(self.X_train_direct_exog_names_out_) // self.max_step
+                    idx_columns.append(
+                        np.arange(
+                            offset + (step - 1) * n_exog, 
+                            offset + step * n_exog
+                        )
+                    )
+                    offset += n_exog * self.max_step
+                
+                if has_calendar:
+                    n_calendar = len(self.X_train_calendar_features_names_out_)
+                    idx_columns.append(
+                        np.arange(
+                            offset + (step - 1) * n_calendar,
+                            offset + step * n_calendar
+                        )
+                    )
+                    offset += n_calendar * self.max_step
+                
+                idx_columns = np.concatenate(idx_columns)
                 self.filter_train_X_y_index_cache_[step] = idx_columns
 
             idx_columns = self.filter_train_X_y_index_cache_[step]
@@ -1547,6 +1672,7 @@ class ForecasterDirect(ForecasterBase):
         (
             X_train_autoreg,
             X_train_exog,
+            X_train_calendar,
             y_train,
             train_index,
             _,
@@ -1567,6 +1693,7 @@ class ForecasterDirect(ForecasterBase):
         (
             X_test_autoreg,
             X_test_exog,
+            X_test_calendar,
             y_test,
             *_
         ) = self._create_train_X_y(
@@ -1579,16 +1706,18 @@ class ForecasterDirect(ForecasterBase):
         # NOTE: Only step 1 is optimized in one-step-ahead validation.
         step = 1
         X_train, y_train = self._create_train_X_y_step(
-                               X_train_autoreg = X_train_autoreg,
-                               X_train_exog    = X_train_exog,
-                               y_train         = y_train, 
-                               step            = step,
+                               X_train_autoreg  = X_train_autoreg,
+                               X_train_exog     = X_train_exog,
+                               X_train_calendar = X_train_calendar,
+                               y_train          = y_train, 
+                               step             = step,
                            )
         X_test, y_test = self._create_train_X_y_step(
-                             X_train_autoreg = X_test_autoreg, 
-                             X_train_exog    = X_test_exog,
-                             y_train         = y_test, 
-                             step            = step,
+                             X_train_autoreg  = X_test_autoreg, 
+                             X_train_exog     = X_test_exog,
+                             X_train_calendar = X_test_calendar,
+                             y_train          = y_test, 
+                             step             = step,
                          )
 
         X_train, y_train, train_index_step = self._filter_nan_X_y_step(
@@ -1613,15 +1742,12 @@ class ForecasterDirect(ForecasterBase):
         else:
             fit_kwargs = {**self.fit_kwargs}
 
-        if (
-            'cat_features' in fit_kwargs
-            and type(self.estimators_[step]).__name__ == 'CatBoostRegressor'
-        ):
-            cat_idx = np.array(fit_kwargs['cat_features'])
-            X_train = X_train.astype(object)
-            X_train[:, cat_idx] = X_train[:, cat_idx].astype(int)
-            X_test = X_test.astype(object)
-            X_test[:, cat_idx] = X_test[:, cat_idx].astype(int)
+        X_train = cast_catboost_categorical_columns(
+            X=X_train, fit_kwargs=fit_kwargs, estimator=self.estimators_[step]
+        )
+        X_test = cast_catboost_categorical_columns(
+            X=X_test, fit_kwargs=fit_kwargs, estimator=self.estimators_[step]
+        )
 
         return X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
 
@@ -1716,35 +1842,37 @@ class ForecasterDirect(ForecasterBase):
         """
 
         # Reset values in case the forecaster has already been fitted.
-        self.last_window_                       = None
-        self.index_type_                        = None
-        self.index_freq_                        = None
-        self.training_range_                    = None
-        self.series_name_in_                    = None
-        self.exog_in_                           = False
-        self.exog_names_in_                     = None
-        self.exog_type_in_                      = None
-        self.exog_dtypes_in_                    = None
-        self.exog_dtypes_out_                   = None
-        self.categorical_features_names_in_     = None
-        self.X_train_window_features_names_out_ = None
-        self.X_train_exog_names_out_            = None
-        self.X_train_direct_exog_names_out_     = None
-        self.X_train_features_names_out_        = None
-        self.X_train_direct_features_names_out_ = None
-        self.in_sample_residuals_               = None
-        self.in_sample_residuals_by_bin_        = None
-        self.out_sample_residuals_              = None
-        self.out_sample_residuals_by_bin_       = None
-        self.binner_intervals_                  = None
-        self.filter_train_X_y_index_cache_      = {}
-        self.filter_train_X_y_columns_cache_    = {}
-        self.is_fitted                          = False
-        self.fit_date                           = None
+        self.last_window_                         = None
+        self.index_type_                          = None
+        self.index_freq_                          = None
+        self.training_range_                      = None
+        self.series_name_in_                      = None
+        self.exog_in_                             = False
+        self.exog_names_in_                       = None
+        self.exog_type_in_                        = None
+        self.exog_dtypes_in_                      = None
+        self.exog_dtypes_out_                     = None
+        self.categorical_features_names_in_       = None
+        self.X_train_window_features_names_out_   = None
+        self.X_train_calendar_features_names_out_ = None
+        self.X_train_exog_names_out_              = None
+        self.X_train_direct_exog_names_out_       = None
+        self.X_train_features_names_out_          = None
+        self.X_train_direct_features_names_out_   = None
+        self.in_sample_residuals_                 = None
+        self.in_sample_residuals_by_bin_          = None
+        self.out_sample_residuals_                = None
+        self.out_sample_residuals_by_bin_         = None
+        self.binner_intervals_                    = None
+        self.filter_train_X_y_index_cache_        = {}
+        self.filter_train_X_y_columns_cache_      = {}
+        self.is_fitted                            = False
+        self.fit_date                             = None
 
         (
             X_train_autoreg,
             X_train_exog,
+            X_train_calendar,
             y_train,
             train_index,
             exog_names_in_,
@@ -1766,6 +1894,7 @@ class ForecasterDirect(ForecasterBase):
                 estimator                   = clone(self.estimator),
                 X_train_autoreg             = X_train_autoreg,
                 X_train_exog                = X_train_exog,
+                X_train_calendar            = X_train_calendar,
                 y_train                     = y_train,
                 train_index                 = train_index,
                 X_train_features_names_out_ = X_train_features_names_out_,
@@ -1974,7 +2103,6 @@ class ForecasterDirect(ForecasterBase):
                 last_window     = last_window,
                 exog            = exog,
                 exog_names_in_  = self.exog_names_in_,
-                interval        = None,
                 max_step        = self.max_step
             )
 
@@ -2023,6 +2151,8 @@ class ForecasterDirect(ForecasterBase):
             Xs_col_names.extend(self.X_train_window_features_names_out_)
 
         X_autoreg = np.concatenate(X_autoreg).reshape(1, -1)
+
+        exog_values = None
         if exog is not None:
             
             exog = input_to_frame(data=exog, input_name='exog')
@@ -2051,21 +2181,9 @@ class ForecasterDirect(ForecasterBase):
                 check_exog_dtypes(exog=exog)
             else:
                 check_exog(exog=exog, allow_nan=False)
-            
-            n_exog = exog.shape[1]
-            n_features_autoreg = X_autoreg.shape[1]
-            
-            Xs_array = np.empty((len(steps), n_features_autoreg + n_exog), dtype=float)
-            Xs_array[:, :n_features_autoreg] = X_autoreg
 
             exog_values = exog.to_numpy()[:max(steps), :]
-            for i, step in enumerate(steps):
-                Xs_array[i, n_features_autoreg:] = exog_values[step - 1, :]
-            
-            Xs = [Xs_array[i:i + 1] for i in range(len(steps))]
             Xs_col_names = Xs_col_names + self.X_train_exog_names_out_
-        else:
-            Xs = [X_autoreg] * len(steps)
 
         prediction_index = expand_index(
                                index = last_window.index,
@@ -2075,6 +2193,37 @@ class ForecasterDirect(ForecasterBase):
             steps, np.arange(min(steps), max(steps) + 1)
         ):
             prediction_index.freq = last_window.index.freq
+
+        calendar_values = None
+        if self.calendar_features is not None:
+            # NOTE: Calendar features depend only on the predicted timestamp, so
+            # they are computed directly on `prediction_index`. Row `i` already
+            # corresponds to `steps[i]`, no per-step offset is needed.
+            calendar_values = self.calendar_features.transform(
+                prediction_index
+            ).to_numpy()
+            Xs_col_names = Xs_col_names + self.X_train_calendar_features_names_out_
+
+        if exog_values is None and calendar_values is None:
+            Xs = [X_autoreg] * len(steps)
+        else:
+            n_features_autoreg = X_autoreg.shape[1]
+            n_exog = exog_values.shape[1] if exog_values is not None else 0
+            n_calendar = calendar_values.shape[1] if calendar_values is not None else 0
+
+            Xs_array = np.empty(
+                (len(steps), n_features_autoreg + n_exog + n_calendar), dtype=float
+            )
+            Xs_array[:, :n_features_autoreg] = X_autoreg
+            for i, step in enumerate(steps):
+                offset = n_features_autoreg
+                if exog_values is not None:
+                    Xs_array[i, offset:offset + n_exog] = exog_values[step - 1, :]
+                    offset += n_exog
+                if calendar_values is not None:
+                    Xs_array[i, offset:offset + n_calendar] = calendar_values[i, :]
+
+            Xs = [Xs_array[i:i + 1] for i in range(len(steps))]
 
         return Xs, Xs_col_names, steps, prediction_index, differentiator
 
@@ -2559,7 +2708,7 @@ class ForecasterDirect(ForecasterBase):
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         method: str = 'bootstrapping',
-        interval: float | list[float] | tuple[float] = [5, 95],
+        interval: float | list[float] | tuple[float] = [0.05, 0.95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
@@ -2597,18 +2746,22 @@ class ForecasterDirect(ForecasterBase):
             intervals [1]_.
             - 'conformal': Employs the conformal prediction split method for 
             interval estimation [2]_.
-        interval : float, list, tuple, default [5, 95]
+        interval : float, list, tuple, default [0.05, 0.95]
             Confidence level of the prediction interval. Interpretation depends 
             on the method used:
             
             - If `float`, represents the nominal (expected) coverage (between 0 
-            and 1). For instance, `interval=0.95` corresponds to `[2.5, 97.5]` 
-            percentiles.
-            - If `list` or `tuple`, defines the exact percentiles to compute, which 
-            must be between 0 and 100 inclusive. For example, interval 
-            of 95% should be as `interval = [2.5, 97.5]`.
+            and 1). For instance, `interval=0.95` corresponds to `[0.025, 0.975]` 
+            quantiles.
+            - If `list` or `tuple`, defines the exact quantiles to compute, which 
+            must be between 0 and 1 inclusive. For example, interval 
+            of 95% should be as `interval = [0.025, 0.975]`.
             - When using `method='conformal'`, the interval must be a float or 
             a list/tuple defining a symmetric interval.
+
+            **Changed in version 0.23.0:** `interval` is now expressed as
+            quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+            is deprecated and emits a `FutureWarning`.
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
@@ -2651,8 +2804,9 @@ class ForecasterDirect(ForecasterBase):
         if method == "bootstrapping":
             
             if isinstance(interval, (list, tuple)):
+                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=False)
-                interval = np.array(interval) / 100
+                interval = np.array(interval)
             else:
                 check_interval(alpha=interval, alpha_literal='interval')
                 interval = np.array([0.5 - interval / 2, 0.5 + interval / 2])
@@ -2683,8 +2837,9 @@ class ForecasterDirect(ForecasterBase):
         elif method == 'conformal':
 
             if isinstance(interval, (list, tuple)):
+                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=True)
-                nominal_coverage = (interval[1] - interval[0]) / 100
+                nominal_coverage = interval[1] - interval[0]
             else:
                 check_interval(alpha=interval, alpha_literal='interval')
                 nominal_coverage = interval
@@ -3042,11 +3197,13 @@ class ForecasterDirect(ForecasterBase):
 
         self.fit_kwargs = check_select_fit_kwargs(self.estimator, fit_kwargs=fit_kwargs)
 
+    @manage_warnings
     def set_in_sample_residuals(
         self,
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> None:
         """
         Set in-sample residuals in case they were not calculated during the
@@ -3079,6 +3236,10 @@ class ForecasterDirect(ForecasterBase):
             that y[i] is regressed on exog[i].
         random_state : int, default 123
             Sets a seed to the random sampling for reproducible output.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the sampling 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
@@ -3109,10 +3270,12 @@ class ForecasterDirect(ForecasterBase):
         original_exog_in_ = self.exog_in_
         original_X_train_window_features_names_out_ = self.X_train_window_features_names_out_
         original_X_train_direct_exog_names_out_ = self.X_train_direct_exog_names_out_
+        original_X_train_calendar_features_names_out_ = self.X_train_calendar_features_names_out_
         
         (
             X_train_autoreg,
             X_train_exog,
+            X_train_calendar,
             y_train,
             _,
             _,
@@ -3130,6 +3293,7 @@ class ForecasterDirect(ForecasterBase):
             self.exog_in_ = original_exog_in_
             self.X_train_window_features_names_out_ = original_X_train_window_features_names_out_
             self.X_train_direct_exog_names_out_ = original_X_train_direct_exog_names_out_
+            self.X_train_calendar_features_names_out_ = original_X_train_calendar_features_names_out_
 
             raise ValueError(
                 f"Feature mismatch detected after matrix creation. The features "
@@ -3145,10 +3309,11 @@ class ForecasterDirect(ForecasterBase):
         self.in_sample_residuals_ = {}
         for step in self.steps:
             X_train_step, y_train_step = self._create_train_X_y_step(
-                                             X_train_autoreg = X_train_autoreg,
-                                             X_train_exog    = X_train_exog,
-                                             y_train         = y_train,
-                                             step            = step,
+                                             X_train_autoreg  = X_train_autoreg,
+                                             X_train_exog     = X_train_exog,
+                                             X_train_calendar = X_train_calendar,
+                                             y_train          = y_train,
+                                             step             = step,
                                          )
             X_train_step, y_train_step, _ = self._filter_nan_X_y_step(
                                                 X_train_step = X_train_step,
@@ -3177,6 +3342,7 @@ class ForecasterDirect(ForecasterBase):
         self.exog_in_ = original_exog_in_
         self.X_train_window_features_names_out_ = original_X_train_window_features_names_out_
         self.X_train_direct_exog_names_out_ = original_X_train_direct_exog_names_out_
+        self.X_train_calendar_features_names_out_ = original_X_train_calendar_features_names_out_
 
     def set_out_sample_residuals(
         self,

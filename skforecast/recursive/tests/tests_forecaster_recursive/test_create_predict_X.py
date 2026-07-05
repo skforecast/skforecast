@@ -16,9 +16,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
 
-from ....exceptions import DataTransformationWarning
+from skforecast.exceptions import DataTransformationWarning
 from skforecast.utils import transform_numpy
-from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from skforecast.recursive import ForecasterRecursive
 
 # Fixtures
@@ -566,7 +566,7 @@ def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y(
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_when_window_features():
+def test_create_predict_X_when_window_features_calendar_features_and_exog():
     """
     Test the output of create_predict_X when using window_features and exog 
     with datetime index.
@@ -585,23 +585,34 @@ def test_create_predict_X_when_window_features():
     )
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=[5, 5])
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
+    calendar = CalendarFeatures(
+        features=['day_of_week', 'weekend'], encoding="onehot"
+    )
 
     forecaster = ForecasterRecursive(
-        LinearRegression(), lags=5, window_features=[rolling, rolling_2]
+        LinearRegression(), lags=5, window_features=[rolling, rolling_2],
+        calendar_features=calendar
     )
     forecaster.fit(y=y_datetime, exog=exog_datetime)
     results = forecaster.create_predict_X(steps=5, exog=exog_datetime_pred)
 
     expected = pd.DataFrame(
         data = np.array([
-                    [14., 13., 12., 11., 10., 12., 12., 69., 115.],
-                    [15., 14., 13., 12., 11., 13., 13., 75., 116.],
-                    [16., 15., 14., 13., 12., 14., 14., 81., 117.],
-                    [17., 16., 15., 14., 13., 15., 15., 87., 118.],
-                    [18., 17., 16., 15., 14., 16., 16., 93., 119.]]),
+                    [14., 13., 12., 11., 10., 12., 12., 69., 115.,
+                     1., 0., 0., 0., 0., 0., 0., 1.],
+                    [15., 14., 13., 12., 11., 13., 13., 75., 116.,
+                     0., 1., 0., 0., 0., 0., 0., 0.],
+                    [16., 15., 14., 13., 12., 14., 14., 81., 117.,
+                     0., 0., 1., 0., 0., 0., 0., 0.],
+                    [17., 16., 15., 14., 13., 15., 15., 87., 118.,
+                     0., 0., 0., 1., 0., 0., 0., 0.],
+                    [18., 17., 16., 15., 14., 16., 16., 93., 119.,
+                     0., 0., 0., 0., 1., 0., 0., 0.]]),
         index   = pd.date_range('2000-01-16', periods=5, freq='D'),
         columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
-                   'roll_mean_5', 'roll_median_5', 'roll_sum_6', 'exog']
+                   'roll_mean_5', 'roll_median_5', 'roll_sum_6', 'exog',
+                   'weekend', 'day_of_week_0', 'day_of_week_1', 'day_of_week_2',
+                   'day_of_week_3', 'day_of_week_4', 'day_of_week_5', 'day_of_week_6']
     )
 
     pd.testing.assert_frame_equal(results, expected)

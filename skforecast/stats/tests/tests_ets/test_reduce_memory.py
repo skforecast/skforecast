@@ -72,14 +72,14 @@ def test_reduce_memory_preserves_predictions():
     
     # Get predictions before reduction
     pred_before = model.predict(steps=24)
-    pred_interval_before = model.predict_interval(steps=24, level=[80, 95])
+    pred_interval_before = model.predict_interval(steps=24, level=[0.8, 0.95])
     
     # Reduce memory
     model.reduce_memory()
     
     # Get predictions after reduction
     pred_after = model.predict(steps=24)
-    pred_interval_after = model.predict_interval(steps=24, level=[80, 95])
+    pred_interval_after = model.predict_interval(steps=24, level=[0.8, 0.95])
     
     # Verify predictions are identical
     np.testing.assert_allclose(pred_before, pred_after)

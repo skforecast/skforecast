@@ -129,8 +129,8 @@ def test_set_params_requires_refit_before_predict_interval():
     model.fit(y)
     
     # predict_interval works after fit
-    result_before = model.predict_interval(steps=5, level=(95,))
-    assert result_before.shape == (5, 3)  # mean, lower_95, upper_95
+    result_before = model.predict_interval(steps=5, level=(0.95,))
+    assert result_before.shape == (5, 3)  # mean, lower_0.95, upper_0.95
     
     # Set params resets fitted state
     model.set_params(alpha=0.2)
@@ -141,7 +141,7 @@ def test_set_params_requires_refit_before_predict_interval():
     
     # Refit and predict_interval should work again
     model.fit(y)
-    result_after = model.predict_interval(steps=5, level=(95,))
+    result_after = model.predict_interval(steps=5, level=(0.95,))
     assert result_after.shape == (5, 3)
 
 

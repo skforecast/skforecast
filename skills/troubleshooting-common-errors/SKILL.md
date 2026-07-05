@@ -9,6 +9,8 @@ description: >
 
 # Troubleshooting Common Errors
 
+This skill is the full pitfall catalog. The highest-risk skills also carry a focused `## Stop Conditions` table at the top (forecasting-single-series, forecasting-multiple-series, prediction-intervals, statistical-models, foundation-forecasting, feature-engineering, deep-learning-forecasting, hyperparameter-optimization); this skill remains the canonical source they point back to.
+
 ## Deprecated Import Paths
 
 The most frequent LLM error. Old import paths no longer exist.

@@ -9,7 +9,9 @@ from skforecast.plot import plot_multivariate_time_series_corr
 
 
 def _make_corr(n: int = 4, seed: int = 123) -> pd.DataFrame:
-    """Return a square correlation DataFrame of size n x n."""
+    """
+    Return a square correlation DataFrame of size n x n.
+    """
     rng = np.random.default_rng(seed)
     data = rng.standard_normal((100, n))
     columns = [f"series_{i}" for i in range(n)]
@@ -19,7 +21,7 @@ def _make_corr(n: int = 4, seed: int = 123) -> pd.DataFrame:
 def test_plot_multivariate_time_series_corr_output():
     """
     Test that plot_multivariate_time_series_corr returns a Figure with heatmap
-    (QuadMesh), n*n text annotations and the expected x-axis label when no
+    (AxesImage), n*n text annotations and the expected x-axis label when no
     external ax is provided.
     """
     n = 4
@@ -30,7 +32,7 @@ def test_plot_multivariate_time_series_corr_output():
     assert isinstance(fig, matplotlib.figure.Figure)
     assert len(fig.axes) == 2  # 1 main axes + 1 colorbar axes
     ax = fig.axes[0]
-    assert len(ax.collections) >= 1  # QuadMesh from heatmap
+    assert len(ax.images) == 1  # AxesImage from heatmap
     texts = [
         child for child in ax.get_children()
         if isinstance(child, matplotlib.text.Text) and child.get_text()
@@ -51,7 +53,7 @@ def test_plot_multivariate_time_series_corr_output_with_custom_ax():
 
     assert isinstance(fig, matplotlib.figure.Figure)
     assert fig is fig_ext
-    assert len(ax_ext.collections) >= 1  # heatmap drawn on provided ax
+    assert len(ax_ext.images) == 1  # heatmap drawn on provided ax
 
 
 def test_plot_multivariate_time_series_corr_output_with_fig_kw():

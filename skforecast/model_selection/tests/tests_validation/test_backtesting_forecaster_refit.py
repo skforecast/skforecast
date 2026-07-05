@@ -14,9 +14,9 @@ from catboost import CatBoostRegressor
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
+from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection._validation import _backtesting_forecaster
-from skforecast.preprocessing import RollingFeatures
 
 # Fixtures
 from skforecast.exceptions import IgnoredArgumentWarning
@@ -370,35 +370,41 @@ def test_output_backtesting_forecaster_ForecasterRecursive_window_features_with_
     12 observations to backtest, steps=4 (no remainder), metric='mean_absolute_error'
     and window features.
     """
+    y_datetime = y.copy()
+    y_datetime.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
+    exog_datetime = exog.copy()
+    exog_datetime.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
 
-    expected_metric = pd.DataFrame({"mean_absolute_error": [0.2095996273]})
+    expected_metric = pd.DataFrame({"mean_absolute_error": [0.23258375638256037]})
     expected_predictions = pd.DataFrame(
         {
             "pred": np.array(
                 [
-                    0.4937106691, 0.4471145812, 0.4937808606, 0.536444821 , 0.4215610015,
-                    0.4273722215, 0.4483843054, 0.5401413533, 0.4366510863, 0.4705228766,
-                    0.5736477861, 0.5938840872,
+                    0.440366070885612, 0.3934075053873992, 0.39277888247102744, 
+                    0.4408493012903725, 0.4513309969374961, 0.46652816388653595, 
+                    0.4047030159770846, 0.5421449391574614, 0.43357116935121026, 
+                    0.39654116676276874, 0.49078552251250257, 0.5967420413335364
                 ]
             )
         },
-        index=pd.RangeIndex(start=38, stop=50, step=1),
+        index=pd.date_range(start='2022-02-08', periods=12, freq='D'),
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
+    calendar_features = CalendarFeatures(features=None, encoding='cyclical')
     window_features = RollingFeatures(
         stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
         window_sizes = 3,
     )
     forecaster = ForecasterRecursive(
-        estimator=Ridge(random_state=123), lags=3, window_features=window_features
+        estimator=Ridge(random_state=123), lags=3, 
+        window_features=window_features, calendar_features=calendar_features
     )
 
     n_backtest = 12
-    y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
             steps                 = 4,
-            initial_train_size    = len(y_train),
+            initial_train_size    = len(y_datetime[:-n_backtest]),
             window_size           = None,
             differentiation       = None,
             refit                 = True,
@@ -410,8 +416,8 @@ def test_output_backtesting_forecaster_ForecasterRecursive_window_features_with_
         )
     metric, backtest_predictions = _backtesting_forecaster(
                                         forecaster = forecaster,
-                                        y          = y,
-                                        exog       = exog,
+                                        y          = y_datetime,
+                                        exog       = exog_datetime,
                                         cv         = cv,
                                         metric     = 'mean_absolute_error',
                                         verbose    = False
@@ -428,35 +434,41 @@ def test_output_backtesting_forecaster_ForecasterDirect_window_features_with_moc
     12 observations to backtest, steps=4 (no remainder), metric='mean_absolute_error'
     and window features.
     """
+    y_datetime = y.copy()
+    y_datetime.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
+    exog_datetime = exog.copy()
+    exog_datetime.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
 
-    expected_metric = pd.DataFrame({"mean_absolute_error": [0.1979777165]})
+    expected_metric = pd.DataFrame({"mean_absolute_error": [0.22667240792099544]})
     expected_predictions = pd.DataFrame(
         {
             "pred": np.array(
                 [
-                    0.4754121497, 0.4737280131, 0.5951416701, 0.4792250046, 0.4086254462,
-                    0.4906131377, 0.4283798785, 0.4534338932, 0.4384145046, 0.5073137847,
-                    0.5507396524, 0.4885913459,
+                    0.3831982672969094, 0.3379854288326746, 0.44010691857924766, 
+                    0.3576207222253624, 0.4835864927336175, 0.5491432739870774, 
+                    0.47562023430885014, 0.3977010432218724, 0.4321652302334456, 
+                    0.4273202371150677, 0.5049388792293678, 0.505694491520422
                 ]
             )
         },
-        index=pd.RangeIndex(start=38, stop=50, step=1),
+        index=pd.date_range(start='2022-02-08', periods=12, freq='D'),
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
+    calendar_features = CalendarFeatures(features=None, encoding='cyclical')
     window_features = RollingFeatures(
         stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
         window_sizes = 3,
     )
     forecaster = ForecasterDirect(
-        estimator=Ridge(random_state=123), steps=4, lags=3, window_features=window_features
+        estimator=Ridge(random_state=123), steps=4, lags=3, 
+        window_features=window_features, calendar_features=calendar_features
     )
 
     n_backtest = 12
-    y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
             steps                 = 4,
-            initial_train_size    = len(y_train),
+            initial_train_size    = len(y_datetime[:-n_backtest]),
             window_size           = None,
             differentiation       = None,
             refit                 = True,
@@ -468,8 +480,8 @@ def test_output_backtesting_forecaster_ForecasterDirect_window_features_with_moc
         )
     metric, backtest_predictions = _backtesting_forecaster(
                                         forecaster = forecaster,
-                                        y          = y,
-                                        exog       = exog,
+                                        y          = y_datetime,
+                                        exog       = exog_datetime,
                                         cv         = cv,
                                         metric     = 'mean_absolute_error',
                                         verbose    = False
@@ -693,7 +705,7 @@ def test_output_backtesting_forecaster_interval_no_exog_no_remainder_with_mocked
                                        exog                    = None,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -754,7 +766,7 @@ def test_output_backtesting_forecaster_interval_no_exog_yes_remainder_with_mocke
                                        exog                    = None,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -815,7 +827,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_no_remainder_with_mocke
                                        exog                    = exog,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -876,7 +888,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_with_mock
                                        exog                    = exog,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -892,9 +904,9 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_with_mock
 @pytest.mark.parametrize("initial_train_size", 
                          [len(y) - 20, "2022-01-30 00:00:00"],
                          ids=lambda init: f'initial_train_size: {init}')
-def test_output_backtesting_forecaster_refit_interval_percentiles_yes_exog(initial_train_size):
+def test_output_backtesting_forecaster_refit_interval_quantiles_yes_exog(initial_train_size):
     """
-    Test output of _backtesting_forecaster with predicted intervals as percentiles.
+    Test output of _backtesting_forecaster with predicted intervals as quantiles.
     """
     y_with_index = y.copy()
     y_with_index.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
@@ -924,7 +936,7 @@ def test_output_backtesting_forecaster_refit_interval_percentiles_yes_exog(initi
             [0.49592041, 0.25591545, 0.46211508, 0.65788551, 0.80186688],
             [0.52061567, 0.23847963, 0.4387499 , 0.69760195, 0.81649697],
             [0.51002945, 0.25031203, 0.45753096, 0.74133217, 0.80883212]]),
-        columns = ['pred', 'p_10', 'p_40', 'p_80', 'p_90'],
+        columns = ['pred', 'q_0.1', 'q_0.4', 'q_0.8', 'q_0.9'],
         index = pd.date_range(start='2022-01-31', periods=20, freq='D')
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3])
@@ -941,7 +953,7 @@ def test_output_backtesting_forecaster_refit_interval_percentiles_yes_exog(initi
                                        exog                    = exog_with_index,
                                        cv                      = cv,
                                        metric                  = 'mean_absolute_error',
-                                       interval                = (10, 40, 80, 90),
+                                       interval                = (0.1, 0.4, 0.8, 0.9),
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 250,
                                        random_state            = 123,
@@ -955,7 +967,7 @@ def test_output_backtesting_forecaster_refit_interval_percentiles_yes_exog(initi
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.90, (5, 95)], 
+                         [0.90, (0.05, 0.95)], 
                          ids = lambda value: f'interval: {value}')
 def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked(interval):
     """
@@ -1027,7 +1039,7 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.90, (5, 95)], 
+                         [0.90, (0.05, 0.95)], 
                          ids = lambda value: f'interval: {value}')
 def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked_ForecasterDirect(interval):
     """
@@ -1148,7 +1160,7 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_no_exog_no_
                                        exog                    = None,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -1217,7 +1229,7 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_binned_no_e
                                        exog                    = None,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -1689,7 +1701,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_gap_with_
                                        exog                    = exog,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        use_in_sample_residuals = True,
@@ -1760,7 +1772,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
                                        exog                    = exog_with_index,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -1840,7 +1852,7 @@ def test_output_backtesting_forecaster_refit_int_interval_yes_exog_yes_remainder
                                        exog                    = exog,
                                        cv                      = cv,
                                        metric                  = ['mean_squared_error', 'mean_absolute_scaled_error'],
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,
@@ -1917,7 +1929,7 @@ def test_output_backtesting_forecaster_refit_int_interval_yes_exog_not_allow_rem
                                            exog                    = exog_with_index,
                                            cv                      = cv,
                                            metric                  = 'mean_squared_error',
-                                           interval                = [5, 95],
+                                           interval                = [0.05, 0.95],
                                            interval_method         = 'bootstrapping',
                                            n_boot                  = 500,
                                            random_state            = 123,
@@ -2005,7 +2017,7 @@ def test_output_backtesting_forecaster_refit_int_interval_yes_exog_fold_stride_s
                                        exog                    = exog,
                                        cv                      = cv,
                                        metric                  = 'mean_squared_error',
-                                       interval                = [5, 95],
+                                       interval                = [0.05, 0.95],
                                        interval_method         = 'bootstrapping',
                                        n_boot                  = 500,
                                        random_state            = 123,

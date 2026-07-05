@@ -161,7 +161,6 @@ def run_benchmark_ForecasterRnn(output_dir, run_id=None):
             last_window       = forecaster.last_window_,
             exog              = exog,
             exog_names_in_    = forecaster.exog_names_in_,
-            interval          = None,
             max_step          = forecaster.max_step,
             levels            = forecaster.levels,
             levels_forecaster = forecaster.levels,
@@ -183,7 +182,7 @@ def run_benchmark_ForecasterRnn(output_dir, run_id=None):
             steps=STEPS,
             exog=exog,
             method='conformal',
-            interval=[5, 95],
+            interval=[0.05, 0.95],
             suppress_warnings=True
         )
 
@@ -227,7 +226,7 @@ def run_benchmark_ForecasterRnn(output_dir, run_id=None):
                 series=series,
                 exog=exog,
                 cv=cv,
-                interval=[5, 95],
+                interval=[0.05, 0.95],
                 interval_method='conformal',
                 metric='mean_squared_error',
                 show_progress=False

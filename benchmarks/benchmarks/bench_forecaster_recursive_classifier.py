@@ -112,8 +112,7 @@ def run_benchmark_ForecasterRecursiveClassifier(output_dir, run_id=None):
             window_size     = forecaster.window_size,
             last_window     = forecaster.last_window_,
             exog            = exog,
-            exog_names_in_  = forecaster.exog_names_in_,
-            interval        = None
+            exog_names_in_  = forecaster.exog_names_in_
         )
 
     def ForecasterRecursiveClassifier__create_predict_inputs(forecaster, exog):

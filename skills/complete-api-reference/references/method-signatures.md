@@ -152,10 +152,12 @@ FoundationModel(
     **kwargs,                  # Forwarded to the resolved adapter. Common keys:
                                #   context_length : int
                                #   device_map / device : 'auto' | 'cuda' | 'mps' | 'cpu'
-                               #   torch_dtype : object (Chronos-2 only)
+                               #   torch_dtype : object (Chronos-2, T0)
                                #   cross_learning : bool (Chronos-2 only)
                                #   max_horizon, forecast_config_kwargs (TimesFM 2.5)
                                #   point_estimate, tabicl_config, temporal_features (TabICL)
+                               #   mode, point_estimate, tabpfn_model_config, temporal_features (TabPFN-TS)
+                               #   (T0 uses only context_length, device_map, torch_dtype)
 )
 
 ForecasterFoundation(
@@ -318,7 +320,7 @@ forecaster.predict(
     check_inputs=True         # bool
 ) -> pd.DataFrame             # Long-format: columns ['level', 'pred']
 # Also:
-#   predict_interval(steps, ..., interval=[10, 90]) -> ['level','pred','lower_bound','upper_bound']
+#   predict_interval(steps, ..., interval=[0.1, 0.9]) -> ['level','pred','lower_bound','upper_bound']
 #   predict_quantiles(steps, ..., quantiles=[0.1, 0.5, 0.9]) -> ['level','q_0.1','q_0.5','q_0.9']
 ```
 
@@ -331,7 +333,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.Series | pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     method='bootstrapping',             # 'bootstrapping' | 'conformal'
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     n_boot=250,                         # int, number of bootstrap samples
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
@@ -346,7 +348,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | dict | None
     method='conformal',                 # 'bootstrapping' | 'conformal'
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     n_boot=250,                         # int
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
@@ -360,7 +362,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.Series | pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     method='bootstrapping',             # 'bootstrapping' | 'conformal'
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     n_boot=250,                         # int
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
@@ -374,7 +376,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     method='conformal',                 # 'bootstrapping' | 'conformal'
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     n_boot=250,                         # int
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
@@ -389,7 +391,7 @@ forecaster.predict_interval(
     last_window_exog=None,              # pd.Series | pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     alpha=0.05,                         # float, significance level
-    interval=None,                      # list[float] | tuple[float] | None
+    interval=None,                      # list[float] | tuple[float] | None, quantiles 0-1
     suppress_warnings=False             # bool
 ) -> pd.DataFrame
 
@@ -398,7 +400,7 @@ forecaster.predict_interval(
     steps,                              # int (required)
     last_window=None,                   # pd.Series | None
     method='conformal',                 # only 'conformal' supported
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
     random_state=None,                  # Any, ignored (API compatibility)
@@ -414,7 +416,7 @@ forecaster.predict_interval(
     last_window=None,                   # pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
     method='conformal',                 # only 'conformal' supported
-    interval=[5, 95],                   # float | list[float] | tuple[float]
+    interval=[0.05, 0.95],              # float (coverage) | list[float] | tuple[float], quantiles 0-1
     use_in_sample_residuals=True,       # bool
     use_binned_residuals=True,          # bool
     suppress_warnings=False,            # bool
@@ -931,7 +933,7 @@ TimeSeriesDifferentiator(
     window_size=None         # int | None
 )
 
-DateTimeFeatureTransformer(
+CalendarFeatures(
     features=None,           # list[str] | None, e.g. ['year', 'month', 'day_of_week', 'hour']
     encoding='cyclical',     # 'cyclical' | 'onehot' | None
     max_values=None          # dict[str, int] | None, max values for cyclical encoding

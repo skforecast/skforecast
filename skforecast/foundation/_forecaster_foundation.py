@@ -16,6 +16,7 @@ from sklearn.exceptions import NotFittedError
 from .. import __version__
 from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
+    _normalize_interval_scale,
     check_interval,
     get_style_repr_html,
 )
@@ -146,8 +147,9 @@ class ForecasterFoundation:
             "library": "skforecast",
             "forecaster_name": "ForecasterFoundation",
             "forecaster_task": "regression",
-            "forecasting_scope": "single-series|multi-series",
+            "forecasting_scope": "single-series | global",
             "forecasting_strategy": "foundation",
+            "multiple_estimators": False, 
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
@@ -164,11 +166,12 @@ class ForecasterFoundation:
                 "long-format pandas.DataFrame",
                 "dict[str, pandas.Series | pandas.DataFrame | None]",
             ],
-            "handles_missing_values_series": False,
-            "handles_missing_values_exog": False,
+            "handles_missing_values_series": True,
+            "handles_missing_values_exog": True,
 
             "supports_lags": False,
             "supports_window_features": False,
+            "supports_calendar_features": False,
             "supports_transformer_series": False,
             "supports_transformer_exog": False,
             "supports_categorical_features": True,
@@ -577,7 +580,7 @@ class ForecasterFoundation:
                 <ul>
                     <li><strong>Context range:</strong> {context_range_html}</li>
                     <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
-                    <li><strong>Training index frequency:</strong> {self.index_freq_ if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index frequency:</strong> {self.index_freq_.freqstr if hasattr(self.index_freq_, 'freqstr') else str(self.index_freq_) if self.is_fitted else 'Not fitted'}</li>
                 </ul>
             </details>
             <details>
@@ -773,7 +776,7 @@ class ForecasterFoundation:
             | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
-        interval: list[float] | tuple[float] = [10, 90],
+        interval: float | list[float] | tuple[float] = [0.1, 0.9],
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
@@ -797,10 +800,20 @@ class ForecasterFoundation:
         exog : pandas Series, pandas DataFrame, dict, default None
             Future-known exogenous variables for the forecast horizon
             (future covariates).
-        interval : list, tuple, default [10, 90]
-            Confidence of the prediction interval. Sequence of two percentiles
-            `[lower, upper]`, e.g. `[10, 90]` for an 80 % interval.
-            Values must be between 0 and 100 inclusive.
+        interval : float, list, tuple, default [0.1, 0.9]
+            Confidence level of the prediction interval. Interpretation depends 
+            on the method used:
+            
+            - If `float`, represents the nominal (expected) coverage (between 0 
+            and 1). For instance, `interval=0.95` corresponds to `[0.025, 0.975]` 
+            quantiles.
+            - If `list` or `tuple`, defines the exact quantiles to compute, which 
+            must be between 0 and 1 inclusive. For example, interval 
+            of 95% should be as `interval = [0.025, 0.975]`.
+
+            **Changed in version 0.23.0:** `interval` is now expressed as
+            quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+            is deprecated and emits a `FutureWarning`.
         check_inputs : bool, default True
             If `True`, the `context` and `context_exog` inputs are validated
             and normalized. If `False`, `context` must already be a
@@ -840,24 +853,15 @@ class ForecasterFoundation:
                 "arguments before using `predict_interval()`, or pass `context`."
             )
 
-        if isinstance(interval, (int, float)):
+        if isinstance(interval, (list, tuple)):
+            interval = _normalize_interval_scale(interval)
+            check_interval(interval=interval, ensure_symmetric_intervals=False)
+        else:
             check_interval(alpha=interval, alpha_literal='interval')
-            interval = [(0.5 - interval / 2) * 100, (0.5 + interval / 2) * 100]
+            interval = [0.5 - interval / 2, 0.5 + interval / 2]
 
-        if len(interval) != 2:
-            raise ValueError(
-                f"`interval` must be a sequence of exactly two values [lower, upper]. "
-                f"Got {len(interval)} values."
-            )
-        lower_pct, upper_pct = float(interval[0]), float(interval[1])
-        if not (0 <= lower_pct < upper_pct <= 100):
-            raise ValueError(
-                f"`interval` values must satisfy 0 <= lower < upper <= 100. "
-                f"Got [{lower_pct}, {upper_pct}]."
-            )
+        lower_q, upper_q = float(interval[0]), float(interval[1])
 
-        lower_q = lower_pct / 100
-        upper_q = upper_pct / 100
         # Always include the median (0.5) so 'pred' is the central forecast.
         quantiles = sorted({lower_q, 0.5, upper_q})
 

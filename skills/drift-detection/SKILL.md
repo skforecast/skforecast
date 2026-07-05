@@ -18,6 +18,11 @@ Use drift detection to monitor whether new data falls outside the patterns seen 
 | `RangeDriftDetector` | Very fast | Real-time inference — checks if values are in training range |
 | `PopulationDriftDetector` | Moderate | Batch monitoring — statistical tests for distribution shifts |
 
+### Related skills
+
+- **Before**: `forecasting-single-series` / `forecasting-multiple-series` (the detector is fitted on the training data of an existing forecaster)
+- **Before**: `prediction-intervals` (intervals quantify uncertainty under the training distribution; drift detection flags when that distribution changes)
+
 ## RangeDriftDetector
 
 Checks whether new observations fall within the ranges seen during training. Lightweight and suitable for real-time scoring.

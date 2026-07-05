@@ -19,23 +19,29 @@ def select_features(
     selector: object,
     y: pd.Series | pd.DataFrame,
     exog: pd.Series | pd.DataFrame | None = None,
-    select_only: str | None = None,
+    select_only: str | list[str] | None = None,
     force_inclusion: list[str] | str | None = None,
     subsample: int | float = 0.5,
     random_state: int = 123,
     verbose: bool = True
-) -> tuple[list[int], list[str], list[str]]:
+) -> tuple[list[int], list[str], list[str], list[str]]:
     """
     Feature selection using any of the sklearn.feature_selection module selectors 
-    (such as `RFECV`, `SelectFromModel`, etc.). Two groups of features are
-    evaluated: autoregressive features (lags and window features) and exogenous
-    features. By default, the selection process is performed on both sets of features
-    at the same time, so that the most relevant autoregressive and exogenous features
-    are selected. However, using the `select_only` argument, the selection process
-    can focus only on the autoregressive or exogenous features without taking into
-    account the other features. Therefore, all other features will remain in the model. 
-    It is also possible to force the inclusion of certain features in the final list
-    of selected features using the `force_inclusion` parameter.
+    (such as `RFECV`, `SelectFromModel`, etc.). Three groups of features are
+    evaluated: autoregressive features (lags and window features), exogenous
+    features and calendar features. By default, the selection process is performed
+    on the three sets of features at the same time, so that the most relevant
+    autoregressive, exogenous and calendar features are selected. However, using
+    the `select_only` argument, the selection process can focus only on one or more
+    of these groups without taking into account the others. Therefore, all features
+    in the remaining groups will remain in the model. It is also possible to force
+    the inclusion of certain features in the final list of selected features using
+    the `force_inclusion` parameter.
+
+    If encoded, calendar features are evaluated at the encoded-column level (e.g. 
+    `month_sin`, `month_cos`), but they are returned at the source-feature level 
+    (e.g. `month`). A source calendar feature is kept whenever at least one of 
+    its encoded columns is selected.
 
     Parameters
     ----------
@@ -50,15 +56,24 @@ def select_features(
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    select_only : str, default None
-        Decide what type of features to include in the selection process. 
-        
-        - If `'autoreg'`, only autoregressive features (lags and window features)
-        are evaluated by the selector. All exogenous features are included in the
-        output `selected_exog`.
-        - If `'exog'`, only exogenous features are evaluated without the presence
-        of autoregressive features. All autoregressive features are included 
-        in the outputs `selected_lags` and `selected_window_features`.
+    select_only : str, list, default None
+        Decide what type of features to include in the selection process.
+
+        - If `'autoreg'` (or `['autoreg']`), only autoregressive features (lags
+        and window features) are evaluated by the selector. All exogenous and
+        calendar features are kept and returned in `selected_exog` and
+        `selected_calendar_features`.
+        - If `'exog'` (or `['exog']`), only exogenous features are evaluated. All
+        autoregressive and calendar features are kept and returned in
+        `selected_lags`, `selected_window_features` and
+        `selected_calendar_features`.
+        - If `'calendar'` (or `['calendar']`), only calendar features are
+        evaluated. All autoregressive and exogenous features are kept and
+        returned in `selected_lags`, `selected_window_features` and
+        `selected_exog`.
+        - If `list`, any combination of `'autoreg'`, `'exog'` and `'calendar'`.
+        Only the groups listed are evaluated by the selector; the remaining
+        groups are kept unchanged.
         - If `None`, all features are evaluated by the selector.
     force_inclusion : list, str, default None
         Features to force include in the final list of selected features.
@@ -67,6 +82,10 @@ def select_features(
         - If `str`, regular expression to identify features to force include. 
         For example, if `force_inclusion="^sun_"`, all features that begin 
         with "sun_" will be included in the final list of selected features.
+
+        For calendar features, `force_inclusion` is matched against the encoded
+        column names (e.g. `month_sin`); forcing any encoded column keeps its
+        source calendar feature in `selected_calendar_features`.
     subsample : int, float, default 0.5
         Proportion of records to use for feature selection.
     random_state : int, default 123
@@ -83,6 +102,9 @@ def select_features(
         List of selected window features.
     selected_exog : list
         List of selected exogenous features.
+    selected_calendar_features : list
+        List of selected calendar features (source-level names, without the
+        encoding suffix). Empty list if the forecaster has no calendar features.
 
     """
 
@@ -93,11 +115,27 @@ def select_features(
         raise TypeError(
             f"`forecaster` must be one of the following classes: {valid_forecasters}."
         )
-    
-    if select_only not in ['autoreg', 'exog', None]:
-        raise ValueError(
-            "`select_only` must be one of the following values: 'autoreg', 'exog', None."
+
+    valid_select_only = ['autoreg', 'exog', 'calendar']
+    if select_only is None:
+        select_only_list = valid_select_only
+    else:
+        select_only_list = (
+            [select_only] if isinstance(select_only, str) else select_only
         )
+        if not isinstance(select_only_list, list):
+            raise TypeError(
+                "`select_only` must be a str, a list of str, or None."
+            )
+        if not set(select_only_list).issubset(valid_select_only):
+            raise ValueError(
+                "`select_only` must be one or more of the following values: "
+                "'autoreg', 'exog', 'calendar', or None."
+            )
+
+    eval_autoreg = 'autoreg' in select_only_list
+    eval_exog = 'exog' in select_only_list
+    eval_calendar = 'calendar' in select_only_list
 
     if subsample <= 0 or subsample > 1:
         raise ValueError(
@@ -125,25 +163,56 @@ def select_features(
         window_features_cols = forecaster.window_features_names
         autoreg_cols.extend(window_features_cols)
 
+    # `create_train_X_y` fit-transforms `calendar_features`, so its encoded
+    # output column names (e.g. `month_sin`) are available in `feature_names_out_`.
+    # `calendar_features_names` holds the source-level feature names (e.g. `month`).
+    calendar_cols = []
+    calendar_features_names = []
+    if forecaster.calendar_features is not None:
+        calendar_cols = list(forecaster.calendar_features.feature_names_out_)
+        calendar_features_names = list(forecaster.calendar_features_names)
+
     # Use sets for O(1) lookup instead of O(n) list search
     autoreg_cols_set = set(autoreg_cols)
-    exog_cols = [col for col in X_train.columns if col not in autoreg_cols_set]
+    calendar_cols_set = set(calendar_cols)
+    exog_cols = [
+        col for col in X_train.columns
+        if col not in autoreg_cols_set and col not in calendar_cols_set
+    ]
     exog_cols_set = set(exog_cols)
 
     forced_autoreg = []
     forced_exog = []
+    forced_calendar = []
     if force_inclusion is not None:
         if isinstance(force_inclusion, list):
             forced_autoreg = [col for col in force_inclusion if col in autoreg_cols_set]
             forced_exog = [col for col in force_inclusion if col in exog_cols_set]
+            forced_calendar = [col for col in force_inclusion if col in calendar_cols_set]
         elif isinstance(force_inclusion, str):
             forced_autoreg = [col for col in autoreg_cols if re.match(force_inclusion, col)]
             forced_exog = [col for col in exog_cols if re.match(force_inclusion, col)]
+            forced_calendar = [col for col in calendar_cols if re.match(force_inclusion, col)]
 
-    if select_only == 'autoreg':
-        X_train = X_train.drop(columns=exog_cols)
-    elif select_only == 'exog':
-        X_train = X_train.drop(columns=autoreg_cols)
+    # Groups not evaluated by the selector are kept fixed and removed from the
+    # selection matrix so the selector only sees the requested groups.
+    cols_to_drop = []
+    if not eval_autoreg:
+        cols_to_drop.extend(autoreg_cols)
+    if not eval_exog:
+        cols_to_drop.extend(exog_cols)
+    if not eval_calendar:
+        cols_to_drop.extend(calendar_cols)
+    
+    if cols_to_drop:
+        X_train = X_train.drop(columns=cols_to_drop)
+
+    if X_train.shape[1] == 0:
+        raise ValueError(
+            "No features remain to be evaluated by the selector. The group(s) "
+            "requested in `select_only` contain no features. Make sure the "
+            "forecaster includes features for the selected group(s)."
+        )
 
     if isinstance(subsample, float):
         subsample = int(len(X_train) * subsample)
@@ -155,37 +224,46 @@ def select_features(
     selector.fit(X_train_sample, y_train_sample)
     selected_features = selector.get_feature_names_out()
 
-    if select_only == 'exog':
-        selected_autoreg = autoreg_cols
-    else:
+    if eval_autoreg:
         selected_autoreg = [
-            feature
-            for feature in selected_features
-            if feature in autoreg_cols_set
+            feature for feature in selected_features if feature in autoreg_cols_set
         ]
-
-    if select_only == 'autoreg':
-        selected_exog = exog_cols
     else:
+        selected_autoreg = autoreg_cols
+
+    if eval_exog:
         selected_exog = [
-            feature
-            for feature in selected_features
-            if feature in exog_cols_set
+            feature for feature in selected_features if feature in exog_cols_set
         ]
+    else:
+        selected_exog = exog_cols
+
+    if eval_calendar:
+        selected_calendar_cols = [
+            feature for feature in selected_features if feature in calendar_cols_set
+        ]
+    else:
+        selected_calendar_cols = calendar_cols
 
     if force_inclusion is not None: 
-        if select_only != 'autoreg':
+        if eval_exog:
             forced_exog_not_selected = set(forced_exog) - set(selected_features)
             selected_exog.extend(forced_exog_not_selected)
             # Use dict for O(1) index lookup instead of O(n) list.index()
             exog_cols_order = {col: i for i, col in enumerate(exog_cols)}
             selected_exog.sort(key=lambda x: exog_cols_order[x])
-        if select_only != 'exog':
+        if eval_autoreg:
             forced_autoreg_not_selected = set(forced_autoreg) - set(selected_features)
             selected_autoreg.extend(forced_autoreg_not_selected)
             # Use dict for O(1) index lookup instead of O(n) list.index()
             autoreg_cols_order = {col: i for i, col in enumerate(autoreg_cols)}
             selected_autoreg.sort(key=lambda x: autoreg_cols_order[x])
+        if eval_calendar:
+            forced_calendar_not_selected = set(forced_calendar) - set(selected_features)
+            selected_calendar_cols.extend(forced_calendar_not_selected)
+            # Use dict for O(1) index lookup instead of O(n) list.index()
+            calendar_cols_order = {col: i for i, col in enumerate(calendar_cols)}
+            selected_calendar_cols.sort(key=lambda x: calendar_cols_order[x])
 
     if len(selected_autoreg) == 0:
         warnings.warn(
@@ -206,21 +284,47 @@ def select_features(
             feature for feature in selected_autoreg if feature in window_features_cols_set
         ]
 
+    # Map the selected encoded calendar columns back to their source calendar
+    # features (e.g. `month_sin`, `month_cos` -> `month`). A source feature is
+    # kept if at least one of its encoded columns is selected. Source features
+    # are matched longest-first to disambiguate names that share a prefix
+    # (e.g. `week` and `day_of_week`).
+    source_features_sorted = sorted(calendar_features_names, key=len, reverse=True)
+    selected_calendar_features = []
+    seen_calendar_features = set()
+    for col in selected_calendar_cols:
+        for feature in source_features_sorted:
+            if col == feature or col.startswith(f"{feature}_"):
+                if feature not in seen_calendar_features:
+                    seen_calendar_features.add(feature)
+                    selected_calendar_features.append(feature)
+                break
+    calendar_features_order = {
+        feature: i for i, feature in enumerate(calendar_features_names)
+    }
+    selected_calendar_features.sort(key=lambda x: calendar_features_order[x])
+
     if verbose:
         print(f"Recursive feature elimination ({selector.__class__.__name__})")
         print("--------------------------------" + "-" * len(selector.__class__.__name__))
         print(f"Total number of records available: {X_train.shape[0]}")
         print(f"Total number of records used for feature selection: {X_train_sample.shape[0]}")
-        print(f"Number of features available: {len(autoreg_cols) + len(exog_cols)}") 
+        print(f"Number of features available: {len(autoreg_cols) + len(exog_cols) + len(calendar_cols)}") 
         print(f"    Lags            (n={len(lags_cols)})")
         print(f"    Window features (n={len(window_features_cols)})")
         print(f"    Exog            (n={len(exog_cols)})")
-        print(f"Number of features selected: {len(selected_features)}")
+        print(f"    Calendar        (n={len(calendar_cols)})")
+        n_selected = (
+            len(selected_lags) + len(selected_window_features)
+            + len(selected_exog) + len(selected_calendar_features)
+        )
+        print(f"Number of features selected: {n_selected}")
         print(f"    Lags            (n={len(selected_lags)}) : {selected_lags}")
         print(f"    Window features (n={len(selected_window_features)}) : {selected_window_features}")
         print(f"    Exog            (n={len(selected_exog)}) : {selected_exog}")
+        print(f"    Calendar        (n={len(selected_calendar_features)}) : {selected_calendar_features}")
 
-    return selected_lags, selected_window_features, selected_exog
+    return selected_lags, selected_window_features, selected_exog, selected_calendar_features
 
 
 def select_features_multiseries(
@@ -228,23 +332,29 @@ def select_features_multiseries(
     selector: object,
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    select_only: str | None = None,
+    select_only: str | list[str] | None = None,
     force_inclusion: list[str] | str | None = None,
     subsample: int | float = 0.5,
     random_state: int = 123,
     verbose: bool = True,
-) -> tuple[list[int] | dict[str, int], list[str], list[str]]:
+) -> tuple[list[int] | dict[str, list[int]], list[str], list[str], list[str]]:
     """
     Feature selection using any of the sklearn.feature_selection module selectors 
-    (such as `RFECV`, `SelectFromModel`, etc.). Two groups of features are
-    evaluated: autoregressive features and exogenous features. By default, the 
-    selection process is performed on both sets of features at the same time, 
-    so that the most relevant autoregressive and exogenous features are selected. 
-    However, using the `select_only` argument, the selection process can focus 
-    only on the autoregressive or exogenous features without taking into account 
-    the other features. Therefore, all other features will remain in the model. 
-    It is also possible to force the inclusion of certain features in the final 
-    list of selected features using the `force_inclusion` parameter.
+    (such as `RFECV`, `SelectFromModel`, etc.). Three groups of features are
+    evaluated: autoregressive features (lags and window features), exogenous
+    features and calendar features. By default, the selection process is performed
+    on the three sets of features at the same time, so that the most relevant
+    autoregressive, exogenous and calendar features are selected. However, using
+    the `select_only` argument, the selection process can focus only on one or more
+    of these groups without taking into account the others. Therefore, all features
+    in the remaining groups will remain in the model. It is also possible to force
+    the inclusion of certain features in the final list of selected features using
+    the `force_inclusion` parameter.
+
+    If encoded, calendar features are evaluated at the encoded-column level (e.g. 
+    `month_sin`, `month_cos`), but they are returned at the source-feature level 
+    (e.g. `month`). A source calendar feature is kept whenever at least one of 
+    its encoded columns is selected.
 
     Parameters
     ----------
@@ -257,15 +367,24 @@ def select_features_multiseries(
         Target time series to which the feature selection will be applied.
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
-    select_only : str, default None
+    select_only : str, list, default None
         Decide what type of features to include in the selection process. 
         
-        - If `'autoreg'`, only autoregressive features (lags and window features) 
-        are evaluated by the selector. All exogenous features are 
-        included in the output `selected_exog`.
-        - If `'exog'`, only exogenous features are evaluated without the presence
-        of autoregressive features. All autoregressive features are included 
-        in the outputs `selected_lags` and `selected_window_features`.
+        - If `'autoreg'` (or `['autoreg']`), only autoregressive features (lags
+        and window features) are evaluated by the selector. All exogenous and
+        calendar features are kept and returned in `selected_exog` and
+        `selected_calendar_features`.
+        - If `'exog'` (or `['exog']`), only exogenous features are evaluated. All
+        autoregressive and calendar features are kept and returned in
+        `selected_lags`, `selected_window_features` and
+        `selected_calendar_features`.
+        - If `'calendar'` (or `['calendar']`), only calendar features are
+        evaluated. All autoregressive and exogenous features are kept and
+        returned in `selected_lags`, `selected_window_features` and
+        `selected_exog`.
+        - If `list`, any combination of `'autoreg'`, `'exog'` and `'calendar'`.
+        Only the groups listed are evaluated by the selector; the remaining
+        groups are kept unchanged.
         - If `None`, all features are evaluated by the selector.
     force_inclusion : list, str, default None
         Features to force include in the final list of selected features.
@@ -274,6 +393,10 @@ def select_features_multiseries(
         - If `str`, regular expression to identify features to force include. 
         For example, if `force_inclusion="^sun_"`, all features that begin 
         with "sun_" will be included in the final list of selected features.
+
+        For calendar features, `force_inclusion` is matched against the encoded
+        column names (e.g. `month_sin`); forcing any encoded column keeps its
+        source calendar feature in `selected_calendar_features`.
     subsample : int, float, default 0.5
         Proportion of records to use for feature selection.
     random_state : int, default 123
@@ -292,6 +415,9 @@ def select_features_multiseries(
         List of selected window features.
     selected_exog : list
         List of selected exogenous features.
+    selected_calendar_features : list
+        List of selected calendar features (source-level names, without the
+        encoding suffix). Empty list if the forecaster has no calendar features.
 
     """
 
@@ -305,11 +431,27 @@ def select_features_multiseries(
         raise TypeError(
             f"`forecaster` must be one of the following classes: {valid_forecasters}."
         )
-    
-    if select_only not in ['autoreg', 'exog', None]:
-        raise ValueError(
-            "`select_only` must be one of the following values: 'autoreg', 'exog', None."
+
+    valid_select_only = ['autoreg', 'exog', 'calendar']
+    if select_only is None:
+        select_only_list = valid_select_only
+    else:
+        select_only_list = (
+            [select_only] if isinstance(select_only, str) else select_only
         )
+        if not isinstance(select_only_list, list):
+            raise TypeError(
+                "`select_only` must be a str, a list of str, or None."
+            )
+        if not set(select_only_list).issubset(valid_select_only):
+            raise ValueError(
+                "`select_only` must be one or more of the following values: "
+                "'autoreg', 'exog', 'calendar', or None."
+            )
+
+    eval_autoreg = 'autoreg' in select_only_list
+    eval_exog = 'exog' in select_only_list
+    eval_calendar = 'calendar' in select_only_list
 
     if subsample <= 0 or subsample > 1:
         raise ValueError(
@@ -349,33 +491,62 @@ def select_features_multiseries(
         autoreg_cols.extend(lags_cols)
     if forecaster.window_features is not None:
         autoreg_cols.extend(window_features_cols)
-    
+
+    # `create_train_X_y` fit-transforms `calendar_features`, so its encoded
+    # output column names (e.g. `month_sin`) are available in X_train.
+    # `calendar_features_names` holds the source-level feature names (e.g. `month`).
+    calendar_cols = []
+    calendar_features_names = []
+    if forecaster.calendar_features is not None:
+        calendar_cols = list(forecaster.calendar_features.feature_names_out_)
+        calendar_features_names = list(forecaster.calendar_features_names)
+
     # Use sets for O(1) lookup instead of O(n) list search
     autoreg_cols_set = set(autoreg_cols)
+    calendar_cols_set = set(calendar_cols)
     encoding_cols_set = set(encoding_cols)
     exog_cols = [
         col
         for col in X_train.columns
-        if col not in autoreg_cols_set and col not in encoding_cols_set
+        if col not in autoreg_cols_set
+        and col not in calendar_cols_set
+        and col not in encoding_cols_set
     ]
     exog_cols_set = set(exog_cols)
 
     forced_autoreg = []
     forced_exog = []
+    forced_calendar = []
     if force_inclusion is not None:
         if isinstance(force_inclusion, list):
             forced_autoreg = [col for col in force_inclusion if col in autoreg_cols_set]
             forced_exog = [col for col in force_inclusion if col in exog_cols_set]
+            forced_calendar = [col for col in force_inclusion if col in calendar_cols_set]
         elif isinstance(force_inclusion, str):
             forced_autoreg = [col for col in autoreg_cols if re.match(force_inclusion, col)]
             forced_exog = [col for col in exog_cols if re.match(force_inclusion, col)]
+            forced_calendar = [col for col in calendar_cols if re.match(force_inclusion, col)]
 
-    if select_only == 'autoreg':
-        X_train = X_train.drop(columns=exog_cols + encoding_cols)
-    elif select_only == 'exog':
-        X_train = X_train.drop(columns=autoreg_cols + encoding_cols)
-    else:
-        X_train = X_train.drop(columns=encoding_cols)
+    # Groups not evaluated by the selector are kept fixed and removed from the
+    # selection matrix so the selector only sees the requested groups. Encoding
+    # columns are always removed.
+    cols_to_drop = list(encoding_cols)
+    if not eval_autoreg:
+        cols_to_drop.extend(autoreg_cols)
+    if not eval_exog:
+        cols_to_drop.extend(exog_cols)
+    if not eval_calendar:
+        cols_to_drop.extend(calendar_cols)
+
+    if cols_to_drop:
+        X_train = X_train.drop(columns=cols_to_drop)
+
+    if X_train.shape[1] == 0:
+        raise ValueError(
+            "No features remain to be evaluated by the selector. The group(s) "
+            "requested in `select_only` contain no features. Make sure the "
+            "forecaster includes features for the selected group(s)."
+        )
 
     if isinstance(subsample, float):
         subsample = int(len(X_train) * subsample)
@@ -387,37 +558,52 @@ def select_features_multiseries(
     selector.fit(X_train_sample, y_train_sample)
     selected_features = selector.get_feature_names_out()
 
-    if select_only == 'exog':
-        selected_autoreg = autoreg_cols
-    else:
+    if eval_autoreg:
         selected_autoreg = [
             feature
             for feature in selected_features
             if feature in autoreg_cols_set
         ]
-
-    if select_only == 'autoreg':
-        selected_exog = exog_cols
     else:
+        selected_autoreg = autoreg_cols
+
+    if eval_exog:
         selected_exog = [
             feature
             for feature in selected_features
             if feature in exog_cols_set
         ]
+    else:
+        selected_exog = exog_cols
+
+    if eval_calendar:
+        selected_calendar_cols = [
+            feature
+            for feature in selected_features
+            if feature in calendar_cols_set
+        ]
+    else:
+        selected_calendar_cols = calendar_cols
 
     if force_inclusion is not None: 
-        if select_only != 'autoreg':
+        if eval_exog:
             forced_exog_not_selected = set(forced_exog) - set(selected_features)
             selected_exog.extend(forced_exog_not_selected)
             # Use dict for O(1) index lookup instead of O(n) list.index()
             exog_cols_order = {col: i for i, col in enumerate(exog_cols)}
             selected_exog.sort(key=lambda x: exog_cols_order[x])
-        if select_only != 'exog':
+        if eval_autoreg:
             forced_autoreg_not_selected = set(forced_autoreg) - set(selected_features)
             selected_autoreg.extend(forced_autoreg_not_selected)
             # Use dict for O(1) index lookup instead of O(n) list.index()
             autoreg_cols_order = {col: i for i, col in enumerate(autoreg_cols)}
             selected_autoreg.sort(key=lambda x: autoreg_cols_order[x])
+        if eval_calendar:
+            forced_calendar_not_selected = set(forced_calendar) - set(selected_features)
+            selected_calendar_cols.extend(forced_calendar_not_selected)
+            # Use dict for O(1) index lookup instead of O(n) list.index()
+            calendar_cols_order = {col: i for i, col in enumerate(calendar_cols)}
+            selected_calendar_cols.sort(key=lambda x: calendar_cols_order[x])
 
     if len(selected_autoreg) == 0:
         warnings.warn(
@@ -460,18 +646,44 @@ def select_features_multiseries(
             if feature in window_features_cols_set
         ]
 
+    # Map the selected encoded calendar columns back to their source calendar
+    # features (e.g. `month_sin`, `month_cos` -> `month`). A source feature is
+    # kept if at least one of its encoded columns is selected. Source features
+    # are matched longest-first to disambiguate names that share a prefix
+    # (e.g. `week` and `day_of_week`).
+    source_features_sorted = sorted(calendar_features_names, key=len, reverse=True)
+    selected_calendar_features = []
+    seen_calendar_features = set()
+    for col in selected_calendar_cols:
+        for feature in source_features_sorted:
+            if col == feature or col.startswith(f"{feature}_"):
+                if feature not in seen_calendar_features:
+                    seen_calendar_features.add(feature)
+                    selected_calendar_features.append(feature)
+                break
+    calendar_features_order = {
+        feature: i for i, feature in enumerate(calendar_features_names)
+    }
+    selected_calendar_features.sort(key=lambda x: calendar_features_order[x])
+
     if verbose:
         print(f"Recursive feature elimination ({selector.__class__.__name__})")
         print("--------------------------------" + "-" * len(selector.__class__.__name__))
         print(f"Total number of records available: {X_train.shape[0]}")
         print(f"Total number of records used for feature selection: {X_train_sample.shape[0]}")
-        print(f"Number of features available: {len(autoreg_cols) + len(exog_cols)}") 
+        print(f"Number of features available: {len(autoreg_cols) + len(exog_cols) + len(calendar_cols)}") 
         print(f"    Lags            (n={len(lags_cols)})")
         print(f"    Window features (n={len(window_features_cols)})")
         print(f"    Exog            (n={len(exog_cols)})")
-        print(f"Number of features selected: {len(selected_features)}")
+        print(f"    Calendar        (n={len(calendar_cols)})")
+        n_selected = (
+            len(verbose_selected_lags) + len(selected_window_features)
+            + len(selected_exog) + len(selected_calendar_features)
+        )
+        print(f"Number of features selected: {n_selected}")
         print(f"    Lags            (n={len(verbose_selected_lags)}) : {verbose_selected_lags}")
         print(f"    Window features (n={len(selected_window_features)}) : {selected_window_features}")
         print(f"    Exog            (n={len(selected_exog)}) : {selected_exog}")
+        print(f"    Calendar        (n={len(selected_calendar_features)}) : {selected_calendar_features}")
 
-    return selected_lags, selected_window_features, selected_exog
+    return selected_lags, selected_window_features, selected_exog, selected_calendar_features

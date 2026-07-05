@@ -20,7 +20,15 @@ import numpy as np
 import math
 import warnings
 from numba import njit
-from statsmodels.tsa.stattools import adfuller, kpss
+
+from ...utils import check_optional_dependency
+
+try:
+    from statsmodels.tsa.stattools import adfuller, kpss
+except ModuleNotFoundError as error:
+    if error.name == "statsmodels":
+        check_optional_dependency(package_name="statsmodels")
+    raise
 
 from ._seasonal_strength import seas_heuristic
 

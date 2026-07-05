@@ -1,6 +1,6 @@
 [project]
 name = "skforecast"
-version = "0.22.0"
+version = "0.23.0"
 description = "Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others."
 readme = "README.md"
 authors = [
@@ -71,7 +71,6 @@ stats = [
 
 plotting = [
     "matplotlib>=3.7, <3.11",
-    "seaborn>=0.12, <0.14",
     "statsmodels>=0.13, <0.15"
 ]
 
@@ -82,7 +81,6 @@ deeplearning = [
 
 all = [
     "matplotlib>=3.7, <3.11",
-    "seaborn>=0.12, <0.14",
     "statsmodels>=0.13, <0.15",
     "keras>=3.0, <4.0",
     'tensorflow>=2.18, <2.22; python_version < "3.14"',
@@ -110,7 +108,6 @@ test = [
     # Stats and plotting
     "statsmodels>=0.13, <0.15",  
     "matplotlib>=3.7, <3.11",
-    "seaborn>=0.12, <0.14",
     
     # Other optional dependencies
     "lightgbm>=4.0, <5.0",
@@ -118,6 +115,8 @@ test = [
     "catboost>=1.2, <2.0",
     "keras>=3.0, <4.0",
     "torch>=2.4, <2.12",
+    "cloudpickle>=3.0",
+    "skops>=0.14",
     "tomli>=2.0",
     "pandas[parquet]>=2.1"
 ]
@@ -139,8 +138,24 @@ build-backend = "setuptools.build_meta"
 include = ["skforecast*"]
 exclude = ["skforecast.*.tests", "skforecast.*.tests.*"]
 
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E221", "E251", "E501", "E241"]
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 88
+max-line-length = 88
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = false
+
 [tool.pytest.ini_options]
 testpaths = ["skforecast"]
+pythonpath = ["."]
 python_files = "test_*.py"
 python_functions = "test_*"
 addopts = "-vv --tb=short"

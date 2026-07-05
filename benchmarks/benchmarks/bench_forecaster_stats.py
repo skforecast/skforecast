@@ -128,9 +128,7 @@ def run_benchmark_ForecasterStats(output_dir, run_id=None):
             last_window      = forecaster.last_window_,
             last_window_exog = None,
             exog             = exog,
-            exog_names_in_   = forecaster.exog_names_in_,
-            interval         = None,
-            alpha            = None
+            exog_names_in_   = forecaster.exog_names_in_
         )
 
     def ForecasterStats__create_predict_inputs(forecaster, exog):

@@ -5,8 +5,6 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.recursive import ForecasterRecursive
-from skforecast.preprocessing import TimeSeriesDifferentiator
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
@@ -15,6 +13,8 @@ from sklearn.compose import make_column_transformer
 from sklearn.compose import make_column_selector
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
+from skforecast.recursive import ForecasterRecursive
+from skforecast.preprocessing import TimeSeriesDifferentiator, CalendarFeatures
 
 # Fixtures
 from .fixtures_forecaster_recursive import y as y_categorical
@@ -53,15 +53,18 @@ def test_create_predict_inputs_when_estimator_is_LinearRegression():
     expected = (
         np.array([45., 46., 47., 48., 49.]),
         None,
+        None,
         pd.RangeIndex(start=50, stop=55, step=1),
-        5
+        5,
+        None
     )
     
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] is None
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-    assert results[4] is None
+    assert results[2] is None
+    pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == expected[4]
+    assert results[5] is None
 
 
 def test_create_predict_inputs_when_with_transform_y():
@@ -86,15 +89,18 @@ def test_create_predict_inputs_when_with_transform_y():
     expected = (
         np.array([-0.1056608, -0.30987914, -0.45194408, -0.28324197, -0.52297655]),
         None,
+        None,
         pd.RangeIndex(start=20, stop=25, step=1),
-        5
+        5,
+        None
     )
     
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] is None
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-    assert results[4] is None
+    assert results[2] is None
+    pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == expected[4]
+    assert results[5] is None
 
 
 def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series():
@@ -119,15 +125,18 @@ def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series()
     expected = (
         np.array([1.16937289, -2.34810076, 0.89246539, 0.27129451, 0.0542589]),
         np.array([[-1.76425513], [-1.00989936], [0.59254869], [0.45863938], [0.1640389]]),
+        None,
         pd.RangeIndex(start=8, stop=13, step=1),
-        5
+        5,
+        None
     )
     
     np.testing.assert_array_almost_equal(results[0], expected[0])
     np.testing.assert_array_almost_equal(results[1], expected[1])
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-    assert results[4] is None
+    assert results[2] is None
+    pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == expected[4]
+    assert results[5] is None
 
 
 def test_create_predict_inputs_when_with_transform_y_and_transform_exog_df():
@@ -169,15 +178,18 @@ def test_create_predict_inputs_when_with_transform_y_and_transform_exog_df():
                   [ 0.59254869,  1.        ,  0.        ],
                   [ 0.45863938,  1.        ,  0.        ],
                   [ 0.1640389 ,  0.        ,  1.        ]]),
+        None,
         pd.RangeIndex(start=8, stop=13, step=1),
-        5
+        5,
+        None
     )
     
     np.testing.assert_array_almost_equal(results[0], expected[0])
     np.testing.assert_array_almost_equal(results[1], expected[1])
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-    assert results[4] is None
+    assert results[2] is None
+    pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == expected[4]
+    assert results[5] is None
 
 
 def test_create_predict_inputs_when_categorical_features_native_implementation_HistGradientBoostingRegressor():
@@ -237,15 +249,18 @@ def test_create_predict_inputs_when_categorical_features_native_implementation_H
                   [2.        , 2.        , 0.68130077],
                   [3.        , 3.        , 0.87545684],
                   [4.        , 4.        , 0.51042234]]),
+        None,
         pd.RangeIndex(start=50, stop=60, step=1),
-        10
+        10,
+        None
     )
     
     np.testing.assert_array_almost_equal(results[0], expected[0])
     np.testing.assert_array_almost_equal(results[1], expected[1])
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-    assert results[4] is None
+    assert results[2] is None
+    pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == expected[4]
+    assert results[5] is None
 
 
 def test_create_predict_inputs_when_with_exog_differentiation_is_1():
@@ -295,16 +310,18 @@ def test_create_predict_inputs_when_with_exog_differentiation_is_1():
                   [-0.78148407], [-0.27354003], [-0.27128144], [-0.6389055 ], 
                   [ 0.19573233], [-0.67321672], [ 1.1559056 ]]
         ),
+        None,
         pd.date_range(start='2003-04-01', periods=63, freq='MS'),
         63
     )
     
     np.testing.assert_array_almost_equal(results[0], expected[0])
     np.testing.assert_array_almost_equal(results[1], expected[1])
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-    assert isinstance(results[4], TimeSeriesDifferentiator)
-    assert results[4] is not forecaster.differentiator
+    assert results[2] is None
+    pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == expected[4]
+    assert isinstance(results[5], TimeSeriesDifferentiator)
+    assert results[5] is not forecaster.differentiator
 
 
 def test_create_predict_inputs_does_not_mutate_differentiator():
@@ -379,18 +396,21 @@ def test_create_predict_inputs_when_categorical_features_auto_and_explicit_no_tr
                   [0.68130077, 2.        , 2.        ],
                   [0.87545684, 3.        , 3.        ],
                   [0.51042234, 4.        , 4.        ]]),
+        None,
         pd.RangeIndex(start=50, stop=60, step=1),
-        10
+        10,
+        None
     )
-
+    
     np.testing.assert_array_almost_equal(results[0], expected[0])
     np.testing.assert_array_almost_equal(results[1], expected[1])
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-    assert results[4] is None
+    assert results[2] is None
+    pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == expected[4]
+    assert results[5] is None
 
 
-def test_create_predict_inputs_when_categorical_features_auto_with_transformer_exog():
+def test_create_predict_inputs_when_calendar_and_categorical_features_auto_with_transformer_exog():
     """
     Test _create_predict_inputs when using internal categorical encoding
     (`categorical_features='auto'`) together with `transformer_exog`
@@ -403,9 +423,13 @@ def test_create_predict_inputs_when_categorical_features_auto_with_transformer_e
          'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
          'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
     )
+    df_exog.index = pd.date_range(start='2000-01-01', periods=50, freq='D')
+
+    y_datetime = y_categorical.copy()
+    y_datetime.index = pd.date_range(start='2000-01-01', periods=50, freq='D')
 
     exog_predict = df_exog.copy()
-    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+    exog_predict.index = pd.date_range(start='2000-02-20', periods=50, freq='D')
 
     transformer_exog = make_column_transformer(
                            (StandardScaler(), make_column_selector(dtype_include=np.number)),
@@ -413,14 +437,19 @@ def test_create_predict_inputs_when_categorical_features_auto_with_transformer_e
                            verbose_feature_names_out=False,
                        ).set_output(transform='pandas')
 
+    calendar = CalendarFeatures(
+        features=['day_of_week', 'weekend'], encoding="onehot"
+    )
+
     forecaster = ForecasterRecursive(
                      estimator             = LinearRegression(),
                      lags                  = 5,
                      transformer_y         = None,
                      transformer_exog      = transformer_exog,
-                     categorical_features  = 'auto'
+                     categorical_features  = 'auto',
+                     calendar_features     = calendar
                  )
-    forecaster.fit(y=y_categorical, exog=df_exog)
+    forecaster.fit(y=y_datetime, exog=df_exog)
     results = forecaster._create_predict_inputs(steps=10, exog=exog_predict)
 
     expected = (
@@ -435,12 +464,24 @@ def test_create_predict_inputs_when_categorical_features_auto_with_transformer_e
                   [ 0.69981558, 2.        , 2.        ],
                   [ 1.45340838, 3.        , 3.        ],
                   [ 0.03657206, 4.        , 4.        ]]),
-        pd.RangeIndex(start=50, stop=60, step=1),
-        10
+        np.array([[1, 0, 0, 0, 0, 0, 0, 1],
+                  [0, 1, 0, 0, 0, 0, 0, 0],
+                  [0, 0, 1, 0, 0, 0, 0, 0],
+                  [0, 0, 0, 1, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 1, 0, 0, 0],
+                  [0, 0, 0, 0, 0, 1, 0, 0],
+                  [1, 0, 0, 0, 0, 0, 1, 0],
+                  [1, 0, 0, 0, 0, 0, 0, 1],
+                  [0, 1, 0, 0, 0, 0, 0, 0],
+                  [0, 0, 1, 0, 0, 0, 0, 0]]),
+        pd.date_range(start='2000-02-20', periods=10, freq='D'),
+        10,
+        None
     )
-
+    
     np.testing.assert_array_almost_equal(results[0], expected[0])
     np.testing.assert_array_almost_equal(results[1], expected[1])
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-    assert results[4] is None
+    np.testing.assert_array_almost_equal(results[2], expected[2])
+    pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] == expected[4]
+    assert results[5] is None

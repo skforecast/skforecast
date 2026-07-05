@@ -26,6 +26,7 @@ from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     check_exog,
     check_interval,
+    _normalize_interval_scale,
     check_predict_input,
     check_residuals_input,
     check_select_fit_kwargs,
@@ -416,7 +417,8 @@ class ForecasterRnn(ForecasterBase):
             "forecaster_name": "ForecasterRnn",
             "forecaster_task": "regression",
             "forecasting_scope": "global",  # single-series | global
-            "forecasting_strategy": "deep_learning",  # recursive | direct | deep_learning
+            "forecasting_strategy": "deep_learning",  # recursive | direct | deep_learning | foundation
+            "multiple_estimators": False,
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
@@ -428,6 +430,7 @@ class ForecasterRnn(ForecasterBase):
 
             "supports_lags": True,
             "supports_window_features": False,
+            "supports_calendar_features": False,
             "supports_transformer_series": True,
             "supports_transformer_exog": True,
             "supports_categorical_features": False,
@@ -560,7 +563,7 @@ class ForecasterRnn(ForecasterBase):
                     <li><strong>Target series (levels):</strong> {self.levels}</li>
                     <li><strong>Training range:</strong> {self.training_range_.to_list() if self.is_fitted else 'Not fitted'}</li>
                     <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
-                    <li><strong>Training index frequency:</strong> {self.index_freq_ if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index frequency:</strong> {self.index_freq_.freqstr if hasattr(self.index_freq_, 'freqstr') else str(self.index_freq_) if self.is_fitted else 'Not fitted'}</li>
                 </ul>
             </details>
             <details>
@@ -1327,7 +1330,6 @@ class ForecasterRnn(ForecasterBase):
                 last_window=last_window,
                 exog=exog,
                 exog_names_in_=self.exog_names_in_,
-                interval=None,
                 max_step=self.max_step,
                 levels=levels,
                 levels_forecaster=self.levels,
@@ -1774,7 +1776,7 @@ class ForecasterRnn(ForecasterBase):
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         method: str = 'conformal',
-        interval: float | list[float] | tuple[float] = [5, 95],
+        interval: float | list[float] | tuple[float] = [0.05, 0.95],
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         suppress_warnings: bool = False,
@@ -1810,18 +1812,22 @@ class ForecasterRnn(ForecasterBase):
             Exogenous variable/s included as predictor/s.
         method : str, default 'conformal'
             Employs the conformal prediction split method for interval estimation [1]_.
-        interval : float, list, tuple, default [5, 95]
+        interval : float, list, tuple, default [0.05, 0.95]
             Confidence level of the prediction interval. Interpretation depends 
             on the method used:
             
             - If `float`, represents the nominal (expected) coverage (between 0 
-            and 1). For instance, `interval=0.95` corresponds to `[2.5, 97.5]` 
-            percentiles.
-            - If `list` or `tuple`, defines the exact percentiles to compute, which 
-            must be between 0 and 100 inclusive. For example, interval 
-            of 95% should be as `interval = [2.5, 97.5]`.
+            and 1). For instance, `interval=0.95` corresponds to `[0.025, 0.975]` 
+            quantiles.
+            - If `list` or `tuple`, defines the exact quantiles to compute, which 
+            must be between 0 and 1 inclusive. For example, interval 
+            of 95% should be as `interval = [0.025, 0.975]`.
             - When using `method='conformal'`, the interval must be a float or 
             a list/tuple defining a symmetric interval.
+
+            **Changed in version 0.23.0:** `interval` is now expressed as
+            quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+            is deprecated and emits a `FutureWarning`.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
@@ -1858,8 +1864,9 @@ class ForecasterRnn(ForecasterBase):
         if method == "conformal":
 
             if isinstance(interval, (list, tuple)):
+                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=True)
-                nominal_coverage = (interval[1] - interval[0]) / 100
+                nominal_coverage = interval[1] - interval[0]
             else:
                 check_interval(alpha=interval, alpha_literal='interval')
                 nominal_coverage = interval

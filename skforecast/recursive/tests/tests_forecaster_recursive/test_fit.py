@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
-from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from skforecast.recursive import ForecasterRecursive
 from skforecast.exceptions import MissingValuesWarning
 
@@ -69,24 +69,36 @@ def test_forecaster_y_exog_features_stored():
     """
     Test forecaster stores y and exog features after fitting.
     """
+    
+    y_datetime = y.copy()
+    y_datetime.index = pd.date_range(start='2022-01-01', periods=len(y), freq='D')
+    exog_datetime = exog.copy()
+    exog_datetime.index = pd.date_range(start='2022-01-01', periods=len(exog), freq='D')
+
     rolling = RollingFeatures(
         stats=['ratio_min_max', 'median'], window_sizes=4
     )
-    forecaster = ForecasterRecursive(
-        LinearRegression(), lags=3, window_features=rolling
+    calendar = CalendarFeatures(
+        features=['day_of_week', 'weekend'], encoding="cyclical"
     )
-    forecaster.fit(y=y, exog=exog)
+
+    forecaster = ForecasterRecursive(
+        LinearRegression(), lags=3, window_features=rolling, calendar_features=calendar
+    )
+    forecaster.fit(y=y_datetime, exog=exog_datetime)
 
     series_name_in_ = 'y'
     exog_in_ = True
-    exog_type_in_ = type(exog)
+    exog_type_in_ = type(exog_datetime)
     exog_names_in_ = ['exog']
-    exog_dtypes_in_ = {'exog': exog.dtype}
-    exog_dtypes_out_ = {'exog': exog.dtype}
+    exog_dtypes_in_ = {'exog': exog_datetime.dtype}
+    exog_dtypes_out_ = {'exog': exog_datetime.dtype}
     X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
+    X_train_calendar_features_names_out_ = ['weekend', 'day_of_week_sin', 'day_of_week_cos']
     X_train_exog_names_out_ = ['exog']
     X_train_features_names_out_ = [
-        'lag_1', 'lag_2', 'lag_3', 'roll_ratio_min_max_4', 'roll_median_4', 'exog'
+        'lag_1', 'lag_2', 'lag_3', 'roll_ratio_min_max_4', 'roll_median_4', 
+        'exog', 'weekend', 'day_of_week_sin', 'day_of_week_cos'
     ]
     
     assert forecaster.series_name_in_ == series_name_in_
@@ -97,6 +109,7 @@ def test_forecaster_y_exog_features_stored():
     assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
     assert forecaster.categorical_features_names_in_ == []
     assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
+    assert forecaster.X_train_calendar_features_names_out_ == X_train_calendar_features_names_out_
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
     assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
 

@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import pytest
+import warnings
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -268,8 +269,15 @@ def test_forecaster_set_out_sample_residuals_when_transformer_y_and_differentiat
         y_pred = y_pred
     )
 
-    y_true = forecaster.transformer_y.transform(y_true.to_numpy().reshape(-1, 1)).flatten()
-    y_pred = forecaster.transformer_y.transform(y_pred.reshape(-1, 1)).flatten()
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="X does not have valid feature names",
+            category=UserWarning
+        )
+        y_true = forecaster.transformer_y.transform(y_true.to_numpy().reshape(-1, 1)).flatten()
+        y_pred = forecaster.transformer_y.transform(y_pred.reshape(-1, 1)).flatten()
+
     y_true = forecaster.differentiator.transform(y_true)[forecaster.differentiation:]
     y_pred = forecaster.differentiator.transform(y_pred)[forecaster.differentiation:]
     residuals = y_true - y_pred

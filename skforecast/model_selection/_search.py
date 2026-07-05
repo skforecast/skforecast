@@ -374,20 +374,13 @@ def _evaluate_grid_hyperparameters(
             suppress_warnings = suppress_warnings
         )
 
-        cv = deepcopy(cv)
         initial_train_size = date_to_index_position(
                                  index        = cv._extract_index(y), 
                                  date_input   = cv.initial_train_size, 
                                  method       = 'validation',
                                  date_literal = 'initial_train_size'
                              )
-        cv.set_params({
-            'initial_train_size': initial_train_size,
-            'window_size': forecaster_search.window_size,
-            'differentiation': forecaster_search.differentiation_max,
-            'verbose': verbose
-        })
-   
+
     if not isinstance(metric, list):
         metric = [metric] 
     metric = [
@@ -438,7 +431,7 @@ def _evaluate_grid_hyperparameters(
                 sample_weight,
                 fit_kwargs
             ) = forecaster_search._train_test_split_one_step_ahead(
-                y=y, initial_train_size=cv.initial_train_size, exog=exog
+                y=y, initial_train_size=initial_train_size, exog=exog
             )
 
         if show_progress:
@@ -638,7 +631,7 @@ def bayesian_search_forecaster(
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' for regression tasks or
         'maximize' for classification tasks, and a 
-        `TPESampler(multivariate=True, group=True, consider_endpoints=True, seed=random_state)` 
+        `TPESampler(multivariate=True, group=True, seed=random_state)` 
         sampler is used during optimization.
     kwargs_study_optimize : dict, default None
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
@@ -689,19 +682,12 @@ def bayesian_search_forecaster(
             suppress_warnings = suppress_warnings
         )
 
-        cv = deepcopy(cv)
         initial_train_size = date_to_index_position(
                                  index        = cv._extract_index(y), 
                                  date_input   = cv.initial_train_size, 
                                  method       = 'validation',
                                  date_literal = 'initial_train_size'
                              )
-        cv.set_params({
-            'initial_train_size': initial_train_size,
-            'window_size': forecaster_search.window_size,
-            'differentiation': forecaster_search.differentiation_max,
-            'verbose': verbose
-        })
     
     if not isinstance(metric, list):
         metric = [metric]
@@ -814,7 +800,7 @@ def bayesian_search_forecaster(
                     sample_weight,
                     fit_kwargs
                 ) = forecaster_search._train_test_split_one_step_ahead(
-                    y=y, initial_train_size=cv.initial_train_size, exog=exog
+                    y=y, initial_train_size=initial_train_size, exog=exog
                 )
                 
                 _cached_split[lags_key] = (
@@ -859,7 +845,7 @@ def bayesian_search_forecaster(
                 message='.*multivariate.*|.*group.*'
             )
             kwargs_create_study['sampler'] = TPESampler(
-                multivariate=True, group=True, consider_endpoints=True, seed=random_state
+                multivariate=True, group=True, seed=random_state
             )
 
     kwargs_study_optimize = kwargs_study_optimize.copy() if kwargs_study_optimize is not None else {}
@@ -1359,12 +1345,6 @@ def _evaluate_grid_hyperparameters_multiseries(
                                  method       = 'validation',
                                  date_literal = 'initial_train_size'
                              )
-        cv.set_params({
-            'initial_train_size': initial_train_size,
-            'window_size': forecaster_search.window_size,
-            'differentiation': forecaster_search.differentiation_max,
-            'verbose': verbose
-        })
     
     if aggregate_metric is None:
         aggregate_metric = ['weighted_average', 'average', 'pooling']
@@ -1442,7 +1422,7 @@ def _evaluate_grid_hyperparameters_multiseries(
                 sample_weight,
                 fit_kwargs
             ) = forecaster_search._train_test_split_one_step_ahead(
-                series=series, exog=exog, initial_train_size=cv.initial_train_size
+                series=series, exog=exog, initial_train_size=initial_train_size
             )
 
         if show_progress:
@@ -1682,7 +1662,7 @@ def bayesian_search_forecaster_multiseries(
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' for regression tasks or
         'maximize' for classification tasks, and a 
-        `TPESampler(multivariate=True, group=True, consider_endpoints=True, seed=random_state)` 
+        `TPESampler(multivariate=True, group=True, seed=random_state)` 
         sampler is used during optimization.
     kwargs_study_optimize : dict, default None
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
@@ -1748,19 +1728,12 @@ def bayesian_search_forecaster_multiseries(
             suppress_warnings = suppress_warnings
         )
 
-        cv = deepcopy(cv)
         initial_train_size = date_to_index_position(
                                  index        = cv._extract_index(series), 
                                  date_input   = cv.initial_train_size, 
                                  method       = 'validation',
                                  date_literal = 'initial_train_size'
                              )
-        cv.set_params({
-            'initial_train_size': initial_train_size,
-            'window_size': forecaster_search.window_size,
-            'differentiation': forecaster_search.differentiation_max,
-            'verbose': verbose
-        })
     
     if aggregate_metric is None:
         aggregate_metric = ['weighted_average', 'average', 'pooling']
@@ -1913,7 +1886,7 @@ def bayesian_search_forecaster_multiseries(
                     sample_weight,
                     fit_kwargs
                 ) = forecaster_search._train_test_split_one_step_ahead(
-                    series=series, exog=exog, initial_train_size=cv.initial_train_size,
+                    series=series, exog=exog, initial_train_size=initial_train_size,
                 )
                 _cached_split[lags_key] = (
                     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding,
@@ -1974,7 +1947,7 @@ def bayesian_search_forecaster_multiseries(
                 message='.*multivariate.*|.*group.*'
             )
             kwargs_create_study['sampler'] = TPESampler(
-                multivariate=True, group=True, consider_endpoints=True, seed=random_state
+                multivariate=True, group=True, seed=random_state
             )
     
     kwargs_study_optimize = kwargs_study_optimize.copy() if kwargs_study_optimize is not None else {}

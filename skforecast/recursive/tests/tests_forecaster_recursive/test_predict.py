@@ -17,8 +17,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
 
-from skforecast.preprocessing import RollingFeatures
-from skforecast.preprocessing import TimeSeriesDifferentiator
+from skforecast.preprocessing import RollingFeatures, TimeSeriesDifferentiator
 from skforecast.recursive import ForecasterRecursive
 from skforecast.exceptions import MissingValuesWarning
 

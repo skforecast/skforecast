@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import KBinsDiscretizer
-from ...preprocessing import QuantileBinner
+from ..._preprocessing import QuantileBinner
 from skforecast.exceptions import IgnoredArgumentWarning
 
 
