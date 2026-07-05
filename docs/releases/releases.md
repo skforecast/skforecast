@@ -36,6 +36,10 @@ The main changes in this release are:
 
 + <span class="badge text-bg-fix">Fix</span> Fixed <code>[TimeSeriesFold]</code> `split` to clamp the start of the last window to zero when `window_size` exceeds `initial_train_size`. Previously a small negative `iloc` start was interpreted by Python as an offset from the end of the index, producing an empty last window and a downstream `TypeError`. This was hit whenever a foundation model's `context_length` exceeded the initial train size during backtesting. [#1213](https://github.com/skforecast/skforecast/pull/1213)
 
+!!! warning "Serialized models incompatibility"
+
+    Forecasters that were serialized with previous versions of skforecast are **not compatible** with version 0.23.0 due to internal changes in all Forecasters (new parameters, changes in attributes, and an optimized training pipeline). Forecasters must be **retrained** after upgrading.
+
 
 **Added**
 
