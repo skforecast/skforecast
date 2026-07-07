@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1             # shallow clone, faster checkout
           persist-credentials: true  # use GITHUB_TOKEN for push
