@@ -84,7 +84,7 @@ all = [
     "statsmodels>=0.13, <0.15",
     "keras>=3.0, <4.0",
     'tensorflow>=2.18, <2.22; python_version < "3.14"',
-    "torch>=2.4, <2.12"
+    "torch>=2.4, <2.13"
 ]
 
 full = ["skforecast[all]"]
@@ -114,7 +114,7 @@ test = [
     "xgboost>=2.1, <4.0",
     "catboost>=1.2, <2.0",
     "keras>=3.0, <4.0",
-    "torch>=2.4, <2.12",
+    "torch>=2.4, <2.13",
     "cloudpickle>=3.0",
     "skops>=0.14",
     "tomli>=2.0",
