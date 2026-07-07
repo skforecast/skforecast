@@ -70,17 +70,17 @@ stats = [
 ]
 
 plotting = [
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.7, <3.12",
     "statsmodels>=0.13, <0.15"
 ]
 
 deeplearning = [
     "keras>=3.0, <4.0",
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.7, <3.12",
 ]
 
 all = [
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.7, <3.12",
     "statsmodels>=0.13, <0.15",
     "keras>=3.0, <4.0",
     'tensorflow>=2.18, <2.22; python_version < "3.14"',
@@ -107,7 +107,7 @@ test = [
     
     # Stats and plotting
     "statsmodels>=0.13, <0.15",  
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.7, <3.12",
     
     # Other optional dependencies
     "lightgbm>=4.0, <5.0",

@@ -53,6 +53,10 @@ The main changes in this release are:
 
 + New `backend` parameter in <code>[save_forecaster]</code> and <code>[load_forecaster]</code> to select the serialization engine. In addition to the default `'joblib'`, the `'pickle'` and `'cloudpickle'` backends are now supported. The `'cloudpickle'` backend embeds custom functions (e.g. `weight_func`) and user-defined classes (e.g. `window_features`) directly in the saved file, removing the need to export them as separate `.py` files. A fourth `'skops'` backend provides a secure format that does not execute arbitrary code on load, recommended when loading files from untrusted sources; the new `trusted` parameter of <code>[load_forecaster]</code> controls which types skops is allowed to reconstruct (`False` by default, the secure setting). The `'skops'` backend is not available for `ForecasterStats`, `ForecasterRnn`, or `ForecasterFoundation`, whose underlying estimators embed objects that skops cannot serialize. On load, the backend is inferred automatically from the file extension (`.joblib`, `.pkl`/`.pickle`, `.cloudpickle`, `.skops`) when `backend` is not provided. [User guide](../user_guides/save-load-forecaster.ipynb)
 
++ Added `torch 2.12` compatibility.
+
++ Added `matplotlib 2.11` compatibility.
+
 
 **Changed**
 
