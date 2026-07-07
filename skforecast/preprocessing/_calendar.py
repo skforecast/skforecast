@@ -276,8 +276,8 @@ def create_calendar_features(
         for feature in features:
             if feature in features_to_encode and feature in max_values:
                 max_val = max_values[feature]
-                sin_vals = np.sin(2 * np.pi * X_new[feature] / max_val)
-                cos_vals = np.cos(2 * np.pi * X_new[feature] / max_val)
+                sin_vals = np.sin(X_new[feature] * (2.0 * np.pi / max_val))
+                cos_vals = np.cos(X_new[feature] * (2.0 * np.pi / max_val))
                 if tol is not None:
                     sin_vals = np.where(np.abs(sin_vals) < tol, 0.0, sin_vals)
                     cos_vals = np.where(np.abs(cos_vals) < tol, 0.0, cos_vals)
