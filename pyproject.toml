@@ -101,9 +101,9 @@ docs = [
 
 test = [
     # Testing
-    "pytest>=7.3",
-    "pytest-cov>=4.1",
-    "pytest-xdist>=3.3",
+    "pytest>=9.1.0",
+    "pytest-cov>=7.1.0",
+    "pytest-xdist>=3.8",
     
     # Stats and plotting
     "statsmodels>=0.13, <0.15",  
@@ -131,7 +131,7 @@ Download = "https://pypi.org/project/skforecast/#files"
 Tracker = "https://github.com/skforecast/skforecast/issues"
 
 [build-system]
-requires = ["setuptools>=61", "toml", "build"]
+requires = ["setuptools>=83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
