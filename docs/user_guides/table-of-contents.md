@@ -44,6 +44,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 - [Metrics](../user_guides/metrics.ipynb)
 - [Backtesting forecaster](../user_guides/backtesting.ipynb)
+- [Autocorrelation analysis and lag selection](../user_guides/autocorrelation-and-lag-selection.ipynb)
 - [Hyperparameter tuning and lags selection](../user_guides/hyperparameter-tuning-and-lags-selection.ipynb)
 - [Feature selection](../user_guides/feature-selection.ipynb)
 

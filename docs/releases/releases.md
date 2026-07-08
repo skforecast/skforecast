@@ -10,7 +10,7 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.23.0 <small>In development</small> { id="0.23.0" }
+## 0.23.0 <small>Jul 8, 2026</small> { id="0.23.0" }
 
 The main changes in this release are:
 
@@ -36,6 +36,10 @@ The main changes in this release are:
 
 + <span class="badge text-bg-fix">Fix</span> Fixed <code>[TimeSeriesFold]</code> `split` to clamp the start of the last window to zero when `window_size` exceeds `initial_train_size`. Previously a small negative `iloc` start was interpreted by Python as an offset from the end of the index, producing an empty last window and a downstream `TypeError`. This was hit whenever a foundation model's `context_length` exceeded the initial train size during backtesting. [#1213](https://github.com/skforecast/skforecast/pull/1213)
 
+!!! warning "Serialized models incompatibility"
+
+    Forecasters that were serialized with previous versions of skforecast are **not compatible** with version 0.23.0 due to internal changes in all Forecasters (new parameters, changes in attributes, and an optimized training pipeline). Forecasters must be **retrained** after upgrading.
+
 
 **Added**
 
@@ -48,6 +52,10 @@ The main changes in this release are:
 + New functions <code>[acf]</code>, <code>[pacf]</code> and <code>[calculate_lag_autocorrelation]</code> in the <code>[stats]</code> module. Fast ACF and PACF implementations via FFT and Levinson-Durbin, removing the dependency on `statsmodels` for autocorrelation calculations.
 
 + New `backend` parameter in <code>[save_forecaster]</code> and <code>[load_forecaster]</code> to select the serialization engine. In addition to the default `'joblib'`, the `'pickle'` and `'cloudpickle'` backends are now supported. The `'cloudpickle'` backend embeds custom functions (e.g. `weight_func`) and user-defined classes (e.g. `window_features`) directly in the saved file, removing the need to export them as separate `.py` files. A fourth `'skops'` backend provides a secure format that does not execute arbitrary code on load, recommended when loading files from untrusted sources; the new `trusted` parameter of <code>[load_forecaster]</code> controls which types skops is allowed to reconstruct (`False` by default, the secure setting). The `'skops'` backend is not available for `ForecasterStats`, `ForecasterRnn`, or `ForecasterFoundation`, whose underlying estimators embed objects that skops cannot serialize. On load, the backend is inferred automatically from the file extension (`.joblib`, `.pkl`/`.pickle`, `.cloudpickle`, `.skops`) when `backend` is not provided. [User guide](../user_guides/save-load-forecaster.ipynb)
+
++ Added `torch 2.12` compatibility.
+
++ Added `matplotlib 2.11` compatibility.
 
 
 **Changed**

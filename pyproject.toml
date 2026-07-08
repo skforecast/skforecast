@@ -70,21 +70,21 @@ stats = [
 ]
 
 plotting = [
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.7, <3.12",
     "statsmodels>=0.13, <0.15"
 ]
 
 deeplearning = [
     "keras>=3.0, <4.0",
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.7, <3.12",
 ]
 
 all = [
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.7, <3.12",
     "statsmodels>=0.13, <0.15",
     "keras>=3.0, <4.0",
     'tensorflow>=2.18, <2.22; python_version < "3.14"',
-    "torch>=2.4, <2.12"
+    "torch>=2.4, <2.13"
 ]
 
 full = ["skforecast[all]"]
@@ -101,20 +101,20 @@ docs = [
 
 test = [
     # Testing
-    "pytest>=7.3",
-    "pytest-cov>=4.1",
-    "pytest-xdist>=3.3",
+    "pytest>=9.1.0",
+    "pytest-cov>=7.1.0",
+    "pytest-xdist>=3.8",
     
     # Stats and plotting
     "statsmodels>=0.13, <0.15",  
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.7, <3.12",
     
     # Other optional dependencies
     "lightgbm>=4.0, <5.0",
     "xgboost>=2.1, <4.0",
     "catboost>=1.2, <2.0",
     "keras>=3.0, <4.0",
-    "torch>=2.4, <2.12",
+    "torch>=2.4, <2.13",
     "cloudpickle>=3.0",
     "skops>=0.14",
     "tomli>=2.0",
@@ -131,7 +131,7 @@ Download = "https://pypi.org/project/skforecast/#files"
 Tracker = "https://github.com/skforecast/skforecast/issues"
 
 [build-system]
-requires = ["setuptools>=61", "toml", "build"]
+requires = ["setuptools>=83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]

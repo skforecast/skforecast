@@ -61,7 +61,7 @@ Skforecast includes 13 modular **skills** — self-contained guides that AI agen
 | `statistical-models` | `ForecasterStats` with `Arima`, `Sarimax`, `Ets`, `Arar`: auto-ARIMA, seasonal config |
 | `hyperparameter-optimization` | Grid, random, and Bayesian search with `TimeSeriesFold` and `OneStepAheadFold` |
 | `prediction-intervals` | Bootstrapping, conformal prediction, quantile regression, interval calibration |
-| `feature-engineering` | `RollingFeatures`, feature_engine calendar/cyclical features, custom features, exogenous variables |
+| `feature-engineering` | `CalendarFeatures`, `RollingFeatures`, custom features, exogenous variables |
 | `feature-selection` | `RFECV`, `SelectFromModel`: selecting lags, window features, and exog |
 | `drift-detection` | `RangeDriftDetector` and `PopulationDriftDetector` for production monitoring |
 | `deep-learning-forecasting` | `ForecasterRnn` with Keras: `create_and_compile_model`, LSTM/GRU architectures |
