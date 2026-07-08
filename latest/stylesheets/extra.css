@@ -143,6 +143,12 @@ Badge Styles
   border-radius: 0.25rem;
 }
 
+/* Feature Badge */
+.text-bg-feature {
+  color: #fff;
+  background-color: #28a745;
+}
+
 /* Enhancement Badge */
 .text-bg-enhancement {
   color: #fff;
@@ -155,14 +161,8 @@ Badge Styles
   background-color: #ffc107;
 }
 
-/* Feature Badge */
-.text-bg-feature {
-  color: #fff;
-  background-color: #28a745;
-}
-
 /* Fix Badge */
-.text-bg-danger {
+.text-bg-fix {
   color: #fff;
   background-color: #dc3545;
 }
