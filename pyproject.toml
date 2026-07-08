@@ -95,8 +95,8 @@ docs = [
     "mkdocs-jupyter==0.26.3",
     "mkdocs-material==9.7.6",
     "mkdocstrings==1.0.4",
-    "mkdocstrings-python==2.0.3",
-    "black==26.3.1",
+    "mkdocstrings-python==2.0.5",
+    "black==26.5.1",
 ]
 
 test = [
@@ -106,7 +106,7 @@ test = [
     "pytest-xdist>=3.8",
     
     # Stats and plotting
-    "statsmodels>=0.13, <0.15",  
+    "statsmodels>=0.13, <0.15",
     "matplotlib>=3.7, <3.12",
     
     # Other optional dependencies
