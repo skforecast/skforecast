@@ -33,6 +33,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [Backtesting](https://skforecast.org/latest/user_guides/backtesting.html): Time series cross-validation with TimeSeriesFold and OneStepAheadFold
 - [Hyperparameter tuning](https://skforecast.org/latest/user_guides/hyperparameter-tuning-and-lags-selection.html): Grid, random, and Bayesian search for model optimization
 - [Exogenous variables](https://skforecast.org/latest/user_guides/exogenous-variables.html): Adding external features to forecasting models
+- [Autocorrelation and lag selection](https://skforecast.org/latest/user_guides/autocorrelation-and-lag-selection.html): Autocorrelation analysis and lag selection
 - [Window and custom features](https://skforecast.org/latest/user_guides/window-features-and-custom-features.html): Rolling statistics and custom feature engineering
 - [Calendar features](https://skforecast.org/latest/user_guides/calendar-features.html): Date and time-based features with CalendarFeatures
 - [Categorical features](https://skforecast.org/latest/user_guides/categorical-features.html): Native categorical support with LightGBM, XGBoost, CatBoost
