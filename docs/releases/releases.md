@@ -55,7 +55,7 @@ The main changes in this release are:
 
 + Added `torch 2.12` compatibility.
 
-+ Added `matplotlib 2.11` compatibility.
++ Added `matplotlib 3.11` compatibility.
 
 
 **Changed**
