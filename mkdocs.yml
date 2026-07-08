@@ -92,7 +92,7 @@ nav:
       - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
       - Profiling skforecast: faq/profiling-skforecast.ipynb
 
-  - Examples and tutorials:
+  - Examples:
     - English: examples/examples_english.md
     - Spanish: examples/examples_spanish.md
     - Chinese (中文): examples/examples_chinese.md

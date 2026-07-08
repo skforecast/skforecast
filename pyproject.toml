@@ -106,7 +106,7 @@ test = [
     "pytest-xdist>=3.8",
     
     # Stats and plotting
-    "statsmodels>=0.13, <0.15",  
+    "statsmodels>=0.13, <0.15",
     "matplotlib>=3.7, <3.12",
     
     # Other optional dependencies
