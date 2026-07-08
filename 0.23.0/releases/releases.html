@@ -5267,7 +5267,7 @@
 <td style="text-align: left;">Changes in the API</td>
 </tr>
 <tr>
-<td style="text-align: left;"><span class="badge text-bg-danger">Fix</span></td>
+<td style="text-align: left;"><span class="badge text-bg-fix">Fix</span></td>
 <td style="text-align: left;">Bug fix</td>
 </tr>
 </tbody>
@@ -5303,7 +5303,7 @@
 <p><span class="badge text-bg-api-change">API Change</span> <code><a href="../api/feature_selection.html#skforecast.feature_selection.feature_selection.select_features">select_features</a></code> and <code><a href="../api/feature_selection.html#skforecast.feature_selection.feature_selection.select_features_multiseries">select_features_multiseries</a></code> now support calendar features. The <code>select_only</code> argument accepts the new value <code>'calendar'</code> (and a list combining <code>'autoreg'</code>, <code>'exog'</code> and <code>'calendar'</code>), and both functions return a fourth element, <code>selected_calendar_features</code>, with the selected calendar features at the source-feature level (e.g. <code>month</code>). Calendar features are evaluated at the encoded-column level (e.g. <code>month_sin</code>, <code>month_cos</code>) and a source feature is kept whenever at least one of its encoded columns is selected.</p>
 </li>
 <li>
-<p><span class="badge text-bg-fix">Fix</span> Fixed parallel execution failure in single-core environments (e.g. Docker with <code>cpus: '1.0'</code>). <code>[select_n_jobs_backtesting]</code> and <code>[select_n_jobs_fit_forecaster]</code> now fall back to <code>n_jobs=1</code> instead of <code>0</code>, which raised <code>ValueError</code> in <code>joblib.Parallel</code>. (<a href="https://github.com/skforecast/skforecast/issues/1197">#1197</a>)</p>
+<p><span class="badge text-bg-fix">Fix</span> Fixed parallel execution failure in single-core environments (e.g. Docker with <code>cpus: '1.0'</code>). <code>select_n_jobs_backtesting</code> and <code>select_n_jobs_fit_forecaster</code> now fall back to <code>n_jobs=1</code> instead of <code>0</code>, which raised <code>ValueError</code> in <code>joblib.Parallel</code>. (<a href="https://github.com/skforecast/skforecast/issues/1197">#1197</a>)</p>
 </li>
 <li>
 <p><span class="badge text-bg-fix">Fix</span> Fixed <code><a href="../api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold">TimeSeriesFold</a></code> <code>split</code> to clamp the start of the last window to zero when <code>window_size</code> exceeds <code>initial_train_size</code>. Previously a small negative <code>iloc</code> start was interpreted by Python as an offset from the end of the index, producing an empty last window and a downstream <code>TypeError</code>. This was hit whenever a foundation model's <code>context_length</code> exceeded the initial train size during backtesting. <a href="https://github.com/skforecast/skforecast/pull/1213">#1213</a></p>
@@ -5370,7 +5370,7 @@
 <p><strong>Fixed</strong></p>
 <ul>
 <li>
-<p>Fixed parallel execution failure in single-core environments (e.g. Docker with <code>cpus: '1.0'</code>). <code>[select_n_jobs_backtesting]</code> and <code>[select_n_jobs_fit_forecaster]</code> now fall back to <code>n_jobs=1</code> instead of <code>0</code>, which raised <code>ValueError</code> in <code>joblib.Parallel</code>. (<a href="https://github.com/skforecast/skforecast/issues/1197">#1197</a>)</p>
+<p>Fixed parallel execution failure in single-core environments (e.g. Docker with <code>cpus: '1.0'</code>). <code>select_n_jobs_backtesting</code> and <code>select_n_jobs_fit_forecaster</code> now fall back to <code>n_jobs=1</code> instead of <code>0</code>, which raised <code>ValueError</code> in <code>joblib.Parallel</code>. (<a href="https://github.com/skforecast/skforecast/issues/1197">#1197</a>)</p>
 </li>
 <li>
 <p>Fixed <code><a href="../api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold">TimeSeriesFold</a></code> <code>split</code> to clamp the start of the last window to zero when <code>window_size</code> exceeds <code>initial_train_size</code>. Previously a small negative <code>iloc</code> start was interpreted by Python as an offset from the end of the index, producing an empty last window and a downstream <code>TypeError</code>. This was hit whenever a foundation model's <code>context_length</code> exceeded the initial train size during backtesting. <a href="https://github.com/skforecast/skforecast/pull/1213">#1213</a></p>
@@ -5401,7 +5401,7 @@
 <p><span class="badge text-bg-api-change">API Change</span> The <code>regressor</code> argument has been removed, deprecated in version <strong>0.19.0</strong>. Use the <code>estimator</code> argument instead.</p>
 </li>
 <li>
-<p><span class="badge text-bg-danger">Fix</span> Fixed conformal prediction intervals with <code>differentiation</code>, categorical lags in <code><a href="../api/ForecasterRecursiveClassifier.html">ForecasterRecursiveClassifier</a></code>, and other bug fixes. See details in the "Fixed" section below.</p>
+<p><span class="badge text-bg-fix">Fix</span> Fixed conformal prediction intervals with <code>differentiation</code>, categorical lags in <code><a href="../api/ForecasterRecursiveClassifier.html">ForecasterRecursiveClassifier</a></code>, and other bug fixes. See details in the "Fixed" section below.</p>
 </li>
 </ul>
 <div class="admonition warning">
@@ -5512,10 +5512,10 @@
 <p>The main changes in this release are:</p>
 <ul>
 <li>
-<p><span class="badge text-bg-danger">Fix</span> Fixed an issue in backtesting functions where passing <code>interval</code> as a single float (e.g. <code>interval=0.8</code> for 80% coverage) was not handled correctly when <code>interval_method</code> is set to <code>'bootstrapping'</code>, causing an error during prediction interval calculation.</p>
+<p><span class="badge text-bg-fix">Fix</span> Fixed an issue in backtesting functions where passing <code>interval</code> as a single float (e.g. <code>interval=0.8</code> for 80% coverage) was not handled correctly when <code>interval_method</code> is set to <code>'bootstrapping'</code>, causing an error during prediction interval calculation.</p>
 </li>
 <li>
-<p><span class="badge text-bg-danger">Fix</span> Fixed an issue in <code><a href="../api/preprocessing.html#skforecast.preprocessing._preprocessing.reshape_exog_long_to_dict">reshape_exog_long_to_dict</a></code> where the <code>fill_value</code> parameter was applied to all columns, causing errors with categorical columns and silent data corruption in string columns. Now, <code>fill_value</code> is only applied to numeric columns, and non-numeric columns retain NaN in the gaps. A warning is issued to inform the user.</p>
+<p><span class="badge text-bg-fix">Fix</span> Fixed an issue in <code><a href="../api/preprocessing.html#skforecast.preprocessing._preprocessing.reshape_exog_long_to_dict">reshape_exog_long_to_dict</a></code> where the <code>fill_value</code> parameter was applied to all columns, causing errors with categorical columns and silent data corruption in string columns. Now, <code>fill_value</code> is only applied to numeric columns, and non-numeric columns retain NaN in the gaps. A warning is issued to inform the user.</p>
 </li>
 </ul>
 <p><strong>Added</strong></p>
@@ -5604,7 +5604,7 @@
 <p><span class="badge text-bg-feature">Feature</span> Enabled thresholds based on standard deviations in the <code><a href="../api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector">PopulationDriftDetector</a></code> class. Now, users can specify thresholds using standard deviations from the mean, allowing for more flexible and statistically grounded drift detection. This is now the default behavior when thresholds are not explicitly provided. (<a href="https://github.com/skforecast/skforecast/issues/1080">#1080</a>)</p>
 </li>
 <li>
-<p><span class="badge text-bg-danger">Fix</span> Fixed an issue that prevented using Forecasters created in past versions of the library after loading them with <code><a href="../api/utils.html#skforecast.utils.utils.load_forecaster">load_forecaster</a></code>. The problem occurred with the introduction of the <code>estimator</code> parameter in version <code>0.19.0</code>, which replaced the previous <code>regressor</code> parameter. This fix ensures that Forecasters saved with versions prior to <code>0.19.0</code> can be loaded and used without any issues. (<a href="https://github.com/skforecast/skforecast/issues/1079">#1079</a>)</p>
+<p><span class="badge text-bg-fix">Fix</span> Fixed an issue that prevented using Forecasters created in past versions of the library after loading them with <code><a href="../api/utils.html#skforecast.utils.utils.load_forecaster">load_forecaster</a></code>. The problem occurred with the introduction of the <code>estimator</code> parameter in version <code>0.19.0</code>, which replaced the previous <code>regressor</code> parameter. This fix ensures that Forecasters saved with versions prior to <code>0.19.0</code> can be loaded and used without any issues. (<a href="https://github.com/skforecast/skforecast/issues/1079">#1079</a>)</p>
 </li>
 </ul>
 <p><strong>Added</strong></p>
@@ -5644,7 +5644,7 @@
 <p><span class="badge text-bg-api-change">API Change</span> Class <code><a href="https://skforecast.org/0.19.0/api/forecastersarimax.html">ForecasterSarimax</a></code> has been deprecated in favor of the new <code><a href="../api/ForecasterStats.html">ForecasterStats</a></code> model in the <code><a href="../api/ForecasterRecursive.html">recursive</a></code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
 </li>
 <li>
-<p><span class="badge text-bg-danger">Fix</span> Fixed an issue that prevented using indices with frequencies containing metadata (e.g., <code>CustomBusinessDay</code>, <code>CustomBusinessHour</code>, or holiday/weekmask variants). The library now preserves full frequency metadata by using <code>freq</code> instead of <code>freqstr</code>, ensuring correct alignment and compatibility with custom date offsets. (<a href="https://github.com/skforecast/skforecast/issues/1051">#1051</a>)</p>
+<p><span class="badge text-bg-fix">Fix</span> Fixed an issue that prevented using indices with frequencies containing metadata (e.g., <code>CustomBusinessDay</code>, <code>CustomBusinessHour</code>, or holiday/weekmask variants). The library now preserves full frequency metadata by using <code>freq</code> instead of <code>freqstr</code>, ensuring correct alignment and compatibility with custom date offsets. (<a href="https://github.com/skforecast/skforecast/issues/1051">#1051</a>)</p>
 </li>
 </ul>
 <p><strong>Added</strong></p>
@@ -5709,10 +5709,10 @@
 <p><span class="badge text-bg-api-change">API Change</span> Backtesting functions output DataFrame now includes a <code>fold</code> column to identify the fold number of each prediction.</p>
 </li>
 <li>
-<p><span class="badge text-bg-danger">Fix</span> Fixed a bug that caused the gap to not be applied correctly in the <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> function. (<a href="https://github.com/skforecast/skforecast/issues/1028">#1028</a>)</p>
+<p><span class="badge text-bg-fix">Fix</span> Fixed a bug that caused the gap to not be applied correctly in the <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> function. (<a href="https://github.com/skforecast/skforecast/issues/1028">#1028</a>)</p>
 </li>
 <li>
-<p><span class="badge text-bg-danger">Fix</span> Fixed a bug that prevented the <code>CatBoostRegressor</code> from working with the <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code>. (<a href="https://github.com/skforecast/skforecast/issues/1039">#1039</a>)</p>
+<p><span class="badge text-bg-fix">Fix</span> Fixed a bug that prevented the <code>CatBoostRegressor</code> from working with the <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code>. (<a href="https://github.com/skforecast/skforecast/issues/1039">#1039</a>)</p>
 </li>
 </ul>
 <p><strong>Added</strong></p>
@@ -5771,13 +5771,13 @@
 <p><span class="badge text-bg-api-change">API Change</span> The functions <code>series_long_to_dict</code> and <code>exog_long_to_dict</code> have been renamed to <code><a href="../api/preprocessing.html#skforecast.preprocessing._preprocessing.reshape_series_long_to_dict">reshape_series_long_to_dict</a></code> and <code><a href="../api/preprocessing.html#skforecast.preprocessing._preprocessing.reshape_exog_long_to_dict">reshape_exog_long_to_dict</a></code> in the <code><a href="../api/preprocessing.html">preprocessing</a></code> module.</p>
 </li>
 <li>
-<p><span class="badge text-bg-danger">Fix</span> A bug that prevented the use of <code>initial_train_size</code> as a date with the <code><a href="../api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> during the hyperparameter search has been fixed.</p>
+<p><span class="badge text-bg-fix">Fix</span> A bug that prevented the use of <code>initial_train_size</code> as a date with the <code><a href="../api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> during the hyperparameter search has been fixed.</p>
 </li>
 <li>
-<p><span class="badge text-bg-danger">Fix</span> A bug that caused the data types to be set incorrectly when creating the predicting matrix with the <code>create_predict_X</code> method or when <code>return_predictors=True</code> in the <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster">backtesting_forecaster</a></code> and <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> functions has been fixed. The dtypes of the predictors are now set to match those of the training data.</p>
+<p><span class="badge text-bg-fix">Fix</span> A bug that caused the data types to be set incorrectly when creating the predicting matrix with the <code>create_predict_X</code> method or when <code>return_predictors=True</code> in the <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster">backtesting_forecaster</a></code> and <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> functions has been fixed. The dtypes of the predictors are now set to match those of the training data.</p>
 </li>
 <li>
-<p><span class="badge text-bg-danger">Fix</span> A bug that prevented the use of a <code>pd.RangeIndex</code> with the <code><a href="../api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> during the hyperparameter search has been fixed.</p>
+<p><span class="badge text-bg-fix">Fix</span> A bug that prevented the use of a <code>pd.RangeIndex</code> with the <code><a href="../api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> during the hyperparameter search has been fixed.</p>
 </li>
 </ul>
 <p><strong>Added</strong></p>
@@ -5884,7 +5884,7 @@
 <p><strong>Fixed</strong></p>
 <h2 id="0.15.1">0.15.1 <small>Mar 18, 2025</small><a class="headerlink" href="#0.15.1" title="Permanent link">&para;</a></h2>
 <ul>
-<li><span class="badge text-bg-danger">Fix</span> Minor release to fix a bug when importing module <code>skforecast.sarimax</code>.</li>
+<li><span class="badge text-bg-fix">Fix</span> Minor release to fix a bug when importing module <code>skforecast.sarimax</code>.</li>
 </ul>
 <p><strong>Added</strong></p>
 <p><strong>Changed</strong></p>
@@ -6048,7 +6048,7 @@
 <p><span class="badge text-bg-api-change">API Change</span> The <code>pmdarima.ARIMA</code> estimator is no longer supported by the <code><a href="https://skforecast.org/0.19.0/api/forecastersarimax.html">ForecasterSarimax</a></code>. You can use the skforecast <code><a href="../api/stats.html#skforecast.stats._sarimax.Sarimax">Sarimax</a></code> model or, to continue using it, use skforecast 0.13.0 or lower.</p>
 </li>
 <li>
-<p><span class="badge text-bg-danger">Fix</span> Fixed a bug where the <code>create_predict_X</code> method in recursive Forecasters did not correctly generate the matrix correctly when using transformations and/or differentiations</p>
+<p><span class="badge text-bg-fix">Fix</span> Fixed a bug where the <code>create_predict_X</code> method in recursive Forecasters did not correctly generate the matrix correctly when using transformations and/or differentiations</p>
 </li>
 </ul>
 <p><strong>Added</strong></p>
@@ -6361,7 +6361,7 @@
 <li>Bug fix in <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> using a <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseries">ForecasterAutoregMultiSeries</a></code> or <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code> that includes differentiation.</li>
 </ul>
 <h2 id="0.12.1">0.12.1 <small>May 20, 2024</small><a class="headerlink" href="#0.12.1" title="Permanent link">&para;</a></h2>
-<p><span class="badge text-bg-danger">Fix</span> This is a minor release to fix a bug.</p>
+<p><span class="badge text-bg-fix">Fix</span> This is a minor release to fix a bug.</p>
 <p><strong>Added</strong></p>
 <p><strong>Changed</strong></p>
 <p><strong>Fixed</strong></p>
