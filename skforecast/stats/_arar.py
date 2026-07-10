@@ -21,7 +21,8 @@ from .arar._arar_base import (
 from ._utils import (
     check_is_fitted, 
     check_memory_reduced, 
-    FastLinearRegression
+    FastLinearRegression,
+    _normalize_level
 )
 
 
@@ -439,7 +440,7 @@ class Arar(BaseEstimator, RegressorMixin):
     def predict_interval(
         self,
         steps: int = 1,
-        level=(80, 95),
+        level=(0.8, 0.95),
         as_frame: bool = True,
         exog: np.ndarray | pd.Series | pd.DataFrame | None = None
     ) -> np.ndarray | pd.DataFrame:
@@ -450,8 +451,13 @@ class Arar(BaseEstimator, RegressorMixin):
         ----------
         steps : int, default 1
             Forecast horizon.
-        level : iterable of int, default (80, 95)
-            Confidence levels in percent.
+        level : float, list or tuple of float, default (0.8, 0.95)
+            Confidence levels expressed as coverage proportions in the (0, 1]
+            range (e.g., 0.8 for 80% intervals).
+
+            **Changed in version 0.23.0:** `level` is now expressed as coverage
+            proportions (0-1) instead of percentiles (0-100). Passing percentiles
+            is deprecated and emits a `FutureWarning`.
         as_frame : bool, default True
             If True, return a tidy DataFrame with columns 'mean', 'lower_<L>',
             'upper_<L>' for each level L. If False, return a NumPy ndarray.
@@ -474,8 +480,10 @@ class Arar(BaseEstimator, RegressorMixin):
 
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
-            
-        raw_preds = forecast(self.model_, h=steps, level=level)
+
+        level = _normalize_level(level)
+        level_pct = [lv * 100 for lv in level]
+        raw_preds = forecast(self.model_, h=steps, level=level_pct)
         
         if self.exog_model_ is None and exog is not None:
             raise ValueError(
@@ -508,8 +516,7 @@ class Arar(BaseEstimator, RegressorMixin):
             raw_preds["upper"] = raw_preds["upper"] + exog_pred[:, np.newaxis]
             raw_preds["lower"] = raw_preds["lower"] + exog_pred[:, np.newaxis]
 
-        levels = raw_preds["level"]
-        n_levels = len(levels)
+        n_levels = len(level)
         cols = [raw_preds["mean"]]
         for i in range(n_levels):
             cols.append(raw_preds["lower"][:, i])
@@ -519,10 +526,9 @@ class Arar(BaseEstimator, RegressorMixin):
 
         if as_frame:
             col_names = ["mean"]
-            for level in levels:
-                level = int(level)
-                col_names.append(f"lower_{level}")
-                col_names.append(f"upper_{level}")
+            for lvl in level:
+                col_names.append(f"lower_{lvl}")
+                col_names.append(f"upper_{lvl}")
             
             predictions = pd.DataFrame(
                 predictions, columns=col_names, index=pd.RangeIndex(1, steps + 1, name="step")

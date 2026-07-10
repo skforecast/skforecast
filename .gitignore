@@ -1,3 +1,6 @@
+# macOS
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -147,3 +150,10 @@ dmypy.json
 # Github Agents & prompts
 .github/agents
 .github/prompts
+
+# Claude Code (local user settings)
+.claude/settings.local.json
+.claude/settings.json
+
+# Docs execution logs
+tools/execute_docs/logs/

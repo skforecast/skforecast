@@ -744,3 +744,77 @@ def test_output_align_series_and_exog_multiseries_when_series_is_dict_and_differ
     for k in exog_dict:
         pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])
         pd.testing.assert_index_equal(exog_dict[k].index, series_dict[k].index)
+
+
+def test_output_align_series_and_exog_multiseries_when_trim_series_nan_is_False():
+    """
+    Test align_series_and_exog_multiseries preserves leading and trailing NaNs
+    when `trim_series_nan` is False. Only exog reindexing should be applied.
+    """
+    series_diff = series_wide_dt.copy()
+    n_leading_nans = 10
+    series_diff.iloc[:n_leading_nans, 0] = np.nan
+    series_diff.iloc[-5:, 1] = np.nan
+    series_diff_long = reshape_series_wide_to_long(data=series_diff)
+
+    series_dict, series_indexes = check_preprocess_series(series=series_diff_long)
+
+    exog_dict = {
+        '1': exog_wide_dt.copy(),
+        '2': exog_wide_dt['exog_1'].copy()
+    }
+
+    exog_dict, _ = check_preprocess_exog_multiseries(
+                       series_names_in_  = ['1', '2'],
+                       series_index_type = type(series_indexes['1']),
+                       exog              = exog_dict,
+                       exog_dict         = {'1': None, '2': None}
+                   )
+
+    series_dict, exog_dict = align_series_and_exog_multiseries(
+                                 series_dict     = series_dict,
+                                 exog_dict       = exog_dict,
+                                 trim_series_nan = False,
+                             )
+
+    len_series = len(series_wide_dt)
+    expected_series_dict = {
+        '1': pd.Series(
+                 data  = series_diff['1'].to_numpy(),
+                 index = pd.date_range(start='2000-01-01', periods=len_series, freq='D'),
+                 name  = '1'
+             ),
+        '2': pd.Series(
+                 data  = series_diff['2'].to_numpy(),
+                 index = pd.date_range(start='2000-01-01', periods=len_series, freq='D'),
+                 name  = '2'
+             ),
+    }
+    expected_exog_dict = {
+        '1': pd.DataFrame(
+                 data    = exog_wide_dt.to_numpy(),
+                 index   = pd.date_range(start='2000-01-01', periods=len_series, freq='D'),
+                 columns = ['exog_1', 'exog_2']
+             ).astype({'exog_1': float}),
+        '2': pd.DataFrame(
+                 data    = exog_wide_dt['exog_1'].to_numpy(),
+                 index   = pd.date_range(start='2000-01-01', periods=len_series, freq='D'),
+                 columns = ['exog_1']
+             ).astype({'exog_1': float}),
+    }
+
+    assert isinstance(series_dict, dict)
+    assert list(series_dict.keys()) == ['1', '2']
+    for k in series_dict:
+        assert isinstance(series_dict[k], pd.Series)
+        pd.testing.assert_series_equal(series_dict[k], expected_series_dict[k])
+
+    # Verify NaNs are preserved
+    assert np.isnan(series_dict['1'].iloc[0])
+    assert np.isnan(series_dict['2'].iloc[-1])
+
+    assert isinstance(exog_dict, dict)
+    assert list(exog_dict.keys()) == ['1', '2']
+    for k in exog_dict:
+        pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])
+        pd.testing.assert_index_equal(exog_dict[k].index, series_dict[k].index)

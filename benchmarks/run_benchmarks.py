@@ -15,6 +15,7 @@ if os.getenv('GITHUB_ACTIONS') != 'true':
     os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
     os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 
+import uuid
 import joblib
 import numpy as np
 import pandas as pd
@@ -32,7 +33,7 @@ from benchmarks import (
 np.random.seed(123)
 
 
-def verify_all_benchmarks_completed(output_dir: str, start_time: pd.Timestamp) -> bool:
+def verify_all_benchmarks_completed(output_dir: str, run_id: str) -> bool:
     """
     Verify that all benchmarks from the current run completed successfully 
     by checking for NaN values in the benchmark results.
@@ -41,9 +42,9 @@ def verify_all_benchmarks_completed(output_dir: str, start_time: pd.Timestamp) -
     ----------
     output_dir : str
         Directory where benchmark.joblib is saved.
-    start_time : pd.Timestamp
-        Timestamp when the current benchmark run started. Only benchmarks
-        with datetime >= start_time will be verified.
+    run_id : str
+        Unique identifier for the current benchmark run. Only benchmarks
+        with this run_id will be verified.
         
     Returns
     -------
@@ -58,8 +59,8 @@ def verify_all_benchmarks_completed(output_dir: str, start_time: pd.Timestamp) -
     
     df = joblib.load(result_file)
     
-    # Filter only benchmarks from the current run (started after start_time)
-    df_current_run = df[df['datetime'] >= start_time]
+    # Filter only benchmarks from the current run
+    df_current_run = df[df['run_id'] == run_id]
     
     if len(df_current_run) == 0:
         print("::error::No benchmarks found for the current run!")
@@ -86,23 +87,23 @@ def main():
 
     output_dir = "benchmarks"
     
-    # Record start time to filter only current run benchmarks
-    start_time = pd.Timestamp.now()
+    # Generate a unique run_id shared by all benchmarks in this execution
+    run_id = pd.Timestamp.now().strftime('%Y%m%d') + '_' + uuid.uuid4().hex[:6]
 
     print(
         f"Running skforecast benchmarks (skforecast={skforecast_version}), "
-        f"output will be saved in '{output_dir}'"
+        f"run_id='{run_id}', output will be saved in '{output_dir}'"
     )
     
-    run_benchmark_ForecasterRecursive(output_dir)
-    run_benchmark_ForecasterRecursiveClassifier(output_dir)
-    run_benchmark_ForecasterRecursiveMultiSeries(output_dir)
-    run_benchmark_ForecasterStats(output_dir)
-    run_benchmark_ForecasterDirect(output_dir)
-    run_benchmark_ForecasterDirectMultiVariate(output_dir)
+    run_benchmark_ForecasterRecursive(output_dir, run_id=run_id)
+    run_benchmark_ForecasterRecursiveClassifier(output_dir, run_id=run_id)
+    run_benchmark_ForecasterRecursiveMultiSeries(output_dir, run_id=run_id)
+    run_benchmark_ForecasterStats(output_dir, run_id=run_id)
+    run_benchmark_ForecasterDirect(output_dir, run_id=run_id)
+    run_benchmark_ForecasterDirectMultiVariate(output_dir, run_id=run_id)
 
     # Verify all benchmarks completed successfully (only from current run)
-    if not verify_all_benchmarks_completed(output_dir, start_time):
+    if not verify_all_benchmarks_completed(output_dir, run_id):
         print("::error::Not all benchmarks completed successfully!")
         raise SystemExit(1)
     

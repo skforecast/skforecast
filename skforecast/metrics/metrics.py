@@ -104,6 +104,7 @@ def add_y_train_argument(func: Callable) -> Callable:
     sig = inspect.signature(func)
     
     if "y_train" in sig.parameters:
+        func._needs_y_train = True
         return func
 
     new_params = list(sig.parameters.values()) + [
@@ -116,8 +117,28 @@ def add_y_train_argument(func: Callable) -> Callable:
         return func(*args, **kwargs)
     
     wrapper.__signature__ = new_sig
+    wrapper._needs_y_train = False
     
     return wrapper
+
+
+def _any_metric_needs_y_train(metrics: list) -> bool:
+    """
+    Check if any metric in the list requires `y_train`.
+
+    Parameters
+    ----------
+    metrics : list
+        List of metric callables, already processed by `add_y_train_argument`.
+
+    Returns
+    -------
+    needs : bool
+        `True` if at least one metric needs `y_train`, `False` otherwise.
+
+    """
+
+    return any(getattr(m, '_needs_y_train', True) for m in metrics)
 
 
 def mean_absolute_scaled_error(
@@ -335,6 +356,9 @@ def crps_from_quantiles(
             "The number of predicted quantiles and quantile levels must be equal."
         )
 
+    if np.any((quantile_levels < 0) | (quantile_levels > 1)):
+        raise ValueError("All quantile levels must be between 0 and 1.")
+
     sorted_indices = np.argsort(pred_quantiles)
     pred_quantiles = pred_quantiles[sorted_indices]
     quantile_levels = quantile_levels[sorted_indices]
@@ -411,7 +435,7 @@ def calculate_coverage(
     return coverage
 
 
-def create_mean_pinball_loss(alpha: float) -> callable:
+def create_mean_pinball_loss(alpha: float) -> Callable:
     """
     Create pinball loss, also known as quantile loss, for a given quantile.
     Internally, it uses the `mean_pinball_loss` function from scikit-learn.

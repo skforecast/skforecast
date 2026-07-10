@@ -21,6 +21,12 @@ Jupyter Wrapper Styles
   font-size: 1.2em; /* Adjust the size as needed */
 }
 
+/* Size of rich HTML output cells in Jupyter Notebooks */
+.jupyter-wrapper .jp-RenderedHTMLCommon.jp-OutputArea-output pre {
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
 /* Display inline tables for dataframes in Jupyter */
 .jupyter-wrapper table.dataframe {
   display: inline;
@@ -137,6 +143,12 @@ Badge Styles
   border-radius: 0.25rem;
 }
 
+/* Feature Badge */
+.text-bg-feature {
+  color: #fff;
+  background-color: #28a745;
+}
+
 /* Enhancement Badge */
 .text-bg-enhancement {
   color: #fff;
@@ -149,14 +161,8 @@ Badge Styles
   background-color: #ffc107;
 }
 
-/* Feature Badge */
-.text-bg-feature {
-  color: #fff;
-  background-color: #28a745;
-}
-
 /* Fix Badge */
-.text-bg-danger {
+.text-bg-fix {
   color: #fff;
   background-color: #dc3545;
 }

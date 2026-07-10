@@ -33,6 +33,17 @@ def test_show_datasets_info_specific_datasets(capsys):
     assert 'items_sales' in captured.out
 
 
+def test_show_datasets_info_version_in_url(capsys):
+    """
+    `show_datasets_info` substitutes the `version` argument into the URL
+    `{version}` placeholder when printing each dataset panel.
+    """
+    show_datasets_info(datasets_names=['h2o'], version='0.14.0')
+    captured = capsys.readouterr()
+    assert '0.14.0' in captured.out
+    assert '{version}' not in captured.out
+
+
 def test_show_datasets_info_invalid_names(capsys):
     """
     `show_datasets_info` prints a user-friendly message for invalid dataset

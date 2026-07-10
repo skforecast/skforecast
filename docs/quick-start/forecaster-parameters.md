@@ -10,16 +10,18 @@ We will explore the arguments that can be included in a [`ForecasterRecursive`](
 from skforecast.recursive import ForecasterRecursive
 
 forecaster = ForecasterRecursive(
-                 estimator        = None,
-                 lags             = None,
-                 window_features  = None,
-                 transformer_y    = None,
-                 transformer_exog = None,
-                 weight_func      = None,
-                 differentiation  = None,
-                 fit_kwargs       = None,
-                 binner_kwargs    = None,
-                 forecaster_id    = None
+                 estimator            = None,
+                 lags                 = None,
+                 window_features      = None,
+                 transformer_y        = None,
+                 transformer_exog     = None,
+                 categorical_features = 'auto',
+                 weight_func          = None,
+                 differentiation      = None,
+                 dropna_from_series   = False,
+                 fit_kwargs           = None,
+                 binner_kwargs        = None,
+                 forecaster_id        = None
              )
 ```
 
@@ -106,6 +108,7 @@ forecaster = ForecasterRecursive(
              )
 ```
 
+
 ### Transformers
 
 Skforecast has two arguments in all the forecasters that allow more detailed control over input data transformations. This feature is particularly useful as many machine learning models require specific data pre-processing transformations. For example, linear models may benefit from features being scaled, or categorical features being transformed into numerical values.
@@ -131,6 +134,31 @@ forecaster = ForecasterRecursive(
                  window_features  = None,
                  transformer_y    = StandardScaler(),
                  transformer_exog = StandardScaler()
+             )
+```
+
+
+### Categorical features
+
+Categorical features (variables that take a discrete set of values, such as weather conditions or holiday status) provide valuable signals in time series forecasting. Before most machine learning models can use them, however, they must be converted into numerical representations. This encoding step must be learned exclusively from training data to avoid information leakage.
+
+Since **version 0.22.0**, skforecast provides a built-in `categorical_features` parameter that automatically handles encoding and natively configures gradient boosting estimators (XGBoost, LightGBM, CatBoost and HistGradientBoosting), requiring no manual encoder pipelines or estimator-specific parameters.
+
+More information: [Categorical features](../user_guides/categorical-features.ipynb).
+
+```python
+# Create a forecaster
+# ==============================================================================
+from lightgbm import LGBMRegressor
+from skforecast.recursive import ForecasterRecursive
+
+forecaster = ForecasterRecursive(
+                 estimator            = LGBMRegressor(random_state=123, verbose=-1),
+                 lags                 = 5,
+                 window_features      = None,
+                 transformer_y        = None,
+                 transformer_exog     = None,
+                 categorical_features = 'auto',
              )
 ```
 
@@ -176,7 +204,7 @@ forecaster = ForecasterRecursive(
 
 ### Differentiation
 
-Time series differentiation involves computing the differences between consecutive observations in the time series. When it comes to training forecasting models, differentiation offers the advantage of focusing on relative rates of change rather than directly attempting to model the absolute values. **Skforecast**, version 0.10.0 or higher, introduces a novel differentiation parameter within its Forecasters. 
+Time series differentiation involves computing the differences between consecutive observations in the time series. When it comes to training forecasting models, differentiation offers the advantage of focusing on relative rates of change rather than directly attempting to model the absolute values.
 
 More information: [Time series differentiation](../user_guides/time-series-differentiation.ipynb).
 
@@ -195,6 +223,36 @@ forecaster = ForecasterRecursive(
                  transformer_exog = None,
                  weight_func      = None,
                  differentiation  = 1
+             )
+```
+
+
+### Handling of missing values
+
+When the original time series and/or exogenous variables contain **interspersed missing values**, these values can be introduced in the training matrices. Two options are available to handle these NaN values:
+
++ Set `dropna_from_series=True` to drop the rows with NaN values from the training matrices before fitting the model. This allows training forecasters with time series that contain interspersed missing values.
+
++ Set `dropna_from_series=False` and use an estimator that can handle NaN values, such as scikit-learn's `HistGradientBoosting`, `LightGBM`, `XGBoost` or `CatBoost`. This allows training forecasters with time series that contain interspersed missing values without dropping any data.
+
+More information: [Handling missing values in time series](../user_guides/handling-missing-values.ipynb).
+
+```python
+# Create a forecaster
+# ==============================================================================
+from sklearn.preprocessing import StandardScaler
+from lightgbm import LGBMRegressor
+from skforecast.recursive import ForecasterRecursive
+
+forecaster = ForecasterRecursive(
+                 estimator          = LGBMRegressor(random_state=123, verbose=-1),
+                 lags               = 5,
+                 window_features    = None,
+                 transformer_y      = None,
+                 transformer_exog   = None,
+                 weight_func        = None,
+                 differentiation    = None,
+                 dropna_from_series = False
              )
 ```
 
@@ -234,7 +292,7 @@ forecaster = ForecasterRecursive(
 
 ### Intervals conditioned on predicted values (binned residuals)
 
-When creating prediction intervals, skforecast uses a [`QuantileBinner`](../api/preprocessing.md#skforecast.preprocessing.preprocessing.QuantileBinner) class to bin data into quantile-based bins using `numpy.percentile`. This class is similar to [KBinsDiscretizer](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.KBinsDiscretizer.html) but faster for binning data into quantile-based bins. Bin intervals are defined following the convention: bins[i-1] <= x < bins[i].
+When creating prediction intervals, skforecast uses a [`QuantileBinner`](../api/preprocessing.md#skforecast.preprocessing._preprocessing.QuantileBinner) class to bin data into quantile-based bins using `numpy.percentile`. This class is similar to [KBinsDiscretizer](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.KBinsDiscretizer.html) but faster for binning data into quantile-based bins. Bin intervals are defined following the convention: bins[i-1] <= x < bins[i].
 
 More information: [Intervals conditioned on predicted values (binned residuals)](../user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb#intervals-conditioned-on-predicted-values-binned-residuals).
 

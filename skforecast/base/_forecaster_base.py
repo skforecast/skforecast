@@ -8,17 +8,25 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
+import html
 import textwrap
-import warnings
 import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
 
 
+_CAT_BADGE = (
+    '<span title="categorical" style="background-color: #FFA726; color: white; '
+    'border-radius: 3px; padding: 1px 5px; font-size: 0.75em; '
+    'margin-left: 4px; font-weight: bold; letter-spacing: 0.03em; '
+    'vertical-align: middle;">CAT</span>'
+)
+
+
 class ForecasterBase(ABC):
     """
     Base class for all forecasters in skforecast. All forecasters should specify
-    all the parameters that can be set at the class level in their ``__init__``.     
+    all the parameters that can be set at the class level in their `__init__`.     
     """
 
     def _preprocess_repr(
@@ -27,7 +35,9 @@ class ForecasterBase(ABC):
         training_range_: dict[str, str] | None = None,
         series_names_in_: list[str] | None = None,
         exog_names_in_: list[str] | None = None,
-        transformer_series: object | dict[str, object] | None = None
+        transformer_series: object | dict[str, object] | None = None,
+        categorical_features_names_in_: list[str] | None = None,
+        as_html: bool = False
     ) -> tuple[str, str | None, str | None, str | None, str | None]:
         """
         Prepare the information to be displayed when a Forecaster object is printed.
@@ -44,6 +54,12 @@ class ForecasterBase(ABC):
             Names of the exogenous variables used in the forecaster.
         transformer_series : object, dict, default None
             Transformer used in the series. Only used for `ForecasterRecursiveMultiSeries`.
+        categorical_features_names_in_ : list, default None
+            Names of the exogenous variables considered as categorical.
+            Only used when `as_html` is `True`.
+        as_html : bool, default False
+            If `True`, exogenous variable names are formatted as HTML with
+            CAT badges and html-escaping.
 
         Returns
         -------
@@ -82,15 +98,36 @@ class ForecasterBase(ABC):
                 training_range_ = training_range_[:5] + ['...'] + training_range_[-5:]
             training_range_ = ", ".join(training_range_)
 
+        max_items = 50
         if series_names_in_ is not None:
-            if len(series_names_in_) > 50:
-                series_names_in_ = series_names_in_[:25] + ["..."] + series_names_in_[-25:]
+            if len(series_names_in_) > max_items:
+                series_names_in_ = (
+                    series_names_in_[: max_items // 2]
+                    + ["..."]
+                    + series_names_in_[-max_items // 2 :]
+                )
             series_names_in_ = ", ".join(series_names_in_)
 
         if exog_names_in_ is not None:
-            if len(exog_names_in_) > 50:
-                exog_names_in_ = exog_names_in_[:25] + ["..."] + exog_names_in_[-25:]
-            exog_names_in_ = ", ".join(exog_names_in_)
+            if len(exog_names_in_) > max_items:
+                exog_names_in_ = (
+                    exog_names_in_[: max_items // 2]
+                    + ['...']
+                    + exog_names_in_[-max_items // 2 :]
+                )
+            if as_html:
+                cat_set = set(categorical_features_names_in_ or [])
+                parts = []
+                for name in exog_names_in_:
+                    if name == '...':
+                        parts.append('<em style="color: #999;">\u2026</em>')
+                    elif name in cat_set:
+                        parts.append(f'{html.escape(str(name))}{_CAT_BADGE}')
+                    else:
+                        parts.append(html.escape(str(name)))
+                exog_names_in_ = ', '.join(parts)
+            else:
+                exog_names_in_ = ', '.join(exog_names_in_)
         
         if transformer_series is not None:
             if isinstance(transformer_series, dict):
@@ -326,37 +363,3 @@ class ForecasterBase(ABC):
         """
         
         print(self.__repr__())
-
-    def __setstate__(self, state: dict) -> None:
-        """
-        Custom __setstate__ to ensure backward compatibility when unpickling
-        Forecaster objects created with older versions of skforecast.
-
-        This method is called when an object is unpickled (deserialized).
-        It handles the migration of deprecated attributes to their new names.
-
-        Parameters
-        ----------
-        state : dict
-            The state dictionary from the pickled object.
-
-        Returns
-        -------
-        None
-
-        """
-
-        # Migration: 'regressor' renamed to 'estimator' in version 0.18.0
-        if 'regressor' in state and 'estimator' not in state:
-            state['estimator'] = state.pop('regressor')
-
-        self.__dict__.update(state)
-
-    @property
-    def regressor(self):
-        warnings.warn(
-            "The `regressor` attribute is deprecated and will be removed in future "
-            "versions. Use `estimator` instead.",
-            FutureWarning
-        )
-        return self.estimator

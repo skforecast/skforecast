@@ -6,7 +6,7 @@
 # coding=utf-8
 
 import os
-os.environ["KERAS_BACKEND"] = "torch"
+os.environ["KERAS_BACKEND"] = "torch"  # Also present in .github/workflows/benchmark.yml to ensure consistency in CI
 import keras
 import numpy as np
 import pandas as pd
@@ -89,7 +89,7 @@ def _make_data(
     return series, exog, exog_pred
 
 
-def run_benchmark_ForecasterRnn(output_dir):
+def run_benchmark_ForecasterRnn(output_dir, run_id=None):
     """
     Run all benchmarks for the ForecasterRnn class and save the results.
     """
@@ -161,7 +161,6 @@ def run_benchmark_ForecasterRnn(output_dir):
             last_window       = forecaster.last_window_,
             exog              = exog,
             exog_names_in_    = forecaster.exog_names_in_,
-            interval          = None,
             max_step          = forecaster.max_step,
             levels            = forecaster.levels,
             levels_forecaster = forecaster.levels,
@@ -183,7 +182,7 @@ def run_benchmark_ForecasterRnn(output_dir):
             steps=STEPS,
             exog=exog,
             method='conformal',
-            interval=[5, 95],
+            interval=[0.05, 0.95],
             suppress_warnings=True
         )
 
@@ -227,31 +226,31 @@ def run_benchmark_ForecasterRnn(output_dir):
                 series=series,
                 exog=exog,
                 cv=cv,
-                interval=[5, 95],
+                interval=[0.05, 0.95],
                 interval_method='conformal',
                 metric='mean_squared_error',
                 show_progress=False
             )
         
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRnn__create_lags, forecaster=forecaster, y=y_values)
 
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRnn__create_train_X_y, forecaster=forecaster_exog, series=series, exog=exog)
     _ = runner.benchmark(ForecasterRnn__create_train_X_y_no_exog, forecaster=forecaster, series=series)
 
-    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRnn_fit, forecaster=forecaster_exog, series=series, exog=exog)
     _ = runner.benchmark(ForecasterRnn_fit_series_no_exog, forecaster=forecaster, series=series)
 
     forecaster_exog.fit(series=series, exog=exog, store_in_sample_residuals=True)
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRnn_check_predict_inputs, forecaster=forecaster_exog, exog=exog_pred)
     _ = runner.benchmark(ForecasterRnn__create_predict_inputs, forecaster=forecaster_exog, exog=exog_pred)
     _ = runner.benchmark(ForecasterRnn_predict, forecaster=forecaster_exog, exog=exog_pred)
     _ = runner.benchmark(ForecasterRnn_predict_interval_conformal, forecaster=forecaster_exog, exog=exog_pred)
 
-    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRnn_backtesting, forecaster=forecaster_exog, series=series, exog=exog)
     _ = runner.benchmark(ForecasterRnn_backtesting_no_exog, forecaster=forecaster, series=series)
     _ = runner.benchmark(ForecasterRnn_backtesting_conformal, forecaster=forecaster_exog, series=series, exog=exog)

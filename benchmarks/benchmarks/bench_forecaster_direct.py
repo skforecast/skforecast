@@ -78,7 +78,7 @@ def _make_data(
     return y, exog, exog_pred
 
 
-def run_benchmark_ForecasterDirect(output_dir):
+def run_benchmark_ForecasterDirect(output_dir, run_id=None):
     """
     Run all benchmarks for the ForecasterDirect class and save the results.
     """
@@ -119,7 +119,6 @@ def run_benchmark_ForecasterDirect(output_dir):
                 last_window     = forecaster.last_window_,
                 exog            = exog,
                 exog_names_in_  = forecaster.exog_names_in_,
-                interval        = None,
                 max_step        = forecaster.max_step
             )
         else:
@@ -134,7 +133,6 @@ def run_benchmark_ForecasterDirect(output_dir):
                 last_window     = forecaster.last_window_,
                 exog            = exog,
                 exog_names_in_  = forecaster.exog_names_in_,
-                interval        = None,
                 max_steps       = forecaster.steps
             )
 
@@ -152,7 +150,7 @@ def run_benchmark_ForecasterDirect(output_dir):
         forecaster.predict_interval(
             steps=STEPS,
             exog=exog,
-            interval=[5, 95],
+            interval=[0.05, 0.95],
             method='conformal'
         )
         
@@ -182,7 +180,7 @@ def run_benchmark_ForecasterDirect(output_dir):
                 forecaster=forecaster,
                 y=y,
                 exog=exog,
-                interval=[5, 95],
+                interval=[0.05, 0.95],
                 interval_method='conformal',
                 cv=cv,
                 metric='mean_squared_error',
@@ -191,20 +189,20 @@ def run_benchmark_ForecasterDirect(output_dir):
                 suppress_warnings=True
             )
 
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterDirect__create_lags, forecaster=forecaster, y=y_values)
     _ = runner.benchmark(ForecasterDirect__create_train_X_y, forecaster=forecaster, y=y, exog=exog)
 
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterDirect_fit, forecaster=forecaster, y=y, exog=exog)
 
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True, suppress_warnings=True)
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterDirect_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirect__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirect_predict, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirect_predict_interval_conformal, forecaster=forecaster, exog=exog_pred)
 
-    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterDirect_backtesting, forecaster=forecaster, y=y, exog=exog)
     _ = runner.benchmark(ForecasterDirect_backtesting_conformal, forecaster=forecaster, y=y, exog=exog)

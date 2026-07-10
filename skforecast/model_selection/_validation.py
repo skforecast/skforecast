@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed, cpu_count
 from tqdm.auto import tqdm
-from ..metrics import add_y_train_argument, _get_metric
+from ..metrics import add_y_train_argument, _any_metric_needs_y_train, _get_metric
 from ..exceptions import LongTrainingWarning, IgnoredArgumentWarning
 from ..model_selection._split import TimeSeriesFold
 from ..model_selection._utils import (
@@ -27,9 +27,12 @@ from ..model_selection._utils import (
 from ..utils import (
     check_preprocess_series,
     check_preprocess_exog_multiseries,
+    align_series_and_exog_multiseries,
     manage_warnings,
-    deepcopy_forecaster
+    deepcopy_forecaster,
+    _normalize_interval_scale
 )
+from ..foundation._utils import check_preprocess_series_foundation
 
 
 def _prepare_fold_data(
@@ -222,14 +225,10 @@ def _fit_predict_forecaster(
                     pred = forecaster.predict_bootstrapping(**kwargs_interval)
                 elif isinstance(interval, (float, list, tuple)):
                     if isinstance(interval, float):
-                        quantiles = [0.5 - interval / 2, 0.5 + interval / 2]
-                    else:
-                        quantiles = [q / 100 for q in interval]
-                    pred = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
-                    if len(quantiles) == 2:
+                        interval = [0.5 - interval / 2, 0.5 + interval / 2]
+                    pred = forecaster.predict_quantiles(quantiles=interval, **kwargs_interval)
+                    if len(interval) == 2:
                         pred.columns = ['lower_bound', 'upper_bound']
-                    else:
-                        pred.columns = [f'p_{p}' for p in interval]
                 else:
                     pred = forecaster.predict_dist(distribution=interval, **kwargs_interval)
                 
@@ -339,11 +338,11 @@ def _backtesting_forecaster(
         method to use. The following options are supported:
 
         - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
-        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
-        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
-        be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
-        50 and 90) as `interval = [10, 50, 90]`.
+        For instance, `interval=0.95` corresponds to `[0.025, 0.975]` quantiles.
+        - If `list` or `tuple`: Sequence of quantiles to compute, each value must 
+        be between 0 and 1 inclusive. For example, a 95% confidence interval can 
+        be specified as `interval = [0.025, 0.975]` or multiple quantiles (e.g. 0.1, 
+        0.5 and 0.9) as `interval = [0.1, 0.5, 0.9]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
@@ -400,8 +399,8 @@ def _backtesting_forecaster(
         
         - For `float`: Columns `lower_bound` and `upper_bound`.
         - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
-        - For `list` or `tuple` with multiple percentiles: One column per percentile 
-        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `list` or `tuple` with multiple quantiles: One column per quantile 
+        (e.g., `q_0.1`, `q_0.5`, `q_0.9`).
         - For `'bootstrapping'`: One column per bootstrapping iteration 
         (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
         - For `scipy.stats` distribution objects: One column for each estimated 
@@ -497,7 +496,7 @@ def _backtesting_forecaster(
         forecaster._probabilistic_mode = 'no_binned'
 
     folds = cv.split(X=y, as_pandas=False)
-    initial_train_size = cv.initial_train_size
+    initial_train_size = cv.initial_train_size_as_int
     window_size = cv.window_size
     gap = cv.gap
 
@@ -591,29 +590,32 @@ def _backtesting_forecaster(
 
     backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
 
-    train_indexes = []
-    for i, fold in enumerate(folds):
-        fit_fold = fold[-1]
-        if i == 0 or fit_fold:
-            # NOTE: When using a scaled metric, `y_train` doesn't include the
-            # first window_size observations used to create the predictors and/or
-            # rolling features.
-            train_iloc_start = fold[1][0] + window_size
-            train_iloc_end = fold[1][1]
-            train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
-    
-    train_indexes = np.unique(np.concatenate(train_indexes))
-    y_train = y.iloc[train_indexes]
-
     backtest_predictions_for_metrics = backtest_predictions
     if overlapping_folds:
         backtest_predictions_for_metrics = (
             backtest_predictions_for_metrics
             .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
         )
-
+    
     y_true = y.loc[backtest_predictions_for_metrics.index]
     y_pred = backtest_predictions_for_metrics['pred']
+
+    if _any_metric_needs_y_train(metrics):
+        train_indexes = []
+        for i, fold in enumerate(folds):
+            fit_fold = fold[-1]
+            if i == 0 or fit_fold:
+                # NOTE: When using a scaled metric, `y_train` doesn't include the
+                # first window_size observations used to create the predictors and/or
+                # rolling features.
+                train_iloc_start = fold[1][0] + window_size
+                train_iloc_end = fold[1][1]
+                train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
+        train_indexes = np.unique(np.concatenate(train_indexes))
+        y_train = y.iloc[train_indexes]
+    else:
+        y_train = None
+
     metric_values = [[
         m(y_true=y_true, y_pred=y_pred, y_train=y_train) 
         for m in metrics
@@ -684,15 +686,19 @@ def backtesting_forecaster(
         method to use. The following options are supported:
 
         - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
-        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
-        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
-        be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
-        50 and 90) as `interval = [10, 50, 90]`.
+        For instance, `interval=0.95` corresponds to `[0.025, 0.975]` quantiles.
+        - If `list` or `tuple`: Sequence of quantiles to compute, each value must 
+        be between 0 and 1 inclusive. For example, a 95% confidence interval can 
+        be specified as `interval = [0.025, 0.975]` or multiple quantiles (e.g. 0.1, 
+        0.5 and 0.9) as `interval = [0.1, 0.5, 0.9]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
+
+        **Changed in version 0.23.0:** `interval` is now expressed as
+        quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+        is deprecated and emits a `FutureWarning`.
     interval_method : str, default 'bootstrapping'
         Technique used to estimate prediction intervals. Available options:
 
@@ -745,8 +751,8 @@ def backtesting_forecaster(
         
         - For `float`: Columns `lower_bound` and `upper_bound`.
         - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
-        - For `list` or `tuple` with multiple percentiles: One column per percentile 
-        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `list` or `tuple` with multiple quantiles: One column per quantile 
+        (e.g., `q_0.1`, `q_0.5`, `q_0.9`).
         - For `'bootstrapping'`: One column per bootstrapping iteration 
         (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
         - For `scipy.stats` distribution objects: One column for each estimated 
@@ -794,6 +800,10 @@ def backtesting_forecaster(
             f"types of forecasters use the other functions available in the "
             f"`model_selection` module."
         )
+    
+    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
+    if isinstance(interval, (list, tuple)):
+        interval = _normalize_interval_scale(interval)
     
     check_backtesting_input(
         forecaster              = forecaster,
@@ -957,14 +967,10 @@ def _fit_predict_forecaster_multiseries(
                 pred = forecaster.predict_bootstrapping(**kwargs_interval)
             elif isinstance(interval, (float, list, tuple)):
                 if isinstance(interval, float):
-                    quantiles = [0.5 - interval / 2, 0.5 + interval / 2]
-                else:
-                    quantiles = [q / 100 for q in interval]
-                pred = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
-                if len(quantiles) == 2:
+                    interval = [0.5 - interval / 2, 0.5 + interval / 2]
+                pred = forecaster.predict_quantiles(quantiles=interval, **kwargs_interval)
+                if len(interval) == 2:
                     pred.columns = ['level', 'lower_bound', 'upper_bound']
-                else:
-                    pred.columns = ['level'] + [f'p_{p}' for p in interval]
             else:
                 pred = forecaster.predict_dist(distribution=interval, **kwargs_interval)
              
@@ -1084,11 +1090,11 @@ def _backtesting_forecaster_multiseries(
         method to use. The following options are supported:
 
         - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
-        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
-        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
-        be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
-        50 and 90) as `interval = [10, 50, 90]`.
+        For instance, `interval=0.95` corresponds to `[0.025, 0.975]` quantiles.
+        - If `list` or `tuple`: Sequence of quantiles to compute, each value must 
+        be between 0 and 1 inclusive. For example, a 95% confidence interval can 
+        be specified as `interval = [0.025, 0.975]` or multiple quantiles (e.g. 0.1, 
+        0.5 and 0.9) as `interval = [0.1, 0.5, 0.9]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
@@ -1139,16 +1145,16 @@ def _backtesting_forecaster_multiseries(
         Long-format DataFrame containing the predicted values for each series. The 
         DataFrame includes the following columns:
         
-        - `level`: Identifier for the time series or level being predicted.
+        - level: Identifier for the time series or level being predicted.
         - fold: Indicates the fold number where the prediction was made.
-        - `pred`: Predicted values for the corresponding series and time steps.
+        - pred: Predicted values for the corresponding series and time steps.
 
         If `interval` is not `None`, additional columns are included depending on the method:
         
         - For `float`: Columns `lower_bound` and `upper_bound`.
         - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
-        - For `list` or `tuple` with multiple percentiles: One column per percentile 
-        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `list` or `tuple` with multiple quantiles: One column per quantile 
+        (e.g., `q_0.1`, `q_0.5`, `q_0.9`).
         - For `'bootstrapping'`: One column per bootstrapping iteration 
         (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
         - For `scipy.stats` distribution objects: One column for each estimated 
@@ -1250,7 +1256,7 @@ def _backtesting_forecaster_multiseries(
 
     folds = cv.split(X=series, as_pandas=False)
     span_index = cv._extract_index(X=series)
-    initial_train_size = cv.initial_train_size
+    initial_train_size = cv.initial_train_size_as_int
     gap = cv.gap
 
     # Save out-of-sample residuals before any fit() call. Since fit() resets
@@ -1306,9 +1312,6 @@ def _backtesting_forecaster_multiseries(
                 LongTrainingWarning
             )
 
-    if show_progress:
-        folds = tqdm(folds)
-        
     externally_fitted = True if initial_train_size is None else False
     data_folds = _extract_data_folds_multiseries(
                      series             = series,
@@ -1327,6 +1330,9 @@ def _backtesting_forecaster_multiseries(
         else (s_train, lw, levels_lw, e_train, e_test, fold)
         for s_train, lw, levels_lw, e_train, e_test, fold in data_folds
     ]
+
+    if show_progress:
+        data_folds_list = tqdm(data_folds_list)
 
     kwargs_fit_predict_forecaster = {
         "forecaster": forecaster,
@@ -1469,15 +1475,19 @@ def backtesting_forecaster_multiseries(
         method to use. The following options are supported:
 
         - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
-        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
-        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
-        be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
-        50 and 90) as `interval = [10, 50, 90]`.
+        For instance, `interval=0.95` corresponds to `[0.025, 0.975]` quantiles.
+        - If `list` or `tuple`: Sequence of quantiles to compute, each value must 
+        be between 0 and 1 inclusive. For example, a 95% confidence interval can 
+        be specified as `interval = [0.025, 0.975]` or multiple quantiles (e.g. 0.1, 
+        0.5 and 0.9) as `interval = [0.1, 0.5, 0.9]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
+
+        **Changed in version 0.23.0:** `interval` is now expressed as
+        quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+        is deprecated and emits a `FutureWarning`.
     interval_method : str, default 'conformal'
         Technique used to estimate prediction intervals. Available options:
 
@@ -1524,16 +1534,16 @@ def backtesting_forecaster_multiseries(
         Long-format DataFrame containing the predicted values for each series. The 
         DataFrame includes the following columns:
         
-        - `level`: Identifier for the time series or level being predicted.
+        - level: Identifier for the time series or level being predicted.
         - fold: Indicates the fold number where the prediction was made.
-        - `pred`: Predicted values for the corresponding series and time steps.
+        - pred: Predicted values for the corresponding series and time steps.
 
         If `interval` is not `None`, additional columns are included depending on the method:
         
         - For `float`: Columns `lower_bound` and `upper_bound`.
         - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
-        - For `list` or `tuple` with multiple percentiles: One column per percentile 
-        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `list` or `tuple` with multiple quantiles: One column per quantile 
+        (e.g., `q_0.1`, `q_0.5`, `q_0.9`).
         - For `'bootstrapping'`: One column per bootstrapping iteration 
         (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
         - For `scipy.stats` distribution objects: One column for each estimated 
@@ -1594,6 +1604,10 @@ def backtesting_forecaster_multiseries(
                           exog              = exog,
                           exog_dict         = exog_dict
                       )
+    
+    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
+    if isinstance(interval, (list, tuple)):
+        interval = _normalize_interval_scale(interval)
 
     check_backtesting_input(
         forecaster              = forecaster,
@@ -1814,9 +1828,9 @@ def _backtesting_stats(
         If both, `alpha` and `interval` are provided, `alpha` will be used.
     interval : list, tuple, default None
         Confidence of the prediction interval estimated. The values must be
-        symmetric. Sequence of percentiles to compute, which must be between 
-        0 and 100 inclusive. For example, interval of 95% should be as 
-        `interval = [2.5, 97.5]`. If both, `alpha` and `interval` are 
+        symmetric. Sequence of quantiles to compute, which must be between 
+        0 and 1 inclusive. For example, interval of 95% should be as 
+        `interval = [0.025, 0.975]`. If both, `alpha` and `interval` are 
         provided, `alpha` will be used.
     freeze_params : bool, default True
         Determines whether to freeze the model parameters after the first fit
@@ -1948,7 +1962,7 @@ def _backtesting_stats(
         ]
     
     folds = cv.split(X=y, as_pandas=False)
-    initial_train_size = cv.initial_train_size
+    initial_train_size = cv.initial_train_size_as_int
     steps = cv.steps
     gap = cv.gap
 
@@ -2022,16 +2036,19 @@ def _backtesting_stats(
         estimator_names_ = [result[1] for result in results]
         backtest_predictions['estimator_params'] = np.concatenate(estimator_names_)
 
-    train_indexes = []
-    for i, fold in enumerate(folds):
-        fit_fold = fold[-1]
-        if i == 0 or fit_fold:
-            train_iloc_start = fold[1][0]
-            train_iloc_end = fold[1][1]
-            train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
-    
-    train_indexes = np.unique(np.concatenate(train_indexes))
-    y_train = y.iloc[train_indexes]
+    if _any_metric_needs_y_train(metrics):
+        train_indexes = []
+        for i, fold in enumerate(folds):
+            fit_fold = fold[-1]
+            if i == 0 or fit_fold:
+                train_iloc_start = fold[1][0]
+                train_iloc_end = fold[1][1]
+                train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
+        
+        train_indexes = np.unique(np.concatenate(train_indexes))
+        y_train = y.iloc[train_indexes]
+    else:
+        y_train = None
 
     backtest_predictions_for_metrics = backtest_predictions
     if overlapping_folds:
@@ -2120,10 +2137,14 @@ def backtesting_stats(
         If both, `alpha` and `interval` are provided, `alpha` will be used.
     interval : list, tuple, default None
         Confidence of the prediction interval estimated. The values must be
-        symmetric. Sequence of percentiles to compute, which must be between 
-        0 and 100 inclusive. For example, interval of 95% should be as 
-        `interval = [2.5, 97.5]`. If both, `alpha` and `interval` are 
+        symmetric. Sequence of quantiles to compute, which must be between 
+        0 and 1 inclusive. For example, interval of 95% should be as 
+        `interval = [0.025, 0.975]`. If both, `alpha` and `interval` are 
         provided, `alpha` will be used.
+
+        **Changed in version 0.23.0:** `interval` is now expressed as
+        quantiles (0-1) instead of percentiles (0-100). Passing percentiles
+        is deprecated and emits a `FutureWarning`.
     freeze_params : bool, default True
         Determines whether to freeze the model parameters after the first fit
         for estimators that perform automatic model selection.
@@ -2195,6 +2216,10 @@ def backtesting_stats(
             "`model_selection` module."
         )
     
+    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
+    if isinstance(interval, (list, tuple)):
+        interval = _normalize_interval_scale(interval)
+    
     check_backtesting_input(
         forecaster        = forecaster,
         cv                = cv,
@@ -2224,3 +2249,488 @@ def backtesting_stats(
     )
 
     return metric_values, backtest_predictions
+
+
+@manage_warnings
+def _backtesting_foundation(
+    forecaster: object,
+    series: dict[str, pd.Series],
+    cv: TimeSeriesFold,
+    metric: str | Callable | list[str | Callable],
+    levels: str | list[str] | None = None,
+    add_aggregated_metric: bool = True,
+    exog: dict[str, pd.Series | pd.DataFrame | None] | None = None,
+    quantiles: list[float] | None = None,
+    verbose: bool = False,
+    show_progress: bool = True,
+    suppress_warnings: bool = False,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Backtesting of ForecasterFoundation.
+
+    The original forecaster is used directly (no copy): refit is always
+    disabled for foundation models and every fold passes `context`
+    explicitly, so `self.context_` is never modified during the fold loop.
+    The only state change is the initial `fit` call that stores the training
+    context window.
+
+    Parameters
+    ----------
+    forecaster : ForecasterFoundation
+        Forecaster model.
+    series : dict[str, pd.Series]
+        Training time series. A single `pd.Series` runs in single-series
+        mode; a wide `pd.DataFrame` or `dict[str, pd.Series]` runs in
+        multi-series mode.
+    cv : TimeSeriesFold
+        TimeSeriesFold object with the information needed to split the data
+        into folds.
+    metric : str, Callable, list
+        Metric used to quantify the goodness of fit of the model.
+
+        - If `string`: {'mean_squared_error', 'mean_absolute_error',
+        'mean_absolute_percentage_error', 'mean_squared_log_error',
+        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `Callable`: Function with arguments `y_true`, `y_pred` and
+        `y_train` (Optional) that returns a float.
+        - If `list`: List containing multiple strings and/or Callables.
+    levels : str, list, default None
+        Time series to be predicted and evaluated. Only used in multi-series
+        mode. If `None`, all series seen at fit time are used.
+    add_aggregated_metric : bool, default True
+        If `True`, and multiple series (`levels`) are predicted, the aggregated
+        metrics (average, weighted average and pooled) are also returned.
+
+        - 'average': the average (arithmetic mean) of all levels.
+        - 'weighted_average': the average of the metrics weighted by the number of
+        predicted values of each level.
+        - 'pooling': the values of all levels are pooled and then the metric is
+        calculated.
+    exog : dict[str, pd.Series | pd.DataFrame | None] | None, default None
+        Exogenous variable/s included as predictor/s. Must cover the full
+        time range of `series` including the forecast horizon of each fold.
+    quantiles : list, default None
+        Sequence of quantile levels (between 0 and 1 inclusive) to estimate.
+        For example, `quantiles = [0.1, 0.5, 0.9]`.
+    verbose : bool, default False
+        Print number of folds and index of training and validation sets used
+        for backtesting.
+    show_progress : bool, default True
+        Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the
+        backtesting process. See
+        skforecast.exceptions.warn_skforecast_categories for more
+        information.
+
+    Returns
+    -------
+    metrics_levels : pandas DataFrame
+        Value(s) of the metric(s).
+    backtest_predictions : pandas DataFrame
+        Value of predictions. The DataFrame includes the following columns:
+
+        - fold: Indicates the fold number where the prediction was made.
+        - level: Identifies the series.
+        - pred: Predicted values.
+
+        If `quantiles` is provided, one column per quantile is included
+        (e.g. `q_0.1`, `q_0.5`, `q_0.9`) instead of pred.
+
+        Depending on the relation between `steps` and `fold_stride`, the
+        output may include repeated indexes (if `fold_stride < steps`) or
+        gaps (if `fold_stride > steps`). See Notes below for more details.
+
+    Notes
+    -----
+    Note on `fold_stride` vs. `steps`:
+
+    - If `fold_stride == steps`, test sets are placed back-to-back without
+    overlap. Each observation appears only once in the output DataFrame, so
+    the index is unique.
+    - If `fold_stride < steps`, test sets overlap. Multiple forecasts are
+    generated for the same observations and, therefore, the output DataFrame
+    contains repeated indexes.
+    - If `fold_stride > steps`, there are gaps between consecutive test sets.
+    Some observations in the series will not have associated predictions, so
+    the output DataFrame has non-contiguous indexes.
+
+    """
+
+    cv = deepcopy(cv)
+
+    if cv.refit is True or cv.fixed_train_size is False:
+        warnings.warn(
+            f"Foundation models are zero-shot and do not learn from training data. "
+            f"Arguments `refit` and `fixed_train_size` have no effect and are "
+            f"ignored. The context window grows with each fold up to the maximum "
+            f"context length ({forecaster.context_length}).",
+            IgnoredArgumentWarning
+        )
+    cv.refit = True
+    cv.fixed_train_size = False
+
+    series_names = list(series.keys())
+    is_multiseries = len(series_names) > 1
+
+    if levels is not None:
+        levels = [levels] if isinstance(levels, str) else list(levels)
+    else:
+        levels = series_names
+
+    cv.set_params({
+        'window_size': forecaster.window_size,
+        'return_all_indexes': False,
+        'verbose': verbose,
+    })
+    overlapping_folds = cv.overlapping_folds
+
+    if not isinstance(metric, list):
+        metrics = [
+            _get_metric(metric=metric) if isinstance(metric, str)
+            else add_y_train_argument(metric)
+        ]
+    else:
+        metrics = [
+            _get_metric(metric=m) if isinstance(m, str)
+            else add_y_train_argument(m)
+            for m in metric
+        ]
+
+    folds = cv.split(X=series, as_pandas=False)
+    span_index = cv._extract_index(X=series)
+    gap = cv.gap
+    
+    data_folds = _extract_data_folds_multiseries(
+                     series             = series,
+                     folds              = folds,
+                     span_index         = span_index,
+                     window_size        = 1,  # Minimum 1 observation as context.
+                     exog               = exog,
+                     dropna_last_window = False,
+                     externally_fitted  = False
+                 )
+
+    data_folds_tqdm = tqdm(data_folds, total=len(folds)) if show_progress else data_folds
+    
+    backtest_predictions = []
+    for context, _, levels_context, context_exog, exog_test, fold in data_folds_tqdm:
+
+        fold_number = fold[0]
+        test_gap_start, test_gap_end = fold[3]
+
+        steps_with_gap = test_gap_end - test_gap_start
+        context = {
+            name: s.iloc[-forecaster.context_length :]
+            for name, s in context.items()
+        }
+
+        if exog is not None:
+            context_exog = {
+                name: (
+                    e.iloc[-forecaster.context_length :]
+                    if e is not None
+                    else None
+                )
+                for name, e in context_exog.items()
+            }
+        else:
+            context_exog = None
+
+        levels_predict = [level for level in levels if level in levels_context]
+        if quantiles is not None:
+            pred = forecaster.predict_quantiles(
+                       steps        = steps_with_gap,
+                       levels       = levels_predict,
+                       context      = context,
+                       context_exog = context_exog,
+                       exog         = exog_test,
+                       quantiles    = quantiles,
+                       check_inputs = False
+                   )
+        else:
+            pred = forecaster.predict(
+                       steps        = steps_with_gap,
+                       levels       = levels_predict,
+                       context      = context,
+                       context_exog = context_exog,
+                       exog         = exog_test,
+                       check_inputs = False
+                   )
+        
+        pred = pred.iloc[len(levels_predict) * gap:, :]
+
+        pred.insert(1, 'fold', fold_number)
+        backtest_predictions.append(pred)
+
+    backtest_predictions = pd.concat(backtest_predictions, axis=0)
+
+    if is_multiseries:
+        backtest_levels = set(backtest_predictions['level'].unique())
+
+        # Convert to (idx, level) MultiIndex required by
+        # _calculate_metrics_backtesting_multiseries.
+        backtest_predictions = (
+            backtest_predictions
+            .rename_axis('idx', axis=0)
+            .set_index('level', append=True)
+        )
+
+        if quantiles is not None:
+            mask_cols = [c for c in backtest_predictions.columns if c.startswith('q_')]
+        else:
+            mask_cols = ['pred']
+
+        backtest_predictions_grouped = backtest_predictions.groupby('level', sort=False)
+        for level, indices in backtest_predictions_grouped.groups.items():
+            if level in backtest_levels:
+                valid_index = series[level].dropna().index
+                valid_index = pd.MultiIndex.from_product(
+                    [valid_index, [level]], names=['idx', 'level']
+                )
+                no_valid_index = indices.difference(valid_index, sort=False)
+                backtest_predictions.loc[no_valid_index, mask_cols] = np.nan
+
+        backtest_predictions_for_metrics = backtest_predictions
+        if overlapping_folds:
+            backtest_predictions_for_metrics = (
+                backtest_predictions_for_metrics
+                .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
+            )
+
+        # For quantile-only output, use the median quantile as the metric target.
+        if quantiles is not None:
+            metric_col = 'q_0.5'
+        else:
+            metric_col = 'pred'
+
+        metrics_levels = _calculate_metrics_backtesting_multiseries(
+            series                = series,
+            predictions           = backtest_predictions_for_metrics[[metric_col]],
+            folds                 = folds,
+            span_index            = span_index,
+            window_size           = 0,  # Not used here 
+            metrics               = metrics,
+            levels                = levels,
+            add_aggregated_metric = add_aggregated_metric,
+        )
+
+        backtest_predictions = (
+            backtest_predictions
+            .reset_index('level')
+            .rename_axis(None, axis=0)
+        )
+    else:
+
+        backtest_predictions_for_metrics = backtest_predictions
+        if overlapping_folds:
+            backtest_predictions_for_metrics = (
+                backtest_predictions_for_metrics
+                .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
+            )
+        
+        y_true = series[series_names[0]].loc[backtest_predictions_for_metrics.index]
+        # For quantile-only output, derive 'pred' from the median quantile.
+        if quantiles is not None:
+            y_pred = backtest_predictions_for_metrics['q_0.5']
+        else:
+            y_pred = backtest_predictions_for_metrics['pred']
+        
+        if _any_metric_needs_y_train(metrics):
+            train_indexes = []
+            for i, fold in enumerate(folds):
+                if i == 0 or fold[-1]:
+                    train_indexes.append(np.arange(fold[1][0], fold[1][1]))
+            train_indexes = np.unique(np.concatenate(train_indexes))
+            y_train = series[series_names[0]].iloc[train_indexes]
+        else:
+            y_train = None
+
+        metric_values = [[
+            m(y_true=y_true, y_pred=y_pred, y_train=y_train)
+            for m in metrics
+        ]]
+
+        metrics_levels = pd.DataFrame(
+            data    = metric_values,
+            columns = [m.__name__ for m in metrics],
+        )
+
+    return metrics_levels, backtest_predictions
+
+
+def backtesting_foundation(
+    forecaster: object,
+    series: pd.Series | pd.DataFrame | dict,
+    cv: TimeSeriesFold,
+    metric: str | Callable | list[str | Callable],
+    levels: str | list[str] | None = None,
+    add_aggregated_metric: bool = True,
+    exog: pd.Series | pd.DataFrame | dict | None = None,
+    quantiles: list[float] | None = None,
+    verbose: bool = False,
+    show_progress: bool = True,
+    suppress_warnings: bool = False,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Backtesting of ForecasterFoundation.
+
+    The original forecaster is modified in-place (fitted on the initial
+    training slice) but its loaded model weights are preserved across the
+    entire backtesting run. Since foundation models are zero-shot, refit
+    is always disabled and per-fold predictions receive `last_window`
+    explicitly, so the stored context is not consulted or modified during
+    the fold loop.
+
+    Parameters
+    ----------
+    forecaster : ForecasterFoundation
+        Forecaster model.
+    series : pandas Series, pandas DataFrame, or dict
+        Training time series. A single `pd.Series` runs in single-series
+        mode. A wide `pd.DataFrame`, a long-format `pd.DataFrame` with a
+        MultiIndex (series IDs in the first level, `DatetimeIndex` in the
+        second), or a `dict[str, pd.Series]` runs in multi-series mode.
+        Long-format DataFrames are normalised internally to a dict before
+        processing.
+    cv : TimeSeriesFold
+        TimeSeriesFold object with the information needed to split the data
+        into folds.
+    metric : str, Callable, list
+        Metric used to quantify the goodness of fit of the model.
+
+        - If `string`: {'mean_squared_error', 'mean_absolute_error',
+        'mean_absolute_percentage_error', 'mean_squared_log_error',
+        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `Callable`: Function with arguments `y_true`, `y_pred` and
+        `y_train` (Optional) that returns a float.
+        - If `list`: List containing multiple strings and/or Callables.
+    levels : str, list, default None
+        Time series to be predicted and evaluated. Only used in multi-series
+        mode. If `None`, all series seen at fit time are used.
+    add_aggregated_metric : bool, default True
+        If `True`, and multiple series (`levels`) are predicted, the aggregated
+        metrics (average, weighted average and pooled) are also returned.
+
+        - 'average': the average (arithmetic mean) of all levels.
+        - 'weighted_average': the average of the metrics weighted by the
+        number of predicted values of each level.
+        - 'pooling': the values of all levels are pooled and then the metric
+        is calculated.
+    exog : pandas Series, pandas DataFrame, dict, default None
+        Exogenous variable/s included as predictor/s. Must have the same
+        number of observations as `series` and should be aligned so that
+        `series[i]` is regressed on `exog[i]`. Must also cover the
+        forecast horizon of each fold.
+    quantiles : list, default None
+        Sequence of quantile levels (between 0 and 1 inclusive) to estimate.
+        For example, `quantiles = [0.1, 0.5, 0.9]`.
+    verbose : bool, default False
+        Print number of folds and index of training and validation sets used
+        for backtesting.
+    show_progress : bool, default True
+        Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the
+        backtesting process. See
+        skforecast.exceptions.warn_skforecast_categories for more
+        information.
+
+    Returns
+    -------
+    metrics_levels : pandas DataFrame
+        Value(s) of the metric(s).
+    backtest_predictions : pandas DataFrame
+        Value of predictions. The DataFrame includes the following columns:
+
+        - fold: Indicates the fold number where the prediction was made.
+        - level: Identifies the series.
+        - pred: Predicted values.
+
+        If `quantiles` is provided, one column per quantile is included
+        (e.g. `q_0.1`, `q_0.5`, `q_0.9`) instead of pred.
+
+        Depending on the relation between `steps` and `fold_stride`, the
+        output may include repeated indexes (if `fold_stride < steps`) or
+        gaps (if `fold_stride > steps`). See Notes below for more details.
+
+    Notes
+    -----
+    Note on `fold_stride` vs. `steps`:
+
+    - If `fold_stride == steps`, test sets are placed back-to-back without
+    overlap. Each observation appears only once in the output DataFrame, so
+    the index is unique.
+    - If `fold_stride < steps`, test sets overlap. Multiple forecasts are
+    generated for the same observations and, therefore, the output DataFrame
+    contains repeated indexes.
+    - If `fold_stride > steps`, there are gaps between consecutive test sets.
+    Some observations in the series will not have associated predictions, so
+    the output DataFrame has non-contiguous indexes.
+
+    """
+
+    if type(forecaster).__name__ != 'ForecasterFoundation':
+        raise TypeError(
+            "`forecaster` must be of type `ForecasterFoundation`. For all "
+            "other types of forecasters use the other functions available in "
+            "the `model_selection` module."
+        )
+
+    series_dict, series_indexes = check_preprocess_series_foundation(series)
+    series_names_in_ = list(series_dict.keys())
+
+    exog_dict = None
+    if exog is not None:
+        exog_dict, _ = check_preprocess_exog_multiseries(
+            series_names_in_  = series_names_in_,
+            series_index_type = type(series_indexes[series_names_in_[0]]),
+            exog              = exog,
+            exog_dict         = {name: None for name in series_names_in_},
+        )
+
+        # NOTE: As no trim is applied to the series, it is only needed to 
+        # align exog.
+        series_dict, exog_dict = align_series_and_exog_multiseries(
+                                     series_dict      = series_dict,
+                                     exog_dict        = exog_dict,
+                                     trim_series_nan  = False,
+                                 )
+
+    if quantiles is not None:
+        if 0.5 not in quantiles:
+            warnings.warn(
+                "The median quantile (0.5) is required to compute the main "
+                "predictions and metrics. Since it is not included in `quantiles`, "
+                "it will be added automatically.",
+                IgnoredArgumentWarning
+            )
+            quantiles = sorted(quantiles + [0.5])
+
+    check_backtesting_input(
+        forecaster             = forecaster,
+        cv                     = cv,
+        series                 = series_dict,
+        metric                 = metric,
+        add_aggregated_metric  = add_aggregated_metric,
+        exog                   = exog_dict,
+        interval               = quantiles,
+        show_progress          = show_progress,
+        suppress_warnings      = suppress_warnings,
+    )
+
+    metrics_levels, backtest_predictions = _backtesting_foundation(
+        forecaster            = forecaster,
+        series                = series_dict,
+        cv                    = cv,
+        metric                = metric,
+        levels                = levels,
+        add_aggregated_metric = add_aggregated_metric,
+        exog                  = exog_dict,
+        quantiles             = quantiles,
+        verbose               = verbose,
+        show_progress         = show_progress,
+        suppress_warnings     = suppress_warnings,
+    )
+
+    return metrics_levels, backtest_predictions

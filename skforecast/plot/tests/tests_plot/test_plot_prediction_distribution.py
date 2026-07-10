@@ -10,7 +10,7 @@ from skforecast.plot import plot_prediction_distribution
 def _make_bootstrapping_predictions(steps: int = 12, n_boot: int = 200, seed: int = 123) -> pd.DataFrame:
     """
     Return a DataFrame shaped (steps, n_boot) mirroring the output of
-    ``forecaster.predict_bootstrapping()``.
+    `forecaster.predict_bootstrapping()`.
     The index is a DatetimeIndex of monthly periods.
     """
     rng = np.random.default_rng(seed)

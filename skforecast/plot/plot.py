@@ -12,6 +12,7 @@ from pathlib import Path
 import warnings
 import numpy as np
 import pandas as pd
+from scipy.stats import gaussian_kde
 from ..utils import check_optional_dependency, input_to_frame
 from ..exceptions import IgnoredArgumentWarning
 
@@ -19,9 +20,7 @@ try:
     import matplotlib
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation, PillowWriter
-    import seaborn as sns
     from statsmodels.graphics.tsaplots import plot_acf
-    from statsmodels.tsa.stattools import acf, pacf
 except Exception as e:
     package_name = str(e).split(" ")[-1].replace("'", "")
     check_optional_dependency(package_name=package_name)
@@ -74,7 +73,22 @@ def plot_residuals(
     ax3 = plt.subplot(gs[1, 1])
     
     ax1.plot(residuals)
-    sns.histplot(residuals, kde=True, bins=30, ax=ax2)
+    residuals_kde = np.asarray(residuals, dtype=float)
+    residuals_kde = residuals_kde[~np.isnan(residuals_kde)]
+    hist_color = "C0"
+    _, bin_edges, _ = ax2.hist(
+        residuals_kde,
+        bins=30,
+        facecolor=matplotlib.colors.to_rgba(hist_color, 0.5),
+        edgecolor=matplotlib.rcParams["patch.edgecolor"],
+        linewidth=0.5,
+    )
+    if residuals_kde.size > 1 and np.ptp(residuals_kde) > 0:
+        kde = gaussian_kde(residuals_kde)
+        x_kde = np.linspace(bin_edges[0], bin_edges[-1], 200)
+        bin_width = bin_edges[1] - bin_edges[0]
+        ax2.plot(x_kde, kde(x_kde) * residuals_kde.size * bin_width, color=hist_color)
+    ax2.set_ylabel("Count")
     plot_acf(residuals, ax=ax3, lags=60)
     
     ax1.set_title("Residuals")
@@ -113,14 +127,33 @@ def plot_multivariate_time_series_corr(
         fig, ax = plt.subplots(1, 1, **fig_kw)
     else:
         fig = ax.get_figure()
-    
-    sns.heatmap(
-        corr,
-        annot=True,
-        linewidths=.5,
-        ax=ax,
-        cmap=sns.color_palette("viridis", as_cmap=True)
-    )
+
+    values = corr.to_numpy()
+    im = ax.imshow(values, cmap='viridis', aspect='auto')
+    fig.colorbar(im, ax=ax)
+
+    ax.set_xticks(np.arange(corr.shape[1]))
+    ax.set_yticks(np.arange(corr.shape[0]))
+    ax.set_xticklabels(corr.columns)
+    ax.set_yticklabels(corr.index)
+
+    # Minor ticks to draw separating grid lines between cells
+    ax.set_xticks(np.arange(corr.shape[1] + 1) - 0.5, minor=True)
+    ax.set_yticks(np.arange(corr.shape[0] + 1) - 0.5, minor=True)
+    ax.grid(which='minor', color='w', linewidth=0.5)
+    ax.tick_params(which='minor', bottom=False, left=False)
+
+    # Annotate each cell, choosing text color for contrast with the background
+    for i in range(values.shape[0]):
+        for j in range(values.shape[1]):
+            value = values[i, j]
+            r, g, b, _ = im.cmap(im.norm(value))
+            luminance = 0.299 * r + 0.587 * g + 0.114 * b
+            ax.text(
+                j, i, f"{value:.2g}",
+                ha='center', va='center',
+                color='white' if luminance < 0.5 else 'black'
+            )
 
     ax.set_xlabel('Time series')
     
@@ -155,7 +188,7 @@ def plot_prediction_distribution(
     """
 
     index = bootstrapping_predictions.index.astype(str).to_list()[::-1]
-    palette = sns.cubehelix_palette(len(index), rot=-.25, light=.7, reverse=False)
+    palette = plt.get_cmap('cubehelix')(np.linspace(0.15, 0.7, len(index)))
     fig, axs = plt.subplots(len(index), 1, sharex=True, **fig_kw)
     if not isinstance(axs, np.ndarray):
         axs = np.array([axs])
@@ -308,118 +341,6 @@ def plot_prediction_intervals(
 
     if initial_x_zoom is not None:
         ax.set_xlim(initial_x_zoom)
-
-
-def calculate_lag_autocorrelation(
-    data: pd.Series | pd.DataFrame,
-    n_lags: int = 50,
-    last_n_samples: int | None = None,
-    sort_by: str = "partial_autocorrelation_abs",
-    acf_kwargs: dict[str, object] = {},
-    pacf_kwargs: dict[str, object] = {},
-) -> pd.DataFrame:
-    """
-    Calculate autocorrelation and partial autocorrelation for a time series.
-    This is a wrapper around statsmodels.acf [1]_ and statsmodels.pacf [2]_.
-
-    Parameters
-    ----------
-    data : pandas Series, pandas DataFrame
-        Time series to calculate autocorrelation. If a DataFrame is provided,
-        it must have exactly one column.
-    n_lags : int
-        Number of lags to calculate autocorrelation.
-    last_n_samples : int or None, default None
-        Number of most recent samples to use. If None, use the entire series. 
-        Note that partial correlations can only be computed for lags up to 
-        50% of the sample size. For example, if the series has 10 samples, 
-        `n_lags` must be less than or equal to 5. This parameter is useful
-        to speed up calculations when the series is very long.
-    sort_by : str, default 'partial_autocorrelation_abs'
-        Sort results by 'lag', 'partial_autocorrelation_abs', 
-        'partial_autocorrelation', 'autocorrelation_abs' or 'autocorrelation'.
-    acf_kwargs : dict, default {}
-        Optional arguments to pass to statsmodels.tsa.stattools.acf.
-    pacf_kwargs : dict, default {}
-        Optional arguments to pass to statsmodels.tsa.stattools.pacf.
-
-    Returns
-    -------
-    results : pandas DataFrame
-        Autocorrelation and partial autocorrelation values.
-
-    References
-    ----------
-    .. [1] Statsmodels acf API Reference.
-           https://www.statsmodels.org/stable/generated/statsmodels.tsa.stattools.acf.html
-    
-    .. [2] Statsmodels pacf API Reference.
-           https://www.statsmodels.org/stable/generated/statsmodels.tsa.stattools.pacf.html
-
-    Examples
-    --------
-    ```python
-    import pandas as pd
-    from skforecast.plot import calculate_lag_autocorrelation
-
-    data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    calculate_lag_autocorrelation(data = data, n_lags = 4)
-    
-    #    lag  partial_autocorrelation_abs  partial_autocorrelation  autocorrelation_abs  autocorrelation
-    # 0    1                     0.777778                 0.777778             0.700000         0.700000
-    # 1    4                     0.360707                -0.360707             0.078788        -0.078788
-    # 2    3                     0.274510                -0.274510             0.148485         0.148485
-    # 3    2                     0.227273                -0.227273             0.412121         0.412121
-    ```
-
-    """
-
-    if not isinstance(data, (pd.Series, pd.DataFrame)):
-        raise TypeError(
-            f"`data` must be a pandas Series or a DataFrame with a single column. "
-            f"Got {type(data)}."
-        )
-    if isinstance(data, pd.DataFrame) and data.shape[1] != 1:
-        raise ValueError(
-            f"If `data` is a DataFrame, it must have exactly one column. "
-            f"Got {data.shape[1]} columns."
-        )
-    if not isinstance(n_lags, int) or n_lags <= 0:
-        raise TypeError(f"`n_lags` must be a positive integer. Got {n_lags}.")
-    
-    if last_n_samples is not None:
-        if not isinstance(last_n_samples, int) or last_n_samples <= 0:
-            raise TypeError(f"`last_n_samples` must be a positive integer. Got {last_n_samples}.")
-        data = data.iloc[-last_n_samples:]
-
-    if sort_by not in [
-        "lag", "partial_autocorrelation_abs", "partial_autocorrelation",
-        "autocorrelation_abs", "autocorrelation",
-    ]:
-        raise ValueError(
-            "`sort_by` must be 'lag', 'partial_autocorrelation_abs', 'partial_autocorrelation', "
-            "'autocorrelation_abs' or 'autocorrelation'."
-        )
-
-    pacf_values = pacf(data, nlags=n_lags, **pacf_kwargs)
-    acf_values = acf(data, nlags=n_lags, **acf_kwargs)
-
-    results = pd.DataFrame(
-        {
-            "lag": range(n_lags + 1),
-            "partial_autocorrelation_abs": np.abs(pacf_values),
-            "partial_autocorrelation": pacf_values,
-            "autocorrelation_abs": np.abs(acf_values),
-            "autocorrelation": acf_values,
-        }
-    ).iloc[1:]
-
-    if sort_by == "lag":
-        results = results.sort_values(by=sort_by, ascending=True).reset_index(drop=True)
-    else:
-        results = results.sort_values(by=sort_by, ascending=False).reset_index(drop=True)
-
-    return results
 
 
 def backtesting_gif_creator(

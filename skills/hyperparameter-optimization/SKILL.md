@@ -26,6 +26,22 @@ Use hyperparameter search after establishing a baseline forecaster to improve pr
 | **Random Search** | Large parameter space, limited compute budget | Medium |
 | **Grid Search** | Small parameter space, exhaustive exploration | Slowest |
 
+### Related skills
+
+- **Before**: `autocorrelation-and-lag-selection` (narrow the `lags` search space to a statistically informed candidate set)
+- **Before**: `feature-selection` (run the search on a reduced feature set to make it tractable)
+- **After**: `prediction-intervals` (add uncertainty quantification once the configuration is fixed)
+
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| The search refits the forecaster in place with the best params when `return_best=True` (the default) | With `return_best=False`, the forecaster keeps its pre-search params | Rely on the default, or refit with the best params from the results table |
+| Use the `*_multiseries` / `*_stats` search variant matching the forecaster type | Search function raises on the wrong forecaster type | Call e.g. `bayesian_search_forecaster_multiseries` / `grid_search_stats` |
+| Include `lags` in the Bayesian `search_space()` | Suboptimal search; the highest-impact parameter stays fixed | Add `trial.suggest_categorical('lags', [...])` to the search space |
+
 ## Bayesian Search (Recommended)
 
 Always prefer Bayesian search as the default strategy. It uses Optuna to intelligently explore the search space.
@@ -57,7 +73,7 @@ def search_space(trial):
     }
 
 # n_trials=20 is the default. Increase for better results (50-200 recommended).
-results, best_trial = bayesian_search_forecaster(
+results, study = bayesian_search_forecaster(
     forecaster=forecaster,
     y=data['target'],
     exog=exog,
@@ -72,6 +88,7 @@ results, best_trial = bayesian_search_forecaster(
     output_file='search_results.csv',  # Save results incrementally
 )
 # results is a DataFrame sorted by metric (best first)
+# study is the full Optuna Study; access the best trial with study.best_trial
 ```
 
 ## Grid Search
@@ -148,7 +165,7 @@ cv = TimeSeriesFold(
     refit=False,
 )
 
-results, best_trial = bayesian_search_forecaster_multiseries(
+results, study = bayesian_search_forecaster_multiseries(
     forecaster=forecaster,
     series=series,
     exog=exog,
@@ -162,6 +179,7 @@ results, best_trial = bayesian_search_forecaster_multiseries(
     n_jobs='auto',
     show_progress=True,
 )
+# Access the best trial with study.best_trial
 ```
 
 ## Statistical Models Search
@@ -199,7 +217,7 @@ cv_fast = OneStepAheadFold(
     initial_train_size=len(data) - 100,
 )
 
-results, best_trial = bayesian_search_forecaster(
+results, study = bayesian_search_forecaster(
     forecaster=forecaster,
     y=data['target'],
     cv=cv_fast,
@@ -208,6 +226,7 @@ results, best_trial = bayesian_search_forecaster(
     n_trials=100,
     return_best=True,
 )
+# Access the best trial with study.best_trial
 ```
 
 ## Common Mistakes

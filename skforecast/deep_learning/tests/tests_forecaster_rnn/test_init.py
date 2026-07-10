@@ -1,4 +1,3 @@
-
 # Unit test __init__ ForecasterRnn using PyTorch backend
 # ==============================================================================
 import re
@@ -41,7 +40,15 @@ def test_ForecasterRnn_init_basic_and_attr_types():
     assert isinstance(forecaster.skforecast_version, str)
     assert isinstance(forecaster.python_version, str)
     assert forecaster.forecaster_id == "f-id"
-    assert forecaster._probabilistic_mode == "no_binned"
+    assert forecaster._probabilistic_mode == "binned"
+    assert forecaster.binner == {}
+    assert forecaster.binner_intervals_ == {}
+    assert forecaster.binner_kwargs == {
+        'n_bins': 10, 'method': 'linear', 'subsample': 200000,
+        'random_state': 789654, 'dtype': np.float64
+    }
+    assert forecaster.in_sample_residuals_by_bin_ is None
+    assert forecaster.out_sample_residuals_by_bin_ is None
     assert forecaster.dropna_from_series is False
     assert forecaster.encoding is None
     assert forecaster.differentiation is None
@@ -243,3 +250,25 @@ def test_ForecasterRnn_init_raises_TypeError_if_exog_val_wrong_type():
             lags=3,
             fit_kwargs=fit_kwargs
         )
+
+
+def test_ForecasterRnn_init_custom_binner_kwargs():
+    """
+    Test custom binner_kwargs are stored correctly.
+    """
+    series = pd.DataFrame({'A': np.arange(10, dtype=float)})
+    model = create_and_compile_model(
+        series=series, lags=3, steps=2, model_name="modelo"
+    )
+    custom_kwargs = {
+        'n_bins': 5, 'method': 'linear', 'subsample': 100000,
+        'random_state': 42, 'dtype': np.float32
+    }
+    forecaster = ForecasterRnn(
+        estimator=model,
+        levels='A',
+        lags=3,
+        binner_kwargs=custom_kwargs
+    )
+
+    assert forecaster.binner_kwargs == custom_kwargs

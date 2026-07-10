@@ -6,8 +6,63 @@
 # coding=utf-8
 
 from __future__ import annotations
+import warnings
 import numpy as np
 from sklearn.exceptions import NotFittedError
+
+
+def _normalize_level(
+    level: float | int | list[float] | tuple[float, ...]
+) -> list[float]:
+    """
+    Normalize confidence level(s) to the 0-1 coverage scale.
+
+    Detection rules, applied to the level value(s):
+
+    - All values in `(0, 1]`: already coverage proportions, returned unchanged.
+    - All values in `(1, 100]`: legacy percentiles. They are divided by 100 and
+    a `FutureWarning` is emitted.
+    - Mixed (some value `<= 1` and some value `> 1`): the scale is ambiguous and
+    a `ValueError` is raised.
+
+    Parameters
+    ----------
+    level : float, int, list, tuple
+        Confidence level(s), either as coverage proportions (0-1) or as legacy
+        percentiles (0-100).
+
+    Returns
+    -------
+    level : list
+        Confidence level(s) expressed as coverage proportions in the 0-1 scale.
+
+    """
+
+    if isinstance(level, (int, float, np.number)):
+        values = [float(level)]
+    else:
+        values = [float(v) for v in level]
+
+    any_above_one = any(v > 1 for v in values)
+    any_le_one = any(v <= 1 for v in values)
+
+    if any_above_one and any_le_one:
+        raise ValueError(
+            "`level` mixes values <= 1 and > 1, so the scale is ambiguous. Use "
+            "coverage proportions in the (0, 1] range, e.g. `level=[0.8, 0.95]`."
+        )
+
+    if any_above_one:
+        warnings.warn(
+            "Passing `level` as percentiles (0-100) is deprecated. Use coverage "
+            "proportions (0-1) instead. For example, use `level=[0.8, 0.95]` "
+            "instead of `level=[80, 95]`. Percentile support will be removed in "
+            "skforecast 0.25.0.",
+            FutureWarning
+        )
+        return [v / 100 for v in values]
+
+    return values
 
 
 def check_is_fitted(func):

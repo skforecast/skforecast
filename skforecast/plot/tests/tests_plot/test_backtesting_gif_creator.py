@@ -5,8 +5,6 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-import matplotlib
-import matplotlib.pyplot as plt
 from pathlib import Path
 from skforecast.model_selection import TimeSeriesFold
 from ... import backtesting_gif_creator
@@ -84,14 +82,16 @@ def test_backtesting_gif_creator_raise_error_invalid_arguments():
 
 @pytest.mark.parametrize(
     "cv_kwargs", 
-    [{'steps': 10, 'initial_train_size': 70},
-     {'steps': 10, 'initial_train_size': 70, 'refit': True},
-     {'steps': 10, 'initial_train_size': 70, 'refit': True, 'fixed_train_size': False},
-     {'steps': 10, 'initial_train_size': 70, 'gap': 5},
-     {'steps': 8, 'initial_train_size': 70, 'gap': 5, 'allow_incomplete_fold': False, 'refit': 2},
-     {'steps': 8, 'initial_train_size': 70, 'skip_folds': 2, 'allow_incomplete_fold': False},
-     {'steps': 8, 'initial_train_size': 70, 'fold_stride': 5}
-     ], 
+    [
+        {'steps': 10, 'initial_train_size': 70},
+        {'steps': 10, 'initial_train_size': 70, 'refit': True},
+        {'steps': 10, 'initial_train_size': 70, 'refit': True, 'fixed_train_size': False},
+        {'steps': 10, 'initial_train_size': 70, 'gap': 5},
+        {'steps': 8, 'initial_train_size': 70, 'gap': 5, 'allow_incomplete_fold': False, 'refit': 2},
+        {'steps': 8, 'initial_train_size': 70, 'skip_folds': 2, 'allow_incomplete_fold': False},
+        {'steps': 8, 'initial_train_size': 70, 'fold_stride': 5},
+        {'steps': 8, 'initial_train_size': 70, 'refit': True, 'fold_stride': 3, 'return_all_indexes': True}
+    ], 
     ids=lambda cv_kwargs: f'cv_kwargs: {cv_kwargs}'
 )
 def test_backtesting_gif_creator_output(cv_kwargs):

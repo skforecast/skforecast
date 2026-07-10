@@ -5,10 +5,10 @@ This script is the single entry point for producing all derived AI context
 files used by IDEs, the web site, and LLMs.  The source files that are
 maintained by hand are:
 
-  1. tools/ai/llms-base.txt        – core API reference (~730 lines)
-  2. llms.txt                      – public index per llmstxt.org spec (~120 lines)
-  3. skills/*/SKILL.md             – modular Agent Skills (one per directory)
-  4. tools/ai/ai_context_header.md – dev-only header (testing, code style)
+  1. tools/ai/llms-base.txt        - core API reference (~730 lines)
+  2. llms.txt                      - public index per llmstxt.org spec (~120 lines)
+  3. skills/*/SKILL.md             - modular Agent Skills (one per directory)
+  4. tools/ai/ai_context_header.md - dev-only header (testing, code style)
 
 Everything else is generated.
 
@@ -21,6 +21,7 @@ Usage
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import sys
 import textwrap
@@ -34,17 +35,25 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 AI_DIR = Path(__file__).resolve().parent
+PYPROJECT_LLM_CONTEXT_RE = re.compile(
+    r'^"LLM Context"\s*=\s*"([^"]+)"', re.MULTILINE
+)
+ALLOWED_REDIRECT_PREFIXES = ("https://doi.org/",)
 
 SKILL_ORDER: list[str] = [
     "forecasting-single-series",
     "forecasting-multiple-series",
     "statistical-models",
+    "metric-selection",
+    "backtesting-configuration",
     "hyperparameter-optimization",
     "prediction-intervals",
+    "autocorrelation-and-lag-selection",
     "feature-engineering",
     "feature-selection",
     "drift-detection",
     "deep-learning-forecasting",
+    "foundation-forecasting",
     "choosing-a-forecaster",
     "troubleshooting-common-errors",
     "complete-api-reference",
@@ -73,6 +82,8 @@ AUTOGEN_NOTICE_FULL = textwrap.dedent("""\
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
 def strip_yaml_frontmatter(text: str) -> str:
     """Remove YAML front-matter delimited by ``---`` from *text*."""
     if text.startswith("---"):
@@ -130,6 +141,24 @@ def validate_skill(skill_dir: Path) -> list[str]:
     line_count = body.count("\n") + 1
     if line_count > 500:
         errors.append(f"  {name}: SKILL.md body is {line_count} lines (max 500)")
+
+    # --- references ---
+    refs_dir = skill_dir / "references"
+    if refs_dir.exists():
+        for ref_file in sorted(refs_dir.glob("*.md")):
+            ref_body = ref_file.read_text(encoding="utf-8")
+            if not ref_body.strip():
+                errors.append(f"  {name}: references/{ref_file.name} is empty")
+            ref_line_count = ref_body.count("\n") + 1
+            if ref_line_count > 1000:
+                errors.append(
+                    f"  {name}: references/{ref_file.name} is "
+                    f"{ref_line_count} lines (max 1000)"
+                )
+            if f"references/{ref_file.name}" not in raw:
+                errors.append(
+                    f"  {name}: references/{ref_file.name} is not linked from SKILL.md"
+                )
 
     # --- name must be in SKILL_ORDER ---
     if name not in SKILL_ORDER:
@@ -198,7 +227,8 @@ def validate_imports_consistency() -> list[str]:
     subpackages = [
         "recursive", "direct", "preprocessing", "model_selection",
         "feature_selection", "metrics", "datasets", "stats",
-        "drift_detection", "deep_learning",
+        "drift_detection", "deep_learning", "foundation", "plot",
+        "exceptions", "experimental",
     ]
 
     for pkg in subpackages:
@@ -210,24 +240,27 @@ def validate_imports_consistency() -> list[str]:
         # Extract imported names from __init__.py
         exported: set[str] = set()
 
-        # Match "from .X import (A, B, ...)"
+        # Match "from .X import (A, B, ...)" — exclude parent imports (from ..X)
         for match in re.finditer(
-            r"from\s+\.[\w.]*\s+import\s+\(([^)]+)\)", init_text, re.DOTALL
+            r"from\s+\.(?!\.)[\w.]*\s+import\s+\(([^)]+)\)", init_text, re.DOTALL
         ):
             for token in re.findall(r"\b(\w+)\b", match.group(1)):
                 exported.add(token)
 
-        # Match "from .X import A, B, C" (no parentheses)
+        # Match "from .X import A, B, C" (no parentheses) — exclude parent imports
         for match in re.finditer(
-            r"from\s+\.[\w.]*\s+import\s+(?!\()(.+)$", init_text, re.MULTILINE
+            r"from\s+\.(?!\.)[\w.]*\s+import\s+(?!\()(.+)$", init_text, re.MULTILINE
         ):
             for token in re.findall(r"\b(\w+)\b", match.group(1)):
                 exported.add(token)
 
-        # Remove submodule imports ("from . import submod")
-        submod_imports = set(
-            re.findall(r"^from\s+\.\s+import\s+(\w+)", init_text, re.MULTILINE)
-        )
+        # Remove submodule imports ("from . import submod1, submod2, ...")
+        submod_imports: set[str] = set()
+        for submod_match in re.finditer(
+            r"from\s+\.\s+import\s+(.+)$", init_text, re.MULTILINE
+        ):
+            for token in re.findall(r"\b(\w+)\b", submod_match.group(1)):
+                submod_imports.add(token)
         exported -= submod_imports
 
         # Filter: only public, non-private identifiers.
@@ -249,111 +282,161 @@ def validate_imports_consistency() -> list[str]:
     return errors
 
 
-def validate_llms_txt_urls(
-    ignore_patterns: list[str] | None = None,
-) -> list[str]:
-    """Check that all URLs in llms.txt (root) are reachable.
+def extract_urls(text: str) -> list[str]:
+    """Extract markdown and bare HTTP(S) URLs from text."""
+    urls: list[str] = re.findall(r"\(\s*(https?://[^)\s]+)\s*\)", text)
+    urls.extend(re.findall(r"\bhttps?://[^\s)>\"']+", text))
 
-    Extracts markdown links ``[text](url)`` and plain URLs, then sends
-    HTTP HEAD requests. Reports unreachable, redirected, or error URLs.
-
-    Parameters
-    ----------
-    ignore_patterns : list[str] or None
-        Substrings to match against URLs. Any URL containing one of these
-        substrings is skipped (useful for URLs pending deployment).
-    """
-    errors: list[str] = []
-    llms_path = ROOT / 'llms.txt'
-    if not llms_path.exists():
-        errors.append('  llms.txt not found at repository root')
-        return errors
-
-    text = llms_path.read_text(encoding='utf-8')
-
-    # Extract URLs from markdown links [text](url) and bare https:// URLs
-    urls: list[str] = re.findall(r'\(\s*(https?://[^)\s]+)\s*\)', text)
-    bare = re.findall(r'(?<!\()\b(https?://[^\s)>]+)', text)
     seen: set[str] = set()
-    all_urls: list[str] = []
-    for u in urls + bare:
-        u = u.rstrip('.,;:')
-        if u not in seen:
-            seen.add(u)
-            all_urls.append(u)
+    unique_urls: list[str] = []
+    for url in urls:
+        clean_url = url.rstrip(".,;:)'\"")
+        if clean_url not in seen:
+            seen.add(clean_url)
+            unique_urls.append(clean_url)
 
-    if not all_urls:
-        errors.append('  llms.txt: no URLs found')
-        return errors
+    return unique_urls
 
-    # Filter out ignored URLs
-    if ignore_patterns:
-        filtered: list[str] = []
-        skipped: list[str] = []
-        for u in all_urls:
-            if any(pat in u for pat in ignore_patterns):
-                skipped.append(u)
-            else:
-                filtered.append(u)
-        if skipped:
-            print(f'  Skipping {len(skipped)} URL(s) matching --ignore-urls:')
-            for s in skipped:
-                print(f'    {s}')
-        all_urls = filtered
 
-    if not all_urls:
-        print('  All URLs were ignored, nothing to check.')
-        return errors
-
-    print(f'  Checking {len(all_urls)} URLs in llms.txt ...')
-
-    ok_count = 0
-    redirects: list[str] = []
-    for url in all_urls:
+def check_url(url: str, label: str) -> list[str]:
+    """Check a URL with HEAD and fallback to GET."""
+    errors: list[str] = []
+    allow_redirect = any(
+        url.startswith(prefix) for prefix in ALLOWED_REDIRECT_PREFIXES
+    )
+    try:
+        req = urllib.request.Request(url, method="HEAD")
+        req.add_header("User-Agent", "skforecast-link-checker/1.0")
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            code = resp.getcode()
+            if code and code >= 400:
+                errors.append(f"  {label}: HTTP {code} - {url}")
+            elif resp.url != url and not allow_redirect:
+                errors.append(f"  {label}: redirected {url} -> {resp.url}")
+    except urllib.error.HTTPError as exc:
+        # Some servers reject HEAD; retry with GET
         try:
-            req = urllib.request.Request(url, method='HEAD')
-            req.add_header('User-Agent', 'skforecast-link-checker/1.0')
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            req_get = urllib.request.Request(url, method="GET")
+            req_get.add_header("User-Agent", "skforecast-link-checker/1.0")
+            with urllib.request.urlopen(req_get, timeout=15) as resp:
                 code = resp.getcode()
                 if code and code >= 400:
-                    errors.append(f'  llms.txt: HTTP {code} — {url}')
-                else:
-                    if resp.url != url:
-                        redirects.append(
-                            f'  llms.txt: redirected {url} -> {resp.url}'
-                        )
-                    ok_count += 1
-        except urllib.error.HTTPError as exc:
-            # Some servers reject HEAD; retry with GET
-            try:
-                req_get = urllib.request.Request(url, method='GET')
-                req_get.add_header('User-Agent', 'skforecast-link-checker/1.0')
-                with urllib.request.urlopen(req_get, timeout=15) as resp:
-                    code = resp.getcode()
-                    if code and code >= 400:
-                        errors.append(f'  llms.txt: HTTP {code} — {url}')
-                    else:
-                        if resp.url != url:
-                            redirects.append(
-                                f'  llms.txt: redirected {url} -> {resp.url}'
-                            )
-                        ok_count += 1
-            except Exception:
-                errors.append(f'  llms.txt: HTTP {exc.code} — {url}')
-        except urllib.error.URLError as exc:
-            errors.append(f'  llms.txt: Connection error ({exc.reason}) — {url}')
-        except Exception as exc:
-            errors.append(f'  llms.txt: {exc} — {url}')
+                    errors.append(f"  {label}: HTTP {code} - {url}")
+                elif resp.url != url and not allow_redirect:
+                    errors.append(f"  {label}: redirected {url} -> {resp.url}")
+        except Exception:
+            errors.append(f"  {label}: HTTP {exc.code} - {url}")
+    except urllib.error.URLError as exc:
+        errors.append(f"  {label}: Connection error ({exc.reason}) - {url}")
+    except Exception as exc:
+        errors.append(f"  {label}: {exc} - {url}")
 
-    if redirects:
-        print(f'  {len(redirects)} URL(s) redirected:')
-        for r in redirects:
-            print(r)
-        errors.extend(redirects)
+    return errors
+
+
+def validate_urls_in_file(
+    path: Path,
+    label: str,
+    ignore_patterns: list[str] | None = None,
+) -> list[str]:
+    """Check all URLs in a text file are reachable and canonical."""
+    errors: list[str] = []
+    if not path.exists():
+        return [f"  {label}: file not found at {path.relative_to(ROOT)}"]
+
+    urls = extract_urls(path.read_text(encoding="utf-8"))
+    if ignore_patterns:
+        urls = [
+            url for url in urls
+            if not any(pattern in url for pattern in ignore_patterns)
+        ]
+
+    if not urls:
+        return [f"  {label}: no URLs found"]
+
+    print(f"  Checking {len(urls)} URLs in {label} ...")
+    for url in urls:
+        errors.extend(check_url(url, label))
 
     if not errors:
-        print(f'  All {ok_count} URLs are reachable.')
+        print(f"  All {len(urls)} URLs in {label} are reachable.")
 
+    return errors
+
+
+def validate_pyproject_llm_context_url() -> list[str]:
+    """Check the PyPI metadata LLM Context URL."""
+    pyproject_path = ROOT / "pyproject.toml"
+    if not pyproject_path.exists():
+        return ["  pyproject.toml: file not found"]
+
+    text = pyproject_path.read_text(encoding="utf-8")
+    match = PYPROJECT_LLM_CONTEXT_RE.search(text)
+    if not match:
+        return ["  pyproject.toml: missing project URL 'LLM Context'"]
+
+    url = match.group(1)
+    print("  Checking LLM Context URL in pyproject.toml ...")
+    errors = check_url(url, "pyproject.toml LLM Context")
+    if not errors:
+        print("  LLM Context URL in pyproject.toml is reachable.")
+
+    return errors
+
+
+def validate_python_snippets() -> list[str]:
+    """Syntax-check executable Python snippets in AI context source files."""
+    errors: list[str] = []
+    source_files: list[Path] = [AI_DIR / "llms-base.txt"]
+    source_files.extend((ROOT / "skills").glob("*/SKILL.md"))
+    source_files.extend((ROOT / "skills").glob("*/references/*.md"))
+
+    # Signature reference blocks intentionally use non-executable notation.
+    skip_files = {
+        ROOT
+        / "skills"
+        / "complete-api-reference"
+        / "references"
+        / "method-signatures.md",
+    }
+
+    for path in sorted(source_files):
+        if path in skip_files or not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for match in re.finditer(
+            r"^[ \t]*```python\n(.*?)\n[ \t]*```",
+            text,
+            re.DOTALL | re.MULTILINE,
+        ):
+            snippet = textwrap.dedent(match.group(1))
+            try:
+                ast.parse(snippet)
+            except SyntaxError as exc:
+                relpath = path.relative_to(ROOT)
+                errors.append(
+                    f"  {relpath}: invalid Python snippet near line "
+                    f"{text[:match.start()].count(chr(10)) + exc.lineno + 1}: "
+                    f"{exc.msg}"
+                )
+
+    return errors
+
+
+def validate_ai_context_urls(
+    ignore_patterns: list[str] | None = None,
+) -> list[str]:
+    """Check AI context URLs exposed to users and package metadata."""
+    errors: list[str] = []
+    errors.extend(
+        validate_urls_in_file(ROOT / "llms.txt", "llms.txt", ignore_patterns)
+    )
+    errors.extend(
+        validate_urls_in_file(
+            AI_DIR / "llms-base.txt", "tools/ai/llms-base.txt", ignore_patterns
+        )
+    )
+    errors.extend(validate_pyproject_llm_context_url())
     return errors
 
 
@@ -431,6 +514,9 @@ def generate(*, check_only: bool = False) -> bool:
 
     # ── validate imports consistency ─────────────────────────────────
     all_errors.extend(validate_imports_consistency())
+
+    # ── validate Python snippets ─────────────────────────────────────
+    all_errors.extend(validate_python_snippets())
 
     if all_errors:
         print("Validation errors:")
@@ -510,9 +596,9 @@ def main() -> None:
     ok = generate(check_only=args.check)
 
     if args.check_urls:
-        url_errors = validate_llms_txt_urls(ignore_patterns=args.ignore_urls)
+        url_errors = validate_ai_context_urls(ignore_patterns=args.ignore_urls)
         if url_errors:
-            print('\nURL validation errors in llms.txt:')
+            print('\nURL validation errors in AI context files:')
             for e in url_errors:
                 print(e)
             ok = False

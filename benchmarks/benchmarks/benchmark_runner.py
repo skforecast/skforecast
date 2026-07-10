@@ -23,11 +23,12 @@ class BenchmarkRunner:
     """"
     Class to run benchmarks on skforecast forecasters and save the results.
     """
-    def __init__(self, output_dir="./benchmarks", repeat=10):
+    def __init__(self, output_dir="./benchmarks", repeat=10, run_id=None):
 
         self.results_filename = "benchmark.joblib"
         self.output_dir = output_dir
         self.repeat = repeat
+        self.run_id = run_id
         self._system_info_cache = None
 
         os.makedirs(self.output_dir, exist_ok=True)
@@ -110,6 +111,7 @@ class BenchmarkRunner:
         timing = self.time_function(func, forecaster, *args, **kwargs)
 
         entry = {
+            'run_id': self.run_id,
             'forecaster_name': forecaster_name,
             'estimator_name': estimator_name,
             'function_name': func_name,

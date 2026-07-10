@@ -341,9 +341,9 @@ class PopulationDriftDetector:
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{__version__}/api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector">&#128214; <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{__version__}/user_guides/drift-detection.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/drift-detection.html">&#128221; <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -499,7 +499,7 @@ class PopulationDriftDetector:
                 # This may not perfectly align with bins used in predict if new data
                 # extends the range, but it provides a reasonable approximation
                 # for efficiency.
-                bins_edges = np.histogram_bin_edges(ref.astype("float64"), bins='doane')
+                bins_edges = np.histogram_bin_edges(ref.astype("float64", copy=False), bins='doane')
                 ref_hist = np.histogram(ref, bins=bins_edges)[0] / len(ref)
 
                 self.ref_bins_edges_[feature] = bins_edges

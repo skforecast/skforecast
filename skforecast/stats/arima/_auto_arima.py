@@ -14,7 +14,15 @@ from typing import Tuple, Optional, Dict as DictType, Any, Union, List
 import warnings
 from scipy.stats import norm
 from numba import njit
-from statsmodels.tsa.stattools import adfuller, kpss
+
+from ...utils import check_optional_dependency
+
+try:
+    from statsmodels.tsa.stattools import adfuller, kpss
+except ModuleNotFoundError as error:
+    if error.name == "statsmodels":
+        check_optional_dependency(package_name="statsmodels")
+    raise
 
 from ._arima_base import (
     arima, predict_arima, diff, _validate_choice, ArimaResult, SARIMAOrder,

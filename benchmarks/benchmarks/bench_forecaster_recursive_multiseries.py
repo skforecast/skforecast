@@ -145,7 +145,7 @@ def _make_data(
     )
 
 
-def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
+def run_benchmark_ForecasterRecursiveMultiSeries(output_dir, run_id=None):
     """
     Run all benchmarks for the ForecasterRecursiveMultiSeries class and save the results.
     """
@@ -243,7 +243,6 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
             last_window      = pd.DataFrame(forecaster.last_window_),
             exog             = exog,
             exog_names_in_   = forecaster.exog_names_in_,
-            interval         = None,
             levels           = forecaster.series_names_in_,
             series_names_in_ = forecaster.series_names_in_,
             encoding         = forecaster.encoding
@@ -281,7 +280,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
             steps=STEPS,
             exog=exog,
             method='conformal',
-            interval=[5, 95],
+            interval=[0.05, 0.95],
             suppress_warnings=True
         )
 
@@ -328,7 +327,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
                 series=series,
                 exog=None,
                 cv=cv,
-                interval=[5, 95],
+                interval=[0.05, 0.95],
                 interval_method='conformal',
                 metric='mean_squared_error',
                 show_progress=False,
@@ -346,7 +345,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
                 series=series,
                 exog=exog,
                 cv=cv,
-                interval=[5, 95],
+                interval=[0.05, 0.95],
                 interval_method='conformal',
                 metric='mean_squared_error',
                 show_progress=False,
@@ -371,7 +370,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
         encoding="ordinal"
     )
 
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__create_lags, 
             forecaster=forecaster, 
@@ -379,7 +378,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
             train_index=train_index
         )
     
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_no_exog,
             forecaster=forecaster,
@@ -442,7 +441,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
         encoding="ordinal"
     )
 
-    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_fit_series_is_dict_no_exog,
             forecaster=forecaster,
@@ -496,7 +495,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
         series=series_dict, exog=exog_dict, store_in_sample_residuals=True, suppress_warnings=True
     )
 
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_check_predict_inputs,
             forecaster=forecaster,
@@ -556,7 +555,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
         encoding="ordinal"
     )
 
-    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_backtesting_series_is_dict_no_exog,
             forecaster=forecaster,
@@ -597,7 +596,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
         series=series_dict, exog=exog_dict, store_in_sample_residuals=True, suppress_warnings=True
     )
 
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_predict_bootstrapping_exog_is_dict,
             forecaster=forecaster_boot,

@@ -14,7 +14,7 @@ from sklearn.base import BaseEstimator, RegressorMixin
 
 from .arima._arima_base import arima, predict_arima
 from .arima._auto_arima import auto_arima, forecast_arima
-from ._utils import check_is_fitted, check_memory_reduced
+from ._utils import check_is_fitted, check_memory_reduced, _normalize_level
 
 
 class Arima(BaseEstimator, RegressorMixin):
@@ -234,7 +234,7 @@ class Arima(BaseEstimator, RegressorMixin):
     aic_ : float
         Akaike Information Criterion value.
     bic_ : float or None
-        Bayesian Information Criterion value (may be ``None`` if not available).
+        Bayesian Information Criterion value (may be `None` if not available).
     arma_ : list of int
         ARIMA specification: [p, q, P, Q, m, d, D].
     converged_ : bool
@@ -682,9 +682,13 @@ class Arima(BaseEstimator, RegressorMixin):
         steps : int, default 1
             Forecast horizon.
         level : list or tuple of float, default None
-            Confidence levels in percent (e.g., 80 for 80% intervals).
-            If None and alpha is None, defaults to (80, 95).
-            Cannot be specified together with `alpha`.
+            Confidence levels expressed as coverage proportions in the (0, 1]
+            range (e.g., 0.8 for 80% intervals). If None and `alpha` is None,
+            defaults to (0.8, 0.95). Cannot be specified together with `alpha`.
+
+            **Changed in version 0.23.0:** `level` is now expressed as coverage
+            proportions (0-1) instead of percentiles (0-100). Passing percentiles
+            is deprecated and emits a `FutureWarning`.
         alpha : float, default None
             The significance level for the prediction interval. 
             If specified, the confidence interval will be (1 - alpha) * 100%.
@@ -727,14 +731,11 @@ class Arima(BaseEstimator, RegressorMixin):
         if alpha is not None:
             if not 0 < alpha < 1:
                 raise ValueError("`alpha` must be between 0 and 1.")
-            level = [(1 - alpha) * 100]
+            level = [1 - alpha]
         elif level is None:
-            level = (80, 95)
+            level = (0.8, 0.95)
         
-        if isinstance(level, (int, float, np.number)):
-            level = [level]
-        else:
-            level = list(level)
+        level = _normalize_level(level)
         
         if exog is not None:
             exog = np.asarray(exog, dtype=float)
@@ -775,7 +776,7 @@ class Arima(BaseEstimator, RegressorMixin):
                 level   = level
             )
 
-        levels = raw_preds['level']
+        levels = [lvl / 100 for lvl in raw_preds['level']]
         n_levels = len(levels)
         predictions = np.empty((steps, 1 + 2 * n_levels), dtype=float)
         predictions[:, 0] = raw_preds['mean']
@@ -785,7 +786,6 @@ class Arima(BaseEstimator, RegressorMixin):
         if as_frame:
             col_names = ["mean"]
             for level in levels:
-                level = int(level)
                 col_names.append(f"lower_{level}")
                 col_names.append(f"upper_{level}")
             

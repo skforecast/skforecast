@@ -14,6 +14,25 @@ description: >
 - **ForecasterRecursiveMultiSeries**: A single global model learns patterns across many series. Each series is predicted independently but the model shares parameters. Best default for multi-series.
 - **ForecasterDirectMultiVariate**: Uses values from multiple series as input features to predict one target series. Use when series are strongly correlated and influence each other.
 
+### Related skills
+
+- **Before**: `choosing-a-forecaster` (decide between MultiSeries, MultiVariate, Rnn, or Foundation for multi-series problems)
+- **Before**: `autocorrelation-and-lag-selection` (analyse representative series to inform the shared `lags` argument)
+- **Before**: `feature-engineering` (build per-series exogenous and rolling features)
+- **After**: `hyperparameter-optimization` (tune the global model across series)
+- **After**: `prediction-intervals` (add intervals to the multi-series forecasts)
+
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| Use `backtesting_forecaster_multiseries` and the `*_multiseries` search functions | `backtesting_forecaster` / `grid_search_forecaster` raises on a multi-series forecaster | Call the `_multiseries` variant with `series=` instead of `y=` |
+| `ForecasterDirectMultiVariate` defaults to `transformer_series=StandardScaler()` | Series are scaled unexpectedly (other forecasters default to `None`) | Pass `transformer_series=None` explicitly if you do not want scaling |
+| `exog` format must match the `series` format (both wide, or both dict) | Index / format mismatch during fit or predict | Convert exog to the same layout as `series` before fitting |
+| Regressors with native categorical support need `encoding='ordinal_category'` | Categoricals silently encoded as plain ordinals, degrading the model | Set `encoding='ordinal_category'` for LightGBM / CatBoost / XGBoost / HistGBR |
+
 ## Data Formats
 
 ForecasterRecursiveMultiSeries accepts three input formats:
@@ -54,8 +73,9 @@ forecaster = ForecasterRecursiveMultiSeries(
     # transformer_series={'series_1': StandardScaler(), 'series_2': MinMaxScaler()},
     # weight_func={'series_1': custom_weights_fn, '_default': None},
     # differentiation={'series_1': 1, 'series_2': None},
+    categorical_features='auto',  # Auto-detect and encode non-numeric exog columns
     differentiation=None,
-    dropna_from_series=False, # Set True if individual series may have NaN
+    dropna_from_series=False,     # True to drop NaN rows; False to keep (NaN-tolerant estimators)
 )
 
 # 3. Train
@@ -105,6 +125,8 @@ forecaster = ForecasterDirectMultiVariate(
     estimator=LGBMRegressor(n_estimators=100, random_state=123),
     lags=24,                  # Or dict: {'series_a': 12, 'series_b': 24}
     transformer_series=StandardScaler(),  # Default — set None to disable scaling
+    categorical_features='auto',  # Auto-detect and encode non-numeric exog columns
+    dropna_from_series=False,     # True to drop NaN rows; False to keep (NaN-tolerant estimators)
 )
 forecaster.fit(series=series_df)
 predictions = forecaster.predict()

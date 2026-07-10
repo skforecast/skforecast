@@ -56,3 +56,50 @@ def test_output_preprocess_repr(transformer_series):
 
     for r, e in zip(results, expected):
         assert r == e
+
+
+def test_preprocess_repr_as_html_with_categorical_features():
+    """
+    Test _preprocess_repr with as_html=True adds CAT badge to categorical
+    features and html-escapes names.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2
+    )
+    exog_names = ['num_feat', 'cat_feat']
+    cat_names = ['cat_feat']
+
+    _, _, _, exog_html, _ = forecaster._preprocess_repr(
+        exog_names_in_=exog_names,
+        categorical_features_names_in_=cat_names,
+        as_html=True,
+    )
+
+    assert 'num_feat' in exog_html
+    assert '>CAT</span>' in exog_html
+    assert 'cat_feat' in exog_html
+    # CAT badge only on cat_feat, not on num_feat
+    num_idx = exog_html.index('num_feat')
+    cat_idx = exog_html.index('cat_feat')
+    assert exog_html[num_idx:cat_idx].count('>CAT</span>') == 0
+
+
+def test_preprocess_repr_as_html_truncation_uses_styled_ellipsis():
+    """
+    Test _preprocess_repr with as_html=True and >50 exog names uses styled
+    ellipsis instead of plain '...'.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2
+    )
+    exog_names = [f'exog_{i}' for i in range(60)]
+
+    _, _, _, exog_html, _ = forecaster._preprocess_repr(
+        exog_names_in_=exog_names,
+        as_html=True,
+    )
+
+    assert '<em style="color: #999;">\u2026</em>' in exog_html
+    assert '...' not in exog_html
+    assert 'exog_0' in exog_html
+    assert 'exog_59' in exog_html

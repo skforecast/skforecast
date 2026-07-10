@@ -17,9 +17,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
 
-from skforecast.preprocessing import RollingFeatures
-from skforecast.preprocessing import TimeSeriesDifferentiator
+from skforecast.preprocessing import RollingFeatures, TimeSeriesDifferentiator, CalendarFeatures
 from skforecast.direct import ForecasterDirect
+from skforecast.exceptions import MissingValuesWarning
 
 # Fixtures
 from .fixtures_forecaster_direct import y as y_categorical
@@ -301,9 +301,17 @@ def test_predict_output_when_and_weight_func():
     pd.testing.assert_series_equal(results, expected)
 
 
-def test_predict_output_when_categorical_features_native_implementation_HistGradientBoostingRegressor():
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_predict_output_when_categorical_features_HistGradientBoostingRegressor(categorical_features):
     """
     Test predict output when using HistGradientBoostingRegressor and categorical variables.
+    Native implementation of categorical features in HistGradientBoostingRegressor
+    should return the same predictions as the one obtained when using the Forecaster 
+    to encode the categorical features.
     """
     df_exog = pd.DataFrame({'exog_1': exog_categorical,
                             'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
@@ -312,7 +320,7 @@ def test_predict_output_when_categorical_features_native_implementation_HistGrad
     exog_predict = df_exog.copy()
     exog_predict.index = pd.RangeIndex(start=50, stop=100)
 
-    categorical_features = df_exog.select_dtypes(exclude=[np.number]).columns.tolist()
+    cat_features = df_exog.select_dtypes(exclude=[np.number]).columns.tolist()
     transformer_exog = make_column_transformer(
                            (
                                OrdinalEncoder(
@@ -321,24 +329,49 @@ def test_predict_output_when_categorical_features_native_implementation_HistGrad
                                    unknown_value=-1,
                                    encoded_missing_value=-1
                                ),
-                               categorical_features
+                               cat_features
                            ),
                            remainder="passthrough",
                            verbose_feature_names_out=False,
                        ).set_output(transform="pandas")
     
+    # No categorical features managed by the forecaster.
+    # make_column_transformer reorders columns to ['exog_2', 'exog_3', 'exog_1']
+    # so categorical indices in X_train_step (5 lags + 3 exog) are [5, 6].
+    # HistGradientBoostingRegressor requires integer indices when X is numpy.
     forecaster = ForecasterDirect(
-                     estimator        = HistGradientBoostingRegressor(
-                                            categorical_features = categorical_features,
-                                            random_state         = 123
-                                        ),
-                     lags             = 5,
-                     steps            = 10, 
-                     transformer_y    = None,
-                     transformer_exog = transformer_exog
+                     estimator             = HistGradientBoostingRegressor(
+                                                 categorical_features = [5, 6],
+                                                 random_state         = 123
+                                             ),
+                     lags                  = 5,
+                     steps                 = 10, 
+                     transformer_y         = None,
+                     transformer_exog      = transformer_exog,
+                     categorical_features  = None
                  )
     forecaster.fit(y=y_categorical, exog=df_exog)
+    assert forecaster.X_train_features_names_out_ == [
+        'lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_2', 'exog_3', 'exog_1'
+    ]
     predictions = forecaster.predict(steps=10, exog=exog_predict)
+    
+    # Categorical features managed by the forecaster
+    forecaster_2 = ForecasterDirect(
+                       estimator             = HistGradientBoostingRegressor(
+                                                   random_state = 123
+                                               ),
+                       lags                  = 5,
+                       steps                 = 10,
+                       transformer_y         = None,
+                       transformer_exog      = None,
+                       categorical_features  = categorical_features
+                   )
+    forecaster_2.fit(y=y_categorical, exog=df_exog)
+    assert forecaster_2.X_train_features_names_out_ == [
+        'lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2', 'exog_3'
+    ]
+    predictions_2 = forecaster_2.predict(steps=10, exog=exog_predict)
 
     expected = pd.Series(
                    data = np.array([0.50131059, 0.49276926, 0.47433929, 0.4668392 , 
@@ -349,20 +382,31 @@ def test_predict_output_when_categorical_features_native_implementation_HistGrad
                )
     
     pd.testing.assert_series_equal(predictions, expected)
+    pd.testing.assert_series_equal(predictions_2, expected)
 
 
-def test_predict_output_when_categorical_features_native_implementation_LGBMRegressor():
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_predict_output_when_categorical_features_LGBMRegressor(categorical_features):
     """
     Test predict output when using LGBMRegressor and categorical variables.
+    Native implementation of categorical features in LGBMRegressor
+    should return the same predictions as the one obtained when using the Forecaster 
+    to encode the categorical features.
     """
-    df_exog = pd.DataFrame({'exog_1': exog_categorical,
-                            'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
-                            'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)})
+    df_exog = pd.DataFrame(
+        {'exog_1': exog_categorical,
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
     
     exog_predict = df_exog.copy()
     exog_predict.index = pd.RangeIndex(start=50, stop=100)
 
-    categorical_features = df_exog.select_dtypes(exclude=[np.number]).columns.tolist()
+    cat_features = df_exog.select_dtypes(exclude=[np.number]).columns.tolist()
     transformer_exog = make_column_transformer(
                            (
                                OrdinalEncoder(
@@ -371,22 +415,43 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                                    unknown_value=-1,
                                    encoded_missing_value=-1
                                ),
-                               categorical_features
+                               cat_features
                            ),
                            remainder="passthrough",
                            verbose_feature_names_out=False,
                        ).set_output(transform="pandas")
     
+    # make_column_transformer reorders columns to ['exog_2', 'exog_3', 'exog_1']
+    # so categorical indices in X_train_step (5 lags + 3 exog) are [5, 6].
+    # LGBMRegressor requires integer indices when X is numpy.
     forecaster = ForecasterDirect(
-                     estimator        = LGBMRegressor(random_state=123),
-                     lags             = 5,
-                     steps            = 10, 
-                     transformer_y    = None,
-                     transformer_exog = transformer_exog,
-                     fit_kwargs       = {'categorical_feature': categorical_features}
+                     estimator            = LGBMRegressor(random_state=123, verbose=-1),
+                     lags                 = 5,
+                     steps                = 10,
+                     transformer_y        = None,
+                     transformer_exog     = transformer_exog,
+                     categorical_features = None,
+                     fit_kwargs           = {'categorical_feature': [5, 6]}
                  )
     forecaster.fit(y=y_categorical, exog=df_exog)
+    assert forecaster.X_train_features_names_out_ == [
+        'lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_2', 'exog_3', 'exog_1'
+    ]
     predictions = forecaster.predict(steps=10, exog=exog_predict)
+    
+    forecaster_2 = ForecasterDirect(
+                       estimator            = LGBMRegressor(random_state=123, verbose=-1),
+                       lags                 = 5,
+                       steps                = 10,
+                       transformer_y        = None,
+                       transformer_exog     = None,
+                       categorical_features = categorical_features
+                   )
+    forecaster_2.fit(y=y_categorical, exog=df_exog)
+    assert forecaster_2.X_train_features_names_out_ == [
+        'lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_1', 'exog_2', 'exog_3'
+    ]
+    predictions_2 = forecaster_2.predict(steps=10, exog=exog_predict)
 
     expected = pd.Series(
                    data = np.array([0.50131059, 0.49276926, 0.47433929, 0.46683919, 
@@ -397,12 +462,21 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                )
     
     pd.testing.assert_series_equal(predictions, expected)
+    pd.testing.assert_series_equal(predictions_2, expected)
 
 
-def test_predict_output_when_categorical_features_native_implementation_LGBMRegressor_auto():
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_predict_output_when_categorical_features_LGBMRegressor_auto(categorical_features):
     """
     Test predict output when using LGBMRegressor and categorical variables with 
     categorical_features='auto'.
+    Native implementation of categorical features in LGBMRegressor
+    should return the same predictions as the one obtained when using the Forecaster 
+    to encode the categorical features.
     """
     df_exog = pd.DataFrame({'exog_1': exog_categorical,
                             'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
@@ -433,15 +507,27 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterDirect(
-                     estimator        = LGBMRegressor(random_state=123),
-                     lags             = 5,
-                     steps            = 10, 
-                     transformer_y    = None,
-                     transformer_exog = transformer_exog,
-                     fit_kwargs       = {'categorical_feature': 'auto'}
+                     estimator            = LGBMRegressor(random_state=123, verbose=-1),
+                     lags                 = 5,
+                     steps                = 10, 
+                     transformer_y        = None,
+                     transformer_exog     = transformer_exog,
+                     categorical_features = None,
+                     fit_kwargs           = {'categorical_feature': 'auto'}
                  )
     forecaster.fit(y=y_categorical, exog=df_exog)
     predictions = forecaster.predict(steps=10, exog=exog_predict)
+    
+    forecaster_2 = ForecasterDirect(
+                       estimator            = LGBMRegressor(random_state=123, verbose=-1),
+                       lags                 = 5,
+                       steps                = 10,
+                       transformer_y        = None,
+                       transformer_exog     = None,
+                       categorical_features = categorical_features
+                   )
+    forecaster_2.fit(y=y_categorical, exog=df_exog)
+    predictions_2 = forecaster_2.predict(steps=10, exog=exog_predict)
 
     expected = pd.Series(
                    data = np.array([0.50131059, 0.49276926, 0.47433929, 0.46683919, 
@@ -452,6 +538,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                )
     
     pd.testing.assert_series_equal(predictions, expected)
+    pd.testing.assert_series_equal(predictions_2, expected)
 
 
 def test_predict_output_when_with_exog_and_differentiation_is_1_steps_1():
@@ -657,3 +744,134 @@ def test_predict_output_when_window_features_steps_10():
                )
     
     pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_last_window_stored_has_NaN():
+    """
+    Test predict output when the stored last_window_ contains NaN values
+    because the original y had NaN near the end. Estimator:
+    HistGradientBoostingRegressor (supports NaN natively).
+    """
+    y_nan = pd.Series(
+        data  = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, np.nan, 9.0, 10.0],
+        index = pd.RangeIndex(start=0, stop=10),
+        name  = 'y'
+    )
+    forecaster = ForecasterDirect(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     lags               = 3,
+                     steps              = 2,
+                     dropna_from_series = True
+                 )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. They have been dropped."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        forecaster.fit(y=y_nan)
+
+    assert forecaster.last_window_.isna().any().any()
+
+    warn_msg = re.escape(
+        "`last_window` has missing values."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        predictions = forecaster.predict(steps=2)
+
+    expected = pd.Series(
+                   data  = np.array([5.5, 6.75]),
+                   index = pd.RangeIndex(start=10, stop=12, step=1),
+                   name  = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_last_window_argument_has_NaN():
+    """
+    Test predict output when a custom last_window with NaN values is passed
+    to the predict method. Estimator: HistGradientBoostingRegressor.
+    """
+    y = pd.Series(
+        data  = np.arange(1.0, 21.0),
+        index = pd.RangeIndex(start=0, stop=20),
+        name  = 'y'
+    )
+    forecaster = ForecasterDirect(
+                     estimator          = HistGradientBoostingRegressor(random_state=123),
+                     lags               = 3,
+                     steps              = 2,
+                     dropna_from_series = False
+                 )
+    forecaster.fit(y=y)
+
+    last_window_nan = pd.Series(
+        data  = [np.nan, 19.0, 20.0],
+        index = pd.RangeIndex(start=17, stop=20),
+        name  = 'y'
+    )
+
+    warn_msg = re.escape(
+        "`last_window` has missing values."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        predictions = forecaster.predict(steps=2, last_window=last_window_nan)
+
+    expected = pd.Series(
+                   data  = np.array([11.5, 12.5]),
+                   index = pd.RangeIndex(start=20, stop=22, step=1),
+                   name  = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_with_exog_window_features_and_calendar():
+    """
+    Test predict output with exogenous, window features and calendar features
+    is the same as when not using calendar_features argument and including
+    calendar features in the exogenous dataframe.
+    """
+    y_datetime = y_categorical.copy()
+    y_datetime.index = pd.date_range(
+        start='2020-01-01', periods=len(y_categorical), freq='D'
+    )
+    exog_datetime = exog_categorical.copy()
+    exog_datetime.index = y_datetime.index
+    exog_predict_datetime = exog_predict_categorical.copy()
+    exog_predict_datetime.index = pd.date_range(
+        start='2020-02-20', periods=len(exog_predict_categorical), freq='D'
+    )
+
+    exog_calendar = exog_datetime.to_frame()
+    exog_calendar['day_of_week'] = exog_calendar.index.dayofweek
+    exog_calendar['weekend'] = exog_calendar['day_of_week'].isin([5, 6]).astype(int)
+    exog_predict_calendar = exog_predict_datetime.to_frame()
+    exog_predict_calendar['day_of_week'] = exog_predict_calendar.index.dayofweek
+    exog_predict_calendar['weekend'] = (
+        exog_predict_calendar['day_of_week'].isin([5, 6]).astype(int)
+    )
+
+    rolling = RollingFeatures(stats=['mean', 'std'], window_sizes=4)
+    calendar = CalendarFeatures(features=['day_of_week', 'weekend'], encoding=None)
+
+    forecaster = ForecasterDirect(
+        LGBMRegressor(verbose=-1, random_state=123),
+        steps=10,
+        lags=3,
+        window_features=rolling,
+        calendar_features=calendar
+    )
+    forecaster.fit(y=y_datetime, exog=exog_datetime)
+    predictions = forecaster.predict(steps=10, exog=exog_predict_datetime)
+
+    forecaster_no_cal = ForecasterDirect(
+        LGBMRegressor(verbose=-1, random_state=123),
+        steps=10,
+        lags=3,
+        window_features=rolling
+    )
+    forecaster_no_cal.fit(y=y_datetime, exog=exog_calendar)
+    predictions_no_cal = forecaster_no_cal.predict(steps=10, exog=exog_predict_calendar)
+
+    pd.testing.assert_series_equal(predictions, predictions_no_cal)

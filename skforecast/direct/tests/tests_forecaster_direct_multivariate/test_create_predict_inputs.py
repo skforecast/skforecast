@@ -11,10 +11,10 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.compose import make_column_transformer
+from sklearn.compose import make_column_selector
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
-from skforecast.preprocessing import RollingFeatures
-from skforecast.preprocessing import TimeSeriesDifferentiator
+from skforecast.preprocessing import RollingFeatures, TimeSeriesDifferentiator, CalendarFeatures
 from skforecast.direct import ForecasterDirectMultiVariate
 
 # Fixtures
@@ -685,19 +685,19 @@ def test_create_predict_inputs_output_with_2_window_features():
     assert results[4] is None
 
 
-def test_create_predict_inputs_output_window_features_and_no_lags():
+def test_create_predict_inputs_output_window_features_no_lags_and_calendar_features():
     """
-    Test _create_predict_inputs output with window_features and no lags.
+    Test _create_predict_inputs output with window_features, no lags and calendar_features.
     """
-    series = pd.DataFrame(
-        {'l1': np.arange(50),
-         'l2': np.arange(50, 100)},
-        index = pd.date_range('2020-01-01', periods=50, freq='D')
+    series_local = pd.DataFrame(
+        {'l1': np.arange(50, dtype=float),
+         'l2': np.arange(50, 100, dtype=float)},
+        index=pd.date_range('2020-01-01', periods=50, freq='D')
     )
-    
     rolling = RollingFeatures(
         stats=['mean', 'median', 'sum'], window_sizes=[4, 5, 6]
     )
+    calendar = CalendarFeatures(features=['day_of_week', 'weekend'], encoding=None)
 
     forecaster = ForecasterDirectMultiVariate(
                      estimator          = LinearRegression(),
@@ -705,21 +705,23 @@ def test_create_predict_inputs_output_window_features_and_no_lags():
                      steps              = 3,
                      lags               = None,
                      window_features    = rolling,
+                     calendar_features  = calendar,
                      transformer_series = None
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series_local)
     results = forecaster._create_predict_inputs()
 
     expected = (
-        [np.array([[47.5, 47., 279., 97.5, 97., 579.]]),
-         np.array([[47.5, 47., 279., 97.5, 97., 579.]]),
-         np.array([[47.5, 47., 279., 97.5, 97., 579.]])],
+        [np.array([[ 47.5,  47. , 279. ,  97.5,  97. , 579. ,   3. ,   0. ]]),
+         np.array([[ 47.5,  47. , 279. ,  97.5,  97. , 579. ,   4. ,   0. ]]),
+         np.array([[ 47.5,  47. , 279. ,  97.5,  97. , 579. ,   5. ,   1. ]])],
         ['l1_roll_mean_4', 'l1_roll_median_5', 'l1_roll_sum_6',
-         'l2_roll_mean_4', 'l2_roll_median_5', 'l2_roll_sum_6'],
+         'l2_roll_mean_4', 'l2_roll_median_5', 'l2_roll_sum_6',
+         'day_of_week', 'weekend'],
         [1, 2, 3],
         pd.date_range(start='2020-02-20', periods=3, freq='D')
     )
-    
+
     for step in range(len(expected[0])):
         np.testing.assert_almost_equal(results[0][step], expected[0][step])
     assert results[1] == expected[1]
@@ -773,3 +775,248 @@ def test_create_predict_inputs_does_not_mutate_differentiator():
     # Both calls should produce identical results
     for step in range(len(results_1[0])):
         np.testing.assert_almost_equal(results_1[0][step], results_2[0][step])
+
+
+def test_create_predict_inputs_output_with_transform_series_and_transform_exog_series():
+    """
+    Test _create_predict_inputs output when StandardScaler as transformer_series
+    and StandardScaler as transformer_exog with exog as Series.
+    """
+    series_local = pd.DataFrame({
+        'l1': pd.Series(np.array([-0.59, 0.02, -0.9, 1.09, -3.61, 0.72, -0.11, -0.4])),
+        'l2': pd.Series(np.array([0.5, -0.3, 1.2, 0.8, -0.5, 0.1, 0.7, -0.2]))
+    })
+    exog_local = pd.Series(
+        np.array([7.5, 24.4, 60.3, 57.3, 50.7, 41.4, 87.2, 47.4]),
+        name='exog'
+    )
+    exog_predict_local = exog_local.copy()
+    exog_predict_local.index = pd.RangeIndex(start=8, stop=16)
+
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = LinearRegression(),
+                     level              = 'l1',
+                     lags               = 3,
+                     steps              = 3,
+                     transformer_series = StandardScaler(),
+                     transformer_exog   = StandardScaler()
+                 )
+    forecaster.fit(series=series_local, exog=exog_local)
+    results = forecaster._create_predict_inputs(steps=3, exog=exog_predict_local)
+
+    expected = (
+        [np.array([[ 0.0542589 ,  0.27129451,  0.89246539,
+                    -0.86368623,  0.73081142, -0.33218701, -1.76425513]]),
+         np.array([[ 0.0542589 ,  0.27129451,  0.89246539,
+                    -0.86368623,  0.73081142, -0.33218701, -1.00989936]]),
+         np.array([[ 0.0542589 ,  0.27129451,  0.89246539,
+                    -0.86368623,  0.73081142, -0.33218701,  0.59254869]])],
+        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3',
+         'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'exog'],
+        [1, 2, 3],
+        pd.RangeIndex(start=8, stop=11, step=1)
+    )
+
+    for step in range(len(expected[0])):
+        np.testing.assert_almost_equal(results[0][step], expected[0][step])
+    assert results[1] == expected[1]
+    assert results[2] == expected[2]
+    pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
+
+
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_create_predict_inputs_when_categorical_features_auto_and_explicit_no_transformer_exog(
+    categorical_features,
+):
+    """
+    Test _create_predict_inputs when using internal categorical encoding
+    (`categorical_features='auto'` and explicit list) without `transformer_exog`.
+    This exercises the copy guard branch (`transformer_exog is None`).
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog['exog_1'],
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
+
+    exog_predict_local = df_exog.copy()
+    exog_predict_local.index = pd.RangeIndex(start=50, stop=100)
+
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator            = LinearRegression(),
+                     level                = 'l1',
+                     lags                 = 5,
+                     steps                = 10,
+                     transformer_series   = None,
+                     transformer_exog     = None,
+                     categorical_features = categorical_features
+                 )
+    forecaster.fit(series=series, exog=df_exog)
+    results = forecaster._create_predict_inputs(steps=10, exog=exog_predict_local)
+
+    expected = (
+        [np.array([[0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                    0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
+                    0.51312815, 0.        , 0.        ]]),
+         np.array([[0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                    0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
+                    0.66662455, 1.        , 1.        ]]),
+         np.array([[0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                    0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
+                    0.10590849, 2.        , 2.        ]]),
+         np.array([[0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                    0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
+                    0.13089495, 3.        , 3.        ]]),
+         np.array([[0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                    0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
+                    0.32198061, 4.        , 4.        ]]),
+         np.array([[0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                    0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
+                    0.66156434, 0.        , 0.        ]]),
+         np.array([[0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                    0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
+                    0.84650623, 1.        , 1.        ]]),
+         np.array([[0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                    0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
+                    0.55325734, 2.        , 2.        ]]),
+         np.array([[0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                    0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
+                    0.85445249, 3.        , 3.        ]]),
+         np.array([[0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                    0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
+                    0.38483781, 4.        , 4.        ]])],
+        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5',
+         'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
+         'exog_1', 'exog_2', 'exog_3'],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        pd.RangeIndex(start=50, stop=60, step=1)
+    )
+
+    for step in range(len(expected[0])):
+        np.testing.assert_almost_equal(results[0][step], expected[0][step])
+    assert results[1] == expected[1]
+    assert results[2] == expected[2]
+    pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None
+
+
+def test_create_predict_inputs_when_calendar_and_categorical_features_auto_with_transformer_exog():
+    """
+    Test _create_predict_inputs when using internal categorical encoding
+    (`categorical_features='auto'`) together with `transformer_exog`
+    (StandardScaler on numeric columns) and `calendar_features`. This
+    exercises the branch where copy is NOT needed because `transformer_exog`
+    already returns a new DataFrame.
+    """
+    series_dt = pd.DataFrame(
+        {'l1': series.values[:, 0],
+         'l2': series.values[:, 1]},
+        index=pd.date_range('2020-01-01', periods=len(series), freq='D')
+    )
+    df_exog_dt = pd.DataFrame(
+        {'exog_1': exog['exog_1'].values,
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)},
+        index=series_dt.index
+    )
+    exog_predict_dt = df_exog_dt.copy()
+    exog_predict_dt.index = pd.date_range(
+        start=series_dt.index[-1] + pd.Timedelta(days=1),
+        periods=len(df_exog_dt),
+        freq='D'
+    )
+
+    transformer_exog_local = make_column_transformer(
+                                 (StandardScaler(), make_column_selector(dtype_include=np.number)),
+                                 remainder='passthrough',
+                                 verbose_feature_names_out=False,
+                             ).set_output(transform='pandas')
+
+    calendar = CalendarFeatures(
+        features=['day_of_week', 'weekend'], encoding='onehot'
+    )
+
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator            = LinearRegression(),
+                     level                = 'l1',
+                     lags                 = 5,
+                     steps                = 10,
+                     calendar_features    = calendar,
+                     transformer_series   = None,
+                     transformer_exog     = transformer_exog_local,
+                     categorical_features = 'auto'
+                 )
+    forecaster.fit(series=series_dt, exog=df_exog_dt)
+    results = forecaster._create_predict_inputs(steps=10, exog=exog_predict_dt)
+
+    expected = (
+        [np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
+                     0.34345601,  0.2408559 ,  0.39887629,  0.15112745,  0.6917018 ,
+                    -0.02551075,  0.        ,  0.        ,  0.        ,  0.        ,
+                     0.        ,  0.        ,  1.        ,  0.        ,  0.        ,
+                     0.        ]]),
+         np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
+                     0.34345601,  0.2408559 ,  0.39887629,  0.15112745,  0.6917018 ,
+                     0.51927383,  1.        ,  1.        ,  0.        ,  0.        ,
+                     0.        ,  0.        ,  0.        ,  1.        ,  0.        ,
+                     0.        ]]),
+         np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
+                     0.34345601,  0.2408559 ,  0.39887629,  0.15112745,  0.6917018 ,
+                    -1.47080194,  2.        ,  2.        ,  1.        ,  0.        ,
+                     0.        ,  0.        ,  0.        ,  0.        ,  1.        ,
+                     0.        ]]),
+         np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
+                     0.34345601,  0.2408559 ,  0.39887629,  0.15112745,  0.6917018 ,
+                    -1.38212079,  3.        ,  3.        ,  1.        ,  0.        ,
+                     0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+                     1.        ]]),
+         np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
+                     0.34345601,  0.2408559 ,  0.39887629,  0.15112745,  0.6917018 ,
+                    -0.70392558,  4.        ,  4.        ,  0.        ,  1.        ,
+                     0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+                     0.        ]]),
+         np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
+                     0.34345601,  0.2408559 ,  0.39887629,  0.15112745,  0.6917018 ,
+                     0.5013143 ,  0.        ,  0.        ,  0.        ,  0.        ,
+                     1.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+                     0.        ]]),
+         np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
+                     0.34345601,  0.2408559 ,  0.39887629,  0.15112745,  0.6917018 ,
+                     1.15770422,  1.        ,  1.        ,  0.        ,  0.        ,
+                     0.        ,  1.        ,  0.        ,  0.        ,  0.        ,
+                     0.        ]]),
+         np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
+                     0.34345601,  0.2408559 ,  0.39887629,  0.15112745,  0.6917018 ,
+                     0.1169145 ,  2.        ,  2.        ,  0.        ,  0.        ,
+                     0.        ,  0.        ,  1.        ,  0.        ,  0.        ,
+                     0.        ]]),
+         np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
+                     0.34345601,  0.2408559 ,  0.39887629,  0.15112745,  0.6917018 ,
+                     1.18590684,  3.        ,  3.        ,  0.        ,  0.        ,
+                     0.        ,  0.        ,  0.        ,  1.        ,  0.        ,
+                     0.        ]]),
+         np.array([[ 0.61289453,  0.51948512,  0.98555979,  0.48303426,  0.25045537,
+                     0.34345601,  0.2408559 ,  0.39887629,  0.15112745,  0.6917018 ,
+                    -0.48083479,  4.        ,  4.        ,  1.        ,  0.        ,
+                     0.        ,  0.        ,  0.        ,  0.        ,  1.        ,
+                     0.        ]])],
+        ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5',
+         'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
+         'exog_1', 'exog_2', 'exog_3',
+         'weekend', 'day_of_week_0', 'day_of_week_1', 'day_of_week_2',
+         'day_of_week_3', 'day_of_week_4', 'day_of_week_5', 'day_of_week_6'],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        pd.date_range(start='2020-02-20', periods=10, freq='D')
+    )
+
+    for step in range(len(expected[0])):
+        np.testing.assert_almost_equal(results[0][step], expected[0][step])
+    assert results[1] == expected[1]
+    assert results[2] == expected[2]
+    pd.testing.assert_index_equal(results[3], expected[3])
+    assert results[4] is None

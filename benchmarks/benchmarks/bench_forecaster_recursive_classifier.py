@@ -76,7 +76,7 @@ def _make_data(
     return y, exog, exog_pred
 
 
-def run_benchmark_ForecasterRecursiveClassifier(output_dir):
+def run_benchmark_ForecasterRecursiveClassifier(output_dir, run_id=None):
     """
     Run all benchmarks for the ForecasterRecursiveClassifier class and save the results.
     """
@@ -87,13 +87,13 @@ def run_benchmark_ForecasterRecursiveClassifier(output_dir):
     y_values = y.to_numpy()
 
     forecaster = ForecasterRecursiveClassifier(
-        estimator=DummyClassifier(strategy='constant', constant=1),
+        estimator=DummyClassifier(strategy='constant', constant=1),  # 1 as it is the encoding for class 'b'
         lags=50,
         transformer_exog=StandardScaler(),
     )
 
     def ForecasterRecursiveClassifier__create_lags(forecaster, y):
-        forecaster._create_lags(y=y, X_as_pandas=False, train_index=None)
+        forecaster._create_lags(y=y)
 
     def ForecasterRecursiveClassifier__create_train_X_y(forecaster, y, exog):
         forecaster._create_train_X_y(y=y, exog=exog)
@@ -112,8 +112,7 @@ def run_benchmark_ForecasterRecursiveClassifier(output_dir):
             window_size     = forecaster.window_size,
             last_window     = forecaster.last_window_,
             exog            = exog,
-            exog_names_in_  = forecaster.exog_names_in_,
-            interval        = None
+            exog_names_in_  = forecaster.exog_names_in_
         )
 
     def ForecasterRecursiveClassifier__create_predict_inputs(forecaster, exog):
@@ -147,19 +146,19 @@ def run_benchmark_ForecasterRecursiveClassifier(output_dir):
                 show_progress=False
             )
 
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursiveClassifier__create_lags, forecaster=forecaster, y=y_values)
     _ = runner.benchmark(ForecasterRecursiveClassifier__create_train_X_y, forecaster=forecaster, y=y, exog=exog)
 
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursiveClassifier_fit, forecaster=forecaster, y=y, exog=exog)
 
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     _ = runner.benchmark(ForecasterRecursiveClassifier_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursiveClassifier__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursiveClassifier_predict, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursiveClassifier_predict_proba, forecaster=forecaster, exog=exog_pred)
 
-    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursiveClassifier_backtesting, forecaster=forecaster, y=y, exog=exog)

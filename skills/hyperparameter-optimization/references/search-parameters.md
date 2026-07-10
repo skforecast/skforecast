@@ -168,7 +168,7 @@ param_grid = {
 
 ```python
 # Advanced: customize Optuna study
-results, best_trial = bayesian_search_forecaster(
+results, study = bayesian_search_forecaster(
     ...,
     kwargs_create_study={
         'sampler': optuna.samplers.TPESampler(seed=123),
@@ -179,17 +179,18 @@ results, best_trial = bayesian_search_forecaster(
         'gc_after_trial': True,
     },
 )
+# Access the best trial with study.best_trial
 ```
 
 ## Return Values
 
-| Function | Returns | Best trial object |
+| Function | Returns | Study object |
 |----------|---------|:-:|
 | `grid_search_*` | `pd.DataFrame` sorted by metric | — |
 | `random_search_*` | `pd.DataFrame` sorted by metric | — |
-| `bayesian_search_*` | `tuple[pd.DataFrame, optuna.FrozenTrial]` | ✓ |
+| `bayesian_search_*` | `tuple[pd.DataFrame, optuna Study]` | ✓ |
 | `*_stats` | `pd.DataFrame` sorted by metric | — |
 
 When `return_best=True`, the forecaster is automatically updated with the
 best parameters found. The results DataFrame always has rows sorted by
-metric (best first).
+metric (best first). Access the best Optuna trial with `study.best_trial`.

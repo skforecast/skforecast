@@ -18,7 +18,7 @@ This section provides essential tutorials for users who are just getting started
 
 <i class="fa-solid fa-table-list" style="font-size: 25px; color: #808080;"></i> [Forecasting of categorical time series](https://cienciadedatos.net/documentos/py72-classification-forecasting-categorical-series.html)
 
-<i class="fa-regular fa-pencil" style="font-size: 25px; color: #76b644;"></i> [Visualizing time series data](https://cienciadedatos.net/documentos/py71-visualizing-time-series-data.html)
+<i class="fa-solid fa-pencil" style="font-size: 25px; color: #76b644;"></i> [Visualizing time series data](https://cienciadedatos.net/documentos/py71-visualizing-time-series-data.html)
 
 <i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #E60023;"></i> [Exponential Smoothing Models](https://cienciadedatos.net/documentos/py76-exponential-smoothing-models.html)
 
@@ -46,6 +46,8 @@ These tutorials focus on global models and multi-series forecasting, where you c
 ## Advanced Techniques: Beyond Basic Models
 
 For experienced users looking to deepen their forecasting skills, this section provides advanced techniques, including probabilistic forecasting, handling missing values, and more sophisticated ensemble methods.
+
+<i class="fa-solid fa-microchip" style="font-size: 25px; color: teal;"></i>  [Forecasting with foundation models](https://www.cienciadedatos.net/documentos/py79-forecasting-with-foundation-models.html)
 
 <i class="fa-light fa-chart-line fa" style="font-size: 25px; color: #f26e1d;"></i>  [Probabilistic forecasting with machine learning](https://www.cienciadedatos.net/documentos/py42-probabilistic-forecasting.html)
 

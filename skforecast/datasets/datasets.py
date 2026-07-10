@@ -663,8 +663,10 @@ def show_datasets_info(
     datasets_names: list, default None
         List of dataset names to display information about. If None, information 
         about all datasets will be displayed.
-    version: str
-        Version of the datasets to display information about.
+    version: str, default 'latest'
+        Version of the datasets to display information about. If 'latest', the
+        latest version will be used (the one in the main branch). For a list of
+        available versions, see the repository branches.
 
     Returns
     -------
@@ -815,9 +817,11 @@ def fetch_dataset(
             if freq == 'h' and tuple(int(x) for x in pd.__version__.split('.')[:2]) < (2, 2):
                 freq = 'H'
             date_format = datasets[name]['date_format']
-            df = df.set_index(index_col)
+            if df.index.name != index_col:
+                df = df.set_index(index_col)
             df.index = pd.to_datetime(df.index, format=date_format)
-            df = df.asfreq(freq)
+            if df.index.is_unique:
+                df = df.asfreq(freq)
             df = df.sort_index()
         except Exception as e:
             warnings.warn(

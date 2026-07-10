@@ -3,31 +3,33 @@
 Skforecast provides machine-readable context files so that AI coding assistants (ChatGPT, Claude, Gemini, GitHub Copilot, Cursor, and others) can generate **accurate, up-to-date code** for time series forecasting.
 
 
-## Quick start: paste a URL into any LLM
+## Quick start: provide the context to an LLM
 
-Copy the following URL and paste it into any AI chat:
+If your AI assistant can access web pages, paste the following URL into the chat:
 
 ```
 https://skforecast.org/latest/llms-full.txt
 ```
 
-This single file contains the complete API reference, all forecaster signatures, workflow examples, and best practices. It gives any LLM enough context to help you with skforecast without hallucinating deprecated methods or wrong parameter names.
+If your assistant cannot browse URLs, open the file and paste or upload its contents instead.
+
+This single file contains the core API reference, forecaster APIs, workflow examples, and best practices. It gives AI assistants enough context to help you with skforecast while reducing hallucinations about deprecated methods or wrong parameter names.
 
 **Example prompt:**
 
 > Using the context from https://skforecast.org/latest/llms-full.txt, create a ForecasterRecursiveMultiSeries with LightGBM, fit it on a DataFrame with 3 series, and run backtesting with conformal prediction intervals.
 
 
-## IDE integration (automatic)
+## IDE integration
 
-If you clone or open the skforecast repository in an AI-enabled IDE, the context is loaded **automatically**, no manual setup required:
+If you clone or open the skforecast repository in an AI-enabled IDE that supports repository context files, the assistant can load the relevant context from the repo:
 
 | IDE / Tool | File loaded | How |
 |------------|-------------|-----|
-| **VS Code + GitHub Copilot** | `.github/copilot-instructions.md` | Injected into every Copilot prompt |
-| **Claude Code** | `AGENTS.md` | Read automatically at project root |
-| **OpenAI Codex / Aider** | `AGENTS.md` | Read automatically at project root |
-| **Cursor** | `AGENTS.md` | Read automatically at project root |
+| **VS Code + GitHub Copilot** | `.github/copilot-instructions.md` | Used as repository instructions by Copilot |
+| **Claude Code** | `AGENTS.md` | Read from the project root |
+| **OpenAI Codex / Aider** | `AGENTS.md` | Read when the tool supports the AGENTS.md convention |
+| **Cursor** | `AGENTS.md` | Can be used as project context when supported or configured |
 
 These files contain the same core content: project structure, all forecasters, code style, and testing conventions.
 
@@ -36,20 +38,21 @@ These files contain the same core content: project structure, all forecasters, c
 
 The AI context covers:
 
-- **Choice of forecaster** — when to use `ForecasterRecursive` vs `ForecasterRecursiveMultiSeries` vs `ForecasterRnn`, etc.
-- **All 8 forecaster types** — constructors, `fit()`, and `predict()` methods including parameters and defaults.
+- **Choice of forecaster** — when to use `ForecasterRecursive` vs `ForecasterRecursiveMultiSeries` vs `ForecasterRnn` vs `ForecasterFoundation`, etc.
+- **All 9 forecaster types** — constructors, `fit()`, and `predict()` methods including parameters and defaults.
 - **Model selection** — `backtesting_forecaster`, `bayesian_search_forecaster` and other hyperparameter optimization methods, `TimeSeriesFold`, `OneStepAheadFold`, and their multi-series variants.
 - **Statistical models** — `Arima`, `Sarimax`, `Ets`, `Arar` wrapped by `ForecasterStats`.
 - **Deep learning** — `ForecasterRnn` with `create_and_compile_model`, LSTM/GRU architectures.
-- **Feature engineering** — `RollingFeatures`, custom features, and exogenous variables.
+- **Foundation models (zero-shot)** — `FoundationModel` + `ForecasterFoundation` with Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, and TFC-T0 backends.
+- **Feature engineering** — `RollingFeatures`, feature_engine calendar/cyclical features, custom features, and exogenous variables.
 - **Feature selection** — `RFECV`, `SelectFromModel` for lags, window features, and exogenous variables.
 - **Drift detection** — `RangeDriftDetector` and `PopulationDriftDetector` for production monitoring.
-- **12 specialized workflow skills** — step-by-step guides for common tasks, loaded on-demand by advanced AI agents.
+- **13 specialized workflow skills** — step-by-step guides for common tasks, loaded on-demand by advanced AI agents.
 
 
 ## Workflow skills
 
-Skforecast includes 12 modular **skills** — self-contained guides that AI agents can load on demand when a user asks about a specific topic. Each skill covers a complete workflow with decision trees, code examples, and common pitfalls.
+Skforecast includes 13 modular **skills** — self-contained guides that AI agents can load on demand when a user asks about a specific topic. Each skill covers a complete workflow with decision trees, code examples, and common pitfalls.
 
 | Skill | What it covers |
 |-------|----------------|
@@ -58,10 +61,11 @@ Skforecast includes 12 modular **skills** — self-contained guides that AI agen
 | `statistical-models` | `ForecasterStats` with `Arima`, `Sarimax`, `Ets`, `Arar`: auto-ARIMA, seasonal config |
 | `hyperparameter-optimization` | Grid, random, and Bayesian search with `TimeSeriesFold` and `OneStepAheadFold` |
 | `prediction-intervals` | Bootstrapping, conformal prediction, quantile regression, interval calibration |
-| `feature-engineering` | `RollingFeatures`, `DateTimeFeatureTransformer`, custom features, exogenous variables |
+| `feature-engineering` | `CalendarFeatures`, `RollingFeatures`, custom features, exogenous variables |
 | `feature-selection` | `RFECV`, `SelectFromModel`: selecting lags, window features, and exog |
 | `drift-detection` | `RangeDriftDetector` and `PopulationDriftDetector` for production monitoring |
 | `deep-learning-forecasting` | `ForecasterRnn` with Keras: `create_and_compile_model`, LSTM/GRU architectures |
+| `foundation-forecasting` | Zero-shot forecasting with `ForecasterFoundation`: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0 |
 | `choosing-a-forecaster` | Decision guide: "I have X situation → use Y forecaster" |
 | `troubleshooting-common-errors` | Frequent mistakes AI assistants make with skforecast and their corrections |
 | `complete-api-reference` | Full method signatures and availability matrix for all forecasters |
@@ -73,17 +77,17 @@ These skills are bundled into `llms-full.txt`. AI agents that support the [Agent
 
 | File | Audience | Description |
 |------|----------|-------------|
-| [`llms-full.txt`](../llms-full.txt) | Any LLM user | Complete context: API + 12 workflow skills |
+| [`llms-full.txt`](../llms-full.txt) | Any LLM user | Complete context: API + 13 workflow skills |
 | [`llms.txt`](../llms.txt) | LLMs with web search | Public index with links to all documentation sections |
 | `.github/copilot-instructions.md` | Contributors (VS Code) | Auto-injected into GitHub Copilot |
 | `AGENTS.md` | Contributors (Claude Code, Codex, Aider) | Standard agent context file |
 
-The context files are **auto-generated** from a single source of truth (`tools/ai/llms-base.txt`) to ensure they stay in sync with the library. They are regenerated on every release.
+The context files are **auto-generated** from maintained source files (`tools/ai/llms-base.txt`, `llms.txt`, `tools/ai/ai_context_header.md`, and `skills/`) to ensure they stay in sync with the library. They are regenerated on every release.
 
 
 ## Tips for better results
 
 1. **Always provide the context URL** — Without it, LLMs may hallucinate methods that don't exist or use outdated API names (e.g., `ForecasterAutoreg` instead of `ForecasterRecursive`).
 2. **Be specific about your forecaster** — Mention which forecaster you're using. Parameter names and defaults differ across forecasters.
-3. **Mention the version** — Say "skforecast 0.21.0" so the LLM doesn't mix advice from older versions.
-4. **Validate the output** — AI-generated code is a starting point. Always run backtesting to verify model performance.
+3. **Mention the version** — Say "skforecast 0.23.0" so the LLM doesn't mix advice from older versions.
+4. **Validate the output** — AI-generated code is a starting point. Use backtesting or an appropriate holdout evaluation to verify model performance.

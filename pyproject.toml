@@ -1,7 +1,7 @@
 [project]
 name = "skforecast"
-version = "0.21.0"
-description = "Skforecast is a Python library for time series forecasting using statistical and machine learning models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others."
+version = "0.23.0"
+description = "Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others."
 readme = "README.md"
 authors = [
     {name = "Joaquin Amat Rodrigo", email = "j.amatrodrigo@gmail.com"},
@@ -49,6 +49,7 @@ keywords = [
     "deep-learning",
     "lightgbm",
     "xgboost",
+    "catboost",
 ]
 dependencies = [
     "numpy>=1.26",
@@ -69,23 +70,21 @@ stats = [
 ]
 
 plotting = [
-    "matplotlib>=3.7, <3.11",
-    "seaborn>=0.12, <0.14",
+    "matplotlib>=3.7, <3.12",
     "statsmodels>=0.13, <0.15"
 ]
 
 deeplearning = [
     "keras>=3.0, <4.0",
-    "matplotlib>=3.7, <3.11",
+    "matplotlib>=3.7, <3.12",
 ]
 
 all = [
-    "matplotlib>=3.7, <3.11",
-    "seaborn>=0.12, <0.14",
+    "matplotlib>=3.7, <3.12",
     "statsmodels>=0.13, <0.15",
     "keras>=3.0, <4.0",
-    'tensorflow>=2.18, <2.21; python_version < "3.14"',
-    "torch>=2.4, <2.11",
+    'tensorflow>=2.18, <2.22; python_version < "3.14"',
+    "torch>=2.4, <2.13"
 ]
 
 full = ["skforecast[all]"]
@@ -93,29 +92,31 @@ full = ["skforecast[all]"]
 docs = [
     "mike==2.1.3",
     "mkdocs==1.6.1",
-    "mkdocs-jupyter==0.25.1",
-    "mkdocs-material==9.7.1",
-    "mkdocstrings==1.0.3",
-    "mkdocstrings-python==2.0.2",
-    "black==26.3.1",
+    "mkdocs-jupyter==0.26.3",
+    "mkdocs-material==9.7.6",
+    "mkdocstrings==1.0.4",
+    "mkdocstrings-python==2.0.5",
+    "black==26.5.1",
 ]
 
 test = [
     # Testing
-    "pytest>=7.3",
-    "pytest-cov>=4.1",
-    "pytest-xdist>=3.3",
+    "pytest>=9.1.0",
+    "pytest-cov>=7.1.0",
+    "pytest-xdist>=3.8",
     
     # Stats and plotting
-    "statsmodels>=0.13, <0.15",  
-    "matplotlib>=3.7, <3.11",
-    "seaborn>=0.12, <0.14",
+    "statsmodels>=0.13, <0.15",
+    "matplotlib>=3.7, <3.12",
     
     # Other optional dependencies
     "lightgbm>=4.0, <5.0",
     "xgboost>=2.1, <4.0",
+    "catboost>=1.2, <2.0",
     "keras>=3.0, <4.0",
-    "torch>=2.4, <2.11",
+    "torch>=2.4, <2.13",
+    "cloudpickle>=3.0",
+    "skops>=0.14",
     "tomli>=2.0",
     "pandas[parquet]>=2.1"
 ]
@@ -125,26 +126,60 @@ Homepage = "https://www.skforecast.org"
 Repository = "https://github.com/skforecast/skforecast"
 Documentation = "https://www.skforecast.org"
 "Release Notes" = "https://skforecast.org/latest/releases/releases"
-"LLM Context" = "https://skforecast.org/llms.txt"
+"LLM Context" = "https://skforecast.org/latest/llms.txt"
 Download = "https://pypi.org/project/skforecast/#files"
 Tracker = "https://github.com/skforecast/skforecast/issues"
 
 [build-system]
-requires = ["setuptools>=61", "toml", "build"]
+requires = ["setuptools>=83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["skforecast*"]
 exclude = ["skforecast.*.tests", "skforecast.*.tests.*"]
 
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E221", "E251", "E501", "E241"]
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 88
+max-line-length = 88
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = false
+
 [tool.pytest.ini_options]
 testpaths = ["skforecast"]
+pythonpath = ["."]
 python_files = "test_*.py"
 python_functions = "test_*"
 addopts = "-vv --tb=short"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "serial",
+]
 # filterwarnings = [
-#     "ignore::DeprecationWarning",
-#     "ignore::FutureWarning",
+#     # "ignore::DeprecationWarning",
+#     # "ignore::FutureWarning",
+#     "ignore::skforecast.exceptions.DataTypeWarning",
+#     "ignore::skforecast.exceptions.DataTransformationWarning",
+#     "ignore::skforecast.exceptions.ExogenousInterpretationWarning",
+#     "ignore::skforecast.exceptions.FeatureOutOfRangeWarning",
+#     "ignore::skforecast.exceptions.IgnoredArgumentWarning",
+#     "ignore::skforecast.exceptions.InputTypeWarning",
+#     "ignore::skforecast.exceptions.LongTrainingWarning",
+#     "ignore::skforecast.exceptions.MissingExogWarning",
+#     "ignore::skforecast.exceptions.MissingValuesWarning",
+#     "ignore::skforecast.exceptions.OneStepAheadValidationWarning",
+#     "ignore::skforecast.exceptions.ResidualsUsageWarning",
+#     "ignore::skforecast.exceptions.UnknownLevelWarning",
+#     "ignore::skforecast.exceptions.SaveLoadSkforecastWarning",
+#     "ignore::skforecast.exceptions.SkforecastVersionWarning",
 # ]
 
 [tool.coverage.run]

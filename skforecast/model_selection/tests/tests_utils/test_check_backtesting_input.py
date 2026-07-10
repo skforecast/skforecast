@@ -24,6 +24,10 @@ from skforecast.model_selection.tests.fixtures_model_selection_multiseries impor
     series_dict_range,
     series_dict_dt
 )
+from skforecast.foundation.tests.tests_forecaster_foundation.fixtures_forecaster_foundation import (
+    make_forecaster,
+    y as y_foundation,
+)
 
 
 def test_check_backtesting_input_TypeError_when_cv_not_TimeSeriesFold():
@@ -838,7 +842,7 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
         'cv': cv,
         'metric': 'mean_absolute_error',
         'y': y,
-        'interval': [10, 90],
+        'interval': [0.1, 0.9],
         'interval_method': 'bootstrapping',
         'n_boot': 500,
         'use_in_sample_residuals': True,
@@ -848,7 +852,7 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
         'suppress_warnings': False
     }
 
-    kwargs['interval'] = {'10': 10, '90': 90}
+    kwargs['interval'] = {'10': 0.1, '90': 0.9}
     kwargs['interval_method'] = 'conformal'
     err_msg = re.escape(
         f"When `interval_method` is 'conformal', `interval` must "
@@ -858,7 +862,7 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(**kwargs)
 
-    kwargs['interval'] = {'10': 10, '90': 90}
+    kwargs['interval'] = {'10': 0.1, '90': 0.9}
     kwargs['interval_method'] = 'bootstrapping'
     err_msg = re.escape(
         f"When `interval_method` is 'bootstrapping', `interval` "
@@ -882,18 +886,10 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(**kwargs)
 
-    kwargs['interval'] = ['10', '90']
-    err_msg = re.escape(
-        f"`interval` must be a list or tuple of floats. "
-        f"Got {type('10')} in {kwargs['interval']}."
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        check_backtesting_input(**kwargs)
-
-    kwargs['interval'] = [0, 100, 101]
+    kwargs['interval'] = [0, 1, 1.1]
     err_msg = re.escape(
         "When `interval` is a list or tuple, all values must be "
-        "between 0 and 100 inclusive. Got 101 in [0, 100, 101]."
+        "between 0 and 1 inclusive. Got 1.1 in [0, 1, 1.1]."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(**kwargs)
@@ -931,42 +927,6 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
         check_backtesting_input(**kwargs)
 
 
-def test_check_backtesting_input_ValueError_when_ForecasterRnn_and_use_binned_residuals():
-    """
-    Test ValueError is raised in check_backtesting_input when `use_binned_residuals`
-    is True and the forecaster is a ForecasterRnn.
-    """
-    # Mock ForecasterRnn to avoid keras dependency
-    class ForecasterRnn:
-        def __init__(self):
-            self.window_size = 2
-            self.max_step = 10
-    
-    forecaster = ForecasterRnn()
-    
-    cv = TimeSeriesFold(
-             steps              = 3,
-             initial_train_size = len(series_wide_range) - 12,
-         )
-    
-    err_msg = re.escape(
-        "`use_binned_residuals` is not supported for ForecasterRnn. "
-        "Set `use_binned_residuals=False`."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        check_backtesting_input(
-            forecaster          = forecaster,
-            cv                  = cv,
-            metric              = 'mean_absolute_error',
-            series              = series_wide_range,
-            interval            = [10, 90],
-            interval_method     = 'conformal',
-            use_binned_residuals = True,
-            show_progress       = False,
-            suppress_warnings   = False
-        )
-
-
 def test_check_backtesting_input_ValueError_when_interval_and_ForecasterRecursiveClassifier():
     """
     Test ValueError is raised in check_backtesting_input when `interval` is not None
@@ -992,7 +952,7 @@ def test_check_backtesting_input_ValueError_when_interval_and_ForecasterRecursiv
             cv                = cv,
             metric            = 'mean_absolute_error',
             y                 = y,
-            interval         = [10, 90],
+            interval         = [0.1, 0.9],
             show_progress     = False,
             suppress_warnings = False
         )
@@ -1075,3 +1035,72 @@ def test_check_backtesting_input_ValueError_when_Direct_forecaster_not_enough_st
             show_progress     = False,
             suppress_warnings = False
         )
+
+
+def test_check_backtesting_input_ForecasterFoundation_no_error_when_initial_train_size_smaller_than_window_size():
+    """
+    Test that check_backtesting_input does NOT raise an error for
+    ForecasterFoundation when initial_train_size is smaller than window_size
+    (context_length). Unlike ML forecasters, context_length is an upper bound,
+    not a minimum required training size.
+    """
+    # context_length=2048 >> len(y_foundation)=50, initial_train_size=38
+    forecaster = make_forecaster(context_length=2048)
+    forecaster.fit(series=y_foundation)
+
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = 38,  # 38 < window_size=2048, but valid
+             refit                 = False,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True,
+             verbose               = False,
+         )
+
+    check_backtesting_input(
+        forecaster        = forecaster,
+        cv                = cv,
+        metric            = 'mean_absolute_error',
+        series            = {'y': y_foundation},
+        show_progress     = False,
+        suppress_warnings = False,
+    )
+
+
+def test_check_backtesting_input_ForecasterFoundation_ValueError_when_initial_train_size_not_correct_value():
+    """
+    Test ValueError is raised in check_backtesting_input for
+    ForecasterFoundation when initial_train_size >= data_length. The error
+    message uses ">0" instead of "window_size" as the lower bound.
+    """
+    forecaster = make_forecaster(context_length=2048)
+    forecaster.fit(series=y_foundation)
+
+    data_length = len(y_foundation)
+
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = data_length,
+             refit                 = False,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True,
+             verbose               = False,
+         )
+
+    err_msg = re.escape(
+        f"If `initial_train_size` is an integer, it must be greater than "
+        f"0 and smaller than the length of `series` ({data_length}). "
+        f"If it is a date, it must be within this range of the index."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        check_backtesting_input(
+            forecaster        = forecaster,
+            cv                = cv,
+            metric            = 'mean_absolute_error',
+            series            = {'y': y_foundation},
+            show_progress     = False,
+            suppress_warnings = False,
+        )
+

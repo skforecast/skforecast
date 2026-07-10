@@ -2,14 +2,14 @@
 <!-- Source: tools/ai/llms-base.txt + tools/ai/ai_context_header.md -->
 <!-- Regenerate with: python tools/ai/generate_ai_context_files.py -->
 
-# Skforecast — Development Context
+# Skforecast: Development Context
 
 ## For Contributors Working Inside This Repository
 
 ### Testing
 
 ```bash
-pytest skforecast/recursive/tests/ -vv           # Run a specific module's tests
+pytest skforecast/recursive/tests/ -vv            # Run a specific module's tests
 pytest --cov=skforecast --cov-report=html         # Coverage report
 pytest -n auto                                    # Parallel execution (pytest-xdist)
 ```
@@ -21,31 +21,39 @@ Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
 - NumPy-style docstrings
 - Type hints for function signatures
 - PEP 8 compliant (max line length 88, enforced by ruff)
-- Single quotes for strings (ruff `quote-style = "single"`)
+- Double quotes for strings (ruff `quote-style = "double"`)
 - Relative imports within package
+- When generating code comments, docstrings, and documentation, do not use en dashes (–), or em dashes (—). Use commas, colons, semicolons, or parentheses for punctuation instead.
 
 ### Dependencies
 
 Core: numpy>=1.26, pandas>=2.1,<3.0, scikit-learn>=1.4, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
-Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 + seaborn>=0.12,<0.14 (plotting), keras>=3.0,<4.0 (deep learning)
+Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 (plotting), keras>=3.0,<4.0 (deep learning)
+
+### Python environment
+
+Before running any Python command (tests, scripts, notebooks, `pip install`, etc.)
+for the first time in a session, run `conda env list` and ask which environment to
+use. Do not assume the active environment. Once the user confirms an environment,
+reuse it for the rest of the session without asking again.
 
 ---
 
-# Skforecast — Complete API & Workflow Reference
+# Skforecast: Complete API & Workflow Reference
 
 (The content below is the full `llms-base.txt` and applies to any user of skforecast)
 
 # Skforecast
 
-> Python library for time series forecasting using machine learning models
+> Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
-This document is for skforecast v0.21.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.23.0+. If you are using an older version, check the documentation at skforecast.org.
 
-Skforecast is a Python library that simplifies time series forecasting using machine learning. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
+Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.21.0
+- Version: 0.23.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -74,8 +82,10 @@ skforecast/
 │                            # ForecasterRecursiveClassifier, ForecasterStats, ForecasterEquivalentDate
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
-├── stats/                   # Arima, Sarimax, Ets, Arar (sklearn-compatible wrappers)
-├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, DateTimeFeatureTransformer,
+├── foundation/              # FoundationModel, ForecasterFoundation
+│                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0)
+├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
+├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
 ├── model_selection/         # backtesting_forecaster, grid/random/bayesian search, TimeSeriesFold
 ├── feature_selection/       # select_features, select_features_multiseries
@@ -92,8 +102,9 @@ skforecast/
 ### Module Relationships
 
 - **Forecasters inheriting from `ForecasterBase`**: ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterRecursiveClassifier, ForecasterDirect, ForecasterDirectMultiVariate, ForecasterRnn
-- **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate
+- **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate, ForecasterFoundation
 - Statistical models in `stats/` are wrapped by `ForecasterStats` (in `recursive/`)
+- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`) resolved from the HuggingFace `model_id`
 - `model_selection/` functions work with all forecaster types
 - `preprocessing/` classes can be passed to forecasters via `transformer_y`, `transformer_exog`, `window_features`
 
@@ -107,6 +118,7 @@ skforecast/
 | ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
 | ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
 | ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
+| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
 
@@ -119,7 +131,7 @@ from sklearn.ensemble import RandomForestRegressor
 from skforecast.recursive import ForecasterRecursive
 from skforecast.model_selection import backtesting_forecaster, TimeSeriesFold
 
-# Load data — y must be a pandas Series with DatetimeIndex and frequency set
+# Load data: y must be a pandas Series with DatetimeIndex and frequency set
 data = pd.read_csv('data.csv', index_col='date', parse_dates=True)
 data = data.asfreq('h')  # IMPORTANT: always set frequency before using skforecast
 
@@ -189,6 +201,102 @@ forecaster.fit(y=y_train, exog=exog_train)
 predictions = forecaster.predict(steps=10, exog=exog_test)
 ```
 
+## Categorical Exogenous Variables
+
+All ML forecasters (ForecasterRecursive, ForecasterDirect, ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRecursiveClassifier) include a `categorical_features` parameter to handle categorical exogenous variables automatically.
+
+```python
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+    categorical_features='auto',  # Default: auto-detect non-numeric columns after transformer_exog
+)
+forecaster.fit(y=y_train, exog=exog_train)
+```
+
+**`categorical_features` options:**
+- `'auto'` (default): Non-numeric columns (after `transformer_exog`) are automatically detected and encoded using an internal `OrdinalEncoder`. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
+- `list`: Explicit list of column names to treat as categorical (including numeric columns).
+- `None`: No categorical encoding is applied.
+
+**Important:** When `categorical_features` is not `None` do not set categorical features directly on the estimator or via `fit_kwargs`. The forecaster manages categorical configuration internally and overwrites any estimator-level settings.
+
+**Choosing an encoding strategy:**
+
+| Method | API | Best for |
+|--------|-----|----------|
+| Built-in `categorical_features` | `categorical_features='auto'` or `list` | Gradient boosting (LightGBM, XGBoost, CatBoost, HistGBR), simplest workflow |
+| One-hot / Ordinal encoding | `transformer_exog` | Linear models, SVMs, non-gradient-boosting trees |
+| Target encoding | Outside forecaster | High-cardinality features (applied manually to avoid leakage) |
+
+**`categorical_features` and `transformer_exog` interaction:**
+`transformer_exog` is applied **before** `categorical_features` detection. They can be used together, e.g., scale numeric columns with `transformer_exog` while `categorical_features='auto'` handles the categorical ones. Avoid applying both mechanisms to the same columns.
+
+```python
+from sklearn.compose import make_column_transformer
+from sklearn.preprocessing import StandardScaler
+
+# Scale numeric columns, leave categorical columns untouched
+transformer_exog = make_column_transformer(
+    (StandardScaler(), ['temp', 'hum']),
+    remainder='passthrough',
+    verbose_feature_names_out=False
+).set_output(transform='pandas')
+
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=24,
+    transformer_exog=transformer_exog,
+    categorical_features='auto',  # Detects remaining non-numeric columns
+)
+```
+
+## Handling Missing Values
+
+All ML forecasters (ForecasterRecursive, ForecasterDirect, ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRecursiveClassifier) include a `dropna_from_series` parameter to control how NaN values in the training data are handled. Not applicable to ForecasterStats, ForecasterEquivalentDate, or ForecasterRnn.
+
+When `y`, `series`, or `exog` contain interspersed NaN values, the training matrices (`X_train`, `y_train`) will also contain NaNs. The `dropna_from_series` parameter determines what happens next.
+
+**`dropna_from_series` options:**
+- `False` (default): NaN rows are kept in the training matrices. A `MissingValuesWarning` is issued. Only use with NaN-tolerant estimators.
+- `True`: Rows containing NaN in `X_train` (and the corresponding rows in `y_train`) are dropped before fitting.
+
+**NaN-tolerant estimators** (support `dropna_from_series=False`):
+- LightGBM (`LGBMRegressor`, `LGBMClassifier`)
+- CatBoost (`CatBoostRegressor`, `CatBoostClassifier`)
+- HistGradientBoosting (`HistGradientBoostingRegressor`, `HistGradientBoostingClassifier`)
+- XGBoost (`XGBRegressor`, `XGBClassifier`) with `tree_method='hist'`
+
+**Choosing a strategy:**
+
+| Scenario | Recommended strategy |
+|:---------|:---------------------|
+| Using LightGBM, CatBoost, XGBoost (hist), or HistGradientBoosting | `dropna_from_series=False`: let the estimator handle NaNs. No data loss. |
+| Estimator does not support NaN (RandomForest, LinearRegression, SVR...) | `dropna_from_series=True`: drop incomplete rows before fitting. |
+| Few or small gaps in the series | `dropna_from_series=True`: simple and data loss is negligible. |
+| Large gaps, need to preserve all training data | Imputation + `weight_func`: fill NaNs and down-weight imputed observations. |
+| Multi-series with different lengths | `ForecasterRecursiveMultiSeries` with `dropna_from_series=True`. |
+
+```python
+from lightgbm import LGBMRegressor
+
+# NaN-tolerant estimator: keep all rows including NaN
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(random_state=123, verbose=-1),
+    lags=14,
+    dropna_from_series=False,  # Default: NaN rows kept for NaN-tolerant estimators
+)
+forecaster.fit(y=y_train, suppress_warnings=True)  # Suppress MissingValuesWarning
+
+# Non-NaN-tolerant estimator: drop rows with NaN
+forecaster = ForecasterRecursive(
+    estimator=RandomForestRegressor(random_state=123),
+    lags=14,
+    dropna_from_series=True,  # Drop NaN rows before fitting
+)
+forecaster.fit(y=y_train)
+```
+
 ## Window Features (Rolling Statistics)
 
 ```python
@@ -211,9 +319,10 @@ forecaster = ForecasterRecursive(
 
 ```python
 # Predict with confidence intervals
+# Since v0.23.0 `interval` is expressed as quantiles in (0, 1), not percentiles
 predictions = forecaster.predict_interval(
     steps=10,
-    interval=[10, 90],  # 80% prediction interval
+    interval=[0.1, 0.9],  # 80% prediction interval
     method='bootstrapping',  # or 'conformal'
     n_boot=500
 )
@@ -241,7 +350,7 @@ metric, predictions = backtesting_forecaster(
     cv=cv,                                      # TimeSeriesFold with CV configuration
     metric='mean_absolute_error',               # Metric(s): str, callable, or list
     exog=exog,                                  # Exogenous variables (optional)
-    interval=[10, 90],                          # Prediction intervals as percentiles (optional)
+    interval=[0.1, 0.9],                        # Prediction intervals as quantiles in (0, 1) (optional)
     interval_method='bootstrapping',            # 'bootstrapping' or 'conformal'
     n_boot=250,                                 # Bootstrap iterations (only if method='bootstrapping')
     use_in_sample_residuals=True,               # Use training residuals for intervals
@@ -324,7 +433,7 @@ from skforecast.model_selection import bayesian_search_forecaster, TimeSeriesFol
 
 cv = TimeSeriesFold(steps=12, initial_train_size=len(data) - 100, refit=False)
 
-# Bayesian Search — lags can be included in search_space
+# Bayesian Search: lags can be included in search_space
 def search_space(trial):
     return {
         'lags': trial.suggest_categorical('lags', [3, 5, [1, 2, 3, 20]]),
@@ -333,7 +442,7 @@ def search_space(trial):
         'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True)
     }
 
-results, best_trial = bayesian_search_forecaster(
+results, study = bayesian_search_forecaster(
     forecaster=forecaster,
     y=data['target'],
     cv=cv,
@@ -345,27 +454,75 @@ results, best_trial = bayesian_search_forecaster(
     n_jobs='auto',
     show_progress=True
 )
+# Access the best trial with study.best_trial
 ```
 
 ## Statistical Models (ARIMA, ETS, ARAR)
 
 Statistical models are wrapped by `ForecasterStats` for a sklearn-compatible interface. Available models: `Arima`, `Sarimax`, `Ets`, `Arar`.
+Autocorrelation utilities are also available in `skforecast.stats`: `acf`, `pacf`, and `calculate_lag_autocorrelation`.
 
 ```python
 from skforecast.recursive import ForecasterStats
 from skforecast.stats import Arima, Ets, Sarimax, Arar
+from skforecast.stats import acf, pacf, calculate_lag_autocorrelation
 
 # ARIMA model (order=(p,d,q), seasonal_order=(P,D,Q), m=seasonal_period)
 forecaster = ForecasterStats(estimator=Arima(order=(1, 1, 1), seasonal_order=(1, 1, 1), m=12))
 forecaster.fit(y=data['target'])
 predictions = forecaster.predict(steps=10)
 
-# Auto ARIMA (automatic order selection) - set order=None
-forecaster = ForecasterStats(estimator=Arima(order=None, seasonal=True, m=12))
+# Auto ARIMA (automatic order selection) - set order=None and seasonal_order=None
+forecaster = ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=12))
 
 # ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None, Z=Auto)
 forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 ```
+
+## Foundation Models (Zero-Shot)
+
+Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`). Models are downloaded from HuggingFace on first use.
+
+`FoundationModel` is the low-level interface; `ForecasterFoundation` wraps it to integrate with the rest of the skforecast ecosystem (backtesting, model selection, uniform `predict` / `predict_interval` / `predict_quantiles` API).
+
+```python
+from skforecast.foundation import FoundationModel, ForecasterFoundation
+
+# Zero-shot single-series forecasting with Chronos-2
+model = FoundationModel(
+    model_id='autogluon/chronos-2-small',
+    context_length=2048,
+    device_map='auto',
+)
+forecaster = ForecasterFoundation(estimator=model)
+forecaster.fit(series=data['target'])  # Only stores context; no training
+predictions = forecaster.predict(steps=24)  # Long-format: columns ['level', 'pred']
+
+# Prediction intervals (native quantile output, no bootstrapping needed)
+predictions = forecaster.predict_interval(steps=24, interval=[0.1, 0.9])
+predictions = forecaster.predict_quantiles(steps=24, quantiles=[0.1, 0.5, 0.9])
+
+# Multi-series (global zero-shot model): pass a wide DataFrame
+forecaster.fit(series=series_df)
+predictions = forecaster.predict(steps=24, levels=['series_1', 'series_2'])
+```
+
+Supported adapters (selected automatically from `model_id`):
+
+| Adapter | `model_id` prefix | Exog | Default `context_length` | Quantiles |
+|---------|-------------------|------|--------------------------|-----------|
+| ChronosAdapter (Amazon) | `autogluon/chronos` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
+| TimesFMAdapter (Google) | `google/timesfm` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
+| MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
+| TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (past & future covariates) | 4096 | Any in `(0, 1)` |
+| TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
+| T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
+
+Key points:
+- `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
+- The index must have a frequency (`data.asfreq(...)`), same requirement as other skforecast forecasters.
+- `predict(..., context=...)` lets you override the stored context (used internally by backtesting).
+- Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. Refit is always disabled internally, model weights are preserved across folds since there is no per-fold training.
 
 ## Feature Selection
 
@@ -396,14 +553,14 @@ Two drift detection tools for monitoring data distribution changes during deploy
 ```python
 from skforecast.drift_detection import RangeDriftDetector, PopulationDriftDetector
 
-# RangeDriftDetector — lightweight, checks out-of-range values vs training ranges
+# RangeDriftDetector: lightweight, checks out-of-range values vs training ranges
 detector = RangeDriftDetector()
 detector.fit(series=y_train, exog=exog_train)
 flag_out_of_range, out_of_range_series, out_of_range_exog = detector.predict(
     last_window=new_data, exog=new_exog
 )
 
-# PopulationDriftDetector — statistical tests (KS, Chi-Square, Jensen-Shannon)
+# PopulationDriftDetector: statistical tests (KS, Chi-Square, Jensen-Shannon)
 detector = PopulationDriftDetector(chunk_size=100, threshold=3, threshold_method='std')
 detector.fit(X=reference_data)
 results, summary = detector.predict(X=new_data)
@@ -424,11 +581,14 @@ from skforecast.direct import ForecasterDirect
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning import create_and_compile_model
+from skforecast.foundation import FoundationModel
+from skforecast.foundation import ForecasterFoundation
 
 # Model Selection
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection import backtesting_stats
+from skforecast.model_selection import backtesting_foundation
 from skforecast.model_selection import grid_search_forecaster
 from skforecast.model_selection import grid_search_forecaster_multiseries
 from skforecast.model_selection import random_search_forecaster
@@ -444,8 +604,9 @@ from skforecast.model_selection import OneStepAheadFold
 from skforecast.preprocessing import RollingFeatures
 from skforecast.preprocessing import RollingFeaturesClassification
 from skforecast.preprocessing import TimeSeriesDifferentiator
-from skforecast.preprocessing import DateTimeFeatureTransformer
-from skforecast.preprocessing import create_datetime_features
+from skforecast.preprocessing import CalendarFeatures
+from skforecast.preprocessing import create_calendar_features
+from skforecast.preprocessing import calculate_distance_from_holiday
 from skforecast.preprocessing import QuantileBinner
 from skforecast.preprocessing import ConformalIntervalCalibrator
 # Data reshaping utilities
@@ -475,6 +636,7 @@ from skforecast.metrics import create_mean_pinball_loss
 
 # Statistical models (used with ForecasterStats)
 from skforecast.stats import Arima, Ets, Sarimax, Arar
+from skforecast.stats import acf, pacf, calculate_lag_autocorrelation
 
 # Drift Detection
 from skforecast.drift_detection import RangeDriftDetector
@@ -485,13 +647,28 @@ from skforecast.plot import plot_residuals
 from skforecast.plot import plot_multivariate_time_series_corr
 from skforecast.plot import plot_prediction_distribution
 from skforecast.plot import plot_prediction_intervals
-from skforecast.plot import calculate_lag_autocorrelation
 from skforecast.plot import backtesting_gif_creator
 from skforecast.plot import set_dark_theme
 
 # Exceptions and Warnings
+from skforecast.exceptions import DataTypeWarning
+from skforecast.exceptions import DataTransformationWarning
+from skforecast.exceptions import ExogenousInterpretationWarning
+from skforecast.exceptions import FeatureOutOfRangeWarning
+from skforecast.exceptions import IgnoredArgumentWarning
+from skforecast.exceptions import InputTypeWarning
+from skforecast.exceptions import LongTrainingWarning
+from skforecast.exceptions import MissingExogWarning
+from skforecast.exceptions import MissingValuesWarning
+from skforecast.exceptions import OneStepAheadValidationWarning
+from skforecast.exceptions import ResidualsUsageWarning
+from skforecast.exceptions import SaveLoadSkforecastWarning
+from skforecast.exceptions import SkforecastVersionWarning
+from skforecast.exceptions import UnknownLevelWarning
 from skforecast.exceptions import set_warnings_style
 from skforecast.exceptions import warn_skforecast_categories
+from skforecast.exceptions import runtime_deprecated
+
 ```
 
 ## Available Datasets
@@ -504,7 +681,7 @@ from skforecast.datasets import fetch_dataset, show_datasets_info
 data = fetch_dataset(name='h2o')             # Monthly, single series
 data = fetch_dataset(name='items_sales')     # Daily, 3 series (multi-series)
 data = fetch_dataset(name='bike_sharing')    # Hourly, with exogenous variables
-data = fetch_dataset(name='store_sales')     # Daily, 50 products × 10 stores
+data = fetch_dataset(name='store_sales')     # Daily, 50 products x 10 stores
 data = fetch_dataset(name='h2o_exog')        # Monthly, with exogenous variables
 
 # See all available datasets
@@ -513,8 +690,8 @@ show_datasets_info()
 
 ## Tips for Best Results
 
-1. **Always set frequency**: Use `data.asfreq('h')` or similar — skforecast requires a DatetimeIndex with frequency
-2. **Handle missing values**: Forecasters don't accept NaN by default
+1. **Always set frequency**: Use `data.asfreq('h')` or similar, skforecast requires a DatetimeIndex with frequency
+2. **Handle missing values**: Use `dropna_from_series=True` to drop NaN rows, or `dropna_from_series=False` (default) with NaN-tolerant estimators (LightGBM, CatBoost, HistGradientBoosting)
 3. **Scale data**: Use `transformer_y` for better model performance
 4. **Use backtesting**: Always validate with realistic train/test splits
 5. **Consider differentiation**: For non-stationary series, use `differentiation` parameter
@@ -531,5 +708,5 @@ show_datasets_info()
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.21.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.23.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```

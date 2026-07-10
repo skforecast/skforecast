@@ -155,16 +155,110 @@ Used only in `transform_batch()` method (not in recursive prediction):
 
 ## Forecaster Compatibility
 
-| Forecaster | `window_features` supported |
-|------------|:--:|
-| ForecasterRecursive | ✓ |
-| ForecasterDirect | ✓ |
-| ForecasterRecursiveMultiSeries | ✓ |
-| ForecasterDirectMultiVariate | ✓ |
-| ForecasterRecursiveClassifier | ✓ |
-| ForecasterRnn | — |
-| ForecasterStats | — |
-| ForecasterEquivalentDate | — |
+| Forecaster | `window_features` supported | Notes |
+|------------|:--:|-------|
+| ForecasterRecursive | ✓ | |
+| ForecasterDirect | ✓ | |
+| ForecasterRecursiveMultiSeries | ✓ | Same instance applied independently per series |
+| ForecasterDirectMultiVariate | ✓ | Same instance applied independently per input series |
+| ForecasterRecursiveClassifier | ✓ | Use `RollingFeaturesClassification` (not `RollingFeatures`) |
+| ForecasterRnn | — | |
+| ForecasterStats | — | |
+| ForecasterEquivalentDate | — | |
+| ForecasterFoundation | — | |
+
+## How the forecaster uses `window_features`
+
+When the forecaster builds the training matrix, it calls `wf.transform_batch(y)` on each instance once. The returned DataFrame is appended to the lag matrix as additional predictors. At prediction time, the forecaster slices the last `max_size_window_features` values of the running history and calls `wf.transform(...)` (numpy fast path) for each step.
+
+**Effective `window_size`:**
+
+```
+window_size = max(max_lag, max_size_window_features) [+ differentiation]
+```
+
+Consequences:
+- The first `window_size` rows of `y_train` cannot be used as targets (no full history available to compute predictors).
+- `last_window` passed to `predict(..., last_window=...)` must contain at least `window_size` observations.
+- A large rolling window combined with short series may leave too few training samples — check `len(y) - window_size` before fitting.
+
+**Differentiation interaction:** the forecaster differentiates the series first, then computes window features on the differenced values. `roll_mean_7` with `differentiation=1` therefore averages seven *changes*, not seven raw observations. Inverse-differentiation only applies to the predictions, not to the predictors themselves.
+
+**Multiple instances:** `window_features=[wf1, wf2]` calls `transform_batch` on each instance and concatenates the columns. Feature names must be unique across the combined set; duplicates silently collide. Use `RollingFeatures(features_names=[...])` to disambiguate.
+
+**Lags-free mode:** `lags=None, window_features=...` is supported. `window_size` falls back to `max_size_window_features`. At least one of the two must be non-`None` — passing both as `None` raises `ValueError` from `set_lags` / `set_window_features`.
+
+**Runtime mutation:** `forecaster.set_window_features(new_wf)` (analogous to `set_lags`) replaces the configuration after init and recomputes `window_size`, `window_features_names`, `window_features_class_names`, and the differentiator's window size. Useful in manual hyperparameter loops where the forecaster instance is reused across configurations.
+
+## Custom window feature classes (protocol)
+
+`window_features` accepts any object implementing the following contract — `RollingFeatures` is one such implementation, but user-defined classes are accepted as long as they conform.
+
+**Required methods:**
+
+| Method | Signature | Purpose |
+|--------|-----------|---------|
+| `transform_batch` | `(y: pd.Series) -> pd.DataFrame` | Computes features for the full training series. Used during `fit`. |
+| `transform` | `(X: np.ndarray) -> np.ndarray` | Computes features for a single (or batched) prediction window. Used during `predict`. |
+
+**Required attributes:**
+
+| Attribute | Type | Purpose |
+|-----------|------|---------|
+| `max_window_size` | `int` | Largest window the class needs — drives the forecaster's `window_size`. |
+| `features_names` | `list[str]` | Output column / feature names (must match `transform_batch` columns and the order produced by `transform`). |
+
+**Validation enforced by the forecaster** (see `_create_window_features`):
+- `transform_batch` must return a `pd.DataFrame` (`TypeError` otherwise).
+- The DataFrame length must equal `len(y) - max_window_size` (`ValueError` otherwise).
+- The DataFrame index must equal the forecaster's `train_index` (`ValueError` otherwise).
+
+**Minimal custom example:**
+
+```python
+import numpy as np
+import pandas as pd
+
+class LastDeltaFeature:
+    """Feature: difference between the last and the first value of the window."""
+
+    def __init__(self, window_size: int):
+        self.max_window_size = window_size
+        self.features_names = [f'last_minus_first_{window_size}']
+
+    def transform_batch(self, y: pd.Series) -> pd.DataFrame:
+        # closed='left' to avoid leakage — last point excluded
+        last = y.shift(1).rolling(self.max_window_size).apply(lambda w: w[-1], raw=True)
+        first = y.shift(1).rolling(self.max_window_size).apply(lambda w: w[0], raw=True)
+        out = (last - first).iloc[self.max_window_size:]
+        return out.to_frame(name=self.features_names[0])
+
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        # X shape: (window_length,) or (window_length, n_samples)
+        if X.ndim == 1:
+            return np.array([X[-1] - X[0]])
+        return (X[-1, :] - X[0, :]).reshape(-1, 1)
+
+# Use it like a RollingFeatures instance
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=7,
+    window_features=LastDeltaFeature(window_size=14),
+)
+```
+
+Combine custom and built-in instances freely:
+
+```python
+forecaster = ForecasterRecursive(
+    estimator=LGBMRegressor(),
+    lags=7,
+    window_features=[
+        RollingFeatures(stats=['mean', 'std'], window_sizes=14),
+        LastDeltaFeature(window_size=14),
+    ],
+)
+```
 
 ## Feature Selection Interaction
 

@@ -3,10 +3,10 @@
 import re
 import pytest
 import numpy as np
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OrdinalEncoder
 from sklearn.linear_model import LinearRegression
 from ....exceptions import DataTransformationWarning
-from ....preprocessing import RollingFeatures, TimeSeriesDifferentiator
+from ....preprocessing import RollingFeatures, CalendarFeatures, TimeSeriesDifferentiator
 from ....recursive import ForecasterRecursiveMultiSeries
 
 
@@ -65,6 +65,35 @@ def test_init_window_size_correctly_stored(lags, window_features, expected):
         assert forecaster.window_features_class_names is None
 
 
+@pytest.mark.parametrize("include_calendar", 
+                         [True, False], 
+                         ids = lambda cf: f'include_calendar: {cf}')
+def test_init_calendar_features_correctly_stored(include_calendar):
+    """
+    Test calendar_features is correctly stored when passed.
+    """
+    if include_calendar:
+        calendar_features = CalendarFeatures(features=None)
+    else:
+        calendar_features = None
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator         = LinearRegression(),
+                     lags              = 5,
+                     calendar_features = calendar_features
+                 )
+    
+    if calendar_features:
+        assert isinstance(forecaster.calendar_features, CalendarFeatures)
+        assert forecaster.calendar_features_names == [
+            "year", "month", "week", "day_of_week", "day_of_month",
+            "day_of_year", "weekend", "hour", "minute", "second", "quarter",
+        ]
+    else:
+        assert forecaster.calendar_features is None
+        assert forecaster.calendar_features_names is None
+
+
 def test_init_ValueError_invalid_encoding():
     """
     Test ValueError is raised when encoding is not valid.
@@ -80,6 +109,59 @@ def test_init_ValueError_invalid_encoding():
             lags      = [1, 2, 3],
             encoding  = 'invalid_encoding',
         )
+
+
+@pytest.mark.parametrize("categorical_features", 
+                         [True, 5, 'not_auto'], 
+                         ids = lambda cf: f'categorical_features: {cf}')
+def test_init_ValueError_when_categorical_features_is_not_auto_list_or_None(categorical_features):
+    """
+    Test ValueError is raised when categorical_features is not 'auto', list, or None.
+    """
+    err_msg = re.escape(
+        f"Argument `categorical_features` must be `'auto'`, a list of "
+        f"column names, or `None`. Got {categorical_features}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        ForecasterRecursiveMultiSeries(
+            estimator            = LinearRegression(),
+            lags                 = 5,
+            categorical_features = categorical_features
+        )
+
+
+def test_init_ValueError_when_categorical_features_is_empty_list():
+    """
+    Test ValueError is raised when categorical_features is an empty list.
+    """
+    err_msg = re.escape(
+        "Argument `categorical_features` must not be an empty list. "
+        "Use `None` to disable categorical encoding."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        ForecasterRecursiveMultiSeries(
+            estimator            = LinearRegression(),
+            lags                 = 5,
+            categorical_features = []
+        )
+
+
+@pytest.mark.parametrize("categorical_features", 
+                         ['auto', ['col_1', 'col_2'], None], 
+                         ids = lambda cf: f'categorical_features: {cf}')
+def test_init_categorical_features_correctly_stored(categorical_features):
+    """
+    Test categorical_features is correctly stored when 'auto', list, or None.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = LinearRegression(),
+                     lags                 = 5,
+                     categorical_features = categorical_features
+                 )
+    
+    assert forecaster.categorical_features == categorical_features
+    assert forecaster.categorical_features_names_in_ is None
+    assert isinstance(forecaster.categorical_encoder, OrdinalEncoder)
 
 
 def test_ForecasterRecursiveMultiSeries_init_not_scaling_with_linear_model():

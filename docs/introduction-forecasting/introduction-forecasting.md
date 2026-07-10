@@ -173,7 +173,7 @@ Using the [`ForecasterRnn`](../user_guides/forecasting-with-deep-learning-rnn-ls
 
 A **Forecaster** object in the skforecast library is a comprehensive **container that provides essential functionality and methods** for training a forecasting model and generating predictions for future points in time.
 
-The **skforecast** library offers a **variety of forecaster** types, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, or custom predictors. Regardless of the specific forecaster type, all instances share the same API.
+The **skforecast** library offers a **variety of forecaster types**, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, statistical models (ARIMA, ETS), deep learning (RNN/LSTM), and foundation models. Regardless of the forecaster type, all share a unified API for training, prediction, and validation.
 
 | Forecaster                   | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Window features |
 |:-----------------------------|:-------------:|:---------------:|:------------------:|:---------------:|:------------------------:|:---------------------------:|:------------------:|:---------------:|
@@ -181,18 +181,20 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterDirect]               |✔️|||✔️|✔️|✔️|✔️|✔️|
 |[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
 |[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
+|[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
 |[ForecasterRnn]                  |✔️|✔️||✔️|✔️||✔️||
 |[ForecasterStats]                |✔️||✔️||✔️|✔️|✔️||
-|[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
+|[ForecasterFoundation]           |✔️|✔️|||✔️||✔️||
 |[ForecasterEquivalentDate]       |✔️||✔️||✔️||||
 
 [ForecasterRecursive]: ../user_guides/autoregressive-forecaster.ipynb
 [ForecasterDirect]: ../user_guides/direct-multi-step-forecasting.ipynb
 [ForecasterRecursiveMultiSeries]: ../user_guides/independent-multi-time-series-forecasting.ipynb
 [ForecasterDirectMultiVariate]: ../user_guides/dependent-multi-series-multivariate-forecasting.ipynb
+[ForecasterRecursiveClassifier]: ../user_guides/autoregressive-classification-forecasting.ipynb
 [ForecasterRnn]: ../user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
 [ForecasterStats]: ../user_guides/forecasting-sarimax-arima.ipynb
-[ForecasterRecursiveClassifier]: ../user_guides/autoregressive-classification-forecasting.ipynb
+[ForecasterFoundation]: ../user_guides/foundation-forecasting-models.ipynb
 [ForecasterEquivalentDate]: ../user_guides/forecasting-baseline.ipynb
 
 To understand what can be done when initializing a forecaster with **skforecast** visit [Forecaster parameters](../quick-start/forecaster-parameters.md) and [Forecaster attributes](../quick-start/forecaster-attributes.ipynb).

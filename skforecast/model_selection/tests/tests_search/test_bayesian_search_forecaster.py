@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
+from xgboost import XGBRegressor
 from skforecast.exceptions import OneStepAheadValidationWarning
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
 from skforecast.recursive import ForecasterRecursive
@@ -17,6 +18,7 @@ from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection import bayesian_search_forecaster
 from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
 from skforecast.preprocessing import RollingFeatures
+import warnings
 import optuna
 from optuna.samplers import TPESampler
 from tqdm import tqdm
@@ -433,7 +435,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
         return search_space
 
     kwargs_create_study = {
-        'sampler': TPESampler(seed=123, prior_weight=2.0, consider_magic_clip=False)
+        'sampler': TPESampler(seed=123, n_startup_trials=5, n_ei_candidates=18)
     }
     results = bayesian_search_forecaster(
                   forecaster          = forecaster,
@@ -451,40 +453,40 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
     expected_results = pd.DataFrame(
         np.array([
             [np.array([1, 2]),
-                {'alpha': 0.23598059857016607},
-                0.21239141697571848,
-                0.23598059857016607],
+                {'alpha': 0.013034582111428786},
+                0.21182366076042425,
+                0.013034582111428786],
+            [np.array([1, 2]),
+                {'alpha': 0.07828966760371814},
+                0.21200904927858408,
+                0.07828966760371814],
+            [np.array([1, 2]),
+                {'alpha': 0.10496922722723273},
+                0.21207982895766356,
+                0.10496922722723273],
+            [np.array([1, 2]),
+                {'alpha': 0.12110612961869299},
+                0.2121213367300672,
+                0.12110612961869299],
             [np.array([1, 2]),
                 {'alpha': 0.398196343012209},
-                0.21271021033387605,
+                0.21271021033387602,
                 0.398196343012209],
             [np.array([1, 2]),
                 {'alpha': 0.4441865222328282},
                 0.2127897499229874,
                 0.4441865222328282],
             [np.array([1, 2]),
-                {'alpha': 0.53623586010342},
-                0.21293692257888705,
-                0.53623586010342],
-            [np.array([1, 2]),
-                {'alpha': 0.7252189487445193},
-                0.21319693043832985,
-                0.7252189487445193],
+                {'alpha': 0.9874718231802596},
+                0.21348609947715802,
+                0.9874718231802596],
             [np.array([1, 2, 3, 4]),
                 {'alpha': 0.9809565564007693},
                 0.21539791166603497,
                 0.9809565564007693],
             [np.array([1, 2, 3, 4]),
-                {'alpha': 0.8509374761370117},
-                0.215576908447532,
-                0.8509374761370117],
-            [np.array([1, 2, 3, 4]),
-                {'alpha': 0.7406154516747153},
-                0.2157346392837304,
-                0.7406154516747153],
-            [np.array([1, 2, 3, 4]),
                 {'alpha': 0.6995044937418831},
-                0.21579460210585208,
+                0.2157946021058521,
                 0.6995044937418831],
             [np.array([1, 2, 3, 4]),
                 {'alpha': 0.5558016213920624},
@@ -1449,3 +1451,88 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
+
+
+def test_bayesian_search_forecaster_xgboost_categorical_no_ValueError_on_cache_hit():
+    """
+    Test that bayesian_search_forecaster does not raise a ValueError when
+    XGBRegressor with categorical features is used and the search space includes
+    multiple lag combinations with OneStepAheadFold (cache hit scenario).
+
+    Root cause: `configure_estimator_categorical_features` sets `feature_types` on
+    the estimator via `set_params` (persistent mutation). When a cached split is
+    reused the estimator's `feature_types` must be restored to match the cached
+    X_train column count, otherwise XGBoost raises:
+      ValueError: feature types must have the same length as the number of
+                  data columns, expected <N>, got <M>
+    """
+    # np.random.seed(123); y = np.random.rand(50)
+    y_local = pd.Series(
+        np.array([0.69646919, 0.28613933, 0.22685145, 0.55131477, 0.71946897,
+                  0.42310646, 0.9807642 , 0.68482974, 0.4809319 , 0.39211752,
+                  0.34317802, 0.72904971, 0.43857224, 0.0596779 , 0.39804426,
+                  0.73799541, 0.18249173, 0.17545176, 0.53155137, 0.53182759,
+                  0.63440096, 0.84943179, 0.72445532, 0.61102351, 0.72244338,
+                  0.32295891, 0.36178866, 0.22826323, 0.29371405, 0.63097612,
+                  0.09210494, 0.43370117, 0.43086276, 0.4936851 , 0.42583029,
+                  0.31226122, 0.42635131, 0.89338916, 0.94416002, 0.50183668,
+                  0.62395295, 0.1156184 , 0.31728548, 0.41482621, 0.86630916,
+                  0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453])
+    )
+    # Hardcoded categorical exog with three levels ('f', 'g', 'h')
+    exog_local = pd.DataFrame({
+        'cat_feat': pd.Categorical(
+            ['f', 'f', 'g', 'h', 'g', 'g', 'g', 'g', 'g', 'g', 'g', 'h', 'g', 'g',
+             'g', 'f', 'f', 'g', 'g', 'g', 'h', 'f', 'g', 'g', 'f', 'h', 'h', 'h',
+             'g', 'f', 'f', 'h', 'g', 'h', 'g', 'h', 'g', 'h', 'g', 'h', 'g', 'h',
+             'f', 'g', 'h', 'h', 'g', 'f', 'f', 'g']
+        )
+    })
+
+    forecaster = ForecasterRecursive(
+        estimator=XGBRegressor(n_estimators=10, random_state=123, verbosity=0),
+        lags=3
+    )
+    forecaster.categorical_features = ['cat_feat']
+
+    cv = OneStepAheadFold(initial_train_size=35)
+
+    def search_space(trial):
+        return {
+            'lags': trial.suggest_categorical('lags', [[1, 2, 3], [1, 2, 3, 4, 5]]),
+            'n_estimators': trial.suggest_int('n_estimators', 5, 10),
+        }
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        results, _ = bayesian_search_forecaster(
+            forecaster   = forecaster,
+            y            = y_local,
+            exog         = exog_local,
+            cv           = cv,
+            search_space = search_space,
+            metric       = 'mean_absolute_error',
+            n_trials     = 6,
+            random_state = 123,
+            return_best  = False,
+            verbose      = False,
+            show_progress = False
+        )
+
+    expected_results = pd.DataFrame(
+        data=np.array(
+            [[np.array([1, 2, 3, 4, 5]), {'n_estimators': 7}, 0.267985, 7],
+             [np.array([1, 2, 3]),        {'n_estimators': 6}, 0.275470, 6],
+             [np.array([1, 2, 3]),        {'n_estimators': 6}, 0.275470, 6],
+             [np.array([1, 2, 3]),        {'n_estimators': 7}, 0.281943, 7],
+             [np.array([1, 2, 3]),        {'n_estimators': 7}, 0.281943, 7],
+             [np.array([1, 2, 3]),        {'n_estimators': 9}, 0.285263, 9]],
+            dtype=object
+        ),
+        columns=['lags', 'params', 'mean_absolute_error', 'n_estimators'],
+        index=pd.RangeIndex(start=0, stop=6, step=1)
+    ).astype({'mean_absolute_error': float, 'n_estimators': int})
+
+    pd.testing.assert_frame_equal(
+        results.drop(columns=['trial_number']), expected_results, atol=1e-4
+    )

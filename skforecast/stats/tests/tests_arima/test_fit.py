@@ -309,10 +309,6 @@ def test_arima_fit_2d_y_with_single_column():
     assert model.converged_ is True
 
 
-@pytest.mark.skipif(
-    platform.system() == 'Darwin',
-    reason="ARIMA optimizer converges to different values on macOS"
-)
 def test_arima_fit_method_css():
     """
     Test fitting with CSS method and verify exact values.
@@ -322,11 +318,16 @@ def test_arima_fit_method_css():
     model.fit(y)
     
     # Check exact coefficients
-    expected_coef = np.array([0.6651909069893525, 0.10578612974450272, -0.17749673261063734])
+    if platform.system() == 'Darwin':
+        expected_coef = np.array([0.66519091, 0.10578615, -0.17749671])
+        expected_sigma2 = 0.597459948833307
+    else:
+        expected_coef = np.array([0.6651909069893525, 0.10578612974450272, -0.17749673261063734])
+        expected_sigma2 = 0.597459948833387
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=5)
     
     # Check exact sigma2 (aic is nan for CSS method)
-    np.testing.assert_almost_equal(model.sigma2_, 0.597459948833387, decimal=5)
+    np.testing.assert_almost_equal(model.sigma2_, expected_sigma2, decimal=5)
     
     assert "CSS" in model.model_['method'] or "ARIMA" in model.model_['method']
     assert model.converged_ is True

@@ -77,7 +77,7 @@ def _make_data(
     return y, exog, exog_pred
 
 
-def run_benchmark_ForecasterRecursive(output_dir):
+def run_benchmark_ForecasterRecursive(output_dir, run_id=None):
     """
     Run all benchmarks for the ForecasterRecursive class and save the results.
     """
@@ -124,8 +124,7 @@ def run_benchmark_ForecasterRecursive(output_dir):
             window_size     = forecaster.window_size,
             last_window     = forecaster.last_window_,
             exog            = exog,
-            exog_names_in_  = forecaster.exog_names_in_,
-            interval        = None
+            exog_names_in_  = forecaster.exog_names_in_
         )
 
     def ForecasterRecursive__create_predict_inputs(forecaster, exog):
@@ -142,7 +141,7 @@ def run_benchmark_ForecasterRecursive(output_dir):
         forecaster.predict_interval(
             steps=STEPS,
             exog=exog,
-            interval=[5, 95],
+            interval=[0.05, 0.95],
             method='conformal'
         )
         
@@ -172,7 +171,7 @@ def run_benchmark_ForecasterRecursive(output_dir):
                 forecaster=forecaster,
                 y=y,
                 exog=exog,
-                interval=[5, 95],
+                interval=[0.05, 0.95],
                 interval_method='conformal',
                 cv=cv,
                 metric='mean_squared_error',
@@ -188,24 +187,24 @@ def run_benchmark_ForecasterRecursive(output_dir):
             n_boot=250
         )
 
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursive__create_lags, forecaster=forecaster, y=y_values)
     _ = runner.benchmark(ForecasterRecursive__create_train_X_y, forecaster=forecaster, y=y, exog=exog)
 
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursive_fit, forecaster=forecaster, y=y, exog=exog)
 
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True, suppress_warnings=True)
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursive_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive_predict, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive_predict_interval_conformal, forecaster=forecaster, exog=exog_pred)
 
-    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursive_backtesting, forecaster=forecaster, y=y, exog=exog)
     _ = runner.benchmark(ForecasterRecursive_backtesting_conformal, forecaster=forecaster, y=y, exog=exog)
 
     forecaster_boot.fit(y=y, exog=exog, store_in_sample_residuals=True, suppress_warnings=True)
-    runner = BenchmarkRunner(repeat=15, output_dir=output_dir)
+    runner = BenchmarkRunner(repeat=15, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursive_predict_bootstrapping, forecaster=forecaster_boot, exog=exog_pred)

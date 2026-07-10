@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import KBinsDiscretizer
-from ...preprocessing import QuantileBinner
+from ..._preprocessing import QuantileBinner
 from skforecast.exceptions import IgnoredArgumentWarning
 
 
@@ -186,6 +186,7 @@ def test_QuantileBinner_is_equivalent_to_KBinsDiscretizer():
             strategy="quantile",
             dtype=np.float64,
             random_state=789654,
+            quantile_method='linear',
         )
         binner_2 = QuantileBinner(
             n_bins=n_bins,
