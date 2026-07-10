@@ -503,3 +503,210 @@ def symmetric_mean_absolute_percentage_error(
     smape = 100 * np.mean(smape_values)
     
     return smape
+
+
+def winkler_score(
+    y_true,
+    lower_bound,
+    upper_bound,
+    alpha: float,
+) -> float:
+    """
+    Winkler Score (Interval Score) for evaluating prediction intervals.
+
+    Penalises both wide intervals and observations outside the interval.
+    Lower score = better interval forecast.
+
+        score_i = (upper_i - lower_i)
+                  + (2/alpha) * max(0, lower_i - y_true_i)
+                  + (2/alpha) * max(0, y_true_i - upper_i)
+
+    Parameters
+    ----------
+    y_true : numpy ndarray, pandas Series
+        True values. Shape (n,).
+    lower_bound : numpy ndarray, pandas Series
+        Lower bound of the prediction interval. Shape (n,).
+    upper_bound : numpy ndarray, pandas Series
+        Upper bound of the prediction interval. Shape (n,).
+    alpha : float
+        Significance level (e.g. 0.05 for a 95% interval). Must be in (0, 1).
+
+    Returns
+    -------
+    score : float
+        Mean Winkler Score across all observations. Lower is better.
+
+    Notes
+    -----
+    Strictly proper scoring rule for interval forecasts. Standard metric in
+    the M4 and M5 Forecasting Competitions. In banking it enables principled
+    comparison of overdraft or deposit-flow prediction intervals where the
+    cost of missing the interval differs from producing an overly wide one.
+
+    References
+    ----------
+    Winkler, R. L. (1972). A Decision-Theoretic Approach to Interval Estimation.
+    Journal of the American Statistical Association, 67(337), 187-191.
+
+    Gneiting, T., & Raftery, A. E. (2007). Strictly Proper Scoring Rules,
+    Prediction, and Estimation. Journal of the American Statistical Association,
+    102(477), 359-378.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from skforecast.metrics import winkler_score
+    >>> y_true = np.array([100., 200., 150., 80.])
+    >>> lower_bound = np.array([90., 180., 140., 100.])
+    >>> upper_bound = np.array([110., 220., 160., 120.])
+    >>> winkler_score(y_true, lower_bound, upper_bound, alpha=0.05)
+    225.0
+
+    """
+    if not isinstance(y_true, (np.ndarray, pd.Series)) or np.asarray(y_true).ndim != 1:
+        raise TypeError("`y_true` must be a 1D numpy array or pandas Series.")
+    if not isinstance(lower_bound, (np.ndarray, pd.Series)) or np.asarray(lower_bound).ndim != 1:
+        raise TypeError("`lower_bound` must be a 1D numpy array or pandas Series.")
+    if not isinstance(upper_bound, (np.ndarray, pd.Series)) or np.asarray(upper_bound).ndim != 1:
+        raise TypeError("`upper_bound` must be a 1D numpy array or pandas Series.")
+    if not isinstance(alpha, (float, int)) or not (0 < float(alpha) < 1):
+        raise ValueError("`alpha` must be a float strictly between 0 and 1.")
+
+    y_true = np.asarray(y_true, dtype=float)
+    lower_bound = np.asarray(lower_bound, dtype=float)
+    upper_bound = np.asarray(upper_bound, dtype=float)
+
+    if not (y_true.shape == lower_bound.shape == upper_bound.shape):
+        raise ValueError(
+            "`y_true`, `lower_bound`, and `upper_bound` must have the same shape."
+        )
+    if len(y_true) == 0:
+        raise ValueError("`y_true` must have at least one element.")
+    if np.any(upper_bound < lower_bound):
+        raise ValueError(
+            "All values in `upper_bound` must be >= corresponding `lower_bound`."
+        )
+
+    width = upper_bound - lower_bound
+    penalty_lower = (2.0 / alpha) * np.maximum(0.0, lower_bound - y_true)
+    penalty_upper = (2.0 / alpha) * np.maximum(0.0, y_true - upper_bound)
+
+    return float(np.mean(width + penalty_lower + penalty_upper))
+
+
+
+def weighted_interval_score(
+    y_true,
+    point_forecast,
+    lower_bounds: np.ndarray,
+    upper_bounds: np.ndarray,
+    alphas,
+) -> float:
+    """
+    Weighted Interval Score (WIS) for evaluating probabilistic forecasts.
+
+    Generalises the Winkler Score to K prediction intervals plus a point
+    (median) forecast. Converges to CRPS as K grows. Primary evaluation
+    metric of the US CDC COVID-19 Forecast Hub.
+
+        WIS = (1 / (K + 0.5)) * (0.5*|y - m| + sum_k(alpha_k/2 * IS_k))
+
+    Parameters
+    ----------
+    y_true : numpy ndarray, pandas Series. Shape (n,).
+    point_forecast : numpy ndarray, pandas Series. Predicted median. Shape (n,).
+    lower_bounds : numpy ndarray. Shape (n, K).
+    upper_bounds : numpy ndarray. Shape (n, K).
+    alphas : numpy ndarray or list of float. Shape (K,). Values in (0, 1).
+
+    Returns
+    -------
+    wis : float
+        Mean Weighted Interval Score across observations. Lower is better.
+
+    Notes
+    -----
+    Proper scoring rule. Decomposes into sharpness (interval width) and
+    calibration (miscoverage penalty). Enables evaluation of full predictive
+    distributions for deposit-flow or overdraft-probability models in banking.
+
+    References
+    ----------
+    Bracher, J., Ray, E. L., Gneiting, T., & Reich, N. G. (2021).
+    Evaluating epidemic forecasts in an interval format.
+    PLOS Computational Biology, 17(2), e1008618.
+    https://doi.org/10.1371/journal.pcbi.1008618
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from skforecast.metrics import weighted_interval_score
+    >>> y_true = np.array([100., 200., 150.])
+    >>> point_forecast = np.array([98., 195., 155.])
+    >>> lower_bounds = np.array([[88., 80.], [175., 165.], [138., 128.]])
+    >>> upper_bounds = np.array([[108., 118.], [215., 225.], [168., 178.]])
+    >>> alphas = np.array([0.20, 0.05])
+    >>> weighted_interval_score(y_true, point_forecast, lower_bounds, upper_bounds, alphas)
+    2.4933333333333336
+
+    """
+    if not isinstance(y_true, (np.ndarray, pd.Series)) or np.asarray(y_true).ndim != 1:
+        raise TypeError("`y_true` must be a 1D numpy array or pandas Series.")
+    if not isinstance(point_forecast, (np.ndarray, pd.Series)) or np.asarray(point_forecast).ndim != 1:
+        raise TypeError("`point_forecast` must be a 1D numpy array or pandas Series.")
+
+    y_true = np.asarray(y_true, dtype=float)
+    point_forecast = np.asarray(point_forecast, dtype=float)
+    lower_bounds = np.asarray(lower_bounds, dtype=float)
+    upper_bounds = np.asarray(upper_bounds, dtype=float)
+    alphas = np.asarray(alphas, dtype=float)
+
+    if lower_bounds.ndim != 2:
+        raise ValueError(
+            "`lower_bounds` must be a 2D array with shape (n_observations, n_intervals)."
+        )
+    if upper_bounds.ndim != 2:
+        raise ValueError(
+            "`upper_bounds` must be a 2D array with shape (n_observations, n_intervals)."
+        )
+    if alphas.ndim != 1:
+        raise ValueError("`alphas` must be a 1D array of significance levels.")
+    if len(y_true) == 0:
+        raise ValueError("`y_true` must have at least one element.")
+
+    n_obs = len(y_true)
+    n_intervals = len(alphas)
+
+    if len(point_forecast) != n_obs:
+        raise ValueError("`y_true` and `point_forecast` must have the same length.")
+    if lower_bounds.shape != (n_obs, n_intervals):
+        raise ValueError(
+            f"`lower_bounds` must have shape ({n_obs}, {n_intervals}). "
+            f"Got {lower_bounds.shape}."
+        )
+    if upper_bounds.shape != (n_obs, n_intervals):
+        raise ValueError(
+            f"`upper_bounds` must have shape ({n_obs}, {n_intervals}). "
+            f"Got {upper_bounds.shape}."
+        )
+    if np.any((alphas <= 0) | (alphas >= 1)):
+        raise ValueError("All values in `alphas` must be strictly between 0 and 1.")
+    if np.any(upper_bounds < lower_bounds):
+        raise ValueError(
+            "All values in `upper_bounds` must be >= corresponding `lower_bounds`."
+        )
+
+    abs_error = np.abs(y_true - point_forecast)
+    width = upper_bounds - lower_bounds
+    penalty_lower = (2.0 / alphas[np.newaxis, :]) * np.maximum(
+        0.0, lower_bounds - y_true[:, np.newaxis]
+    )
+    penalty_upper = (2.0 / alphas[np.newaxis, :]) * np.maximum(
+        0.0, y_true[:, np.newaxis] - upper_bounds
+    )
+    interval_scores = width + penalty_lower + penalty_upper
+    weighted_sum = np.sum((alphas[np.newaxis, :] / 2.0) * interval_scores, axis=1)
+    wis_per_obs = (1.0 / (n_intervals + 0.5)) * (0.5 * abs_error + weighted_sum)
+
+    return float(np.mean(wis_per_obs))
