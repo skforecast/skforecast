@@ -29,6 +29,7 @@
 [![NumFOCUS Affiliated](https://img.shields.io/badge/NumFOCUS-Affiliated%20Project-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)](https://numfocus.org/sponsored-projects/affiliated-projects)
 [![GC.OS Affiliated](https://img.shields.io/badge/GC.OS-Affiliated%20Project-orange.svg?style=flat&colorA=0eac92&colorB=2077b4)](https://gc-os-ai.github.io/)
 [![Skforecast Studio](https://img.shields.io/badge/Skforecast%20Studio-Launch%20App-f79939?logo=rocket)](https://studio.skforecast.org/)
+[![Skforecast AI](https://img.shields.io/badge/Skforecast%20AI-Documentation-f79939?logo=readthedocs)](https://ai.skforecast.org/)
 
 
 ## About The Project
@@ -45,6 +46,8 @@ Skforecast simplifies time series forecasting with machine learning by providing
 - :building_construction: **Production-ready models** with interpretability and validation methods for backtesting and realistic performance evaluation.
 
 Whether you're building quick prototypes or deploying models in production, skforecast ensures a fast, reliable, and scalable experience.
+
+:sparkles: **Try [skforecast-ai](https://ai.skforecast.org/)**, an **AI forecasting assistant** that pairs a deterministic engine, powered by [**skforecast**](https://skforecast.org/), with an **LLM reasoning layer**.
 
 :computer: **Try [Skforecast Studio](https://studio.skforecast.org/)** — an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
 
@@ -112,6 +115,8 @@ Explore our extensive list of examples and tutorials (English and Spanish) to ge
 ## AI-assisted forecasting
 
 Skforecast includes machine-readable context files so AI assistants (ChatGPT, Claude, Copilot, and others) can generate accurate code. Paste `https://skforecast.org/latest/llms-full.txt` into any LLM, or let your IDE pick up context automatically. Learn more in [AI-assisted forecasting](./quick-start/ai-assisted-forecasting.md).
+
+For an end-to-end workflow, try [**skforecast-ai**](https://ai.skforecast.org/), an **AI forecasting assistant** that pairs a deterministic engine, powered by **skforecast**, with an **LLM reasoning layer**. The source code is available on [GitHub](https://github.com/skforecast/skforecast-ai).
 
 
 ## How to contribute
