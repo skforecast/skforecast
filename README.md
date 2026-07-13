@@ -6,6 +6,7 @@
 | | |
 | --- | --- |
 | Package | ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue) [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/) [![Conda](https://img.shields.io/conda/v/conda-forge/skforecast?logo=Anaconda)](https://anaconda.org/conda-forge/skforecast) [![Downloads](https://static.pepy.tech/badge/skforecast)](https://pepy.tech/project/skforecast) [![Downloads](https://img.shields.io/pypi/dm/skforecast?style=flat-square&color=blue&label=downloads%2Fmonth)](https://pypistats.org/packages/skforecast) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/skforecast/skforecast/graphs/commit-activity) [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) |
+| AI assistant | [![Skforecast AI](https://img.shields.io/badge/Skforecast%20AI-Documentation-f79939?logo=readthedocs)](https://ai.skforecast.org/) [![PyPI](https://img.shields.io/pypi/v/skforecast-ai)](https://pypi.org/project/skforecast-ai/) [![GitHub](https://img.shields.io/badge/GitHub-skforecast--ai-181717?logo=github)](https://github.com/skforecast/skforecast-ai) |
 | App | [![Skforecast Studio](https://img.shields.io/badge/Skforecast%20Studio-Launch%20App-f79939?logo=rocket)](https://studio.skforecast.org/) |
 | Meta | [![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/master/LICENSE) [![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787) [![llms.txt](https://img.shields.io/badge/llms.txt-available-blue)](https://skforecast.org/latest/llms-full.txt) |
 | Testing | [![Build status](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml) [![codecov](https://codecov.io/gh/skforecast/skforecast/branch/master/graph/badge.svg)](https://codecov.io/gh/skforecast/skforecast) |
@@ -42,6 +43,9 @@ Skforecast simplifies time series forecasting with machine learning by providing
 - :building_construction: **Production-ready models** with interpretability and validation methods for backtesting and realistic performance evaluation.
 
 Whether you're building quick prototypes or deploying models in production, skforecast ensures a fast, reliable, and scalable experience.
+
+> [!TIP]
+> :sparkles: **Try [skforecast-ai](https://ai.skforecast.org/)**, an **AI forecasting assistant** that pairs a deterministic engine, powered by [**skforecast**](https://skforecast.org/), with an **LLM reasoning layer**.
 
 > [!TIP]
 > :computer: **Try [Skforecast Studio](https://studio.skforecast.org/)** — an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
@@ -102,6 +106,7 @@ Explore the full capabilities of **skforecast** with our comprehensive documenta
 | :books: [API Reference]                 | Comprehensive reference for skforecast functions and classes |
 | :memo: [Releases]                       | Keep track of major updates and changes |
 | :mag: [More]                            | Discover more about skforecast and its creators |
+| :sparkles: [Skforecast AI]              | Create reproducible forecasts with an AI-assisted workflow |
 | :computer: [Skforecast Studio]          | Build forecasting models visually with no code |
 
 [Introduction to forecasting]: https://skforecast.org/latest/introduction-forecasting/introduction-forecasting.html
@@ -112,6 +117,7 @@ Explore the full capabilities of **skforecast** with our comprehensive documenta
 [API Reference]: https://skforecast.org/latest/api/forecasterrecursive.html
 [Releases]: https://skforecast.org/latest/releases/releases.html
 [More]: https://skforecast.org/latest/more/about-skforecast.html
+[Skforecast AI]: https://ai.skforecast.org/
 [Skforecast Studio]: https://studio.skforecast.org/
 
 
@@ -170,6 +176,8 @@ Explore our extensive list of examples and tutorials (English and Spanish) to ge
 # AI-assisted forecasting
 
 Skforecast includes machine-readable context files so AI assistants (ChatGPT, Claude, Copilot, and others) can generate accurate code. Paste `https://skforecast.org/latest/llms-full.txt` into any LLM, or let your IDE pick up context automatically. Learn more in [AI-assisted forecasting](https://skforecast.org/latest/quick-start/ai-assisted-forecasting.html).
+
+For an end-to-end workflow, try [**skforecast-ai**](https://ai.skforecast.org/), an **AI forecasting assistant** that pairs a deterministic engine, powered by **skforecast**, with an **LLM reasoning layer**. The source code is available on [GitHub](https://github.com/skforecast/skforecast-ai).
 
 
 # How to contribute
