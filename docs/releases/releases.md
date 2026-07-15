@@ -10,6 +10,25 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-fix">Fix</span>                 | Bug fix                               |
 
 
+## 0.24.0 <small>In development</small> { id="0.24.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span> New functions <code>[winkler_score]</code> and <code>[weighted_interval_score]</code> in the <code>[metrics]</code> module to evaluate the quality of prediction intervals. The Winkler score assesses a single interval (balancing sharpness and calibration), while the Weighted Interval Score (WIS) aggregates several intervals together with the median forecast and approximates the CRPS. [User guide](../user_guides/probabilistic-forecasting-metrics.ipynb) ([#1254](https://github.com/skforecast/skforecast/pull/1254))
+
+
+**Added**
+
++ New functions <code>[winkler_score]</code> and <code>[weighted_interval_score]</code> in the <code>[metrics]</code> module to evaluate the quality of prediction intervals. The Winkler score assesses a single interval (balancing sharpness and calibration), while the Weighted Interval Score (WIS) aggregates several intervals together with the median forecast and approximates the CRPS. [User guide](../user_guides/probabilistic-forecasting-metrics.ipynb) ([#1254](https://github.com/skforecast/skforecast/pull/1254))
+
+
+**Changed**
+
+
+**Fixed**
+
+
+
 ## 0.23.0 <small>Jul 8, 2026</small> { id="0.23.0" }
 
 The main changes in this release are:
@@ -1647,6 +1666,12 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [mean_absolute_scaled_error]: ../api/metrics.md#skforecast.metrics.mean_absolute_scaled_error
 [root_mean_squared_scaled_error]: ../api/metrics.md#skforecast.metrics.root_mean_squared_scaled_error
 [symmetric_mean_absolute_percentage_error]: ../api/metrics.md#skforecast.metrics.symmetric_mean_absolute_percentage_error
+[calculate_coverage]: ../api/metrics.md#skforecast.metrics.calculate_coverage
+[crps_from_predictions]: ../api/metrics.md#skforecast.metrics.crps_from_predictions
+[crps_from_quantiles]: ../api/metrics.md#skforecast.metrics.crps_from_quantiles
+[winkler_score]: ../api/metrics.md#skforecast.metrics.winkler_score
+[weighted_interval_score]: ../api/metrics.md#skforecast.metrics.weighted_interval_score
+[create_mean_pinball_loss]: ../api/metrics.md#skforecast.metrics.create_mean_pinball_loss
 [add_y_train_argument]: ../api/metrics.md#skforecast.metrics.add_y_train_argument
 
 <!-- plot -->
