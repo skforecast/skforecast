@@ -6,7 +6,11 @@
 
 ### The Sovereign Tech Fund
 
-**skforecast has been awarded a service agreement by the Sovereign Tech Fund**, a program of the Sovereign Tech Agency, which invests globally in maintaining digital infrastructure via public procurement.
+<a href="https://sovereign.tech" target="_blank" rel="noopener noreferrer" title="Sovereign Tech Agency">
+  <img src="../img/STA-Logo-Default-Color-RGB.png" alt="Sovereign Tech Agency" style="width: 250px; margin-bottom: 1em;">
+</a>
+
+skforecast has been awarded a [service agreement by the Sovereign Tech Fund](https://www.sovereign.tech/tech/skforecast), a program of the Sovereign Tech Agency, which invests globally in maintaining digital infrastructure via public procurement.
 
 Starting in June 2026, this 12-month investment allows the core maintainers to dedicate substantial time and resources to the project, ensuring that the library remains robust, secure, and ready for enterprise-level adoption.
 
