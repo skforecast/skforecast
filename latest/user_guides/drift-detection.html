@@ -9624,11 +9624,11 @@ Any distance greater than $\tau$ indicates a deviation beyond what is expected u
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h4 id="2-monitoring-phase-detecting-drift-in-new-data">2. Monitoring Phase — Detecting Drift in New Data<a class="anchor-link" href="#2-monitoring-phase-detecting-drift-in-new-data">¶</a></h4><p>Once the baseline distribution is established, new data can be continuously evaluated for drift.</p>
 <ol>
-<li><p><strong>Chunk new data</strong><br>
+<li><p><strong>Chunk new data</strong><br/>
 As new observations become available, segment them into chunks of the same length used in the reference phase:
 $$
 \{ C'_1, C'_2, \ldots, C'_m \}
-$$</br></p>
+$$</p>
 </li>
 <li><p><strong>Compute distances to the reference</strong><br/>
 For each new chunk $C'_j$, compute its distance to the reference baseline (either to all reference chunks or to an aggregated representation of the reference distribution).</p>

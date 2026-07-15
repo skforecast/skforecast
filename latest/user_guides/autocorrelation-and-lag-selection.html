@@ -5821,7 +5821,7 @@ set_dark_theme()</div>
 <h2 id="autocorrelation-function-acf">Autocorrelation function (ACF)<a class="anchor-link" href="#autocorrelation-function-acf">¶</a></h2><p>The ACF at lag <em>k</em> measures the <strong>total linear correlation</strong> between $y_t$ and $y_{t-k}$, including any indirect dependence routed through the intermediate lags $y_{t-1}, \dots, y_{t-k+1}$. As a consequence, a single strong dependence on the immediate past propagates and produces non-zero autocorrelation at many subsequent lags.</p>
 <p>A common rule of thumb when identifying a process from its ACF:</p>
 <ul>
-<li>**ACF cuts off sharply after lag *q*** → suggests an MA(q) component.</li>
+<li><strong>ACF cuts off sharply after lag <em>q</em></strong> → suggests an MA(q) component.</li>
 <li><strong>ACF decays slowly</strong> (geometric or oscillating) → suggests an AR or mixed process.</li>
 </ul>
 <p>Below, an AR(1) series with $\phi = 0.7$ is simulated and analysed. The expected pattern is a geometric decay of the ACF.</p>
@@ -5954,7 +5954,7 @@ plt.show()</div>
 <h2 id="partial-autocorrelation-function-pacf">Partial autocorrelation function (PACF)<a class="anchor-link" href="#partial-autocorrelation-function-pacf">¶</a></h2><p>The PACF at lag <em>k</em> measures the linear correlation between $y_t$ and $y_{t-k}$ <strong>after removing the linear effect of all intermediate lags</strong> $y_{t-1}, \dots, y_{t-k+1}$. It isolates the <em>direct</em> contribution of lag <em>k</em>, which is exactly what is needed to choose the order of an autoregressive model.</p>
 <p>Reading rule:</p>
 <ul>
-<li>**PACF cuts off after lag <em>p*** → suggests an AR(p) component (lags 1 to *p</em> are the relevant ones).</li>
+<li><strong>PACF cuts off after lag <em>p</em></strong> → suggests an AR(p) component (lags 1 to <em>p</em> are the relevant ones).</li>
 <li><strong>PACF decays slowly</strong> → suggests an MA or mixed process.</li>
 </ul>
 <p>Below, an AR(2) series is simulated. The expected pattern is two significant PACF coefficients at lags 1 and 2, and everything else inside the white-noise band.</p>
