@@ -2077,6 +2077,7 @@ def bayesian_search_forecaster_multiseries(
     return results, study
 
 
+@manage_warnings
 def bayesian_search_foundation(
     forecaster: object,
     series: pd.Series | pd.DataFrame | dict,
@@ -2101,61 +2102,61 @@ def bayesian_search_foundation(
     object using the optuna library.
 
     Foundation models are zero-shot (no weight training), so only inference-time
-    knobs are tuned. The most impactful parameter is ``context_length``, which
+    knobs are tuned. The most impactful parameter is `context_length`, which
     controls how many past observations are fed to the model; shorter contexts
     reduce memory and latency while potentially sacrificing accuracy. Additional
     adapter-specific parameters may be tuned (see Notes).
 
     For each trial, the sampled configuration is applied via
-    ``forecaster.set_params(sample)`` and evaluated with
-    ``backtesting_foundation``. Returns a ranked results DataFrame and the
-    optuna ``Study`` object (same output contract as the other search functions).
+    `forecaster.set_params(sample)` and evaluated with
+    `backtesting_foundation`. Returns a ranked results DataFrame and the
+    optuna `Study` object (same output contract as the other search functions).
 
-    Only ``TimeSeriesFold`` is supported; ``OneStepAheadFold`` is incompatible
+    Only `TimeSeriesFold` is supported; `OneStepAheadFold` is incompatible
     with zero-shot foundation semantics.
 
     Parameters
     ----------
     forecaster : ForecasterFoundation
-        Forecaster model. Must be a ``ForecasterFoundation`` instance.
+        Forecaster model. Must be a `ForecasterFoundation` instance.
     series : pandas Series, pandas DataFrame, dict
-        Training time series. Passed directly to ``backtesting_foundation``.
+        Training time series. Passed directly to `backtesting_foundation`.
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data into
-        folds. ``OneStepAheadFold`` is not accepted and raises ``TypeError``.
+        folds. `OneStepAheadFold` is not accepted and raises `TypeError`.
     search_space : Callable
-        Function with argument ``trial`` which returns a dictionary with parameter
-        names (``str``) as keys and Trial object from optuna
-        (``trial.suggest_float``, ``trial.suggest_int``,
-        ``trial.suggest_categorical``) as values. All keys must match the names
-        passed to the suggest calls (``trial.params`` keys).
+        Function with argument `trial` which returns a dictionary with parameter
+        names (`str`) as keys and Trial object from optuna
+        (`trial.suggest_float`, `trial.suggest_int`,
+        `trial.suggest_categorical`) as values. All keys must match the names
+        passed to the suggest calls (`trial.params` keys).
 
         Tunable parameters per adapter:
 
-        - All adapters: ``context_length`` (int or categorical list).
-        - ChronosAdapter: ``cross_learning`` (bool).
-        - TabICLAdapter, TabPFNAdapter: ``point_estimate`` (str),
-          ``temporal_features`` (bool).
-        - TabPFNAdapter: ``mode`` (str).
-        - TimesFMAdapter: ``max_horizon`` (int).
+        - All adapters: `context_length` (int or categorical list).
+        - ChronosAdapter: `cross_learning` (bool).
+        - TabICLAdapter, TabPFNAdapter: `point_estimate` (str),
+          `temporal_features` (bool).
+        - TabPFNAdapter: `mode` (str).
+        - TimesFMAdapter: `max_horizon` (int).
 
-        Note: changing ``model_id``, device arguments, or ``torch_dtype``
+        Note: changing `model_id`, device arguments, or `torch_dtype`
         forces a full model reload and is expensive. On TimesFM and Moirai,
-        changing ``context_length`` also forces a reload.
+        changing `context_length` also forces a reload.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
 
-        - If ``str``: ``{'mean_squared_error', 'mean_absolute_error',
+        - If `str`: `{'mean_squared_error', 'mean_absolute_error',
           'mean_absolute_percentage_error', 'mean_squared_log_error',
-          'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}``.
-        - If ``Callable``: Function with arguments ``y_true``, ``y_pred`` and
-          ``y_train`` (optional) that returns a float.
-        - If ``list``: List containing multiple strings and/or callables.
+          'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}`.
+        - If `Callable`: Function with arguments `y_true`, `y_pred` and
+          `y_train` (optional) that returns a float.
+        - If `list`: List containing multiple strings and/or callables.
     aggregate_metric : str, list, default None
         Aggregation method(s) used to combine the metric(s) of all levels (series)
         when multiple levels are predicted. If list, the first aggregation method
-        is used to select the best parameters. If ``None``,
-        ``['weighted_average', 'average', 'pooling']`` is used.
+        is used to select the best parameters. If `None`,
+        `['weighted_average', 'average', 'pooling']` is used.
 
         - 'average': the arithmetic mean of all levels.
         - 'weighted_average': the mean weighted by the number of predicted values
@@ -2163,39 +2164,39 @@ def bayesian_search_foundation(
         - 'pooling': values of all levels are pooled and then the metric is
           calculated.
     levels : str, list, default None
-        Level(s) at which the forecaster is optimized. If ``None``, all levels
-        present in ``series`` are used.
+        Level(s) at which the forecaster is optimized. If `None`, all levels
+        present in `series` are used.
     exog : pandas Series, pandas DataFrame, dict, default None
-        Exogenous variables. Passed directly to ``backtesting_foundation``.
+        Exogenous variables. Passed directly to `backtesting_foundation`.
     n_trials : int, default 20
         Number of parameter settings sampled. The first trials are random
-        (controlled by optuna's ``n_startup_trials``); the TPE sampler guides
+        (controlled by optuna's `n_startup_trials`); the TPE sampler guides
         the search from trial 11 onward. For meaningful Bayesian optimization,
-        ``n_trials`` should be significantly larger than 10.
+        `n_trials` should be significantly larger than 10.
     random_state : int, default 123
         Seed for the TPE sampler for reproducible output. When a custom sampler
-        is passed in ``kwargs_create_study``, the seed must be set within that
+        is passed in `kwargs_create_study`, the seed must be set within that
         sampler.
     return_best : bool, default True
-        Refit the original ``forecaster`` using the best-found parameters on the
+        Refit the original `forecaster` using the best-found parameters on the
         whole data set after the search.
     verbose : bool, default False
         Print number of folds used for cross-validation.
     show_progress : bool, default True
         Whether to show a progress bar.
     suppress_warnings : bool, default False
-        If ``True``, skforecast warnings will be suppressed during the search.
-        See ``skforecast.exceptions.warn_skforecast_categories`` for details.
+        If `True`, skforecast warnings will be suppressed during the search.
+        See `skforecast.exceptions.warn_skforecast_categories` for details.
     output_file : str, default None
         Filename or full path where optuna logging output should be saved. If
-        ``None``, logging output is not redirected.
+        `None`, logging output is not redirected.
     kwargs_create_study : dict, default None
-        Additional keyword arguments passed to ``optuna.create_study()``. If not
+        Additional keyword arguments passed to `optuna.create_study()`. If not
         provided, direction is set to 'minimize' for regression tasks, and a
-        ``TPESampler(multivariate=True, group=True, seed=random_state)`` sampler
+        `TPESampler(multivariate=True, group=True, seed=random_state)` sampler
         is used.
     kwargs_study_optimize : dict, default None
-        Additional keyword arguments passed to ``study.optimize()``.
+        Additional keyword arguments passed to `study.optimize()`.
 
     Returns
     -------
@@ -2203,15 +2204,15 @@ def bayesian_search_foundation(
         Results for each combination of parameters, sorted by the first metric.
 
         - column trial_number: optuna trial number. Use
-          ``study.trials[trial_number]`` to access the full optuna trial object.
+          `study.trials[trial_number]` to access the full optuna trial object.
         - column levels: levels evaluated in each trial.
         - column params: parameter configuration for each trial.
         - column metric: metric value estimated for each trial.
         - additional columns with one column per searched parameter (expanded
-          from ``params``).
+          from `params`).
     study : optuna Study
         The optuna study object containing all optimization trials. Access the
-        best trial via ``study.best_trial``.
+        best trial via `study.best_trial`.
 
     """
 
