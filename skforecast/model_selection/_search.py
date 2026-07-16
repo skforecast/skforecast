@@ -21,9 +21,10 @@ from sklearn.model_selection import ParameterGrid, ParameterSampler
 from ..exceptions import warn_skforecast_categories
 from ..model_selection._split import TimeSeriesFold, OneStepAheadFold
 from ..model_selection._validation import (
-    backtesting_forecaster, 
+    backtesting_forecaster,
     backtesting_forecaster_multiseries,
-    backtesting_stats
+    backtesting_stats,
+    backtesting_foundation
 )
 from ..metrics import add_y_train_argument, _get_metric
 from ..model_selection._utils import (
@@ -2070,6 +2071,365 @@ def bayesian_search_forecaster_multiseries(
                 f"  Parameters: {best_params}\n"
                 f"  {'Backtesting' if cv_name == 'TimeSeriesFold' else 'One-step-ahead'} "
                 f"metric: {best_metric}\n"
+                f"  Levels: {levels_print}"
+            )
+
+    return results, study
+
+
+def bayesian_search_foundation(
+    forecaster: object,
+    series: pd.Series | pd.DataFrame | dict,
+    cv: TimeSeriesFold,
+    search_space: Callable,
+    metric: str | Callable | list[str | Callable],
+    aggregate_metric: str | list[str] | None = None,
+    levels: str | list[str] | None = None,
+    exog: pd.Series | pd.DataFrame | dict | None = None,
+    n_trials: int = 20,
+    random_state: int = 123,
+    return_best: bool = True,
+    verbose: bool = False,
+    show_progress: bool = True,
+    suppress_warnings: bool = False,
+    output_file: str | None = None,
+    kwargs_create_study: dict | None = None,
+    kwargs_study_optimize: dict | None = None,
+) -> tuple[pd.DataFrame, object]:
+    """
+    Bayesian search for inference-time configuration of a ForecasterFoundation
+    object using the optuna library.
+
+    Foundation models are zero-shot (no weight training), so only inference-time
+    knobs are tuned. The most impactful parameter is ``context_length``, which
+    controls how many past observations are fed to the model; shorter contexts
+    reduce memory and latency while potentially sacrificing accuracy. Additional
+    adapter-specific parameters may be tuned (see Notes).
+
+    For each trial, the sampled configuration is applied via
+    ``forecaster.set_params(sample)`` and evaluated with
+    ``backtesting_foundation``. Returns a ranked results DataFrame and the
+    optuna ``Study`` object (same output contract as the other search functions).
+
+    Only ``TimeSeriesFold`` is supported; ``OneStepAheadFold`` is incompatible
+    with zero-shot foundation semantics.
+
+    Parameters
+    ----------
+    forecaster : ForecasterFoundation
+        Forecaster model. Must be a ``ForecasterFoundation`` instance.
+    series : pandas Series, pandas DataFrame, dict
+        Training time series. Passed directly to ``backtesting_foundation``.
+    cv : TimeSeriesFold
+        TimeSeriesFold object with the information needed to split the data into
+        folds. ``OneStepAheadFold`` is not accepted and raises ``TypeError``.
+    search_space : Callable
+        Function with argument ``trial`` which returns a dictionary with parameter
+        names (``str``) as keys and Trial object from optuna
+        (``trial.suggest_float``, ``trial.suggest_int``,
+        ``trial.suggest_categorical``) as values. All keys must match the names
+        passed to the suggest calls (``trial.params`` keys).
+
+        Tunable parameters per adapter:
+
+        - All adapters: ``context_length`` (int or categorical list).
+        - ChronosAdapter: ``cross_learning`` (bool).
+        - TabICLAdapter, TabPFNAdapter: ``point_estimate`` (str),
+          ``temporal_features`` (bool).
+        - TabPFNAdapter: ``mode`` (str).
+        - TimesFMAdapter: ``max_horizon`` (int).
+
+        Note: changing ``model_id``, device arguments, or ``torch_dtype``
+        forces a full model reload and is expensive. On TimesFM and Moirai,
+        changing ``context_length`` also forces a reload.
+    metric : str, Callable, list
+        Metric used to quantify the goodness of fit of the model.
+
+        - If ``str``: ``{'mean_squared_error', 'mean_absolute_error',
+          'mean_absolute_percentage_error', 'mean_squared_log_error',
+          'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}``.
+        - If ``Callable``: Function with arguments ``y_true``, ``y_pred`` and
+          ``y_train`` (optional) that returns a float.
+        - If ``list``: List containing multiple strings and/or callables.
+    aggregate_metric : str, list, default None
+        Aggregation method(s) used to combine the metric(s) of all levels (series)
+        when multiple levels are predicted. If list, the first aggregation method
+        is used to select the best parameters. If ``None``,
+        ``['weighted_average', 'average', 'pooling']`` is used.
+
+        - 'average': the arithmetic mean of all levels.
+        - 'weighted_average': the mean weighted by the number of predicted values
+          of each level.
+        - 'pooling': values of all levels are pooled and then the metric is
+          calculated.
+    levels : str, list, default None
+        Level(s) at which the forecaster is optimized. If ``None``, all levels
+        present in ``series`` are used.
+    exog : pandas Series, pandas DataFrame, dict, default None
+        Exogenous variables. Passed directly to ``backtesting_foundation``.
+    n_trials : int, default 20
+        Number of parameter settings sampled. The first trials are random
+        (controlled by optuna's ``n_startup_trials``); the TPE sampler guides
+        the search from trial 11 onward. For meaningful Bayesian optimization,
+        ``n_trials`` should be significantly larger than 10.
+    random_state : int, default 123
+        Seed for the TPE sampler for reproducible output. When a custom sampler
+        is passed in ``kwargs_create_study``, the seed must be set within that
+        sampler.
+    return_best : bool, default True
+        Refit the original ``forecaster`` using the best-found parameters on the
+        whole data set after the search.
+    verbose : bool, default False
+        Print number of folds used for cross-validation.
+    show_progress : bool, default True
+        Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If ``True``, skforecast warnings will be suppressed during the search.
+        See ``skforecast.exceptions.warn_skforecast_categories`` for details.
+    output_file : str, default None
+        Filename or full path where optuna logging output should be saved. If
+        ``None``, logging output is not redirected.
+    kwargs_create_study : dict, default None
+        Additional keyword arguments passed to ``optuna.create_study()``. If not
+        provided, direction is set to 'minimize' for regression tasks, and a
+        ``TPESampler(multivariate=True, group=True, seed=random_state)`` sampler
+        is used.
+    kwargs_study_optimize : dict, default None
+        Additional keyword arguments passed to ``study.optimize()``.
+
+    Returns
+    -------
+    results : pandas DataFrame
+        Results for each combination of parameters, sorted by the first metric.
+
+        - column trial_number: optuna trial number. Use
+          ``study.trials[trial_number]`` to access the full optuna trial object.
+        - column levels: levels evaluated in each trial.
+        - column params: parameter configuration for each trial.
+        - column metric: metric value estimated for each trial.
+        - additional columns with one column per searched parameter (expanded
+          from ``params``).
+    study : optuna Study
+        The optuna study object containing all optimization trials. Access the
+        best trial via ``study.best_trial``.
+
+    """
+
+    forecaster_search = deepcopy_forecaster(forecaster)
+
+    if type(forecaster).__name__ != "ForecasterFoundation":
+        raise TypeError(
+            f"`forecaster` must be a `ForecasterFoundation` instance. "
+            f"Got {type(forecaster).__name__}."
+        )
+
+    if type(cv).__name__ != "TimeSeriesFold":
+        raise TypeError(
+            f"`cv` must be a `TimeSeriesFold` instance. Got {type(cv).__name__}. "
+            f"`OneStepAheadFold` is not supported for `ForecasterFoundation`."
+        )
+
+    if aggregate_metric is None:
+        aggregate_metric = ["weighted_average", "average", "pooling"]
+    if isinstance(aggregate_metric, str):
+        aggregate_metric = [aggregate_metric]
+    allowed_aggregate_metrics = ["average", "weighted_average", "pooling"]
+    if not set(aggregate_metric).issubset(allowed_aggregate_metrics):
+        raise ValueError(
+            f"Allowed `aggregate_metric` are: {allowed_aggregate_metrics}. "
+            f"Got: {aggregate_metric}."
+        )
+
+    if not isinstance(metric, list):
+        metric = [metric]
+    metric = [
+        _get_metric(metric=m) if isinstance(m, str) else add_y_train_argument(m)
+        for m in metric
+    ]
+    metric_names = [(m if isinstance(m, str) else m.__name__) for m in metric]
+    if len(metric_names) != len(set(metric_names)):
+        raise ValueError(
+            "When `metric` is a `list`, each metric name must be unique."
+        )
+
+    if isinstance(series, pd.Series):
+        levels_resolved = [series.name]
+    else:
+        levels_resolved = _initialize_levels_model_selection_multiseries(
+            forecaster=forecaster_search,
+            series=series,
+            levels=levels,
+        )
+
+    add_aggregated_metric = len(levels_resolved) > 1
+    if add_aggregated_metric:
+        metric_names = [
+            f"{metric_name}__{aggregation}"
+            for metric_name in metric_names
+            for aggregation in aggregate_metric
+        ]
+
+    def _objective(
+        trial,
+        search_space=search_space,
+        forecaster_search=forecaster_search,
+        series=series,
+        cv=cv,
+        exog=exog,
+        levels=levels_resolved,
+        metric=metric,
+        metric_names=metric_names,
+        add_aggregated_metric=add_aggregated_metric,
+        aggregate_metric=aggregate_metric,
+        verbose=verbose,
+        suppress_warnings=suppress_warnings,
+    ) -> float:
+
+        sample = search_space(trial)
+        if sample.keys() != trial.params.keys():
+            raise ValueError(
+                f"`search_space` dict keys must match the names passed to "
+                f"`trial.suggest_*()`.\n"
+                f"  Dict keys    : {list(sample.keys())}\n"
+                f"  Suggest names: {list(trial.params.keys())}"
+            )
+
+        adapter = forecaster_search.estimator.adapter
+        _valid_params = set(adapter.get_params().keys())
+        _invalid = set(sample.keys()) - _valid_params
+        if _invalid:
+            raise ValueError(
+                f"The following keys in `search_space` are not valid parameters "
+                f"for {type(adapter).__name__}: {sorted(_invalid)}. Valid "
+                f"parameters are: {sorted(_valid_params)}."
+            )
+
+        forecaster_search.set_params(sample)
+
+        metrics, _ = backtesting_foundation(
+            forecaster=forecaster_search,
+            series=series,
+            cv=cv,
+            exog=exog,
+            levels=levels,
+            metric=metric,
+            add_aggregated_metric=add_aggregated_metric,
+            verbose=verbose,
+            show_progress=False,
+            suppress_warnings=suppress_warnings,
+        )
+
+        if "levels" in metrics.columns:
+            if add_aggregated_metric:
+                metrics = metrics.loc[metrics["levels"].isin(aggregate_metric), :]
+            else:
+                metrics = metrics.loc[metrics["levels"] == levels[0], :]
+            metrics = pd.DataFrame(
+                data=[metrics.iloc[:, 1:].transpose().stack().to_numpy()],
+                columns=metric_names,
+            )
+        else:
+            metrics = pd.DataFrame(
+                data=[metrics.values.ravel()],
+                columns=metric_names,
+            )
+        metrics = metrics.reset_index(drop=True)
+
+        for m_name in metric_names:
+            trial.set_user_attr(m_name, float(metrics.loc[0, m_name]))
+
+        return metrics.loc[0, metric_names[0]]
+
+    is_regression = (
+        forecaster_search.__skforecast_tags__["forecaster_task"] == "regression"
+    )
+    kwargs_create_study = (
+        kwargs_create_study.copy() if kwargs_create_study is not None else {}
+    )
+    if "direction" not in kwargs_create_study:
+        kwargs_create_study["direction"] = "minimize" if is_regression else "maximize"
+    if "sampler" not in kwargs_create_study:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message=".*multivariate.*|.*group.*")
+            kwargs_create_study["sampler"] = TPESampler(
+                multivariate=True, group=True, seed=random_state
+            )
+
+    kwargs_study_optimize = (
+        kwargs_study_optimize.copy() if kwargs_study_optimize is not None else {}
+    )
+    if show_progress:
+        kwargs_study_optimize["show_progress_bar"] = True
+    else:
+        kwargs_study_optimize.setdefault("show_progress_bar", False)
+
+    if output_file is not None:
+        optuna.logging.disable_default_handler()
+        logger = logging.getLogger("optuna")
+        logger.setLevel(logging.INFO)
+        for handler in logger.handlers.copy():
+            if isinstance(handler, logging.StreamHandler):
+                logger.removeHandler(handler)
+        handler = logging.FileHandler(output_file, mode="w")
+        logger.addHandler(handler)
+    else:
+        logging.getLogger("optuna").setLevel(logging.WARNING)
+        optuna.logging.disable_default_handler()
+
+    study = optuna.create_study(**kwargs_create_study)
+
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=UserWarning,
+                message="Choices for a categorical distribution should be*",
+            )
+            study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
+    finally:
+        if output_file is not None:
+            handler.close()
+            logger.removeHandler(handler)
+
+    trial_number_list = []
+    params_list = []
+    metrics_data = []
+    for trial in study.get_trials(states=[TrialState.COMPLETE]):
+        trial_number_list.append(trial.number)
+        params_list.append(trial.params)
+        metrics_data.append({m_name: trial.user_attrs[m_name] for m_name in metric_names})
+
+    results = pd.DataFrame(metrics_data)
+    results.insert(0, "trial_number", trial_number_list)
+    results.insert(1, "levels", [levels_resolved] * len(results))
+    results.insert(2, "params", params_list)
+    results = (
+        results.sort_values(
+            by=metric_names[0], ascending=True if is_regression else False
+        )
+        .reset_index(drop=True)
+    )
+    results = pd.concat([results, results["params"].apply(pd.Series)], axis=1)
+
+    if return_best:
+
+        best_params = results.loc[0, "params"]
+        best_metric = results.loc[0, metric_names[0]]
+
+        forecaster.set_params(best_params)
+        forecaster.fit(series=series, exog=exog)
+
+        if verbose:
+            levels_print = (
+                levels_resolved[:10] + ["..."] + levels_resolved[-10:]
+                if len(levels_resolved) > 20
+                else levels_resolved
+            )
+            print(
+                f"`Forecaster` refitted using the best-found parameters, "
+                f"and the whole data set: \n"
+                f"  Parameters: {best_params}\n"
+                f"  Backtesting metric: {best_metric}\n"
                 f"  Levels: {levels_print}"
             )
 
