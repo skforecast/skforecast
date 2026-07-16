@@ -79,13 +79,12 @@ class FoundationModel:
 
         - `TabICLAdapter`: `context_length` (int), `point_estimate` (str),
           `tabicl_config` (dict), `temporal_features` (list),
-          `show_progress` (bool, default `True`; set to `False` to suppress
-          the ``GPU 0:`` tqdm bar emitted during inference).
+          `show_progress` (bool, default `False`; set to `True` to show
+          the tqdm bar emitted during inference).
         - `TabPFNAdapter`: `context_length` (int), `mode` (str),
           `point_estimate` (str), `tabpfn_model_config` (dict),
-          `temporal_features` (list), `show_progress` (bool, default `True`;
-          set to `False` to suppress the ``Predicting time series:`` / ``GPU
-          0:`` tqdm bar emitted during inference).
+          `temporal_features` (list), `show_progress` (bool, default `False`;
+          set to `True` to show the tqdm bar emitted during inference).
 
     Attributes
     ----------

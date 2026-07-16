@@ -1442,9 +1442,9 @@ class TabICLAdapter:
         -------
         params : dict
             Keys: `model_id`, `context_length`, `point_estimate`,
-            `tabicl_config`, `temporal_features`. `tabicl_config` is
-            returned as `None` when no additional config was set (i.e.
-            when the internal dict is empty).
+            `tabicl_config`, `temporal_features`, `show_progress`.
+            `tabicl_config` is returned as `None` when no additional
+            config was set (i.e. when the internal dict is empty).
 
         """
         return {
@@ -1458,15 +1458,15 @@ class TabICLAdapter:
 
     def set_params(self, **params) -> TabICLAdapter:
         """
-        Set adapter parameters. Resets the model when any parameter changes,
-        since the `TabICLForecaster` is instantiated lazily on the first
-        `predict` call using the current adapter state.
+        Set adapter parameters. Resets the model when a parameter that affects
+        the `TabICLForecaster` instance changes; toggling `show_progress` does
+        not reset the model.
 
         Parameters
         ----------
         **params :
             Valid keys: `model_id`, `context_length`, `point_estimate`,
-            `tabicl_config`, `temporal_features`.
+            `tabicl_config`, `temporal_features`, `show_progress`.
 
         Returns
         -------
@@ -2142,7 +2142,7 @@ class TabPFNAdapter:
             elif key == "show_progress":
                 if not isinstance(value, bool):
                     raise ValueError(
-                        f"`show_progress` must be a bool. Got {type(value)}."
+                        f"`show_progress` must be a bool. Got {value!r}."
                     )
                 validated[key] = value
             else:
