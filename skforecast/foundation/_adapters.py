@@ -11,6 +11,8 @@
 
 from __future__ import annotations
 from typing import Any
+import contextlib
+import io
 import numpy as np
 import pandas as pd
 import warnings
@@ -1311,6 +1313,9 @@ class TabICLAdapter:
         inference. If `None`, TabICL uses its default transforms:
         `[IndexEncoder(), DatetimeEncoder(), AutoPeriodicEncoder()]`. Pass
         an empty list to disable all temporal feature engineering.
+    show_progress : bool, default False
+        If `False`, the tqdm progress bar emitted by the underlying TabICL
+        dispatch loop (`GPU 0: ...`) is suppressed.
 
     Attributes
     ----------
@@ -1328,6 +1333,8 @@ class TabICLAdapter:
         Additional configuration forwarded to `TabICLRegressor`.
     temporal_features : list
         Temporal feature transforms applied to the series.
+    show_progress : bool
+        Whether the TabICL dispatch progress bar is shown.
     is_fitted : bool
         Whether the adapter has been fitted.
     _model : object
@@ -1370,6 +1377,7 @@ class TabICLAdapter:
         point_estimate: str = "mean",
         tabicl_config: dict[str, Any] | None = None,
         temporal_features: list[Any] | None = None,
+        show_progress: bool = False,
     ) -> None:
         """
         Initialise the adapter.
@@ -1399,6 +1407,10 @@ class TabICLAdapter:
             List of `TimeTransform` instances applied before inference. If
             `None`, TabICL uses its defaults. Pass `[]` to disable all
             temporal feature engineering.
+        show_progress : bool, default False
+            If `False`, the tqdm progress bar emitted by the underlying
+            TabICL dispatch loop (`GPU 0: ...`) is suppressed by
+            redirecting stderr during the `predict_df` call.
 
         """
 
@@ -1419,6 +1431,7 @@ class TabICLAdapter:
         self.point_estimate    = point_estimate
         self.tabicl_config     = dict(tabicl_config) if tabicl_config else {}
         self.temporal_features = temporal_features
+        self.show_progress     = show_progress
         self.is_fitted         = False
 
     def get_params(self) -> dict:
@@ -1440,6 +1453,7 @@ class TabICLAdapter:
             "point_estimate":    self.point_estimate,
             "tabicl_config":     self.tabicl_config or None,
             "temporal_features": self.temporal_features,
+            "show_progress":     self.show_progress,
         }
 
     def set_params(self, **params) -> TabICLAdapter:
@@ -1462,7 +1476,7 @@ class TabICLAdapter:
 
         valid = {
             "model_id", "context_length", "point_estimate",
-            "tabicl_config", "temporal_features",
+            "tabicl_config", "temporal_features", "show_progress",
         }
         invalid = set(params) - valid
         if invalid:
@@ -1487,15 +1501,23 @@ class TabICLAdapter:
                 validated[key] = value
             elif key == "tabicl_config":
                 validated[key] = dict(value) if value else {}
+            elif key == "show_progress":
+                if not isinstance(value, bool):
+                    raise ValueError(
+                        f"`show_progress` must be a bool. Got {value!r}."
+                    )
+                validated[key] = value
             else:
                 validated[key] = value
 
+        model_reset_keys = {"model_id", "context_length", "point_estimate", "tabicl_config", "temporal_features"}
         actually_changed = {
             k: v for k, v in validated.items()
             if getattr(self, k) != v
         }
         if actually_changed:
-            self._model = None
+            if actually_changed.keys() & model_reset_keys:
+                self._model = None
             for key, value in actually_changed.items():
                 setattr(self, key, value)
 
@@ -1613,11 +1635,17 @@ class TabICLAdapter:
                         is_datetime  = is_datetime
                     )
 
-        result_df = self._model.predict_df(
-                        context_df = context_df,
-                        future_df  = future_df,
-                        quantiles  = tabicl_quantiles,
-                    )
+        _stderr_cm = (
+            contextlib.redirect_stderr(io.StringIO())
+            if not self.show_progress
+            else contextlib.nullcontext()
+        )
+        with _stderr_cm:
+            result_df = self._model.predict_df(
+                            context_df = context_df,
+                            future_df  = future_df,
+                            quantiles  = tabicl_quantiles,
+                        )
 
         # result_df is a plain DataFrame with MultiIndex (item_id, timestamp).
         # columns: "target" (str) and quantile levels as float column names.
@@ -1903,6 +1931,10 @@ class TabPFNAdapter:
         before inference. If `None`, TabPFN-TS uses its default transforms:
         `[RunningIndexFeature(), CalendarFeature(), AutoSeasonalFeature()]`.
         Pass an empty list to disable all temporal feature engineering.
+    show_progress : bool, default False
+        If `False`, the tqdm progress bar emitted by the underlying TabPFN-TS
+        dispatch loop (`Predicting time series: ...` on CPU, `GPU 0: ...` on
+        GPU) is suppressed.
 
     Attributes
     ----------
@@ -1922,6 +1954,8 @@ class TabPFNAdapter:
         Additional configuration forwarded to the TabPFN regressor.
     temporal_features : list
         Temporal feature transforms applied to the series.
+    show_progress : bool
+        Whether the tqdm progress bar is shown during inference.
     is_fitted : bool
         Whether the adapter has been fitted.
     _model : object
@@ -1964,6 +1998,7 @@ class TabPFNAdapter:
         point_estimate: str = "median",
         tabpfn_model_config: dict[str, Any] | None = None,
         temporal_features: list[Any] | None = None,
+        show_progress: bool = False,
     ) -> None:
         """
         Initialise the adapter.
@@ -1995,6 +2030,10 @@ class TabPFNAdapter:
             List of `FeatureGenerator` instances applied before inference.
             If `None`, TabPFN-TS uses its defaults. Pass `[]` to disable all
             temporal feature engineering.
+        show_progress : bool, default False
+            If `False`, the tqdm progress bar emitted by the underlying
+            TabPFN-TS dispatch loop (`Predicting time series: ...` on CPU,
+            `GPU 0: ...` on GPU) is suppressed.
 
         """
 
@@ -2021,6 +2060,7 @@ class TabPFNAdapter:
         self.point_estimate      = point_estimate
         self.tabpfn_model_config = dict(tabpfn_model_config) if tabpfn_model_config else {}
         self.temporal_features   = temporal_features
+        self.show_progress       = show_progress
         self.is_fitted           = False
 
     def get_params(self) -> dict:
@@ -2031,9 +2071,9 @@ class TabPFNAdapter:
         -------
         params : dict
             Keys: `model_id`, `context_length`, `mode`, `point_estimate`,
-            `tabpfn_model_config`, `temporal_features`. `tabpfn_model_config`
-            is returned as `None` when no additional config was set (i.e.
-            when the internal dict is empty).
+            `tabpfn_model_config`, `temporal_features`, `show_progress`.
+            `tabpfn_model_config` is returned as `None` when no additional
+            config was set (i.e. when the internal dict is empty).
 
         """
         return {
@@ -2043,19 +2083,21 @@ class TabPFNAdapter:
             "point_estimate":      self.point_estimate,
             "tabpfn_model_config": self.tabpfn_model_config or None,
             "temporal_features":   self.temporal_features,
+            "show_progress":       self.show_progress,
         }
 
     def set_params(self, **params) -> TabPFNAdapter:
         """
-        Set adapter parameters. Resets the model when any parameter changes,
-        since the `TabPFNTSPipeline` is instantiated lazily on the first
-        `predict` call using the current adapter state.
+        Set adapter parameters. Resets the model when a parameter that affects
+        the `TabPFNTSPipeline` instance changes; toggling `show_progress` does
+        not reset the model.
 
         Parameters
         ----------
         **params :
             Valid keys: `model_id`, `context_length`, `mode`,
-            `point_estimate`, `tabpfn_model_config`, `temporal_features`.
+            `point_estimate`, `tabpfn_model_config`, `temporal_features`,
+            `show_progress`.
 
         Returns
         -------
@@ -2065,7 +2107,7 @@ class TabPFNAdapter:
 
         valid = {
             "model_id", "context_length", "mode", "point_estimate",
-            "tabpfn_model_config", "temporal_features",
+            "tabpfn_model_config", "temporal_features", "show_progress",
         }
         invalid = set(params) - valid
         if invalid:
@@ -2097,15 +2139,26 @@ class TabPFNAdapter:
                 validated[key] = value
             elif key == "tabpfn_model_config":
                 validated[key] = dict(value) if value else {}
+            elif key == "show_progress":
+                if not isinstance(value, bool):
+                    raise ValueError(
+                        f"`show_progress` must be a bool. Got {type(value)}."
+                    )
+                validated[key] = value
             else:
                 validated[key] = value
 
+        model_reset_keys = {
+            "model_id", "context_length", "mode", "point_estimate",
+            "tabpfn_model_config", "temporal_features",
+        }
         actually_changed = {
             k: v for k, v in validated.items()
             if getattr(self, k) != v
         }
         if actually_changed:
-            self._model = None
+            if actually_changed.keys() & model_reset_keys:
+                self._model = None
             for key, value in actually_changed.items():
                 setattr(self, key, value)
 
@@ -2223,11 +2276,17 @@ class TabPFNAdapter:
                         is_datetime  = is_datetime
                     )
 
-        result_df = self._model.predict_df(
-                        context_df = context_df,
-                        future_df  = future_df,
-                        quantiles  = tabpfn_quantiles,
-                    )
+        _stderr_cm = (
+            contextlib.redirect_stderr(io.StringIO())
+            if not self.show_progress
+            else contextlib.nullcontext()
+        )
+        with _stderr_cm:
+            result_df = self._model.predict_df(
+                            context_df = context_df,
+                            future_df  = future_df,
+                            quantiles  = tabpfn_quantiles,
+                        )
 
         # result_df is a DataFrame with MultiIndex (item_id, timestamp).
         # columns: "target" (str) and quantile levels as float column names.
