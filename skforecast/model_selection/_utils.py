@@ -905,6 +905,7 @@ def _extract_data_folds_multiseries(
     window_size: int,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     dropna_last_window: bool = False,
+    min_non_nan_last_window: int | None = None,
     externally_fitted: bool = False
 ) -> Generator[
         tuple[
@@ -936,7 +937,18 @@ def _extract_data_folds_multiseries(
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
     dropna_last_window : bool, default False
-        If `True`, drop the columns of the last window that have NaN values.
+        If `True`, drop levels (columns) from the last window according to the
+        NaN policy described in `min_non_nan_last_window`.
+    min_non_nan_last_window : int, default None
+        Minimum number of non-NaN values required in the last window to keep a
+        level when `dropna_last_window=True`.
+
+        - If `None`, drop a level if it contains any NaN (`how="any"`).
+        - If `int`, drop a level only when its non-NaN count is strictly less
+        than `min_non_nan_last_window`.
+
+        Ignored when `dropna_last_window=False`.
+        **New in version 0.24.0**
     externally_fitted : bool, default False
         Flag indicating whether the forecaster is already trained. Only used when 
         `initial_train_size` is None and `refit` is False.
@@ -1021,9 +1033,29 @@ def _extract_data_folds_multiseries(
             series_last_window = pd.DataFrame(series_last_window)
 
         if dropna_last_window:
-            series_last_window = series_last_window.dropna(axis=1, how="any")
-            # TODO: add the option to drop the series without minimum non NaN values.
-            # Similar to how pandas does in the rolling window function.
+            if min_non_nan_last_window is None:
+                series_last_window = series_last_window.dropna(axis=1, how="any")
+            else:
+                if not isinstance(min_non_nan_last_window, (int, np.integer)):
+                    raise TypeError(
+                        f"`min_non_nan_last_window` must be an integer greater than "
+                        f"or equal to 1, or `None`. Got {min_non_nan_last_window}."
+                    )
+                if min_non_nan_last_window < 1:
+                    raise ValueError(
+                        f"`min_non_nan_last_window` must be an integer greater than "
+                        f"or equal to 1, or `None`. Got {min_non_nan_last_window}."
+                    )
+                last_window_length = len(series_last_window)
+                if min_non_nan_last_window > last_window_length:
+                    raise ValueError(
+                        f"`min_non_nan_last_window` ({min_non_nan_last_window}) cannot "
+                        f"be greater than the last window length ({last_window_length})."
+                    )
+                non_nan_count = series_last_window.notna().sum(axis=0)
+                series_last_window = series_last_window.loc[
+                    :, non_nan_count >= min_non_nan_last_window
+                ]
         
         levels_last_window = list(series_last_window.columns)
 

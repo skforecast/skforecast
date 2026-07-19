@@ -136,7 +136,21 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         - If `True`, drop NaNs in `X_train` and same rows in `y_train`.
         - If `False`, leave NaNs in `X_train` and warn the user.
+
+        Also controls whether levels with NaNs in the last window are dropped
+        during multiseries backtesting. See `min_non_nan_last_window` for the
+        drop policy.
         **New in version 0.22.0**
+    min_non_nan_last_window : int, default None
+        Minimum number of non-NaN values required in the last window to keep a
+        level when `dropna_from_series=True` during multiseries fold extraction.
+
+        - If `None`, drop a level if it contains any NaN.
+        - If `int`, drop a level only when its non-NaN count is strictly less
+        than `min_non_nan_last_window`.
+
+        Ignored when `dropna_from_series=False`.
+        **New in version 0.24.0**
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the estimator.
     binner_kwargs : dict, default None
@@ -232,6 +246,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         objects in `differentiator` and is used internally to avoid overwriting.
     dropna_from_series : bool
         Determine whether NaN detected in the training matrices will be dropped.
+    min_non_nan_last_window : int, None
+        Minimum number of non-NaN values required in the last window to keep a
+        level when `dropna_from_series=True` during multiseries fold extraction.
+        **New in version 0.24.0**
     last_window_ : pandas DataFrame
         This window represents the most recent data observed by the predictor
         during its training phase. It contains the values needed to predict the
@@ -391,6 +409,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         weight_func: Callable | None = None,
         differentiation: int | None = None,
         dropna_from_series: bool = False,
+        min_non_nan_last_window: int | None = None,
         fit_kwargs: dict[str, object] | None = None,
         binner_kwargs: dict[str, object] | None = None,
         n_jobs: int | str = 'auto',
@@ -415,6 +434,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.differentiator                       = None
         self.differentiator_                      = None
         self.dropna_from_series                   = dropna_from_series
+        self.min_non_nan_last_window              = min_non_nan_last_window
         self.last_window_                         = None
         self.index_type_                          = None
         self.index_freq_                          = None
@@ -532,6 +552,18 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                         "Argument `categorical_features` must not be an empty list. "
                         "Use `None` to disable categorical encoding."
                     )
+
+        if self.min_non_nan_last_window is not None:
+            if not isinstance(self.min_non_nan_last_window, (int, np.integer)):
+                raise TypeError(
+                    f"`min_non_nan_last_window` must be an integer greater than "
+                    f"or equal to 1, or `None`. Got {self.min_non_nan_last_window}."
+                )
+            if self.min_non_nan_last_window < 1:
+                raise ValueError(
+                    f"`min_non_nan_last_window` must be an integer greater than "
+                    f"or equal to 1, or `None`. Got {self.min_non_nan_last_window}."
+                )
 
         self.categorical_encoder = OrdinalEncoder(
                                        dtype                 = float,
@@ -661,6 +693,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             f"Weight function included: {True if self.weight_func is not None else False} \n"
             f"Differentiation order: {self.differentiation} \n"
             f"Drop NaN from series: {self.dropna_from_series} \n"
+            f"Min non-NaN last window: {self.min_non_nan_last_window} \n"
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
@@ -716,6 +749,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     <li><strong>Weight function included:</strong> {self.weight_func is not None}</li>
                     <li><strong>Differentiation order:</strong> {self.differentiation}</li>
                     <li><strong>Drop NaN from series:</strong> {self.dropna_from_series}</li>
+                    <li><strong>Min non-NaN last window:</strong> {self.min_non_nan_last_window}</li>
                     <li><strong>Creation date:</strong> {self.creation_date}</li>
                     <li><strong>Last fit date:</strong> {self.fit_date}</li>
                     <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>

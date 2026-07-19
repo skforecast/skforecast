@@ -698,3 +698,127 @@ def test_extract_data_folds_multiseries_series_dict_exog_dict_DatetimeIndex_with
                     pd.testing.assert_series_equal(data_fold[4][key], expected_data_folds[i][4][key])
 
         assert data_fold[5] == expected_data_folds[i][5]
+
+
+def test_extract_data_folds_multiseries_min_non_nan_last_window_keeps_level():
+    """
+    With dropna_last_window=True and min_non_nan_last_window less than or equal
+    to the non-NaN count, levels with sparse NaNs in the last window are kept.
+    """
+    series_nan = series_wide_range.copy()
+    series_nan.loc[28, 'l2'] = np.nan  # 1 NaN inside last window of fold 0
+    series_nan.index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+
+    folds = [[0, [0, 30], [25, 30], [30, 37], True]]
+    span_index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    window_size = 5
+
+    data_fold = next(
+        _extract_data_folds_multiseries(
+            series                  = series_nan,
+            folds                   = folds,
+            span_index              = span_index,
+            window_size             = window_size,
+            exog                    = None,
+            dropna_last_window      = True,
+            min_non_nan_last_window = 4,
+            externally_fitted       = False
+        )
+    )
+
+    assert data_fold[2] == ['l1', 'l2', 'l3']
+    assert list(data_fold[1].columns) == ['l1', 'l2', 'l3']
+    assert data_fold[1]['l2'].isna().sum() == 1
+
+
+def test_extract_data_folds_multiseries_min_non_nan_last_window_drops_level():
+    """
+    With dropna_last_window=True and min_non_nan_last_window equal to the full
+    window length, a level with any NaN is dropped (same as how='any').
+    """
+    series_nan = series_wide_range.copy()
+    series_nan.loc[28, 'l2'] = np.nan
+    series_nan.index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+
+    folds = [[0, [0, 30], [25, 30], [30, 37], True]]
+    span_index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    window_size = 5
+
+    data_fold = next(
+        _extract_data_folds_multiseries(
+            series                  = series_nan,
+            folds                   = folds,
+            span_index              = span_index,
+            window_size             = window_size,
+            exog                    = None,
+            dropna_last_window      = True,
+            min_non_nan_last_window = 5,
+            externally_fitted       = False
+        )
+    )
+
+    assert data_fold[2] == ['l1', 'l3']
+    assert list(data_fold[1].columns) == ['l1', 'l3']
+
+
+@pytest.mark.parametrize(
+    "min_non_nan_last_window, error_type",
+    [
+        (0, ValueError),
+        (-1, ValueError),
+        (6, ValueError),
+        (1.5, TypeError),
+        ("4", TypeError),
+    ],
+    ids=lambda v: f"min_non_nan_last_window: {v}"
+)
+def test_extract_data_folds_multiseries_min_non_nan_last_window_invalid(
+    min_non_nan_last_window, error_type
+):
+    """
+    Invalid min_non_nan_last_window values raise TypeError or ValueError.
+    """
+    folds = [[0, [0, 30], [25, 30], [30, 37], True]]
+    span_index = pd.RangeIndex(start=0, stop=50, step=1)
+
+    with pytest.raises(error_type, match="min_non_nan_last_window"):
+        next(
+            _extract_data_folds_multiseries(
+                series                  = series_wide_range,
+                folds                   = folds,
+                span_index              = span_index,
+                window_size             = 5,
+                exog                    = None,
+                dropna_last_window      = True,
+                min_non_nan_last_window = min_non_nan_last_window,
+                externally_fitted       = False
+            )
+        )
+
+
+def test_extract_data_folds_multiseries_min_non_nan_ignored_when_dropna_False():
+    """
+    min_non_nan_last_window is ignored when dropna_last_window is False.
+    """
+    series_nan = series_wide_range.copy()
+    series_nan.loc[28, 'l2'] = np.nan
+    series_nan.index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+
+    folds = [[0, [0, 30], [25, 30], [30, 37], True]]
+    span_index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+
+    data_fold = next(
+        _extract_data_folds_multiseries(
+            series                  = series_nan,
+            folds                   = folds,
+            span_index              = span_index,
+            window_size             = 5,
+            exog                    = None,
+            dropna_last_window      = False,
+            min_non_nan_last_window = 5,
+            externally_fitted       = False
+        )
+    )
+
+    assert data_fold[2] == ['l1', 'l2', 'l3']
+    assert data_fold[1]['l2'].isna().sum() == 1
