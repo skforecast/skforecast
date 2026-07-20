@@ -698,3 +698,127 @@ def test_extract_data_folds_multiseries_series_dict_exog_dict_DatetimeIndex_with
                     pd.testing.assert_series_equal(data_fold[4][key], expected_data_folds[i][4][key])
 
         assert data_fold[5] == expected_data_folds[i][5]
+
+
+def _series_with_nan_in_last_window_fold0():
+    """Series fixture with a single NaN in l2 inside fold-0 last window."""
+    series_nan = series_wide_range.copy()
+    series_nan.loc[28, 'l2'] = np.nan
+    series_nan.index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    return series_nan
+
+
+def test_extract_data_folds_multiseries_keeps_nan_level_for_nan_tolerant_estimator():
+    """
+    When dropna_last_window=True and the estimator natively supports NaNs
+    (and differentiation is None), keep levels with NaNs in the last window.
+    """
+    from sklearn.ensemble import HistGradientBoostingRegressor
+
+    folds = [[0, [0, 30], [25, 30], [30, 37], True]]
+    span_index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+
+    data_fold = next(
+        _extract_data_folds_multiseries(
+            series             = _series_with_nan_in_last_window_fold0(),
+            folds              = folds,
+            span_index         = span_index,
+            window_size        = 5,
+            exog               = None,
+            dropna_last_window = True,
+            estimator          = HistGradientBoostingRegressor(),
+            differentiation    = None,
+            externally_fitted  = False
+        )
+    )
+
+    assert data_fold[2] == ['l1', 'l2', 'l3']
+    assert data_fold[1]['l2'].isna().sum() == 1
+
+
+def test_extract_data_folds_multiseries_drops_nan_level_for_non_tolerant_estimator():
+    """
+    When dropna_last_window=True and the estimator does not support NaNs,
+    drop levels with any NaN in the last window.
+    """
+    from sklearn.linear_model import LinearRegression
+
+    folds = [[0, [0, 30], [25, 30], [30, 37], True]]
+    span_index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+
+    data_fold = next(
+        _extract_data_folds_multiseries(
+            series             = _series_with_nan_in_last_window_fold0(),
+            folds              = folds,
+            span_index         = span_index,
+            window_size        = 5,
+            exog               = None,
+            dropna_last_window = True,
+            estimator          = LinearRegression(),
+            differentiation    = None,
+            externally_fitted  = False
+        )
+    )
+
+    assert data_fold[2] == ['l1', 'l3']
+    assert list(data_fold[1].columns) == ['l1', 'l3']
+
+
+def test_extract_data_folds_multiseries_drops_nan_level_when_differentiation_set():
+    """
+    Differentiation is a hard exclusion: even with a NaN-tolerant estimator,
+    levels with NaNs in the last window are dropped.
+    """
+    from sklearn.ensemble import HistGradientBoostingRegressor
+
+    folds = [[0, [0, 30], [25, 30], [30, 37], True]]
+    span_index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+
+    data_fold = next(
+        _extract_data_folds_multiseries(
+            series             = _series_with_nan_in_last_window_fold0(),
+            folds              = folds,
+            span_index         = span_index,
+            window_size        = 5,
+            exog               = None,
+            dropna_last_window = True,
+            estimator          = HistGradientBoostingRegressor(),
+            differentiation    = 1,
+            externally_fitted  = False
+        )
+    )
+
+    assert data_fold[2] == ['l1', 'l3']
+    assert list(data_fold[1].columns) == ['l1', 'l3']
+
+
+def test_extract_data_folds_multiseries_keeps_nan_level_for_pipeline_nan_tolerant_estimator():
+    """
+    Pipeline estimators are unwrapped: NaN support is based on the last step.
+    """
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+
+    folds = [[0, [0, 30], [25, 30], [30, 37], True]]
+    span_index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    estimator = Pipeline([
+        ("scaler", StandardScaler()),
+        ("model", HistGradientBoostingRegressor()),
+    ])
+
+    data_fold = next(
+        _extract_data_folds_multiseries(
+            series             = _series_with_nan_in_last_window_fold0(),
+            folds              = folds,
+            span_index         = span_index,
+            window_size        = 5,
+            exog               = None,
+            dropna_last_window = True,
+            estimator          = estimator,
+            differentiation    = None,
+            externally_fitted  = False
+        )
+    )
+
+    assert data_fold[2] == ['l1', 'l2', 'l3']
