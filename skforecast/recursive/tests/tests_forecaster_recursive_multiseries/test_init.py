@@ -385,38 +385,3 @@ def test_init_when_differentiation_is_dict(diff):
         assert forecaster.differentiator['l1'] is None
         assert isinstance(forecaster.differentiator['l2'], TimeSeriesDifferentiator)
         assert isinstance(forecaster.differentiator['_unknown_level'], TimeSeriesDifferentiator)
-
-
-@pytest.mark.parametrize(
-    "min_non_nan_last_window",
-    [None, 1, 5],
-    ids=lambda v: f'min_non_nan_last_window: {v}'
-)
-def test_init_min_non_nan_last_window_attribute_correctly_stored(min_non_nan_last_window):
-    """
-    Test min_non_nan_last_window is correctly stored.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(
-                     estimator               = LinearRegression(),
-                     lags                    = 5,
-                     min_non_nan_last_window = min_non_nan_last_window
-                 )
-
-    assert forecaster.min_non_nan_last_window == min_non_nan_last_window
-
-
-@pytest.mark.parametrize(
-    "min_non_nan_last_window, error_type",
-    [(0, ValueError), (-1, ValueError), (1.5, TypeError), ("4", TypeError)],
-    ids=lambda v: f'min_non_nan_last_window: {v}'
-)
-def test_init_min_non_nan_last_window_invalid(min_non_nan_last_window, error_type):
-    """
-    Invalid min_non_nan_last_window values raise TypeError or ValueError.
-    """
-    with pytest.raises(error_type, match="min_non_nan_last_window"):
-        ForecasterRecursiveMultiSeries(
-            estimator               = LinearRegression(),
-            lags                    = 5,
-            min_non_nan_last_window = min_non_nan_last_window
-        )

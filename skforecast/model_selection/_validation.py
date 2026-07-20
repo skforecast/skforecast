@@ -1274,16 +1274,15 @@ def _backtesting_forecaster_multiseries(
         # NOTE: This allows for parallelization when `refit` is `False`. The initial 
         # Forecaster fit occurs outside of the auxiliary function.
         data_fold = _extract_data_folds_multiseries(
-                        series                  = series,
-                        folds                   = [folds[0]],
-                        span_index              = span_index,
-                        window_size             = forecaster.window_size,
-                        exog                    = exog,
-                        dropna_last_window      = forecaster.dropna_from_series,
-                        min_non_nan_last_window = getattr(
-                                                      forecaster, "min_non_nan_last_window", None
-                                                  ),
-                        externally_fitted       = False
+                        series             = series,
+                        folds              = [folds[0]],
+                        span_index         = span_index,
+                        window_size        = forecaster.window_size,
+                        exog               = exog,
+                        dropna_last_window = forecaster.dropna_from_series,
+                        estimator          = getattr(forecaster, "estimator", None),
+                        differentiation    = getattr(forecaster, "differentiation", None),
+                        externally_fitted  = False
                     )
         series_train, _, last_window_levels, exog_train, _, _ = next(data_fold)
         forecaster.fit(
@@ -1317,16 +1316,15 @@ def _backtesting_forecaster_multiseries(
 
     externally_fitted = True if initial_train_size is None else False
     data_folds = _extract_data_folds_multiseries(
-                     series                  = series,
-                     folds                   = folds,
-                     span_index              = span_index,
-                     window_size             = forecaster.window_size,
-                     exog                    = exog,
-                     dropna_last_window      = forecaster.dropna_from_series,
-                     min_non_nan_last_window = getattr(
-                                                   forecaster, "min_non_nan_last_window", None
-                                               ),
-                     externally_fitted       = externally_fitted
+                     series             = series,
+                     folds              = folds,
+                     span_index         = span_index,
+                     window_size        = forecaster.window_size,
+                     exog               = exog,
+                     dropna_last_window = forecaster.dropna_from_series,
+                     estimator          = getattr(forecaster, "estimator", None),
+                     differentiation    = getattr(forecaster, "differentiation", None),
+                     externally_fitted  = externally_fitted
                  )
 
     # Strip series_train and exog_train for refit=False folds to minimize

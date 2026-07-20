@@ -205,16 +205,3 @@ def test_repr_and_repr_html():
     assert forecaster13.dropna_from_series is True
     result_repr13 = repr(forecaster13)
     assert isinstance(result_repr13, str)
-
-    # Test 14: Test min_non_nan_last_window parameter
-    forecaster14 = ForecasterRecursiveMultiSeries(
-        estimator=LinearRegression(),
-        lags=3,
-        dropna_from_series=True,
-        min_non_nan_last_window=3
-    )
-    assert forecaster14.min_non_nan_last_window == 3
-    result_repr14 = repr(forecaster14)
-    result_html14 = forecaster14._repr_html_()
-    assert "Min non-NaN last window:" in result_repr14
-    assert "Min non-NaN last window" in result_html14
