@@ -6,6 +6,6 @@ optuna==4.9.0
 joblib==1.5.3
 numba==0.66.0
 rich==15.0.0
-lightgbm==4.6.0
+lightgbm==4.7.0
 statsmodels==0.14.6
 psutil
