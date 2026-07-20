@@ -5,8 +5,8 @@ from ._split import (
 from ._validation import (
     backtesting_forecaster,
     backtesting_forecaster_multiseries,
-    backtesting_stats,
-    backtesting_foundation
+    backtesting_foundation,
+    backtesting_stats
 )
 from ._search import (
     grid_search_forecaster,
@@ -25,8 +25,8 @@ __all__ = [
     "OneStepAheadFold",
     "backtesting_forecaster",
     "backtesting_forecaster_multiseries",
-    "backtesting_stats",
     "backtesting_foundation",
+    "backtesting_stats",
     "grid_search_forecaster",
     "random_search_forecaster",
     "bayesian_search_forecaster",

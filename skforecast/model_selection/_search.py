@@ -23,8 +23,8 @@ from ..model_selection._split import TimeSeriesFold, OneStepAheadFold
 from ..model_selection._validation import (
     backtesting_forecaster,
     backtesting_forecaster_multiseries,
-    backtesting_stats,
-    backtesting_foundation
+    backtesting_foundation,
+    backtesting_stats
 )
 from ..metrics import add_y_train_argument, _get_metric
 from ..model_selection._utils import (
@@ -602,13 +602,18 @@ def bayesian_search_forecaster(
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
     n_trials : int, default 20
-        Number of parameter settings that are sampled in each lag configuration. 
-        The first 10 trials are random (controlled by optuna's `n_startup_trials`); 
-        the TPE sampler only guides the search from trial 11 onward. For meaningful 
-        Bayesian optimization, `n_trials` should be significantly larger than 10.
+        Number of parameter settings (configurations) sampled during the search.
+        With the default `TPESampler`, the first `n_startup_trials` (10 by
+        default) are drawn by random sampling to seed the search, and the TPE
+        algorithm only guides sampling from the 11th trial onward. For meaningful
+        Bayesian optimization, `n_trials` should therefore be clearly larger than
+        10 (for example 30 to 50 or more). This threshold changes if a custom
+        sampler with a different `n_startup_trials` is passed in
+        `kwargs_create_study`. Larger values increase run time, since each trial
+        triggers a full evaluation.
     random_state : int, default 123
-        Sets a seed to the sampling for reproducible output. When a new sampler 
-        is passed in `kwargs_create_study`, the seed must be set within the 
+        Seed for the `TPESampler` for reproducible output. When a custom sampler
+        is passed in `kwargs_create_study`, the seed must be set within that
         sampler. For example `{'sampler': TPESampler(seed=145)}`.
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
@@ -654,6 +659,13 @@ def bayesian_search_forecaster(
     
     """
 
+    cv_name = type(cv).__name__
+    if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
+        raise TypeError(
+            f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
+            f"Got {type(cv)}."
+        )
+
     if return_best and exog is not None and (len(exog) != len(y)):
         raise ValueError(
             f"`exog` must have same number of samples as `y`. "
@@ -663,14 +675,7 @@ def bayesian_search_forecaster(
     forecaster_search = deepcopy_forecaster(forecaster)
     forecaster_name = type(forecaster_search).__name__
     is_regression = forecaster_search.__skforecast_tags__['forecaster_task'] == 'regression'
-    cv_name = type(cv).__name__
 
-    if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
-        raise TypeError(
-            f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
-            f"Got {type(cv)}."
-        )
-    
     if cv_name == 'OneStepAheadFold':
 
         check_one_step_ahead_input(
@@ -1633,13 +1638,18 @@ def bayesian_search_forecaster_multiseries(
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
     n_trials : int, default 20
-        Number of parameter settings that are sampled in each lag configuration. 
-        The first 10 trials are random (controlled by optuna's `n_startup_trials`); 
-        the TPE sampler only guides the search from trial 11 onward. For meaningful 
-        Bayesian optimization, `n_trials` should be significantly larger than 10.
+        Number of parameter settings (configurations) sampled during the search.
+        With the default `TPESampler`, the first `n_startup_trials` (10 by
+        default) are drawn by random sampling to seed the search, and the TPE
+        algorithm only guides sampling from the 11th trial onward. For meaningful
+        Bayesian optimization, `n_trials` should therefore be clearly larger than
+        10 (for example 30 to 50 or more). This threshold changes if a custom
+        sampler with a different `n_startup_trials` is passed in
+        `kwargs_create_study`. Larger values increase run time, since each trial
+        triggers a full evaluation.
     random_state : int, default 123
-        Sets a seed to the sampling for reproducible output. When a new sampler 
-        is passed in `kwargs_create_study`, the seed must be set within the 
+        Seed for the `TPESampler` for reproducible output. When a custom sampler
+        is passed in `kwargs_create_study`, the seed must be set within that
         sampler. For example `{'sampler': TPESampler(seed=145)}`.
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
@@ -1687,9 +1697,15 @@ def bayesian_search_forecaster_multiseries(
     
     """
 
+    cv_name = type(cv).__name__
+    if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
+        raise TypeError(
+            f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
+            f"Got {type(cv)}."
+        )
+
     forecaster_search = deepcopy_forecaster(forecaster)
     forecaster_name = forecaster_search.__skforecast_tags__['forecaster_name']
-    cv_name = type(cv).__name__
 
     if forecaster_name == 'ForecasterRecursiveMultiSeries':
         series, series_indexes = check_preprocess_series(series)
@@ -1710,12 +1726,6 @@ def bayesian_search_forecaster_multiseries(
                 f"`exog` must have same number of samples as `series`. "
                 f"length `exog`: ({len(exog)}), length `series`: ({len(series)})"
             )
-
-    if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
-        raise TypeError(
-            f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
-            f"Got {type(cv)}."
-        )
     
     if cv_name == 'OneStepAheadFold':
 
@@ -2080,7 +2090,7 @@ def bayesian_search_forecaster_multiseries(
 @manage_warnings
 def bayesian_search_foundation(
     forecaster: object,
-    series: pd.Series | pd.DataFrame | dict,
+    series: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
     cv: TimeSeriesFold,
     search_space: Callable,
     metric: str | Callable | list[str | Callable],
@@ -2102,15 +2112,14 @@ def bayesian_search_foundation(
     object using the optuna library.
 
     Foundation models are zero-shot (no weight training), so only inference-time
-    knobs are tuned. The most impactful parameter is `context_length`, which
+    parameters are tuned. The most impactful parameter is `context_length`, which
     controls how many past observations are fed to the model; shorter contexts
     reduce memory and latency while potentially sacrificing accuracy. Additional
-    adapter-specific parameters may be tuned (see Notes).
+    adapter-specific parameters may be tuned (see `search_space`).
 
-    For each trial, the sampled configuration is applied via
-    `forecaster.set_params(sample)` and evaluated with
-    `backtesting_foundation`. Returns a ranked results DataFrame and the
-    optuna `Study` object (same output contract as the other search functions).
+    For each trial, the sampled configuration is evaluated with
+    `backtesting_foundation` (`TimeSeriesFold`). Returns a ranked results 
+    DataFrame and the optuna `Study` object.
 
     Only `TimeSeriesFold` is supported; `OneStepAheadFold` is incompatible
     with zero-shot foundation semantics.
@@ -2131,18 +2140,18 @@ def bayesian_search_foundation(
         `trial.suggest_categorical`) as values. All keys must match the names
         passed to the suggest calls (`trial.params` keys).
 
-        Tunable parameters per adapter:
+        Tunable parameters per model:
 
-        - All adapters: `context_length` (int or categorical list).
-        - ChronosAdapter: `cross_learning` (bool).
-        - TabICLAdapter, TabPFNAdapter: `point_estimate` (str),
-          `temporal_features` (bool).
-        - TabPFNAdapter: `mode` (str).
-        - TimesFMAdapter: `max_horizon` (int).
+        - All models: `context_length` (int or categorical list).
+        - Amazon Chronos-2: `cross_learning` (bool).
+        - Google TimesFM 2.5: `max_horizon` (int).
+        - TabICLv2, Prior Labs TabPFN-TS: `point_estimate` (str),
+        `temporal_features` (list).
+        - Prior Labs TabPFN-TS: `mode` (str).
 
-        Note: changing `model_id`, device arguments, or `torch_dtype`
-        forces a full model reload and is expensive. On TimesFM and Moirai,
-        changing `context_length` also forces a reload.
+        Note: changing `model_id`, device arguments, or `torch_dtype` forces a 
+        full model reload and is expensive. On Google TimesFM 2.5 and 
+        Salesforce Moirai-2, changing `context_length` also forces a reload.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
 
@@ -2160,23 +2169,28 @@ def bayesian_search_foundation(
 
         - 'average': the arithmetic mean of all levels.
         - 'weighted_average': the mean weighted by the number of predicted values
-          of each level.
+        of each level.
         - 'pooling': values of all levels are pooled and then the metric is
-          calculated.
+        calculated.
     levels : str, list, default None
         Level(s) at which the forecaster is optimized. If `None`, all levels
         present in `series` are used.
     exog : pandas Series, pandas DataFrame, dict, default None
-        Exogenous variables. Passed directly to `backtesting_foundation`.
+        Exogenous variables.
     n_trials : int, default 20
-        Number of parameter settings sampled. The first trials are random
-        (controlled by optuna's `n_startup_trials`); the TPE sampler guides
-        the search from trial 11 onward. For meaningful Bayesian optimization,
-        `n_trials` should be significantly larger than 10.
+        Number of parameter settings (configurations) sampled during the search.
+        With the default `TPESampler`, the first `n_startup_trials` (10 by
+        default) are drawn by random sampling to seed the search, and the TPE
+        algorithm only guides sampling from the 11th trial onward. For meaningful
+        Bayesian optimization, `n_trials` should therefore be clearly larger than
+        10 (for example 30 to 50 or more). This threshold changes if a custom
+        sampler with a different `n_startup_trials` is passed in
+        `kwargs_create_study`. Larger values increase run time, since each trial
+        triggers a full evaluation.
     random_state : int, default 123
-        Seed for the TPE sampler for reproducible output. When a custom sampler
+        Seed for the `TPESampler` for reproducible output. When a custom sampler
         is passed in `kwargs_create_study`, the seed must be set within that
-        sampler.
+        sampler. For example `{'sampler': TPESampler(seed=145)}`.
     return_best : bool, default True
         Refit the original `forecaster` using the best-found parameters on the
         whole data set after the search.
@@ -2204,19 +2218,17 @@ def bayesian_search_foundation(
         Results for each combination of parameters, sorted by the first metric.
 
         - column trial_number: optuna trial number. Use
-          `study.trials[trial_number]` to access the full optuna trial object.
+        `study.trials[trial_number]` to access the full optuna trial object.
         - column levels: levels evaluated in each trial.
         - column params: parameter configuration for each trial.
         - column metric: metric value estimated for each trial.
         - additional columns with one column per searched parameter (expanded
-          from `params`).
+        from `params`).
     study : optuna Study
         The optuna study object containing all optimization trials. Access the
         best trial via `study.best_trial`.
 
     """
-
-    forecaster_search = deepcopy_forecaster(forecaster)
 
     if type(forecaster).__name__ != "ForecasterFoundation":
         raise TypeError(
@@ -2229,6 +2241,8 @@ def bayesian_search_foundation(
             f"`cv` must be a `TimeSeriesFold` instance. Got {type(cv).__name__}. "
             f"`OneStepAheadFold` is not supported for `ForecasterFoundation`."
         )
+
+    forecaster_search = deepcopy_forecaster(forecaster)
 
     if aggregate_metric is None:
         aggregate_metric = ["weighted_average", "average", "pooling"]
@@ -2244,7 +2258,9 @@ def bayesian_search_foundation(
     if not isinstance(metric, list):
         metric = [metric]
     metric = [
-        _get_metric(metric=m) if isinstance(m, str) else add_y_train_argument(m)
+        _get_metric(metric=m) 
+        if isinstance(m, str) 
+        else add_y_train_argument(m)
         for m in metric
     ]
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metric]
@@ -2257,10 +2273,10 @@ def bayesian_search_foundation(
         levels_resolved = [series.name]
     else:
         levels_resolved = _initialize_levels_model_selection_multiseries(
-            forecaster=forecaster_search,
-            series=series,
-            levels=levels,
-        )
+                              forecaster = forecaster_search,
+                              series     = series,
+                              levels     = levels,
+                          )
 
     add_aggregated_metric = len(levels_resolved) > 1
     if add_aggregated_metric:
@@ -2272,18 +2288,18 @@ def bayesian_search_foundation(
 
     def _objective(
         trial,
-        search_space=search_space,
-        forecaster_search=forecaster_search,
-        series=series,
-        cv=cv,
-        exog=exog,
-        levels=levels_resolved,
-        metric=metric,
-        metric_names=metric_names,
-        add_aggregated_metric=add_aggregated_metric,
-        aggregate_metric=aggregate_metric,
-        verbose=verbose,
-        suppress_warnings=suppress_warnings,
+        search_space          = search_space,
+        forecaster_search     = forecaster_search,
+        series                = series,
+        cv                    = cv,
+        exog                  = exog,
+        levels                = levels_resolved,
+        metric                = metric,
+        metric_names          = metric_names,
+        add_aggregated_metric = add_aggregated_metric,
+        aggregate_metric      = aggregate_metric,
+        verbose               = verbose,
+        suppress_warnings     = suppress_warnings,
     ) -> float:
 
         sample = search_space(trial)
@@ -2308,16 +2324,16 @@ def bayesian_search_foundation(
         forecaster_search.set_params(sample)
 
         metrics, _ = backtesting_foundation(
-            forecaster=forecaster_search,
-            series=series,
-            cv=cv,
-            exog=exog,
-            levels=levels,
-            metric=metric,
-            add_aggregated_metric=add_aggregated_metric,
-            verbose=verbose,
-            show_progress=False,
-            suppress_warnings=suppress_warnings,
+            forecaster            = forecaster_search,
+            series                = series,
+            cv                    = cv,
+            exog                  = exog,
+            levels                = levels,
+            metric                = metric,
+            add_aggregated_metric = add_aggregated_metric,
+            verbose               = verbose,
+            show_progress         = False,
+            suppress_warnings     = suppress_warnings,
         )
 
         if "levels" in metrics.columns:
@@ -2326,13 +2342,13 @@ def bayesian_search_foundation(
             else:
                 metrics = metrics.loc[metrics["levels"] == levels[0], :]
             metrics = pd.DataFrame(
-                data=[metrics.iloc[:, 1:].transpose().stack().to_numpy()],
-                columns=metric_names,
+                data    = [metrics.iloc[:, 1:].transpose().stack().to_numpy()],
+                columns = metric_names,
             )
         else:
             metrics = pd.DataFrame(
-                data=[metrics.values.ravel()],
-                columns=metric_names,
+                data    = [metrics.values.ravel()],
+                columns = metric_names,
             )
         metrics = metrics.reset_index(drop=True)
 
@@ -2417,6 +2433,7 @@ def bayesian_search_foundation(
         best_params = results.loc[0, "params"]
         best_metric = results.loc[0, metric_names[0]]
 
+        # NOTE: Here we use the actual forecaster passed by the user
         forecaster.set_params(best_params)
         forecaster.fit(series=series, exog=exog)
 
