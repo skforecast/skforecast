@@ -6,5 +6,7 @@
 ::: skforecast.metrics.calculate_coverage
 ::: skforecast.metrics.crps_from_predictions
 ::: skforecast.metrics.crps_from_quantiles
+::: skforecast.metrics.winkler_score
+::: skforecast.metrics.weighted_interval_score
 ::: skforecast.metrics.create_mean_pinball_loss
 ::: skforecast.metrics.add_y_train_argument
