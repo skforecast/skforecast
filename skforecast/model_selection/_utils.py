@@ -22,6 +22,7 @@ from ..utils import (
     check_interval,
     date_to_index_position,
     cast_catboost_categorical_columns_dataframe,
+    estimator_has_native_nan_support,
 )
 
 
@@ -905,6 +906,8 @@ def _extract_data_folds_multiseries(
     window_size: int,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     dropna_last_window: bool = False,
+    estimator: object | None = None,
+    differentiation: int | dict[str, int | None] | None = None,
     externally_fitted: bool = False
 ) -> Generator[
         tuple[
@@ -936,7 +939,19 @@ def _extract_data_folds_multiseries(
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
     dropna_last_window : bool, default False
-        If `True`, drop the columns of the last window that have NaN values.
+        If `True`, drop levels (columns) whose last window contains NaN values,
+        unless `estimator` natively supports NaN inputs and `differentiation`
+        is `None`. When the estimator supports NaNs and no differentiation is
+        used, levels with NaNs in the last window are kept. Differentiation is
+        always a hard exclusion: if set, levels with any NaN are dropped even
+        for NaN-tolerant estimators.
+    estimator : object, default None
+        Estimator used by the forecaster. Used to decide whether levels with
+        NaNs in the last window can be kept when `dropna_last_window=True`.
+        If the estimator is a Pipeline, the last step is inspected.
+    differentiation : int, dict, default None
+        Differentiation order of the forecaster. If not `None`, levels with
+        NaNs in the last window are always dropped when `dropna_last_window=True`.
     externally_fitted : bool, default False
         Flag indicating whether the forecaster is already trained. Only used when 
         `initial_train_size` is None and `refit` is False.
@@ -1021,9 +1036,19 @@ def _extract_data_folds_multiseries(
             series_last_window = pd.DataFrame(series_last_window)
 
         if dropna_last_window:
-            series_last_window = series_last_window.dropna(axis=1, how="any")
-            # TODO: add the option to drop the series without minimum non NaN values.
-            # Similar to how pandas does in the rolling window function.
+            # Keep levels with NaNs only when the estimator natively supports
+            # NaN inputs and differentiation is not used. Differentiation is a
+            # hard exclusion: np.diff expands the NaN footprint and
+            # inverse_transform_next_window propagates a single NaN across the
+            # forecast horizon. MissingValuesWarning in check_predict_input
+            # already covers NaN last-window cases.
+            keep_nan_levels = (
+                estimator is not None
+                and differentiation is None
+                and estimator_has_native_nan_support(estimator)
+            )
+            if not keep_nan_levels:
+                series_last_window = series_last_window.dropna(axis=1, how="any")
         
         levels_last_window = list(series_last_window.columns)
 

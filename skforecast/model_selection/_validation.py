@@ -1280,6 +1280,8 @@ def _backtesting_forecaster_multiseries(
                         window_size        = forecaster.window_size,
                         exog               = exog,
                         dropna_last_window = forecaster.dropna_from_series,
+                        estimator          = getattr(forecaster, "estimator", None),
+                        differentiation    = getattr(forecaster, "differentiation", None),
                         externally_fitted  = False
                     )
         series_train, _, last_window_levels, exog_train, _, _ = next(data_fold)
@@ -1320,6 +1322,8 @@ def _backtesting_forecaster_multiseries(
                      window_size        = forecaster.window_size,
                      exog               = exog,
                      dropna_last_window = forecaster.dropna_from_series,
+                     estimator          = getattr(forecaster, "estimator", None),
+                     differentiation    = getattr(forecaster, "differentiation", None),
                      externally_fitted  = externally_fitted
                  )
 

@@ -630,6 +630,46 @@ def configure_estimator_categorical_features(
     return fit_kwargs
 
 
+def estimator_has_native_nan_support(estimator: object) -> bool:
+    """
+    Check whether an estimator natively supports NaN values in its input
+    features.
+
+    Uses the same module-based family detection as
+    `configure_estimator_categorical_features`. Recognized families are
+    lightgbm, catboost, xgboost, and sklearn's HistGradientBoostingRegressor /
+    HistGradientBoostingClassifier. If `estimator` is a Pipeline, the last step
+    is inspected.
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator object. If the estimator is a Pipeline, the last step is used.
+
+    Returns
+    -------
+    has_native_nan_support : bool
+        `True` if the estimator natively supports NaN inputs, otherwise `False`.
+
+    """
+
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+
+    estimator_name = type(estimator).__name__
+    module = type(estimator).__module__.split('.')[0]
+
+    if module in ('lightgbm', 'catboost', 'xgboost'):
+        return True
+
+    if module == 'sklearn' and estimator_name in (
+        'HistGradientBoostingRegressor', 'HistGradientBoostingClassifier'
+    ):
+        return True
+
+    return False
+
+
 def cast_catboost_categorical_columns(
     X: np.ndarray,
     fit_kwargs: dict[str, object],
