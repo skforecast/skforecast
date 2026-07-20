@@ -1626,15 +1626,16 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [random_search_forecaster_multiseries]: ../api/model_selection.md#skforecast.model_selection._search.random_search_forecaster_multiseries
 [bayesian_search_forecaster_multiseries]: ../api/model_selection.md#skforecast.model_selection._search.bayesian_search_forecaster_multiseries
 
+[backtesting_foundation]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_foundation
+[bayesian_search_foundation]: ../api/model_selection.md#skforecast.model_selection._search.bayesian_search_foundation
+
 [backtesting_stats]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_stats
 [grid_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.grid_search_stats
 [random_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.random_search_stats
 
-[backtesting_foundation]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_foundation
-
-[BaseFold]: ../api/model_selection.md#skforecast.model_selection._split.BaseFold
 [TimeSeriesFold]: ../api/model_selection.md#skforecast.model_selection._split.TimeSeriesFold
 [OneStepAheadFold]: ../api/model_selection.md#skforecast.model_selection._split.OneStepAheadFold
+[BaseFold]: ../api/model_selection.md#skforecast.model_selection._split.BaseFold
 
 <!-- feature_selection -->
 [feature_selection]: ../api/feature_selection.md

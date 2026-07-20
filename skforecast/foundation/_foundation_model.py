@@ -71,9 +71,20 @@ class FoundationModel:
         Additional keyword arguments forwarded to the underlying adapter.
         Valid keys depend on the adapter selected by `model_id`. See the
         corresponding adapter class (`ChronosAdapter`, `TimesFMAdapter`,
-        `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`) 
-        for the full parameter list, or refer to the model documentation 
+        `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`)
+        for the full parameter list, or refer to the model documentation
         linked in the References section below.
+
+        Commonly used kwargs by adapter:
+
+        - `TabICLAdapter`: `context_length` (int), `point_estimate` (str),
+          `tabicl_config` (dict), `temporal_features` (list),
+          `show_progress` (bool, default `False`; set to `True` to show
+          the tqdm bar emitted during inference).
+        - `TabPFNAdapter`: `context_length` (int), `mode` (str),
+          `point_estimate` (str), `tabpfn_model_config` (dict),
+          `temporal_features` (list), `show_progress` (bool, default `False`;
+          set to `True` to show the tqdm bar emitted during inference).
 
     Attributes
     ----------
