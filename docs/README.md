@@ -2,7 +2,7 @@
 
 <div style="margin-bottom: 20px;">
     <img src="img/banner-landing-page-skforecast.png#only-light" align="left" style="margin-bottom: 30px; margin-top: 0px;">
-    <img src="img/banner-landing-page-dark-mode-skforecast-no-background.png#only-dark" align="left" style="margin-bottom: 30px; margin-top: 0px;">
+    <img src="img/banner-landing-page-dark-mode-skforecast.png#only-dark" align="left" style="margin-bottom: 30px; margin-top: 0px;">
 </div>
 
 <div style="clear: both;"></div>
@@ -14,7 +14,7 @@
 [![Build status](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml)
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/skforecast/skforecast/graphs/commit-activity)
-[![Downloads](https://static.pepy.tech/badge/skforecast)](https://pepy.tech/project/skforecast)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/skforecast?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/skforecast)
 [![Downloads](https://img.shields.io/pypi/dm/skforecast?style=flat-square&color=blue&label=downloads%2Fmonth)](https://pypistats.org/packages/skforecast)
 [![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/master/LICENSE)
 [![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787)
@@ -29,6 +29,7 @@
 [![NumFOCUS Affiliated](https://img.shields.io/badge/NumFOCUS-Affiliated%20Project-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)](https://numfocus.org/sponsored-projects/affiliated-projects)
 [![GC.OS Affiliated](https://img.shields.io/badge/GC.OS-Affiliated%20Project-orange.svg?style=flat&colorA=0eac92&colorB=2077b4)](https://gc-os-ai.github.io/)
 [![Skforecast Studio](https://img.shields.io/badge/Skforecast%20Studio-Launch%20App-f79939?logo=rocket)](https://studio.skforecast.org/)
+[![Skforecast AI](https://img.shields.io/badge/Skforecast%20AI-Documentation-f79939?logo=readthedocs)](https://ai.skforecast.org/)
 
 
 ## About The Project
@@ -45,6 +46,8 @@ Skforecast simplifies time series forecasting with machine learning by providing
 - :building_construction: **Production-ready models** with interpretability and validation methods for backtesting and realistic performance evaluation.
 
 Whether you're building quick prototypes or deploying models in production, skforecast ensures a fast, reliable, and scalable experience.
+
+:sparkles: **Try [skforecast-ai](https://ai.skforecast.org/)**, an **AI forecasting assistant** that pairs a deterministic engine, powered by [**skforecast**](https://skforecast.org/), with an **LLM reasoning layer**.
 
 :computer: **Try [Skforecast Studio](https://studio.skforecast.org/)** — an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
 
@@ -113,6 +116,8 @@ Explore our extensive list of examples and tutorials (English and Spanish) to ge
 
 Skforecast includes machine-readable context files so AI assistants (ChatGPT, Claude, Copilot, and others) can generate accurate code. Paste `https://skforecast.org/latest/llms-full.txt` into any LLM, or let your IDE pick up context automatically. Learn more in [AI-assisted forecasting](./quick-start/ai-assisted-forecasting.md).
 
+For an end-to-end workflow, try [**skforecast-ai**](https://ai.skforecast.org/), an **AI forecasting assistant** that pairs a deterministic engine, powered by **skforecast**, with an **LLM reasoning layer**. The source code is available on [GitHub](https://github.com/skforecast/skforecast-ai).
+
 
 ## How to contribute
 
@@ -137,12 +142,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.23.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.24.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.23.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.24.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **BibTeX**:
@@ -150,7 +155,7 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.23.0) [Compu
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.23.0},
+  version = {0.24.0},
   month   = {7},
   year    = {2026},
   license = {BSD-3-Clause},
