@@ -25,6 +25,7 @@ from ..exceptions import (
     MissingValuesWarning, 
     ResidualsUsageWarning
 )
+from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -52,7 +53,6 @@ from ..utils import (
     manage_warnings,
     scale_correction_factor_differentiation
 )
-from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
 
 class ForecasterRecursive(ForecasterBase):
