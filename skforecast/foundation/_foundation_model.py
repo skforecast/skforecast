@@ -66,14 +66,18 @@ class FoundationModel:
 
         - `'theforecastingcompany/t0-alpha'`
 
+        EDF Lab TS-ICL (supports `exog`):
+
+        - `'taharnbl/TS-ICL'`
+
         See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
         Valid keys depend on the adapter selected by `model_id`. See the
         corresponding adapter class (`ChronosAdapter`, `TimesFMAdapter`,
-        `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`) 
-        for the full parameter list, or refer to the model documentation 
-        linked in the References section below.
+        `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`,
+        `TSICLAdapter`) for the full parameter list, or refer to the model
+        documentation linked in the References section below.
 
     Attributes
     ----------
@@ -175,7 +179,12 @@ class FoundationModel:
 
     .. [12] The Forecasting Company T0 - HuggingFace model card.
             https://huggingface.co/theforecastingcompany/t0-alpha
-    
+
+    .. [13] EDF Lab TS-ICL - GitHub repository.
+            https://github.com/EDF-Lab/ts-icl
+
+    .. [14] EDF Lab TS-ICL - HuggingFace model card.
+            https://huggingface.co/taharnbl/TS-ICL
 
     """
 
