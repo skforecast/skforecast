@@ -66,6 +66,10 @@ class FoundationModel:
 
         - `'theforecastingcompany/t0-alpha'`
 
+        Synthefy Nori (supports `exog`):
+
+        - `'Synthefy/Nori'`
+
         See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.

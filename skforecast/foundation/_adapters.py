@@ -2970,6 +2970,329 @@ class T0Adapter:
         )
 
 
+class NoriAdapter:
+    """
+    Adapter for Synthefy Nori zero-shot tabular foundation models.
+
+    Nori is a tabular regression foundation model that predicts via in-context
+    learning: given labeled context rows it predicts query rows in a single
+    forward pass, with no task-specific training or fine-tuning. This adapter
+    frames forecasting as tabular regression: each series is featurized (running
+    index, calendar features, Fourier seasonal terms, and optional known-future
+    covariates) and a ``NoriRegressor`` predicts the forecast horizon zero-shot.
+
+    Parameters
+    ----------
+    model_id : str
+        Model ID, e.g. ``"Synthefy/Nori"``. Used to resolve this adapter; the
+        underlying checkpoint is controlled by ``nori_config`` (key
+        ``model_path``) and defaults to the public Hugging Face checkpoint.
+    model : object, default None
+        Pre-instantiated ``NoriRegressor`` instance. If ``None``, a new instance
+        is created lazily on the first call to ``predict``. Intended for testing
+        only.
+    context_length : int, default 4096
+        Maximum number of historical observations to use as context rows. Must be
+        a positive integer.
+    point_estimate : str, default 'mean'
+        Point forecast from Nori's predictive distribution. One of ``'mean'``,
+        ``'median'``, ``'mode'``.
+    add_calendar_features : bool, default True
+        Add calendar features (month, day, day-of-week, day-of-year, quarter,
+        hour) when the series has a ``DatetimeIndex``. Ignored for ``RangeIndex``.
+    n_fourier_terms : int, default 2
+        Number of Fourier (sin/cos) seasonal harmonics on the yearly and weekly
+        cycles for datetime series (or on the running index for ``RangeIndex``).
+        Set ``0`` to disable.
+    nori_config : dict, default None
+        Extra keyword arguments forwarded verbatim to ``NoriRegressor`` (e.g.
+        ``model_path``, ``device``, ``token``, ``augmentations``).
+
+    Attributes
+    ----------
+    model_id, context_, context_exog_, context_length, point_estimate,
+    add_calendar_features, n_fourier_terms, nori_config, is_fitted, _model
+
+    Notes
+    -----
+    Nori is a pure tabular regressor and does not ship a time-series
+    featurization pipeline (unlike TabPFN-TS), so this adapter builds its own
+    lightweight, dependency-free features. If the maintainers prefer the
+    ``temporal_features`` / ``FeatureGenerator`` convention used by
+    ``TabPFNAdapter``, the featurizer can be swapped to mirror it.
+
+    Covariate support is available for *known-future* covariates: columns present
+    in both the historical context and the forecast horizon are used as features.
+    Covariates without future values are ignored.
+
+    Series with a ``RangeIndex`` are accepted; only running-index and
+    Fourier(index) features are meaningful there (calendar features are skipped).
+
+    Quantiles use Nori's native pinball head and accept any tau strictly in
+    ``(0, 1)``. A ``bar_distribution`` checkpoint does not support quantiles.
+
+    References
+    ----------
+    .. [1] https://github.com/Synthefy/synthefy-nori
+
+    .. [2] https://huggingface.co/Synthefy/Nori
+
+    .. [3] https://docs.synthefy.com/nori/
+
+    """
+
+    allow_exog: bool = True
+
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        model: Any | None = None,
+        context_length: int = 4096,
+        point_estimate: str = "mean",
+        add_calendar_features: bool = True,
+        n_fourier_terms: int = 2,
+        nori_config: dict[str, Any] | None = None,
+    ) -> None:
+        if not isinstance(context_length, int) or context_length < 1:
+            raise ValueError(
+                f"`context_length` must be a positive integer. Got {context_length!r}."
+            )
+        if point_estimate not in ("mean", "median", "mode"):
+            raise ValueError(
+                f"`point_estimate` must be 'mean', 'median' or 'mode'. "
+                f"Got {point_estimate!r}."
+            )
+        if not isinstance(n_fourier_terms, int) or n_fourier_terms < 0:
+            raise ValueError(
+                f"`n_fourier_terms` must be a non-negative integer. "
+                f"Got {n_fourier_terms!r}."
+            )
+
+        self.model_id              = model_id
+        self._model                = model
+        self.context_              = None
+        self.context_exog_         = None
+        self.context_length        = context_length
+        self.point_estimate        = point_estimate
+        self.add_calendar_features = add_calendar_features
+        self.n_fourier_terms       = n_fourier_terms
+        self.nori_config           = dict(nori_config) if nori_config else {}
+        self.is_fitted             = False
+
+    def get_params(self) -> dict:
+        return {
+            "model_id":              self.model_id,
+            "context_length":        self.context_length,
+            "point_estimate":        self.point_estimate,
+            "add_calendar_features": self.add_calendar_features,
+            "n_fourier_terms":       self.n_fourier_terms,
+            "nori_config":           self.nori_config or None,
+        }
+
+    def set_params(self, **params) -> "NoriAdapter":
+        valid = {
+            "model_id", "context_length", "point_estimate",
+            "add_calendar_features", "n_fourier_terms", "nori_config",
+        }
+        invalid = set(params) - valid
+        if invalid:
+            raise ValueError(
+                f"Invalid parameter(s) for NoriAdapter: {sorted(invalid)}. "
+                f"Valid parameters are: {sorted(valid)}."
+            )
+
+        validated = {}
+        for key, value in params.items():
+            if key == "context_length":
+                if not isinstance(value, int) or value < 1:
+                    raise ValueError(
+                        f"`context_length` must be a positive integer. Got {value!r}."
+                    )
+                validated[key] = value
+            elif key == "point_estimate":
+                if value not in ("mean", "median", "mode"):
+                    raise ValueError(
+                        f"`point_estimate` must be 'mean', 'median' or 'mode'. "
+                        f"Got {value!r}."
+                    )
+                validated[key] = value
+            elif key == "n_fourier_terms":
+                if not isinstance(value, int) or value < 0:
+                    raise ValueError(
+                        f"`n_fourier_terms` must be a non-negative integer. "
+                        f"Got {value!r}."
+                    )
+                validated[key] = value
+            elif key == "nori_config":
+                validated[key] = dict(value) if value else {}
+            else:
+                validated[key] = value
+
+        actually_changed = {
+            k: v for k, v in validated.items() if getattr(self, k) != v
+        }
+        if actually_changed:
+            self._model = None
+            for key, value in actually_changed.items():
+                setattr(self, key, value)
+
+        return self
+
+    def fit(
+        self,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+    ) -> "NoriAdapter":
+        self.context_      = context
+        self.context_exog_ = context_exog
+        self.is_fitted     = True
+        return self
+
+    def predict(
+        self,
+        steps: int,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float] | None,
+    ) -> dict[str, np.ndarray]:
+        quantile_list = list(quantiles) if quantiles is not None else None
+        if quantile_list is not None and any(
+            (q <= 0.0) or (q >= 1.0) for q in quantile_list
+        ):
+            raise ValueError(
+                "NoriAdapter quantiles must lie strictly in (0, 1). "
+                f"Got {quantile_list!r}."
+            )
+
+        predictions: dict[str, np.ndarray] = {}
+        for name, series in context.items():
+            is_datetime = isinstance(series.index, pd.DatetimeIndex)
+            if not is_datetime and self.add_calendar_features:
+                warnings.warn(
+                    "NoriAdapter received a series with a non-DatetimeIndex; "
+                    "calendar features are skipped for it. Only running-index "
+                    "and Fourier(index) features are used.",
+                    # stacklevel=3: NoriAdapter.predict -> FoundationModel.predict -> user
+                    stacklevel=3,
+                )
+
+            ctx_exog = context_exog.get(name) if context_exog is not None else None
+            fut_exog = exog.get(name) if exog is not None else None
+            exog_cols = self._known_future_columns(ctx_exog, fut_exog)
+
+            X_ctx = self._featurize(
+                series, is_datetime, ctx_exog, exog_cols, offset=0, n=len(series)
+            )
+            X_fut = self._featurize(
+                series, is_datetime, fut_exog, exog_cols, offset=len(series), n=steps
+            )
+            y_ctx = series.to_numpy(dtype=float)
+
+            model = self._new_model()
+            model.fit(X_ctx, y_ctx)
+
+            if quantile_list is None:
+                y_hat = model.predict(X_fut, output_type=self.point_estimate)
+                predictions[name] = np.asarray(y_hat, dtype=float).reshape(-1, 1)
+            else:
+                q = model.predict(
+                    X_fut, output_type="quantiles", quantiles=quantile_list
+                )
+                # Nori returns (n_quantiles, steps); skforecast expects
+                # (steps, n_quantiles).
+                predictions[name] = np.asarray(q, dtype=float).reshape(
+                    len(quantile_list), steps
+                ).T
+
+        return predictions
+
+    # ----------------------------------------------------------------- helpers
+    def _new_model(self):
+        if self._model is not None:
+            return self._model
+        try:
+            from synthefy_nori import NoriRegressor
+        except ImportError as exc:
+            raise ImportError(
+                "synthefy-nori is required for NoriAdapter. "
+                "Install it with `pip install synthefy-nori`."
+            ) from exc
+        return NoriRegressor(**self.nori_config)
+
+    @staticmethod
+    def _known_future_columns(ctx_exog, fut_exog) -> list:
+        if ctx_exog is None or fut_exog is None:
+            return []
+        c = (
+            ctx_exog.columns
+            if isinstance(ctx_exog, pd.DataFrame)
+            else pd.Index([ctx_exog.name])
+        )
+        f = (
+            fut_exog.columns
+            if isinstance(fut_exog, pd.DataFrame)
+            else pd.Index([fut_exog.name])
+        )
+        f_set = set(f)
+        return [col for col in c if col in f_set]
+
+    def _featurize(
+        self, series, is_datetime, exog_block, exog_cols, offset, n
+    ) -> np.ndarray:
+        idx = np.arange(offset, offset + n, dtype=float)
+        feats = [idx]  # running index
+
+        if is_datetime and (self.add_calendar_features or self.n_fourier_terms > 0):
+            ts = self._timestamps(series, offset, n)
+            if self.add_calendar_features:
+                feats += [
+                    ts.month.to_numpy(dtype=float),
+                    ts.day.to_numpy(dtype=float),
+                    ts.dayofweek.to_numpy(dtype=float),
+                    ts.dayofyear.to_numpy(dtype=float),
+                    ts.quarter.to_numpy(dtype=float),
+                    ts.hour.to_numpy(dtype=float),
+                ]
+            doy = ts.dayofyear.to_numpy(dtype=float)
+            dow = ts.dayofweek.to_numpy(dtype=float)
+            for k in range(1, self.n_fourier_terms + 1):
+                feats += [
+                    np.sin(2 * np.pi * k * doy / 365.25),
+                    np.cos(2 * np.pi * k * doy / 365.25),
+                    np.sin(2 * np.pi * k * dow / 7.0),
+                    np.cos(2 * np.pi * k * dow / 7.0),
+                ]
+        elif self.n_fourier_terms > 0:
+            period = max(len(series), 1)
+            for k in range(1, self.n_fourier_terms + 1):
+                feats += [
+                    np.sin(2 * np.pi * k * idx / period),
+                    np.cos(2 * np.pi * k * idx / period),
+                ]
+
+        X = np.column_stack(feats)
+
+        if exog_cols and exog_block is not None:
+            block = (
+                exog_block.to_frame()
+                if isinstance(exog_block, pd.Series)
+                else exog_block
+            )
+            X = np.column_stack([X, block[exog_cols].to_numpy(dtype=float)])
+
+        return X.astype(np.float32)
+
+    def _timestamps(self, series, offset, n) -> pd.DatetimeIndex:
+        if offset == 0:
+            return series.index
+        freq = series.index.freq
+        if freq is None:
+            freq = pd.tseries.frequencies.to_offset(pd.infer_freq(series.index))
+        return pd.date_range(start=series.index[-1] + freq, periods=n, freq=freq)
+
+
 _ADAPTER_REGISTRY: dict[str, type] = {
     "amazon/chronos":    ChronosAdapter,
     "autogluon/chronos": ChronosAdapter,
@@ -2977,6 +3300,7 @@ _ADAPTER_REGISTRY: dict[str, type] = {
     "Salesforce/moirai": MoiraiAdapter,
     "soda-inria/tabicl": TabICLAdapter,
     "priorlabs/tabpfn":  TabPFNAdapter,
+    "Synthefy/Nori":     NoriAdapter,
     "theforecastingcompany/t0": T0Adapter,
     # "ibm/TTM": TTMAdapter,
 }
