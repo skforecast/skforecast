@@ -21,6 +21,9 @@ The main changes in this release are:
 + <span class="badge text-bg-feature">Feature</span> New <code>TSICLAdapter</code> in the <code>foundation</code> module wrapping `tsicl` (`TSICL`), registered under the `'taharnbl/TS-ICL'` `model_id` prefix. Supports past and future known exogenous variables, a 0.01 quantile grid in `[0.01, 0.99]`, and lazy import of the `tsicl` backend. Thanks to the [EDF Lab](https://github.com/EDF-Lab) team for contributing this adapter. [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
 
++ New <code>NoriAdapter</code> in the <code>foundation</code> module wrapping `Synthefy Nori`, registered under the `'Synthefy/Nori` `model_id` prefix. Supports future-known exogenous variables, arbitrary quantiles in the 0-1 range, and lazy backend import. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1252](https://github.com/skforecast/skforecast/issues/1252))
+
+
 **Added**
 
 + New function <code>[bayesian_search_foundation]</code> in the <code>[model_selection]</code> module to tune the inference-time configuration (e.g. `context_length`) of <code>[ForecasterFoundation]</code> models using optuna.

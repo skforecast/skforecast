@@ -221,6 +221,12 @@ class FoundationModel:
 
     .. [14] EDF Lab TS-ICL - HuggingFace model card.
             https://huggingface.co/taharnbl/TS-ICL
+            
+    .. [15] Synthefy Nori - GitHub repository.
+            https://github.com/Synthefy/synthefy-nori
+
+    .. [16] Synthefy Nori - HuggingFace model card.
+            https://huggingface.co/Synthefy/Nori
 
     """
 

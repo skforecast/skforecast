@@ -8,6 +8,7 @@ from skforecast.foundation._adapters import (
     MoiraiAdapter,
     TabICLAdapter,
     TabPFNAdapter,
+    NoriAdapter,
     T0Adapter,
     TSICLAdapter,
     _resolve_adapter,
@@ -27,6 +28,7 @@ from skforecast.foundation._adapters import (
         ("Salesforce/moirai-2-base", MoiraiAdapter),
         ("soda-inria/tabicl", TabICLAdapter),
         ("priorlabs/tabpfn-ts", TabPFNAdapter),
+        ("Synthefy/Nori", NoriAdapter),
         ("theforecastingcompany/t0-alpha", T0Adapter),
         ("taharnbl/TS-ICL", TSICLAdapter),
     ],
@@ -63,6 +65,7 @@ def test_ADAPTER_REGISTRY_contains_all_expected_entries():
         "Salesforce/moirai": MoiraiAdapter,
         "soda-inria/tabicl": TabICLAdapter,
         "priorlabs/tabpfn": TabPFNAdapter,
+        "Synthefy/Nori": NoriAdapter,
         "theforecastingcompany/t0": T0Adapter,
         "taharnbl/TS-ICL": TSICLAdapter,
     }

@@ -140,7 +140,7 @@ predictions = forecaster.predict_quantiles(
 )
 ```
 
-TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, …, 0.9]`; TS-ICL restricts them to a 0.01 grid in `[0.01, 0.99]`; Chronos-2, TabICL, TabPFN-TS and TFC-T0 accept any quantile in `(0, 1)`. See the `foundation-forecasting` skill for details.
+TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, …, 0.9]`; TS-ICL restricts them to a 0.01 grid in `[0.01, 0.99]`; Chronos-2, TabICL, TabPFN-TS and TFC-T0 and Nori accept any quantile in `(0, 1)`. See the `foundation-forecasting` skill for details.
 
 ## During Backtesting
 
