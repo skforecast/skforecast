@@ -2970,6 +2970,451 @@ class T0Adapter:
         )
 
 
+class TSICLAdapter:
+    """
+    Adapter for EDF Lab TS-ICL foundation model.
+
+    Parameters
+    ----------
+    model_id : str
+        Model ID, e.g. `"taharnbl/TS-ICL"`. Used only to resolve this
+        adapter; the underlying checkpoint is always downloaded from the
+        `taharnbl/TS-ICL` Hugging Face repository, controlled by
+        `checkpoint_version`.
+    model : object, default None
+        Pre-instantiated `TSICL` model instance. If `None`, a new instance
+        is created lazily on the first call to `predict`. Intended for
+        testing only.
+    checkpoint_version : str, default 'tsicl-v1.ckpt'
+        Checkpoint filename to download from the `taharnbl/TS-ICL`
+        Hugging Face repository.
+    context_length : int, default 4096
+        Maximum number of historical observations to use as context. At fit
+        time only the last `context_length` observations are stored. At
+        predict time, if `context` is longer than `context_length` it is
+        trimmed to this length; if it is shorter, all available observations
+        are used as-is. Must be a positive integer.
+    device : str, default 'auto'
+        Device placement for inference. `"auto"` selects the best available
+        accelerator (CUDA > MPS > CPU). Also accepts explicit values such as
+        `"cuda"`, `"mps"`, or `"cpu"`. Note that TS-ICL currently falls back
+        to CPU whenever CUDA is unavailable, so `"mps"` has no effect on
+        Apple Silicon.
+    allow_auto_download : bool, default True
+        Whether to allow automatic download of the checkpoint from Hugging
+        Face Hub if it is not already cached locally.
+
+    Attributes
+    ----------
+    model_id : str
+        Model ID.
+    context_ : dict
+        Stored training series after fitting.
+    context_exog_ : dict
+        Stored historical exogenous variables after fitting.
+    checkpoint_version : str
+        Checkpoint filename downloaded from Hugging Face Hub.
+    context_length : int
+        Maximum number of historical observations used as context.
+    device : str
+        Device placement for inference.
+    allow_auto_download : bool
+        Whether automatic checkpoint download is allowed.
+    is_fitted : bool
+        Whether the adapter has been fitted.
+
+    Notes
+    -----
+    TS-ICL conditions on covariates that are known over the context, the
+    forecast horizon, or both. skforecast exogenous variables map directly
+    onto this channel: historical values (`context_exog`) are forwarded as
+    `past_covariates` and future values (`exog`) as `future_covariates`.
+    Covariates must be numeric; encode categoricals as numbers before
+    passing them.
+
+    TS-ICL only supports quantile levels on a 0.01 grid in `[0.01, 0.99]`
+    (i.e. a subset of `[0.01, 0.02, ..., 0.99]`); requesting any other level
+    raises a `ValueError` from the underlying library.
+
+    References
+    ----------
+    .. [1] https://github.com/EDF-Lab/ts-icl
+
+    .. [2] https://huggingface.co/taharnbl/TS-ICL
+
+    """
+
+    allow_exog: bool = True
+
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        model: Any | None = None,
+        checkpoint_version: str = "tsicl-v1.ckpt",
+        context_length: int = 4096,
+        device: str = "auto",
+        allow_auto_download: bool = True,
+    ) -> None:
+        """
+        Initialise the adapter.
+
+        Parameters
+        ----------
+        model_id : str
+            Model ID, e.g. `"taharnbl/TS-ICL"`. Used only to resolve this
+            adapter.
+        model : object, default None
+            Pre-instantiated `TSICL` model instance. If `None`, a new
+            instance is created lazily on the first call to `predict`.
+        checkpoint_version : str, default 'tsicl-v1.ckpt'
+            Checkpoint filename to download from the `taharnbl/TS-ICL`
+            Hugging Face repository.
+        context_length : int, default 4096
+            Maximum number of historical observations to retain as context.
+            At `fit` time only the last `context_length` observations of
+            `series` (and `exog`) are stored. At `predict` time, if
+            `context` is longer than `context_length` it is trimmed to
+            this length before inference; if it is shorter, all available
+            observations are passed as-is. Must be a positive integer.
+        device : str, default 'auto'
+            Device placement for inference. `"auto"` selects the best
+            available accelerator (CUDA > MPS > CPU).
+        allow_auto_download : bool, default True
+            Whether to allow automatic download of the checkpoint from
+            Hugging Face Hub if it is not already cached locally.
+
+        """
+
+        if not isinstance(context_length, int) or context_length < 1:
+            raise ValueError(
+                f"`context_length` must be a positive integer. Got {context_length!r}."
+            )
+
+        self.model_id             = model_id
+        self._model                = model
+        self.context_              = None
+        self.context_exog_         = None
+        self.checkpoint_version    = checkpoint_version
+        self.context_length        = context_length
+        self.device                = device
+        self.allow_auto_download   = allow_auto_download
+        self.is_fitted              = False
+
+    def get_params(self) -> dict:
+        """
+        Return the adapter's constructor parameters.
+
+        Returns
+        -------
+        params : dict
+            Keys: `model_id`, `checkpoint_version`, `context_length`,
+            `device`, `allow_auto_download`.
+
+        """
+        return {
+            'model_id':             self.model_id,
+            'checkpoint_version':   self.checkpoint_version,
+            'context_length':       self.context_length,
+            'device':               self.device,
+            'allow_auto_download':  self.allow_auto_download,
+        }
+
+    def set_params(self, **params) -> TSICLAdapter:
+        """
+        Set adapter parameters. Resets the model when `checkpoint_version`
+        or `allow_auto_download` changes, since those control which
+        checkpoint is loaded.
+
+        Parameters
+        ----------
+        **params :
+            Valid keys: `model_id`, `checkpoint_version`, `context_length`,
+            `device`, `allow_auto_download`.
+
+        Returns
+        -------
+        self : TSICLAdapter
+
+        """
+
+        valid = {
+            'model_id', 'checkpoint_version', 'context_length',
+            'device', 'allow_auto_download',
+        }
+        invalid = set(params) - valid
+        if invalid:
+            raise ValueError(
+                f"Invalid parameter(s) for TSICLAdapter: {sorted(invalid)}. "
+                f"Valid parameters are: {sorted(valid)}."
+            )
+
+        model_reset_keys = {'checkpoint_version', 'allow_auto_download'}
+        if params.keys() & model_reset_keys:
+            self._model = None
+
+        for key, value in params.items():
+            if key == 'context_length':
+                if not isinstance(value, int) or value < 1:
+                    raise ValueError(
+                        f"`context_length` must be a positive integer. Got {value!r}."
+                    )
+                self.context_length = value
+            else:
+                setattr(self, key, value)
+
+        return self
+
+    def fit(
+        self,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+    ) -> TSICLAdapter:
+        """
+        Store the training series and optional historical exogenous variables.
+        No model training occurs since TS-ICL is a zero-shot inference model.
+
+        All input normalization and validation is performed upstream by
+        `FoundationModel`; this method receives canonical dicts only.
+
+        Parameters
+        ----------
+        context : dict pandas Series
+            Normalized training series, one entry per series.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series historical exogenous variables (past covariates).
+
+        Returns
+        -------
+        self : TSICLAdapter
+
+        """
+
+        self.context_ = context
+        self.context_exog_ = context_exog
+        self.is_fitted = True
+
+        return self
+
+    def predict(
+        self,
+        steps: int,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        exog: dict[str, pd.DataFrame | pd.Series | None],
+        quantiles: list[float] | tuple[float] | None
+    ) -> dict[str, np.ndarray]:
+        """
+        Generate predictions using the TS-ICL model.
+
+        All input normalization, validation, and context trimming is
+        performed upstream by `FoundationModel`; this method receives
+        pre-processed dicts only.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        context : dict
+            Per-series context windows (already trimmed to
+            `context_length`).
+        context_exog : dict
+            Per-series past covariates (already trimmed).
+        exog : dict
+            Per-series future covariates for the forecast horizon.
+        quantiles : list of float or None
+            Quantile levels to return. If `None`, a point forecast
+            (median, quantile 0.5) is produced.
+
+        Returns
+        -------
+        predictions : dict
+            Keys are series names. Each value is a 2-D array of shape
+            `(steps, n_quantiles)`.
+
+        """
+
+        # NOTE: the model is loaded lazily here so that the adapter can be
+        # instantiated and fitted without requiring tsicl to be installed.
+        self._load_model()
+
+        import torch
+
+        quantile_list = list(quantiles) if quantiles is not None else None
+        query_levels = quantile_list if quantile_list is not None else [0.5]
+
+        series_names_in = list(context.keys())
+        inputs_list = [
+            self._build_tsicl_input(
+                context      = context[name].to_numpy(),
+                context_exog = context_exog[name] if context_exog is not None else None,
+                exog         = exog[name] if exog is not None else None,
+            )
+            for name in series_names_in
+        ]
+
+        device = torch.device(_resolve_torch_device(self.device))
+
+        _, quantile_preds = self._model.forecast(
+            inputs            = inputs_list,
+            prediction_length = steps,
+            quantile_levels   = query_levels,
+            context_length    = self.context_length,
+            device            = device,
+            denormalize       = True,
+            squeeze_output    = False,
+        )
+
+        predictions: dict[str, np.ndarray] = {}
+        for i, name in enumerate(series_names_in):
+            q_arr = quantile_preds[i]
+            if hasattr(q_arr, "detach"):
+                q_arr = q_arr.detach().cpu().numpy()
+            else:
+                q_arr = np.asarray(q_arr)
+            predictions[name] = q_arr[0]  # drop the single-variate dim
+
+        return predictions
+
+    def _load_model(self) -> None:
+        """
+        Load the TS-ICL model into `self._model` if not already set.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ImportError
+            If `tsicl` is not installed.
+
+        Notes
+        -----
+        The model is imported lazily from `tsicl` and instantiated via
+        `TSICL(checkpoint_version=..., allow_auto_download=...)`, which
+        downloads (or loads from cache) the checkpoint from the
+        `taharnbl/TS-ICL` Hugging Face repository. This method is a no-op
+        when `self._model` is already populated.
+
+        """
+
+        if self._model is not None:
+            return
+        try:
+            from tsicl import TSICL
+        except ImportError as exc:
+            raise ImportError(
+                "tsicl is required for TSICLAdapter. "
+                "Install it with `pip install tsicl`."
+            ) from exc
+
+        self._model = TSICL(
+            checkpoint_version   = self.checkpoint_version,
+            allow_auto_download  = self.allow_auto_download,
+        )
+
+    @staticmethod
+    def _to_covariate_array(col_data: Any) -> np.ndarray:
+        """
+        Convert a covariate column to a `float32` numpy array.
+
+        Parameters
+        ----------
+        col_data : array-like
+            A single covariate column (e.g. a pandas Series or 1-D array).
+
+        Returns
+        -------
+        col_array : numpy ndarray
+            A 1-D `float32` numpy array.
+
+        Raises
+        ------
+        ValueError
+            If the column is neither numeric nor boolean. TS-ICL only
+            conditions on numeric covariates; categoricals must be encoded
+            as numbers.
+
+        """
+
+        if isinstance(col_data, pd.Series):
+            if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
+                return col_data.astype(np.float32).to_numpy()
+            raise ValueError(
+                f"TSICLAdapter supports only numeric covariates. Column "
+                f"{col_data.name!r} has dtype {col_data.dtype}. Encode "
+                f"categorical covariates as numeric values before passing them."
+            )
+
+        arr = np.asarray(col_data)
+        if arr.dtype.kind in ("i", "u", "f", "b"):  # integer, unsigned int, float, bool
+            return arr.astype(np.float32)
+
+        raise ValueError(
+            f"TSICLAdapter supports only numeric covariates. Got array of "
+            f"dtype {arr.dtype}. Encode categorical covariates as numeric "
+            f"values before passing them."
+        )
+
+    def _build_tsicl_input(
+        self,
+        context: np.ndarray,
+        context_exog: pd.DataFrame | pd.Series | None = None,
+        exog: pd.DataFrame | pd.Series | None = None,
+    ) -> dict[str, Any]:
+        """
+        Build the input dict consumed by `TSICL.forecast`.
+
+        Parameters
+        ----------
+        context : numpy ndarray
+            1-D array of observed time series values used as context. Must be
+            castable to `float32`.
+        context_exog : pandas DataFrame, pandas Series, default None
+            Historical exogenous variables whose index is aligned to
+            `context`. Each column (or the single Series, referenced by
+            its name) becomes an entry in the returned "past_covariates"
+            dict. Must be numeric or boolean.
+        exog : pandas DataFrame, pandas Series, default None
+            Future-known exogenous variables covering the forecast horizon.
+            Must have exactly `steps` rows. Each column becomes an entry in
+            the returned "future_covariates" dict. Must be numeric or
+            boolean.
+
+        Returns
+        -------
+        input_dict : dict
+            Dictionary with mandatory key "target" (1-D `float32`
+            `numpy ndarray`) and optional keys "past_covariates" and
+            "future_covariates", each mapping column names to 1-D
+            `float32` arrays.
+
+        """
+
+        input_dict = {"target": np.asarray(context, dtype=np.float32)}
+        if context_exog is not None:
+            df = (
+                context_exog
+                if isinstance(context_exog, pd.DataFrame)
+                else context_exog.to_frame()
+            )
+            input_dict["past_covariates"] = {
+                col: TSICLAdapter._to_covariate_array(df[col]) for col in df.columns
+            }
+        if exog is not None:
+            df = (
+                exog
+                if isinstance(exog, pd.DataFrame)
+                else exog.to_frame()
+            )
+            input_dict["future_covariates"] = {
+                col: TSICLAdapter._to_covariate_array(df[col]) for col in df.columns
+            }
+
+        return input_dict
+
+
 _ADAPTER_REGISTRY: dict[str, type] = {
     "amazon/chronos":    ChronosAdapter,
     "autogluon/chronos": ChronosAdapter,
@@ -2978,6 +3423,7 @@ _ADAPTER_REGISTRY: dict[str, type] = {
     "soda-inria/tabicl": TabICLAdapter,
     "priorlabs/tabpfn":  TabPFNAdapter,
     "theforecastingcompany/t0": T0Adapter,
+    "taharnbl/TS-ICL":   TSICLAdapter,
     # "ibm/TTM": TTMAdapter,
 }
 

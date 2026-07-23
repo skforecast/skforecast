@@ -30,9 +30,9 @@ class FoundationModel:
     Scikit-learn compatible interface for foundation time-series models.
 
     Currently supports Amazon Chronos-2, Google TimesFM 2.5, Salesforce
-    Moirai-2, TabICLv2, TabPFN-TS, and TFC-T0. For full skforecast ecosystem
-    integration (backtesting, model selection, etc.) use `ForecasterFoundation` 
-    instead.
+    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, and EDF Lab TS-ICL. For full
+    skforecast ecosystem integration (backtesting, model selection, etc.)
+    use `ForecasterFoundation` instead.
 
     Parameters
     ----------
@@ -65,6 +65,10 @@ class FoundationModel:
         The Forecasting Company T0 (supports `exog`):
 
         - `'theforecastingcompany/t0-alpha'`
+
+        EDF Lab TS-ICL (supports `exog`):
+
+        - `'taharnbl/TS-ICL'`
 
         See References for links to model documentation and model cards.
     **kwargs :
@@ -199,7 +203,12 @@ class FoundationModel:
 
     .. [12] The Forecasting Company T0 - HuggingFace model card.
             https://huggingface.co/theforecastingcompany/t0-alpha
-    
+
+    .. [13] EDF Lab TS-ICL - GitHub repository.
+            https://github.com/EDF-Lab/ts-icl
+
+    .. [14] EDF Lab TS-ICL - HuggingFace model card.
+            https://huggingface.co/taharnbl/TS-ICL
 
     """
 
