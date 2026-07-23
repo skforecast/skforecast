@@ -6,13 +6,13 @@
 
 > Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
-This document is for skforecast v0.23.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.24.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.23.0
+- Version: 0.24.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -42,7 +42,7 @@ skforecast/
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
 ├── foundation/              # FoundationModel, ForecasterFoundation
-│                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0)
+│                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori)
 ├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
@@ -63,7 +63,7 @@ skforecast/
 - **Forecasters inheriting from `ForecasterBase`**: ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterRecursiveClassifier, ForecasterDirect, ForecasterDirectMultiVariate, ForecasterRnn
 - **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate, ForecasterFoundation
 - Statistical models in `stats/` are wrapped by `ForecasterStats` (in `recursive/`)
-- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`) resolved from the HuggingFace `model_id`
+- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`) resolved from the HuggingFace `model_id`
 - `model_selection/` functions work with all forecaster types
 - `preprocessing/` classes can be passed to forecasters via `transformer_y`, `transformer_exog`, `window_features`
 
@@ -77,7 +77,7 @@ skforecast/
 | ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
 | ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
 | ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
-| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0) |
+| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
 
@@ -440,7 +440,7 @@ forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 
 ## Foundation Models (Zero-Shot)
 
-Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`). Models are downloaded from HuggingFace on first use.
+Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`). Models are downloaded from HuggingFace on first use.
 
 `FoundationModel` is the low-level interface; `ForecasterFoundation` wraps it to integrate with the rest of the skforecast ecosystem (backtesting, model selection, uniform `predict` / `predict_interval` / `predict_quantiles` API).
 
@@ -476,6 +476,7 @@ Supported adapters (selected automatically from `model_id`):
 | TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (past & future covariates) | 4096 | Any in `(0, 1)` |
 | TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
 | T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
+| NoriAdapter (Synthefy) | `Synthefy/Nori` | Yes (known-future covariates) | 4096 | Any in `(0, 1)` |
 
 Key points:
 - `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
@@ -548,6 +549,7 @@ from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection import backtesting_stats
 from skforecast.model_selection import backtesting_foundation
+from skforecast.model_selection import bayesian_search_foundation
 from skforecast.model_selection import grid_search_forecaster
 from skforecast.model_selection import grid_search_forecaster_multiseries
 from skforecast.model_selection import random_search_forecaster
@@ -592,6 +594,8 @@ from skforecast.metrics import crps_from_predictions
 from skforecast.metrics import crps_from_quantiles
 from skforecast.metrics import calculate_coverage
 from skforecast.metrics import create_mean_pinball_loss
+from skforecast.metrics import winkler_score
+from skforecast.metrics import weighted_interval_score
 
 # Statistical models (used with ForecasterStats)
 from skforecast.stats import Arima, Ets, Sarimax, Arar
@@ -667,7 +671,7 @@ show_datasets_info()
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.23.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.24.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
 ================================================================================
@@ -1442,6 +1446,8 @@ If unsure, start here:
 | Interval calibration | `calculate_coverage` | Check if actual coverage matches the nominal level |
 | Interval quality (overall) | `crps_from_predictions` | Evaluates sharpness and calibration together |
 | Quantile quality (foundation models) | `crps_from_quantiles` | Proper scoring rule for quantile predictions |
+| Single-interval quality | `winkler_score` | Proper interval score; tune the miscoverage penalty via `alpha` |
+| Full-distribution quality | `weighted_interval_score` | Scores K intervals + median in one number; approximates CRPS |
 | Single-quantile optimization | `create_mean_pinball_loss(alpha)` | Can be passed as `metric=` to optimize for a specific quantile |
 
 ## Step 1 — What Are You Evaluating?
@@ -1566,6 +1572,8 @@ Use these metrics when evaluating prediction intervals or quantile forecasts.
 | `calculate_coverage` | Calibration | y_true, lower_bound, upper_bound | Check if actual coverage matches nominal level |
 | `crps_from_predictions` | Calibration + sharpness | y_true (scalar), y_pred (array of bootstrap samples) | Evaluate bootstrapped interval quality |
 | `crps_from_quantiles` | Calibration + sharpness | y_true (scalar), pred_quantiles, quantile_levels | Evaluate quantile predictions (foundation models) |
+| `winkler_score` | Calibration + sharpness (single interval) | y_true, lower_bound, upper_bound, alpha | Evaluate one interval; penalty tuned by `alpha` |
+| `weighted_interval_score` | Calibration + sharpness (full distribution) | y_true, y_pred, lower_bounds, upper_bounds, alphas | Evaluate K intervals + median in one CRPS-like score |
 | `create_mean_pinball_loss(alpha)` | Single-quantile accuracy | y_true, y_pred (at quantile alpha) | Evaluate a specific quantile forecast |
 
 ### Coverage
@@ -1608,6 +1616,53 @@ crps = crps_from_quantiles(
     quantile_levels=np.array([0.1, 0.25, 0.5, 0.75, 0.9]),
 )
 ```
+
+### Winkler Score (Interval Score)
+
+Scores a single prediction interval: it rewards narrow intervals but adds a
+penalty, scaled by `alpha`, whenever the true value falls outside. Strictly
+proper scoring rule; lower is better. `alpha` must match the interval's nominal
+level (e.g. an 80% interval given by the 10th/90th percentiles uses `alpha=0.2`).
+
+```python
+from skforecast.metrics import winkler_score
+
+# 80% interval -> alpha = 0.2
+score = winkler_score(
+    y_true=y_test,
+    lower_bound=predictions['lower_bound'],
+    upper_bound=predictions['upper_bound'],
+    alpha=0.2,
+)
+```
+
+### Weighted Interval Score (WIS)
+
+Generalises the Winkler Score to K intervals plus the median forecast, producing
+a single number that behaves like a discrete approximation of CRPS. Ideal when a
+model outputs several quantile levels (foundation models, `ForecasterStats`, or
+bootstrapping). `y_pred` is the median (0.5 quantile); `alphas` lists the K
+interval levels and must line up, by position, with the columns of the bound
+arrays. Lower is better.
+
+```python
+import numpy as np
+from skforecast.metrics import weighted_interval_score
+
+# Two intervals: 80% (alpha=0.2) and 95% (alpha=0.05)
+score = weighted_interval_score(
+    y_true=y_test.to_numpy(),
+    y_pred=predictions_median,                   # 0.5 quantile
+    lower_bounds=np.column_stack([q10, q025]),   # columns match `alphas` order
+    upper_bounds=np.column_stack([q90, q975]),
+    alphas=[0.2, 0.05],
+)
+```
+
+> **Note:** Like `calculate_coverage` and CRPS, `winkler_score` and
+> `weighted_interval_score` are computed post-hoc. Their signatures differ from
+> `func(y_true, y_pred)`, so they cannot be passed as a `metric=` string in
+> backtesting or hyperparameter search.
 
 ### Pinball Loss (Quantile Loss)
 
@@ -1754,7 +1809,7 @@ argument is silently ignored.
 ## Metric Compatibility Reference
 
 See [references/metric-compatibility.md](references/metric-compatibility.md) for the
-complete matrix of all 18 metrics with their properties, compatible forecasters,
+complete matrix of all available metrics with their properties, compatible forecasters,
 and usage guidance.
 
 ---
@@ -1786,6 +1841,8 @@ Complete reference for all metrics available in skforecast: properties, compatib
 | Coverage | `calculate_coverage` | `(y_true, lower_bound, upper_bound)` | Any forecaster with intervals | Calibration (proportion of truths in interval) |
 | CRPS (bootstrap) | `crps_from_predictions` | `(y_true: float, y_pred: ndarray)` | Bootstrapped predictions | Calibration + sharpness (single observation) |
 | CRPS (quantiles) | `crps_from_quantiles` | `(y_true: float, pred_quantiles: ndarray, quantile_levels: ndarray)` | Foundation models, quantile predictions | Calibration + sharpness (single observation) |
+| Winkler Score | `winkler_score` | `(y_true, lower_bound, upper_bound, alpha)` | Any single interval | Calibration + sharpness of one interval; miscoverage penalty scaled by `alpha` |
+| Weighted Interval Score | `weighted_interval_score` | `(y_true, y_pred, lower_bounds, upper_bounds, alphas)` | Multi-interval / quantile forecasts | Calibration + sharpness across K intervals + median (approximates CRPS) |
 | Pinball Loss | `create_mean_pinball_loss(alpha)` | Returns `func(y_true, y_pred)` | Any quantile forecast at level alpha | Single-quantile accuracy |
 
 ## Classification Metrics
@@ -1826,6 +1883,8 @@ Complete reference for all metrics available in skforecast: properties, compatib
 | RMSSE | Same as MASE but want to penalize large errors more | Same as MASE |
 | Coverage | Evaluating prediction interval calibration | Want to measure interval width/sharpness (use CRPS) |
 | CRPS | Comprehensive interval/quantile evaluation (calibration + sharpness) | Only have point forecasts |
+| Winkler score | Scoring a single interval with a tunable miscoverage penalty (`alpha`) | Comparing full distributions (use WIS or CRPS) |
+| Weighted interval score (WIS) | Scoring several quantile intervals + median as one CRPS-like number | Only have a single interval (use Winkler) or only point forecasts |
 | Pinball loss | Evaluating a specific quantile (e.g., 90th percentile for risk) | Need overall distributional assessment (use CRPS) |
 | Balanced accuracy | Classification with imbalanced classes | Perfectly balanced classes (accuracy is simpler) |
 | F1 | Classification where both false positives and negatives matter | Need per-class detail (use precision/recall separately) |
@@ -2571,7 +2630,7 @@ predictions = forecaster.predict_quantiles(
 )
 ```
 
-TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, …, 0.9]`; Chronos-2, TabICL, TabPFN-TS and TFC-T0 accept any quantile in `(0, 1)`. See the `foundation-forecasting` skill for details.
+TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, …, 0.9]`; Chronos-2, TabICL, TabPFN-TS, TFC-T0 and Nori accept any quantile in `(0, 1)`. See the `foundation-forecasting` skill for details.
 
 ## During Backtesting
 
@@ -4795,7 +4854,7 @@ predictions = forecaster.predict_interval(
 
 ## References
 
-See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, and `T0Adapter`.
+See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, and `NoriAdapter`.
 
 ## When to Use
 
@@ -4814,7 +4873,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Rule | Symptom | Recovery |
 |------|---------|----------|
 | `fit()` stores context only; it never trains the model | Expecting training to happen or weights to update | Treat the model as pre-trained; evaluate with `backtesting_foundation` |
-| Only Chronos-2, TabICL, TabPFN-TS, and T0 use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `exog` silently dropped, no error raised | Pick an exog-capable adapter when covariates matter |
+| Only Chronos-2, TabICL, TabPFN-TS, T0, and Nori use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `exog` silently dropped, no error raised | Pick an exog-capable adapter when covariates matter |
 | TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]` | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
 | Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
 
@@ -4827,7 +4886,10 @@ pip install chronos-forecasting                                 # For Chronos-2
 pip install git+https://github.com/google-research/timesfm.git  # For TimesFM 2.5
 pip install uni2ts                                              # For Moirai-2
 pip install tabicl[forecast]                                    # For TabICL
-pip install tabpfn-time-series                                  # For TabPFN-TSpip install tfc-t0                                             # For T0```
+pip install tabpfn-time-series                                  # For TabPFN-TS
+pip install tfc-t0                                              # For T0
+pip install synthefy-nori                                       # For Nori
+```
 
 Models are downloaded from HuggingFace on first use.
 
@@ -4883,9 +4945,9 @@ model = FoundationModel(
 )
 ```
 
-## With Exogenous Variables (Chronos-2, TabICL, TabPFN-TS and T0)
+## With Exogenous Variables (Chronos-2, TabICL, TabPFN-TS, T0 and Nori)
 
-Chronos-2, TabICL, TabPFN-TS and T0 (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them.
+Chronos-2, TabICL, TabPFN-TS, T0 and Nori (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them.
 
 ```python
 # Historical + future exog (must cover the forecast horizon)
@@ -4914,7 +4976,7 @@ predictions = forecaster.predict_quantiles(
 # Columns: ['level', 'q_0.1', 'q_0.5', 'q_0.9']
 ```
 
-For TimesFM 2.5 and Moirai-2, requested quantiles must be a subset of `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. Chronos-2, TabICL, TabPFN-TS and TFC-T0 support any quantile in `(0, 1)`.
+For TimesFM 2.5 and Moirai-2, requested quantiles must be a subset of `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. Chronos-2, TabICL, TabPFN-TS, TFC-T0 and Nori support any quantile in `(0, 1)`.
 
 ## Choosing a Model
 
@@ -4926,6 +4988,7 @@ For TimesFM 2.5 and Moirai-2, requested quantiles must be a subset of `[0.1, 0.2
 | `soda-inria/tabicl` (Soda-INRIA)       | Yes  | 4096            | Tabular in-context learning, exog-aware           |
 | `priorlabs/tabpfn-ts` (Prior Labs)     | Yes  | 32768           | Tabular foundation model, exog-aware, long context |
 | `theforecastingcompany/t0` (TFC)       | Yes  | 8192            | Probabilistic forecasts, exog-aware (future covariates) |
+| `Synthefy/Nori` (Synthefy)             | Yes  | 4096            | Tabular foundation model, exog-aware               |
 
 The adapter is resolved automatically from the `model_id` prefix — no need to import adapter classes directly.
 
@@ -4972,10 +5035,10 @@ automatically to the last `context_length` observations.
 
 1. **Expecting `fit()` to train the model**: it only stores context. The weights come from HuggingFace.
 2. **Index without frequency**: call `series.asfreq('h')` (or similar) before `fit` — skforecast requires a frequency.
-3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2, TabICL, TabPFN-TS and TFC-T0 support exogenous variables.
+3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2, TabICL, TabPFN-TS, TFC-T0 and Nori support exogenous variables.
 4. **Requesting unsupported quantiles**: TimesFM 2.5 and Moirai-2 are restricted to the nine deciles `0.1 … 0.9`.
 5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
-6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`). Install only the one(s) you need.
+6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`). Install only the one(s) you need.
 
 ---
 ### Reference: adapter-parameters
@@ -5086,6 +5149,24 @@ The model is compiled lazily for the exact requested `steps` (up to `max_horizo
 
 Point forecasts use the median (quantile `0.5`). Covariates must be numeric; encode categoricals as numbers before passing them. A series with no future exog is forecast without covariates.
 
+## NoriAdapter — Synthefy Nori
+
+- **`model_id` prefix**: `Synthefy/Nori`
+- **`allow_exog`**: `True` (known-future covariates; columns present in both the historical context and the forecast horizon are used as features, covariates without future values are ignored)
+- **Quantiles**: any value in `(0, 1)`
+
+| Parameter                | Type | Default  | Description                                                                                       |
+|--------------------------|------|----------|-----------------------------------------------------------------------------------------------------|
+| `model_id`               | str  | —        | Model ID (e.g. `Synthefy/Nori`). Used only for adapter resolution.                                 |
+| `model`                  | obj  | `None`   | Pre-instantiated `NoriRegressor`. If `None`, created lazily on first `predict`.                    |
+| `context_length`         | int  | `4096`   | Max historical observations kept as context.                                                        |
+| `point_estimate`         | str  | `'mean'` | Point forecast method: `'mean'`, `'median'` or `'mode'`.                                            |
+| `add_calendar_features`  | bool | `True`   | Add calendar features (month, day, day-of-week, day-of-year, quarter, hour) for `DatetimeIndex` series. Ignored for `RangeIndex`. |
+| `n_fourier_terms`        | int  | `2`      | Number of Fourier (sin/cos) seasonal harmonics on the yearly/weekly cycles (or the running index for `RangeIndex` series). `0` disables them. |
+| `nori_config`            | dict | `None`   | Extra kwargs forwarded to `NoriRegressor` at instantiation (e.g. `model_path`, `device`, `token`, `augmentations`). |
+
+Nori frames forecasting as tabular in-context regression rather than a native sequence model: each series is featurized (running index, calendar features, Fourier terms, and known-future covariates) before being handed to `NoriRegressor`. Covariates must be numeric; encode categoricals as numbers before passing them.
+
 ## Common Behavior
 
 All adapters implement the same minimal interface:
@@ -5094,7 +5175,7 @@ All adapters implement the same minimal interface:
 - `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
 
-Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.
+Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.
 
 ================================================================================
 # SKILL: choosing-a-forecaster
@@ -5133,7 +5214,7 @@ Skforecast is a **machine learning-first** library. The ML forecasters are the p
 | **General purpose** (start here) | `ForecasterRecursive` | Default choice. One model, recursive multi-step. Works with any sklearn-compatible estimator (LightGBM, XGBoost, CatBoost, RandomForest, etc.). Supports lags, window features, exog, differentiation, transformers, weight functions, and all probabilistic prediction methods (bootstrapping, conformal, quantiles, distributions) |
 | **Horizon-dependent patterns** (e.g., predicting at 1h vs 24h requires different relationships) | `ForecasterDirect` | Trains one independent model per step — no error propagation. Better when the predictive relationship changes significantly across the forecast horizon. Requires `steps` at init; parallelizable with `n_jobs` |
 | **Statistical baseline** | `ForecasterStats` | Wraps ARIMA, SARIMAX, ETS, ARAR. Use as a benchmark to compare against ML models, or when the series is very short (< 200 obs) and ML overfits |
-| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0). `fit()` only stores context — no training. Good baseline and cold-start option. See the `foundation-forecasting` skill |
+| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori). `fit()` only stores context — no training. Good baseline and cold-start option. See the `foundation-forecasting` skill |
 | **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Use as a sanity-check baseline |
 
 ## Step 2b — Multiple Series
@@ -5143,7 +5224,7 @@ Skforecast is a **machine learning-first** library. The ML forecasters are the p
 | **Forecast many series with a shared model** (start here) | `ForecasterRecursiveMultiSeries` | One global model learns cross-series patterns. Supports DataFrame or dict input (dict allows series with different date ranges). Encoding options: `'ordinal'` (default), `'ordinal_category'`, `'onehot'`, `None`. Supports per-series transformers, per-series differentiation, series_weights |
 | **Other series are features for one target** | `ForecasterDirectMultiVariate` | All series become input features to predict a single `level`. Per-series lags via dict (`{'sales': [1,7], 'price': [1]}`). One model per step — no error propagation |
 | **Deep learning / complex nonlinear patterns** | `ForecasterRnn` | Keras-based RNN/LSTM/GRU. Single model outputs all steps and levels simultaneously via 3D tensors. Only conformal intervals (no bootstrapping). Requires keras |
-| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0. `fit()` only stores context. Native quantile intervals. Chronos-2, TabICL, TabPFN-TS, and TFC-T0 support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
+| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori. `fit()` only stores context. Native quantile intervals. Chronos-2, TabICL, TabPFN-TS, TFC-T0, and Nori support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
 
 ## Decision Flowchart
 
@@ -5176,7 +5257,7 @@ How many series?
         └─► ForecasterRnn
 
 Zero-shot / no training data / cold-start (single or multi-series)?
-    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0)
+    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori)
 ```
 
 ## Key Comparisons
@@ -5504,7 +5585,7 @@ the complete reference, including:
 - `ForecasterStats` — statistical models (ARIMA, ETS, SARIMAX, ARAR)
 - `ForecasterEquivalentDate` — baseline using past offsets
 - `ForecasterRnn` — deep learning (RNN/LSTM/GRU)
-- `ForecasterFoundation` — zero-shot with foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0)
+- `ForecasterFoundation` — zero-shot with foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori)
 - `FoundationModel` — low-level foundation model wrapper used by `ForecasterFoundation`
 
 ### Forecaster Methods
@@ -5698,6 +5779,7 @@ FoundationModel(
                                #   point_estimate, tabicl_config, temporal_features (TabICL)
                                #   mode, point_estimate, tabpfn_model_config, temporal_features (TabPFN-TS)
                                #   (T0 uses only context_length, device_map, torch_dtype)
+                               #   point_estimate, add_calendar_features, n_fourier_terms, nori_config (Nori)
 )
 
 ForecasterFoundation(

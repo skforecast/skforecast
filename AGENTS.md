@@ -47,13 +47,13 @@ reuse it for the rest of the session without asking again.
 
 > Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
-This document is for skforecast v0.23.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.24.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.23.0
+- Version: 0.24.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -590,6 +590,7 @@ from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection import backtesting_stats
 from skforecast.model_selection import backtesting_foundation
+from skforecast.model_selection import bayesian_search_foundation
 from skforecast.model_selection import grid_search_forecaster
 from skforecast.model_selection import grid_search_forecaster_multiseries
 from skforecast.model_selection import random_search_forecaster
@@ -634,6 +635,8 @@ from skforecast.metrics import crps_from_predictions
 from skforecast.metrics import crps_from_quantiles
 from skforecast.metrics import calculate_coverage
 from skforecast.metrics import create_mean_pinball_loss
+from skforecast.metrics import winkler_score
+from skforecast.metrics import weighted_interval_score
 
 # Statistical models (used with ForecasterStats)
 from skforecast.stats import Arima, Ets, Sarimax, Arar
@@ -709,5 +712,5 @@ show_datasets_info()
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.23.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.24.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
