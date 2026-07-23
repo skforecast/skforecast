@@ -24,6 +24,8 @@ Complete reference for all metrics available in skforecast: properties, compatib
 | Coverage | `calculate_coverage` | `(y_true, lower_bound, upper_bound)` | Any forecaster with intervals | Calibration (proportion of truths in interval) |
 | CRPS (bootstrap) | `crps_from_predictions` | `(y_true: float, y_pred: ndarray)` | Bootstrapped predictions | Calibration + sharpness (single observation) |
 | CRPS (quantiles) | `crps_from_quantiles` | `(y_true: float, pred_quantiles: ndarray, quantile_levels: ndarray)` | Foundation models, quantile predictions | Calibration + sharpness (single observation) |
+| Winkler Score | `winkler_score` | `(y_true, lower_bound, upper_bound, alpha)` | Any single interval | Calibration + sharpness of one interval; miscoverage penalty scaled by `alpha` |
+| Weighted Interval Score | `weighted_interval_score` | `(y_true, y_pred, lower_bounds, upper_bounds, alphas)` | Multi-interval / quantile forecasts | Calibration + sharpness across K intervals + median (approximates CRPS) |
 | Pinball Loss | `create_mean_pinball_loss(alpha)` | Returns `func(y_true, y_pred)` | Any quantile forecast at level alpha | Single-quantile accuracy |
 
 ## Classification Metrics
@@ -64,6 +66,8 @@ Complete reference for all metrics available in skforecast: properties, compatib
 | RMSSE | Same as MASE but want to penalize large errors more | Same as MASE |
 | Coverage | Evaluating prediction interval calibration | Want to measure interval width/sharpness (use CRPS) |
 | CRPS | Comprehensive interval/quantile evaluation (calibration + sharpness) | Only have point forecasts |
+| Winkler score | Scoring a single interval with a tunable miscoverage penalty (`alpha`) | Comparing full distributions (use WIS or CRPS) |
+| Weighted interval score (WIS) | Scoring several quantile intervals + median as one CRPS-like number | Only have a single interval (use Winkler) or only point forecasts |
 | Pinball loss | Evaluating a specific quantile (e.g., 90th percentile for risk) | Need overall distributional assessment (use CRPS) |
 | Balanced accuracy | Classification with imbalanced classes | Perfectly balanced classes (accuracy is simpler) |
 | F1 | Classification where both false positives and negatives matter | Need per-class detail (use precision/recall separately) |

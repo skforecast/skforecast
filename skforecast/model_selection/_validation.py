@@ -2559,6 +2559,7 @@ def _backtesting_foundation(
     return metrics_levels, backtest_predictions
 
 
+@manage_warnings
 def backtesting_foundation(
     forecaster: object,
     series: pd.Series | pd.DataFrame | dict,
@@ -2689,8 +2690,7 @@ def backtesting_foundation(
             exog_dict         = {name: None for name in series_names_in_},
         )
 
-        # NOTE: As no trim is applied to the series, it is only needed to 
-        # align exog.
+        # NOTE: As no trim is applied to the series, it is only needed to align exog.
         series_dict, exog_dict = align_series_and_exog_multiseries(
                                      series_dict      = series_dict,
                                      exog_dict        = exog_dict,

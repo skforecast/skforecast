@@ -73,11 +73,35 @@ class FoundationModel:
         See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
-        Valid keys depend on the adapter selected by `model_id`. See the
-        corresponding adapter class (`ChronosAdapter`, `TimesFMAdapter`,
-        `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`,
-        `TSICLAdapter`) for the full parameter list, or refer to the model
-        documentation linked in the References section below.
+        Valid keys depend on the model selected by `model_id`. See the
+        corresponding adapter class documentation or the model card linked
+        in the References section below for the full parameter list.
+
+        Commonly used kwargs by model:
+
+        - **Amazon Chronos-2** (`ChronosAdapter`): `context_length` (int,
+          default 8192), `device_map` (str, default `'auto'`),
+          `torch_dtype` (object, default None), `predict_kwargs` (dict,
+          default None), `cross_learning` (bool, default False).
+        - **Google TimesFM 2.5** (`TimesFMAdapter`): `context_length` (int,
+          default 512), `max_horizon` (int, default 512),
+          `forecast_config_kwargs` (dict, default None).
+        - **Salesforce Moirai-2** (`MoiraiAdapter`): `context_length` (int,
+          default 2048), `device` (str, default `'auto'`).
+        - **TabICLv2** (`TabICLAdapter`): `context_length` (int, default
+          4096), `point_estimate` (str, default `'mean'`), `tabicl_config`
+          (dict, default None), `temporal_features` (list, default None),
+          `show_progress` (bool, default False; set to True to show the
+          tqdm bar emitted during inference).
+        - **Prior Labs TabPFN-TS** (`TabPFNAdapter`): `context_length`
+          (int, default 32768), `mode` (str, default `'local'`),
+          `point_estimate` (str, default `'median'`), `tabpfn_model_config`
+          (dict, default None), `temporal_features` (list, default None),
+          `show_progress` (bool, default False; set to True to show the
+          tqdm bar emitted during inference).
+        - **The Forecasting Company T0** (`T0Adapter`): `context_length`
+          (int, default 8192), `device_map` (str, default `'auto'`),
+          `torch_dtype` (object, default None).
 
     Attributes
     ----------

@@ -10,6 +10,29 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-fix">Fix</span>                 | Bug fix                               |
 
 
+## 0.24.0 <small>In development</small> { id="0.24.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span> New function <code>[bayesian_search_foundation]</code> in the <code>[model_selection]</code> module to tune the inference-time configuration (e.g. `context_length`) of <code>[ForecasterFoundation]</code> models using optuna.
+
++ <span class="badge text-bg-feature">Feature</span> New functions <code>[winkler_score]</code> and <code>[weighted_interval_score]</code> in the <code>[metrics]</code> module to evaluate the quality of prediction intervals. The Winkler score assesses a single interval (balancing sharpness and calibration), while the Weighted Interval Score (WIS) aggregates several intervals together with the median forecast and approximates the CRPS. [User guide](../user_guides/probabilistic-forecasting-metrics.ipynb) ([#1254](https://github.com/skforecast/skforecast/pull/1254), [#1262](https://github.com/skforecast/skforecast/pull/1262))
+
+
+**Added**
+
++ New function <code>[bayesian_search_foundation]</code> in the <code>[model_selection]</code> module to tune the inference-time configuration (e.g. `context_length`) of <code>[ForecasterFoundation]</code> models using optuna.
+
++ New functions <code>[winkler_score]</code> and <code>[weighted_interval_score]</code> in the <code>[metrics]</code> module to evaluate the quality of prediction intervals. The Winkler score assesses a single interval (balancing sharpness and calibration), while the Weighted Interval Score (WIS) aggregates several intervals together with the median forecast and approximates the CRPS. [User guide](../user_guides/probabilistic-forecasting-metrics.ipynb) ([#1254](https://github.com/skforecast/skforecast/pull/1254), [#1262](https://github.com/skforecast/skforecast/pull/1262))
+
+
+**Changed**
+
+
+**Fixed**
+
+
+
 ## 0.23.0 <small>Jul 8, 2026</small> { id="0.23.0" }
 
 The main changes in this release are:
@@ -1607,15 +1630,16 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [random_search_forecaster_multiseries]: ../api/model_selection.md#skforecast.model_selection._search.random_search_forecaster_multiseries
 [bayesian_search_forecaster_multiseries]: ../api/model_selection.md#skforecast.model_selection._search.bayesian_search_forecaster_multiseries
 
+[backtesting_foundation]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_foundation
+[bayesian_search_foundation]: ../api/model_selection.md#skforecast.model_selection._search.bayesian_search_foundation
+
 [backtesting_stats]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_stats
 [grid_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.grid_search_stats
 [random_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.random_search_stats
 
-[backtesting_foundation]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_foundation
-
-[BaseFold]: ../api/model_selection.md#skforecast.model_selection._split.BaseFold
 [TimeSeriesFold]: ../api/model_selection.md#skforecast.model_selection._split.TimeSeriesFold
 [OneStepAheadFold]: ../api/model_selection.md#skforecast.model_selection._split.OneStepAheadFold
+[BaseFold]: ../api/model_selection.md#skforecast.model_selection._split.BaseFold
 
 <!-- feature_selection -->
 [feature_selection]: ../api/feature_selection.md
@@ -1647,6 +1671,12 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [mean_absolute_scaled_error]: ../api/metrics.md#skforecast.metrics.mean_absolute_scaled_error
 [root_mean_squared_scaled_error]: ../api/metrics.md#skforecast.metrics.root_mean_squared_scaled_error
 [symmetric_mean_absolute_percentage_error]: ../api/metrics.md#skforecast.metrics.symmetric_mean_absolute_percentage_error
+[calculate_coverage]: ../api/metrics.md#skforecast.metrics.calculate_coverage
+[crps_from_predictions]: ../api/metrics.md#skforecast.metrics.crps_from_predictions
+[crps_from_quantiles]: ../api/metrics.md#skforecast.metrics.crps_from_quantiles
+[winkler_score]: ../api/metrics.md#skforecast.metrics.winkler_score
+[weighted_interval_score]: ../api/metrics.md#skforecast.metrics.weighted_interval_score
+[create_mean_pinball_loss]: ../api/metrics.md#skforecast.metrics.create_mean_pinball_loss
 [add_y_train_argument]: ../api/metrics.md#skforecast.metrics.add_y_train_argument
 
 <!-- plot -->
