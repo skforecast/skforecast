@@ -47,13 +47,13 @@ reuse it for the rest of the session without asking again.
 
 > Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
-This document is for skforecast v0.23.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.24.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.23.0
+- Version: 0.24.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -83,7 +83,7 @@ skforecast/
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
 ├── foundation/              # FoundationModel, ForecasterFoundation
-│                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, TS-ICL)
+│                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, , TS-ICL, Synthefy Nori)
 ├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
@@ -104,7 +104,7 @@ skforecast/
 - **Forecasters inheriting from `ForecasterBase`**: ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterRecursiveClassifier, ForecasterDirect, ForecasterDirectMultiVariate, ForecasterRnn
 - **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate, ForecasterFoundation
 - Statistical models in `stats/` are wrapped by `ForecasterStats` (in `recursive/`)
-- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `TSICLAdapter`) resolved from the HuggingFace `model_id`
+- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `TSICLAdapter`, `NoriAdapter`) resolved from the HuggingFace `model_id`
 - `model_selection/` functions work with all forecaster types
 - `preprocessing/` classes can be passed to forecasters via `transformer_y`, `transformer_exog`, `window_features`
 
@@ -118,7 +118,7 @@ skforecast/
 | ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
 | ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
 | ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
-| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, TS-ICL) |
+| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, TS-ICL, Synthefy Nori) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
 
@@ -481,7 +481,7 @@ forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 
 ## Foundation Models (Zero-Shot)
 
-Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`). Models are downloaded from HuggingFace on first use.
+Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`). Models are downloaded from HuggingFace on first use.
 
 `FoundationModel` is the low-level interface; `ForecasterFoundation` wraps it to integrate with the rest of the skforecast ecosystem (backtesting, model selection, uniform `predict` / `predict_interval` / `predict_quantiles` API).
 
@@ -518,6 +518,7 @@ Supported adapters (selected automatically from `model_id`):
 | TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
 | T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
 | TSICLAdapter (EDF Lab) | `taharnbl/TS-ICL` | Yes (past & future covariates) | 4096 | Subset of `[0.01, 0.02, ..., 0.99]` |
+| NoriAdapter (Synthefy) | `Synthefy/Nori` | Yes (known-future covariates) | 4096 | Any in `(0, 1)` |
 
 Key points:
 - `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
@@ -590,6 +591,7 @@ from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection import backtesting_stats
 from skforecast.model_selection import backtesting_foundation
+from skforecast.model_selection import bayesian_search_foundation
 from skforecast.model_selection import grid_search_forecaster
 from skforecast.model_selection import grid_search_forecaster_multiseries
 from skforecast.model_selection import random_search_forecaster
@@ -634,6 +636,8 @@ from skforecast.metrics import crps_from_predictions
 from skforecast.metrics import crps_from_quantiles
 from skforecast.metrics import calculate_coverage
 from skforecast.metrics import create_mean_pinball_loss
+from skforecast.metrics import winkler_score
+from skforecast.metrics import weighted_interval_score
 
 # Statistical models (used with ForecasterStats)
 from skforecast.stats import Arima, Ets, Sarimax, Arar
@@ -709,5 +713,5 @@ show_datasets_info()
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.23.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.24.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```

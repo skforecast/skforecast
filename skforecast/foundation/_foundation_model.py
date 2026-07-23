@@ -30,8 +30,8 @@ class FoundationModel:
     Scikit-learn compatible interface for foundation time-series models.
 
     Currently supports Amazon Chronos-2, Google TimesFM 2.5, Salesforce
-    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, and EDF Lab TS-ICL. For full
-    skforecast ecosystem integration (backtesting, model selection, etc.)
+    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori and EDF Lab TS-ICL.
+    For full skforecast ecosystem integration (backtesting, model selection, etc.)
     use `ForecasterFoundation` instead.
 
     Parameters
@@ -70,6 +70,10 @@ class FoundationModel:
 
         - `'taharnbl/TS-ICL'`
 
+        Synthefy Nori (supports `exog`):
+
+        - `'Synthefy/Nori'`
+
         See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
@@ -106,6 +110,10 @@ class FoundationModel:
           default `'tsicl-v1.ckpt'`), `context_length` (int, default 4096),
           `device` (str, default `'auto'`), `allow_auto_download` (bool,
           default True).
+        - **Synthefy Nori** (`NoriAdapter`): `context_length` (int, default
+          4096), `point_estimate` (str, default `'mean'`),
+          `add_calendar_features` (bool, default True), `n_fourier_terms`
+          (int, default 2), `nori_config` (dict, default None).
 
     Attributes
     ----------
