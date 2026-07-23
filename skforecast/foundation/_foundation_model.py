@@ -30,9 +30,9 @@ class FoundationModel:
     Scikit-learn compatible interface for foundation time-series models.
 
     Currently supports Amazon Chronos-2, Google TimesFM 2.5, Salesforce
-    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, and Synthefy Nori. For full skforecast
-    ecosystem integration (backtesting, model selection, etc.) use
-    `ForecasterFoundation` instead.
+    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori and EDF Lab TS-ICL.
+    For full skforecast ecosystem integration (backtesting, model selection, etc.)
+    use `ForecasterFoundation` instead.
 
     Parameters
     ----------
@@ -65,6 +65,10 @@ class FoundationModel:
         The Forecasting Company T0 (supports `exog`):
 
         - `'theforecastingcompany/t0-alpha'`
+
+        EDF Lab TS-ICL (supports `exog`):
+
+        - `'taharnbl/TS-ICL'`
 
         Synthefy Nori (supports `exog`):
 
@@ -102,6 +106,10 @@ class FoundationModel:
         - **The Forecasting Company T0** (`T0Adapter`): `context_length`
           (int, default 8192), `device_map` (str, default `'auto'`),
           `torch_dtype` (object, default None).
+        - **EDF Lab TS-ICL** (`TSICLAdapter`): `checkpoint_version` (str,
+          default `'tsicl-v1.ckpt'`), `context_length` (int, default 4096),
+          `device` (str, default `'auto'`), `allow_auto_download` (bool,
+          default True).
         - **Synthefy Nori** (`NoriAdapter`): `context_length` (int, default
           4096), `point_estimate` (str, default `'mean'`),
           `add_calendar_features` (bool, default True), `n_fourier_terms`
@@ -208,10 +216,16 @@ class FoundationModel:
     .. [12] The Forecasting Company T0 - HuggingFace model card.
             https://huggingface.co/theforecastingcompany/t0-alpha
 
-    .. [13] Synthefy Nori - GitHub repository.
+    .. [13] EDF Lab TS-ICL - GitHub repository.
+            https://github.com/EDF-Lab/ts-icl
+
+    .. [14] EDF Lab TS-ICL - HuggingFace model card.
+            https://huggingface.co/taharnbl/TS-ICL
+            
+    .. [15] Synthefy Nori - GitHub repository.
             https://github.com/Synthefy/synthefy-nori
 
-    .. [14] Synthefy Nori - HuggingFace model card.
+    .. [16] Synthefy Nori - HuggingFace model card.
             https://huggingface.co/Synthefy/Nori
 
     """

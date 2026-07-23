@@ -10,6 +10,7 @@ from skforecast.foundation._adapters import (
     TabPFNAdapter,
     NoriAdapter,
     T0Adapter,
+    TSICLAdapter,
     _resolve_adapter,
     _ADAPTER_REGISTRY,
 )
@@ -29,6 +30,7 @@ from skforecast.foundation._adapters import (
         ("priorlabs/tabpfn-ts", TabPFNAdapter),
         ("Synthefy/Nori", NoriAdapter),
         ("theforecastingcompany/t0-alpha", T0Adapter),
+        ("taharnbl/TS-ICL", TSICLAdapter),
     ],
     ids=lambda x: str(x),
 )
@@ -65,6 +67,7 @@ def test_ADAPTER_REGISTRY_contains_all_expected_entries():
         "priorlabs/tabpfn": TabPFNAdapter,
         "Synthefy/Nori": NoriAdapter,
         "theforecastingcompany/t0": T0Adapter,
+        "taharnbl/TS-ICL": TSICLAdapter,
     }
     for prefix, cls in expected.items():
         assert prefix in _ADAPTER_REGISTRY

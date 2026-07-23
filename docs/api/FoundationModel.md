@@ -7,4 +7,5 @@
 ::: skforecast.foundation._adapters.TabICLAdapter
 ::: skforecast.foundation._adapters.TabPFNAdapter
 ::: skforecast.foundation._adapters.T0Adapter
+::: skforecast.foundation._adapters.TSICLAdapter
 ::: skforecast.foundation._adapters.NoriAdapter
