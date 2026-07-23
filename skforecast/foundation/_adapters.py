@@ -3092,14 +3092,14 @@ class TSICLAdapter:
             )
 
         self.model_id             = model_id
-        self._model                = model
-        self.context_              = None
-        self.context_exog_         = None
-        self.checkpoint_version    = checkpoint_version
-        self.context_length        = context_length
-        self.device                = device
-        self.allow_auto_download   = allow_auto_download
-        self.is_fitted              = False
+        self._model               = model
+        self.context_             = None
+        self.context_exog_        = None
+        self.checkpoint_version   = checkpoint_version
+        self.context_length       = context_length
+        self.device               = device
+        self.allow_auto_download  = allow_auto_download
+        self.is_fitted            = False
 
     def get_params(self) -> dict:
         """

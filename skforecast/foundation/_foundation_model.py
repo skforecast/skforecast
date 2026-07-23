@@ -102,6 +102,10 @@ class FoundationModel:
         - **The Forecasting Company T0** (`T0Adapter`): `context_length`
           (int, default 8192), `device_map` (str, default `'auto'`),
           `torch_dtype` (object, default None).
+        - **EDF Lab TS-ICL** (`TSICLAdapter`): `checkpoint_version` (str,
+          default `'tsicl-v1.ckpt'`), `context_length` (int, default 4096),
+          `device` (str, default `'auto'`), `allow_auto_download` (bool,
+          default True).
 
     Attributes
     ----------
