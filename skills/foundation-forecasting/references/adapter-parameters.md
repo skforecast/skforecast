@@ -104,6 +104,24 @@ The model is compiled lazily for the exact requested `steps` (up to `max_horizo
 
 Point forecasts use the median (quantile `0.5`). Covariates must be numeric; encode categoricals as numbers before passing them. A series with no future exog is forecast without covariates.
 
+## NoriAdapter — Synthefy Nori
+
+- **`model_id` prefix**: `Synthefy/Nori`
+- **`allow_exog`**: `True` (known-future covariates; columns present in both the historical context and the forecast horizon are used as features, covariates without future values are ignored)
+- **Quantiles**: any value in `(0, 1)`
+
+| Parameter                | Type | Default  | Description                                                                                       |
+|--------------------------|------|----------|-----------------------------------------------------------------------------------------------------|
+| `model_id`               | str  | —        | Model ID (e.g. `Synthefy/Nori`). Used only for adapter resolution.                                 |
+| `model`                  | obj  | `None`   | Pre-instantiated `NoriRegressor`. If `None`, created lazily on first `predict`.                    |
+| `context_length`         | int  | `4096`   | Max historical observations kept as context.                                                        |
+| `point_estimate`         | str  | `'mean'` | Point forecast method: `'mean'`, `'median'` or `'mode'`.                                            |
+| `add_calendar_features`  | bool | `True`   | Add calendar features (month, day, day-of-week, day-of-year, quarter, hour) for `DatetimeIndex` series. Ignored for `RangeIndex`. |
+| `n_fourier_terms`        | int  | `2`      | Number of Fourier (sin/cos) seasonal harmonics on the yearly/weekly cycles (or the running index for `RangeIndex` series). `0` disables them. |
+| `nori_config`            | dict | `None`   | Extra kwargs forwarded to `NoriRegressor` at instantiation (e.g. `model_path`, `device`, `token`, `augmentations`). |
+
+Nori frames forecasting as tabular in-context regression rather than a native sequence model: each series is featurized (running index, calendar features, Fourier terms, and known-future covariates) before being handed to `NoriRegressor`. Covariates must be numeric; encode categoricals as numbers before passing them.
+
 ## Common Behavior
 
 All adapters implement the same minimal interface:
@@ -112,4 +130,4 @@ All adapters implement the same minimal interface:
 - `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
 
-Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.
+Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.

@@ -5,7 +5,6 @@ import pandas as pd
 from skforecast.foundation._utils import (
     check_preprocess_series_foundation,
 )
-from skforecast.utils import expand_index
 
 
 def normalize_exog_to_dict(exog, series_names):
@@ -418,3 +417,54 @@ class FakeTabPFNTSPipeline:
             data[q] = [r[q] for r in rows]
 
         return pd.DataFrame(data, index=index)
+
+
+# RangeIndex fixture (for adapters that accept integer-indexed series)
+# ==============================================================================
+y_range = pd.Series(np.arange(50, dtype=float), name="sales")
+
+
+# Fake Nori regressor
+# ==============================================================================
+class FakeNoriRegressor:
+    """
+    Fake `NoriRegressor` for testing without synthefy-nori.
+
+    `fit()` records the feature-matrix width (`n_features_in_`) and the target
+    (`y_`). `predict()` returns deterministic output:
+
+    - point (`output_type` in {'mean', 'median', 'mode'}): a length-`n` array
+      filled with the corresponding statistic of the fitted target.
+    - quantiles: shape `(n_quantiles, n)` where row `i` equals `quantiles[i]`,
+      making quantile column-order assertions trivial.
+
+    Records the last call arguments for inspection.
+    """
+
+    def __init__(self, **kwargs):
+        self.n_features_in_ = None
+        self.y_ = None
+        self.last_output_type = None
+        self.last_quantiles = None
+
+    def fit(self, X, y):
+        self.n_features_in_ = X.shape[1]
+        self.y_ = np.asarray(y, dtype=float)
+        return self
+
+    def predict(self, X, *, output_type="mean", quantiles=None):
+        n = len(X)
+        self.last_output_type = output_type
+        self.last_quantiles = list(quantiles) if quantiles is not None else None
+
+        if quantiles is None:
+            fill = {
+                "mean":   self.y_.mean(),
+                "median": np.median(self.y_),
+                "mode":   self.y_.mean(),
+            }[output_type]
+            return np.full(n, fill)
+
+        return np.tile(
+            np.asarray(quantiles, dtype=float).reshape(-1, 1), (1, n)
+        )

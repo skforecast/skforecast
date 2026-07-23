@@ -2979,57 +2979,77 @@ class NoriAdapter:
     forward pass, with no task-specific training or fine-tuning. This adapter
     frames forecasting as tabular regression: each series is featurized (running
     index, calendar features, Fourier seasonal terms, and optional known-future
-    covariates) and a ``NoriRegressor`` predicts the forecast horizon zero-shot.
+    covariates) and a `NoriRegressor` predicts the forecast horizon zero-shot.
 
     Parameters
     ----------
     model_id : str
-        Model ID, e.g. ``"Synthefy/Nori"``. Used to resolve this adapter; the
-        underlying checkpoint is controlled by ``nori_config`` (key
-        ``model_path``) and defaults to the public Hugging Face checkpoint.
+        Model ID, e.g. `"Synthefy/Nori"`. Used to resolve this adapter; the
+        underlying checkpoint is controlled by `nori_config` (key `model_path`)
+        and defaults to the public HuggingFace checkpoint.
     model : object, default None
-        Pre-instantiated ``NoriRegressor`` instance. If ``None``, a new instance
-        is created lazily on the first call to ``predict``. Intended for testing
+        Pre-instantiated `NoriRegressor` instance. If `None`, a new instance
+        is created lazily on the first call to `predict`. Intended for testing
         only.
     context_length : int, default 4096
-        Maximum number of historical observations to use as context rows. Must be
-        a positive integer.
+        Maximum number of historical observations to use as context rows. At fit
+        time only the last `context_length` observations are stored. At predict
+        time, if `context` is longer than `context_length` it is trimmed to this
+        length; if it is shorter, all available observations are used as-is. Must
+        be a positive integer.
     point_estimate : str, default 'mean'
-        Point forecast from Nori's predictive distribution. One of ``'mean'``,
-        ``'median'``, ``'mode'``.
+        Method used to derive the point forecast from Nori's predictive
+        distribution. Accepted values: `'mean'`, `'median'`, `'mode'`.
     add_calendar_features : bool, default True
-        Add calendar features (month, day, day-of-week, day-of-year, quarter,
-        hour) when the series has a ``DatetimeIndex``. Ignored for ``RangeIndex``.
+        If `True`, add calendar features (month, day, day-of-week, day-of-year,
+        quarter, hour) when the series has a `DatetimeIndex`. Ignored for
+        `RangeIndex` series.
     n_fourier_terms : int, default 2
-        Number of Fourier (sin/cos) seasonal harmonics on the yearly and weekly
-        cycles for datetime series (or on the running index for ``RangeIndex``).
-        Set ``0`` to disable.
+        Number of Fourier (sin/cos) seasonal harmonics added on the yearly and
+        weekly cycles for datetime series (or on the running index for
+        `RangeIndex` series). Set `0` to disable. Must be a non-negative integer.
     nori_config : dict, default None
-        Extra keyword arguments forwarded verbatim to ``NoriRegressor`` (e.g.
-        ``model_path``, ``device``, ``token``, ``augmentations``).
+        Additional keyword arguments forwarded verbatim to `NoriRegressor` at
+        instantiation (e.g. `model_path`, `device`, `token`, `augmentations`).
+        If `None`, the library defaults are used.
 
     Attributes
     ----------
-    model_id, context_, context_exog_, context_length, point_estimate,
-    add_calendar_features, n_fourier_terms, nori_config, is_fitted, _model
+    model_id : str
+        Model ID.
+    context_ : dict
+        Stored training series after fitting.
+    context_exog_ : dict
+        Stored historical exogenous variables after fitting.
+    context_length : int
+        Maximum number of historical observations used as context.
+    point_estimate : str
+        Point forecast method.
+    add_calendar_features : bool
+        Whether calendar features are added for datetime series.
+    n_fourier_terms : int
+        Number of Fourier seasonal harmonics added.
+    nori_config : dict
+        Additional configuration forwarded to `NoriRegressor`.
+    is_fitted : bool
+        Whether the adapter has been fitted.
+    _model : object
+        Internal `NoriRegressor` instance. `None` until the first call to
+        `predict`, after which it is cached for reuse.
 
     Notes
     -----
-    Nori is a pure tabular regressor and does not ship a time-series
-    featurization pipeline (unlike TabPFN-TS), so this adapter builds its own
-    lightweight, dependency-free features. If the maintainers prefer the
-    ``temporal_features`` / ``FeatureGenerator`` convention used by
-    ``TabPFNAdapter``, the featurizer can be swapped to mirror it.
+    Nori supports arbitrary quantile levels (any float strictly in `(0, 1)`),
+    unlike models with fixed quantile sets such as TimesFM or Moirai. A
+    `bar_distribution` checkpoint does not support quantiles.
 
     Covariate support is available for *known-future* covariates: columns present
     in both the historical context and the forecast horizon are used as features.
-    Covariates without future values are ignored.
+    Covariates without future values are ignored. Covariates must be numeric;
+    encode categoricals as numbers before passing them.
 
-    Series with a ``RangeIndex`` are accepted; only running-index and
+    Series with a `RangeIndex` are accepted; only running-index and
     Fourier(index) features are meaningful there (calendar features are skipped).
-
-    Quantiles use Nori's native pinball head and accept any tau strictly in
-    ``(0, 1)``. A ``bar_distribution`` checkpoint does not support quantiles.
 
     References
     ----------
@@ -3054,6 +3074,39 @@ class NoriAdapter:
         n_fourier_terms: int = 2,
         nori_config: dict[str, Any] | None = None,
     ) -> None:
+        """
+        Initialise the adapter.
+
+        Parameters
+        ----------
+        model_id : str
+            Model ID, e.g. `"Synthefy/Nori"`.
+        model : object, default None
+            Pre-instantiated `NoriRegressor` instance. If `None`, a new
+            instance is created lazily on the first call to `predict`.
+            Intended for testing only.
+        context_length : int, default 4096
+            Maximum number of historical observations to retain as context.
+            At `fit` time only the last `context_length` observations of
+            `series` (and `exog`) are stored. At `predict` time, if `context`
+            is longer than `context_length` it is trimmed to this length
+            before inference; if it is shorter, all available observations are
+            passed as-is. Must be a positive integer.
+        point_estimate : str, default 'mean'
+            Method used to derive the point forecast. Accepted values:
+            `'mean'`, `'median'`, `'mode'`.
+        add_calendar_features : bool, default True
+            If `True`, add calendar features when the series has a
+            `DatetimeIndex`. Ignored for `RangeIndex` series.
+        n_fourier_terms : int, default 2
+            Number of Fourier seasonal harmonics added. Set `0` to disable.
+            Must be a non-negative integer.
+        nori_config : dict, default None
+            Additional keyword arguments forwarded verbatim to `NoriRegressor`
+            at instantiation.
+
+        """
+
         if not isinstance(context_length, int) or context_length < 1:
             raise ValueError(
                 f"`context_length` must be a positive integer. Got {context_length!r}."
@@ -3062,6 +3115,11 @@ class NoriAdapter:
             raise ValueError(
                 f"`point_estimate` must be 'mean', 'median' or 'mode'. "
                 f"Got {point_estimate!r}."
+            )
+        if not isinstance(add_calendar_features, bool):
+            raise ValueError(
+                f"`add_calendar_features` must be a bool. "
+                f"Got {add_calendar_features!r}."
             )
         if not isinstance(n_fourier_terms, int) or n_fourier_terms < 0:
             raise ValueError(
@@ -3081,6 +3139,18 @@ class NoriAdapter:
         self.is_fitted             = False
 
     def get_params(self) -> dict:
+        """
+        Return the adapter's constructor parameters.
+
+        Returns
+        -------
+        params : dict
+            Keys: `model_id`, `context_length`, `point_estimate`,
+            `add_calendar_features`, `n_fourier_terms`, `nori_config`.
+            `nori_config` is returned as `None` when no additional config was
+            set (i.e. when the internal dict is empty).
+
+        """
         return {
             "model_id":              self.model_id,
             "context_length":        self.context_length,
@@ -3090,7 +3160,26 @@ class NoriAdapter:
             "nori_config":           self.nori_config or None,
         }
 
-    def set_params(self, **params) -> "NoriAdapter":
+    def set_params(self, **params) -> NoriAdapter:
+        """
+        Set adapter parameters. Resets the loaded model when a parameter baked
+        into the `NoriRegressor` instance changes (`model_id`, `nori_config`);
+        featurization/inference-time parameters (`context_length`,
+        `point_estimate`, `add_calendar_features`, `n_fourier_terms`) do not
+        reset the model.
+
+        Parameters
+        ----------
+        **params :
+            Valid keys: `model_id`, `context_length`, `point_estimate`,
+            `add_calendar_features`, `n_fourier_terms`, `nori_config`.
+
+        Returns
+        -------
+        self : NoriAdapter
+
+        """
+
         valid = {
             "model_id", "context_length", "point_estimate",
             "add_calendar_features", "n_fourier_terms", "nori_config",
@@ -3117,6 +3206,12 @@ class NoriAdapter:
                         f"Got {value!r}."
                     )
                 validated[key] = value
+            elif key == "add_calendar_features":
+                if not isinstance(value, bool):
+                    raise ValueError(
+                        f"`add_calendar_features` must be a bool. Got {value!r}."
+                    )
+                validated[key] = value
             elif key == "n_fourier_terms":
                 if not isinstance(value, int) or value < 0:
                     raise ValueError(
@@ -3129,11 +3224,13 @@ class NoriAdapter:
             else:
                 validated[key] = value
 
+        model_reset_keys = {"model_id", "nori_config"}
         actually_changed = {
             k: v for k, v in validated.items() if getattr(self, k) != v
         }
         if actually_changed:
-            self._model = None
+            if actually_changed.keys() & model_reset_keys:
+                self._model = None
             for key, value in actually_changed.items():
                 setattr(self, key, value)
 
@@ -3143,10 +3240,31 @@ class NoriAdapter:
         self,
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-    ) -> "NoriAdapter":
+    ) -> NoriAdapter:
+        """
+        Store the training series and optional historical exogenous variables.
+        No model training occurs since Nori is a zero-shot inference model.
+
+        All input normalization and validation is performed upstream by
+        `FoundationModel`; this method receives canonical dicts only.
+
+        Parameters
+        ----------
+        context : dict pandas Series
+            Normalized training series, one entry per series.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series historical exogenous variables (past covariates).
+
+        Returns
+        -------
+        self : NoriAdapter
+
+        """
+
         self.context_      = context
         self.context_exog_ = context_exog
         self.is_fitted     = True
+
         return self
 
     def predict(
@@ -3157,6 +3275,41 @@ class NoriAdapter:
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         quantiles: list[float] | tuple[float] | None,
     ) -> dict[str, np.ndarray]:
+        """
+        Generate predictions using Nori.
+
+        All input normalization, validation, and context trimming is
+        performed upstream by `FoundationModel`; this method receives
+        pre-processed dicts only.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        context : dict pandas Series
+            Per-series context windows (already trimmed to `context_length`).
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series past covariates (already trimmed).
+        exog : dict pandas DataFrame, pandas Series, or None
+            Per-series future covariates for the forecast horizon.
+        quantiles : list of float or None
+            Quantile levels to return, in the requested order. Must lie
+            strictly in `(0, 1)`. If `None`, a point forecast is produced
+            (shape `(steps, 1)`).
+
+        Returns
+        -------
+        predictions : dict
+            Keys are series names. Each value is a 2-D numpy ndarray of shape
+            `(steps, n_quantiles)` with columns ordered to match `quantiles`.
+
+        Raises
+        ------
+        ValueError
+            If a requested quantile level is not strictly in `(0, 1)`.
+
+        """
+
         quantile_list = list(quantiles) if quantiles is not None else None
         if quantile_list is not None and any(
             (q <= 0.0) or (q >= 1.0) for q in quantile_list
@@ -3166,18 +3319,28 @@ class NoriAdapter:
                 f"Got {quantile_list!r}."
             )
 
+        # Nori does not guarantee that the output column order matches the
+        # requested quantiles, so query sorted, unique levels and reindex the
+        # columns back to the caller's order afterwards.
+        if quantile_list is not None:
+            query_levels = sorted(set(quantile_list))
+            column_for = [query_levels.index(q) for q in quantile_list]
+
+        self._load_model()
+
+        first_series = next(iter(context.values()))
+        is_datetime = isinstance(first_series.index, pd.DatetimeIndex)
+        if not is_datetime and self.add_calendar_features:
+            warnings.warn(
+                "NoriAdapter received series with a non-DatetimeIndex; "
+                "calendar features are skipped. Only running-index and "
+                "Fourier(index) features are used.",
+                # stacklevel=3: NoriAdapter.predict → FoundationModel.predict → user
+                stacklevel=3,
+            )
+
         predictions: dict[str, np.ndarray] = {}
         for name, series in context.items():
-            is_datetime = isinstance(series.index, pd.DatetimeIndex)
-            if not is_datetime and self.add_calendar_features:
-                warnings.warn(
-                    "NoriAdapter received a series with a non-DatetimeIndex; "
-                    "calendar features are skipped for it. Only running-index "
-                    "and Fourier(index) features are used.",
-                    # stacklevel=3: NoriAdapter.predict -> FoundationModel.predict -> user
-                    stacklevel=3,
-                )
-
             ctx_exog = context_exog.get(name) if context_exog is not None else None
             fut_exog = exog.get(name) if exog is not None else None
             exog_cols = self._known_future_columns(ctx_exog, fut_exog)
@@ -3190,28 +3353,50 @@ class NoriAdapter:
             )
             y_ctx = series.to_numpy(dtype=float)
 
-            model = self._new_model()
-            model.fit(X_ctx, y_ctx)
+            # Nori fits in-context (no gradient training); the cached model is
+            # re-conditioned on each series' context rows before predicting.
+            self._model.fit(X_ctx, y_ctx)
 
             if quantile_list is None:
-                y_hat = model.predict(X_fut, output_type=self.point_estimate)
-                predictions[name] = np.asarray(y_hat, dtype=float).reshape(-1, 1)
+                y_hat = self._model.predict(X_fut, output_type=self.point_estimate)
+                predictions[name] = self._to_numpy(y_hat).reshape(-1, 1)
             else:
-                q = model.predict(
-                    X_fut, output_type="quantiles", quantiles=quantile_list
+                q = self._to_numpy(
+                    self._model.predict(
+                        X_fut, output_type="quantiles", quantiles=query_levels
+                    )
                 )
                 # Nori returns (n_quantiles, steps); skforecast expects
-                # (steps, n_quantiles).
-                predictions[name] = np.asarray(q, dtype=float).reshape(
-                    len(quantile_list), steps
-                ).T
+                # (steps, n_quantiles). Reorder columns to the requested order.
+                q = q.reshape(len(query_levels), steps).T
+                predictions[name] = q[:, column_for]
 
         return predictions
 
-    # ----------------------------------------------------------------- helpers
-    def _new_model(self):
+    def _load_model(self) -> None:
+        """
+        Load the `NoriRegressor` into `self._model` if not already set.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ImportError
+            If `synthefy-nori` is not installed.
+
+        Notes
+        -----
+        The regressor is imported lazily from `synthefy_nori` and instantiated
+        with `nori_config`. This method is a no-op when `self._model` is
+        already populated (either by a prior call or by the `model`
+        test-injection parameter). The same instance is reused across series
+        and folds; it is re-conditioned per series via its in-context `fit`.
+        """
+
         if self._model is not None:
-            return self._model
+            return
         try:
             from synthefy_nori import NoriRegressor
         except ImportError as exc:
@@ -3219,10 +3404,60 @@ class NoriAdapter:
                 "synthefy-nori is required for NoriAdapter. "
                 "Install it with `pip install synthefy-nori`."
             ) from exc
-        return NoriRegressor(**self.nori_config)
+
+        self._model = NoriRegressor(**self.nori_config)
 
     @staticmethod
-    def _known_future_columns(ctx_exog, fut_exog) -> list:
+    def _to_numpy(values: Any) -> np.ndarray:
+        """
+        Convert a model output to a float numpy array.
+
+        Torch tensors (including those on a non-CPU device or requiring grad)
+        are detached, moved to CPU, and converted before casting to `float`.
+
+        Parameters
+        ----------
+        values : array-like
+            Model output, either a numpy array or a torch tensor.
+
+        Returns
+        -------
+        array : numpy ndarray
+            Float numpy array.
+
+        """
+
+        if hasattr(values, "detach"):
+            values = values.detach().cpu().numpy()
+
+        return np.asarray(values, dtype=float)
+
+    @staticmethod
+    def _known_future_columns(
+        ctx_exog: pd.DataFrame | pd.Series | None,
+        fut_exog: pd.DataFrame | pd.Series | None,
+    ) -> list:
+        """
+        Return covariate columns present in both context and future exog.
+
+        Only known-future covariates (columns available over both the
+        historical context and the forecast horizon) are usable by Nori.
+
+        Parameters
+        ----------
+        ctx_exog : pandas DataFrame, pandas Series, or None
+            Historical (past) covariates for a single series.
+        fut_exog : pandas DataFrame, pandas Series, or None
+            Future covariates for a single series.
+
+        Returns
+        -------
+        columns : list
+            Column names present in both `ctx_exog` and `fut_exog`, in the
+            order they appear in `ctx_exog`. Empty when either input is `None`.
+
+        """
+
         if ctx_exog is None or fut_exog is None:
             return []
         c = (
@@ -3236,11 +3471,49 @@ class NoriAdapter:
             else pd.Index([fut_exog.name])
         )
         f_set = set(f)
+
         return [col for col in c if col in f_set]
 
     def _featurize(
-        self, series, is_datetime, exog_block, exog_cols, offset, n
+        self,
+        series: pd.Series,
+        is_datetime: bool,
+        exog_block: pd.DataFrame | pd.Series | None,
+        exog_cols: list,
+        offset: int,
+        n: int,
     ) -> np.ndarray:
+        """
+        Build the tabular feature matrix for `n` rows starting at `offset`.
+
+        Features are a running index, optional calendar features and Fourier
+        seasonal harmonics (datetime series) or Fourier(index) terms
+        (`RangeIndex` series), and the known-future covariate columns.
+
+        Parameters
+        ----------
+        series : pandas Series
+            The context series (used for its index and length).
+        is_datetime : bool
+            Whether the series has a `DatetimeIndex`.
+        exog_block : pandas DataFrame, pandas Series, or None
+            Covariate values for the rows being featurized (`context_exog` for
+            the context block, `exog` for the horizon block).
+        exog_cols : list
+            Known-future covariate column names to include.
+        offset : int
+            Row offset of the block (`0` for the context, `len(series)` for the
+            forecast horizon).
+        n : int
+            Number of rows to featurize.
+
+        Returns
+        -------
+        X : numpy ndarray
+            2-D `float32` feature matrix of shape `(n, n_features)`.
+
+        """
+
         idx = np.arange(offset, offset + n, dtype=float)
         feats = [idx]  # running index
 
@@ -3280,16 +3553,79 @@ class NoriAdapter:
                 if isinstance(exog_block, pd.Series)
                 else exog_block
             )
-            X = np.column_stack([X, block[exog_cols].to_numpy(dtype=float)])
+            exog_values = np.column_stack(
+                [self._to_float_array(block[col]) for col in exog_cols]
+            )
+            X = np.column_stack([X, exog_values])
 
         return X.astype(np.float32)
 
-    def _timestamps(self, series, offset, n) -> pd.DatetimeIndex:
+    @staticmethod
+    def _to_float_array(col_data: pd.Series) -> np.ndarray:
+        """
+        Convert a numeric or boolean covariate column to a `float32` array.
+
+        Parameters
+        ----------
+        col_data : pandas Series
+            A single covariate column.
+
+        Returns
+        -------
+        col_array : numpy ndarray
+            1-D `float32` array.
+
+        Raises
+        ------
+        ValueError
+            If the column is neither numeric nor boolean. Nori conditions only
+            on numeric covariates; categoricals must be encoded as numbers.
+
+        """
+
+        if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
+            return col_data.astype(np.float32).to_numpy()
+
+        raise ValueError(
+            f"NoriAdapter supports only numeric covariates. Column "
+            f"{col_data.name!r} has dtype {col_data.dtype}. Encode categorical "
+            f"covariates as numeric values before passing them."
+        )
+
+    def _timestamps(
+        self, series: pd.Series, offset: int, n: int
+    ) -> pd.DatetimeIndex:
+        """
+        Return datetime timestamps for `n` rows starting at `offset`.
+
+        For the context block (`offset == 0`) the series' own index is
+        returned. For the forecast horizon the index is extended by `n` steps
+        at the series' frequency (inferred when not set).
+
+        Parameters
+        ----------
+        series : pandas Series
+            The context series (used to determine the end timestamp and
+            frequency).
+        offset : int
+            Row offset of the block. `0` selects the context index; any other
+            value selects the extended forecast-horizon index.
+        n : int
+            Number of timestamps to return.
+
+        Returns
+        -------
+        timestamps : pandas DatetimeIndex
+            Datetime timestamps for the requested block.
+
+        """
+
         if offset == 0:
             return series.index
         freq = series.index.freq
         if freq is None:
             freq = pd.tseries.frequencies.to_offset(pd.infer_freq(series.index))
+
         return pd.date_range(start=series.index[-1] + freq, periods=n, freq=freq)
 
 
