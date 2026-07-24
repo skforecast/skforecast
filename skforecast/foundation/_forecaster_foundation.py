@@ -15,12 +15,12 @@ from sklearn.exceptions import NotFittedError
 
 from .. import __version__
 from ..exceptions import IgnoredArgumentWarning
+from ._foundation_model import FoundationModel
 from ..utils import (
     _normalize_interval_scale,
     check_interval,
     get_style_repr_html,
 )
-from ._foundation_model import FoundationModel
 
 
 class ForecasterFoundation:

@@ -4081,10 +4081,9 @@ _ADAPTER_REGISTRY: dict[str, type] = {
     "Salesforce/moirai": MoiraiAdapter,
     "soda-inria/tabicl": TabICLAdapter,
     "priorlabs/tabpfn":  TabPFNAdapter,
-    "Synthefy/Nori":     NoriAdapter,
     "theforecastingcompany/t0": T0Adapter,
-    "taharnbl/TS-ICL":   TSICLAdapter,
     "Synthefy/Nori":     NoriAdapter,
+    "taharnbl/TS-ICL":   TSICLAdapter
 }
 
 

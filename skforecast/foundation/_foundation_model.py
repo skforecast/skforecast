@@ -15,8 +15,8 @@ import pandas as pd
 
 from .. import __version__
 from ._adapters import _resolve_adapter
-from ._utils import check_preprocess_series_foundation
 from ..exceptions import IgnoredArgumentWarning, InputTypeWarning, MissingValuesWarning
+from ._utils import check_preprocess_series_foundation
 from ..utils import (
     check_preprocess_exog_multiseries,
     align_series_and_exog_multiseries,
