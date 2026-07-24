@@ -14,7 +14,7 @@ description: >
 
 ## References
 
-See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `TSICLAdapter` and `NoriAdapter`.
+See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, and `TSICLAdapter`.
 
 ## When to Use
 
@@ -33,7 +33,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Rule | Symptom | Recovery |
 |------|---------|----------|
 | `fit()` stores context only; it never trains the model | Expecting training to happen or weights to update | Treat the model as pre-trained; evaluate with `backtesting_foundation` |
-| Only Chronos-2, TabICL, TabPFN-TS, T0, TS-ICL, and Nori use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `exog` silently dropped, no error raised | Pick an exog-capable adapter when covariates matter |
+| Only Chronos-2, TabICL, TabPFN-TS, T0, Nori, and TS-ICL use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `exog` silently dropped, no error raised | Pick an exog-capable adapter when covariates matter |
 | TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]` | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
 | Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
 
@@ -48,8 +48,8 @@ pip install uni2ts                                              # For Moirai-2
 pip install tabicl[forecast]                                    # For TabICL
 pip install tabpfn-time-series                                  # For TabPFN-TS
 pip install tfc-t0                                              # For T0
-pip install tsicl                                               # For TS-ICL
 pip install synthefy-nori                                       # For Nori
+pip install tsicl                                               # For TS-ICL
 ```
 
 Models are downloaded from HuggingFace on first use.
@@ -106,9 +106,9 @@ model = FoundationModel(
 )
 ```
 
-## With Exogenous Variables (Chronos-2, TabICL, TabPFN-TS, T0 and Nori)
+## With Exogenous Variables (Chronos-2, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL)
 
-Chronos-2, TabICL, TabPFN-TS, T0, TS-ICL and Nori (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them.
+Chronos-2, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them.
 
 ```python
 # Historical + future exog (must cover the forecast horizon)
@@ -149,8 +149,8 @@ For TimesFM 2.5 and Moirai-2, requested quantiles must be a subset of `[0.1, 0.2
 | `soda-inria/tabicl` (Soda-INRIA)       | Yes  | 4096            | Tabular in-context learning, exog-aware           |
 | `priorlabs/tabpfn-ts` (Prior Labs)     | Yes  | 32768           | Tabular foundation model, exog-aware, long context |
 | `theforecastingcompany/t0` (TFC)       | Yes  | 8192            | Probabilistic forecasts, exog-aware (future covariates) |
-| `taharnbl/TS-ICL` (EDF Lab)            | Yes  | 4096            | Past & future covariates, fine-grained (0.01) quantile grid |
 | `Synthefy/Nori` (Synthefy)             | Yes  | 4096            | Tabular foundation model, exog-aware               |
+| `taharnbl/TS-ICL` (EDF Lab)            | Yes  | 4096            | Past & future covariates, fine-grained (0.01) quantile grid |
 
 The adapter is resolved automatically from the `model_id` prefix — no need to import adapter classes directly.
 
@@ -197,7 +197,7 @@ automatically to the last `context_length` observations.
 
 1. **Expecting `fit()` to train the model**: it only stores context. The weights come from HuggingFace.
 2. **Index without frequency**: call `series.asfreq('h')` (or similar) before `fit` — skforecast requires a frequency.
-3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2, TabICL, TabPFN-TS, TFC-T0, TS-ICL and Nori support exogenous variables.
+3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL support exogenous variables.
 4. **Requesting unsupported quantiles**: TimesFM 2.5 and Moirai-2 are restricted to the nine deciles `0.1 … 0.9` ; TS-ICL is restricted to a 0.01 grid in `[0.01, 0.99]`.
 5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
-6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `tsicl`, `synthefy-nori`). Install only the one(s) you need.
+6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`). Install only the one(s) you need.

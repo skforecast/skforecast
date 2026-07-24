@@ -66,13 +66,13 @@ class FoundationModel:
 
         - `'theforecastingcompany/t0-alpha'`
 
-        EDF Lab TS-ICL (supports `exog`):
-
-        - `'taharnbl/TS-ICL'`
-
         Synthefy Nori (supports `exog`):
 
         - `'Synthefy/Nori'`
+
+        EDF Lab TS-ICL (supports `exog`):
+
+        - `'taharnbl/TS-ICL'`
 
         See References for links to model documentation and model cards.
     **kwargs :
@@ -106,14 +106,14 @@ class FoundationModel:
         - **The Forecasting Company T0** (`T0Adapter`): `context_length`
           (int, default 8192), `device_map` (str, default `'auto'`),
           `torch_dtype` (object, default None).
-        - **EDF Lab TS-ICL** (`TSICLAdapter`): `checkpoint_version` (str,
-          default `'tsicl-v1.ckpt'`), `context_length` (int, default 4096),
-          `device` (str, default `'auto'`), `allow_auto_download` (bool,
-          default True).
         - **Synthefy Nori** (`NoriAdapter`): `context_length` (int, default
           4096), `point_estimate` (str, default `'mean'`),
           `add_calendar_features` (bool, default True), `n_fourier_terms`
           (int, default 2), `nori_config` (dict, default None).
+        - **EDF Lab TS-ICL** (`TSICLAdapter`): `checkpoint_version` (str,
+          default `'tsicl-v1.ckpt'`), `context_length` (int, default 4096),
+          `device` (str, default `'auto'`), `allow_auto_download` (bool,
+          default True).
 
     Attributes
     ----------
@@ -215,18 +215,18 @@ class FoundationModel:
 
     .. [12] The Forecasting Company T0 - HuggingFace model card.
             https://huggingface.co/theforecastingcompany/t0-alpha
-
-    .. [13] EDF Lab TS-ICL - GitHub repository.
-            https://github.com/EDF-Lab/ts-icl
-
-    .. [14] EDF Lab TS-ICL - HuggingFace model card.
-            https://huggingface.co/taharnbl/TS-ICL
             
-    .. [15] Synthefy Nori - GitHub repository.
+    .. [13] Synthefy Nori - GitHub repository.
             https://github.com/Synthefy/synthefy-nori
 
-    .. [16] Synthefy Nori - HuggingFace model card.
+    .. [14] Synthefy Nori - HuggingFace model card.
             https://huggingface.co/Synthefy/Nori
+
+    .. [15] EDF Lab TS-ICL - GitHub repository.
+            https://github.com/EDF-Lab/ts-icl
+
+    .. [16] EDF Lab TS-ICL - HuggingFace model card.
+            https://huggingface.co/taharnbl/TS-ICL
 
     """
 
