@@ -174,6 +174,59 @@ class FakeMoirai2Forecast:
         return raw
 
 
+# Fake TS-ICL model
+# ==============================================================================
+class FakeTSICL:
+    """
+    Fake TSICL model for testing without torch/tsicl.
+
+    `forecast()` returns quantile values equal to the quantile level itself
+    for all steps (the `mean` output is ignored by `TSICLAdapter`, so its
+    content is irrelevant). Records last call arguments for inspection.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.last_inputs = None
+        self.last_prediction_length = None
+        self.last_quantile_levels = None
+        self.last_context_length = None
+        self.last_device = None
+        self.last_kwargs = None
+
+    def forecast(
+        self,
+        inputs,
+        covars=None,
+        prediction_length=0,
+        batch_size=64,
+        quantile_levels=None,
+        context_length=None,
+        device=None,
+        denormalize=True,
+        point_estimator="mean",
+        allow_auto_complete=False,
+        allow_covar_forecast=False,
+        squeeze_output=True,
+        **kwargs,
+    ):
+        self.last_inputs = inputs
+        self.last_prediction_length = prediction_length
+        self.last_quantile_levels = quantile_levels
+        self.last_context_length = context_length
+        self.last_device = device
+        self.last_kwargs = kwargs
+
+        n_q = len(quantile_levels)
+        q_values = np.array(quantile_levels, dtype=float)
+        quantile_arr = np.broadcast_to(q_values, (1, prediction_length, n_q)).copy()
+        mean_arr = np.zeros((1, prediction_length, 1))
+
+        mean = [mean_arr.copy() for _ in inputs]
+        quantiles = [quantile_arr.copy() for _ in inputs]
+
+        return mean, quantiles
+
+
 # Helper: prepare dicts for adapter.fit()
 # ==============================================================================
 def prepare_fit_args(series, exog=None, context_length=None):

@@ -43,7 +43,7 @@ The AI context covers:
 - **Model selection** — `backtesting_forecaster`, `bayesian_search_forecaster` and other hyperparameter optimization methods, `TimeSeriesFold`, `OneStepAheadFold`, and their multi-series variants.
 - **Statistical models** — `Arima`, `Sarimax`, `Ets`, `Arar` wrapped by `ForecasterStats`.
 - **Deep learning** — `ForecasterRnn` with `create_and_compile_model`, LSTM/GRU architectures.
-- **Foundation models (zero-shot)** — `FoundationModel` + `ForecasterFoundation` with Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, and Nori backends.
+- **Foundation models (zero-shot)** — `FoundationModel` + `ForecasterFoundation` with Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL backends.
 - **Feature engineering** — `RollingFeatures`, feature_engine calendar/cyclical features, custom features, and exogenous variables.
 - **Feature selection** — `RFECV`, `SelectFromModel` for lags, window features, and exogenous variables.
 - **Drift detection** — `RangeDriftDetector` and `PopulationDriftDetector` for production monitoring.
@@ -65,7 +65,7 @@ Skforecast includes 13 modular **skills** — self-contained guides that AI agen
 | `feature-selection` | `RFECV`, `SelectFromModel`: selecting lags, window features, and exog |
 | `drift-detection` | `RangeDriftDetector` and `PopulationDriftDetector` for production monitoring |
 | `deep-learning-forecasting` | `ForecasterRnn` with Keras: `create_and_compile_model`, LSTM/GRU architectures |
-| `foundation-forecasting` | Zero-shot forecasting with `ForecasterFoundation`: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori |
+| `foundation-forecasting` | Zero-shot forecasting with `ForecasterFoundation`: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL |
 | `choosing-a-forecaster` | Decision guide: "I have X situation → use Y forecaster" |
 | `troubleshooting-common-errors` | Frequent mistakes AI assistants make with skforecast and their corrections |
 | `complete-api-reference` | Full method signatures and availability matrix for all forecasters |
