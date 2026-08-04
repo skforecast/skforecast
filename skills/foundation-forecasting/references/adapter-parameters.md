@@ -95,7 +95,7 @@ The model is compiled lazily for the exact requested `steps` (up to `max_horizo
 - **Quantiles**: any value in `(0, 1)` (native levels `0.1, 0.25, 0.5, 0.75, 0.9`; other levels are produced by inference-time interpolation)
 
 | Parameter        | Type   | Default  | Description                                                                |
-|------------------|--------|----------|----------------------------------------------------------------------------|
+|------------------|--------|----------|------------------------------------------------------------------------------|
 | `model_id`       | str    | —        | HuggingFace model ID (e.g. `theforecastingcompany/t0-alpha`).             |
 | `model`          | obj    | `None`   | Pre-loaded `T0Forecaster`. If `None`, loaded lazily on first `predict`.    |
 | `context_length` | int    | `8192`   | Max historical observations kept as context.                               |
@@ -103,6 +103,8 @@ The model is compiled lazily for the exact requested `steps` (up to `max_horizo
 | `torch_dtype`    | object | `None`   | Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).           |
 
 Point forecasts use the median (quantile `0.5`). Covariates must be numeric; encode categoricals as numbers before passing them. A series with no future exog is forecast without covariates.
+
+**Gated checkpoints**: `theforecastingcompany/t0*` repos are gated on the Hugging Face Hub. Before first use, log in at the model page (e.g. `https://huggingface.co/theforecastingcompany/t0-alpha`) to accept its license, then authenticate locally (`hf auth login` or the `HF_TOKEN` environment variable). Skipping this step surfaces as a confusing `TypeError` about missing `T0Forecaster` constructor arguments rather than an authentication error.
 
 ## TSICLAdapter — EDF Lab TS-ICL
 

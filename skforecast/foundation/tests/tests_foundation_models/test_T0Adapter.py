@@ -254,3 +254,40 @@ def test_T0Adapter_load_model_noop_when_already_set():
     adapter = T0Adapter(model_id="theforecastingcompany/t0-alpha", model=fake)
     adapter._load_model()
     assert adapter._model is fake
+
+
+def test_T0Adapter_load_model_OSError_when_from_pretrained_raises_TypeError(monkeypatch):
+    """
+    Test that _load_model converts a TypeError raised by
+    T0Forecaster.from_pretrained into a clear OSError. This mirrors the real
+    failure mode: huggingface_hub's from_pretrained silently swallows a
+    gated-repository config download failure and falls back to
+    instantiating the model with no constructor arguments, raising a
+    confusing TypeError about missing hyperparameters. The `t0` package is
+    faked so the test does not depend on `tfc-t0` being installed.
+    """
+    import sys
+    import types
+
+    class FakeGatedT0Forecaster:
+        @classmethod
+        def from_pretrained(cls, model_id):
+            raise TypeError(
+                "T0Forecaster.__init__() missing 8 required positional "
+                "arguments: 'embed_dim', 'num_layers', 'num_heads', "
+                "'mlp_hidden_dim', 'patch_size', 'group_every_n', 'dropout', "
+                "and 'quantile_levels'"
+            )
+
+    fake_t0_module = types.ModuleType("t0")
+    fake_t0_module.T0Forecaster = FakeGatedT0Forecaster
+    monkeypatch.setitem(sys.modules, "t0", fake_t0_module)
+
+    adapter = T0Adapter(model_id="theforecastingcompany/t0-alpha")
+    err_msg = re.escape(
+        "Could not load model 'theforecastingcompany/t0-alpha' from the "
+        "Hugging Face Hub."
+    )
+    with pytest.raises(OSError, match=err_msg):
+        adapter._load_model()
+    assert adapter._model is None

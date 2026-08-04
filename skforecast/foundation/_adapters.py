@@ -833,7 +833,7 @@ class TimesFMAdapter:
         except ImportError as exc:
             raise ImportError(
                 "timesfm is required for TimesFMAdapter. "
-                "Install it with `pip install git+https://github.com/google-research/timesfm.git`."
+                "Install it with `pip install timesfm`."
             ) from exc
 
         # Workaround for a compatibility issue between huggingface_hub and
@@ -2587,6 +2587,11 @@ class T0Adapter:
     before passing them. A series with no future exog is forecast without
     covariates.
 
+    T0 checkpoints (e.g. `theforecastingcompany/t0-alpha`) are gated on the
+    Hugging Face Hub: visit the model page while logged in to accept its
+    license, then authenticate locally (`hf auth login` or the `HF_TOKEN`
+    environment variable) before first use.
+
     References
     ----------
     .. [1] https://github.com/theforecastingcompany/tfc-t0
@@ -2831,6 +2836,10 @@ class T0Adapter:
         ------
         ImportError
             If `tfc-t0` is not installed.
+        OSError
+            If `T0Forecaster.from_pretrained` fails to build the model, most
+            commonly because the repository is gated on the Hugging Face Hub
+            and the active credentials have not accepted its license.
 
         Notes
         -----
@@ -2838,6 +2847,15 @@ class T0Adapter:
         `T0Forecaster.from_pretrained`, then moved to the resolved device and
         switched to eval mode. This method is a no-op when `self._model` is
         already populated.
+
+        T0 checkpoints are gated on the Hugging Face Hub. When the
+        repository's `config.json` cannot be downloaded (e.g. the license
+        has not been accepted, or no valid token is available),
+        `huggingface_hub`'s `from_pretrained` silently swallows the download
+        failure and falls back to instantiating the model with no
+        constructor arguments, raising a confusing `TypeError` about missing
+        hyperparameters. That `TypeError` is caught here and re-raised as a
+        clearer `OSError` pointing to the likely cause.
 
         """
 
@@ -2851,8 +2869,20 @@ class T0Adapter:
                 "Install it with `pip install tfc-t0`."
             ) from exc
 
+        try:
+            model = T0Forecaster.from_pretrained(self.model_id)
+        except TypeError as exc:
+            raise OSError(
+                f"Could not load model '{self.model_id}' from the Hugging "
+                f"Face Hub. This is often caused by a gated repository "
+                f"whose license has not been accepted: visit "
+                f"https://huggingface.co/{self.model_id} while logged in "
+                f"to accept it, then authenticate locally (`hf auth login` "
+                f"or the `HF_TOKEN` environment variable) before retrying."
+            ) from exc
+
         device = _resolve_torch_device(self.device_map)
-        model = T0Forecaster.from_pretrained(self.model_id).to(device)
+        model = model.to(device)
         if self.torch_dtype is not None:
             model = model.to(self.torch_dtype)
         self._model = model.eval()
