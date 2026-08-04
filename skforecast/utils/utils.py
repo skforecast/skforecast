@@ -3211,7 +3211,7 @@ def set_cpu_gpu_device(
 
 def _build_predict_function(
     estimator: object,
-) -> callable:
+) -> Callable:
     """
     Build an optimized predict callable for a fitted estimator. The returned
     function takes a 2D numpy array `X` of shape `(n_samples, n_features)` and
@@ -3244,6 +3244,7 @@ def _build_predict_function(
     predict_fn : callable
         A function `predict_fn(X) -> np.ndarray` where `X` has shape
         `(n_samples, n_features)` and the output has shape `(n_samples,)`.
+    
     """
 
     estimator_name = type(estimator).__name__

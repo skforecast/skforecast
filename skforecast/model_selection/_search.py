@@ -2840,3 +2840,273 @@ def _evaluate_grid_hyperparameters_stats(
             )
             
     return results
+
+
+@manage_warnings
+def grid_search_equivalent_date(
+    forecaster: object,
+    y: pd.Series,
+    cv: TimeSeriesFold,
+    param_grid: dict | list[dict],
+    metric: str | Callable | list[str | Callable],
+    return_best: bool = True,
+    n_jobs: int | str = 'auto',
+    verbose: bool = False,
+    show_progress: bool = True,
+    suppress_warnings: bool = False,
+    output_file: str | None = None
+) -> pd.DataFrame:
+    """
+    Search over specified configurations for a ForecasterEquivalentDate object.
+    Validation is done using time series backtesting.
+
+    The parameters `offset` and `n_offsets` are coupled: together they define the
+    window used to build the equivalent-date prediction. A third parameter,
+    `agg_func`, controls how the `n_offsets` values are aggregated into the
+    prediction (when `n_offsets > 1`) and can be searched as well. For this
+    reason, `param_grid` accepts two forms:
+
+    - `dict`: parameter names as keys and lists of values to try. All
+    combinations (Cartesian product) are evaluated. Useful when the combinations
+    are meaningful, for example sweeping `agg_func` over a set of `offset` values.
+    - `list` of `dict`: each dictionary defines one explicit configuration (one
+    run) and no Cartesian product is computed. Values must be scalar. To evaluate
+    several values of a parameter, add one dictionary per configuration, for
+    example `[{'offset': 7, 'n_offsets': 2, 'agg_func': np.mean},
+    {'offset': 7, 'n_offsets': 2, 'agg_func': np.median}]`. Each dictionary may
+    include an optional `alias` key (`str`) to label the configuration in the
+    results; the alias is not passed to the forecaster.
+
+    Parameters
+    ----------
+    forecaster : ForecasterEquivalentDate
+        Forecaster model.
+    y : pandas Series
+        Training time series.
+    cv : TimeSeriesFold
+        TimeSeriesFold object with the information needed to split the data into folds.
+    param_grid : dict, list
+        Configurations to try. Valid parameter names are `offset`, `n_offsets`
+        and `agg_func`.
+
+        - If `dict`: parameter names (`str`) as keys and lists of settings to try
+        as values. All combinations are evaluated (Cartesian product).
+        For example, `{'offset': [1, 7], 'n_offsets': [1, 2], 'agg_func': [np.mean, np.median]}`.
+        - If `list`: each element is a dictionary defining a single configuration
+        with scalar values (one run per dictionary). Each dictionary may include 
+        an optional `alias` key (`str`) to label the configuration in the results. 
+        For example,
+        `[{'alias': '7-day moving average', 'offset': 1, 'n_offsets': 7, 'agg_func': np.mean}, 
+        {'alias': 'mean of lag-7 and lag-14', 'offset': 7, 'n_offsets': 2, 'agg_func': np.mean}]`.
+    metric : str, Callable, list
+        Metric used to quantify the goodness of fit of the model.
+
+        - If `string`: {'mean_squared_error', 'mean_absolute_error',
+        'mean_absolute_percentage_error', 'mean_squared_log_error',
+        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
+        (Optional) that returns a float.
+        - If `list`: List containing multiple strings and/or Callables.
+    return_best : bool, default True
+        Refit the `forecaster` using the best found configuration on the whole data.
+    n_jobs : int, 'auto', default 'auto'
+        The number of jobs to run in parallel. If `-1`, then the number of jobs is
+        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        skforecast.utils.select_n_jobs_backtesting.
+    verbose : bool, default False
+        Print number of folds used for cv or backtesting.
+    show_progress : bool, default True
+        Whether to show a progress bar.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed during the search.
+        See skforecast.exceptions.warn_skforecast_categories for more information.
+    output_file : str, default None
+        Specifies the filename or full path where the results should be saved.
+        The results will be saved in a tab-separated values (TSV) format. If
+        `None`, the results will not be saved to a file.
+
+    Returns
+    -------
+    results : pandas DataFrame
+        Results for each configuration.
+
+        - column alias: configuration label, only present as the first column if
+        `param_grid` is a list and at least one configuration defines an `alias`.
+        - column params: parameters configuration for each iteration.
+        - column metric: metric value estimated for each iteration.
+        - additional n columns with param = value.
+
+    """
+
+    if type(forecaster).__name__ != 'ForecasterEquivalentDate':
+        raise TypeError(
+            "`forecaster` must be of type `ForecasterEquivalentDate`, for all "
+            "other types of forecasters use the functions available in the "
+            "`model_selection` module."
+        )
+
+    if type(cv).__name__ != 'TimeSeriesFold':
+        raise TypeError(
+            f"`cv` must be an instance of `TimeSeriesFold`. Got {type(cv).__name__}."
+        )
+
+    if isinstance(param_grid, dict):
+        if 'alias' in param_grid:
+            raise ValueError(
+                "`alias` is only supported when `param_grid` is a list of "
+                "configurations, not when `param_grid` is a dict."
+            )
+        param_grid = list(ParameterGrid(param_grid))
+        alias_grid = [None] * len(param_grid)
+    elif isinstance(param_grid, list):
+        param_grid_clean = []
+        alias_grid = []
+        for config in param_grid:
+            if not isinstance(config, dict):
+                raise TypeError(
+                    f"When `param_grid` is a list, each element must be a dict "
+                    f"of parameters. Got {type(config).__name__}."
+                )
+            config = config.copy()
+            alias = config.pop('alias', None)
+            list_valued_params = [
+                k for k, v in config.items()
+                if isinstance(v, (list, np.ndarray))
+            ]
+            if list_valued_params:
+                raise ValueError(
+                    f"When `param_grid` is a list, each dictionary must define a "
+                    f"single configuration with scalar values. Parameters "
+                    f"{list_valued_params} have list values. To evaluate multiple "
+                    f"values, either use the dict form of `param_grid` (Cartesian "
+                    f"product) or add one dictionary per configuration."
+                )
+            param_grid_clean.append(config)
+            alias_grid.append(alias)
+        param_grid = param_grid_clean
+    else:
+        raise TypeError(
+            f"`param_grid` must be a dict or a list of dicts. "
+            f"Got {type(param_grid).__name__}."
+        )
+
+    use_alias = any(alias is not None for alias in alias_grid)
+
+    forecaster_search = deepcopy_forecaster(forecaster)
+
+    if not isinstance(metric, list):
+        metric = [metric]
+    metric_dict = {
+        (m if isinstance(m, str) else m.__name__): []
+        for m in metric
+    }
+
+    if len(metric_dict) != len(metric):
+        raise ValueError(
+            "When `metric` is a `list`, each metric name must be unique."
+        )
+
+    if verbose:
+        print(f"Number of models compared: {len(param_grid)}.")
+
+    param_alias_grid = list(zip(param_grid, alias_grid))
+    if show_progress:
+        param_alias_grid = tqdm(param_alias_grid, desc='params grid', position=0)
+
+    if output_file is not None and os.path.isfile(output_file):
+        os.remove(output_file)
+
+    params_list = []
+    alias_list = []
+    for params, alias in param_alias_grid:
+
+        try:
+            forecaster_search.set_params(params)
+            metric_values = backtesting_forecaster(
+                                forecaster        = forecaster_search,
+                                y                 = y,
+                                cv                = cv,
+                                metric            = metric,
+                                exog              = None,
+                                interval          = None,
+                                n_jobs            = n_jobs,
+                                verbose           = verbose,
+                                show_progress     = False,
+                                suppress_warnings = suppress_warnings
+                            )[0]
+        except Exception as e:
+            warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
+            continue
+
+        metric_values = metric_values.iloc[0, :].to_list()
+
+        params_list.append(params)
+        alias_list.append(alias)
+        for m, m_value in zip(metric, metric_values):
+            m_name = m if isinstance(m, str) else m.__name__
+            metric_dict[m_name].append(m_value)
+
+        if output_file is not None:
+            header = ['alias'] if use_alias else []
+            header += ['params', *metric_dict.keys(), *params.keys()]
+            row = [alias] if use_alias else []
+            row += [
+                params,
+                *metric_values,
+                *[v.__name__ if callable(v) else v for v in params.values()]
+            ]
+            if not os.path.isfile(output_file):
+                with open(output_file, 'w', newline='') as f:
+                    f.write('\t'.join(header) + '\n')
+                    f.write('\t'.join([str(r) for r in row]) + '\n')
+            else:
+                with open(output_file, 'a', newline='') as f:
+                    f.write('\t'.join([str(r) for r in row]) + '\n')
+
+    results = pd.DataFrame({
+                  'params': params_list,
+                  **metric_dict
+              })
+    if use_alias:
+        results.insert(0, 'alias', alias_list)
+
+    results = (
+        results
+        .sort_values(by=list(metric_dict.keys())[0], ascending=True)
+        .reset_index(drop=True)
+    )
+    expanded_params = results['params'].apply(pd.Series)
+    expanded_params = expanded_params.map(
+        lambda v: v.__name__ if callable(v) else v
+    )
+    results = pd.concat([results, expanded_params], axis=1)
+
+    if results.empty:
+        warnings.warn(
+            "No valid parameter combinations found. All combinations raised exceptions.",
+            RuntimeWarning
+        )
+        return results
+
+    if return_best:
+
+        best_params = results.loc[0, 'params']
+        best_metric = results.loc[0, list(metric_dict.keys())[0]]
+
+        # NOTE: Here we use the actual forecaster passed by the user
+        forecaster.set_params(best_params)
+        forecaster.fit(
+            y                         = y,
+            store_in_sample_residuals = True,
+            suppress_warnings         = suppress_warnings
+        )
+
+        if verbose:
+            print(
+                f"`Forecaster` refitted using the best-found parameters, "
+                f"and the whole data set: \n"
+                f"  Parameters: {best_params}\n"
+                f"  Backtesting metric: {best_metric}\n"
+            )
+
+    return results

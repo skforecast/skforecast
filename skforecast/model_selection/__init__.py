@@ -17,7 +17,8 @@ from ._search import (
     bayesian_search_forecaster_multiseries,
     bayesian_search_foundation,
     grid_search_stats,
-    random_search_stats
+    random_search_stats,
+    grid_search_equivalent_date
 )
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "bayesian_search_foundation",
     "grid_search_stats",
     "random_search_stats",
+    "grid_search_equivalent_date",
 ]
