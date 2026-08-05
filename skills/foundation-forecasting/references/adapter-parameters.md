@@ -95,7 +95,7 @@ The model is compiled lazily for the exact requested `steps` (up to `max_horizo
 - **Quantiles**: any value in `(0, 1)` (native levels `0.1, 0.25, 0.5, 0.75, 0.9`; other levels are produced by inference-time interpolation)
 
 | Parameter        | Type   | Default  | Description                                                                |
-|------------------|--------|----------|----------------------------------------------------------------------------|
+|------------------|--------|----------|------------------------------------------------------------------------------|
 | `model_id`       | str    | —        | HuggingFace model ID (e.g. `theforecastingcompany/t0-alpha`).             |
 | `model`          | obj    | `None`   | Pre-loaded `T0Forecaster`. If `None`, loaded lazily on first `predict`.    |
 | `context_length` | int    | `8192`   | Max historical observations kept as context.                               |
@@ -103,6 +103,60 @@ The model is compiled lazily for the exact requested `steps` (up to `max_horizo
 | `torch_dtype`    | object | `None`   | Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).           |
 
 Point forecasts use the median (quantile `0.5`). Covariates must be numeric; encode categoricals as numbers before passing them. A series with no future exog is forecast without covariates.
+
+**Gated checkpoints**: `theforecastingcompany/t0*` repos are gated on the Hugging Face Hub. Before first use, log in at the model page (e.g. `https://huggingface.co/theforecastingcompany/t0-alpha`) to accept its license, then authenticate locally (`hf auth login` or the `HF_TOKEN` environment variable). Skipping this step surfaces as a confusing `TypeError` about missing `T0Forecaster` constructor arguments rather than an authentication error.
+
+## TSICLAdapter — EDF Lab TS-ICL
+
+- **`model_id` prefix**: `taharnbl/TS-ICL`. Used only for adapter resolution; the checkpoint is always downloaded from the `taharnbl/TS-ICL` Hugging Face repository, controlled by `checkpoint_version`.
+- **`allow_exog`**: `True` (past and future covariates, mirroring `ChronosAdapter`'s `past_covariates`/`future_covariates` format)
+- **Quantiles**: subset of a 0.01 grid in `[0.01, 0.99]` (e.g. `0.05`, `0.5`, `0.37`); other levels raise a `ValueError`
+
+| Parameter              | Type | Default            | Description                                                                |
+|------------------------|------|--------------------|------------------------------------------------------------------------------|
+| `model_id`             | str  | —                  | Model ID (e.g. `taharnbl/TS-ICL`). Used only for adapter resolution.        |
+| `model`                | obj  | `None`             | Pre-instantiated `TSICL` model. If `None`, created lazily on first `predict`.|
+| `checkpoint_version`   | str  | `'tsicl-v1.ckpt'`  | Checkpoint filename downloaded from the `taharnbl/TS-ICL` Hugging Face repo. |
+| `context_length`       | int  | `4096`             | Max historical observations kept as context.                                |
+| `device`               | str  | `'auto'`           | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`. Verified empirically: the installed `tsicl` version currently falls back to CPU internally whenever CUDA is unavailable, regardless of the requested device, so `'mps'` has no effect on Apple Silicon. |
+| `allow_auto_download`  | bool | `True`             | Whether to allow automatic download of the checkpoint from Hugging Face Hub. |
+
+Covariates must be numeric; encode categoricals as numbers before passing them.
+
+## NoriAdapter — Synthefy Nori
+
+- **`model_id` prefix**: `Synthefy/Nori`
+- **`allow_exog`**: `True` (known-future covariates; columns present in both the historical context and the forecast horizon are used as features, covariates without future values are ignored)
+- **Quantiles**: any value in `(0, 1)`
+
+| Parameter                | Type | Default  | Description                                                                                       |
+|--------------------------|------|----------|-----------------------------------------------------------------------------------------------------|
+| `model_id`               | str  | —        | Model ID (e.g. `Synthefy/Nori`). Used only for adapter resolution.                                 |
+| `model`                  | obj  | `None`   | Pre-instantiated `NoriRegressor`. If `None`, created lazily on first `predict`.                    |
+| `context_length`         | int  | `4096`   | Max historical observations kept as context.                                                        |
+| `point_estimate`         | str  | `'mean'` | Point forecast method: `'mean'`, `'median'` or `'mode'`.                                            |
+| `add_calendar_features`  | bool | `True`   | Add calendar features (month, day, day-of-week, day-of-year, quarter, hour) for `DatetimeIndex` series. Ignored for `RangeIndex`. |
+| `n_fourier_terms`        | int  | `2`      | Number of Fourier (sin/cos) seasonal harmonics on the yearly/weekly cycles (or the running index for `RangeIndex` series). `0` disables them. |
+| `nori_config`            | dict | `None`   | Extra kwargs forwarded to `NoriRegressor` at instantiation (e.g. `model_path`, `device`, `token`, `augmentations`). |
+
+Nori frames forecasting as tabular in-context regression rather than a native sequence model: each series is featurized (running index, calendar features, Fourier terms, and known-future covariates) before being handed to `NoriRegressor`. Covariates must be numeric; encode categoricals as numbers before passing them.
+
+## TSICLAdapter — EDF Lab TS-ICL
+
+- **`model_id` prefix**: `taharnbl/TS-ICL`. Used only for adapter resolution; the checkpoint is always downloaded from the `taharnbl/TS-ICL` Hugging Face repository, controlled by `checkpoint_version`.
+- **`allow_exog`**: `True` (past and future covariates, mirroring `ChronosAdapter`'s `past_covariates`/`future_covariates` format)
+- **Quantiles**: subset of a 0.01 grid in `[0.01, 0.99]` (e.g. `0.05`, `0.5`, `0.37`); other levels raise a `ValueError`
+
+| Parameter              | Type | Default            | Description                                                                |
+|------------------------|------|--------------------|------------------------------------------------------------------------------|
+| `model_id`             | str  | —                  | Model ID (e.g. `taharnbl/TS-ICL`). Used only for adapter resolution.        |
+| `model`                | obj  | `None`             | Pre-instantiated `TSICL` model. If `None`, created lazily on first `predict`.|
+| `checkpoint_version`   | str  | `'tsicl-v1.ckpt'`  | Checkpoint filename downloaded from the `taharnbl/TS-ICL` Hugging Face repo. |
+| `context_length`       | int  | `4096`             | Max historical observations kept as context.                                |
+| `device`               | str  | `'auto'`           | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`. Verified empirically: the installed `tsicl` version currently falls back to CPU internally whenever CUDA is unavailable, regardless of the requested device, so `'mps'` has no effect on Apple Silicon. |
+| `allow_auto_download`  | bool | `True`             | Whether to allow automatic download of the checkpoint from Hugging Face Hub. |
+
+Covariates must be numeric; encode categoricals as numbers before passing them.
 
 ## Common Behavior
 
@@ -112,4 +166,4 @@ All adapters implement the same minimal interface:
 - `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
 
-Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.
+Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.

@@ -158,6 +158,7 @@ FoundationModel(
                                #   point_estimate, tabicl_config, temporal_features (TabICL)
                                #   mode, point_estimate, tabpfn_model_config, temporal_features (TabPFN-TS)
                                #   (T0 uses only context_length, device_map, torch_dtype)
+                               #   point_estimate, add_calendar_features, n_fourier_terms, nori_config (Nori)
 )
 
 ForecasterFoundation(
