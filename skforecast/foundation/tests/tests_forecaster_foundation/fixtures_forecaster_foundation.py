@@ -197,14 +197,18 @@ def make_forecaster(context_length: int = 2048, **kwargs) -> "ForecasterFoundati
     """
     Return a ``ForecasterFoundation`` backed by a ``FakePipeline``.
 
-    The fake pipeline is injected so no real Chronos model is loaded.
+    The fake pipeline is assigned to the forecaster's own (cloned) adapter
+    after construction, since `ForecasterFoundation.__init__` clones the
+    `FoundationModel` it receives and a pipeline passed to the constructor
+    would not survive that clone.
     """
     from skforecast.foundation import ForecasterFoundation
 
     estimator = FoundationModel(
         "autogluon/chronos-2-small",
         context_length=context_length,
-        pipeline=FakePipeline(),
         **kwargs,
     )
-    return ForecasterFoundation(estimator=estimator)
+    forecaster = ForecasterFoundation(estimator=estimator)
+    forecaster.estimator.adapter._pipeline = FakePipeline()
+    return forecaster

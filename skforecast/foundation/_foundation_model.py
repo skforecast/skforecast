@@ -1011,11 +1011,13 @@ class FoundationModel:
 
         Notes
         -----
-        Required so that `sklearn.base.clone` can create an unfitted copy
-        of this object, which is used internally by `deepcopy_forecaster`
-        during backtesting. The pre-loaded pipeline is intentionally excluded
-        so that clones are created without copying heavy model weights; the
-        pipeline is reloaded lazily on the first `predict` call.
+        Required so that `sklearn.base.clone` can create an unfitted copy of
+        this object. `clone` is invoked when a `ForecasterFoundation` is
+        constructed (in its `__init__`) and by `deepcopy_forecaster` during
+        model selection and hyperparameter search. The pre-loaded pipeline is
+        intentionally excluded so that clones are created without copying heavy
+        model weights; the pipeline is reloaded lazily on the first `predict`
+        call.
         
         """
 

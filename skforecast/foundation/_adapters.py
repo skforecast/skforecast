@@ -615,7 +615,7 @@ class TimesFMAdapter:
         self.context_exog_          = None
         self.context_length         = context_length
         self.max_horizon            = max_horizon
-        self.forecast_config_kwargs = dict(forecast_config_kwargs) if forecast_config_kwargs else {}
+        self.forecast_config_kwargs = forecast_config_kwargs or {}
         self.is_fitted              = False
 
     def get_params(self) -> dict:
@@ -678,7 +678,7 @@ class TimesFMAdapter:
                     )
                 self.max_horizon = value
             elif key == 'forecast_config_kwargs':
-                self.forecast_config_kwargs = dict(value) if value else {}
+                self.forecast_config_kwargs = value or {}
             else:
                 setattr(self, key, value)
         
@@ -1429,7 +1429,7 @@ class TabICLAdapter:
         self.context_exog_     = None
         self.context_length    = context_length
         self.point_estimate    = point_estimate
-        self.tabicl_config     = dict(tabicl_config) if tabicl_config else {}
+        self.tabicl_config     = tabicl_config or {}
         self.temporal_features = temporal_features
         self.show_progress     = show_progress
         self.is_fitted         = False
@@ -1500,7 +1500,7 @@ class TabICLAdapter:
                     )
                 validated[key] = value
             elif key == "tabicl_config":
-                validated[key] = dict(value) if value else {}
+                validated[key] = value or {}
             elif key == "show_progress":
                 if not isinstance(value, bool):
                     raise ValueError(
@@ -2058,7 +2058,7 @@ class TabPFNAdapter:
         self.context_length      = context_length
         self.mode                = mode
         self.point_estimate      = point_estimate
-        self.tabpfn_model_config = dict(tabpfn_model_config) if tabpfn_model_config else {}
+        self.tabpfn_model_config = tabpfn_model_config or {}
         self.temporal_features   = temporal_features
         self.show_progress       = show_progress
         self.is_fitted           = False
@@ -2138,7 +2138,7 @@ class TabPFNAdapter:
                     )
                 validated[key] = value
             elif key == "tabpfn_model_config":
-                validated[key] = dict(value) if value else {}
+                validated[key] = value or {}
             elif key == "show_progress":
                 if not isinstance(value, bool):
                     raise ValueError(
@@ -3580,7 +3580,7 @@ class NoriAdapter:
         self.point_estimate        = point_estimate
         self.add_calendar_features = add_calendar_features
         self.n_fourier_terms       = n_fourier_terms
-        self.nori_config           = dict(nori_config) if nori_config else {}
+        self.nori_config           = nori_config or {}
         self.is_fitted             = False
 
     def get_params(self) -> dict:
@@ -3665,7 +3665,7 @@ class NoriAdapter:
                     )
                 validated[key] = value
             elif key == "nori_config":
-                validated[key] = dict(value) if value else {}
+                validated[key] = value or {}
             else:
                 validated[key] = value
 
