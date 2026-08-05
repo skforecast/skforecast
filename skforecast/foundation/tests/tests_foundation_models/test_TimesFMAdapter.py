@@ -73,17 +73,18 @@ def test_TimesFMAdapter_init_ValueError_when_invalid_params(param, value):
         )
 
 
-def test_TimesFMAdapter_init_forecast_config_kwargs_is_independent_copy():
+def test_TimesFMAdapter_init_forecast_config_kwargs_stored_by_reference():
     """
-    Test that forecast_config_kwargs is stored as an independent copy.
+    Test that forecast_config_kwargs is stored by reference (not copied), so
+    the same object is returned by get_params and the adapter stays compatible
+    with sklearn.base.clone.
     """
     original = {"normalize_inputs": True}
     adapter = TimesFMAdapter(
         model_id="google/timesfm-2.5-200m-pytorch",
         forecast_config_kwargs=original
     )
-    original["extra"] = "should_not_appear"
-    assert "extra" not in adapter.forecast_config_kwargs
+    assert adapter.forecast_config_kwargs is original
 
 
 # ==============================================================================
@@ -162,7 +163,6 @@ def test_TimesFMAdapter_fit_error_handling():
     """
     Test fit raises TypeError for unsupported series types.
     """
-    adapter = make_adapter()
     with pytest.raises(TypeError):
         prepare_fit_args(np.arange(50))
 

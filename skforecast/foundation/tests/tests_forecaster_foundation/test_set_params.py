@@ -4,7 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.foundation import ForecasterFoundation
+from skforecast.foundation import ForecasterFoundation, FoundationModel
 
 # Fixtures
 from .fixtures_forecaster_foundation import make_forecaster, FakePipeline, y
@@ -84,6 +84,20 @@ def test_set_params_resets_fitted_state():
     assert forecaster.exog_in_ is False
     assert forecaster.exog_names_in_ is None
     assert forecaster.exog_type_in_ is None
+
+
+def test_set_params_does_not_mutate_original_estimator():
+    """
+    set_params must not mutate the FoundationModel instance the caller
+    originally passed to the constructor, since it was cloned at __init__.
+    """
+    estimator = FoundationModel("autogluon/chronos-2-small", context_length=8)
+    forecaster = ForecasterFoundation(estimator=estimator)
+
+    forecaster.set_params({"context_length": 999})
+
+    assert estimator.context_length == 8
+    assert forecaster.context_length == 999
 
 
 def test_set_params_device_map_resets_pipeline():

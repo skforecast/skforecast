@@ -39,6 +39,8 @@ The main changes in this release are:
 
 **Fixed**
 
++ Fixed an issue where <code>[FoundationModel]</code> was not fully compatible with `sklearn.base.clone`. The `TimesFMAdapter`, `TabICLAdapter`, `TabPFNAdapter`, and `NoriAdapter` stored their configuration dictionaries (`forecast_config_kwargs`, `tabicl_config`, `tabpfn_model_config`, `nori_config`) as a fresh copy in `__init__`, which broke the parameter identity check performed by `clone` and raised a `RuntimeError` whenever a non-empty configuration dictionary was passed. Because <code>[ForecasterFoundation]</code> clones its estimator at construction, this also prevented building a forecaster from a `FoundationModel` configured with those settings. The configuration is now stored by reference, following the scikit-learn convention of keeping constructor parameters unchanged.
+
 
 
 ## 0.23.0 <small>Jul 8, 2026</small> { id="0.23.0" }

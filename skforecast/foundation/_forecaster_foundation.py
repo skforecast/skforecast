@@ -11,6 +11,7 @@ import sys
 import textwrap
 import warnings
 import pandas as pd
+from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 
 from .. import __version__
@@ -51,7 +52,7 @@ class ForecasterFoundation:
     Attributes
     ----------
     estimator : FoundationModel
-        The `FoundationModel` instance provided by the user.
+        A clone of the `FoundationModel` instance provided by the user.
     model_id : str
         HuggingFace model ID. Delegates to `estimator.model_id`.
     context_ : dict
@@ -136,7 +137,7 @@ class ForecasterFoundation:
                 f"Got {type(estimator)}."
             )
 
-        self.estimator          = estimator
+        self.estimator          = clone(estimator)
         self.creation_date      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted          = False
         self.skforecast_version = __version__
