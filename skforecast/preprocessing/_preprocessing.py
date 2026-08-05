@@ -347,6 +347,8 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         if array_ndim == 1:
             X = X[:, np.newaxis]
 
+        # TODO: Check if this NaN removal is necessary
+
         # Remove initial rows with nan values if present
         X = X[~np.isnan(X).any(axis=1)]
 
