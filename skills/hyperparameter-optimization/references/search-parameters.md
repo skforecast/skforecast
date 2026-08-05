@@ -10,7 +10,7 @@
 | ForecasterDirectMultiVariate | `grid_search_forecaster_multiseries` | `random_search_forecaster_multiseries` | `bayesian_search_forecaster_multiseries` |
 | ForecasterRnn | `grid_search_forecaster_multiseries` | `random_search_forecaster_multiseries` | `bayesian_search_forecaster_multiseries` |
 | ForecasterStats | `grid_search_stats` | `random_search_stats` | N/A |
-| ForecasterEquivalentDate | N/A | N/A | N/A |
+| ForecasterEquivalentDate | `grid_search_equivalent_date` | N/A | N/A |
 | ForecasterRecursiveClassifier | `grid_search_forecaster` | `random_search_forecaster` | `bayesian_search_forecaster` |
 
 ## Parameter Comparison Across Search Functions
@@ -72,6 +72,62 @@ Default `aggregate_metric = ['weighted_average', 'average', 'pooling']`
 
 > **Note:** Stats search does NOT support `OneStepAheadFold`, `lags_grid`,
 > or Bayesian search.
+
+### Equivalent Date Function (baseline tuning)
+
+`grid_search_equivalent_date` selects the best `ForecasterEquivalentDate`
+baseline configuration. Only grid search exists (random/Bayesian are
+unnecessary for such a small, discrete space).
+
+| Parameter | `grid_search_equivalent_date` |
+|-----------|:---:|
+| `forecaster` | ✓ (must be `ForecasterEquivalentDate`) |
+| `y` | ✓ |
+| `cv` | **TimeSeriesFold only** |
+| `param_grid` | ✓ (dict **or** list of dicts, see below) |
+| `metric` | ✓ |
+| `return_best` | ✓ (default: True) |
+| `n_jobs` | ✓ (default: 'auto') |
+| `output_file` | ✓ |
+| **Returns** | `pd.DataFrame` |
+
+> **Note:** No `exog` (baseline does not use exogenous variables), no
+> `lags_grid`, no `OneStepAheadFold`, no random/Bayesian variant.
+
+`param_grid` behaves differently from the other search functions because
+`offset` and `n_offsets` are **coupled** (together they define the equivalent
+window). A third parameter, `agg_func`, sets how the `n_offsets` values are
+aggregated (when `n_offsets > 1`) and is searchable too, so remember to include
+it when the aggregation matters:
+
+```python
+from skforecast.recursive import ForecasterEquivalentDate
+from skforecast.model_selection import grid_search_equivalent_date, TimeSeriesFold
+import numpy as np
+
+forecaster = ForecasterEquivalentDate(offset=1, n_offsets=1)
+cv = TimeSeriesFold(steps=7, initial_train_size=len(y) - 70, refit=False)
+
+# dict -> Cartesian product (use only when every combination is meaningful)
+param_grid = {'offset': [1, 7], 'n_offsets': [1, 2], 'agg_func': [np.mean, np.median]}
+
+# list of dicts -> one explicit configuration per dict (no cross product).
+# Values must be scalar. Add one dict per configuration to avoid the coupled
+# offset/n_offsets footgun. Each dict may carry an optional `alias` label.
+param_grid = [
+    {'alias': '7-day moving average',     'offset': 1, 'n_offsets': 7, 'agg_func': np.mean},
+    {'alias': 'mean of lag-7 and lag-14', 'offset': 7, 'n_offsets': 2, 'agg_func': np.mean},
+]
+
+results = grid_search_equivalent_date(
+    forecaster=forecaster, y=y, cv=cv, param_grid=param_grid,
+    metric='mean_absolute_error', return_best=True,
+)
+```
+
+When at least one configuration defines `alias`, an `alias` column is added as
+the first column of the results table. The `alias` key is stripped before the
+forecaster is configured (it never reaches `set_params`).
 
 ## How `lags_grid` Works
 

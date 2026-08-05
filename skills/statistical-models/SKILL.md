@@ -27,6 +27,7 @@ Use statistical models when:
 ### Related skills
 
 - **Before**: `autocorrelation-and-lag-selection` (read ACF/PACF to identify ARIMA orders `p`, `d`, `q` before fitting)
+- **Alongside**: `baseline-forecasting` (the other benchmark family: naive equivalent-date baselines)
 - **After**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals via the `interval_method` argument)
 - **After**: `hyperparameter-optimization` (tune ARIMA `order` / `seasonal_order` via grid search)
 

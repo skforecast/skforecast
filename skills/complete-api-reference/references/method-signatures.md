@@ -645,6 +645,20 @@ random_search_stats(
     suppress_warnings=False, # bool
     output_file=None         # str | None
 ) -> pd.DataFrame
+
+grid_search_equivalent_date(
+    forecaster,              # ForecasterEquivalentDate
+    y,                       # pd.Series with DatetimeIndex
+    cv,                      # TimeSeriesFold
+    param_grid,              # dict | list[dict] (coupled offset/n_offsets, plus searchable agg_func; list config supports optional 'alias')
+    metric,                  # str | Callable | list[str | Callable]
+    return_best=True,        # bool
+    n_jobs='auto',           # int | str
+    verbose=False,           # bool
+    show_progress=True,      # bool
+    suppress_warnings=False, # bool
+    output_file=None         # str | None
+) -> pd.DataFrame
 ```
 
 ## Forecaster Methods: predict_quantiles()

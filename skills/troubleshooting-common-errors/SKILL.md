@@ -132,6 +132,19 @@ grid_search_forecaster(forecaster=forecaster_stats, y=y, cv=cv, param_grid=param
 from skforecast.model_selection import grid_search_stats
 grid_search_stats(forecaster=forecaster_stats, y=y, cv=cv, param_grid=param_grid)
 
+# ❌ WRONG: grid_search_forecaster with ForecasterEquivalentDate
+grid_search_forecaster(forecaster=forecaster_baseline, y=y, cv=cv, param_grid=param_grid)
+
+# ✅ CORRECT: grid_search_equivalent_date for baselines (offset/n_offsets are coupled;
+#            agg_func is also searchable; pass a list of dicts to test explicit
+#            configs, optional 'alias' label)
+from skforecast.model_selection import grid_search_equivalent_date
+grid_search_equivalent_date(
+    forecaster=forecaster_baseline, y=y, cv=cv,
+    param_grid=[{'offset': 1, 'n_offsets': 7}, {'offset': 7, 'n_offsets': 2}],
+    metric='mean_absolute_error',
+)
+
 # ❌ WRONG: grid_search_forecaster with ForecasterRecursiveMultiSeries
 grid_search_forecaster(forecaster=forecaster_multi, y=y, cv=cv, param_grid=param_grid)
 
