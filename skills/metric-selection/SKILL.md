@@ -21,6 +21,7 @@ or any other model selection function.
 
 - **After**: `choosing-a-forecaster` (the forecaster type determines which metrics apply)
 - **Before**: `hyperparameter-optimization` (the chosen metric drives the search objective)
+- **Alongside**: `baseline-forecasting` (MASE < 1 means the model beats the naive baseline)
 - **Before**: `prediction-intervals` (probabilistic metrics evaluate interval quality)
 
 ## Quick Recommendations
