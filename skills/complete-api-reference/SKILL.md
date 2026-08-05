@@ -53,6 +53,7 @@ the complete reference, including:
 - `grid_search_forecaster` / `grid_search_forecaster_multiseries` / `grid_search_stats`
 - `random_search_forecaster` / `random_search_forecaster_multiseries` / `random_search_stats`
 - `bayesian_search_forecaster` / `bayesian_search_forecaster_multiseries`
+- `grid_search_equivalent_date` — tune `ForecasterEquivalentDate` baselines
 - `TimeSeriesFold` — multi-step cross-validation
 - `OneStepAheadFold` — fast one-step cross-validation
 

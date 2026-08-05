@@ -17,12 +17,19 @@ Use this skill when the user needs help choosing a forecaster, comparing forecas
 
 - **After**: `forecasting-single-series` (apply the chosen forecaster to one target series)
 - **After**: `forecasting-multiple-series` (apply the chosen forecaster to several series jointly)
+- **After**: `baseline-forecasting` (build and benchmark a naive baseline with `ForecasterEquivalentDate`)
 - **After**: `autocorrelation-and-lag-selection` (analyse the series dynamics before configuring `lags`)
 - **After**: `feature-engineering` (build the input feature set: calendar, rolling, exogenous)
 
 ## Overview
 
-Skforecast is a **machine learning-first** library. The ML forecasters are the primary tools; statistical models (`ForecasterStats`) and naive baselines (`ForecasterEquivalentDate`) serve as comparison benchmarks.
+Skforecast is a **machine learning-first** library. The primary tools are the
+sklearn-compatible ML forecasters (`ForecasterRecursive`, `ForecasterDirect`,
+and their multi-series variants) and the zero-shot foundation models
+(`ForecasterFoundation`, e.g. Chronos-2, TimesFM 2.5) - reach for an ML or a
+foundation forecaster first. Statistical models (`ForecasterStats`) and naive
+baselines (`ForecasterEquivalentDate`) serve as comparison benchmarks to confirm
+the chosen model adds value.
 
 ## Step 1 — How Many Series?
 
@@ -41,7 +48,7 @@ Skforecast is a **machine learning-first** library. The ML forecasters are the p
 | **Horizon-dependent patterns** (e.g., predicting at 1h vs 24h requires different relationships) | `ForecasterDirect` | Trains one independent model per step — no error propagation. Better when the predictive relationship changes significantly across the forecast horizon. Requires `steps` at init; parallelizable with `n_jobs` |
 | **Statistical baseline** | `ForecasterStats` | Wraps ARIMA, SARIMAX, ETS, ARAR. Use as a benchmark to compare against ML models, or when the series is very short (< 200 obs) and ML overfits |
 | **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0). `fit()` only stores context — no training. Good baseline and cold-start option. See the `foundation-forecasting` skill |
-| **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Use as a sanity-check baseline |
+| **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Use as a sanity-check baseline. See the `baseline-forecasting` skill |
 
 ## Step 2b — Multiple Series
 
