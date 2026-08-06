@@ -120,7 +120,7 @@ The AI context system follows three principles:
 
 1. **Single source of truth** — All generated files derive from `llms-base.txt` and `ai_context_header.md`. Edit the source, regenerate, done.
 2. **Layered context** — Global context is always present, specialized context loads only when relevant, avoiding prompt bloat.
-3. **CI-enforced consistency** — A GitHub Actions workflow runs `--check` mode on every PR to prevent stale generated files from reaching master.
+3. **CI-enforced consistency** — A GitHub Actions workflow runs `--check` mode on every PR to prevent stale generated files from reaching main.
 
 ## Source files (human-maintained)
 
@@ -198,7 +198,7 @@ python tools/ai/generate_ai_context_files.py --check-urls --ignore-urls llms-ful
 
 ### CI enforcement
 
-`.github/workflows/ai-context-check.yml` runs `--check` on every pull request targeting master. If any generated file is stale, the PR check fails with a message indicating which files need regeneration.
+`.github/workflows/ai-context-check.yml` runs `--check` on every pull request targeting main. If any generated file is stale, the PR check fails with a message indicating which files need regeneration.
 
 ## File map
 

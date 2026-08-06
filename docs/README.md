@@ -10,13 +10,13 @@
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
 [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/)
 [![Conda](https://img.shields.io/conda/v/conda-forge/skforecast?logo=Anaconda)](https://anaconda.org/conda-forge/skforecast)
-[![codecov](https://codecov.io/gh/skforecast/skforecast/branch/master/graph/badge.svg)](https://codecov.io/gh/skforecast/skforecast)
+[![codecov](https://codecov.io/gh/skforecast/skforecast/branch/main/graph/badge.svg)](https://codecov.io/gh/skforecast/skforecast)
 [![Build status](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml)
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/skforecast/skforecast/graphs/commit-activity)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/skforecast?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/skforecast)
 [![Downloads](https://img.shields.io/pypi/dm/skforecast?style=flat-square&color=blue&label=downloads%2Fmonth)](https://pypistats.org/packages/skforecast)
-[![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/main/LICENSE)
 [![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787)
 [![llms.txt](https://img.shields.io/badge/llms.txt-available-blue)](https://skforecast.org/latest/llms-full.txt)
 [![paypal](https://img.shields.io/static/v1?style=social&amp;label=Donate&amp;message=%E2%9D%A4&amp;logo=Paypal&amp;color&amp;link=%3curl%3e)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
@@ -56,10 +56,10 @@ Whether you're building quick prototypes or deploying models in production, skfo
 We value your input! Here are a few ways you can participate:
 
 - **Report bugs** and suggest new features on our [GitHub Issues page](https://github.com/skforecast/skforecast/issues).
-- **Contribute** to the project by [submitting code](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md), adding new features, or improving the documentation.
+- **Contribute** to the project by [submitting code](https://github.com/skforecast/skforecast/blob/main/CONTRIBUTING.md), adding new features, or improving the documentation.
 - **Share your feedback** on LinkedIn to help spread the word about skforecast!
 
-Together, we can make time series forecasting accessible to everyone. Discover more in our [contribution guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md)
+Together, we can make time series forecasting accessible to everyone. Discover more in our [contribution guide](https://github.com/skforecast/skforecast/blob/main/CONTRIBUTING.md)
 
 
 ## Installation & Dependencies
@@ -130,7 +130,7 @@ Primarily, skforecast development consists of adding and creating new *Forecaste
 - Translate our documentation into another language.
 - Write a blog post, tweet, or share our project with others.
 
-For more information on how to contribute to skforecast, see our [Contribution Guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md).
+For more information on how to contribute to skforecast, see our [Contribution Guide](https://github.com/skforecast/skforecast/blob/main/CONTRIBUTING.md).
 
 Visit our [About section](./more/about-skforecast.md) to meet the people behind **skforecast**.
 
@@ -269,7 +269,7 @@ If you found **skforecast** useful, you can support us with a donation. Your con
 
 ## License
 
-**Skforecast software**: [BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/master/LICENSE)
+**Skforecast software**: [BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/main/LICENSE)
 
 **Skforecast documentation**: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
