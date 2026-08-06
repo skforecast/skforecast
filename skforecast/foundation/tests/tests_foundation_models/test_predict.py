@@ -282,6 +282,23 @@ def test_predict_output_when_context_without_fit():
     assert len(result) == 5
 
 
+def test_predict_ValueError_when_context_is_empty_dict():
+    """
+    Test predict raises ValueError when `context` is an empty dict,
+    both when `check_inputs=True` and `check_inputs=False`.
+    """
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m.fit(series=y)
+
+    err_msg1 = re.escape("`series` cannot be an empty dictionary or an empty DataFrame.")
+    with pytest.raises(ValueError, match=err_msg1):
+        m.predict(steps=3, context={}, check_inputs=True)
+
+    err_msg2 = re.escape("`context` cannot be an empty dictionary.")
+    with pytest.raises(ValueError, match=err_msg2):
+        m.predict(steps=3, context={}, check_inputs=False)
+
+
 # Tests predict — exog forwarding
 # ==============================================================================
 def test_predict_passes_future_exog_to_pipeline():
@@ -353,9 +370,21 @@ def test_predict_does_not_modify_context():
     pd.testing.assert_series_equal(context, lw_copy)
 
 
-# Tests predict — levels filtering
+# Tests predict: levels filtering
 # ==============================================================================
-def test_predict_levels_filters_before_adapter_inference():
+def test_predict_ValueError_when_levels_is_empty():
+    """
+    Test predict raises ValueError when `levels` is an empty list.
+    """
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m.fit(series=y_dict)
+
+    err_msg = re.escape("`levels` must be a single string or a list-like of strings, but cannot be empty.")
+    with pytest.raises(ValueError, match=err_msg):
+        m.predict(steps=3, levels=[])
+
+
+def test_predict_levels_filters_before_adapter_inference():        
     """
     Test that passing `levels` filters the input sent to the adapter, so the
     underlying pipeline receives only the requested series (avoiding
