@@ -40,6 +40,8 @@ The main changes in this release are:
 
 **Changed**
 
++ The main branch of the repository has been renamed from `master` to `main`. All references to the default branch in CI, documentation, and test fixtures have been updated accordingly.
+
 
 **Fixed**
 
