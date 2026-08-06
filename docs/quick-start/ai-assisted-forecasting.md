@@ -47,17 +47,18 @@ The AI context covers:
 - **Feature engineering** — `RollingFeatures`, feature_engine calendar/cyclical features, custom features, and exogenous variables.
 - **Feature selection** — `RFECV`, `SelectFromModel` for lags, window features, and exogenous variables.
 - **Drift detection** — `RangeDriftDetector` and `PopulationDriftDetector` for production monitoring.
-- **13 specialized workflow skills** — step-by-step guides for common tasks, loaded on-demand by advanced AI agents.
+- **14 specialized workflow skills** — step-by-step guides for common tasks, loaded on-demand by advanced AI agents.
 
 
 ## Workflow skills
 
-Skforecast includes 13 modular **skills** — self-contained guides that AI agents can load on demand when a user asks about a specific topic. Each skill covers a complete workflow with decision trees, code examples, and common pitfalls.
+Skforecast includes 14 modular **skills** — self-contained guides that AI agents can load on demand when a user asks about a specific topic. Each skill covers a complete workflow with decision trees, code examples, and common pitfalls.
 
 | Skill | What it covers |
 |-------|----------------|
 | `forecasting-single-series` | End-to-end forecasting with `ForecasterRecursive`: data prep, fit, predict, backtest, intervals |
 | `forecasting-multiple-series` | Global model with `ForecasterRecursiveMultiSeries`: encoding, dict input, multi-level predictions |
+| `baseline-forecasting` | Simple baselines with `ForecasterEquivalentDate` (equivalent-date / seasonal-naive / moving-average) to benchmark ML models |
 | `statistical-models` | `ForecasterStats` with `Arima`, `Sarimax`, `Ets`, `Arar`: auto-ARIMA, seasonal config |
 | `hyperparameter-optimization` | Grid, random, and Bayesian search with `TimeSeriesFold` and `OneStepAheadFold` |
 | `prediction-intervals` | Bootstrapping, conformal prediction, quantile regression, interval calibration |

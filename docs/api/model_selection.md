@@ -17,6 +17,8 @@
 ::: skforecast.model_selection._search.grid_search_stats
 ::: skforecast.model_selection._search.random_search_stats
 
+::: skforecast.model_selection._search.grid_search_equivalent_date
+
 ::: skforecast.model_selection._split.TimeSeriesFold
 ::: skforecast.model_selection._split.OneStepAheadFold
 ::: skforecast.model_selection._split.BaseFold
