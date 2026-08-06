@@ -66,7 +66,7 @@ Thank you for helping us make **skforecast** better! 🎉
     We value your input! Here are a few ways you can participate:
 
     - **Report bugs** and suggest new features on our [GitHub Issues page](https://github.com/skforecast/skforecast/issues).
-    - **Contribute** to the project by [submitting code](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md), adding new features, or improving the documentation.
+    - **Contribute** to the project by [submitting code](https://github.com/skforecast/skforecast/blob/main/CONTRIBUTING.md), adding new features, or improving the documentation.
     - **Share your feedback** on LinkedIn to help spread the word about skforecast!
 
     Together, we can make time series forecasting accessible to everyone.
@@ -103,14 +103,14 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.24.0) [Compu
 }
 ```
 
-View the [citation file](https://github.com/skforecast/skforecast/blob/master/CITATION.cff).
+View the [citation file](https://github.com/skforecast/skforecast/blob/main/CITATION.cff).
 
 
 ## License
 
-[![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/main/LICENSE)
 
-**Skforecast software**: [BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/master/LICENSE)
+**Skforecast software**: [BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/main/LICENSE)
 
 **Skforecast documentation**: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
@@ -122,7 +122,7 @@ View the [citation file](https://github.com/skforecast/skforecast/blob/master/CI
 Official **skforecast** logo for presentations, blog posts, or any material mentioning or promoting skforecast. Created by Thelma Alfonso Arias.
 
 <p style="text-align: center">
-  <img src="https://raw.githubusercontent.com/skforecast/skforecast/refs/heads/master/images/logo-skforecast.png" alt="skforecast Logo" width="250"/>
+  <img src="https://raw.githubusercontent.com/skforecast/skforecast/refs/heads/main/images/logo-skforecast.png" alt="skforecast Logo" width="250"/>
 </p>
 
 *The trademark skforecast is registered with the European Union Intellectual Property Office (EUIPO) under the application number 019109684. Unauthorized use of this trademark, its logo, or any associated visual identity elements is strictly prohibited without the express consent of the owner.*
