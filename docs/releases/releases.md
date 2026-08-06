@@ -16,6 +16,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New function <code>[bayesian_search_foundation]</code> in the <code>[model_selection]</code> module to tune the inference-time configuration (e.g. `context_length`) of <code>[ForecasterFoundation]</code> models using optuna.
 
++ <span class="badge text-bg-feature">Feature</span> New function <code>[grid_search_equivalent_date]</code> in the <code>[model_selection]</code> module to search the best baseline configuration (`offset`, `n_offsets`, `agg_func`) of a <code>[ForecasterEquivalentDate]</code> using time series backtesting.
+
 + <span class="badge text-bg-feature">Feature</span> New functions <code>[winkler_score]</code> and <code>[weighted_interval_score]</code> in the <code>[metrics]</code> module to evaluate the quality of prediction intervals. The Winkler score assesses a single interval (balancing sharpness and calibration), while the Weighted Interval Score (WIS) aggregates several intervals together with the median forecast and approximates the CRPS. [User guide](../user_guides/probabilistic-forecasting-metrics.ipynb) ([#1254](https://github.com/skforecast/skforecast/pull/1254), [#1262](https://github.com/skforecast/skforecast/pull/1262))
 
 + <span class="badge text-bg-feature">Feature</span> New <code>[NoriAdapter]</code> in the <code>foundation</code> module wrapping `Synthefy Nori`, registered under the `'Synthefy/Nori` `model_id` prefix. Supports future-known exogenous variables, arbitrary quantiles in the 0-1 range, and lazy backend import. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1252](https://github.com/skforecast/skforecast/issues/1252))
@@ -26,6 +28,8 @@ The main changes in this release are:
 **Added**
 
 + New function <code>[bayesian_search_foundation]</code> in the <code>[model_selection]</code> module to tune the inference-time configuration (e.g. `context_length`) of <code>[ForecasterFoundation]</code> models using optuna.
+
++ New function <code>[grid_search_equivalent_date]</code> in the <code>[model_selection]</code> module to search the best baseline configuration (`offset`, `n_offsets`, `agg_func`) of a <code>[ForecasterEquivalentDate]</code> using time series backtesting.
 
 + New functions <code>[winkler_score]</code> and <code>[weighted_interval_score]</code> in the <code>[metrics]</code> module to evaluate the quality of prediction intervals. The Winkler score assesses a single interval (balancing sharpness and calibration), while the Weighted Interval Score (WIS) aggregates several intervals together with the median forecast and approximates the CRPS. [User guide](../user_guides/probabilistic-forecasting-metrics.ipynb) ([#1254](https://github.com/skforecast/skforecast/pull/1254), [#1262](https://github.com/skforecast/skforecast/pull/1262))
 
@@ -1654,6 +1658,8 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [backtesting_stats]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_stats
 [grid_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.grid_search_stats
 [random_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.random_search_stats
+
+[grid_search_equivalent_date]: ../api/model_selection.md#skforecast.model_selection._search.grid_search_equivalent_date
 
 [TimeSeriesFold]: ../api/model_selection.md#skforecast.model_selection._split.TimeSeriesFold
 [OneStepAheadFold]: ../api/model_selection.md#skforecast.model_selection._split.OneStepAheadFold
