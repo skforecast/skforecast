@@ -299,6 +299,32 @@ def test_predict_ValueError_when_context_is_empty_dict():
         m.predict(steps=3, context={}, check_inputs=False)
 
 
+@pytest.mark.parametrize(
+    "index",
+    [
+        pd.DatetimeIndex(["2020-01-01", "2020-01-03"]),
+        pd.DatetimeIndex(["2020-01-01", "2020-01-03", "2020-01-10"]),
+    ],
+    ids=["fewer_than_3_observations", "irregularly_spaced"],
+)
+def test_predict_ValueError_when_check_inputs_False_and_context_freq_not_inferable(index):
+    """
+    Test predict raises a clear ValueError, instead of an unhandled
+    TypeError, when `check_inputs=False` skips the usual freq validation
+    and the context's DatetimeIndex has no freq that pandas can infer.
+    This is the path `backtesting_foundation` uses internally, and it
+    applies to every adapter (not just the ones with their own
+    timestamp-building logic) because it goes through the shared
+    `expand_index` call that builds the output prediction index.
+    """
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    context = {"sales": pd.Series(np.arange(len(index), dtype=float), index=index, name="sales")}
+
+    err_msg = re.escape("Could not infer a frequency from `index`.")
+    with pytest.raises(ValueError, match=err_msg):
+        m.predict(steps=3, context=context, check_inputs=False)
+
+
 # Tests predict — exog forwarding
 # ==============================================================================
 def test_predict_passes_future_exog_to_pipeline():

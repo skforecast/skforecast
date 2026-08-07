@@ -17,6 +17,8 @@ import numpy as np
 import pandas as pd
 import warnings
 
+from ..utils import expand_index
+
 
 def _resolve_torch_device(device: str) -> str:
     """
@@ -1755,16 +1757,7 @@ class TabICLAdapter:
         """
 
         if is_datetime:
-            freq = series.index.freq
-            if freq is None:
-                freq = pd.tseries.frequencies.to_offset(
-                    pd.infer_freq(series.index)
-                )
-            timestamps = pd.date_range(
-                             start   = series.index[-1] + freq,
-                             periods = steps,
-                             freq    = freq,
-                         )
+            timestamps = expand_index(series.index, steps=steps)
         else:
             n = len(series)
             timestamps = pd.date_range(
@@ -2403,16 +2396,7 @@ class TabPFNAdapter:
         """
 
         if is_datetime:
-            freq = series.index.freq
-            if freq is None:
-                freq = pd.tseries.frequencies.to_offset(
-                    pd.infer_freq(series.index)
-                )
-            timestamps = pd.date_range(
-                             start   = series.index[-1] + freq,
-                             periods = steps,
-                             freq    = freq,
-                         )
+            timestamps = expand_index(series.index, steps=steps)
         else:
             n = len(series)
             timestamps = pd.date_range(
@@ -4097,11 +4081,8 @@ class NoriAdapter:
 
         if offset == 0:
             return series.index
-        freq = series.index.freq
-        if freq is None:
-            freq = pd.tseries.frequencies.to_offset(pd.infer_freq(series.index))
 
-        return pd.date_range(start=series.index[-1] + freq, periods=n, freq=freq)
+        return expand_index(series.index, steps=n)
 
 
 _ADAPTER_REGISTRY: dict[str, type] = {

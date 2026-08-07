@@ -10,24 +10,13 @@
 - **Fix:** gate all delegated fit-derived properties on `self.is_fitted` consistently, once cloning (1.2) is fixed this mostly stops being reachable, but the gating should still be consistent defensively.
 
 
-### 1.5 Latent `TypeError` crash on short/irregular `DatetimeIndex` context (TabICL, TabPFN, Nori)
-- Duplicated near-verbatim in `TabICLAdapter._get_future_timestamps` (`:1757-1767`), `TabPFNAdapter._get_future_timestamps` (`:2405-2415`), and in spirit in `NoriAdapter._timestamps` (`:4070-4074`):
-  ```python
-  freq = series.index.freq
-  if freq is None:
-      freq = pd.tseries.frequencies.to_offset(pd.infer_freq(series.index))
-  timestamps = pd.date_range(start=series.index[-1] + freq, periods=steps, freq=freq)
-  ```
-- If `pd.infer_freq` can't determine a frequency (irregular spacing, or fewer than 3 observations — realistic for a very short context window), it returns `None`; `to_offset(None)` returns `None`; `series.index[-1] + None` raises an unhandled `TypeError`.
-- **Fix:** raise a clear `ValueError` immediately when `pd.infer_freq(...)` returns `None`, explaining that a frequency couldn't be inferred (irregular index or <3 observations) and suggesting the caller set an explicit `.freq`. Do this once in a shared helper (see §3.4) rather than patching 3 separate copies. Add a regression test with a 2-point / irregularly-spaced context.
-
 ### 1.6 `MoiraiAdapter.set_params` reloads the entire pretrained module on *any* reset-key presence, including no-op device changes
 - `_adapters.py:1043-1052`: `valid = {'model_id', 'context_length', 'device'}`; any of these being **present** in the call (not necessarily changed) nulls `self._module`/`self._forecast_obj`, forcing a full HuggingFace re-download/reload on the next `predict`. Unlike `TabICLAdapter`/`TabPFNAdapter`/`NoriAdapter`, which compare old vs. new value first and only reset on real changes — this is a genuine cross-adapter behavioral inconsistency (5 of 8 adapters reset unconditionally on key-presence, 3 compare-and-reset).
 - `device`-only changes don't need a reload at all — `.to(device)` on the already-loaded module/forecast object would suffice.
 - **Fix:** unify all adapters on "reset only if the value actually changed" (see §3.1's shared base class), and for Moirai specifically, special-case `device`-only changes to call `.to(...)` on the cached `_forecast_obj` instead of nulling it (reusing the existing MPS-fallback warning logic in `_ensure_forecast_obj`, `:1244-1251`, factored into a small shared helper). **Note:** this will likely require updating `test_MoiraiAdapter.py`'s existing `set_params` reset-semantics test — flag it as an intentional behavior change, not a silent one.
 
-### 1.7 `TabICLAdapter`/`TabPFNAdapter` line-for-line duplicated (~190 lines) — shares bug 1.5 by construction
-Covered above; noted here because it's the direct cause of the same bug existing in two places independently rather than one.
+### 1.7 `TabICLAdapter`/`TabPFNAdapter` line-for-line duplicated (~190 lines)
+- The two adapters are near-verbatim copies. Their shared timestamp helper (`_get_future_timestamps`) has since been consolidated onto `expand_index`, but the remaining ~190 lines (`get_params`/`set_params`, covariate handling, `predict` body) are still duplicated and should be unified (see §2's shared-base-class item).
 
 ### 1.8 Minor / low-severity, worth a one-line fix each
 - **Duplicate dict key** in `_ADAPTER_REGISTRY` (`_adapters.py:4084` and `:4087`, `"Synthefy/Nori"` twice) — harmless today (same value) but dead code a linter would flag (ruff `F601`); delete the second occurrence.
@@ -84,8 +73,8 @@ Covered above; noted here because it's the direct cause of the same bug existing
 
 ## Priority / sequencing recommendation
 
-1. **Fix first (real bugs, small/contained diffs):** ~~1.2 (clone estimator)~~ DONE, 1.4 (`levels=[]`), 1.5 (infer_freq TypeError), 1.8's duplicate registry key and `predict_quantiles(None)` guard.
-2. **Do together (same refactor, mutually reinforcing):** the duplication cleanups in §2 (shared base class for adapter `get_params`/`set_params`, shared validation/conversion helpers, shared timestamp helpers) — this refactor is what naturally fixes 1.5, 1.6, and 1.7 at the same time instead of patching 3 copies.
+1. **Fix first (real bugs, small/contained diffs):** ~~1.2 (clone estimator)~~ DONE, 1.4 (`levels=[]`), ~~1.5 (infer_freq TypeError)~~ DONE, 1.8's duplicate registry key and `predict_quantiles(None)` guard.
+2. **Do together (same refactor, mutually reinforcing):** the duplication cleanups in §2 (shared base class for adapter `get_params`/`set_params`, shared validation/conversion helpers) — this refactor naturally addresses 1.6 and the remaining 1.7 duplication at the same time instead of patching separate copies.
 3. **Do with care, new tests required:** 1.6 (Moirai reset-key change — will need a test update), 3.3 (context-trimming reorder — needs exog-alignment redesign + large-input tests).
 4. **Low priority / documentation-only:** the scalar-interval float artifact (codebase-wide, cosmetic), TimesFM recompilation trade-off (docstring only), device-handling inconsistency (defer to major version).
 

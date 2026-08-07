@@ -656,6 +656,45 @@ def test_TabICLAdapter_predict_range_index_timestamps_are_datetime():
 
 
 # ==============================================================================
+# Tests TabICLAdapter._get_future_timestamps
+# ==============================================================================
+def test_TabICLAdapter_get_future_timestamps_ValueError_when_index_has_fewer_than_3_observations():
+    """
+    Test that _get_future_timestamps raises ValueError, instead of an
+    unhandled TypeError, when the context has a DatetimeIndex with no
+    freq and fewer than 3 observations (pandas cannot infer a frequency).
+    """
+    adapter = TabICLAdapter(model_id="soda-inria/tabicl")
+    series = pd.Series(
+        data=[1.0, 2.0],
+        index=pd.DatetimeIndex(["2020-01-01", "2020-01-03"]),
+        name="ts",
+    )
+
+    err_msg = re.escape("Could not infer a frequency from `index`.")
+    with pytest.raises(ValueError, match=err_msg):
+        adapter._get_future_timestamps(series, steps=3, is_datetime=True)
+
+
+def test_TabICLAdapter_get_future_timestamps_ValueError_when_index_is_irregularly_spaced():
+    """
+    Test that _get_future_timestamps raises ValueError, instead of an
+    unhandled TypeError, when the context has an irregularly spaced
+    DatetimeIndex with no freq (pandas cannot infer a frequency).
+    """
+    adapter = TabICLAdapter(model_id="soda-inria/tabicl")
+    series = pd.Series(
+        data=[1.0, 2.0, 3.0],
+        index=pd.DatetimeIndex(["2020-01-01", "2020-01-03", "2020-01-10"]),
+        name="ts",
+    )
+
+    err_msg = re.escape("Could not infer a frequency from `index`.")
+    with pytest.raises(ValueError, match=err_msg):
+        adapter._get_future_timestamps(series, steps=3, is_datetime=True)
+
+
+# ==============================================================================
 # Tests TabICLAdapter.predict — ImportError
 # ==============================================================================
 def test_TabICLAdapter_predict_ImportError_when_tabicl_not_installed(monkeypatch):

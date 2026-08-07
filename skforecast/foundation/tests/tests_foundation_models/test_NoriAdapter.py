@@ -375,6 +375,45 @@ def test_NoriAdapter_predict_handles_device_tensor_output():
 
 
 # ==============================================================================
+# Tests NoriAdapter._timestamps
+# ==============================================================================
+def test_NoriAdapter_timestamps_ValueError_when_index_has_fewer_than_3_observations():
+    """
+    Test that _timestamps raises ValueError, instead of an unhandled
+    TypeError, when the context has a DatetimeIndex with no freq and fewer
+    than 3 observations (pandas cannot infer a frequency).
+    """
+    adapter = NoriAdapter(model_id="Synthefy/Nori")
+    series = pd.Series(
+        data=[1.0, 2.0],
+        index=pd.DatetimeIndex(["2020-01-01", "2020-01-03"]),
+        name="sales",
+    )
+
+    err_msg = re.escape("Could not infer a frequency from `index`.")
+    with pytest.raises(ValueError, match=err_msg):
+        adapter._timestamps(series, offset=1, n=3)
+
+
+def test_NoriAdapter_timestamps_ValueError_when_index_is_irregularly_spaced():
+    """
+    Test that _timestamps raises ValueError, instead of an unhandled
+    TypeError, when the context has an irregularly spaced DatetimeIndex
+    with no freq (pandas cannot infer a frequency).
+    """
+    adapter = NoriAdapter(model_id="Synthefy/Nori")
+    series = pd.Series(
+        data=[1.0, 2.0, 3.0],
+        index=pd.DatetimeIndex(["2020-01-01", "2020-01-03", "2020-01-10"]),
+        name="sales",
+    )
+
+    err_msg = re.escape("Could not infer a frequency from `index`.")
+    with pytest.raises(ValueError, match=err_msg):
+        adapter._timestamps(series, offset=1, n=3)
+
+
+# ==============================================================================
 # Tests NoriAdapter._load_model
 # ==============================================================================
 def test_NoriAdapter_load_model_noop_when_already_set():
