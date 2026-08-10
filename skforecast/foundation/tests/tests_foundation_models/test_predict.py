@@ -42,6 +42,19 @@ def test_predict_ValueError_when_steps_not_positive(steps):
         m.predict(steps=steps)
 
 
+@pytest.mark.parametrize("steps", [True, False], ids=["True", "False"])
+def test_predict_ValueError_when_steps_is_bool(steps):
+    """
+    Test predict rejects boolean `steps` rather than silently treating
+    True as steps=1 (bool is an int subclass).
+    """
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m.fit(series=y)
+    err_msg = re.escape("`steps` must be a positive integer.")
+    with pytest.raises(ValueError, match=err_msg):
+        m.predict(steps=steps)
+
+
 @pytest.mark.parametrize(
     "bad_quantile",
     [-0.1, 1.1, 2.0],

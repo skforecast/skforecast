@@ -2922,11 +2922,11 @@ class T0Adapter:
         if not future_frames:
             return None
 
-        columns: list[str] = []
-        for frame in future_frames.values():
-            for col in frame.columns:
-                if col not in columns:
-                    columns.append(col)
+        columns: list[str] = list(
+            dict.fromkeys(
+                col for frame in future_frames.values() for col in frame.columns
+            )
+        )
 
         total_length = context_length + steps
         covariates = np.full(

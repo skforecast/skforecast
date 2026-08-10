@@ -880,7 +880,11 @@ class FoundationModel:
                 "Call `fit` before `predict`, or pass `context`."
             )
 
-        if not isinstance(steps, (int, np.integer)) or steps < 1:
+        if (
+            isinstance(steps, bool)
+            or not isinstance(steps, (int, np.integer))
+            or steps < 1
+        ):
             raise ValueError("`steps` must be a positive integer.")
 
         if quantiles is not None:
@@ -1002,13 +1006,13 @@ class FoundationModel:
 
         return predictions
 
-    def get_params(self, deep: Any = None) -> dict:
+    def get_params(self, deep: bool = True) -> dict:
         """
         Get parameters for this estimator (sklearn-compatible).
 
         Parameters
         ----------
-        deep : Any, default None
+        deep : bool, default True
             Not used, present here for API consistency by convention.
 
         Returns

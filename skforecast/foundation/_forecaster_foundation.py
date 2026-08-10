@@ -498,7 +498,7 @@ class ForecasterFoundation:
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Context range: {context_range_repr} \n"
-            f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
+            f"Training index type: {self.index_type_.__name__ if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
             f"Creation date: {self.creation_date} \n"
             f"Last fit date: {self.fit_date} \n"
@@ -580,7 +580,7 @@ class ForecasterFoundation:
                 <summary>Training Information</summary>
                 <ul>
                     <li><strong>Context range:</strong> {context_range_html}</li>
-                    <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index type:</strong> {self.index_type_.__name__ if self.is_fitted else 'Not fitted'}</li>
                     <li><strong>Training index frequency:</strong> {self.index_freq_.freqstr if hasattr(self.index_freq_, 'freqstr') else str(self.index_freq_) if self.is_fitted else 'Not fitted'}</li>
                 </ul>
             </details>
@@ -802,10 +802,10 @@ class ForecasterFoundation:
             Future-known exogenous variables for the forecast horizon
             (future covariates).
         interval : float, list, tuple, default [0.1, 0.9]
-            Confidence level of the prediction interval. Interpretation depends 
+            Confidence level of the prediction interval. Interpretation depends
             on the method used:
-            
-            - If `float`, represents the nominal (expected) coverage (between 0 
+
+            - If `float`, represents the nominal (expected) coverage (between 0
             and 1). For instance, `interval=0.95` corresponds to `[0.025, 0.975]` 
             quantiles.
             - If `list` or `tuple`, defines the exact quantiles to compute, which 

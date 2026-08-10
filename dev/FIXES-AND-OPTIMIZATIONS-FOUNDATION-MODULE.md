@@ -1,6 +1,44 @@
 # Code Review: `skforecast/foundation/` — Bugs, Best Practices, Optimization
 
 
+### Tier 1: quick correctness and robustness wins — DONE
+Implemented and merged (PR A): `bool` `steps` guard, `get_params(deep)` typing, `T0Adapter` dedup,
+and `index_type_.__name__` repr cleanup. Each shipped with a regression test. The `None`-safe
+`quantiles` / `interval` defaults were reverted afterward to keep `predict_interval` /
+`predict_quantiles` aligned with the mutable-default-literal convention used by every other
+forecaster (`ForecasterRecursive`, `ForecasterDirect`, etc.), which do not accept `None` for
+these arguments.
+
+### Tier 2: internal consistency and small perf (low risk, no API change)
+7. **1.3** inconsistent `is_fitted` gating: gate all delegated fit-derived properties on `self.is_fitted` (`_forecaster_foundation.py:288-396`). Now defensive, since cloning fixes the crash.
+8. **3.2** TSICL re-imports torch and re-resolves device on every `predict` (`_adapters.py:3255, 3270`): cache `self._resolved_device` at model load, invalidate with `self._model` on `set_params`.
+9. **1.8** brittle `str.replace(AdapterClassName, "FoundationModel")` error rewriting (`_foundation_model.py:1053-1058`): make the message rewrite robust (anchor on the class-name token or restructure adapter errors).
+
+### Tier 3: shared adapter base class and delegated refactors (biggest de-dup, enabler)
+Highest effort but unlocks most of section 2. Build the base first, then migrate.
+- **3.1 / section 2** `_FoundationAdapterBase` mixin: declarative `_param_names` / `_reset_keys` / `_validators` per subclass, replacing ~350 lines of hand-written `get_params` / `set_params` across all 8 adapters.
+- Riding on the base class:
+  - **1.6 Moirai `set_params`**: switch from key-presence reset to compare-and-reset (matching TabICL / TabPFN / Nori at `_adapters.py:1516 / 2148 / 3687`), and special-case `device`-only changes to `.to(...)` the cached object instead of nulling it. Intentional behavior change, requires updating `test_MoiraiAdapter.py`'s reset-semantics test.
+  - **1.7 TabICL / TabPFN dedup** (~590 / 640 lines, near-verbatim): collapse onto the shared base.
+  - `_validate_positive_int` helper (context_length, ~16 sites), tensor to numpy detach helper (3 sites), covariate conversion helpers (permissive vs strict, 4 sites), one shared 9-level quantile-grid constant plus a quantile to index helper.
+- FoundationModel-side extractions (independent, can go in parallel): `_reset_fit_state()` (triplicated reset block `:1060+`), `_check_is_fitted_or_context(context, method)` (triplicated `NotFittedError` guard), `_predict_impl` shared by `predict` / `predict_quantiles`.
+
+### Tier 4: docs-only and careful optimizations (defer, schedule separately)
+- **3.4 TimesFM**: docstring note on `max_horizon` / `context_length` advising backtesting users to set `max_horizon` up front to avoid recompilation. No code change.
+- **3.5 device-handling**: document the 4-strategy difference in `FoundationModel`'s docstring, defer signature unification (adding `device` to TimesFM) to a version bump.
+- **3.3 full `.copy()` before trimming to `context_length`**: real perf win for direct `fit` / `predict` on long histories, but needs care (trim before preprocess must preserve `context_range_`, rework exog alignment order, long-format MultiIndex path stays as-is). Needs new large-series plus exog tests. Schedule as its own PR.
+- Low-priority defensive / cosmetic (only if already touching the code): scalar `interval` float artifact (`:861`, cosmetic, codebase-wide pattern), degenerate / duplicate quantile-column defensive check (`:878`).
+
+### Recommended sequencing
+1. **PR A (Tier 1)**: DONE, all six batched with regression tests.
+2. **PR B (Tier 2)**: consistency plus TSICL device cache plus error-rewrite robustness.
+3. **PR C (Tier 3)**: shared base class plus Moirai / TabICL / TabPFN migration plus FoundationModel extractions. Do after A and B merge so the diff is pure refactor.
+4. **PR D (Tier 4)**: docstrings now, the 3.3 copy-trim optimization as a separate follow-up PR.
+
+Baseline before starting and after each PR: `pytest skforecast/foundation/tests/ -vv` (env `skforecast_24_py13`), plus `ruff`.
+
+---
+
 ## 1. Bugs / edge-case failures (verified)
 
 
@@ -70,13 +108,6 @@
 - **Fix:** this is a public-API-shape difference (adding a `device` param to `TimesFMAdapter` would be a signature change) — recommend documenting the difference clearly in `FoundationModel`'s docstring rather than forcing uniformity now; defer any signature unification to a version bump.
 
 ---
-
-## Priority / sequencing recommendation
-
-1. **Fix first (real bugs, small/contained diffs):** ~~1.2 (clone estimator)~~ DONE, 1.4 (`levels=[]`), ~~1.5 (infer_freq TypeError)~~ DONE, 1.8's duplicate registry key and `predict_quantiles(None)` guard.
-2. **Do together (same refactor, mutually reinforcing):** the duplication cleanups in §2 (shared base class for adapter `get_params`/`set_params`, shared validation/conversion helpers) — this refactor naturally addresses 1.6 and the remaining 1.7 duplication at the same time instead of patching separate copies.
-3. **Do with care, new tests required:** 1.6 (Moirai reset-key change — will need a test update), 3.3 (context-trimming reorder — needs exog-alignment redesign + large-input tests).
-4. **Low priority / documentation-only:** the scalar-interval float artifact (codebase-wide, cosmetic), TimesFM recompilation trade-off (docstring only), device-handling inconsistency (defer to major version).
 
 ## Verification plan (once any of the above is implemented)
 
