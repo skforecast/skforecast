@@ -67,6 +67,19 @@ def test_predict_quantiles_output_when_single_series():
     pd.testing.assert_index_equal(result.index, expected_index)
 
 
+def test_predict_quantiles_default_quantiles_when_none():
+    """
+    predict_quantiles(quantiles=None) uses the default [0.1, 0.5, 0.9]
+    quantiles instead of raising a TypeError.
+    """
+    forecaster = make_forecaster()
+    forecaster.fit(series=y)
+    result = forecaster.predict_quantiles(steps=5, quantiles=None)
+
+    assert list(result.columns) == ["level", "q_0.1", "q_0.5", "q_0.9"]
+    assert len(result) == 5
+
+
 @pytest.mark.parametrize(
     "quantiles, expected_columns",
     [

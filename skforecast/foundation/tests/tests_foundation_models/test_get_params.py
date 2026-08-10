@@ -31,3 +31,12 @@ def test_get_params_returns_expected_keys_and_values():
     assert params["model_id"] == "autogluon/chronos-2-small"
     assert params["context_length"] == 64
     assert params["cross_learning"] is True
+
+
+def test_get_params_deep_argument_accepted_and_ignored():
+    """
+    Test that get_params accepts the sklearn-convention `deep` argument
+    (default True) and returns the same dict regardless of its value.
+    """
+    m = FoundationModel("autogluon/chronos-2-small", context_length=64)
+    assert m.get_params() == m.get_params(deep=True) == m.get_params(deep=False)

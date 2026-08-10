@@ -175,6 +175,40 @@ def test_T0Adapter_predict_builds_future_covariates_from_past_and_future():
     np.testing.assert_allclose(fc[0, 0, context_length:], future_exog_values["feat_a"].to_numpy())
 
 
+def test_T0Adapter_build_future_covariates_dedups_columns_preserving_order():
+    """
+    Test that _build_future_covariates pools covariate columns across series
+    in first-seen order, deduplicating repeated column names.
+    """
+    adapter = T0Adapter(model_id="theforecastingcompany/t0-alpha")
+    steps = 2
+    context_length = 3
+    idx = pd.date_range("2020-01-01", periods=steps, freq="D")
+    exog_future = {
+        "s1": pd.DataFrame({"a": [10.0, 10.0], "b": [20.0, 20.0]}, index=idx),
+        "s2": pd.DataFrame({"b": [21.0, 21.0], "c": [30.0, 30.0]}, index=idx),
+    }
+
+    result = adapter._build_future_covariates(
+        series_names=["s1", "s2"],
+        context_exog=None,
+        exog=exog_future,
+        context_length=context_length,
+        steps=steps,
+    )
+
+    # Pooled columns in first-seen order are (a, b, c): 3 covariates, not 4.
+    assert result.shape == (2, 3, context_length + steps)
+    # Future values land in the horizon region at the expected column slot
+    # (a -> 0, b -> 1, c -> 2), missing columns stay NaN.
+    np.testing.assert_array_equal(result[0, 0, context_length:], [10.0, 10.0])
+    np.testing.assert_array_equal(result[0, 1, context_length:], [20.0, 20.0])
+    assert np.all(np.isnan(result[0, 2, context_length:]))
+    np.testing.assert_array_equal(result[1, 1, context_length:], [21.0, 21.0])
+    np.testing.assert_array_equal(result[1, 2, context_length:], [30.0, 30.0])
+    assert np.all(np.isnan(result[1, 0, context_length:]))
+
+
 def test_T0Adapter_predict_batches_all_series_in_one_call():
     """
     Test that all series are forecast in a single batched call and that

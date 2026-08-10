@@ -146,6 +146,18 @@ def test_repr_after_fit(series_input, exog_input, expected_series, expected_exog
         assert "s2" in result
 
 
+def test_repr_index_type_name_when_fitted():
+    """
+    After fit with a DatetimeIndex, both repr and _repr_html_ show the index
+    type by its class name (`DatetimeIndex`).
+    """
+    forecaster = make_forecaster()
+    forecaster.fit(series=y)
+
+    assert "Training index type: DatetimeIndex" in repr(forecaster)
+    assert "DatetimeIndex" in forecaster._repr_html_()
+
+
 def test_repr_many_series_truncated():
     """
     When fitted with more than 50 series, repr truncates with '...'.

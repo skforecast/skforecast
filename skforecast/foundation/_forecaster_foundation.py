@@ -498,7 +498,7 @@ class ForecasterFoundation:
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Context range: {context_range_repr} \n"
-            f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
+            f"Training index type: {self.index_type_.__name__ if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
             f"Creation date: {self.creation_date} \n"
             f"Last fit date: {self.fit_date} \n"
@@ -580,7 +580,7 @@ class ForecasterFoundation:
                 <summary>Training Information</summary>
                 <ul>
                     <li><strong>Context range:</strong> {context_range_html}</li>
-                    <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index type:</strong> {self.index_type_.__name__ if self.is_fitted else 'Not fitted'}</li>
                     <li><strong>Training index frequency:</strong> {self.index_freq_.freqstr if hasattr(self.index_freq_, 'freqstr') else str(self.index_freq_) if self.is_fitted else 'Not fitted'}</li>
                 </ul>
             </details>
@@ -777,7 +777,7 @@ class ForecasterFoundation:
             | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
-        interval: float | list[float] | tuple[float] = [0.1, 0.9],
+        interval: float | list[float] | tuple[float] | None = None,
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
@@ -801,11 +801,12 @@ class ForecasterFoundation:
         exog : pandas Series, pandas DataFrame, dict, default None
             Future-known exogenous variables for the forecast horizon
             (future covariates).
-        interval : float, list, tuple, default [0.1, 0.9]
-            Confidence level of the prediction interval. Interpretation depends 
+        interval : float, list, tuple, default None
+            Confidence level of the prediction interval. If `None`, defaults to
+            `[0.1, 0.9]` (an 80% interval). Interpretation depends
             on the method used:
-            
-            - If `float`, represents the nominal (expected) coverage (between 0 
+
+            - If `float`, represents the nominal (expected) coverage (between 0
             and 1). For instance, `interval=0.95` corresponds to `[0.025, 0.975]` 
             quantiles.
             - If `list` or `tuple`, defines the exact quantiles to compute, which 
@@ -854,6 +855,9 @@ class ForecasterFoundation:
                 "arguments before using `predict_interval()`, or pass `context`."
             )
 
+        if interval is None:
+            interval = [0.1, 0.9]
+
         if isinstance(interval, (list, tuple)):
             interval = _normalize_interval_scale(interval)
             check_interval(interval=interval, ensure_symmetric_intervals=False)
@@ -898,7 +902,7 @@ class ForecasterFoundation:
             | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
-        quantiles: list[float] | tuple[float] = [0.1, 0.5, 0.9],
+        quantiles: list[float] | tuple[float] | None = None,
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
@@ -918,8 +922,9 @@ class ForecasterFoundation:
         exog : pandas Series, pandas DataFrame, dict, default None
             Future-known exogenous variables for the forecast horizon
             (future covariates).
-        quantiles : list, tuple, default [0.1, 0.5, 0.9]
+        quantiles : list, tuple, default None
             Quantile levels to forecast. Values must be in the range (0, 1).
+            If `None`, defaults to `[0.1, 0.5, 0.9]`.
         check_inputs : bool, default True
             If `True`, the `context` and `context_exog` inputs are validated
             and normalized. If `False`, `context` must already be a
@@ -957,6 +962,9 @@ class ForecasterFoundation:
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `predict_quantiles()`, or pass `context`."
             )
+
+        if quantiles is None:
+            quantiles = [0.1, 0.5, 0.9]
 
         predictions = self.estimator.predict(
                           steps        = steps,
