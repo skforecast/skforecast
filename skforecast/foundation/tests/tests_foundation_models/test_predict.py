@@ -282,6 +282,49 @@ def test_predict_output_when_context_without_fit():
     assert len(result) == 5
 
 
+def test_predict_ValueError_when_context_is_empty_dict():
+    """
+    Test predict raises ValueError when `context` is an empty dict,
+    both when `check_inputs=True` and `check_inputs=False`.
+    """
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m.fit(series=y)
+
+    err_msg1 = re.escape("`series` cannot be an empty dictionary or an empty DataFrame.")
+    with pytest.raises(ValueError, match=err_msg1):
+        m.predict(steps=3, context={}, check_inputs=True)
+
+    err_msg2 = re.escape("`context` cannot be an empty dictionary.")
+    with pytest.raises(ValueError, match=err_msg2):
+        m.predict(steps=3, context={}, check_inputs=False)
+
+
+@pytest.mark.parametrize(
+    "index",
+    [
+        pd.DatetimeIndex(["2020-01-01", "2020-01-03"]),
+        pd.DatetimeIndex(["2020-01-01", "2020-01-03", "2020-01-10"]),
+    ],
+    ids=["fewer_than_3_observations", "irregularly_spaced"],
+)
+def test_predict_ValueError_when_check_inputs_False_and_context_freq_not_inferable(index):
+    """
+    Test predict raises a clear ValueError, instead of an unhandled
+    TypeError, when `check_inputs=False` skips the usual freq validation
+    and the context's DatetimeIndex has no freq that pandas can infer.
+    This is the path `backtesting_foundation` uses internally, and it
+    applies to every adapter (not just the ones with their own
+    timestamp-building logic) because it goes through the shared
+    `expand_index` call that builds the output prediction index.
+    """
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    context = {"sales": pd.Series(np.arange(len(index), dtype=float), index=index, name="sales")}
+
+    err_msg = re.escape("Could not infer a frequency from `index`.")
+    with pytest.raises(ValueError, match=err_msg):
+        m.predict(steps=3, context=context, check_inputs=False)
+
+
 # Tests predict — exog forwarding
 # ==============================================================================
 def test_predict_passes_future_exog_to_pipeline():
@@ -353,9 +396,21 @@ def test_predict_does_not_modify_context():
     pd.testing.assert_series_equal(context, lw_copy)
 
 
-# Tests predict — levels filtering
+# Tests predict: levels filtering
 # ==============================================================================
-def test_predict_levels_filters_before_adapter_inference():
+def test_predict_ValueError_when_levels_is_empty():
+    """
+    Test predict raises ValueError when `levels` is an empty list.
+    """
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m.fit(series=y_dict)
+
+    err_msg = re.escape("`levels` must be a single string or a list-like of strings, but cannot be empty.")
+    with pytest.raises(ValueError, match=err_msg):
+        m.predict(steps=3, levels=[])
+
+
+def test_predict_levels_filters_before_adapter_inference():        
     """
     Test that passing `levels` filters the input sent to the adapter, so the
     underlying pipeline receives only the requested series (avoiding

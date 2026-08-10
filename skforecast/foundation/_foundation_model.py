@@ -447,6 +447,9 @@ class FoundationModel:
 
         """
 
+        if len(series) == 0:
+            raise ValueError("`series` cannot be an empty dictionary or an empty DataFrame.")
+
         series_dict, series_indexes = check_preprocess_series_foundation(series)
         series_names_in_ = list(series_dict.keys())
 
@@ -910,9 +913,13 @@ class FoundationModel:
                 exog   = context_exog,
             )
         else:
+            if not context:
+                raise ValueError("`context` cannot be an empty dictionary.")
             series_names_in = list(context.keys())
         
         if levels is not None:
+            if len(levels) == 0:
+                raise ValueError("`levels` must be a single string or a list-like of strings, but cannot be empty.")
             requested_levels = [levels] if isinstance(levels, str) else list(levels)
             unknown = [lv for lv in requested_levels if lv not in series_names_in]
             if unknown:

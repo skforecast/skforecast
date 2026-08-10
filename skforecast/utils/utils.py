@@ -2065,10 +2065,26 @@ def expand_index(
     if isinstance(index, pd.Index):
         
         if isinstance(index, pd.DatetimeIndex):
+            freq = index.freq
+            if freq is None:
+                inferred = pd.infer_freq(index) if len(index) >= 3 else None
+                freq = (
+                    pd.tseries.frequencies.to_offset(inferred)
+                    if inferred is not None
+                    else None
+                )
+            if freq is None:
+                raise ValueError(
+                    "Could not infer a frequency from `index`. This can happen "
+                    "when the index has fewer than 3 observations or is "
+                    "irregularly spaced. Set an explicit frequency (e.g. "
+                    "`index.freq = 'D'` or `series = series.asfreq('D')`) "
+                    "before calling this function."
+                )
             new_index = pd.date_range(
-                            start   = index[-1] + index.freq,
+                            start   = index[-1] + freq,
                             periods = steps,
-                            freq    = index.freq
+                            freq    = freq
                         )
         elif isinstance(index, pd.RangeIndex):
             new_index = pd.RangeIndex(

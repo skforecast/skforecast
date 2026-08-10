@@ -3,45 +3,20 @@
 
 ## 1. Bugs / edge-case failures (verified)
 
-### 1.2 `ForecasterFoundation.__init__` aliases the caller's `FoundationModel` instead of cloning it — DONE
-- `_forecaster_foundation.py:139`: `self.estimator = estimator` — no `sklearn.base.clone()`, unlike `ForecasterRecursiveMultiSeries.__init__` (`self.estimator = clone(estimator)`).
-- Because nearly all state (`context_`, `series_names_in_`, `exog_in_`, etc.) delegates live to `self.estimator`, sharing one `FoundationModel` between two `ForecasterFoundation` wrappers means fitting/`set_params`-ing one silently mutates the other's observed state. `set_params` (`:989`) also mutates the caller's original object in place.
-- **Fix (implemented):** `self.estimator = clone(estimator)` in `__init__` (`:140`), added `from sklearn.base import clone`, and updated the `estimator` attribute docstring to "A clone of the `FoundationModel` instance provided by the user."
-- **Deviation from the original proposal — `set_params` is NOT re-cloned.** The initial plan suggested cloning again inside `set_params`, but this was found during implementation to be both unnecessary and harmful, so it was deliberately dropped:
-  - Unnecessary: after the `__init__` clone, `self.estimator` is already a private, isolated object, so an in-place `self.estimator.set_params(...)` (`:990`) cannot leak to the caller's original object.
-  - Harmful: re-cloning on every `set_params` call would defeat the adapters' deliberate "only reset the cached pipeline/model when `model_id`/`device_map`/`torch_dtype` actually change" optimization (`_adapters.py:230-232`), forcing an unconditional weight reload, and it broke `test_set_params_device_map_resets_pipeline`.
-- **Known, accepted behavioral trade-off.** Because `FoundationModel.get_params()` intentionally excludes the loaded pipeline (to keep clones cheap), a pipeline pre-loaded via `FoundationModel(..., pipeline=...)` is now dropped at `__init__` and lazily reloaded on the first `predict`. Correctness is unaffected (the reloaded pipeline is equivalent); the only cost is one reload in the uncommon pre-load workflow. This actually makes the direct-`predict` path consistent with the backtesting path, which already dropped the pipeline via `clone()` in `deepcopy_forecaster`.
-- **Tests:** the `make_forecaster` fixture now attaches its `FakePipeline` to the forecaster's own cloned adapter after construction (`forecaster.estimator.adapter._pipeline = FakePipeline()`); the pre-existing `test_init_estimator_derived_attributes_correctly_stored` was renamed to `test_init_estimator_is_cloned_and_derived_attributes_correctly_stored` and its `is estimator` assertion flipped to `is not estimator`; two regression tests were added: `test_init_two_forecasters_sharing_estimator_do_not_leak_state` and `test_set_params_does_not_mutate_original_estimator`.
-- **Verified:** full `skforecast/foundation/tests/` suite (554 passed) plus `test_bayesian_search_foundation.py` / `test_backtesting_foundation.py` (48 passed).
 
 ### 1.3 Inconsistent `is_fitted` gating on delegated properties → self-contradictory public state
 - `context_`/`context_exog_` gate on `self.is_fitted` (`:236`, `:263`); `index_type_`, `index_freq_`, `context_range_`, `series_names_in_`, `is_multiple_series_`, `exog_in_`, `exog_names_in_`, `exog_names_in_per_series_`, `exog_type_in_`, `fit_date` (`:287-395`) do not.
 - Combined with 1.2 (shared/unclonable estimator), `forecaster.is_fitted` can be `False` while `forecaster.series_names_in_`/`context_range_` still return stale data from a shared estimator — and `__repr__` (`:484-488`) does `self.context_range_.items()` unconditionally when `is_fitted`, which can then `AttributeError` on `None` if the invariant is violated (i.e., simply printing the object can crash in this state).
 - **Fix:** gate all delegated fit-derived properties on `self.is_fitted` consistently, once cloning (1.2) is fixed this mostly stops being reachable, but the gating should still be consistent defensively.
 
-### 1.4 `levels=[]` crashes with an opaque `numpy` error instead of a clear `ValueError`
-- `FoundationModel.predict` (`_foundation_model.py:915-928`) only special-cases `levels is not None`; an explicit `levels=[]` passes through, `series_names_in`/`context` become empty, and later `n_series = len(series_names_in) == 0` hits `np.column_stack([...])` on an empty list (`:968-978`), confirmed to raise `ValueError: need at least one array to concatenate` — an unrelated low-level error instead of an actionable one from `FoundationModel`.
-- Same root cause makes `ForecasterFoundation.predict(context={}, ...)` (empty dict, not `None`) fall through to either a confusing `ValueError` from `check_preprocess_series({})` (when `check_inputs=True`) or the same `np.column_stack([])` crash (when `check_inputs=False`).
-- **Fix:** add an explicit early check — `if levels is not None and len(levels) == 0: raise ValueError(...)` — and similarly reject an empty `context`/`series` dict with a clear message, in `FoundationModel.predict`/`_check_preprocess_context`.
-
-### 1.5 Latent `TypeError` crash on short/irregular `DatetimeIndex` context (TabICL, TabPFN, Nori)
-- Duplicated near-verbatim in `TabICLAdapter._get_future_timestamps` (`:1757-1767`), `TabPFNAdapter._get_future_timestamps` (`:2405-2415`), and in spirit in `NoriAdapter._timestamps` (`:4070-4074`):
-  ```python
-  freq = series.index.freq
-  if freq is None:
-      freq = pd.tseries.frequencies.to_offset(pd.infer_freq(series.index))
-  timestamps = pd.date_range(start=series.index[-1] + freq, periods=steps, freq=freq)
-  ```
-- If `pd.infer_freq` can't determine a frequency (irregular spacing, or fewer than 3 observations — realistic for a very short context window), it returns `None`; `to_offset(None)` returns `None`; `series.index[-1] + None` raises an unhandled `TypeError`.
-- **Fix:** raise a clear `ValueError` immediately when `pd.infer_freq(...)` returns `None`, explaining that a frequency couldn't be inferred (irregular index or <3 observations) and suggesting the caller set an explicit `.freq`. Do this once in a shared helper (see §3.4) rather than patching 3 separate copies. Add a regression test with a 2-point / irregularly-spaced context.
 
 ### 1.6 `MoiraiAdapter.set_params` reloads the entire pretrained module on *any* reset-key presence, including no-op device changes
 - `_adapters.py:1043-1052`: `valid = {'model_id', 'context_length', 'device'}`; any of these being **present** in the call (not necessarily changed) nulls `self._module`/`self._forecast_obj`, forcing a full HuggingFace re-download/reload on the next `predict`. Unlike `TabICLAdapter`/`TabPFNAdapter`/`NoriAdapter`, which compare old vs. new value first and only reset on real changes — this is a genuine cross-adapter behavioral inconsistency (5 of 8 adapters reset unconditionally on key-presence, 3 compare-and-reset).
 - `device`-only changes don't need a reload at all — `.to(device)` on the already-loaded module/forecast object would suffice.
 - **Fix:** unify all adapters on "reset only if the value actually changed" (see §3.1's shared base class), and for Moirai specifically, special-case `device`-only changes to call `.to(...)` on the cached `_forecast_obj` instead of nulling it (reusing the existing MPS-fallback warning logic in `_ensure_forecast_obj`, `:1244-1251`, factored into a small shared helper). **Note:** this will likely require updating `test_MoiraiAdapter.py`'s existing `set_params` reset-semantics test — flag it as an intentional behavior change, not a silent one.
 
-### 1.7 `TabICLAdapter`/`TabPFNAdapter` line-for-line duplicated (~190 lines) — shares bug 1.5 by construction
-Covered above; noted here because it's the direct cause of the same bug existing in two places independently rather than one.
+### 1.7 `TabICLAdapter`/`TabPFNAdapter` line-for-line duplicated (~190 lines)
+- The two adapters are near-verbatim copies. Their shared timestamp helper (`_get_future_timestamps`) has since been consolidated onto `expand_index`, but the remaining ~190 lines (`get_params`/`set_params`, covariate handling, `predict` body) are still duplicated and should be unified (see §2's shared-base-class item).
 
 ### 1.8 Minor / low-severity, worth a one-line fix each
 - **Duplicate dict key** in `_ADAPTER_REGISTRY` (`_adapters.py:4084` and `:4087`, `"Synthefy/Nori"` twice) — harmless today (same value) but dead code a linter would flag (ruff `F601`); delete the second occurrence.
@@ -98,8 +73,8 @@ Covered above; noted here because it's the direct cause of the same bug existing
 
 ## Priority / sequencing recommendation
 
-1. **Fix first (real bugs, small/contained diffs):** ~~1.2 (clone estimator)~~ DONE, 1.4 (`levels=[]`), 1.5 (infer_freq TypeError), 1.8's duplicate registry key and `predict_quantiles(None)` guard.
-2. **Do together (same refactor, mutually reinforcing):** the duplication cleanups in §2 (shared base class for adapter `get_params`/`set_params`, shared validation/conversion helpers, shared timestamp helpers) — this refactor is what naturally fixes 1.5, 1.6, and 1.7 at the same time instead of patching 3 copies.
+1. **Fix first (real bugs, small/contained diffs):** ~~1.2 (clone estimator)~~ DONE, 1.4 (`levels=[]`), ~~1.5 (infer_freq TypeError)~~ DONE, 1.8's duplicate registry key and `predict_quantiles(None)` guard.
+2. **Do together (same refactor, mutually reinforcing):** the duplication cleanups in §2 (shared base class for adapter `get_params`/`set_params`, shared validation/conversion helpers) — this refactor naturally addresses 1.6 and the remaining 1.7 duplication at the same time instead of patching separate copies.
 3. **Do with care, new tests required:** 1.6 (Moirai reset-key change — will need a test update), 3.3 (context-trimming reorder — needs exog-alignment redesign + large-input tests).
 4. **Low priority / documentation-only:** the scalar-interval float artifact (codebase-wide, cosmetic), TimesFM recompilation trade-off (docstring only), device-handling inconsistency (defer to major version).
 
