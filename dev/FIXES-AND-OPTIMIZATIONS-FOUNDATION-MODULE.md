@@ -2,9 +2,12 @@
 
 
 ### Tier 1: quick correctness and robustness wins — DONE
-Implemented and merged (PR A): None-safe `quantiles` / `interval` defaults, `bool` `steps` guard,
-`get_params(deep)` typing, `T0Adapter` dedup, and `index_type_.__name__` repr cleanup. Each shipped
-with a regression test.
+Implemented and merged (PR A): `bool` `steps` guard, `get_params(deep)` typing, `T0Adapter` dedup,
+and `index_type_.__name__` repr cleanup. Each shipped with a regression test. The `None`-safe
+`quantiles` / `interval` defaults were reverted afterward to keep `predict_interval` /
+`predict_quantiles` aligned with the mutable-default-literal convention used by every other
+forecaster (`ForecasterRecursive`, `ForecasterDirect`, etc.), which do not accept `None` for
+these arguments.
 
 ### Tier 2: internal consistency and small perf (low risk, no API change)
 7. **1.3** inconsistent `is_fitted` gating: gate all delegated fit-derived properties on `self.is_fitted` (`_forecaster_foundation.py:288-396`). Now defensive, since cloning fixes the crash.

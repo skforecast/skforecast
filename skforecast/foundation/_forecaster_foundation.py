@@ -777,7 +777,7 @@ class ForecasterFoundation:
             | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
-        interval: float | list[float] | tuple[float] | None = None,
+        interval: float | list[float] | tuple[float] = [0.1, 0.9],
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
@@ -801,9 +801,8 @@ class ForecasterFoundation:
         exog : pandas Series, pandas DataFrame, dict, default None
             Future-known exogenous variables for the forecast horizon
             (future covariates).
-        interval : float, list, tuple, default None
-            Confidence level of the prediction interval. If `None`, defaults to
-            `[0.1, 0.9]` (an 80% interval). Interpretation depends
+        interval : float, list, tuple, default [0.1, 0.9]
+            Confidence level of the prediction interval. Interpretation depends
             on the method used:
 
             - If `float`, represents the nominal (expected) coverage (between 0
@@ -855,9 +854,6 @@ class ForecasterFoundation:
                 "arguments before using `predict_interval()`, or pass `context`."
             )
 
-        if interval is None:
-            interval = [0.1, 0.9]
-
         if isinstance(interval, (list, tuple)):
             interval = _normalize_interval_scale(interval)
             check_interval(interval=interval, ensure_symmetric_intervals=False)
@@ -902,7 +898,7 @@ class ForecasterFoundation:
             | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
-        quantiles: list[float] | tuple[float] | None = None,
+        quantiles: list[float] | tuple[float] = [0.1, 0.5, 0.9],
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
@@ -922,9 +918,8 @@ class ForecasterFoundation:
         exog : pandas Series, pandas DataFrame, dict, default None
             Future-known exogenous variables for the forecast horizon
             (future covariates).
-        quantiles : list, tuple, default None
+        quantiles : list, tuple, default [0.1, 0.5, 0.9]
             Quantile levels to forecast. Values must be in the range (0, 1).
-            If `None`, defaults to `[0.1, 0.5, 0.9]`.
         check_inputs : bool, default True
             If `True`, the `context` and `context_exog` inputs are validated
             and normalized. If `False`, `context` must already be a
@@ -962,9 +957,6 @@ class ForecasterFoundation:
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `predict_quantiles()`, or pass `context`."
             )
-
-        if quantiles is None:
-            quantiles = [0.1, 0.5, 0.9]
 
         predictions = self.estimator.predict(
                           steps        = steps,

@@ -64,21 +64,6 @@ def test_predict_interval_ValueError_when_invalid_interval(interval):
 # Tests predict_interval — single series basic output
 # ==============================================================================
 
-def test_predict_interval_default_interval_when_none():
-    """
-    predict_interval(interval=None) uses the default [0.1, 0.9] interval
-    instead of raising.
-    """
-    forecaster = make_forecaster()
-    forecaster.fit(series=y)
-    result = forecaster.predict_interval(steps=5, interval=None)
-
-    assert list(result.columns) == ["level", "pred", "lower_bound", "upper_bound"]
-    assert len(result) == 5
-    np.testing.assert_array_almost_equal(result["lower_bound"].values, [0.1] * 5)
-    np.testing.assert_array_almost_equal(result["upper_bound"].values, [0.9] * 5)
-
-
 def test_predict_interval_output_when_single_series():
     """
     predict_interval() returns a DataFrame with correct columns, length,
