@@ -1,13 +1,6 @@
 # Code Review: `skforecast/foundation/` — Bugs, Best Practices, Optimization
 
 
-## 0. Implementation Priority Plan
-
-Findings below re-verified against the current code on branch `feature_fix_bug_empty_levels`.
-Ordered by value / effort / risk. Ship isolated correctness fixes first, then internal
-consistency, then the shared base class refactor that unlocks most of the de-duplication,
-then docs and careful optimizations.
-
 ### Tier 1: quick correctness and robustness wins — DONE
 Implemented and merged (PR A): None-safe `quantiles` / `interval` defaults, `bool` `steps` guard,
 `get_params(deep)` typing, `T0Adapter` dedup, and `index_type_.__name__` repr cleanup. Each shipped
