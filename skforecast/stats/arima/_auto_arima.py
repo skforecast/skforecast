@@ -3,7 +3,7 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
+
 # Automatic ARIMA model selection using stepwise search or exhaustive grid search,
 # minimizing an information criterion (AIC, AICc, or BIC).
 # Also includes arima_rjh for ARIMA fitting with drift and Box-Cox support.

@@ -3,7 +3,6 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
 # Each adapter imports its own backend library lazily (i.e. inside the method
 # that first needs it) rather than at module level. This means that only the
 # library required by the adapter you actually use needs to be installed, other
@@ -3107,6 +3106,7 @@ class TSICLAdapter:
 
         self.model_id             = model_id
         self._model               = model
+        self._resolved_device     = None
         self.context_             = None
         self.context_exog_        = None
         self.checkpoint_version   = checkpoint_version
@@ -3166,6 +3166,9 @@ class TSICLAdapter:
         model_reset_keys = {'checkpoint_version', 'allow_auto_download'}
         if params.keys() & model_reset_keys:
             self._model = None
+
+        if 'device' in params:
+            self._resolved_device = None
 
         for key, value in params.items():
             if key == 'context_length':
@@ -3267,7 +3270,9 @@ class TSICLAdapter:
             for name in series_names_in
         ]
 
-        device = torch.device(_resolve_torch_device(self.device))
+        if self._resolved_device is None:
+            self._resolved_device = _resolve_torch_device(self.device)
+        device = torch.device(self._resolved_device)
 
         _, quantile_preds = self._model.forecast(
             inputs            = inputs_list,

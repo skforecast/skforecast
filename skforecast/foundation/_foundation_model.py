@@ -3,7 +3,6 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
 
 from __future__ import annotations
 from typing import Any
@@ -1057,9 +1056,12 @@ class FoundationModel:
         try:
             self.adapter.set_params(**params)
         except ValueError as exc:
-            raise ValueError(
-                str(exc).replace(type(self.adapter).__name__, "FoundationModel")
-            ) from exc
+            adapter_name = type(self.adapter).__name__
+            message = str(exc).replace(
+                f"Invalid parameter(s) for {adapter_name}:",
+                "Invalid parameter(s) for FoundationModel:",
+            )
+            raise ValueError(message) from exc
 
         self.index_type_               = None
         self.index_freq_               = None

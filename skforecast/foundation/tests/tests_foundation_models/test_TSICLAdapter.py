@@ -27,6 +27,7 @@ def test_TSICLAdapter_init_default_params():
     assert adapter.device == "auto"
     assert adapter.allow_auto_download is True
     assert adapter._model is None
+    assert adapter._resolved_device is None
     assert adapter.context_ is None
     assert adapter.context_exog_ is None
     assert adapter.is_fitted is False
@@ -416,6 +417,48 @@ def test_TSICLAdapter_predict_model_receives_correct_args():
         exog=exog_p, quantiles=[0.05, 0.95],
     )
     assert model.last_quantile_levels == [0.05, 0.95]
+
+
+def test_TSICLAdapter_predict_caches_resolved_device_across_calls(monkeypatch):
+    """
+    Test that `_resolve_torch_device` is invoked at most once across
+    multiple predict calls (the resolved device is cached), and that it
+    is re-invoked after `set_params(device=...)` invalidates the cache.
+    """
+    import skforecast.foundation._adapters as adapters_module
+
+    call_count = {"n": 0}
+    original = adapters_module._resolve_torch_device
+
+    def counting_resolve(device):
+        call_count["n"] += 1
+        return original(device)
+
+    monkeypatch.setattr(adapters_module, "_resolve_torch_device", counting_resolve)
+
+    adapter = TSICLAdapter(model_id="taharnbl/TS-ICL", model=FakeTSICL())
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=3)
+    adapter.predict(
+        steps=3, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
+    )
+    adapter.predict(
+        steps=3, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
+    )
+    assert call_count["n"] == 1
+
+    adapter.set_params(device="cpu")
+    assert adapter._resolved_device is None
+
+    adapter.predict(
+        steps=3, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
+    )
+    assert call_count["n"] == 2
 
 
 # ==============================================================================

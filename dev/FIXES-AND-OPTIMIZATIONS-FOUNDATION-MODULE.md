@@ -9,7 +9,7 @@ and `index_type_.__name__` repr cleanup. Each shipped with a regression test. Th
 forecaster (`ForecasterRecursive`, `ForecasterDirect`, etc.), which do not accept `None` for
 these arguments.
 
-### Tier 2: internal consistency and small perf (low risk, no API change)
+### Tier 2: internal consistency and small perf (low risk, no API change) — DONE
 7. **1.3** inconsistent `is_fitted` gating: gate all delegated fit-derived properties on `self.is_fitted` (`_forecaster_foundation.py:288-396`). Now defensive, since cloning fixes the crash.
 8. **3.2** TSICL re-imports torch and re-resolves device on every `predict` (`_adapters.py:3255, 3270`): cache `self._resolved_device` at model load, invalidate with `self._model` on `set_params`.
 9. **1.8** brittle `str.replace(AdapterClassName, "FoundationModel")` error rewriting (`_foundation_model.py:1053-1058`): make the message rewrite robust (anchor on the class-name token or restructure adapter errors).
