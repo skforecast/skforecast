@@ -2,11 +2,14 @@
 
 
 ### Tier 1: quick correctness and robustness wins — DONE
-Implemented and merged (PR A): None-safe `quantiles` / `interval` defaults, `bool` `steps` guard,
-`get_params(deep)` typing, `T0Adapter` dedup, and `index_type_.__name__` repr cleanup. Each shipped
-with a regression test.
+Implemented and merged (PR A): `bool` `steps` guard, `get_params(deep)` typing, `T0Adapter` dedup,
+and `index_type_.__name__` repr cleanup. Each shipped with a regression test. The `None`-safe
+`quantiles` / `interval` defaults were reverted afterward to keep `predict_interval` /
+`predict_quantiles` aligned with the mutable-default-literal convention used by every other
+forecaster (`ForecasterRecursive`, `ForecasterDirect`, etc.), which do not accept `None` for
+these arguments.
 
-### Tier 2: internal consistency and small perf (low risk, no API change)
+### Tier 2: internal consistency and small perf (low risk, no API change) — DONE
 7. **1.3** inconsistent `is_fitted` gating: gate all delegated fit-derived properties on `self.is_fitted` (`_forecaster_foundation.py:288-396`). Now defensive, since cloning fixes the crash.
 8. **3.2** TSICL re-imports torch and re-resolves device on every `predict` (`_adapters.py:3255, 3270`): cache `self._resolved_device` at model load, invalidate with `self._model` on `set_params`.
 9. **1.8** brittle `str.replace(AdapterClassName, "FoundationModel")` error rewriting (`_foundation_model.py:1053-1058`): make the message rewrite robust (anchor on the class-name token or restructure adapter errors).

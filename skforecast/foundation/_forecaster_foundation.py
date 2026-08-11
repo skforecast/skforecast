@@ -3,7 +3,6 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
 
 from __future__ import annotations
 import html
@@ -283,9 +282,10 @@ class ForecasterFoundation:
         Returns
         -------
         index_type_ : type, None
-            Index type. Delegates to `estimator.index_type_`.
+            Index type. Delegates to `estimator.index_type_`. `None` before
+            fitting.
         """
-        return self.estimator.index_type_
+        return self.estimator.index_type_ if self.is_fitted else None
 
     @property
     def index_freq_(self) -> object:
@@ -295,9 +295,10 @@ class ForecasterFoundation:
         Returns
         -------
         index_freq_ : pandas DateOffset, int, None
-            Index frequency. Delegates to `estimator.index_freq_`.
+            Index frequency. Delegates to `estimator.index_freq_`. `None`
+            before fitting.
         """
-        return self.estimator.index_freq_
+        return self.estimator.index_freq_ if self.is_fitted else None
 
     @property
     def context_range_(self) -> dict[str, pd.Index] | None:
@@ -308,8 +309,9 @@ class ForecasterFoundation:
         -------
         context_range_ : dict, None
             Per-series index range. Delegates to `estimator.context_range_`.
+            `None` before fitting.
         """
-        return self.estimator.context_range_
+        return self.estimator.context_range_ if self.is_fitted else None
 
     @property
     def series_names_in_(self) -> list[str] | None:
@@ -319,9 +321,10 @@ class ForecasterFoundation:
         Returns
         -------
         series_names_in_ : list, None
-            Series names. Delegates to `estimator.series_names_in_`.
+            Series names. Delegates to `estimator.series_names_in_`. `None`
+            before fitting.
         """
-        return self.estimator.series_names_in_
+        return self.estimator.series_names_in_ if self.is_fitted else None
 
     @property
     def is_multiple_series_(self) -> bool:
@@ -331,9 +334,10 @@ class ForecasterFoundation:
         Returns
         -------
         is_multiple_series_ : bool
-            Delegates to `estimator.is_multiple_series_`.
+            Delegates to `estimator.is_multiple_series_`. `False` before
+            fitting.
         """
-        return self.estimator.is_multiple_series_
+        return self.estimator.is_multiple_series_ if self.is_fitted else False
 
     @property
     def exog_in_(self) -> bool:
@@ -343,9 +347,9 @@ class ForecasterFoundation:
         Returns
         -------
         exog_in_ : bool
-            Delegates to `estimator.exog_in_`.
+            Delegates to `estimator.exog_in_`. `False` before fitting.
         """
-        return self.estimator.exog_in_
+        return self.estimator.exog_in_ if self.is_fitted else False
 
     @property
     def exog_names_in_(self) -> list[str] | None:
@@ -355,9 +359,9 @@ class ForecasterFoundation:
         Returns
         -------
         exog_names_in_ : list, None
-            Delegates to `estimator.exog_names_in_`.
+            Delegates to `estimator.exog_names_in_`. `None` before fitting.
         """
-        return self.estimator.exog_names_in_
+        return self.estimator.exog_names_in_ if self.is_fitted else None
 
     @property
     def exog_names_in_per_series_(self) -> dict | None:
@@ -367,9 +371,10 @@ class ForecasterFoundation:
         Returns
         -------
         exog_names_in_per_series_ : dict, None
-            Delegates to `estimator.exog_names_in_per_series_`.
+            Delegates to `estimator.exog_names_in_per_series_`. `None`
+            before fitting.
         """
-        return self.estimator.exog_names_in_per_series_
+        return self.estimator.exog_names_in_per_series_ if self.is_fitted else None
 
     @property
     def exog_type_in_(self) -> type | None:
@@ -379,9 +384,9 @@ class ForecasterFoundation:
         Returns
         -------
         exog_type_in_ : type, None
-            Delegates to `estimator.exog_type_in_`.
+            Delegates to `estimator.exog_type_in_`. `None` before fitting.
         """
-        return self.estimator.exog_type_in_
+        return self.estimator.exog_type_in_ if self.is_fitted else None
 
     @property
     def fit_date(self) -> str | None:
@@ -391,9 +396,9 @@ class ForecasterFoundation:
         Returns
         -------
         fit_date : str, None
-            Delegates to `estimator.fit_date`.
+            Delegates to `estimator.fit_date`. `None` before fitting.
         """
-        return self.estimator.fit_date
+        return self.estimator.fit_date if self.is_fitted else None
 
     @staticmethod
     def _truncate_names(
@@ -777,7 +782,7 @@ class ForecasterFoundation:
             | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
-        interval: float | list[float] | tuple[float] | None = None,
+        interval: float | list[float] | tuple[float] = [0.1, 0.9],
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
@@ -801,9 +806,8 @@ class ForecasterFoundation:
         exog : pandas Series, pandas DataFrame, dict, default None
             Future-known exogenous variables for the forecast horizon
             (future covariates).
-        interval : float, list, tuple, default None
-            Confidence level of the prediction interval. If `None`, defaults to
-            `[0.1, 0.9]` (an 80% interval). Interpretation depends
+        interval : float, list, tuple, default [0.1, 0.9]
+            Confidence level of the prediction interval. Interpretation depends
             on the method used:
 
             - If `float`, represents the nominal (expected) coverage (between 0
@@ -855,9 +859,6 @@ class ForecasterFoundation:
                 "arguments before using `predict_interval()`, or pass `context`."
             )
 
-        if interval is None:
-            interval = [0.1, 0.9]
-
         if isinstance(interval, (list, tuple)):
             interval = _normalize_interval_scale(interval)
             check_interval(interval=interval, ensure_symmetric_intervals=False)
@@ -902,7 +903,7 @@ class ForecasterFoundation:
             | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
-        quantiles: list[float] | tuple[float] | None = None,
+        quantiles: list[float] | tuple[float] = [0.1, 0.5, 0.9],
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
@@ -922,9 +923,8 @@ class ForecasterFoundation:
         exog : pandas Series, pandas DataFrame, dict, default None
             Future-known exogenous variables for the forecast horizon
             (future covariates).
-        quantiles : list, tuple, default None
+        quantiles : list, tuple, default [0.1, 0.5, 0.9]
             Quantile levels to forecast. Values must be in the range (0, 1).
-            If `None`, defaults to `[0.1, 0.5, 0.9]`.
         check_inputs : bool, default True
             If `True`, the `context` and `context_exog` inputs are validated
             and normalized. If `False`, `context` must already be a
@@ -962,9 +962,6 @@ class ForecasterFoundation:
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `predict_quantiles()`, or pass `context`."
             )
-
-        if quantiles is None:
-            quantiles = [0.1, 0.5, 0.9]
 
         predictions = self.estimator.predict(
                           steps        = steps,

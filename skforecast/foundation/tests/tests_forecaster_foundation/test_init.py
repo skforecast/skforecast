@@ -109,9 +109,40 @@ def test_init_default_attributes_before_fit():
     assert forecaster.is_multiple_series_ is False
     assert forecaster.exog_in_ is False
     assert forecaster.exog_names_in_ is None
+    assert forecaster.exog_names_in_per_series_ is None
     assert forecaster.exog_type_in_ is None
     assert forecaster.is_fitted is False
     assert forecaster.fit_date is None
+
+
+def test_init_delegated_properties_gated_on_is_fitted_when_estimator_state_is_stale():
+    """
+    Test that when `is_fitted` is manually reset to False after a real fit
+    (simulating a stale/inconsistent state), all delegated properties
+    consistently return their unfitted default instead of leaking stale
+    data, and repr/_repr_html_ do not raise.
+    """
+    forecaster = make_forecaster()
+    forecaster.fit(series=y)
+    assert forecaster.is_fitted is True
+
+    forecaster.is_fitted = False
+
+    assert forecaster.context_ is None
+    assert forecaster.context_exog_ is None
+    assert forecaster.index_type_ is None
+    assert forecaster.index_freq_ is None
+    assert forecaster.context_range_ is None
+    assert forecaster.series_names_in_ is None
+    assert forecaster.is_multiple_series_ is False
+    assert forecaster.exog_in_ is False
+    assert forecaster.exog_names_in_ is None
+    assert forecaster.exog_names_in_per_series_ is None
+    assert forecaster.exog_type_in_ is None
+    assert forecaster.fit_date is None
+
+    assert "Context range: None" in repr(forecaster)
+    assert "Not fitted" in forecaster._repr_html_()
 
 
 @pytest.mark.parametrize(
