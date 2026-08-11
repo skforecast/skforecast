@@ -1498,26 +1498,28 @@ class RollingFeatures():
         
         vectorizable_stats = {'mean', 'std', 'min', 'max', 'sum', 'median'}
         has_vectorizable = bool(set(self.stats) & vectorizable_stats)
-        
+        has_nonvectorizable = bool(set(self.stats) - vectorizable_stats)
+
         rolling_features = np.full(
             shape=(X.shape[1], self.n_stats), fill_value=np.nan, dtype=float
         )
-        
+
         # Compute vectorized stats if any are requested
         if has_vectorizable:
             self._transform_vectorized(X, rolling_features)
-        
+
         # Compute non-vectorizable stats
-        for i in range(X.shape[1]):
-            for j, stat in enumerate(self.stats):
-                if stat in vectorizable_stats:
-                    continue
-                X_window = X[-self.window_sizes[j]:, i]
-                X_window = X_window[~np.isnan(X_window)]
-                if len(X_window) > 0: 
-                    rolling_features[i, j] = self._apply_stat_numpy_jit(X_window, stat)
-                else:
-                    rolling_features[i, j] = np.nan
+        if has_nonvectorizable:
+            for i in range(X.shape[1]):
+                for j, stat in enumerate(self.stats):
+                    if stat in vectorizable_stats:
+                        continue
+                    X_window = X[-self.window_sizes[j]:, i]
+                    X_window = X_window[~np.isnan(X_window)]
+                    if len(X_window) > 0:
+                        rolling_features[i, j] = self._apply_stat_numpy_jit(X_window, stat)
+                    else:
+                        rolling_features[i, j] = np.nan
 
         if array_ndim == 1:
             rolling_features = rolling_features.ravel()
