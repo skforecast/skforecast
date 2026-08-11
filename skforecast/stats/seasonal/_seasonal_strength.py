@@ -3,7 +3,7 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
+
 # Seasonal strength measures for time series analysis.
 # This module implements seasonal strength heuristics based on STL-like
 # decomposition, following Wang, Smith & Hyndman (2006).
