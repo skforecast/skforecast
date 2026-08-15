@@ -6,8 +6,54 @@
 
 
 from __future__ import annotations
+from typing import Any
+import numpy as np
 import pandas as pd
 from ..utils import check_preprocess_series
+
+
+def _validate_positive_int(name: str, value: Any) -> None:
+    """
+    Validate that a parameter is a positive integer.
+
+    Parameters
+    ----------
+    name : str
+        Parameter name, used in the raised error message.
+    value : Any
+        Value to validate.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if not isinstance(value, int) or value < 1:
+        raise ValueError(f"`{name}` must be a positive integer. Got {value!r}.")
+
+
+def _tensor_to_numpy(values: Any) -> np.ndarray:
+    """
+    Detach a torch tensor to a numpy array, preserving its native dtype.
+
+    Parameters
+    ----------
+    values : array-like
+        Model output, either a numpy array or a torch tensor.
+
+    Returns
+    -------
+    array : numpy ndarray
+        Numpy array. Torch tensors are detached, moved to CPU, and
+        converted, keeping their native dtype.
+
+    """
+
+    if hasattr(values, "detach"):
+        return values.detach().cpu().numpy()
+
+    return np.asarray(values)
 
 
 def check_preprocess_series_foundation(

@@ -17,6 +17,7 @@ import pandas as pd
 import warnings
 
 from ..utils import expand_index
+from ._utils import _validate_positive_int, _tensor_to_numpy
 
 
 def _resolve_torch_device(device: str) -> str:
@@ -164,10 +165,7 @@ class ChronosAdapter:
         
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
 
         self.model_id       = model_id
         self._pipeline      = pipeline
@@ -236,10 +234,7 @@ class ChronosAdapter:
             if key == 'predict_kwargs':
                 self.predict_kwargs = value or {}
             elif key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
+                _validate_positive_int("context_length", value)
                 self.context_length = value
             else:
                 setattr(self, key, value)
@@ -341,11 +336,7 @@ class ChronosAdapter:
 
         predictions: dict[str, np.ndarray] = {}
         for i, name in enumerate(series_names_in):
-            q_arr = quantile_preds[i].squeeze(0)
-            if hasattr(q_arr, "detach"):
-                q_arr = q_arr.detach().cpu().numpy()
-            else:
-                q_arr = np.asarray(q_arr)
+            q_arr = _tensor_to_numpy(quantile_preds[i].squeeze(0))
             predictions[name] = q_arr
 
         return predictions
@@ -601,14 +592,8 @@ class TimesFMAdapter:
         
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
-        if not isinstance(max_horizon, int) or max_horizon < 1:
-            raise ValueError(
-                f"`max_horizon` must be a positive integer. Got {max_horizon!r}."
-            )
+        _validate_positive_int("context_length", context_length)
+        _validate_positive_int("max_horizon", max_horizon)
 
         self.model_id               = model_id
         self._model                 = model
@@ -667,16 +652,10 @@ class TimesFMAdapter:
             self._model = None
         for key, value in params.items():
             if key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
+                _validate_positive_int("context_length", value)
                 self.context_length = value
             elif key == 'max_horizon':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`max_horizon` must be a positive integer. Got {value!r}."
-                    )
+                _validate_positive_int("max_horizon", value)
                 self.max_horizon = value
             elif key == 'forecast_config_kwargs':
                 self.forecast_config_kwargs = value or {}
@@ -995,11 +974,7 @@ class MoiraiAdapter:
         
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. "
-                f"Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
 
         self.model_id       = model_id
         self._module        = module
@@ -1053,11 +1028,7 @@ class MoiraiAdapter:
             self._forecast_obj = None
         for key, value in params.items():
             if key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. "
-                        f"Got {value!r}."
-                    )
+                _validate_positive_int("context_length", value)
                 self.context_length = value
             else:
                 setattr(self, key, value)
@@ -1415,10 +1386,7 @@ class TabICLAdapter:
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
         if point_estimate not in ("mean", "median"):
             raise ValueError(
                 f"`point_estimate` must be 'mean' or 'median'. Got {point_estimate!r}."
@@ -1489,10 +1457,7 @@ class TabICLAdapter:
         validated = {}
         for key, value in params.items():
             if key == "context_length":
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
+                _validate_positive_int("context_length", value)
                 validated[key] = value
             elif key == "point_estimate":
                 if value not in ("mean", "median"):
@@ -2029,10 +1994,7 @@ class TabPFNAdapter:
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
         if mode not in ("local", "client"):
             raise ValueError(
                 f"`mode` must be 'local' or 'client'. Got {mode!r}."
@@ -2111,10 +2073,7 @@ class TabPFNAdapter:
         validated = {}
         for key, value in params.items():
             if key == "context_length":
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
+                _validate_positive_int("context_length", value)
                 validated[key] = value
             elif key == "mode":
                 if value not in ("local", "client"):
@@ -2621,10 +2580,7 @@ class T0Adapter:
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
 
         self.model_id       = model_id
         self._model         = model
@@ -2683,10 +2639,7 @@ class T0Adapter:
 
         for key, value in params.items():
             if key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
+                _validate_positive_int("context_length", value)
                 self.context_length = value
             else:
                 setattr(self, key, value)
@@ -2798,11 +2751,7 @@ class T0Adapter:
             future_covariates = future_covariates,
         )
 
-        q_arr = forecast.quantiles
-        if hasattr(q_arr, "detach"):
-            q_arr = q_arr.detach().cpu().numpy()
-        else:
-            q_arr = np.asarray(q_arr)
+        q_arr = _tensor_to_numpy(forecast.quantiles)
 
         column_for = [query_levels.index(q) for q in requested]
         return {name: q_arr[i][:, column_for] for i, name in enumerate(series_names)}
@@ -3099,10 +3048,7 @@ class TSICLAdapter:
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
 
         self.model_id             = model_id
         self._model               = model
@@ -3172,10 +3118,7 @@ class TSICLAdapter:
 
         for key, value in params.items():
             if key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
+                _validate_positive_int("context_length", value)
                 self.context_length = value
             else:
                 setattr(self, key, value)
@@ -3286,11 +3229,7 @@ class TSICLAdapter:
 
         predictions: dict[str, np.ndarray] = {}
         for i, name in enumerate(series_names_in):
-            q_arr = quantile_preds[i]
-            if hasattr(q_arr, "detach"):
-                q_arr = q_arr.detach().cpu().numpy()
-            else:
-                q_arr = np.asarray(q_arr)
+            q_arr = _tensor_to_numpy(quantile_preds[i])
             predictions[name] = q_arr[0]  # drop the single-variate dim
 
         return predictions
@@ -3571,10 +3510,7 @@ class NoriAdapter:
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
         if point_estimate not in ("mean", "median", "mode"):
             raise ValueError(
                 f"`point_estimate` must be 'mean', 'median' or 'mode'. "
@@ -3658,10 +3594,7 @@ class NoriAdapter:
         validated = {}
         for key, value in params.items():
             if key == "context_length":
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
+                _validate_positive_int("context_length", value)
                 validated[key] = value
             elif key == "point_estimate":
                 if value not in ("mean", "median", "mode"):
