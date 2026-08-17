@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 from typing import Any
+import contextlib
 import warnings
 from numba import njit
 import numpy as np
@@ -1556,15 +1557,37 @@ class RollingFeatures():
             
         """
         vectorizable_stats = {'mean', 'std', 'min', 'max', 'sum', 'median'}
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', category=RuntimeWarning)
+
+        # Cache the NaN check per unique window size. Stats sharing a window size
+        # (X[-ws:, :] is identical for equal ws) would otherwise recompute the
+        # same np.isnan pass. `any_nan` lets the fast path skip the warning
+        # context manager entirely (see below).
+        nan_by_ws = {}
+        for j, stat in enumerate(self.stats):
+            if stat not in vectorizable_stats:
+                continue
+            ws = self.window_sizes[j]
+            if ws not in nan_by_ws:
+                nan_by_ws[ws] = np.isnan(X[-ws:, :]).any()
+        any_nan = any(nan_by_ws.values())
+
+        # `warnings.catch_warnings()` saves/restores the global warning state on
+        # every call and is pure overhead when nothing is emitted. RuntimeWarnings
+        # only arise from the np.nan* branches (empty/all-NaN slices), so the
+        # context manager is only entered when a window actually contains a NaN.
+        warnings_ctx = (
+            warnings.catch_warnings() if any_nan else contextlib.nullcontext()
+        )
+        with warnings_ctx:
+            if any_nan:
+                warnings.simplefilter('ignore', category=RuntimeWarning)
             for j, stat in enumerate(self.stats):
                 if stat not in vectorizable_stats:
                     continue
                 window = X[-self.window_sizes[j]:, :]
-                
-                has_nan = np.isnan(window).any()
-                
+
+                has_nan = nan_by_ws[self.window_sizes[j]]
+
                 if stat == 'mean':
                     if has_nan:
                         rolling_features[:, j] = np.nanmean(window, axis=0)
@@ -1579,11 +1602,10 @@ class RollingFeatures():
                         n_valid = np.sum(~np.isnan(window), axis=0)
                         result[n_valid == 1] = 0.0
                         rolling_features[:, j] = result
+                    elif window.shape[0] == 1:
+                        rolling_features[:, j] = 0.0
                     else:
-                        result = np.std(window, axis=0, ddof=1)
-                        if window.shape[0] == 1:
-                            result = np.zeros_like(result)
-                        rolling_features[:, j] = result
+                        rolling_features[:, j] = np.std(window, axis=0, ddof=1)
                 elif stat == 'min':
                     if has_nan:
                         rolling_features[:, j] = np.nanmin(window, axis=0)
