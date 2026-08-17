@@ -4,9 +4,16 @@ permissions:
   contents: read
 
 on:
+  push:
+    branches:
+    - main
   pull_request:
     branches:
     - main
+
+concurrency:
+  group: codecov-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   run:
@@ -16,10 +23,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v6
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.13'
+          python-version: '3.14'
           cache: 'pip'
 
       - name: Install dependencies
@@ -31,16 +38,28 @@ jobs:
         env:
           KERAS_BACKEND: torch
           # NUMBA_DISABLE_JIT: 1  # Disable Numba JIT to capture a better coverage report
-        run: pytest --cov skforecast --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+        run: |
+          pytest \
+            --cov=skforecast \
+            --cov-report=xml:coverage.xml \
+            --junitxml=junit.xml \
+            -o junit_family=legacy
 
       - name: Upload coverage to Codecov
+        if: ${{ !cancelled() && hashFiles('coverage.xml') != '' }}
         uses: codecov/codecov-action@v7
-        with: 
-          token: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          token: ${{ secrets.CODECOV_GLOBAL_TOKEN }}
           files: ./coverage.xml
+          disable_search: true
+          fail_ci_if_error: true
 
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() && hashFiles('junit.xml') != '' }}
+        uses: codecov/codecov-action@v7
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_GLOBAL_TOKEN }}
+          files: ./junit.xml
+          report_type: test_results
+          disable_search: true
+          fail_ci_if_error: true

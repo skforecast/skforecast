@@ -22,9 +22,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v7
+      with:
+        persist-credentials: false
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -46,4 +48,4 @@ jobs:
       env:
         KERAS_BACKEND: torch
       run: |
-        pytest -vv -s
+        pytest
