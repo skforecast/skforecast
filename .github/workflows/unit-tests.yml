@@ -9,6 +9,10 @@ on:
     - main
   workflow_dispatch:
 
+concurrency:
+  group: unit-tests-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     timeout-minutes: 30
@@ -22,15 +26,20 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v7
+      with:
+        persist-credentials: false
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
 
     - name: Install system dependency libomp on macOS
       if: startsWith(matrix.platform, 'macos-')
+      env:
+        HOMEBREW_NO_AUTO_UPDATE: 1
+        HOMEBREW_NO_INSTALL_CLEANUP: 1
       run: |
         brew install libomp
 
@@ -54,10 +63,7 @@ jobs:
       run: |
         if [[ "${{ matrix.platform }}" == macos* ]]; then
           echo "Skipping deep_learning tests on macOS due to MPS issues"
-          pytest -vv -s --ignore=skforecast/deep_learning
+          pytest --ignore=skforecast/deep_learning
         else
-          pytest -vv -s  # Extra verbosity and show print statements
+          pytest
         fi
-
-      # Condition to skip python 3.13
-      # if [ "${{ matrix.python-version }}" == "3.13" ]; then
