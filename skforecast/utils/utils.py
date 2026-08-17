@@ -3246,7 +3246,10 @@ def _build_predict_function(
     indices are resolved once at build time and the array is cast to `object`
     dtype with those columns converted to `int` before each prediction call.
     CatBoost requires integer values (not float) for categorical features when
-    the input is a numpy array.
+    the input is a numpy array. For `CatBoostRegressor` without categorical
+    features, the array is passed directly and its `writeable` flag is restored
+    after prediction, since CatBoost borrows an F-contiguous array without a
+    copy and leaves it read-only.
 
     For any other estimator the standard `estimator.predict` method is used.
 
@@ -3294,7 +3297,9 @@ def _build_predict_function(
         trees = estimator.estimators_
 
         def predict_fn(X):
-            X_f32 = X.astype(np.float32)
+            # ascontiguousarray gives a C-contiguous float32 copy (the cast
+            # copies anyway), which is the layout tree traversal expects.
+            X_f32 = np.ascontiguousarray(X, dtype=np.float32)
             preds = [tree.tree_.predict(X_f32)[:, 0] for tree in trees]
             return np.mean(preds, axis=0)
 
@@ -3304,7 +3309,9 @@ def _build_predict_function(
         tree_ = estimator.tree_
 
         def predict_fn(X):
-            return tree_.predict(X.astype(np.float32))[:, 0]
+            # ascontiguousarray gives a C-contiguous float32 copy (the cast
+            # copies anyway), which is the layout tree traversal expects.
+            return tree_.predict(np.ascontiguousarray(X, dtype=np.float32))[:, 0]
 
         return predict_fn
 
@@ -3320,6 +3327,18 @@ def _build_predict_function(
                 return estimator.predict(X_obj).ravel()
 
             return predict_fn
+
+        # Without categorical features CatBoost ingests the numpy array
+        # directly. When the array is F-contiguous it is borrowed without a
+        # copy and left read-only after predict, so the writeable flag is
+        # restored to let callers keep filling the array in place across steps.
+        def predict_fn(X):
+            preds = estimator.predict(X).ravel()
+            if not X.flags.writeable:
+                X.flags.writeable = True
+            return preds
+
+        return predict_fn
 
     # Generic fallback
     def predict_fn(X):

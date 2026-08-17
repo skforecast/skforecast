@@ -8,6 +8,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from lightgbm import LGBMRegressor
+from catboost import CatBoostRegressor
 
 from skforecast.preprocessing import RollingFeatures
 from skforecast.preprocessing import TimeSeriesDifferentiator
@@ -347,3 +348,28 @@ def test_predict_bootstrapping_output_when_window_features():
     )
 
     pd.testing.assert_frame_equal(expected, results)
+
+
+def test_predict_bootstrapping_catboost_readonly_array_does_not_raise():
+    """
+    Regression test: CatBoost marks the F-contiguous prediction matrix
+    read-only after predict. `_recursive_predict_bootstrapping` must restore
+    the writeable flag so multi-step bootstrapping does not raise
+    `ValueError: assignment destination is read-only`.
+    """
+    forecaster = ForecasterRecursive(
+        CatBoostRegressor(
+            iterations=10, random_seed=123, verbose=0, allow_writing_files=False
+        ),
+        lags=3,
+    )
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
+
+    for use_binned in (False, True):
+        results = forecaster.predict_bootstrapping(
+            steps=5, n_boot=10, exog=exog_predict,
+            use_in_sample_residuals=True, use_binned_residuals=use_binned,
+        )
+        assert results.shape == (5, 10)
+        assert list(results.columns) == [f"pred_boot_{i}" for i in range(10)]
+        assert not results.isna().to_numpy().any()

@@ -24,6 +24,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New <code>[TSICLAdapter]</code> in the <code>foundation</code> module wrapping `tsicl` (`TSICL`), registered under the `'taharnbl/TS-ICL'` `model_id` prefix. Supports past and future known exogenous variables, a 0.01 quantile grid in `[0.01, 0.99]`, and lazy import of the `tsicl` backend. Thanks to the [EDF Lab](https://github.com/EDF-Lab) team for contributing this adapter. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1265](https://github.com/skforecast/skforecast/pull/1265))
 
++ <span class="badge text-bg-enhancement">Enhancement</span> Optimized the memory layout (`order='F'`) of the bootstrapping prediction matrix in <code>[ForecasterRecursive]</code>, giving a notable speed-up for CatBoost estimators.
+
 
 **Added**
 
@@ -41,6 +43,8 @@ The main changes in this release are:
 **Changed**
 
 + The main branch of the repository has been renamed from `master` to `main`. All references to the default branch in CI, documentation, and test fixtures have been updated accordingly.
+
++ Optimized the memory layout (`order='F'`) of the bootstrapping prediction matrix in <code>[ForecasterRecursive]</code>, giving a notable speed-up for CatBoost estimators. As a side effect, bootstrap prediction intervals produced by linear estimators may differ at floating-point precision (~1e-15) because BLAS summation order depends on the array memory layout.
 
 
 **Fixed**
