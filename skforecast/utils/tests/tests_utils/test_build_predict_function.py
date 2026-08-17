@@ -125,9 +125,10 @@ def test_build_predict_function_catboost_with_cat_features():
 
 def test_build_predict_function_catboost_without_cat_features():
     """
-    Test that _build_predict_function falls back to the generic predict path
-    for CatBoostRegressor fitted without any categorical features, i.e. it
-    returns the same predictions as estimator.predict.
+    Test that _build_predict_function uses the dedicated CatBoost path for a
+    CatBoostRegressor fitted without any categorical features (the array is
+    passed directly and its writeable flag restored after predict), returning
+    the same predictions as estimator.predict.
     """
     rng = np.random.default_rng(42)
     X = rng.standard_normal((100, 3))

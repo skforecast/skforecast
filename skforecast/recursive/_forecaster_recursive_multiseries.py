@@ -2665,11 +2665,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
             predictions[i, :] = pred
 
-            # NOTE: CatBoost may make the input array read-only after predict
-            if not features.flags.writeable:
-                features.flags.writeable = True
-            
-            # Update `last_window` values. The first position is discarded and 
+            # Update `last_window` values. The first position is discarded and
             # the new prediction is added at the end.
             last_window[-remaining, :] = pred
 
@@ -2852,10 +2848,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
             # Reshape from (n_boot × n_levels,) to (n_levels, n_boot)
             pred = pred.reshape(n_boot, n_levels).T
-            
-            # NOTE: CatBoost makes the input array read-only.
-            if not features.flags.writeable:
-                features.flags.writeable = True
 
             if use_binned_residuals:
                 # Vectorized residual lookup for all levels and boots

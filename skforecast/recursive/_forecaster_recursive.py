@@ -1813,7 +1813,11 @@ class ForecasterRecursive(ForecasterBase):
         n_features = n_lags + n_window_features + n_exog + n_calendar
 
         # Input matrix for prediction: shape (n_boot, n_features)
-        X = np.full((n_boot, n_features), fill_value=np.nan, dtype=float)
+        # order='F' makes the per-step column-block writes (X[:, a:b] = ...)
+        # contiguous and lets CatBoost ingest the array without an internal copy
+        # (a large speed-up for CatBoost). LightGBM is copy-free with either
+        # layout, so it is unaffected, as are the remaining estimators.
+        X = np.full((n_boot, n_features), fill_value=np.nan, order='F', dtype=float)
         
         # Output predictions: shape (steps, n_boot)
         predictions = np.full((steps, n_boot), fill_value=np.nan, dtype=float)
@@ -1868,7 +1872,7 @@ class ForecasterRecursive(ForecasterBase):
                 X[:, exog_end:] = calendar_values[i]
         
             pred = predict_fn(X)
-            
+
             if use_binned_residuals:
                 # sampled_residuals is a 3D array: (n_bins, steps, n_boot)
                 pred_bins = self.binner.transform(pred).astype(int)
