@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 from typing import Any
+import contextlib
 import warnings
 from numba import njit
 import numpy as np
@@ -1498,26 +1499,28 @@ class RollingFeatures():
         
         vectorizable_stats = {'mean', 'std', 'min', 'max', 'sum', 'median'}
         has_vectorizable = bool(set(self.stats) & vectorizable_stats)
-        
+        has_nonvectorizable = bool(set(self.stats) - vectorizable_stats)
+
         rolling_features = np.full(
             shape=(X.shape[1], self.n_stats), fill_value=np.nan, dtype=float
         )
-        
+
         # Compute vectorized stats if any are requested
         if has_vectorizable:
             self._transform_vectorized(X, rolling_features)
-        
+
         # Compute non-vectorizable stats
-        for i in range(X.shape[1]):
-            for j, stat in enumerate(self.stats):
-                if stat in vectorizable_stats:
-                    continue
-                X_window = X[-self.window_sizes[j]:, i]
-                X_window = X_window[~np.isnan(X_window)]
-                if len(X_window) > 0: 
-                    rolling_features[i, j] = self._apply_stat_numpy_jit(X_window, stat)
-                else:
-                    rolling_features[i, j] = np.nan
+        if has_nonvectorizable:
+            for i in range(X.shape[1]):
+                for j, stat in enumerate(self.stats):
+                    if stat in vectorizable_stats:
+                        continue
+                    X_window = X[-self.window_sizes[j]:, i]
+                    X_window = X_window[~np.isnan(X_window)]
+                    if len(X_window) > 0:
+                        rolling_features[i, j] = self._apply_stat_numpy_jit(X_window, stat)
+                    else:
+                        rolling_features[i, j] = np.nan
 
         if array_ndim == 1:
             rolling_features = rolling_features.ravel()
@@ -1554,37 +1557,80 @@ class RollingFeatures():
             
         """
         vectorizable_stats = {'mean', 'std', 'min', 'max', 'sum', 'median'}
+
+        # Cache the NaN check per unique window size. Stats sharing a window size
+        # (X[-ws:, :] is identical for equal ws) would otherwise recompute the
+        # same np.isnan pass. `any_nan` lets the fast path skip the warning
+        # context manager entirely (see below).
+        nan_by_ws = {}
         for j, stat in enumerate(self.stats):
             if stat not in vectorizable_stats:
                 continue
-            window = X[-self.window_sizes[j]:, :]
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', message='Mean of empty slice')
-                warnings.filterwarnings('ignore', message='Degrees of freedom <= 0 for slice')
-                warnings.filterwarnings('ignore', message='All-NaN slice encountered')
+            ws = self.window_sizes[j]
+            if ws not in nan_by_ws:
+                nan_by_ws[ws] = np.isnan(X[-ws:, :]).any()
+        any_nan = any(nan_by_ws.values())
+
+        # `warnings.catch_warnings()` saves/restores the global warning state on
+        # every call and is pure overhead when nothing is emitted. RuntimeWarnings
+        # only arise from the np.nan* branches (empty/all-NaN slices), so the
+        # context manager is only entered when a window actually contains a NaN.
+        warnings_ctx = (
+            warnings.catch_warnings() if any_nan else contextlib.nullcontext()
+        )
+        with warnings_ctx:
+            if any_nan:
+                warnings.simplefilter('ignore', category=RuntimeWarning)
+            for j, stat in enumerate(self.stats):
+                if stat not in vectorizable_stats:
+                    continue
+                window = X[-self.window_sizes[j]:, :]
+
+                has_nan = nan_by_ws[self.window_sizes[j]]
+
                 if stat == 'mean':
-                    rolling_features[:, j] = np.nanmean(window, axis=0)
+                    if has_nan:
+                        rolling_features[:, j] = np.nanmean(window, axis=0)
+                    else:
+                        rolling_features[:, j] = np.mean(window, axis=0)
                 elif stat == 'std':
-                    result = np.nanstd(window, axis=0, ddof=1)
-                    # Note: np.nanstd returns nan for single non-NaN values (ddof=1),
-                    # but it is replaced by 0.0 to match the behavior of the non-vectorized
-                    # _np_std_jit function
-                    n_valid = np.sum(~np.isnan(window), axis=0)
-                    result[n_valid == 1] = 0.0
-                    rolling_features[:, j] = result
+                    if has_nan:
+                        result = np.nanstd(window, axis=0, ddof=1)
+                        # Note: np.nanstd returns nan for single non-NaN values (ddof=1),
+                        # but it is replaced by 0.0 to match the behavior of the non-vectorized
+                        # _np_std_jit function
+                        n_valid = np.sum(~np.isnan(window), axis=0)
+                        result[n_valid == 1] = 0.0
+                        rolling_features[:, j] = result
+                    elif window.shape[0] == 1:
+                        rolling_features[:, j] = 0.0
+                    else:
+                        rolling_features[:, j] = np.std(window, axis=0, ddof=1)
                 elif stat == 'min':
-                    rolling_features[:, j] = np.nanmin(window, axis=0)
+                    if has_nan:
+                        rolling_features[:, j] = np.nanmin(window, axis=0)
+                    else:
+                        rolling_features[:, j] = np.min(window, axis=0)
                 elif stat == 'max':
-                    rolling_features[:, j] = np.nanmax(window, axis=0)
+                    if has_nan:
+                        rolling_features[:, j] = np.nanmax(window, axis=0)
+                    else:
+                        rolling_features[:, j] = np.max(window, axis=0)
                 elif stat == 'sum':
-                    result = np.nansum(window, axis=0, dtype=float)
-                    # Note: np.nansum returns 0 for all-NaN slices, but it is replaced by NaN
-                    # to match the behavior of the non-vectorized _np_sum_jit function
-                    all_nan_mask = np.all(np.isnan(window), axis=0)
-                    result[all_nan_mask] = np.nan
-                    rolling_features[:, j] = result
+                    if has_nan:
+                        result = np.nansum(window, axis=0, dtype=float)
+                        # Note: np.nansum returns 0 for all-NaN slices, but it is replaced by NaN
+                        # to match the behavior of the non-vectorized _np_sum_jit function
+                        all_nan_mask = np.all(np.isnan(window), axis=0)
+                        result[all_nan_mask] = np.nan
+                        rolling_features[:, j] = result
+                    else:
+                        rolling_features[:, j] = np.sum(window, axis=0, dtype=float)
                 elif stat == 'median':
-                    rolling_features[:, j] = np.nanmedian(window, axis=0)
+                    if has_nan:
+                        rolling_features[:, j] = np.nanmedian(window, axis=0)
+                    else:
+                        rolling_features[:, j] = np.median(window, axis=0)
 
 
 class RollingFeaturesClassification():

@@ -603,6 +603,28 @@ def test_RollingFeatures_transform_with_nans_2d():
     np.testing.assert_array_almost_equal(rolling_features, expected)
 
 
+def test_RollingFeatures_transform_window_size_1_no_nans():
+    """
+    Test RollingFeatures transform method with window_sizes=1 and no nans.
+    This exercises the vectorized fast path (no NaNs) for `std`, which must
+    return 0.0 for a single-value window instead of NaN, matching the
+    behavior of the non-vectorized `_np_std_jit` function.
+    """
+
+    X_no_nans = X.to_numpy(copy=True)
+
+    stats = ["mean", "std", "min", "max", "sum", "median"]
+    rolling = RollingFeatures(stats=stats, window_sizes=1)
+    rolling_features = rolling.transform(X_no_nans)
+
+    last_value = X_no_nans[-1]
+    expected = np.array(
+        [last_value, 0.0, last_value, last_value, last_value, last_value]
+    )
+
+    np.testing.assert_array_almost_equal(rolling_features, expected)
+
+
 def test_equivalence_results_RollingFeatures_and_custom_class():
     """
     Test equivalence of results between RollingFeatures and custom class that
