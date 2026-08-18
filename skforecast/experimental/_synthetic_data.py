@@ -992,7 +992,9 @@ def generate_gas_station_panel(
         )
 
     if output == "long":
-        return pd.concat(frames, axis=0)
+        long_df = pd.concat(frames, axis=0)
+        long_df["station_id"] = long_df["station_id"].astype("category")
+        return long_df
 
     wide = pd.concat(
         [f.drop(columns="station_id").add_suffix(f"_{f['station_id'].iloc[0]}") for f in frames],
