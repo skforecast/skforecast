@@ -1679,6 +1679,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         window_size        = self.window_size,
                         exog               = exog,
                         dropna_last_window = self.dropna_from_series,
+                        estimator          = self.estimator,
+                        differentiation    = self.differentiation,
                         externally_fitted  = False
                     )
         series_train, _, levels_last_window, exog_train, exog_test, _ = next(data_fold)
