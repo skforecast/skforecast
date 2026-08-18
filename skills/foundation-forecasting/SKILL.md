@@ -5,8 +5,9 @@ description: >
   (Amazon Chronos-2, Google TimesFM 2.5, Salesforce Moirai-2, Soda-INRIA TabICL,
   Prior Labs TabPFN-TS, The Forecasting Company T0, EDF Lab TS-ICL, Synthefy Nori) via ForecasterFoundation and
   FoundationModel. Covers single and multi-series
-  workflows, exogenous variables, prediction intervals / quantiles, and
-  backtesting. Use when the user wants forecasts without task-specific
+  workflows, exogenous variables, prediction intervals / quantiles,
+  backtesting, and inference-time parameter search (context_length tuning).
+  Use when the user wants forecasts without task-specific
   training, cold-start baselines, or pre-trained generalist models.
 ---
 
@@ -33,9 +34,11 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Rule | Symptom | Recovery |
 |------|---------|----------|
 | `fit()` stores context only; it never trains the model | Expecting training to happen or weights to update | Treat the model as pre-trained; evaluate with `backtesting_foundation` |
+| `cv.refit` and `cv.fixed_train_size` are overridden by `backtesting_foundation` | `IgnoredArgumentWarning` when `refit=True` or `fixed_train_size=False` | Leave them at their defaults; the context window expands per fold either way |
 | Only Chronos-2, TabICL, TabPFN-TS, T0, Nori, and TS-ICL use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `exog` silently dropped, no error raised | Pick an exog-capable adapter when covariates matter |
 | TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]` | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
 | Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
+| Tuning uses `bayesian_search_foundation`, never `bayesian_search_forecaster*` | `TypeError` on the forecaster type or on `OneStepAheadFold` | Call `bayesian_search_foundation` with a `TimeSeriesFold` |
 
 ## Installation
 
@@ -156,7 +159,7 @@ The adapter is resolved automatically from the `model_id` prefix — no need to 
 
 ## Backtesting
 
-Use the dedicated `backtesting_foundation` function — it is the only backtester that accepts a `ForecasterFoundation`. Refit is always disabled internally (the loaded model weights are preserved across folds) and probabilistic output is requested via `quantiles`, not `interval`.
+Use the dedicated `backtesting_foundation` function — it is the only backtester that accepts a `ForecasterFoundation`. Internally `cv` is deep-copied and forced to `refit=True`, `fixed_train_size=False`, so the context window expands with each fold up to `context_length`; no weights are ever trained. Probabilistic output is requested via `quantiles`, not `interval`.
 
 ```python
 from skforecast.model_selection import backtesting_foundation, TimeSeriesFold
@@ -164,7 +167,7 @@ from skforecast.model_selection import backtesting_foundation, TimeSeriesFold
 cv = TimeSeriesFold(
     steps=24,
     initial_train_size=len(series) - 200,
-    refit=False,      # Refit is always disabled for foundation forecasters
+    refit=False,      # Overridden internally; passing True emits IgnoredArgumentWarning
 )
 
 metric, predictions = backtesting_foundation(
@@ -175,6 +178,38 @@ metric, predictions = backtesting_foundation(
     quantiles=[0.1, 0.5, 0.9],   # Native model quantiles; no bootstrapping
 )
 ```
+
+## Tuning Inference-Time Parameters
+
+No weights are trained, so tuning means choosing how the pre-trained model is
+queried. `context_length` is the highest-impact parameter. Use
+`bayesian_search_foundation` (`TimeSeriesFold` only, no `lags`, no `n_jobs`):
+
+```python
+from skforecast.model_selection import bayesian_search_foundation, TimeSeriesFold
+
+def search_space(trial):
+    return {
+        'context_length': trial.suggest_categorical('context_length', [512, 1024, 2048, 4096]),
+    }
+
+results, study = bayesian_search_foundation(
+    forecaster=forecaster,
+    series=series,
+    cv=cv,
+    search_space=search_space,
+    metric='mean_absolute_error',
+    n_trials=30,
+    return_best=True,
+)
+```
+
+Keys are validated against the adapter's `get_params()`. Search
+`context_length` and the adapter's quality-relevant parameters; runtime
+settings (`device`, `torch_dtype`, `mode`, `show_progress`, `max_horizon`) are
+accepted but cannot improve accuracy, and several parameters force an expensive
+model reload per trial. Per-adapter matrix:
+[references/adapter-parameters.md](references/adapter-parameters.md).
 
 ## Override the Stored Context
 
@@ -201,3 +236,4 @@ automatically to the last `context_length` observations.
 4. **Requesting unsupported quantiles**: TimesFM 2.5 and Moirai-2 are restricted to the nine deciles `0.1 … 0.9` ; TS-ICL is restricted to a 0.01 grid in `[0.01, 0.99]`.
 5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
 6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`). Install only the one(s) you need.
+7. **Tuning a parameter that forces a model reload**: `model_id` and device/dtype arguments reload the model on every trial, and `context_length` does the same on TimesFM 2.5, Moirai-2, TabICL and TabPFN-TS.

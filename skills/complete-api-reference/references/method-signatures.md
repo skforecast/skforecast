@@ -487,6 +487,20 @@ backtesting_stats(
     show_progress=True,                 # bool
     suppress_warnings=False             # bool
 ) -> tuple[pd.DataFrame, pd.DataFrame]
+
+backtesting_foundation(
+    forecaster,                         # ForecasterFoundation
+    series,                             # pd.Series | pd.DataFrame | dict
+    cv,                                 # TimeSeriesFold (refit / fixed_train_size overridden internally)
+    metric,                             # str | Callable | list[str | Callable]
+    levels=None,                        # str | list[str] | None
+    add_aggregated_metric=True,         # bool
+    exog=None,                          # pd.Series | pd.DataFrame | dict | None
+    quantiles=None,                     # list[float] | None, native model quantiles
+    verbose=False,                      # bool
+    show_progress=True,                 # bool
+    suppress_warnings=False             # bool
+) -> tuple[pd.DataFrame, pd.DataFrame]
 ```
 
 ## Hyperparameter Search Functions
@@ -659,6 +673,30 @@ grid_search_equivalent_date(
     suppress_warnings=False, # bool
     output_file=None         # str | None
 ) -> pd.DataFrame
+```
+
+### Foundation Models
+
+```python
+bayesian_search_foundation(
+    forecaster,              # ForecasterFoundation
+    series,                  # pd.Series | pd.DataFrame | dict
+    cv,                      # TimeSeriesFold (OneStepAheadFold raises TypeError)
+    search_space,            # Callable, keys validated against adapter.get_params(); no 'lags'
+    metric,                  # str | Callable | list[str | Callable]
+    aggregate_metric=None,   # str | list[str] | None
+    levels=None,             # str | list[str] | None
+    exog=None,               # pd.Series | pd.DataFrame | dict | None
+    n_trials=20,             # int
+    random_state=123,        # int
+    return_best=True,        # bool
+    verbose=False,           # bool
+    show_progress=True,      # bool
+    suppress_warnings=False, # bool
+    output_file=None,        # str | None, optuna log
+    kwargs_create_study=None,     # dict | None
+    kwargs_study_optimize=None    # dict | None
+) -> tuple[pd.DataFrame, object]
 ```
 
 ## Forecaster Methods: predict_quantiles()
