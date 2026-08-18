@@ -153,6 +153,19 @@ from skforecast.model_selection import grid_search_forecaster_multiseries
 grid_search_forecaster_multiseries(
     forecaster=forecaster_multi, series=series, cv=cv, param_grid=param_grid
 )
+
+# ❌ WRONG: bayesian_search_forecaster with ForecasterFoundation
+bayesian_search_forecaster(forecaster=forecaster_foundation, y=y, cv=cv, search_space=search_space)
+
+# ✅ CORRECT: bayesian_search_foundation (TimeSeriesFold only, no 'lags' in search_space)
+from skforecast.model_selection import bayesian_search_foundation
+bayesian_search_foundation(
+    forecaster=forecaster_foundation, series=series, cv=cv,
+    search_space=lambda trial: {
+        'context_length': trial.suggest_categorical('context_length', [512, 2048])
+    },
+    metric='mean_absolute_error',
+)
 ```
 
 ## Prediction Interval Errors
