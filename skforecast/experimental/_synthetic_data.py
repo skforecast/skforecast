@@ -343,7 +343,7 @@ def _hourly_temperature(
     daily_anom[0] = rng.normal(0, 2.5)
     for t in range(1, n_days):
         daily_anom[t] = 0.75 * daily_anom[t - 1] + rng.normal(0, 1.8)
-    day_id = (index.normalize().view("int64"))
+    day_id = (index.normalize().astype("int64"))
     _, inverse = np.unique(day_id, return_inverse=True)
     anomaly = daily_anom[inverse]
 
@@ -493,7 +493,8 @@ def _ar_momentum(
     rng : numpy.random.Generator
         Random number generator.
     phi : float, default 0.6
-        AR(1) autoregressive coefficient (persistence of momentum).
+        AR(1) autoregressive coefficient (persistence of momentum). Must
+        satisfy `abs(phi) < 1` for a stationary process.
     sigma : float, default 0.12
         Standard deviation of the innovation term.
 
@@ -502,6 +503,11 @@ def _ar_momentum(
     factor : numpy ndarray
         Positive multiplicative factor with mean approximately 1.
     """
+    if not abs(phi) < 1.0:
+        raise ValueError(
+            f"`phi` must satisfy abs(phi) < 1.0 for a stationary AR(1) "
+            f"process, got {phi}."
+        )
     latent = np.empty(n)
     latent[0] = rng.normal(0, sigma)
     innov = rng.normal(0, sigma, size=n)
