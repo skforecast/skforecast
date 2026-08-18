@@ -1,51 +1,155 @@
-"""
-Synthetic hourly gas-station sales generator (Spain).
+################################################################################
+#                          Synthetic Gas-Station Data                          #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
 
-Context
--------
-Generates realistic, messy hourly time series for Spanish gas-station retail,
-intended for training and testing forecasting models (XGBoost, Prophet, LSTM)
-and skforecast forecasters. The output deliberately mimics real-world dynamics:
-bimodal weekday commute peaks vs a single wide weekend peak, Spanish yearly
-seasonality (Operacion Salida in July/August, Semana Santa, Christmas), hourly
-weather (a diurnal temperature cycle and hourly rain events), fuel prices that
-move as a bounded random walk with a Monday effect, autoregressive demand
-momentum, and occasional anomalies (supply shocks, price-drop queues, extreme
-weather).
-
-What it generates
------------------
-A multi-station panel (mix of highway/urban stations, some open 24/7 and some
-that close overnight). Each station-hour row carries multi-product targets
-(diesel and gasoline liters, store and car-wash revenue) plus exogenous
-features (prices, temperature, precipitation, holiday/weekend/open flags).
-
-Usage
------
-    python dev/synthetic_data_generator.py                                  # defaults + report
-    python dev/synthetic_data_generator.py --start 2023-01-01 --end 2024-12-31 --stations 3
-    python dev/synthetic_data_generator.py --stations 4 --output wide --csv out.csv
-    python dev/synthetic_data_generator.py --selftest                       # run internal checks
-
-    from dev.synthetic_data_generator import generate_gas_station_panel
-    df = generate_gas_station_panel("2023-01-01", "2024-12-31", stations=3, seed=42)
-
-Environment note: run inside the project conda env (e.g. `skforecast_24_py13`).
-The `holidays` library is used when available; otherwise a self-contained
-computation of Spanish national holidays (fixed dates plus Easter-derived
-Semana Santa days) is used instead.
-"""
 
 from __future__ import annotations
-import argparse
+import warnings
+from dataclasses import dataclass
 from datetime import date, timedelta
 import numpy as np
 import pandas as pd
 
 
-# ============================================================================ #
-#                                  Holidays                                    #
-# ============================================================================ #
+@dataclass
+class StationConfig:
+    """
+    Configuration for a single synthetic gas station.
+
+    Parameters
+    ----------
+    station_id : str
+        Identifier used in the `station_id` column (and as a suffix in
+        wide-format output).
+    is_highway : bool, default False
+        Whether the station sits on a highway (amplifies holiday/summer
+        travel demand) versus an urban station (dominated by local commutes).
+    closes_at_night : bool, default False
+        If True, the station closes from 23:00 to 05:59. If False, it is
+        open 24/7.
+    base_diesel_per_hr : float, default 500.0
+        Long-run average diesel demand per open hour, before seasonal,
+        weather, price, and momentum modifiers.
+    base_gasoline_per_hr : float, default 400.0
+        Long-run average gasoline demand per open hour, before modifiers.
+    base_price_diesel : float, default 1.65
+        Long-run mean diesel price per liter.
+    base_price_gasoline : float, default 1.55
+        Long-run mean gasoline price per liter.
+    """
+
+    station_id: str
+    is_highway: bool = False
+    closes_at_night: bool = False
+    base_diesel_per_hr: float = 500.0
+    base_gasoline_per_hr: float = 400.0
+    base_price_diesel: float = 1.65
+    base_price_gasoline: float = 1.55
+
+
+@dataclass
+class SeasonalEffectsConfig:
+    """
+    Tunable multiplicative modifiers for weekly and yearly demand seasonality.
+
+    Defaults reproduce the originally hand-tuned Spanish demand patterns
+    (Operacion Salida in July/August, Sunday heavy-truck ban, an
+    Easter-linked travel window, Christmas travel). Only these Spain-tuned
+    defaults have been validated; when modeling another country, pass an
+    explicit override rather than assuming these values transfer.
+
+    Parameters
+    ----------
+    summer_months : tuple of int, default (7, 8)
+        Calendar months treated as the summer travel season.
+    weekend_travel_gas_highway_mult : float, default 1.6
+        Gasoline multiplier applied to highway stations during the
+        Friday-afternoon outbound and Sunday-evening return travel windows.
+    weekend_travel_gas_urban_mult : float, default 1.15
+        Same as `weekend_travel_gas_highway_mult`, for urban stations.
+    friday_outbound_diesel_highway_mult : float, default 0.75
+        Diesel multiplier applied to highway stations on Friday afternoon
+        (commercial diesel traffic dips as leisure travel takes over).
+    friday_outbound_diesel_urban_mult : float, default 0.95
+        Same as `friday_outbound_diesel_highway_mult`, for urban stations.
+    sunday_truck_ban : bool, default True
+        Whether to apply a Sunday heavy-truck driving ban (depresses diesel
+        demand on Sundays).
+    sunday_truck_ban_factor : float, default 0.4
+        Diesel multiplier applied on Sundays when `sunday_truck_ban` is True.
+    midweek_gas_mult : float, default 0.9
+        Gasoline multiplier applied on Tuesday/Wednesday (midweek lull).
+    midweek_diesel_mult : float, default 0.95
+        Diesel multiplier applied on Tuesday/Wednesday (midweek lull).
+    summer_gas_highway_mult : float, default 1.4
+        Gasoline multiplier for highway stations during `summer_months`.
+    summer_gas_urban_mult : float, default 0.7
+        Gasoline multiplier for urban stations during `summer_months`
+        (local commuting drops as residents travel away).
+    summer_diesel_highway_mult : float, default 1.1
+        Diesel multiplier for highway stations during `summer_months`.
+    summer_diesel_urban_mult : float, default 0.85
+        Diesel multiplier for urban stations during `summer_months`.
+    semana_santa_days_before : int, default 6
+        Number of days before Easter Sunday included in the Easter-linked
+        travel window.
+    semana_santa_days_after : int, default 1
+        Number of days after Easter Sunday included in the Easter-linked
+        travel window.
+    semana_santa_gas_highway_mult : float, default 1.5
+        Gasoline multiplier for highway stations during the Easter-linked
+        travel window.
+    semana_santa_gas_urban_mult : float, default 0.85
+        Gasoline multiplier for urban stations during the Easter-linked
+        travel window.
+    semana_santa_diesel_highway_mult : float, default 1.15
+        Diesel multiplier for highway stations during the Easter-linked
+        travel window.
+    semana_santa_diesel_urban_mult : float, default 0.9
+        Diesel multiplier for urban stations during the Easter-linked
+        travel window.
+    christmas_gas_highway_mult : float, default 1.35
+        Gasoline multiplier for highway stations during the Christmas travel
+        window (Dec 20 through Jan 6).
+    christmas_gas_urban_mult : float, default 0.85
+        Gasoline multiplier for urban stations during the Christmas travel
+        window.
+    holiday_gas_highway_mult : float, default 1.25
+        Gasoline multiplier for highway stations on any national holiday.
+    holiday_gas_urban_mult : float, default 0.8
+        Gasoline multiplier for urban stations on any national holiday.
+    holiday_diesel_mult : float, default 0.55
+        Diesel multiplier (both station types) on any national holiday
+        (commercial traffic drops).
+    """
+
+    summer_months: tuple[int, ...] = (7, 8)
+    weekend_travel_gas_highway_mult: float = 1.6
+    weekend_travel_gas_urban_mult: float = 1.15
+    friday_outbound_diesel_highway_mult: float = 0.75
+    friday_outbound_diesel_urban_mult: float = 0.95
+    sunday_truck_ban: bool = True
+    sunday_truck_ban_factor: float = 0.4
+    midweek_gas_mult: float = 0.9
+    midweek_diesel_mult: float = 0.95
+    summer_gas_highway_mult: float = 1.4
+    summer_gas_urban_mult: float = 0.7
+    summer_diesel_highway_mult: float = 1.1
+    summer_diesel_urban_mult: float = 0.85
+    semana_santa_days_before: int = 6
+    semana_santa_days_after: int = 1
+    semana_santa_gas_highway_mult: float = 1.5
+    semana_santa_gas_urban_mult: float = 0.85
+    semana_santa_diesel_highway_mult: float = 1.15
+    semana_santa_diesel_urban_mult: float = 0.9
+    christmas_gas_highway_mult: float = 1.35
+    christmas_gas_urban_mult: float = 0.85
+    holiday_gas_highway_mult: float = 1.25
+    holiday_gas_urban_mult: float = 0.8
+    holiday_diesel_mult: float = 0.55
+
 
 def _easter(year: int) -> date:
     """
@@ -79,7 +183,7 @@ def _easter(year: int) -> date:
 def _compute_spanish_holidays_fallback(years: list[int]) -> set[date]:
     """
     Self-contained set of Spanish national holidays, used when the `holidays`
-    library is not installed.
+    library is not installed and `country='ES'`.
 
     Parameters
     ----------
@@ -118,37 +222,80 @@ def _compute_spanish_holidays_fallback(years: list[int]) -> set[date]:
     return holidays_set
 
 
-def _get_spanish_holidays(years: list[int], prov: str | None = None) -> set[date]:
+def _compute_universal_holidays_fallback(years: list[int]) -> set[date]:
     """
-    Return the set of Spanish national holiday dates, using the `holidays`
-    library when importable and falling back to a self-contained computation
-    otherwise.
+    Minimal, country-agnostic set of holidays used as a last-resort fallback
+    when the `holidays` library is not installed and `country != 'ES'`.
 
     Parameters
     ----------
     years : list
         Years to generate holidays for.
-    prov : str, default None
-        Subdivision (autonomous community) code passed to the `holidays`
-        library, e.g. `'MD'`. Ignored by the fallback implementation.
 
     Returns
     -------
     holidays_set : set
-        Set of `datetime.date` objects that are holidays in Spain.
+        Set of `datetime.date` objects: New Year's Day, Christmas, Easter
+        Sunday, and Good Friday for each year.
+    """
+    holidays_set: set[date] = set()
+    for year in years:
+        holidays_set.update({date(year, 1, 1), date(year, 12, 25)})
+        easter = _easter(year)
+        holidays_set.add(easter)
+        holidays_set.add(easter - timedelta(days=2))  # Good Friday
+    return holidays_set
+
+
+def _get_holidays(
+    country: str, years: list[int], subdiv: str | None = None
+) -> set[date]:
+    """
+    Return the set of national holiday dates for `country`, using the
+    `holidays` library when importable and falling back to a self-contained
+    computation otherwise.
+
+    Parameters
+    ----------
+    country : str
+        ISO country code passed to the `holidays` library, e.g. `'ES'`,
+        `'FR'`, `'DE'`.
+    years : list
+        Years to generate holidays for.
+    subdiv : str, default None
+        Subdivision code passed to the `holidays` library, e.g. `'MD'`.
+        Ignored by the fallback implementations.
+
+    Returns
+    -------
+    holidays_set : set
+        Set of `datetime.date` objects that are holidays in `country`.
+
+    Notes
+    -----
+    If the `holidays` library is not installed and `country != 'ES'`, this
+    emits a `UserWarning` and falls back to a minimal universal holiday set,
+    not country-specific holidays.
     """
     try:
         import holidays as holidays_lib
 
-        es = holidays_lib.country_holidays("ES", years=years, subdiv=prov)
-        return set(es.keys())
+        country_cal = holidays_lib.country_holidays(
+            country, years=years, subdiv=subdiv
+        )
+        return set(country_cal.keys())
     except Exception:
-        return _compute_spanish_holidays_fallback(years)
+        if country == "ES":
+            return _compute_spanish_holidays_fallback(years)
+        warnings.warn(
+            "The `holidays` library is not available: falling back to a "
+            "minimal universal holiday set (New Year's Day, Christmas, "
+            f"Easter Sunday, Good Friday) for country '{country}'. Install "
+            "`holidays` for accurate country-specific holidays.",
+            UserWarning,
+        )
+        return _compute_universal_holidays_fallback(years)
 
-
-# ============================================================================ #
-#                             Exogenous variables                              #
-# ============================================================================ #
 
 def _hourly_temperature(
     index: pd.DatetimeIndex,
@@ -310,10 +457,6 @@ def _daily_fuel_prices(
     )
 
 
-# ============================================================================ #
-#                          Demand shape and momentum                           #
-# ============================================================================ #
-
 # Base intraday profiles (relative demand by hour, index 0..23).
 _DIESEL_WEEKDAY = np.array(
     [0.1, 0.1, 0.1, 0.2, 0.5, 1.2, 2.5, 2.2, 1.8, 1.5, 1.4, 1.3,
@@ -373,9 +516,10 @@ def _seasonal_calendar_multiplier(
     index: pd.DatetimeIndex,
     holidays_set: set[date],
     is_highway: bool,
+    seasonal_effects: SeasonalEffectsConfig | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Build multiplicative demand modifiers capturing Spanish weekly and yearly
+    Build multiplicative demand modifiers capturing weekly and yearly
     seasonality for diesel and gasoline separately.
 
     Parameters
@@ -387,25 +531,35 @@ def _seasonal_calendar_multiplier(
     is_highway : bool
         Whether the station sits on a highway (amplifies holiday travel,
         dampens local weekday effects) versus an urban station.
+    seasonal_effects : SeasonalEffectsConfig, default None
+        Multiplicative modifiers to use. If None, `SeasonalEffectsConfig()`
+        defaults (Spain-tuned) are used.
 
     Returns
     -------
     diesel_mult, gasoline_mult : tuple of numpy ndarray
         Per-hour multiplicative modifiers for each fuel.
     """
+    if seasonal_effects is None:
+        seasonal_effects = SeasonalEffectsConfig()
+    se = seasonal_effects
+
     hour = index.hour.to_numpy()
     dow = index.dayofweek.to_numpy()
     month = index.month.to_numpy()
     day = index.day.to_numpy()
+    year = index.year.to_numpy()
     dates = index.normalize().date
 
     diesel = np.ones(len(index))
     gas = np.ones(len(index))
 
-    salida_up = 1.6 if is_highway else 1.15
-    salida_down = 0.75 if is_highway else 0.95
+    salida_up = se.weekend_travel_gas_highway_mult if is_highway \
+        else se.weekend_travel_gas_urban_mult
+    salida_down = se.friday_outbound_diesel_highway_mult if is_highway \
+        else se.friday_outbound_diesel_urban_mult
 
-    # Friday afternoon outbound (Operacion Salida) and Sunday evening return.
+    # Friday afternoon outbound and Sunday evening return travel.
     friday_out = (dow == 4) & (hour >= 15) & (hour <= 21)
     gas[friday_out] *= salida_up
     diesel[friday_out] *= salida_down
@@ -413,42 +567,55 @@ def _seasonal_calendar_multiplier(
     gas[sunday_return] *= salida_up
 
     # Sunday heavy-truck ban depresses diesel.
-    diesel[dow == 6] *= 0.4
+    if se.sunday_truck_ban:
+        diesel[dow == 6] *= se.sunday_truck_ban_factor
 
     # Mid-week lull (Tuesday/Wednesday).
-    gas[np.isin(dow, [1, 2])] *= 0.9
-    diesel[np.isin(dow, [1, 2])] *= 0.95
+    gas[np.isin(dow, [1, 2])] *= se.midweek_gas_mult
+    diesel[np.isin(dow, [1, 2])] *= se.midweek_diesel_mult
 
-    # Summer migration (July and August).
-    summer = np.isin(month, [7, 8])
-    gas[summer] *= 1.4 if is_highway else 0.7
-    diesel[summer] *= 1.1 if is_highway else 0.85
+    # Summer migration.
+    summer = np.isin(month, se.summer_months)
+    gas[summer] *= se.summer_gas_highway_mult if is_highway else se.summer_gas_urban_mult
+    diesel[summer] *= (
+        se.summer_diesel_highway_mult if is_highway else se.summer_diesel_urban_mult
+    )
 
-    # Semana Santa (week of Easter) and Christmas travel window.
-    holiday_flag = np.array([d in holidays_set for d in dates])
-    easter_days = {
-        d for d in holidays_set
-        if d.month in (3, 4) and (d.weekday() in (3, 4))  # Jueves/Viernes Santo
-    }
-    semana_santa = np.array(
-        [any(abs((d - e).days) <= 3 for e in easter_days) for d in dates]
-    ) if easter_days else np.zeros(len(index), dtype=bool)
-    gas[semana_santa] *= 1.5 if is_highway else 0.85
-    diesel[semana_santa] *= 1.15 if is_highway else 0.9
+    # Easter-linked travel window, computed directly from Easter Sunday so it
+    # does not depend on the target country's holiday calendar labeling Holy
+    # Week days as national holidays.
+    unique_years = np.unique(year)
+    easter_by_year = {int(y): _easter(int(y)) for y in unique_years}
+    easter_dates = np.array([easter_by_year[y] for y in year])
+    days_from_easter = np.array(
+        [(d - e).days for d, e in zip(dates, easter_dates)]
+    )
+    semana_santa = (
+        (days_from_easter >= -se.semana_santa_days_before)
+        & (days_from_easter <= se.semana_santa_days_after)
+    )
+    gas[semana_santa] *= (
+        se.semana_santa_gas_highway_mult if is_highway else se.semana_santa_gas_urban_mult
+    )
+    diesel[semana_santa] *= (
+        se.semana_santa_diesel_highway_mult if is_highway
+        else se.semana_santa_diesel_urban_mult
+    )
 
     christmas = ((month == 12) & (day >= 20)) | ((month == 1) & (day <= 6))
-    gas[christmas] *= 1.35 if is_highway else 0.85
+    gas[christmas] *= (
+        se.christmas_gas_highway_mult if is_highway else se.christmas_gas_urban_mult
+    )
 
     # On holidays, weekday commuting collapses (behaves like leisure travel).
-    gas[holiday_flag] *= 1.25 if is_highway else 0.8
-    diesel[holiday_flag] *= 0.55
+    holiday_flag = np.array([d in holidays_set for d in dates])
+    gas[holiday_flag] *= (
+        se.holiday_gas_highway_mult if is_highway else se.holiday_gas_urban_mult
+    )
+    diesel[holiday_flag] *= se.holiday_diesel_mult
 
     return diesel, gas
 
-
-# ============================================================================ #
-#                                  Anomalies                                    #
-# ============================================================================ #
 
 def _inject_anomalies(
     df: pd.DataFrame,
@@ -517,16 +684,13 @@ def _inject_anomalies(
     return df
 
 
-# ============================================================================ #
-#                              Station generator                               #
-# ============================================================================ #
-
 def generate_station(
     start_date: str,
     end_date: str,
-    config: dict,
+    config: StationConfig,
     rng: np.random.Generator,
     holidays_set: set[date],
+    seasonal_effects: SeasonalEffectsConfig | None = None,
 ) -> pd.DataFrame:
     """
     Generate one gas station's hourly multi-product series.
@@ -537,33 +701,37 @@ def generate_station(
         Inclusive start date (any pandas-parseable date string).
     end_date : str
         Inclusive end date.
-    config : dict
-        Station configuration with keys `station_id`, `is_highway` (bool),
-        `closes_at_night` (bool), `base_diesel_per_hr`, `base_gasoline_per_hr`,
-        `base_price_diesel`, `base_price_gasoline`.
+    config : StationConfig
+        Station configuration (see `StationConfig`).
     rng : numpy.random.Generator
         Random number generator (one independent stream per station).
     holidays_set : set
         National holiday dates covering the horizon.
+    seasonal_effects : SeasonalEffectsConfig, default None
+        Multiplicative seasonal demand modifiers. If None,
+        `SeasonalEffectsConfig()` defaults (Spain-tuned) are used.
 
     Returns
     -------
     df : pandas DataFrame
         Hourly data indexed by a frequency-aware DatetimeIndex.
     """
+    if seasonal_effects is None:
+        seasonal_effects = SeasonalEffectsConfig()
+
     index = pd.date_range(start=start_date, end=end_date, freq="h")
     hour = index.hour.to_numpy()
     dow = index.dayofweek.to_numpy()
     dates_norm = index.normalize()
 
-    is_highway = bool(config["is_highway"])
+    is_highway = config.is_highway
     is_weekend = np.isin(dow, [5, 6]).astype(int)
     holiday_flag = np.array(
         [d in holidays_set for d in dates_norm.date]
     ).astype(int)
 
     # Opening hours: closing stations shut from 23:00 to 05:59.
-    if config["closes_at_night"]:
+    if config.closes_at_night:
         is_open = ((hour >= 6) & (hour <= 22)).astype(int)
     else:
         is_open = np.ones(len(index), dtype=int)
@@ -576,7 +744,7 @@ def generate_station(
     # --- Prices (daily random walk broadcast to hours) ---
     unique_days = dates_norm.unique()
     daily_prices = _daily_fuel_prices(
-        unique_days, rng, config["base_price_diesel"], config["base_price_gasoline"]
+        unique_days, rng, config.base_price_diesel, config.base_price_gasoline
     )
     prices = daily_prices.reindex(dates_norm)
     price_diesel = prices["price_diesel"].to_numpy()
@@ -588,7 +756,7 @@ def generate_station(
 
     # --- Seasonal / calendar modifiers ---
     diesel_season, gas_season = _seasonal_calendar_multiplier(
-        index, holidays_set, is_highway
+        index, holidays_set, is_highway, seasonal_effects
     )
 
     # --- Weather impact on demand ---
@@ -606,8 +774,8 @@ def generate_station(
     weather_mod = temp_boost * rain_mod
 
     # --- Price elasticity ---
-    diesel_elasticity = (price_diesel / config["base_price_diesel"]) ** -1.2
-    gas_elasticity = (price_gasoline / config["base_price_gasoline"]) ** -1.8
+    diesel_elasticity = (price_diesel / config.base_price_diesel) ** -1.2
+    gas_elasticity = (price_gasoline / config.base_price_gasoline) ** -1.8
 
     # --- Demand momentum (AR(1)) ---
     momentum_d = _ar_momentum(len(index), rng)
@@ -615,11 +783,11 @@ def generate_station(
 
     # --- Expected demand and non-negative count draws ---
     expected_diesel = (
-        config["base_diesel_per_hr"] * diesel_profile * diesel_season
+        config.base_diesel_per_hr * diesel_profile * diesel_season
         * diesel_elasticity * weather_mod * momentum_d
     )
     expected_gas = (
-        config["base_gasoline_per_hr"] * gas_profile * gas_season
+        config.base_gasoline_per_hr * gas_profile * gas_season
         * gas_elasticity * weather_mod * momentum_g
     )
     expected_diesel = np.clip(expected_diesel, 0.0, None) * is_open
@@ -647,7 +815,7 @@ def generate_station(
 
     df = pd.DataFrame(
         {
-            "station_id": config["station_id"],
+            "station_id": config.station_id,
             "liters_diesel_sold": liters_diesel,
             "liters_gasoline_sold": liters_gasoline,
             "store_revenue_euros": store,
@@ -679,11 +847,9 @@ def generate_station(
     return df
 
 
-# ============================================================================ #
-#                                Panel builder                                 #
-# ============================================================================ #
-
-def _default_station_configs(n_stations: int, rng: np.random.Generator) -> list[dict]:
+def _default_station_configs(
+    n_stations: int, rng: np.random.Generator
+) -> list[StationConfig]:
     """
     Build a list of station configurations alternating highway/urban and
     24/7/closing, with jittered base demand and prices.
@@ -697,22 +863,21 @@ def _default_station_configs(n_stations: int, rng: np.random.Generator) -> list[
 
     Returns
     -------
-    configs : list of dict
-        Station configuration dictionaries.
+    configs : list of StationConfig
+        Station configurations.
     """
     configs = []
     for i in range(n_stations):
-        is_highway = i % 2 == 0
         configs.append(
-            {
-                "station_id": f"station_{i + 1:02d}",
-                "is_highway": is_highway,
-                "closes_at_night": (i % 3 == 2),  # roughly a third close overnight
-                "base_diesel_per_hr": float(np.round(rng.uniform(450, 750), 1)),
-                "base_gasoline_per_hr": float(np.round(rng.uniform(300, 550), 1)),
-                "base_price_diesel": float(np.round(rng.uniform(1.55, 1.75), 3)),
-                "base_price_gasoline": float(np.round(rng.uniform(1.45, 1.65), 3)),
-            }
+            StationConfig(
+                station_id=f"station_{i + 1:02d}",
+                is_highway=(i % 2 == 0),
+                closes_at_night=(i % 3 == 2),  # roughly a third close overnight
+                base_diesel_per_hr=float(np.round(rng.uniform(450, 750), 1)),
+                base_gasoline_per_hr=float(np.round(rng.uniform(300, 550), 1)),
+                base_price_diesel=float(np.round(rng.uniform(1.55, 1.75), 3)),
+                base_price_gasoline=float(np.round(rng.uniform(1.45, 1.65), 3)),
+            )
         )
     return configs
 
@@ -720,13 +885,27 @@ def _default_station_configs(n_stations: int, rng: np.random.Generator) -> list[
 def generate_gas_station_panel(
     start_date: str,
     end_date: str,
-    stations: int | list[dict] = 3,
+    stations: int | list[StationConfig | dict] = 3,
     output: str = "long",
-    prov: str | None = None,
+    country: str = "ES",
+    subdiv: str | None = None,
+    seasonal_effects: SeasonalEffectsConfig | None = None,
     seed: int = 42,
 ) -> pd.DataFrame:
     """
-    Generate a multi-station panel of synthetic hourly Spanish gas-station data.
+    Generate a multi-station panel of synthetic hourly gas-station data.
+
+    Produces realistic, messy hourly time series intended for training and
+    testing forecasting models and skforecast forecasters: bimodal weekday
+    commute peaks vs a single wide weekend peak, yearly seasonality (summer
+    travel, a movable Easter-linked travel window, Christmas), hourly weather
+    (a diurnal temperature cycle and hourly rain events), fuel prices that
+    move as a bounded random walk with a Monday effect, autoregressive demand
+    momentum, and occasional anomalies (supply shocks, price-drop queues,
+    extreme weather). The panel mixes highway/urban stations, some open 24/7
+    and some that close overnight, each carrying multi-product targets
+    (diesel and gasoline liters, store and car-wash revenue) plus exogenous
+    features (prices, temperature, precipitation, holiday/weekend/open flags).
 
     Parameters
     ----------
@@ -734,15 +913,25 @@ def generate_gas_station_panel(
         Inclusive start date.
     end_date : str
         Inclusive end date.
-    stations : int or list of dict, default 3
-        Number of stations to auto-configure, or an explicit list of station
-        configuration dictionaries (see `generate_station`).
+    stations : int or list of StationConfig or dict, default 3
+        Number of stations to auto-configure, or an explicit list of
+        `StationConfig` instances (plain dicts with the same fields are also
+        accepted for convenience).
     output : str, default 'long'
         `'long'` returns one row per station-hour with a `station_id` column
         and a repeated DatetimeIndex. `'wide'` returns a single DatetimeIndex
         with columns suffixed by station id.
-    prov : str, default None
+    country : str, default 'ES'
+        ISO country code used to resolve national holidays via the
+        `holidays` library (when installed). See `_get_holidays`.
+    subdiv : str, default None
         Subdivision code passed to the `holidays` library, when available.
+    seasonal_effects : SeasonalEffectsConfig, default None
+        Multiplicative seasonal demand modifiers (summer travel, weekend
+        travel, Sunday truck ban, Easter-linked travel window, Christmas,
+        generic holiday effect). If None, `SeasonalEffectsConfig()` defaults
+        (Spain-tuned) are used. Pass an explicit instance when modeling a
+        country other than Spain.
     seed : int, default 42
         Master seed. Each station receives an independent child RNG stream.
 
@@ -755,6 +944,19 @@ def generate_gas_station_panel(
     -----
     The `is_national_holiday` column is a 0/1 indicator compatible with
     `skforecast.preprocessing.calculate_distance_from_holiday`.
+
+    The `holidays` library is used when available; otherwise a self-contained
+    fallback is used instead. For `country='ES'` the fallback reproduces the
+    Spanish national holidays (fixed dates plus Easter-derived Semana Santa
+    days). For any other country, the fallback degrades to a minimal
+    universal set (New Year's Day, Christmas, Easter Sunday, Good Friday) and
+    emits a `UserWarning`, since no country-specific holiday tables are
+    hand-maintained here.
+
+    Only the default (Spain-tuned) `SeasonalEffectsConfig` values have been
+    validated. When modeling another country, pass an explicit
+    `SeasonalEffectsConfig` override rather than assuming the defaults
+    transfer.
     """
     if output not in ("long", "wide"):
         raise ValueError("`output` must be 'long' or 'wide'.")
@@ -765,16 +967,23 @@ def generate_gas_station_panel(
     if isinstance(stations, int):
         configs = _default_station_configs(stations, config_rng)
     else:
-        configs = stations
+        configs = [
+            cfg if isinstance(cfg, StationConfig) else StationConfig(**cfg)
+            for cfg in stations
+        ]
 
     years = list(range(pd.Timestamp(start_date).year, pd.Timestamp(end_date).year + 1))
-    holidays_set = _get_spanish_holidays(years, prov=prov)
+    holidays_set = _get_holidays(country, years, subdiv=subdiv)
 
     child_seeds = seed_seq.spawn(len(configs))
     frames = []
     for cfg, child in zip(configs, child_seeds):
         station_rng = np.random.default_rng(child)
-        frames.append(generate_station(start_date, end_date, cfg, station_rng, holidays_set))
+        frames.append(
+            generate_station(
+                start_date, end_date, cfg, station_rng, holidays_set, seasonal_effects
+            )
+        )
 
     if output == "long":
         return pd.concat(frames, axis=0)
@@ -785,10 +994,6 @@ def generate_gas_station_panel(
     )
     return wide
 
-
-# ============================================================================ #
-#                            Reporting and self-test                           #
-# ============================================================================ #
 
 def summarize(df: pd.DataFrame) -> None:
     """
@@ -838,98 +1043,3 @@ def summarize(df: pd.DataFrame) -> None:
     total = (first["liters_diesel_sold"] + first["liters_gasoline_sold"])
     print(f"Lag-1 autocorr sales: {total.autocorr(lag=1):.3f} (>0 means momentum)")
     print("=" * 70)
-
-
-def _run_selftest() -> None:
-    """
-    Run internal consistency checks and raise `AssertionError` on failure.
-
-    Returns
-    -------
-    None
-    """
-    df = generate_gas_station_panel("2023-01-01", "2024-12-31", stations=3, seed=42)
-    target_cols = [
-        "liters_diesel_sold", "liters_gasoline_sold",
-        "store_revenue_euros", "carwash_revenue_euros",
-    ]
-
-    assert (df[target_cols] >= 0).all().all(), "Targets must be non-negative."
-
-    closed = df["is_open"] == 0
-    assert closed.any(), "Expected at least one closed hour among stations."
-    assert (df.loc[closed, target_cols].to_numpy() == 0).all(), \
-        "Sales must be exactly 0 when the station is closed."
-
-    for year in (2023, 2024):
-        mask = df.index.year == year
-        assert df.loc[mask, "is_national_holiday"].sum() > 0, \
-            f"No holidays found for {year}."
-
-    first = df[df["station_id"] == df["station_id"].iloc[0]]
-    by_hour = first.groupby(first.index.hour)["temperature_c"].mean()
-    assert by_hour.idxmin() in (2, 3, 4, 5), \
-        f"Coldest hour {by_hour.idxmin()} not near dawn."
-    assert by_hour.idxmax() in (14, 15, 16), \
-        f"Hottest hour {by_hour.idxmax()} not mid-afternoon."
-
-    total = first["liters_diesel_sold"] + first["liters_gasoline_sold"]
-    assert total.autocorr(lag=1) > 0.1, "Sales momentum (autocorrelation) too weak."
-
-    assert df["is_anomaly"].sum() > 0, "No anomalies were injected."
-    # A long panel repeats timestamps across stations; check a single station.
-    assert first.index.inferred_freq == "h", \
-        "Per-station index must be regular hourly."
-
-    print("All self-tests passed.")
-
-
-def main() -> None:
-    """
-    Command-line entry point: generate a panel, print a report, optionally
-    save to CSV, or run the self-test suite.
-
-    Returns
-    -------
-    None
-    """
-    parser = argparse.ArgumentParser(
-        description="Generate synthetic hourly Spanish gas-station sales data."
-    )
-    parser.add_argument("--start", default="2023-01-01", help="Inclusive start date.")
-    parser.add_argument("--end", default="2024-12-31", help="Inclusive end date.")
-    parser.add_argument("--stations", type=int, default=3, help="Number of stations.")
-    parser.add_argument("--output", choices=["long", "wide"], default="long",
-                        help="Panel layout.")
-    parser.add_argument("--prov", default=None,
-                        help="Subdivision code for the holidays library (e.g. MD).")
-    parser.add_argument("--seed", type=int, default=42, help="Master random seed.")
-    parser.add_argument("--csv", default=None, help="Optional path to save the panel.")
-    parser.add_argument("--selftest", action="store_true",
-                        help="Run internal consistency checks and exit.")
-    args = parser.parse_args()
-
-    if args.selftest:
-        _run_selftest()
-        return
-
-    df = generate_gas_station_panel(
-        start_date=args.start,
-        end_date=args.end,
-        stations=args.stations,
-        output=args.output,
-        prov=args.prov,
-        seed=args.seed,
-    )
-    if args.output == "long":
-        summarize(df)
-    else:
-        print(f"Wide panel: {df.shape[0]:,} rows x {df.shape[1]} columns.")
-
-    if args.csv:
-        df.to_csv(args.csv)
-        print(f"Saved to {args.csv}")
-
-
-if __name__ == "__main__":
-    main()
