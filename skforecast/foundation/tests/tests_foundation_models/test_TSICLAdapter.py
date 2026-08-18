@@ -141,6 +141,25 @@ def test_TSICLAdapter_set_params_updates_and_resets_model(
         assert adapter._model is not None
 
 
+def test_TSICLAdapter_set_params_no_reset_when_value_unchanged():
+    """
+    Test that set_params does not reset _model or _resolved_device when reset
+    keys are set to their current values (no actual change).
+    """
+    adapter = TSICLAdapter(model_id="taharnbl/TS-ICL", model=FakeTSICL())
+    adapter._resolved_device = "cpu"
+    assert adapter._model is not None
+
+    adapter.set_params(
+        checkpoint_version="tsicl-v1.ckpt",
+        allow_auto_download=True,
+        device="auto",
+    )
+
+    assert adapter._model is not None  # not reset because values unchanged
+    assert adapter._resolved_device == "cpu"  # device unchanged, not reset
+
+
 # ==============================================================================
 # Tests TSICLAdapter.fit
 # ==============================================================================

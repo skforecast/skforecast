@@ -133,6 +133,24 @@ def test_MoiraiAdapter_set_params_updates_and_resets_module(param, value):
     assert adapter._forecast_obj is None
 
 
+def test_MoiraiAdapter_set_params_no_reset_when_value_unchanged():
+    """
+    Test that set_params does not reset _module or _forecast_obj when reset
+    keys are set to their current values (no actual change).
+    """
+    adapter = make_adapter()
+    adapter._module = object()
+
+    adapter.set_params(
+        model_id="Salesforce/moirai-2.0-R-small",
+        context_length=2048,
+        device="auto",
+    )
+
+    assert adapter._module is not None  # not reset because values unchanged
+    assert adapter._forecast_obj is not None
+
+
 # ==============================================================================
 # Tests MoiraiAdapter.fit
 # ==============================================================================

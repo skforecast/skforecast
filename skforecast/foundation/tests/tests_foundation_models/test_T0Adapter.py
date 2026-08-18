@@ -77,6 +77,25 @@ def test_T0Adapter_set_params_resets_model_on_loader_keys():
     assert adapter.device_map == "cpu"
 
 
+def test_T0Adapter_set_params_no_reset_when_value_unchanged():
+    """
+    Test that set_params does not clear the loaded model when reset keys are
+    set to their current values (no actual change).
+    """
+    adapter = T0Adapter(
+        model_id="theforecastingcompany/t0-alpha", model=FakeT0Forecaster()
+    )
+    assert adapter._model is not None
+
+    adapter.set_params(
+        model_id="theforecastingcompany/t0-alpha",
+        device_map="auto",
+        torch_dtype=None,
+    )
+
+    assert adapter._model is not None  # not reset because values unchanged
+
+
 def test_T0Adapter_set_params_ValueError_on_invalid_key():
     """
     Test that set_params raises ValueError for unknown parameters.
