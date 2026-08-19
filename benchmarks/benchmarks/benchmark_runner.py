@@ -71,10 +71,12 @@ class BenchmarkRunner:
         - ``warmup`` calls are executed first and their time is discarded. This
           removes the systematic cost of the cold first call (memory allocator,
           numpy SIMD dispatch, cache warm-up).
-        - Before computing the statistics, the minimum and maximum observations
-          are trimmed (one on each side) to drop the sporadic spike caused by a
-          noisy neighbor. Trimming is only applied when at least 10 timings are
-          available, so low-repeat benchmarks keep all their samples.
+        - Before computing the statistics, the maximum observation is trimmed to
+          drop the sporadic spike caused by a noisy neighbor. Only the maximum is
+          removed because measurement noise on shared runners is one-sided (it can
+          only make a call slower), so the minimum is the cleanest sample and must
+          be kept. Trimming is only applied when at least 10 timings are available,
+          so low-repeat benchmarks keep all their samples.
         """
         times = []
         try:
@@ -87,10 +89,10 @@ class BenchmarkRunner:
                 end = time.perf_counter()
                 times.append(end - start)
 
-            # Trim the single min and max to reduce the impact of outliers,
+            # Trim the single maximum to reduce the impact of one-sided outliers,
             # only when there are enough samples for the trim to be safe.
             if len(times) >= 10:
-                times = sorted(times)[1:-1]
+                times = sorted(times)[:-1]
 
             return {
                 'avg_time': np.mean(times),
