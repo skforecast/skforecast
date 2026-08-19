@@ -23,11 +23,12 @@ class BenchmarkRunner:
     """"
     Class to run benchmarks on skforecast forecasters and save the results.
     """
-    def __init__(self, output_dir="./benchmarks", repeat=10, run_id=None):
+    def __init__(self, output_dir="./benchmarks", repeat=10, warmup=0, run_id=None):
 
         self.results_filename = "benchmark.joblib"
         self.output_dir = output_dir
         self.repeat = repeat
+        self.warmup = warmup
         self.run_id = run_id
         self._system_info_cache = None
 
@@ -65,17 +66,34 @@ class BenchmarkRunner:
     def time_function(self, func, *args, **kwargs):
         """
         Measure execution time of a function over multiple runs.
+
+        To reduce measurement noise on shared/virtualized CI runners:
+        - ``warmup`` calls are executed first and their time is discarded. This
+          removes the systematic cost of the cold first call (memory allocator,
+          numpy SIMD dispatch, cache warm-up).
+        - Before computing the statistics, the minimum and maximum observations
+          are trimmed (one on each side) to drop the sporadic spike caused by a
+          noisy neighbor. Trimming is only applied when at least 10 timings are
+          available, so low-repeat benchmarks keep all their samples.
         """
         times = []
         try:
+            for _ in range(self.warmup):
+                func(*args, **kwargs)
+
             for _ in range(self.repeat):
                 start = time.perf_counter()
                 func(*args, **kwargs)
                 end = time.perf_counter()
                 times.append(end - start)
 
+            # Trim the single min and max to reduce the impact of outliers,
+            # only when there are enough samples for the trim to be safe.
+            if len(times) >= 10:
+                times = sorted(times)[1:-1]
+
             return {
-                'avg_time': np.mean(times), 
+                'avg_time': np.mean(times),
                 'median_time': np.median(times),
                 'p95_time': np.percentile(times, 95),
                 'std_time': np.std(times)
