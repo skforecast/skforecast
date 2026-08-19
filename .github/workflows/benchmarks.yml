@@ -1,7 +1,20 @@
 name: Benchmarks
 
 on:
-  workflow_dispatch: {}   # manual execution only from GitHub
+  workflow_dispatch:      # manual execution only from GitHub
+    inputs:
+      n_runs:
+        description: "Number of benchmark repetitions in this run (each ~10 min; job timeout is 60 min, so ~5 is the practical maximum)"
+        required: false
+        default: "5"
+        type: string
+
+# Serialize benchmark runs. The job appends a row to the binary benchmarks/benchmark.joblib
+# and pushes it; concurrent runs would race on the push (non-fast-forward) and lose data,
+# since a binary joblib cannot be auto-merged. Queue runs instead of cancelling them.
+concurrency:
+  group: benchmarks
+  cancel-in-progress: false
 
 permissions:
   contents: write  # necessary to push changes
@@ -77,12 +90,26 @@ jobs:
         
       - name: Run benchmarks
         shell: bash
+        env:
+          N_RUNS: ${{ inputs.n_runs }}
         run: |
           set -e
-          echo ">> Running benchmark script..."
-          # Ensure your script writes to benchmarks/benchmark.joblib
-          python benchmarks/run_benchmarks.py
-          echo ">> Benchmark script finished with exit code $?"
+
+          # Validate n_runs: must be a positive integer
+          if ! [[ "$N_RUNS" =~ ^[0-9]+$ ]] || [ "$N_RUNS" -lt 1 ]; then
+            echo "::error::Invalid n_runs='$N_RUNS'. It must be a positive integer."
+            exit 1
+          fi
+
+          echo ">> Running benchmark script $N_RUNS time(s)..."
+          # Each invocation generates its own run_id and appends its rows to
+          # benchmarks/benchmark.joblib. A single commit/push happens afterwards.
+          for i in $(seq 1 "$N_RUNS"); do
+            echo ">> Benchmark repetition $i / $N_RUNS"
+            python benchmarks/run_benchmarks.py
+          done
+
+          echo ">> Benchmark loop finished."
           echo ">> Listing benchmarks directory after run:"
           ls -lh benchmarks || true
           if [ -f benchmarks/benchmark.joblib ]; then
