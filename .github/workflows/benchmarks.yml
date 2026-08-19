@@ -95,9 +95,9 @@ jobs:
         run: |
           set -e
 
-          # Validate n_runs: must be a positive integer
-          if ! [[ "$N_RUNS" =~ ^[0-9]+$ ]] || [ "$N_RUNS" -lt 1 ]; then
-            echo "::error::Invalid n_runs='$N_RUNS'. It must be a positive integer."
+          # Validate n_runs: must be a positive integer, capped at 5 (job timeout is 60 min)
+          if ! [[ "$N_RUNS" =~ ^[0-9]+$ ]] || [ "$N_RUNS" -lt 1 ] || [ "$N_RUNS" -gt 5 ]; then
+            echo "::error::Invalid n_runs='$N_RUNS'. It must be an integer between 1 and 5."
             exit 1
           fi
 

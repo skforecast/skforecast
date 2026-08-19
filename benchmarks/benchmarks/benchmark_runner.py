@@ -98,15 +98,17 @@ class BenchmarkRunner:
                 'avg_time': np.mean(times),
                 'median_time': np.median(times),
                 'p95_time': np.percentile(times, 95),
-                'std_time': np.std(times)
+                'std_time': np.std(times),
+                'n_repeats': len(times)
             }
         except Exception as e:
             print(f"::warning::Benchmark FAILED - {func.__name__}: {e}")
             return {
-                'avg_time': np.nan, 
-                'median_time': np.nan, 
-                'p95_time': np.nan, 
-                'std_time': np.nan
+                'avg_time': np.nan,
+                'median_time': np.nan,
+                'p95_time': np.nan,
+                'std_time': np.nan,
+                'n_repeats': np.nan
             }
 
     def benchmark(self, func, forecaster=None, allow_repeated_execution=True, *args, **kwargs):
@@ -141,7 +143,7 @@ class BenchmarkRunner:
             'run_time_median': timing['median_time'],
             'run_time_p95': timing['p95_time'],
             'run_time_std': timing['std_time'],
-            'n_repeats': self.repeat,
+            'n_repeats': timing['n_repeats'],
             **system_info
         }
 
