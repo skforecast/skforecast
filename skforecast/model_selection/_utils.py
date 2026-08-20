@@ -1023,18 +1023,6 @@ def _extract_data_folds_multiseries(
 
         if dropna_last_window:
             series_last_window = series_last_window.dropna(axis=1, how="any")
-            # TODO: when dropna_last_window is True, allow keeping levels whose last
-            # window contains NaNs when the estimator natively supports NaN inputs
-            # (reuse the module-based family detection in
-            # utils.configure_estimator_categorical_features:
-            # lightgbm/catboost/xgboost/sklearn-HistGradientBoosting; unwrap Pipeline
-            # first). RollingFeatures already tolerates NaNs in the window, so only
-            # raw lag predictors need the estimator's NaN support. Differentiation
-            # must be a hard exclusion (keep the current dropna(how="any")): np.diff
-            # expands the NaN footprint in the lags and inverse_transform_next_window
-            # uses cumsum, so a single NaN poisons the whole horizon for that level.
-            # The existing MissingValuesWarning in check_predict_input already covers
-            # the NaN-last-window case, so no extra warning is needed.
         
         levels_last_window = list(series_last_window.columns)
 

@@ -348,11 +348,6 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         if array_ndim == 1:
             X = X[:, np.newaxis]
 
-        # TODO: Check if this NaN removal is necessary
-
-        # Remove initial rows with nan values if present
-        X = X[~np.isnan(X).any(axis=1)]
-
         for i in range(self.order):
             if i == 0:
                 X_undiff = np.cumsum(X, axis=0, dtype=float) + self.last_values[-1]

@@ -8,6 +8,31 @@ from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.utils import preprocess_levels_self_last_window_multiseries
 
 
+def test_preprocess_levels_self_last_window_multiseries_ValueError_when_levels_is_empty_list():
+    """
+    Test ValueError is raised when `levels` is an empty list.
+    """
+
+    levels = []
+    input_levels_is_list = True
+    last_window_ = {
+        '1': pd.Series(np.arange(10), name='1'),
+        '2': pd.Series(np.arange(10), name='2'),
+    }
+
+    err_msg = re.escape(
+        "No series to predict. `levels` is an empty list. Provide at least "
+        "one series name in `levels`, or set it to `None` to predict all "
+        "the series stored in the `last_window_` attribute."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        preprocess_levels_self_last_window_multiseries(
+            levels               = levels,
+            input_levels_is_list = input_levels_is_list,
+            last_window_         = last_window_
+        )
+
+
 def test_preprocess_levels_self_last_window_multiseries_IgnoredArgumentWarning_when_not_available_self_last_window_for_some_levels():
     """
     Test IgnoredArgumentWarning is raised when last window is not available for 

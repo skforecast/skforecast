@@ -520,7 +520,8 @@ def test_check_predict_input_MissingValuesWarning_when_last_window_has_missing_v
     """
     warn_msg = re.escape(
         "`last_window` has missing values. Most of machine learning models do "
-        "not allow missing values. Prediction method may fail."
+        "not allow missing values. Prediction method may either raise an "
+        "error or return NaN predictions."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):
         check_predict_input(
