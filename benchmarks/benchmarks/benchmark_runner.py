@@ -34,6 +34,25 @@ class BenchmarkRunner:
 
         os.makedirs(self.output_dir, exist_ok=True)
 
+    def get_cpu_model(self):
+        """
+        Best-effort CPU model name. On Linux, `platform.processor()` only
+        reports the architecture (e.g. 'x86_64'), which is identical across
+        GitHub-hosted runners regardless of the underlying physical host.
+        Reading `/proc/cpuinfo` exposes the actual CPU model, which does vary
+        host-to-host, useful to confirm benchmark repetitions landed on
+        different machines. Falls back to `platform.processor()` elsewhere.
+        """
+        if platform.system() == 'Linux':
+            try:
+                with open('/proc/cpuinfo') as f:
+                    for line in f:
+                        if line.startswith('model name'):
+                            return line.split(':', 1)[1].strip()
+            except OSError:
+                pass
+        return platform.processor()
+
     def get_system_info(self):
         """
         Collect system and package version information (cached except datetime).
@@ -48,6 +67,7 @@ class BenchmarkRunner:
                 'lightgbm_version': lightgbm.__version__,
                 'platform': platform.platform(),
                 'processor': platform.processor(),
+                'cpu_model': self.get_cpu_model(),
                 'cpu_count': psutil.cpu_count(logical=True),
                 'memory_gb': round(psutil.virtual_memory().total / 1e9, 2),
             }
