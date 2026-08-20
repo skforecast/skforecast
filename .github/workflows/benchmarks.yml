@@ -4,14 +4,15 @@ on:
   workflow_dispatch:      # manual execution only from GitHub
     inputs:
       n_runs:
-        description: "Number of benchmark repetitions in this run (each ~10 min; job timeout is 60 min, so ~5 is the practical maximum)"
+        description: "Number of benchmark repetitions to run, each on its own runner (between 1 and 5)"
         required: false
         default: "5"
         type: string
 
-# Serialize benchmark runs. The job appends a row to the binary benchmarks/benchmark.joblib
-# and pushes it; concurrent runs would race on the push (non-fast-forward) and lose data,
-# since a binary joblib cannot be auto-merged. Queue runs instead of cancelling them.
+# Serialize benchmark workflow runs. Repetitions append a row to the binary
+# benchmarks/benchmark.joblib and push it; concurrent workflow runs would race on
+# the push (non-fast-forward) and lose data, since a binary joblib cannot be
+# auto-merged. Queue runs instead of cancelling them.
 concurrency:
   group: benchmarks
   cancel-in-progress: false
@@ -20,9 +21,40 @@ permissions:
   contents: write  # necessary to push changes
 
 jobs:
+  set-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      indices: ${{ steps.build.outputs.indices }}
+    steps:
+      - name: Validate n_runs and build matrix indices
+        id: build
+        shell: bash
+        env:
+          N_RUNS: ${{ inputs.n_runs }}
+        run: |
+          set -e
+
+          # Validate n_runs: must be a positive integer, capped at 5 to bound the
+          # total number of sequential runner jobs this workflow spins up.
+          if ! [[ "$N_RUNS" =~ ^[0-9]+$ ]] || [ "$N_RUNS" -lt 1 ] || [ "$N_RUNS" -gt 5 ]; then
+            echo "::error::Invalid n_runs='$N_RUNS'. It must be an integer between 1 and 5."
+            exit 1
+          fi
+
+          indices=$(seq 1 "$N_RUNS" | jq -R . | jq -s -c .)
+          echo ">> Matrix indices: $indices"
+          echo "indices=$indices" >> "$GITHUB_OUTPUT"
+
   run-benchmarks:
+    needs: set-matrix
     runs-on: ubuntu-latest
     timeout-minutes: 60
+
+    strategy:
+      max-parallel: 1    # one repetition at a time, each on a fresh runner
+      fail-fast: false   # a failed repetition does not cancel the remaining ones
+      matrix:
+        run_index: ${{ fromJSON(needs.set-matrix.outputs.indices) }}
 
     env:
       OMP_NUM_THREADS: "1"         # Force OpenMP-based libraries to run single-threaded (e.g., NumPy, scikit-learn, LightGBM) to reduce variance and avoid oversubscription.
@@ -32,6 +64,8 @@ jobs:
       VECLIB_MAXIMUM_THREADS: "1"  # Cap Apple's Accelerate/vecLib threads to 1; no effect on Linux, harmless to keep for portability.
       PYTHONWARNINGS: "ignore"     # Silence Python warnings so benchmark logs are clean; switch to "default" if you want to see warnings.
       KERAS_BACKEND: torch         # Use PyTorch as the backend for Keras.
+      RUN_INDEX: ${{ matrix.run_index }}
+      TOTAL_RUNS: ${{ inputs.n_runs }}
 
     steps:
       - name: Checkout code
@@ -43,6 +77,7 @@ jobs:
       - name: Show runner context (verbose)
         shell: bash
         run: |
+          echo ">> Repetition: $RUN_INDEX / $TOTAL_RUNS"
           echo ">> Repository: $GITHUB_REPOSITORY"
           echo ">> Default branch: $GITHUB_REF_NAME"
           echo ">> Commit SHA: ${GITHUB_SHA}"
@@ -78,7 +113,7 @@ jobs:
           echo ">> Python environment summary:"
           python --version
           python -m pip list | sed -n '1,120p'  # Truncate long lists for readability
-          
+
       - name: Sanity check paths (verbose)
         shell: bash
         run: |
@@ -87,29 +122,29 @@ jobs:
           echo ">> Listing benchmarks directory (if present):"
           ls -la benchmarks || echo "No 'benchmarks' directory yet."
           echo ">> Expected output file: benchmarks/benchmark.joblib"
-        
+
+      - name: Sync latest results from origin
+        shell: bash
+        run: |
+          set -e
+          # Fast-forward onto whatever earlier repetitions in this matrix have
+          # already pushed, before this repetition reads/appends to the joblib.
+          # Must happen BEFORE running the benchmark script: the script loads the
+          # existing file and rewrites it combined with its own row, so if this
+          # checkout were stale, the previous repetition's row would be silently
+          # dropped when this repetition's version overwrites the binary file.
+          echo ">> Pulling latest changes for $GITHUB_REF_NAME (fast-forward only)..."
+          git pull --ff-only origin "$GITHUB_REF_NAME"
+
       - name: Run benchmarks
         shell: bash
-        env:
-          N_RUNS: ${{ inputs.n_runs }}
         run: |
           set -e
 
-          # Validate n_runs: must be a positive integer, capped at 5 (job timeout is 60 min)
-          if ! [[ "$N_RUNS" =~ ^[0-9]+$ ]] || [ "$N_RUNS" -lt 1 ] || [ "$N_RUNS" -gt 5 ]; then
-            echo "::error::Invalid n_runs='$N_RUNS'. It must be an integer between 1 and 5."
-            exit 1
-          fi
+          echo ">> Running benchmark script (repetition $RUN_INDEX / $TOTAL_RUNS)..."
+          python benchmarks/run_benchmarks.py
 
-          echo ">> Running benchmark script $N_RUNS time(s)..."
-          # Each invocation generates its own run_id and appends its rows to
-          # benchmarks/benchmark.joblib. A single commit/push happens afterwards.
-          for i in $(seq 1 "$N_RUNS"); do
-            echo ">> Benchmark repetition $i / $N_RUNS"
-            python benchmarks/run_benchmarks.py
-          done
-
-          echo ">> Benchmark loop finished."
+          echo ">> Benchmark repetition finished."
           echo ">> Listing benchmarks directory after run:"
           ls -lh benchmarks || true
           if [ -f benchmarks/benchmark.joblib ]; then
@@ -117,7 +152,7 @@ jobs:
           else
             echo "!! No output file produced at benchmarks/benchmark.joblib"
           fi
-    
+
       - name: Commit & push updated joblib
         if: success()  # Only commit if all benchmarks completed successfully
         shell: bash
@@ -144,7 +179,7 @@ jobs:
             echo ">> No changes detected in benchmarks/benchmark.joblib. Skipping commit."
           else
             echo ">> Changes detected. Committing..."
-            git commit -m "benchmarks: update benchmark.joblib (run ${GITHUB_RUN_NUMBER} @ ${GITHUB_SHA::7})"
+            git commit -m "benchmarks: update benchmark.joblib (run ${GITHUB_RUN_NUMBER}.${RUN_INDEX} @ ${GITHUB_SHA::7})"
             echo ">> Pushing commit..."
             git push
             echo ">> Push completed."
@@ -160,6 +195,7 @@ jobs:
           {
             echo "## Benchmarks workflow summary"
             echo ""
+            echo "- **Repetition:** \`${RUN_INDEX} / ${TOTAL_RUNS}\`"
             echo "- **Repo:** \`${GITHUB_REPOSITORY}\`"
             echo "- **Branch/Ref:** \`${GITHUB_REF_NAME}\`"
             echo "- **Commit:** \`${GITHUB_SHA}\`"
