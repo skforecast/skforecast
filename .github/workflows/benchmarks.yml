@@ -8,6 +8,11 @@ on:
         required: false
         default: "5"
         type: string
+      skforecast_version:
+        description: "Optional: specific PyPI-published skforecast version to benchmark (e.g. '0.23.0'). Leave blank (or equal to this branch's own version) to benchmark this branch's checked-out code instead."
+        required: false
+        default: ""
+        type: string
 
 # Serialize benchmark workflow runs. Repetitions append a row to the binary
 # benchmarks/benchmark.joblib and push it; concurrent workflow runs would race on
@@ -26,6 +31,11 @@ jobs:
     outputs:
       indices: ${{ steps.build.outputs.indices }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
       - name: Validate n_runs and build matrix indices
         id: build
         shell: bash
@@ -44,6 +54,32 @@ jobs:
           indices=$(seq 1 "$N_RUNS" | jq -R . | jq -s -c .)
           echo ">> Matrix indices: $indices"
           echo "indices=$indices" >> "$GITHUB_OUTPUT"
+
+      - name: Validate skforecast_version
+        shell: bash
+        env:
+          SKFORECAST_VERSION: ${{ inputs.skforecast_version }}
+        run: |
+          set -e
+
+          # Blank, or equal to this branch's own version, means "benchmark the
+          # local checkout" - no PyPI lookup needed. Anything else must be a
+          # version actually published on PyPI, checked here so a typo fails
+          # fast instead of after spinning up the whole matrix.
+          LOCAL_VERSION=$(grep -m1 '^version = ' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
+          echo ">> This branch's own version: $LOCAL_VERSION"
+
+          if [ -z "$SKFORECAST_VERSION" ] || [ "$SKFORECAST_VERSION" = "$LOCAL_VERSION" ]; then
+            echo ">> skforecast_version is blank or matches this branch ($LOCAL_VERSION): will use the local checkout, no PyPI lookup needed."
+          else
+            echo ">> Checking that skforecast==$SKFORECAST_VERSION exists on PyPI..."
+            status=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/skforecast/$SKFORECAST_VERSION/json")
+            if [ "$status" != "200" ]; then
+              echo "::error::skforecast version '$SKFORECAST_VERSION' was not found on PyPI (HTTP $status). Leave the field blank to benchmark this branch, or use a published version."
+              exit 1
+            fi
+            echo ">> Found skforecast==$SKFORECAST_VERSION on PyPI."
+          fi
 
   run-benchmarks:
     needs: set-matrix
@@ -66,6 +102,7 @@ jobs:
       KERAS_BACKEND: torch         # Use PyTorch as the backend for Keras.
       RUN_INDEX: ${{ matrix.run_index }}
       TOTAL_RUNS: ${{ inputs.n_runs }}
+      SKFORECAST_VERSION: ${{ inputs.skforecast_version }}
 
     steps:
       - name: Checkout code
@@ -103,9 +140,15 @@ jobs:
           python -m pip install --upgrade pip
           echo ">> Installing benchmark requirements..."
           pip install -r benchmarks/requirements_benchmarks.txt
-          echo ">> Installing project..."
-          pip install .
 
+          LOCAL_VERSION=$(grep -m1 '^version = ' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
+          if [ -z "$SKFORECAST_VERSION" ] || [ "$SKFORECAST_VERSION" = "$LOCAL_VERSION" ]; then
+            echo ">> Installing project (local checkout, version $LOCAL_VERSION)..."
+            pip install .
+          else
+            echo ">> Installing skforecast==$SKFORECAST_VERSION from PyPI..."
+            pip install "skforecast==$SKFORECAST_VERSION"
+          fi
 
       - name: Show environment info
         shell: bash
@@ -179,7 +222,11 @@ jobs:
             echo ">> No changes detected in benchmarks/benchmark.joblib. Skipping commit."
           else
             echo ">> Changes detected. Committing..."
-            git commit -m "benchmarks: update benchmark.joblib (run ${GITHUB_RUN_NUMBER}.${RUN_INDEX} @ ${GITHUB_SHA::7})"
+            VERSION_SUFFIX=""
+            if [ -n "$SKFORECAST_VERSION" ]; then
+              VERSION_SUFFIX=", skforecast==$SKFORECAST_VERSION"
+            fi
+            git commit -m "benchmarks: update benchmark.joblib (run ${GITHUB_RUN_NUMBER}.${RUN_INDEX} @ ${GITHUB_SHA::7}${VERSION_SUFFIX})"
             echo ">> Pushing commit..."
             git push
             echo ">> Push completed."
@@ -198,6 +245,7 @@ jobs:
             echo "- **Repetition:** \`${RUN_INDEX} / ${TOTAL_RUNS}\`"
             echo "- **Repo:** \`${GITHUB_REPOSITORY}\`"
             echo "- **Branch/Ref:** \`${GITHUB_REF_NAME}\`"
+            echo "- **skforecast version benchmarked:** \`${SKFORECAST_VERSION:-<local checkout>}\`"
             echo "- **Commit:** \`${GITHUB_SHA}\`"
             echo "- **Run number:** \`${GITHUB_RUN_NUMBER}\`"
             echo ""
