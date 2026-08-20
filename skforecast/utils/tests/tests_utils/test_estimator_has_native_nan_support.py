@@ -2,13 +2,18 @@
 # ==============================================================================
 import pytest
 from sklearn.ensemble import (
+    ExtraTreesRegressor,
+    GradientBoostingRegressor,
     HistGradientBoostingClassifier,
     HistGradientBoostingRegressor,
+    RandomForestClassifier,
     RandomForestRegressor,
 )
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVR
+from sklearn.tree import DecisionTreeRegressor
 from skforecast.utils import estimator_has_native_nan_support
 
 
@@ -27,6 +32,10 @@ def _fake_estimator(module: str, name: str):
         _fake_estimator('catboost.core', 'CatBoostRegressor'),
         HistGradientBoostingRegressor(),
         HistGradientBoostingClassifier(),
+        DecisionTreeRegressor(),
+        RandomForestRegressor(n_estimators=2, random_state=123),
+        RandomForestClassifier(n_estimators=2, random_state=123),
+        ExtraTreesRegressor(n_estimators=2, random_state=123),
         Pipeline([
             ("scaler", StandardScaler()),
             ("model", _fake_estimator('lightgbm.sklearn', 'LGBMRegressor')),
@@ -42,6 +51,10 @@ def _fake_estimator(module: str, name: str):
         'catboost',
         'HistGradientBoostingRegressor',
         'HistGradientBoostingClassifier',
+        'DecisionTreeRegressor',
+        'RandomForestRegressor',
+        'RandomForestClassifier',
+        'ExtraTreesRegressor',
         'Pipeline-lightgbm',
         'Pipeline-HistGradientBoostingRegressor',
     ],
@@ -57,18 +70,20 @@ def test_estimator_has_native_nan_support_true(estimator):
     "estimator",
     [
         LinearRegression(),
-        RandomForestRegressor(n_estimators=2, random_state=123),
+        SVR(),
+        GradientBoostingRegressor(n_estimators=2, random_state=123),
         Pipeline([
             ("scaler", StandardScaler()),
             ("model", LinearRegression()),
         ]),
-        _fake_estimator('sklearn.ensemble._forest', 'RandomForestRegressor'),
+        _fake_estimator('unknown_library.module', 'UnknownRegressor'),
     ],
     ids=[
         'LinearRegression',
-        'RandomForestRegressor',
+        'SVR',
+        'GradientBoostingRegressor',
         'Pipeline-LinearRegression',
-        'fake-RandomForestRegressor',
+        'unknown-library',
     ],
 )
 def test_estimator_has_native_nan_support_false(estimator):

@@ -51,6 +51,7 @@ from ..utils import (
     _normalize_interval_scale,
     configure_estimator_categorical_features,
     cast_catboost_categorical_columns_dataframe,
+    estimator_has_native_nan_support,
     input_to_frame,
     expand_index,
     transform_numpy,
@@ -1672,15 +1673,22 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             [0, 0],  # Dummy value
             True
         ]
+        # Levels with NaNs in the last window are kept when the estimator natively
+        # supports NaNs. Otherwise they are dropped and excluded from the test set.
+        # Differentiation is a hard exclusion: `numpy.diff` expands the NaN footprint
+        # and the inverse transform propagates a single NaN across the whole forecast
+        # horizon.
+        dropna_last_window = (
+            self.differentiation_max is not None
+            or not estimator_has_native_nan_support(self.estimator)
+        )
         data_fold = _extract_data_folds_multiseries(
                         series             = series,
                         folds              = [fold],
                         span_index         = span_index,
                         window_size        = self.window_size,
                         exog               = exog,
-                        dropna_last_window = self.dropna_from_series,
-                        estimator          = self.estimator,
-                        differentiation    = self.differentiation,
+                        dropna_last_window = dropna_last_window,
                         externally_fitted  = False
                     )
         series_train, _, levels_last_window, exog_train, exog_test, _ = next(data_fold)
@@ -3015,7 +3023,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             X_predict.append(np.concatenate(X_predict_level, axis=1))
 
         X_predict = pd.DataFrame(
-                        data    = np.concatenate(X_predict),
+                        data    = (
+                            np.concatenate(X_predict) if levels
+                            else np.empty((0, len(self.X_train_features_names_out_)))
+                        ),
                         index   = np.tile(prediction_index, len(levels)),
                         columns = self.X_train_features_names_out_
                     )
