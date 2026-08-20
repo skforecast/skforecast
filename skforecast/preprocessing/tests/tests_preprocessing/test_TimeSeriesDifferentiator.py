@@ -194,3 +194,49 @@ def test_TimeSeriesDifferentiator_inverse_transform_next_window_2d(order, next_w
     results = transformer.inverse_transform_next_window(next_window_diff)
     
     np.testing.assert_array_almost_equal(results, expected)
+
+
+@pytest.mark.parametrize("order, next_window_diff, nan_position, expected",
+                         [(1, next_window_diff_1, 0, np.array([np.nan, np.nan, np.nan])),
+                          (1, next_window_diff_1, 1, np.array([55., np.nan, np.nan])),
+                          (1, next_window_diff_1, 2, np.array([55., 70., np.nan])),
+                          (2, next_window_diff_2, 0, np.array([np.nan, np.nan, np.nan])),
+                          (2, next_window_diff_2, 1, np.array([55., np.nan, np.nan])),
+                          (2, next_window_diff_2, 2, np.array([55., 70., np.nan])),
+                          (3, next_window_diff_3, 0, np.array([np.nan, np.nan, np.nan])),
+                          (3, next_window_diff_3, 1, np.array([55., np.nan, np.nan])),
+                          (3, next_window_diff_3, 2, np.array([55., 70., np.nan]))],
+                         ids = lambda values: f'order, next_window_diff, nan_position, expected: {values}')
+def test_TimeSeriesDifferentiator_inverse_transform_next_window_with_nan(
+    order, next_window_diff, nan_position, expected
+):
+    """
+    Test TimeSeriesDifferentiator.inverse_transform_next_window preserves the
+    input length when the input contains NaN, propagating NaN from the position
+    of the first NaN onwards instead of dropping rows.
+    """
+    next_window_diff = next_window_diff.copy()
+    next_window_diff[nan_position] = np.nan
+
+    transformer = TimeSeriesDifferentiator(order=order)
+    transformer.fit_transform(y)
+    results = transformer.inverse_transform_next_window(next_window_diff)
+
+    assert len(results) == len(next_window_diff)
+    np.testing.assert_array_almost_equal(results, expected)
+
+
+def test_TimeSeriesDifferentiator_inverse_transform_next_window_2d_with_nan():
+    """
+    Test TimeSeriesDifferentiator.inverse_transform_next_window propagates NaN
+    independently for each column when the input is a 2d array.
+    """
+    next_window_diff = next_window_diff_1_2d.copy()
+    next_window_diff[1, 1] = np.nan
+    expected = np.array([[55., 55.], [70., np.nan], [71., np.nan]])
+
+    transformer = TimeSeriesDifferentiator(order=1)
+    transformer.fit_transform(y)
+    results = transformer.inverse_transform_next_window(next_window_diff)
+
+    np.testing.assert_array_almost_equal(results, expected)

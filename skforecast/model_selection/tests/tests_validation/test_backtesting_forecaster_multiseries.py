@@ -5084,6 +5084,77 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
 
 
 # ******************************************************************************
+# * Test backtesting ForecasterRecursiveMultiSeries with NaN values            *
+# ******************************************************************************
+
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_fold_skipped_when_no_levels_to_predict():
+    """
+    Test output of backtesting_forecaster_multiseries for
+    ForecasterRecursiveMultiSeries when the last window of a fold has NaN
+    values in every level to predict. Since the estimator does not natively
+    support NaN, the levels are dropped from the last window, the fold is
+    skipped and a MissingValuesWarning is raised.
+    """
+
+    series_nan = series_wide_range.copy()
+    series_nan.loc[44, 'l1'] = np.nan
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = Ridge(random_state=123),
+                     lags               = 3,
+                     encoding           = 'ordinal',
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+             steps              = 4,
+             initial_train_size = len(series_nan) - 12,
+             refit              = False,
+             fixed_train_size   = False
+         )
+
+    warn_msg = re.escape(
+        "Fold 2 has been skipped because none of the levels to predict "
+        "['l1'] have a last window free of missing values. "
+        "Ridge cannot predict when NaNs are present, so these levels are "
+        "excluded. No predictions are generated for this fold."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                                   forecaster            = forecaster,
+                                                   series                = series_nan,
+                                                   cv                    = cv,
+                                                   levels                = 'l1',
+                                                   metric                = 'mean_absolute_error',
+                                                   add_aggregated_metric = False,
+                                                   exog                  = None,
+                                                   n_jobs                = 1,
+                                                   verbose               = False
+                                               )
+
+    expected_metric = pd.DataFrame(
+        data    = [['l1', 0.21148867432147175]],
+        columns = ['levels', 'mean_absolute_error'],
+    )
+    expected_predictions = pd.DataFrame({
+        'l1': np.array([
+            0.4961012894532394, 0.4762514905324425,
+            0.4970258308636784, 0.4932044610880632,
+            0.4845186054377790, 0.5085629486010284,
+            np.nan,             0.4917491259727923,
+        ])},
+        index = pd.RangeIndex(start=38, stop=46, step=1),
+    )
+    expected_predictions.insert(1, 'fold', [0, 0, 0, 0, 1, 1, 1, 1])
+    expected_predictions = expected_df_to_long_format(
+        expected_predictions, method='backtesting-predict'
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+    assert 2 not in backtest_predictions['fold'].to_numpy()
+
+
+# ******************************************************************************
 # * Test backtesting ForecasterDirectMultiVariate with NaN values              *
 # ******************************************************************************
 
@@ -5217,3 +5288,77 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
 
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_fold_with_NaN_predictions():
+    """
+    Test output of backtesting_forecaster_multiseries for
+    ForecasterDirectMultiVariate when the last window of an intermediate fold
+    has NaN values and the estimator does not natively support NaN. All series
+    are needed to create the predictors, so no series is dropped from the last
+    window, the fold is not skipped and the backtesting completes returning
+    NaN predictions for that fold.
+    """
+
+    series_nan = series_wide_range.copy()
+    series_nan.loc[40, 'l1'] = np.nan
+
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = Ridge(random_state=123),
+                     level              = 'l1',
+                     lags               = 3,
+                     steps              = 4,
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+             steps              = 4,
+             initial_train_size = len(series_nan) - 16,
+             refit              = False,
+             fixed_train_size   = False
+         )
+
+    warn_msg = re.escape(
+        "`last_window` has missing values. Most of machine learning models do "
+        "not allow missing values. Prediction method may either raise an error "
+        "or return NaN predictions."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                                   forecaster            = forecaster,
+                                                   series                = series_nan,
+                                                   cv                    = cv,
+                                                   levels                = 'l1',
+                                                   metric                = 'mean_absolute_error',
+                                                   add_aggregated_metric = False,
+                                                   exog                  = None,
+                                                   n_jobs                = 1,
+                                                   verbose               = False
+                                               )
+
+    expected_metric = pd.DataFrame(
+        data    = [['l1', 0.21065943446368085]],
+        columns = ['levels', 'mean_absolute_error'],
+    )
+    expected_predictions = pd.DataFrame({
+        'l1': np.array([
+            0.4914538253922444, 0.4690761387884539,
+            0.4730699903679380, 0.4740563503065898,
+            0.5474057777694645, 0.4445022567742973,
+            np.nan,             0.4785673459652775,
+            np.nan,             np.nan,
+            np.nan,             np.nan,
+            0.4176191332253270, 0.5212932254208245,
+            0.4283422880142777, 0.4219928299026436,
+        ])},
+        index = pd.RangeIndex(start=34, stop=50, step=1),
+    )
+    expected_predictions.insert(
+        1, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3]
+    )
+    expected_predictions = expected_df_to_long_format(
+        expected_predictions, method='backtesting-predict'
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+

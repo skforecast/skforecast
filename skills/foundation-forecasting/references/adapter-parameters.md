@@ -141,22 +141,31 @@ Covariates must be numeric; encode categoricals as numbers before passing them.
 
 Nori frames forecasting as tabular in-context regression rather than a native sequence model: each series is featurized (running index, calendar features, Fourier terms, and known-future covariates) before being handed to `NoriRegressor`. Covariates must be numeric; encode categoricals as numbers before passing them.
 
-## TSICLAdapter — EDF Lab TS-ICL
+## Tunable Parameters and Model Reload Cost
 
-- **`model_id` prefix**: `taharnbl/TS-ICL`. Used only for adapter resolution; the checkpoint is always downloaded from the `taharnbl/TS-ICL` Hugging Face repository, controlled by `checkpoint_version`.
-- **`allow_exog`**: `True` (past and future covariates, mirroring `ChronosAdapter`'s `past_covariates`/`future_covariates` format)
-- **Quantiles**: subset of a 0.01 grid in `[0.01, 0.99]` (e.g. `0.05`, `0.5`, `0.37`); other levels raise a `ValueError`
+The parameters that can be changed after construction (via `set_params`, and therefore searched with `bayesian_search_foundation`) are exactly the keys returned by each adapter's `get_params()`. Any other key raises `ValueError`. Note that `model` / `pipeline` / `module` are constructor-only and are **not** settable.
 
-| Parameter              | Type | Default            | Description                                                                |
-|------------------------|------|--------------------|------------------------------------------------------------------------------|
-| `model_id`             | str  | —                  | Model ID (e.g. `taharnbl/TS-ICL`). Used only for adapter resolution.        |
-| `model`                | obj  | `None`             | Pre-instantiated `TSICL` model. If `None`, created lazily on first `predict`.|
-| `checkpoint_version`   | str  | `'tsicl-v1.ckpt'`  | Checkpoint filename downloaded from the `taharnbl/TS-ICL` Hugging Face repo. |
-| `context_length`       | int  | `4096`             | Max historical observations kept as context.                                |
-| `device`               | str  | `'auto'`           | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`. Verified empirically: the installed `tsicl` version currently falls back to CPU internally whenever CUDA is unavailable, regardless of the requested device, so `'mps'` has no effect on Apple Silicon. |
-| `allow_auto_download`  | bool | `True`             | Whether to allow automatic download of the checkpoint from Hugging Face Hub. |
+Being accepted is not the same as being worth searching. Most adapters expose runtime settings that cannot improve accuracy: `device`, `device_map`, `torch_dtype`, `mode` (local vs cloud inference), `show_progress`, `allow_auto_download`, and `max_horizon` (a ceiling only, the TimesFM model is recompiled for the requested `steps` regardless). Keep these fixed. `model_id` (and `checkpoint_version` on TS-ICL) does change accuracy, but it selects a different pre-trained model, so compare those with separate searches instead of mixing them into one search space.
 
-Covariates must be numeric; encode categoricals as numbers before passing them.
+| Adapter | Accepted by `set_params` (`get_params()` keys) | Worth searching | Changing these forces a model reload |
+|---------|-----------------------------------------------|-----------------|--------------------------------------|
+| ChronosAdapter | `model_id`, `cross_learning`, `context_length`, `device_map`, `torch_dtype`, `predict_kwargs` | `context_length`, `cross_learning`, (`predict_kwargs`) | `model_id`, `device_map`, `torch_dtype` |
+| TimesFMAdapter | `model_id`, `context_length`, `max_horizon`, `forecast_config_kwargs` | `context_length`, (`forecast_config_kwargs`) | **all of them** |
+| MoiraiAdapter | `model_id`, `context_length`, `device` | `context_length` | **all of them** |
+| TabICLAdapter | `model_id`, `context_length`, `point_estimate`, `tabicl_config`, `temporal_features`, `show_progress` | `context_length`, `point_estimate`, `temporal_features`, (`tabicl_config`) | all except `show_progress` |
+| TabPFNAdapter | `model_id`, `context_length`, `mode`, `point_estimate`, `tabpfn_model_config`, `temporal_features`, `show_progress` | `context_length`, `point_estimate`, `temporal_features`, (`tabpfn_model_config`) | all except `show_progress` |
+| T0Adapter | `model_id`, `context_length`, `device_map`, `torch_dtype` | `context_length` | `model_id`, `device_map`, `torch_dtype` |
+| TSICLAdapter | `model_id`, `checkpoint_version`, `context_length`, `device`, `allow_auto_download` | `context_length` | `checkpoint_version`, `allow_auto_download` (`device` only clears the cached resolved device) |
+| NoriAdapter | `model_id`, `context_length`, `point_estimate`, `add_calendar_features`, `n_fourier_terms`, `nori_config` | `context_length`, `point_estimate`, `add_calendar_features`, `n_fourier_terms`, (`nori_config`) | `model_id`, `nori_config` |
+
+Parameters in parentheses are backend passthrough dicts: they can hold quality-relevant settings but are awkward to search, so treat them as advanced.
+
+Two consequences that matter when tuning:
+
+- **`context_length` is not uniformly cheap.** It reloads the model on TimesFM 2.5, Moirai-2, TabICL and TabPFN-TS; it is free on Chronos-2, T0, TS-ICL and Nori.
+- **Reset on presence vs on change.** `TabICLAdapter`, `TabPFNAdapter` and `NoriAdapter` compare the old and new values first, so re-sampling an identical value costs nothing. `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `T0Adapter` and `TSICLAdapter` reset whenever the key is passed, even if the value is unchanged, so on TimesFM 2.5 and Moirai-2 every single trial that samples `context_length` triggers a reload.
+
+`model_id` forces a reload on every adapter except `TSICLAdapter`, where the checkpoint is selected by `checkpoint_version` instead.
 
 ## Common Behavior
 

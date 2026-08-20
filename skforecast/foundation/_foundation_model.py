@@ -177,6 +177,19 @@ class FoundationModel:
     that only the library required by the adapter you actually use needs to
     be installed, other foundation-model backends remain optional.
 
+    Device handling is not uniform across adapters; each mirrors the
+    convention of its own backend, so the kwarg used to select the device
+    differs by model:
+
+    - `device_map` (plus `torch_dtype`), HuggingFace `from_pretrained`
+      style: Chronos, T0.
+    - `device` string, resolved internally to a concrete accelerator:
+      Moirai, TS-ICL.
+    - Through the backend configuration dict: TabICL (`tabicl_config`),
+      TabPFN (`tabpfn_model_config`), Nori (`nori_config`).
+    - No device parameter: TimesFM, which relies on its backend's own
+      default device selection.
+
     References
     ----------
     .. [1] Amazon Chronos - GitHub repository.

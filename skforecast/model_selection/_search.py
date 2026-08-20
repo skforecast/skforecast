@@ -2144,16 +2144,14 @@ def bayesian_search_foundation(
 
         - All models: `context_length` (int or categorical list).
         - Amazon Chronos-2: `cross_learning` (bool).
-        - Google TimesFM 2.5: `max_horizon` (int).
-        - TabICLv2, Prior Labs TabPFN-TS: `point_estimate` (str),
+        - Soda-INRIA TabICL, Prior Labs TabPFN-TS: `point_estimate` (str),
         `temporal_features` (list).
-        - Prior Labs TabPFN-TS: `mode` (str).
         - Synthefy Nori: `point_estimate` (str), `add_calendar_features`
         (bool), `n_fourier_terms` (int).
 
-        Note: changing `model_id`, device arguments, or `torch_dtype` forces a 
-        full model reload and is expensive. On Google TimesFM 2.5 and 
-        Salesforce Moirai-2, changing `context_length` also forces a reload.
+        Note: changing `model_id`, device arguments, or `torch_dtype` forces a
+        full model reload and is expensive. Changing `context_length` also
+        forces a reload on TimesFM 2.5, Moirai-2, TabICL and TabPFN-TS.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
 
