@@ -1234,8 +1234,9 @@ class ForecasterEquivalentDate():
             if k in allowed_params:
                 setattr(self, k, v)
 
-        if isinstance(self.offset, int):
-            self.window_size = self.offset * self.n_offsets
+        # NOTE: When `offset` is a DateOffset, `window_size` is a DateOffset until
+        # `fit` converts it into the equivalent number of steps.
+        self.window_size = self.offset * self.n_offsets
 
         self.is_fitted = False
 
