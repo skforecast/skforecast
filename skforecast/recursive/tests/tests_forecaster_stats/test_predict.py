@@ -12,6 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 
 # Fixtures
+from .fixtures_forecaster_stats import WINDOWS_LEGACY_BLAS
 from .fixtures_forecaster_stats import y
 from .fixtures_forecaster_stats import exog
 from .fixtures_forecaster_stats import exog_predict
@@ -85,7 +86,7 @@ def test_predict_output_ForecasterStats_skforecast_Sarimax(kwargs, data):
     """
     Test predict output of ForecasterStats using Sarimax from skforecast.
     """
-    system = "win" if platform.system() == "Windows" else 'linux'
+    system = "win" if WINDOWS_LEGACY_BLAS else 'linux'
 
     forecaster = ForecasterStats(
                      estimator = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
@@ -155,7 +156,7 @@ def test_predict_output_ForecasterStats_different_estimators(estimator, expected
     """
     Test predict output of ForecasterStats with different estimators (Sarimax, Arar, Ets).
     """
-    system = "win" if platform.system() == "Windows" else 'linux'
+    system = "win" if WINDOWS_LEGACY_BLAS else 'linux'
 
     forecaster = ForecasterStats(estimator=estimator)
     forecaster.fit(y=y_datetime)
@@ -199,7 +200,7 @@ def test_predict_output_ForecasterStats_different_estimators_exog(estimator, exp
     """
     Test predict output of ForecasterStats with different estimators (Sarimax, Arar, Ets).
     """
-    system = "win" if platform.system() == "Windows" else 'linux'
+    system = "win" if WINDOWS_LEGACY_BLAS else 'linux'
 
     forecaster = ForecasterStats(estimator=estimator)
     forecaster.fit(y=y_datetime, exog=exog_datetime)
@@ -295,7 +296,7 @@ def test_predict_output_ForecasterStats_with_transform_y(estimator, expected_dat
     Test predict output of ForecasterStats with a StandardScaler() as transformer_y
     for different estimators.
     """
-    system = "win" if platform.system() == "Windows" else 'linux'
+    system = "win" if WINDOWS_LEGACY_BLAS else 'linux'
     
     forecaster = ForecasterStats(
                      estimator     = estimator,
@@ -358,7 +359,7 @@ def test_predict_output_ForecasterStats_with_transform_y_and_transform_exog(kwar
     Test predict output of ForecasterStats, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
     """
-    system = "win" if platform.system() == "Windows" else 'linux'
+    system = "win" if WINDOWS_LEGACY_BLAS else 'linux'
     
     transformer_exog = ColumnTransformer(
                            [('scale', StandardScaler(), ['exog_1']),
@@ -397,7 +398,7 @@ def test_predict_output_ForecasterStats_with_last_window(kwargs, data):
     """
     Test predict output of ForecasterStats with `last_window`.
     """
-    system = "win" if platform.system() == "Windows" else 'linux'
+    system = "win" if WINDOWS_LEGACY_BLAS else 'linux'
     
     forecaster = ForecasterStats(
                      estimator = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
@@ -569,7 +570,7 @@ def test_predict_output_ForecasterStats_with_multiple_estimators(estimator, expe
     forecaster.fit(y=y)
     predictions = forecaster.predict(steps=10)
 
-    if isinstance(estimator, Sarimax) and platform.system() == "Windows":
+    if isinstance(estimator, Sarimax) and WINDOWS_LEGACY_BLAS:
         expected_data = [
             0.6343226849319836, 0.6250737232464421, 0.6159596192513042, 
             0.6069784066072901, 0.598128147646011, 0.5894069329519234, 

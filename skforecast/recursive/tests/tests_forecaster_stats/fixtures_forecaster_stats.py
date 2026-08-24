@@ -1,7 +1,15 @@
 # Fixtures ForecasterStats
 # ==============================================================================
+import sys
+import platform
 import numpy as np
 import pandas as pd
+
+# On Windows, the BLAS/LAPACK shipped in the numpy/scipy wheels used to drive the
+# Sarimax optimizer to a different optimum than on Linux/macOS. From Python 3.12
+# onwards pip resolves to numpy >= 2.5 and scipy >= 1.18, whose Windows wheels
+# converge to the same optimum as the other platforms.
+WINDOWS_LEGACY_BLAS = platform.system() == "Windows" and sys.version_info < (3, 12)
 
 # Fixtures
 # From 'https://raw.githubusercontent.com/skforecast/skforecast/main/data/h2o_exog.csv'
