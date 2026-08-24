@@ -48,7 +48,7 @@ Whether you're building quick prototypes or deploying models in production, skfo
 > :sparkles: **Try [skforecast-ai](https://ai.skforecast.org/)**, an **AI forecasting assistant** that pairs a deterministic engine, powered by [**skforecast**](https://skforecast.org/), with an **LLM reasoning layer**.
 
 > [!TIP]
-> :computer: **Try [Skforecast Studio](https://studio.skforecast.org/)** — an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
+> :computer: **Try [Skforecast Studio](https://studio.skforecast.org/)**, an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
 
 ### Quick Example
 

@@ -1,7 +1,7 @@
 ---
 name: foundation-forecasting
 description: >
-  Zero-shot time series forecasting with pre-trained foundation models
+  Forecasts time series zero-shot with pre-trained foundation models
   (Amazon Chronos-2, Google TimesFM 2.5, Salesforce Moirai-2, Soda-INRIA TabICL,
   Prior Labs TabPFN-TS, The Forecasting Company T0, EDF Lab TS-ICL, Synthefy Nori) via ForecasterFoundation and
   FoundationModel. Covers single and multi-series
@@ -13,10 +13,6 @@ description: >
 
 # Foundation Model Forecasting (Zero-Shot)
 
-## References
-
-See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, and `TSICLAdapter`.
-
 ## When to Use
 
 Use `ForecasterFoundation` when:
@@ -26,6 +22,13 @@ Use `ForecasterFoundation` when:
 - You want to compare against pre-trained generalist models.
 
 Foundation models are **pre-trained on massive corpora** — `fit()` does not train them; it only stores the recent context and metadata.
+
+### Related skills
+
+- **Prerequisite**: `choosing-a-forecaster` (decide whether a zero-shot model fits the problem at all)
+- **Alongside**: `baseline-forecasting` (compare the zero-shot model against a naive rule with MASE)
+- **Next**: `hyperparameter-optimization` (tune `context_length` with `bayesian_search_foundation`)
+- **Next**: `metric-selection` (probabilistic metrics for the native quantile output)
 
 ## Stop Conditions
 
@@ -228,7 +231,7 @@ predictions = forecaster.predict(
 If `context` is longer than the adapter's `context_length`, it is trimmed
 automatically to the last `context_length` observations.
 
-## Common Pitfalls
+## Common Mistakes
 
 1. **Expecting `fit()` to train the model**: it only stores context. The weights come from HuggingFace.
 2. **Index without frequency**: call `series.asfreq('h')` (or similar) before `fit` — skforecast requires a frequency.
@@ -237,3 +240,7 @@ automatically to the last `context_length` observations.
 5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
 6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`). Install only the one(s) you need.
 7. **Tuning a parameter that forces a model reload**: `model_id` and device/dtype arguments reload the model on every trial, and `context_length` does the same on TimesFM 2.5, Moirai-2, TabICL and TabPFN-TS.
+
+## References
+
+See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, and `TSICLAdapter`.

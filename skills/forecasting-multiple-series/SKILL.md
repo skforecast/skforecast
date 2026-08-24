@@ -16,11 +16,11 @@ description: >
 
 ### Related skills
 
-- **Before**: `choosing-a-forecaster` (decide between MultiSeries, MultiVariate, Rnn, or Foundation for multi-series problems)
-- **Before**: `autocorrelation-and-lag-selection` (analyse representative series to inform the shared `lags` argument)
-- **Before**: `feature-engineering` (build per-series exogenous and rolling features)
-- **After**: `hyperparameter-optimization` (tune the global model across series)
-- **After**: `prediction-intervals` (add intervals to the multi-series forecasts)
+- **Prerequisite**: `choosing-a-forecaster` (decide between MultiSeries, MultiVariate, Rnn, or Foundation for multi-series problems)
+- **Prerequisite**: `autocorrelation-and-lag-selection` (analyse representative series to inform the shared `lags` argument)
+- **Prerequisite**: `feature-engineering` (build per-series exogenous and rolling features)
+- **Next**: `hyperparameter-optimization` (tune the global model across series)
+- **Next**: `prediction-intervals` (add intervals to the multi-series forecasts)
 
 ## Stop Conditions
 

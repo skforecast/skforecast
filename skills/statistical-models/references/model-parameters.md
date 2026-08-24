@@ -1,5 +1,17 @@
 # Statistical Models — Parameter Reference
 
+## Contents
+
+- Constructor comparison
+- Arima
+- Sarimax
+- Ets
+- Arar
+- ForecasterStats constructor
+- Grid search `param_grid` examples
+- Backtesting with `freeze_params`
+- Exogenous variables support
+
 ## Constructor Comparison
 
 | Parameter | `Arima` | `Sarimax` | `Ets` | `Arar` |

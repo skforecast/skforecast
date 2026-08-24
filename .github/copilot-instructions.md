@@ -524,7 +524,8 @@ Key points:
 - `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
 - The index must have a frequency (`data.asfreq(...)`), same requirement as other skforecast forecasters.
 - `predict(..., context=...)` lets you override the stored context (used internally by backtesting).
-- Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. Refit is always disabled internally, model weights are preserved across folds since there is no per-fold training.
+- Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. It deep-copies `cv` and forces `refit=True`, `fixed_train_size=False`, so the context window expands with each fold up to `context_length`; no weights are ever trained.
+- Use `bayesian_search_foundation` (not `bayesian_search_forecaster`) to tune inference-time parameters such as `context_length`. Only `TimeSeriesFold` is supported.
 
 ## Feature Selection
 
@@ -600,6 +601,7 @@ from skforecast.model_selection import bayesian_search_forecaster
 from skforecast.model_selection import bayesian_search_forecaster_multiseries
 from skforecast.model_selection import grid_search_stats
 from skforecast.model_selection import random_search_stats
+from skforecast.model_selection import grid_search_equivalent_date
 from skforecast.model_selection import TimeSeriesFold
 from skforecast.model_selection import OneStepAheadFold
 

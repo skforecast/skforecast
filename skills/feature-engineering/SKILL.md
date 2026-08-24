@@ -13,18 +13,7 @@ description: >
 
 # Feature Engineering
 
-## References
-
-See [references/calendar-features-reference.md](references/calendar-features-reference.md)
-for the complete `CalendarFeatures` constructor, all supported features and
-encodings, the delegated (`calendar_features` parameter) vs. manual (`exog`)
-workflows, per-forecaster support, and gotchas.
-
-See [references/rolling-stats-reference.md](references/rolling-stats-reference.md) for
-the complete `RollingFeatures` constructor, all 9 available statistics,
-feature name generation formula, window behavior, and `kwargs_stats` usage.
-
-## When to Use This Skill
+## When to Use
 
 Use this skill when the user wants to create features to improve forecasting
 accuracy: calendar/datetime features, cyclical / onehot / spline encoding,
@@ -32,9 +21,9 @@ holiday distance features, rolling statistics, differencing, or data scaling.
 
 ### Related skills
 
-- **Before**: `autocorrelation-and-lag-selection` (use ACF/PACF to choose a candidate set of lags before adding rolling and calendar features)
-- **After**: `feature-selection` (prune redundant features with `select_features` after engineering)
-- **After**: `hyperparameter-optimization` (jointly tune the engineered configuration and the estimator hyperparameters)
+- **Prerequisite**: `autocorrelation-and-lag-selection` (use ACF/PACF to choose a candidate set of lags before adding rolling and calendar features)
+- **Next**: `feature-selection` (prune redundant features with `select_features` after engineering)
+- **Next**: `hyperparameter-optimization` (jointly tune the engineered configuration and the estimator hyperparameters)
 
 ## Stop Conditions
 
@@ -51,7 +40,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 
 | Tool | Module | Purpose |
 |------|--------|---------|
-| `calendar_features` param | skforecast ML forecasters | **Delegated** calendar features: pass a `CalendarFeatures` instance and the forecaster generates them at train and predict — no manual exog. **New in 0.23.0.** |
+| `calendar_features` param | skforecast ML forecasters | **Delegated** calendar features: pass a `CalendarFeatures` instance and the forecaster generates them at train and predict — no manual exog. |
 | `CalendarFeatures` | `skforecast.preprocessing` | Sklearn-compatible transformer: extract calendar features from a `DatetimeIndex` and (optionally) encode them. Pass to `calendar_features`, use as `transformer_exog`, or in a `Pipeline`. |
 | `create_calendar_features` | `skforecast.preprocessing` | Function form of the same logic, for one-shot use without a transformer. |
 | `calculate_distance_from_holiday` | `skforecast.preprocessing` | Periods to next / since last holiday |
@@ -65,7 +54,7 @@ Both use the `CalendarFeatures` class; they differ in who builds the features.
 
 | Workflow | How | When to use |
 |----------|-----|-------------|
-| **Delegated** (new in 0.23.0) | Pass a `CalendarFeatures` instance to the forecaster's `calendar_features` parameter. The forecaster generates the features at train **and** predict — no manual exog. | The 4 supported forecasters: `ForecasterRecursive`, `ForecasterRecursiveMultiSeries`, `ForecasterDirect`, `ForecasterDirectMultiVariate`. |
+| **Delegated** | Pass a `CalendarFeatures` instance to the forecaster's `calendar_features` parameter. The forecaster generates the features at train **and** predict — no manual exog. | The 4 supported forecasters: `ForecasterRecursive`, `ForecasterRecursiveMultiSeries`, `ForecasterDirect`, `ForecasterDirectMultiVariate`. |
 | **Manual** | Build features with `CalendarFeatures.fit_transform` / `create_calendar_features` and pass them as `exog` (or wire `CalendarFeatures` as `transformer_exog`). | Forecasters without `calendar_features` support (`ForecasterRecursiveClassifier`, `ForecasterRnn`, `ForecasterStats`, `ForecasterFoundation`, `ForecasterEquivalentDate`), or when the features live inside a `Pipeline` / `ColumnTransformer`. |
 
 > Full constructor, all features/encodings, per-forecaster support, and gotchas:
@@ -436,3 +425,14 @@ predictions = forecaster.predict(steps=10, exog=exog.loc[forecast_index])
 8. **Rolling window larger than lags without checking training size**: The forecaster's `window_size` is `max(max_lag, max_size_window_features) (+ differentiation)`. A 30-step rolling window with `lags=7` drops the first 30 rows of training data and requires `last_window` of length ≥ 30 at predict time.
 9. **Colliding feature names across multiple `RollingFeatures`**: When passing `window_features=[wf1, wf2]`, names like `roll_mean_7` produced by both instances overwrite each other. Override with `features_names=[...]` on at least one instance.
 10. **Forgetting that window features run on the differenced series**: With `differentiation=1`, `roll_mean_7` is the mean of seven changes, not seven raw values. Adjust interpretation accordingly.
+
+## References
+
+See [references/calendar-features-reference.md](references/calendar-features-reference.md)
+for the complete `CalendarFeatures` constructor, all supported features and
+encodings, the delegated (`calendar_features` parameter) vs. manual (`exog`)
+workflows, per-forecaster support, and gotchas.
+
+See [references/rolling-stats-reference.md](references/rolling-stats-reference.md) for
+the complete `RollingFeatures` constructor, all 9 available statistics,
+feature name generation formula, window behavior, and `kwargs_stats` usage.

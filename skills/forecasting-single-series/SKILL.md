@@ -18,12 +18,12 @@ Use this workflow when you have **one time series** and want to predict its futu
 
 ### Related skills
 
-- **Before**: `choosing-a-forecaster` (decide between Recursive and Direct based on the data)
-- **Before**: `autocorrelation-and-lag-selection` (pick the `lags` argument from ACF/PACF analysis)
-- **Before**: `feature-engineering` (assemble the rolling, calendar, and exogenous features)
+- **Prerequisite**: `choosing-a-forecaster` (decide between Recursive and Direct based on the data)
+- **Prerequisite**: `autocorrelation-and-lag-selection` (pick the `lags` argument from ACF/PACF analysis)
+- **Prerequisite**: `feature-engineering` (assemble the rolling, calendar, and exogenous features)
 - **Alongside**: `baseline-forecasting` (establish a naive reference to benchmark the model against)
-- **After**: `hyperparameter-optimization` (tune the forecaster once a baseline is trained)
-- **After**: `prediction-intervals` (add bootstrap or conformal intervals on top of the point forecasts)
+- **Next**: `hyperparameter-optimization` (tune the forecaster once a baseline is trained)
+- **Next**: `prediction-intervals` (add bootstrap or conformal intervals on top of the point forecasts)
 
 ## Stop Conditions
 

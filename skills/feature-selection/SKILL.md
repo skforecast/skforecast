@@ -12,16 +12,25 @@ description: >
 
 ## When to Use
 
+Feature selection is an **optional refinement**, not a step on the critical path.
+It is usually run once a forecaster is already trained and tuned, to trim the
+feature set and reduce model complexity, rather than to improve accuracy. It is
+also the slowest step in the pipeline, since the selector refits the estimator
+many times.
+
 Use feature selection when:
 - You have many lags or exogenous variables and want to reduce overfitting
 - You want to identify which features matter most
-- You need to speed up training by removing irrelevant features
+- You need to speed up inference or training by removing irrelevant features
+
+After a large reduction, re-run `hyperparameter-optimization`: the best
+parameters for the full feature set are not necessarily best for the trimmed one.
 
 ### Related skills
 
-- **Before**: `autocorrelation-and-lag-selection` (generate an informed candidate set of lags before running the selector)
-- **Before**: `feature-engineering` (create the rolling, calendar, and exogenous features that the selector will rank)
-- **After**: `hyperparameter-optimization` (tune the estimator on the reduced feature set)
+- **Prerequisite**: `autocorrelation-and-lag-selection` (generate an informed candidate set of lags before running the selector)
+- **Prerequisite**: `feature-engineering` (create the rolling, calendar, and exogenous features that the selector will rank)
+- **Next**: `hyperparameter-optimization` (re-tune the estimator on the reduced feature set)
 
 ## Single Series
 

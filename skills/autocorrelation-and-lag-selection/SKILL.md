@@ -12,7 +12,7 @@ description: >
 
 # Autocorrelation and Lag Selection
 
-## When to Use This Skill
+## When to Use
 
 Use this skill when the user wants to:
 
@@ -23,9 +23,9 @@ Use this skill when the user wants to:
 
 ### Related skills
 
-- **After**: `feature-engineering` (turn the candidate lags into a full feature pipeline with rolling and calendar features)
-- **After**: `hyperparameter-optimization` (refine the candidate set via cross-validation with `bayesian_search_forecaster`)
-- **After**: `feature-selection` (prune redundant lags or exog variables with `select_features` once the forecaster is configured)
+- **Next**: `feature-engineering` (turn the candidate lags into a full feature pipeline with rolling and calendar features)
+- **Next**: `hyperparameter-optimization` (refine the candidate set via cross-validation with `bayesian_search_forecaster`)
+- **Next**: `feature-selection` (prune redundant lags or exog variables with `select_features` once the forecaster is configured)
 
 ## Overview
 

@@ -9,13 +9,6 @@ description: >
 
 # Hyperparameter Optimization
 
-## References
-
-See [references/search-parameters.md](references/search-parameters.md) for
-the complete parameter comparison across all 9 search functions, function
-routing by forecaster type, and `lags_grid` / `search_space` / `param_grid`
-usage details.
-
 ## When to Use
 
 Use hyperparameter search after establishing a baseline forecaster to improve prediction accuracy. Skforecast supports three strategies:
@@ -28,11 +21,11 @@ Use hyperparameter search after establishing a baseline forecaster to improve pr
 
 ### Related skills
 
-- **Before**: `autocorrelation-and-lag-selection` (narrow the `lags` search space to a statistically informed candidate set)
-- **Before**: `feature-selection` (run the search on a reduced feature set to make it tractable)
+- **Prerequisite**: `autocorrelation-and-lag-selection` (narrow the `lags` search space to a statistically informed candidate set)
 - **Related**: `baseline-forecasting` (tune `ForecasterEquivalentDate` baselines with `grid_search_equivalent_date`)
 - **Related**: `foundation-forecasting` (tune zero-shot `ForecasterFoundation` inference parameters with `bayesian_search_foundation`)
-- **After**: `prediction-intervals` (add uncertainty quantification once the configuration is fixed)
+- **Related**: `feature-selection` (optional trim of the feature set afterwards; re-tune if the reduction is large)
+- **Next**: `prediction-intervals` (add uncertainty quantification once the configuration is fixed)
 
 ## Stop Conditions
 
@@ -283,3 +276,10 @@ results, study = bayesian_search_forecaster(
 3. **Using TimeSeriesFold for initial tuning**: Use `OneStepAheadFold` first for fast screening, then validate the top candidates with `TimeSeriesFold`.
 4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()` — this is often the most impactful parameter.
 5. **Putting `lags` in a foundation `search_space`**: `bayesian_search_foundation` has no lag concept; any key that is not an adapter parameter raises `ValueError`.
+
+## References
+
+See [references/search-parameters.md](references/search-parameters.md) for
+the complete parameter comparison across all 9 search functions, function
+routing by forecaster type, and `lags_grid` / `search_space` / `param_grid`
+usage details.

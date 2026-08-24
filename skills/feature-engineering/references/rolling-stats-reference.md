@@ -1,5 +1,19 @@
 # Rolling Features — Statistics Reference
 
+## Contents
+
+- RollingFeatures constructor
+- Available statistics
+- Feature name generation
+- Window behavior
+- Configuration patterns
+- `min_periods` parameter
+- `fillna` parameter
+- Forecaster compatibility
+- How the forecaster uses `window_features`
+- Custom window feature classes (protocol)
+- Feature selection interaction
+
 ## RollingFeatures Constructor
 
 ```python

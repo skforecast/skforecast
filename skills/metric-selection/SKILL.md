@@ -10,7 +10,7 @@ description: >
 
 # Metric Selection
 
-## When to Use This Skill
+## When to Use
 
 Use this skill when the user needs help choosing an evaluation metric, comparing
 metrics, understanding trade-offs between error measures, or configuring the
@@ -19,10 +19,10 @@ or any other model selection function.
 
 ### Related skills
 
-- **After**: `choosing-a-forecaster` (the forecaster type determines which metrics apply)
-- **Before**: `hyperparameter-optimization` (the chosen metric drives the search objective)
+- **Prerequisite**: `choosing-a-forecaster` (the forecaster type determines which metrics apply)
 - **Alongside**: `baseline-forecasting` (MASE < 1 means the model beats the naive baseline)
-- **Before**: `prediction-intervals` (probabilistic metrics evaluate interval quality)
+- **Next**: `hyperparameter-optimization` (the chosen metric drives the search objective)
+- **Next**: `prediction-intervals` (probabilistic metrics evaluate interval quality)
 
 ## Quick Recommendations
 
@@ -85,16 +85,9 @@ What is your forecaster producing?
 
 ### Metric Properties
 
-| Metric | Scale-independent | Robust to outliers | Handles zeros | Requires `y_train` | Range |
-|--------|:-----------------:|:------------------:|:-------------:|:-------------------:|-------|
-| MAE | — | ✓ | ✓ | — | [0, ∞) |
-| MSE | — | — | ✓ | — | [0, ∞) |
-| MedAE | — | ✓✓ | ✓ | — | [0, ∞) |
-| MAPE | ✓ | — | — | — | [0, ∞) |
-| SMAPE | ✓ | — | ✓ | — | [0, 200] % |
-| MSLE | — | — | ✓ (if ≥ 0) | — | [0, ∞) |
-| MASE | ✓ | ✓ | ✓ | ✓ | [0, ∞) |
-| RMSSE | ✓ | — | ✓ | ✓ | [0, ∞) |
+Full property matrix (scale independence, robustness, zero handling, `y_train`
+requirement, range and interpretation) for every metric:
+[references/metric-compatibility.md](references/metric-compatibility.md).
 
 ### Using Metrics in Code
 
@@ -403,7 +396,7 @@ argument is silently ignored.
 | Using only point metrics for probabilistic forecasts | Ignores uncertainty quality entirely | Add `calculate_coverage` and/or CRPS alongside point metrics |
 | Passing MASE as callable without understanding y_train | Works fine — skforecast detects the `y_train` parameter automatically | Just pass the callable or string; no extra work needed |
 
-## Metric Compatibility Reference
+## References
 
 See [references/metric-compatibility.md](references/metric-compatibility.md) for the
 complete matrix of all available metrics with their properties, compatible forecasters,
