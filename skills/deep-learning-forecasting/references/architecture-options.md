@@ -1,5 +1,17 @@
 # Deep Learning — Architecture Options Reference
 
+## Contents
+
+- create_and_compile_model signature
+- Recurrent layer types
+- Architecture building blocks
+- Output layer shape
+- Exogenous variables architecture
+- Layer kwargs customization
+- ForecasterRnn constructor
+- Custom Keras model requirements
+- Prediction intervals
+
 ## create_and_compile_model Signature
 
 ```python

@@ -2,6 +2,15 @@
 
 Complete reference for all metrics available in skforecast: properties, compatibility, and usage guidance.
 
+## Contents
+
+- Point forecast metrics (regression)
+- Probabilistic forecast metrics
+- Classification metrics
+- Forecaster × metric type compatibility
+- When to use / when to avoid
+- Multi-series aggregation options
+
 ## Point Forecast Metrics (Regression)
 
 | Metric | String name | Source | Requires `y_train` | Scale-independent | Robust to outliers | Handles zeros | Range | Interpretation |

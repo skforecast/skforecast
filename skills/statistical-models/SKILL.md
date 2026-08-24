@@ -9,13 +9,6 @@ description: >
 
 # Statistical Models (ARIMA, ETS, SARIMAX, ARAR)
 
-## References
-
-See [references/model-parameters.md](references/model-parameters.md) for
-complete constructor signatures of all statistical models (Arima, Sarimax,
-Ets, Arar), the Ets model string format, Auto-ARIMA parameters, seasonal_order
-differences between Arima and Sarimax, and grid search param_grid examples.
-
 ## When to Use
 
 Use statistical models when:
@@ -26,10 +19,10 @@ Use statistical models when:
 
 ### Related skills
 
-- **Before**: `autocorrelation-and-lag-selection` (read ACF/PACF to identify ARIMA orders `p`, `d`, `q` before fitting)
+- **Prerequisite**: `autocorrelation-and-lag-selection` (read ACF/PACF to identify ARIMA orders `p`, `d`, `q` before fitting)
 - **Alongside**: `baseline-forecasting` (the other benchmark family: naive equivalent-date baselines)
-- **After**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals via the `interval_method` argument)
-- **After**: `hyperparameter-optimization` (tune ARIMA `order` / `seasonal_order` via grid search)
+- **Next**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals via the `interval_method` argument)
+- **Next**: `hyperparameter-optimization` (tune ARIMA `order` / `seasonal_order` via grid search)
 
 ## Stop Conditions
 
@@ -196,3 +189,10 @@ predictions = forecaster.predict(steps=12)
 3. **Not using `backtesting_stats`**: Use `backtesting_stats()` for statistical models, NOT `backtesting_forecaster()`.
 4. **Using grid_search_forecaster for stats**: Use `grid_search_stats()` or `random_search_stats()` instead.
 5. **Passing `seasonal_order=(1,1,1,12)` to `Arima`**: `Arima` uses a 3-tuple `seasonal_order=(P,D,Q)` plus a separate `m=12` parameter. The 4-tuple `(P,D,Q,s)` format is only for `Sarimax`.
+
+## References
+
+See [references/model-parameters.md](references/model-parameters.md) for
+complete constructor signatures of all statistical models (Arima, Sarimax,
+Ets, Arar), the Ets model string format, Auto-ARIMA parameters, seasonal_order
+differences between Arima and Sarimax, and grid search param_grid examples.

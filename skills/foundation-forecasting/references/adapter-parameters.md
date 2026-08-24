@@ -12,6 +12,19 @@ model = FoundationModel(
 )
 ```
 
+## Contents
+
+- ChronosAdapter — Amazon Chronos-2
+- TimesFMAdapter — Google TimesFM 2.5
+- MoiraiAdapter — Salesforce Moirai-2
+- TabICLAdapter — Soda-INRIA TabICL
+- TabPFNAdapter — Prior Labs TabPFN-TS
+- T0Adapter — The Forecasting Company T0
+- TSICLAdapter — EDF Lab TS-ICL
+- NoriAdapter — Synthefy Nori
+- Tunable parameters and model reload cost
+- Common behavior
+
 ## ChronosAdapter — Amazon Chronos-2
 
 - **`model_id` prefix**: `autogluon/chronos`

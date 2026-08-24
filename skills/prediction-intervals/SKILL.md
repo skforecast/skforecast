@@ -34,22 +34,29 @@ Use prediction intervals to quantify forecast uncertainty. Skforecast offers thr
 
 ### Related skills
 
-- **Before**: `forecasting-single-series` / `forecasting-multiple-series` (have a fitted forecaster before adding intervals)
-- **Before**: `hyperparameter-optimization` (interval calibration assumes a tuned point forecaster)
-- **After**: `drift-detection` (monitor whether residual assumptions still hold once the model is in production)
+- **Prerequisite**: `forecasting-single-series` / `forecasting-multiple-series` (have a fitted forecaster before adding intervals)
+- **Prerequisite**: `hyperparameter-optimization` (interval calibration assumes a tuned point forecaster)
+- **Next**: `drift-detection` (monitor whether residual assumptions still hold once the model is in production)
 
-## Intervals Are Quantiles (Changed in 0.23.0)
+## Intervals Are Quantiles
 
-Since skforecast 0.23.0, `interval` is expressed as **quantiles in `[0, 1]`**, not
-percentiles in `[0, 100]`. For example, an 80% interval is `interval=[0.1, 0.9]`
+`interval` is expressed as **quantiles in `[0, 1]`**, not percentiles in
+`[0, 100]`. For example, an 80% interval is `interval=[0.1, 0.9]`
 (the default is `[0.05, 0.95]` = 90%).
 
 - `interval` also accepts a single `float` as nominal coverage: `interval=0.95`
   is equivalent to `interval=[0.025, 0.975]`.
-- Passing percentiles (e.g. `[10, 90]`) still works but emits a `FutureWarning`
-  and will be removed in skforecast 0.25.0.
 - Mixing scales (e.g. `[0.1, 90]`) raises a `ValueError` (ambiguous scale).
-- `predict_quantiles(quantiles=...)` was already on the 0-1 scale and is unchanged.
+- `predict_quantiles(quantiles=...)` uses the same 0-1 scale.
+
+<details>
+<summary>Old patterns: percentile intervals</summary>
+
+Earlier versions took percentiles in `[0, 100]`, e.g. `interval=[10, 90]`.
+Percentiles still work but emit a `FutureWarning` and will be removed in a
+future release. Convert by dividing by 100, so `[10, 90]` becomes `[0.1, 0.9]`.
+
+</details>
 
 ## Stop Conditions
 
@@ -60,7 +67,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Fit with `store_in_sample_residuals=True` before `predict_interval(method='bootstrapping')` | `No in-sample residuals stored` | Refit: `forecaster.fit(y=y_train, store_in_sample_residuals=True)` |
 | Multi-series forecasters default to `method='conformal'`, not `'bootstrapping'` | Bootstrapping silently not applied on `ForecasterRecursiveMultiSeries` / `ForecasterDirectMultiVariate` | Pass `method='bootstrapping'` explicitly when that is what you want |
 | ML forecasters accept `interval=`; only `ForecasterStats` accepts `alpha=` | `TypeError` / unexpected argument | Use `interval=[lower, upper]` for ML forecasters |
-| `interval` must be quantiles in `[0, 1]`, not percentiles | `FutureWarning` (percentiles deprecated, removed in 0.25.0) | Use `interval=[0.1, 0.9]` instead of `interval=[10, 90]` |
+| `interval` must be quantiles in `[0, 1]`, not percentiles | `FutureWarning` (percentiles deprecated) | Use `interval=[0.1, 0.9]` instead of `interval=[10, 90]` |
 | Do not mix quantile and percentile scales in one `interval` | `ValueError`: scale is ambiguous | Use a single scale, e.g. `interval=[0.05, 0.95]` |
 
 ## Bootstrapping Method
@@ -249,7 +256,7 @@ See [references/interval-compatibility.md](references/interval-compatibility.md)
 
 ## Common Mistakes
 
-1. **Passing percentiles instead of quantiles**: Since 0.23.0, `interval` is on the 0-1 scale. Use `interval=[0.1, 0.9]`, not `[10, 90]` (percentiles are deprecated and emit a `FutureWarning`, removed in 0.25.0). Mixing scales, e.g. `[0.1, 90]`, raises a `ValueError`.
+1. **Passing percentiles instead of quantiles**: `interval` is on the 0-1 scale. Use `interval=[0.1, 0.9]`, not `[10, 90]` (percentiles are deprecated and emit a `FutureWarning`). Mixing scales, e.g. `[0.1, 90]`, raises a `ValueError`.
 2. **Forgetting `store_in_sample_residuals=True`**: Required in `fit()` before using `predict_interval(method='bootstrapping')`.
 3. **Wrong default method for multi-series**: `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate` default to `method='conformal'`, not `'bootstrapping'`.
 4. **Mixing `alpha` and `interval`**: `ForecasterStats` supports both `alpha` (e.g., `alpha=0.05` for 95% interval) and `interval=[lo, hi]` (quantiles). ML forecasters only support `interval`.

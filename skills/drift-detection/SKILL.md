@@ -20,8 +20,8 @@ Use drift detection to monitor whether new data falls outside the patterns seen 
 
 ### Related skills
 
-- **Before**: `forecasting-single-series` / `forecasting-multiple-series` (the detector is fitted on the training data of an existing forecaster)
-- **Before**: `prediction-intervals` (intervals quantify uncertainty under the training distribution; drift detection flags when that distribution changes)
+- **Prerequisite**: `forecasting-single-series` / `forecasting-multiple-series` (the detector is fitted on the training data of an existing forecaster)
+- **Prerequisite**: `prediction-intervals` (intervals quantify uncertainty under the training distribution; drift detection flags when that distribution changes)
 
 ## RangeDriftDetector
 

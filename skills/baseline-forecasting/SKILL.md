@@ -1,7 +1,7 @@
 ---
 name: baseline-forecasting
 description: >
-  Build and evaluate simple baseline forecasts with ForecasterEquivalentDate
+  Builds and evaluates simple baseline forecasts with ForecasterEquivalentDate
   (equivalent-date / seasonal-naive / moving-average) to benchmark machine
   learning models. Covers offset (int vs pandas DateOffset), n_offsets with
   agg_func, backtesting a baseline, comparing against ML with MASE, conformal
@@ -25,11 +25,11 @@ cannot beat the naive baseline, the added complexity is not justified.
 
 ### Related skills
 
-- **Before**: `choosing-a-forecaster` (decide whether a baseline or an ML model fits the problem)
+- **Prerequisite**: `choosing-a-forecaster` (decide whether a baseline or an ML model fits the problem)
 - **Alongside**: `forecasting-single-series` (train the ML model you are benchmarking against)
-- **After**: `metric-selection` (use MASE to compare the model against the naive baseline)
-- **After**: `hyperparameter-optimization` (route: baselines are tuned with `grid_search_equivalent_date`, not the generic search)
-- **After**: `prediction-intervals` (add conformal intervals to the baseline)
+- **Next**: `metric-selection` (use MASE to compare the model against the naive baseline)
+- **Next**: `hyperparameter-optimization` (route: baselines are tuned with `grid_search_equivalent_date`, not the generic search)
+- **Next**: `prediction-intervals` (add conformal intervals to the baseline)
 
 ## Stop Conditions
 
@@ -100,7 +100,7 @@ forecaster = ForecasterEquivalentDate(offset=7, n_offsets=2, agg_func=np.mean)
 `agg_func` is a real, searchable parameter — do not forget it when comparing
 configurations (e.g. `np.mean` vs `np.median`).
 
-## Workflow: backtest and compare against a model
+## Complete Workflow: backtest and compare against a model
 
 ```python
 from skforecast.model_selection import backtesting_forecaster, TimeSeriesFold
@@ -170,8 +170,8 @@ predictions = forecaster.predict_interval(steps=14, method='conformal', interval
 
 See `prediction-intervals` for the conformal method details.
 
-## API reference
+## Related API
 
 Constructor and method signatures live in the `complete-api-reference` skill
-(`references/method-signatures.md`). This skill covers the baseline workflow and
-its gotchas, not the full API surface.
+(`references/forecaster-constructors.md` and `references/forecaster-methods.md`).
+This skill covers the baseline workflow and its gotchas, not the full API surface.

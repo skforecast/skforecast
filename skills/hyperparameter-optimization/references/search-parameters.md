@@ -1,5 +1,15 @@
 # Hyperparameter Search — Parameter Reference
 
+## Contents
+
+- Function routing (which search function per forecaster)
+- Parameter comparison across search functions
+- How `lags_grid` works
+- How `param_grid` vs `param_distributions` vs `search_space` work
+- Stats model `param_grid`
+- Optuna kwargs
+- Return values
+
 ## Function Routing
 
 | Forecaster | Grid Search | Random Search | Bayesian Search |

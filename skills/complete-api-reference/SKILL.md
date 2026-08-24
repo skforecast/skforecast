@@ -1,7 +1,7 @@
 ---
 name: complete-api-reference
 description: >
-  Complete constructor signatures and method signatures for all skforecast
+  Provides complete constructor and method signatures for all skforecast
   forecasters, backtesting functions, search functions, cross-validation
   classes, preprocessing, feature selection, and drift detection.
   Use when the user needs exact parameter names, types, or defaults for
@@ -10,22 +10,15 @@ description: >
 
 # Complete API Reference
 
-## When to Use This Skill
+## When to Use
 
 Use this when you need exact parameter names, types, defaults, or method signatures for any skforecast class or function.
 
-## Overview
+### Related skills
 
-This skill contains the full constructor and method signatures for all
-public skforecast classes and functions. See
-[references/method-signatures.md](references/method-signatures.md) for
-the complete reference, including:
-
-- All forecaster constructors
-- `fit()`, `predict()`, `predict_interval()`, `predict_quantiles()`, `predict_dist()` signatures
-- `set_params()`, `set_lags()`, `set_out_sample_residuals()` signatures
-- Method availability matrix (which forecaster supports which method)
-- Backtesting, search, cross-validation, feature selection, and drift detection signatures
+- **Prerequisite**: `choosing-a-forecaster` (pick the class first; this skill only supplies its signature)
+- **Alongside**: any workflow skill (they show the idiomatic usage, this one the exact arguments)
+- **Next**: `troubleshooting-common-errors` (when a signature looks right but the call still fails)
 
 ## Quick Index
 
@@ -71,3 +64,13 @@ the complete reference, including:
 - `RollingFeatures` — rolling window statistics
 - `TimeSeriesDifferentiator` — differencing
 - `CalendarFeatures` — calendar features
+
+## References
+
+Full constructor and method signatures for all public skforecast classes and
+functions, split by domain:
+
+- **Forecaster constructors**: See [references/forecaster-constructors.md](references/forecaster-constructors.md)
+- **Forecaster methods** (`fit()`, `predict()`, `predict_interval()`, `predict_quantiles()`, `predict_dist()`, `set_params()`, `set_lags()`, `set_out_sample_residuals()`, availability matrix): See [references/forecaster-methods.md](references/forecaster-methods.md)
+- **Backtesting, search, cross-validation, feature selection**: See [references/model-selection-signatures.md](references/model-selection-signatures.md)
+- **Drift detection and preprocessing**: See [references/preprocessing-signatures.md](references/preprocessing-signatures.md)

@@ -9,17 +9,17 @@ description: >
 
 # Choosing a Forecaster
 
-## When to Use This Skill
+## When to Use
 
 Use this skill when the user needs help choosing a forecaster, comparing forecaster types (recursive vs direct, single vs multi-series), or understanding which skforecast class fits their problem.
 
 ### Related skills
 
-- **After**: `forecasting-single-series` (apply the chosen forecaster to one target series)
-- **After**: `forecasting-multiple-series` (apply the chosen forecaster to several series jointly)
-- **After**: `baseline-forecasting` (build and benchmark a naive baseline with `ForecasterEquivalentDate`)
-- **After**: `autocorrelation-and-lag-selection` (analyse the series dynamics before configuring `lags`)
-- **After**: `feature-engineering` (build the input feature set: calendar, rolling, exogenous)
+- **Next**: `forecasting-single-series` (apply the chosen forecaster to one target series)
+- **Next**: `forecasting-multiple-series` (apply the chosen forecaster to several series jointly)
+- **Next**: `baseline-forecasting` (build and benchmark a naive baseline with `ForecasterEquivalentDate`)
+- **Next**: `autocorrelation-and-lag-selection` (analyse the series dynamics before configuring `lags`)
+- **Next**: `feature-engineering` (build the input feature set: calendar, rolling, exogenous)
 
 ## Overview
 
@@ -158,7 +158,7 @@ Zero-shot / no training data / cold-start (single or multi-series)?
 
 > **Legend:** ✓ = supported, — = not supported/not applicable.
 
-## Quick Start Recommendations
+## Next Steps
 
 Once you have chosen a forecaster, follow these steps to get started:
 
