@@ -17,6 +17,11 @@ import pandas as pd
 import warnings
 
 from ..utils import expand_index
+from ._utils import (
+    _validate_positive_int,
+    _tensor_to_numpy,
+    _apply_set_params,
+)
 
 
 def _resolve_torch_device(device: str) -> str:
@@ -164,10 +169,7 @@ class ChronosAdapter:
         
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
 
         self.model_id       = model_id
         self._pipeline      = pipeline
@@ -202,8 +204,9 @@ class ChronosAdapter:
 
     def set_params(self, **params) -> ChronosAdapter:
         """
-        Set adapter parameters. Resets the pipeline when a device or dtype
-        param changes, since those are baked into the loaded pipeline.
+        Set adapter parameters. Resets the pipeline when `model_id`,
+        `device_map`, or `torch_dtype` changes, since those are baked into the
+        loaded pipeline.
 
         Parameters
         ----------
@@ -217,34 +220,23 @@ class ChronosAdapter:
 
         """
 
-        valid = {
-            'model_id', 'cross_learning', 'context_length',
-            'device_map', 'torch_dtype', 'predict_kwargs',
-        }
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for ChronosAdapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
-        
-        pipeline_reset_keys = {'model_id', 'device_map', 'torch_dtype'}
-        if params.keys() & pipeline_reset_keys:
-            self._pipeline = None
-        
-        for key, value in params.items():
-            if key == 'predict_kwargs':
-                self.predict_kwargs = value or {}
-            elif key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
-                self.context_length = value
-            else:
-                setattr(self, key, value)
-        
-        return self
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            if "predict_kwargs" in p:
+                p["predict_kwargs"] = p["predict_kwargs"] or {}
+            return p
+
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                (
+                    {"model_id", "device_map", "torch_dtype"},
+                    lambda: setattr(self, "_pipeline", None),
+                ),
+            ),
+        )
 
     def fit(
         self,
@@ -341,11 +333,7 @@ class ChronosAdapter:
 
         predictions: dict[str, np.ndarray] = {}
         for i, name in enumerate(series_names_in):
-            q_arr = quantile_preds[i].squeeze(0)
-            if hasattr(q_arr, "detach"):
-                q_arr = q_arr.detach().cpu().numpy()
-            else:
-                q_arr = np.asarray(q_arr)
+            q_arr = _tensor_to_numpy(quantile_preds[i].squeeze(0))
             predictions[name] = q_arr
 
         return predictions
@@ -552,6 +540,16 @@ class TimesFMAdapter:
     yet implemented. Passing `exog` or `context_exog` issues an
     `IgnoredArgumentWarning` and the values are discarded.
 
+    Compilation behavior. The model is compiled lazily on the first
+    `predict` call, sized for the exact number of `steps` requested (not
+    for `max_horizon`, which only acts as an upper bound and validation
+    ceiling). When `steps` is constant across calls, as in a typical
+    backtesting loop, compilation happens only once, on the first fold. A
+    later `predict` that requests more `steps` than any previous call
+    triggers a single recompilation for the larger horizon. To avoid any
+    runtime compilation altogether, pass an already-compiled model via the
+    `model` argument.
+
     References
     ----------
     .. [1] https://github.com/google-research/timesfm
@@ -601,14 +599,8 @@ class TimesFMAdapter:
         
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
-        if not isinstance(max_horizon, int) or max_horizon < 1:
-            raise ValueError(
-                f"`max_horizon` must be a positive integer. Got {max_horizon!r}."
-            )
+        _validate_positive_int("context_length", context_length)
+        _validate_positive_int("max_horizon", max_horizon)
 
         self.model_id               = model_id
         self._model                 = model
@@ -655,35 +647,25 @@ class TimesFMAdapter:
 
         """
 
-        valid = {'model_id', 'context_length', 'max_horizon', 'forecast_config_kwargs'}
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for TimesFMAdapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
-        model_reset_keys = {'model_id', 'context_length', 'max_horizon', 'forecast_config_kwargs'}
-        if params.keys() & model_reset_keys:
-            self._model = None
-        for key, value in params.items():
-            if key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
-                self.context_length = value
-            elif key == 'max_horizon':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`max_horizon` must be a positive integer. Got {value!r}."
-                    )
-                self.max_horizon = value
-            elif key == 'forecast_config_kwargs':
-                self.forecast_config_kwargs = value or {}
-            else:
-                setattr(self, key, value)
-        
-        return self
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            if "max_horizon" in p:
+                _validate_positive_int("max_horizon", p["max_horizon"])
+            if "forecast_config_kwargs" in p:
+                p["forecast_config_kwargs"] = p["forecast_config_kwargs"] or {}
+            return p
+
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                (
+                    {"model_id", "context_length", "max_horizon", "forecast_config_kwargs"},
+                    lambda: setattr(self, "_model", None),
+                ),
+            ),
+        )
 
     def fit(
         self,
@@ -995,11 +977,7 @@ class MoiraiAdapter:
         
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. "
-                f"Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
 
         self.model_id       = model_id
         self._module        = module
@@ -1028,7 +1006,7 @@ class MoiraiAdapter:
     def set_params(self, **params) -> MoiraiAdapter:
         """
         Set adapter parameters. Resets the module and forecast object when
-        `model_id` or `context_length` changes.
+        `model_id`, `context_length`, or `device` changes.
 
         Parameters
         ----------
@@ -1041,28 +1019,22 @@ class MoiraiAdapter:
 
         """
 
-        valid = {'model_id', 'context_length', 'device'}
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for MoiraiAdapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
-        if params.keys() & {'model_id', 'context_length', 'device'}:
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            return p
+
+        def _reset_module() -> None:
             self._module = None
             self._forecast_obj = None
-        for key, value in params.items():
-            if key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. "
-                        f"Got {value!r}."
-                    )
-                self.context_length = value
-            else:
-                setattr(self, key, value)
-        
-        return self
+
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                ({"model_id", "context_length", "device"}, _reset_module),
+            ),
+        )
 
     def fit(
         self,
@@ -1415,10 +1387,7 @@ class TabICLAdapter:
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
         if point_estimate not in ("mean", "median"):
             raise ValueError(
                 f"`point_estimate` must be 'mean' or 'median'. Got {point_estimate!r}."
@@ -1475,54 +1444,33 @@ class TabICLAdapter:
 
         """
 
-        valid = {
-            "model_id", "context_length", "point_estimate",
-            "tabicl_config", "temporal_features", "show_progress",
-        }
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for TabICLAdapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            if "point_estimate" in p and p["point_estimate"] not in ("mean", "median"):
+                raise ValueError(
+                    f"`point_estimate` must be 'mean' or 'median'. "
+                    f"Got {p['point_estimate']!r}."
+                )
+            if "tabicl_config" in p:
+                p["tabicl_config"] = p["tabicl_config"] or {}
+            if "show_progress" in p and not isinstance(p["show_progress"], bool):
+                raise ValueError(
+                    f"`show_progress` must be a bool. Got {p['show_progress']!r}."
+                )
+            return p
 
-        validated = {}
-        for key, value in params.items():
-            if key == "context_length":
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "point_estimate":
-                if value not in ("mean", "median"):
-                    raise ValueError(
-                        f"`point_estimate` must be 'mean' or 'median'. Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "tabicl_config":
-                validated[key] = value or {}
-            elif key == "show_progress":
-                if not isinstance(value, bool):
-                    raise ValueError(
-                        f"`show_progress` must be a bool. Got {value!r}."
-                    )
-                validated[key] = value
-            else:
-                validated[key] = value
-
-        model_reset_keys = {"model_id", "context_length", "point_estimate", "tabicl_config", "temporal_features"}
-        actually_changed = {
-            k: v for k, v in validated.items()
-            if getattr(self, k) != v
-        }
-        if actually_changed:
-            if actually_changed.keys() & model_reset_keys:
-                self._model = None
-            for key, value in actually_changed.items():
-                setattr(self, key, value)
-
-        return self
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                (
+                    {"model_id", "context_length", "point_estimate",
+                     "tabicl_config", "temporal_features"},
+                    lambda: setattr(self, "_model", None),
+                ),
+            ),
+        )
 
     def fit(
         self,
@@ -2029,10 +1977,7 @@ class TabPFNAdapter:
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
         if mode not in ("local", "client"):
             raise ValueError(
                 f"`mode` must be 'local' or 'client'. Got {mode!r}."
@@ -2097,64 +2042,37 @@ class TabPFNAdapter:
 
         """
 
-        valid = {
-            "model_id", "context_length", "mode", "point_estimate",
-            "tabpfn_model_config", "temporal_features", "show_progress",
-        }
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for TabPFNAdapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            if "mode" in p and p["mode"] not in ("local", "client"):
+                raise ValueError(
+                    f"`mode` must be 'local' or 'client'. Got {p['mode']!r}."
+                )
+            if "point_estimate" in p and p["point_estimate"] not in ("mean", "median", "mode"):
+                raise ValueError(
+                    f"`point_estimate` must be 'mean', 'median' or 'mode'. "
+                    f"Got {p['point_estimate']!r}."
+                )
+            if "tabpfn_model_config" in p:
+                p["tabpfn_model_config"] = p["tabpfn_model_config"] or {}
+            if "show_progress" in p and not isinstance(p["show_progress"], bool):
+                raise ValueError(
+                    f"`show_progress` must be a bool. Got {p['show_progress']!r}."
+                )
+            return p
 
-        validated = {}
-        for key, value in params.items():
-            if key == "context_length":
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "mode":
-                if value not in ("local", "client"):
-                    raise ValueError(
-                        f"`mode` must be 'local' or 'client'. Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "point_estimate":
-                if value not in ("mean", "median", "mode"):
-                    raise ValueError(
-                        f"`point_estimate` must be 'mean', 'median' or 'mode'. "
-                        f"Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "tabpfn_model_config":
-                validated[key] = value or {}
-            elif key == "show_progress":
-                if not isinstance(value, bool):
-                    raise ValueError(
-                        f"`show_progress` must be a bool. Got {value!r}."
-                    )
-                validated[key] = value
-            else:
-                validated[key] = value
-
-        model_reset_keys = {
-            "model_id", "context_length", "mode", "point_estimate",
-            "tabpfn_model_config", "temporal_features",
-        }
-        actually_changed = {
-            k: v for k, v in validated.items()
-            if getattr(self, k) != v
-        }
-        if actually_changed:
-            if actually_changed.keys() & model_reset_keys:
-                self._model = None
-            for key, value in actually_changed.items():
-                setattr(self, key, value)
-
-        return self
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                (
+                    {"model_id", "context_length", "mode", "point_estimate",
+                     "tabpfn_model_config", "temporal_features"},
+                    lambda: setattr(self, "_model", None),
+                ),
+            ),
+        )
 
     def fit(
         self,
@@ -2621,10 +2539,7 @@ class T0Adapter:
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
 
         self.model_id       = model_id
         self._model         = model
@@ -2669,29 +2584,21 @@ class T0Adapter:
 
         """
 
-        valid = {'model_id', 'context_length', 'device_map', 'torch_dtype'}
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for T0Adapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            return p
 
-        model_reset_keys = {'model_id', 'device_map', 'torch_dtype'}
-        if params.keys() & model_reset_keys:
-            self._model = None
-
-        for key, value in params.items():
-            if key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
-                self.context_length = value
-            else:
-                setattr(self, key, value)
-
-        return self
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                (
+                    {"model_id", "device_map", "torch_dtype"},
+                    lambda: setattr(self, "_model", None),
+                ),
+            ),
+        )
 
     def fit(
         self,
@@ -2798,11 +2705,7 @@ class T0Adapter:
             future_covariates = future_covariates,
         )
 
-        q_arr = forecast.quantiles
-        if hasattr(q_arr, "detach"):
-            q_arr = q_arr.detach().cpu().numpy()
-        else:
-            q_arr = np.asarray(q_arr)
+        q_arr = _tensor_to_numpy(forecast.quantiles)
 
         column_for = [query_levels.index(q) for q in requested]
         return {name: q_arr[i][:, column_for] for i, name in enumerate(series_names)}
@@ -3099,10 +3002,7 @@ class TSICLAdapter:
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
 
         self.model_id             = model_id
         self._model               = model
@@ -3152,35 +3052,22 @@ class TSICLAdapter:
 
         """
 
-        valid = {
-            'model_id', 'checkpoint_version', 'context_length',
-            'device', 'allow_auto_download',
-        }
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for TSICLAdapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            return p
 
-        model_reset_keys = {'checkpoint_version', 'allow_auto_download'}
-        if params.keys() & model_reset_keys:
-            self._model = None
-
-        if 'device' in params:
-            self._resolved_device = None
-
-        for key, value in params.items():
-            if key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
-                self.context_length = value
-            else:
-                setattr(self, key, value)
-
-        return self
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                (
+                    {"checkpoint_version", "allow_auto_download"},
+                    lambda: setattr(self, "_model", None),
+                ),
+                ({"device"}, lambda: setattr(self, "_resolved_device", None)),
+            ),
+        )
 
     def fit(
         self,
@@ -3286,11 +3173,7 @@ class TSICLAdapter:
 
         predictions: dict[str, np.ndarray] = {}
         for i, name in enumerate(series_names_in):
-            q_arr = quantile_preds[i]
-            if hasattr(q_arr, "detach"):
-                q_arr = q_arr.detach().cpu().numpy()
-            else:
-                q_arr = np.asarray(q_arr)
+            q_arr = _tensor_to_numpy(quantile_preds[i])
             predictions[name] = q_arr[0]  # drop the single-variate dim
 
         return predictions
@@ -3571,10 +3454,7 @@ class NoriAdapter:
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
         if point_estimate not in ("mean", "median", "mode"):
             raise ValueError(
                 f"`point_estimate` must be 'mean', 'median' or 'mode'. "
@@ -3644,61 +3524,37 @@ class NoriAdapter:
 
         """
 
-        valid = {
-            "model_id", "context_length", "point_estimate",
-            "add_calendar_features", "n_fourier_terms", "nori_config",
-        }
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for NoriAdapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            if "point_estimate" in p and p["point_estimate"] not in ("mean", "median", "mode"):
+                raise ValueError(
+                    f"`point_estimate` must be 'mean', 'median' or 'mode'. "
+                    f"Got {p['point_estimate']!r}."
+                )
+            if "add_calendar_features" in p and not isinstance(p["add_calendar_features"], bool):
+                raise ValueError(
+                    f"`add_calendar_features` must be a bool. "
+                    f"Got {p['add_calendar_features']!r}."
+                )
+            if "n_fourier_terms" in p and (
+                not isinstance(p["n_fourier_terms"], int) or p["n_fourier_terms"] < 0
+            ):
+                raise ValueError(
+                    f"`n_fourier_terms` must be a non-negative integer. "
+                    f"Got {p['n_fourier_terms']!r}."
+                )
+            if "nori_config" in p:
+                p["nori_config"] = p["nori_config"] or {}
+            return p
 
-        validated = {}
-        for key, value in params.items():
-            if key == "context_length":
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "point_estimate":
-                if value not in ("mean", "median", "mode"):
-                    raise ValueError(
-                        f"`point_estimate` must be 'mean', 'median' or 'mode'. "
-                        f"Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "add_calendar_features":
-                if not isinstance(value, bool):
-                    raise ValueError(
-                        f"`add_calendar_features` must be a bool. Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "n_fourier_terms":
-                if not isinstance(value, int) or value < 0:
-                    raise ValueError(
-                        f"`n_fourier_terms` must be a non-negative integer. "
-                        f"Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "nori_config":
-                validated[key] = value or {}
-            else:
-                validated[key] = value
-
-        model_reset_keys = {"model_id", "nori_config"}
-        actually_changed = {
-            k: v for k, v in validated.items() if getattr(self, k) != v
-        }
-        if actually_changed:
-            if actually_changed.keys() & model_reset_keys:
-                self._model = None
-            for key, value in actually_changed.items():
-                setattr(self, key, value)
-
-        return self
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                ({"model_id", "nori_config"}, lambda: setattr(self, "_model", None)),
+            ),
+        )
 
     def fit(
         self,

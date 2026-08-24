@@ -162,8 +162,9 @@ def test_output_grid_search_equivalent_date_dict_param_grid():
 def test_output_grid_search_equivalent_date_list_param_grid():
     """
     Test output when param_grid is a list of explicit configurations. Only the
-    two requested (offset, n_offsets) pairs must be evaluated, no Cartesian
-    product across dictionaries.
+    requested (offset, n_offsets) pairs must be evaluated, no Cartesian
+    product across dictionaries. A pandas DateOffset configuration placed after
+    an integer offset configuration must not inherit its window size.
     """
     forecaster = ForecasterEquivalentDate(offset=1, n_offsets=1)
     cv = TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=False)
@@ -173,7 +174,8 @@ def test_output_grid_search_equivalent_date_list_param_grid():
                   y           = y,
                   cv          = cv,
                   param_grid  = [{'offset': 1, 'n_offsets': 7},
-                                 {'offset': 7, 'n_offsets': 2}],
+                                 {'offset': 7, 'n_offsets': 1},
+                                 {'offset': pd.DateOffset(days=7), 'n_offsets': 2}],
                   metric      = 'mean_absolute_error',
                   return_best = False,
                   verbose     = False
@@ -181,13 +183,14 @@ def test_output_grid_search_equivalent_date_list_param_grid():
 
     expected_results = pd.DataFrame(
         data  = {
-            'params'             : [{'n_offsets': 2, 'offset': 7},
+            'params'             : [{'n_offsets': 2, 'offset': pd.DateOffset(days=7)},
+                                    {'n_offsets': 1, 'offset': 7},
                                     {'n_offsets': 7, 'offset': 1}],
-            'mean_absolute_error': np.array([0.2357615, 0.25050685]),
-            'offset'             : [7, 1],
-            'n_offsets'          : [2, 7]
+            'mean_absolute_error': np.array([0.2357615, 0.2365943, 0.25050685]),
+            'offset'             : [pd.DateOffset(days=7), 7, 1],
+            'n_offsets'          : [2, 1, 7]
         },
-        index = pd.Index(np.array([0, 1]), dtype="int64")
+        index = pd.Index(np.array([0, 1, 2]), dtype="int64")
     )
 
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)

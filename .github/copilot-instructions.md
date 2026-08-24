@@ -264,15 +264,15 @@ When `y`, `series`, or `exog` contain interspersed NaN values, the training matr
 **NaN-tolerant estimators** (support `dropna_from_series=False`):
 - LightGBM (`LGBMRegressor`, `LGBMClassifier`)
 - CatBoost (`CatBoostRegressor`, `CatBoostClassifier`)
-- HistGradientBoosting (`HistGradientBoostingRegressor`, `HistGradientBoostingClassifier`)
-- XGBoost (`XGBRegressor`, `XGBClassifier`) with `tree_method='hist'`
+- XGBoost (`XGBRegressor`, `XGBClassifier`)
+- scikit-learn tree-based models (`HistGradientBoosting`, `RandomForest`, `ExtraTrees`, `DecisionTree`, `ExtraTree`, both regressors and classifiers)
 
 **Choosing a strategy:**
 
 | Scenario | Recommended strategy |
 |:---------|:---------------------|
-| Using LightGBM, CatBoost, XGBoost (hist), or HistGradientBoosting | `dropna_from_series=False`: let the estimator handle NaNs. No data loss. |
-| Estimator does not support NaN (RandomForest, LinearRegression, SVR...) | `dropna_from_series=True`: drop incomplete rows before fitting. |
+| Using LightGBM, CatBoost, XGBoost, or a scikit-learn tree-based model | `dropna_from_series=False`: let the estimator handle NaNs. No data loss. |
+| Estimator does not support NaN (LinearRegression, SVR, GradientBoosting...) | `dropna_from_series=True`: drop incomplete rows before fitting. |
 | Few or small gaps in the series | `dropna_from_series=True`: simple and data loss is negligible. |
 | Large gaps, need to preserve all training data | Imputation + `weight_func`: fill NaNs and down-weight imputed observations. |
 | Multi-series with different lengths | `ForecasterRecursiveMultiSeries` with `dropna_from_series=True`. |

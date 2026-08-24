@@ -47,6 +47,22 @@ from ..exceptions import (
 P = ParamSpec('P')
 R = TypeVar('R')
 
+# sklearn estimators that natively support NaN values in the input features.
+# Tree-based models gained this support in scikit-learn 1.3 (single trees) and
+# 1.4 (forests), both at or below the minimum version required by skforecast.
+_SKLEARN_NAN_TOLERANT_ESTIMATORS = frozenset({
+    'DecisionTreeClassifier',
+    'DecisionTreeRegressor',
+    'ExtraTreeClassifier',
+    'ExtraTreeRegressor',
+    'ExtraTreesClassifier',
+    'ExtraTreesRegressor',
+    'HistGradientBoostingClassifier',
+    'HistGradientBoostingRegressor',
+    'RandomForestClassifier',
+    'RandomForestRegressor',
+})
+
 optional_dependencies = {
     'stats': [
         'statsmodels>=0.13, <0.15'
@@ -1376,7 +1392,8 @@ def check_predict_input(
     if last_window.isna().to_numpy().any():
         warnings.warn(
             "`last_window` has missing values. Most of machine learning models do "
-            "not allow missing values. Prediction method may fail.", 
+            "not allow missing values. Prediction method may either raise an "
+            "error or return NaN predictions.",
             MissingValuesWarning
         )
     
@@ -3272,6 +3289,9 @@ def _build_predict_function(
         coef = estimator.coef_
         intercept = estimator.intercept_
 
+        # NOTE: np.dot does not validate its input, so NaN in `X` propagates to the
+        # prediction instead of raising as sklearn's `predict` would. Inputs must be
+        # validated upstream (see `check_predict_input`).
         def predict_fn(X):
             return np.dot(X, coef) + intercept
 
@@ -3810,6 +3830,13 @@ def preprocess_levels_self_last_window_multiseries(
 
     """
 
+    if not levels:
+        raise ValueError(
+            "No series to predict. `levels` is an empty list. Provide at least "
+            "one series name in `levels`, or set it to `None` to predict all "
+            "the series stored in the `last_window_` attribute."
+        )
+
     available_last_windows = set() if last_window_ is None else set(last_window_.keys())
     not_available_last_window = set(levels) - available_last_windows
     if not_available_last_window:
@@ -4233,3 +4260,48 @@ def scale_correction_factor_differentiation(
     )
 
     return correction_factor * scaling_factor
+
+
+def estimator_has_native_nan_support(estimator: object) -> bool:
+    """
+    Check whether an estimator natively supports NaN values in its input
+    features.
+
+    Uses the same module-based family detection as
+    `configure_estimator_categorical_features`. Recognized families are
+    lightgbm, catboost, xgboost, and sklearn's tree-based estimators
+    (`DecisionTree`, `ExtraTree`, `ExtraTrees`, `RandomForest` and
+    `HistGradientBoosting`, both regressors and classifiers). If `estimator`
+    is a Pipeline, the last step is inspected.
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator object. If the estimator is a Pipeline, the last step is used.
+
+    Returns
+    -------
+    has_native_nan_support : bool
+        `True` if the estimator natively supports NaN inputs, otherwise `False`.
+
+    Notes
+    -----
+    Detection is based on the estimator family and class name, not on its
+    hyperparameters. Uncommon configurations that disable NaN support are not
+    detected, in which case the estimator raises its own error.
+
+    """
+
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+
+    estimator_name = type(estimator).__name__
+    module = type(estimator).__module__.split('.')[0]
+
+    if module in ('lightgbm', 'catboost', 'xgboost'):
+        return True
+
+    if module == 'sklearn' and estimator_name in _SKLEARN_NAN_TOLERANT_ESTIMATORS:
+        return True
+
+    return False

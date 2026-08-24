@@ -19,6 +19,7 @@ from ..exceptions import IgnoredArgumentWarning
 try:
     import matplotlib
     import matplotlib.pyplot as plt
+    from matplotlib.dates import AutoDateLocator, ConciseDateFormatter
     from matplotlib.animation import FuncAnimation, PillowWriter
     from statsmodels.graphics.tsaplots import plot_acf
 except Exception as e:
@@ -325,12 +326,15 @@ def plot_prediction_intervals(
     if isinstance(y_true, pd.Series):
         y_true = y_true.to_frame()
 
-    y_true.loc[predictions.index, target_variable].plot(ax=ax, label='real value')
-    predictions['pred'].plot(ax=ax, label='prediction')
+    # NOTE: matplotlib is used directly instead of the pandas plotting backend
+    # to avoid the deprecated pandas matplotlib converters.
+    y_true_to_plot = y_true.loc[predictions.index, target_variable]
+    ax.plot(y_true_to_plot.index, y_true_to_plot.to_numpy(), label='real value')
+    ax.plot(predictions.index, predictions['pred'].to_numpy(), label='prediction')
     ax.fill_between(
         predictions.index,
-        predictions['lower_bound'],
-        predictions['upper_bound'],
+        predictions['lower_bound'].to_numpy(),
+        predictions['upper_bound'].to_numpy(),
         label='prediction interval',
         **kwargs_fill_between
     )
@@ -339,7 +343,14 @@ def plot_prediction_intervals(
     ax.set_title(title)
     ax.legend()
 
+    if isinstance(predictions.index, pd.DatetimeIndex):
+        locator = AutoDateLocator()
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(ConciseDateFormatter(locator))
+
     if initial_x_zoom is not None:
+        if isinstance(predictions.index, pd.DatetimeIndex):
+            initial_x_zoom = pd.to_datetime(initial_x_zoom)
         ax.set_xlim(initial_x_zoom)
 
 

@@ -156,6 +156,23 @@ def test_TimesFMAdapter_set_params_updates_and_resets_model(param, value):
     assert adapter._model is None
 
 
+def test_TimesFMAdapter_set_params_no_reset_when_value_unchanged():
+    """
+    Test that set_params does not reset _model when reset keys are set to
+    their current values (no actual change).
+    """
+    adapter = make_adapter()
+    assert adapter._model is not None
+
+    adapter.set_params(
+        model_id="google/timesfm-2.5-200m-pytorch",
+        context_length=512,
+        max_horizon=512,
+    )
+
+    assert adapter._model is not None  # not reset because values unchanged
+
+
 # ==============================================================================
 # Tests TimesFMAdapter.fit
 # ==============================================================================

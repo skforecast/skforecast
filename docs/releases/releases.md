@@ -44,12 +44,18 @@ The main changes in this release are:
 
 + The main branch of the repository has been renamed from `master` to `main`. All references to the default branch in CI, documentation, and test fixtures have been updated accordingly.
 
++ During backtesting and one-step-ahead validation of <code>[ForecasterRecursiveMultiSeries]</code>, a level is now kept whenever the estimator natively supports NaN inputs (LightGBM, XGBoost, CatBoost and scikit-learn's tree-based models: `DecisionTree`, `ExtraTree`, `ExtraTrees`, `RandomForest` and `HistGradientBoosting`) and no `differentiation` is applied. As a result, metrics may change for series with interspersed NaN values, as previously skipped levels now produce predictions. ([#1196](https://github.com/skforecast/skforecast/issues/1196), [#1260](https://github.com/skforecast/skforecast/pull/1260))
+
++ <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterRnn]</code> build their predictors from every series, so no level can be dropped from the last window. Folds whose last window contains NaNs are now always predicted, and either return NaN predictions or raise, depending on the estimator. ([#1260](https://github.com/skforecast/skforecast/pull/1260))
+
 + Optimized the memory layout (`order='F'`) of the bootstrapping prediction matrix in <code>[ForecasterRecursive]</code>, giving a notable speed-up for CatBoost estimators. As a side effect, bootstrap prediction intervals produced by linear estimators may differ at floating-point precision (~1e-15) because BLAS summation order depends on the array memory layout.
 
 
 **Fixed**
 
 + Fixed an issue where <code>[FoundationModel]</code> was not fully compatible with `sklearn.base.clone`. The `TimesFMAdapter`, `TabICLAdapter`, `TabPFNAdapter`, and `NoriAdapter` stored their configuration dictionaries (`forecast_config_kwargs`, `tabicl_config`, `tabpfn_model_config`, `nori_config`) as a fresh copy in `__init__`, which broke the parameter identity check performed by `clone` and raised a `RuntimeError` whenever a non-empty configuration dictionary was passed. Because <code>[ForecasterFoundation]</code> clones its estimator at construction, this also prevented building a forecaster from a `FoundationModel` configured with those settings. The configuration is now stored by reference, following the scikit-learn convention of keeping constructor parameters unchanged.
+
++ Fixed a misleading error raised by the `predict`, `predict_interval`, `predict_bootstrapping` and `create_predict_X` methods of <code>[ForecasterRecursiveMultiSeries]</code> when `levels` was an empty list and no `last_window` was passed. The internal length validation reported that `last_window` did not contain enough observations to generate the predictors, pointing at the wrong cause. A `ValueError` stating that no series were requested is now raised instead.
 
 
 
@@ -1736,6 +1742,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- exceptions -->
 [exceptions]: ../api/exceptions.md
 [IgnoredArgumentWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.IgnoredArgumentWarning
+[MissingValuesWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.MissingValuesWarning
 
 <!-- OLD -->
 [ForecasterAutoreg]: https://skforecast.org/0.13.0/api/forecasterautoreg

@@ -3,6 +3,7 @@
 import re
 import pytest
 import numpy as np
+import pandas as pd
 
 from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.recursive import ForecasterEquivalentDate
@@ -23,6 +24,26 @@ def test_set_params_updates_attributes_and_window_size():
     assert forecaster.n_offsets == 2
     assert forecaster.agg_func is np.median
     assert forecaster.window_size == 14
+
+
+def test_set_params_window_size_when_offset_is_date_offset():
+    """
+    Test set_params recomputes window_size when the new offset is a pandas
+    DateOffset, including when the previous offset was an integer and `fit`
+    had already converted window_size into a number of steps.
+    """
+    forecaster = ForecasterEquivalentDate(offset=12, n_offsets=1)
+    forecaster.fit(y=y)
+    assert forecaster.window_size == 12
+
+    forecaster.set_params(
+        {'offset': pd.DateOffset(months=12), 'n_offsets': 2, 'agg_func': np.mean}
+    )
+
+    assert forecaster.offset == pd.DateOffset(months=12)
+    assert forecaster.n_offsets == 2
+    assert forecaster.agg_func is np.mean
+    assert forecaster.window_size == pd.DateOffset(months=12) * 2
 
 
 def test_set_params_resets_is_fitted():

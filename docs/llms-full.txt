@@ -223,15 +223,15 @@ When `y`, `series`, or `exog` contain interspersed NaN values, the training matr
 **NaN-tolerant estimators** (support `dropna_from_series=False`):
 - LightGBM (`LGBMRegressor`, `LGBMClassifier`)
 - CatBoost (`CatBoostRegressor`, `CatBoostClassifier`)
-- HistGradientBoosting (`HistGradientBoostingRegressor`, `HistGradientBoostingClassifier`)
-- XGBoost (`XGBRegressor`, `XGBClassifier`) with `tree_method='hist'`
+- XGBoost (`XGBRegressor`, `XGBClassifier`)
+- scikit-learn tree-based models (`HistGradientBoosting`, `RandomForest`, `ExtraTrees`, `DecisionTree`, `ExtraTree`, both regressors and classifiers)
 
 **Choosing a strategy:**
 
 | Scenario | Recommended strategy |
 |:---------|:---------------------|
-| Using LightGBM, CatBoost, XGBoost (hist), or HistGradientBoosting | `dropna_from_series=False`: let the estimator handle NaNs. No data loss. |
-| Estimator does not support NaN (RandomForest, LinearRegression, SVR...) | `dropna_from_series=True`: drop incomplete rows before fitting. |
+| Using LightGBM, CatBoost, XGBoost, or a scikit-learn tree-based model | `dropna_from_series=False`: let the estimator handle NaNs. No data loss. |
+| Estimator does not support NaN (LinearRegression, SVR, GradientBoosting...) | `dropna_from_series=True`: drop incomplete rows before fitting. |
 | Few or small gaps in the series | `dropna_from_series=True`: simple and data loss is negligible. |
 | Large gaps, need to preserve all training data | Imputation + `weight_func`: fill NaNs and down-weight imputed observations. |
 | Multi-series with different lengths | `ForecasterRecursiveMultiSeries` with `dropna_from_series=True`. |
@@ -689,11 +689,12 @@ Use this skill when the user needs help choosing a forecaster, comparing forecas
 
 ### Related skills
 
-- **Next**: `forecasting-single-series` (apply the chosen forecaster to one target series)
-- **Next**: `forecasting-multiple-series` (apply the chosen forecaster to several series jointly)
-- **Next**: `baseline-forecasting` (build and benchmark a naive baseline with `ForecasterEquivalentDate`)
-- **Next**: `autocorrelation-and-lag-selection` (analyse the series dynamics before configuring `lags`)
-- **Next**: `feature-engineering` (build the input feature set: calendar, rolling, exogenous)
+- **Before**: `choosing-a-forecaster` (decide between Recursive and Direct based on the data)
+- **Before**: `autocorrelation-and-lag-selection` (pick the `lags` argument from ACF/PACF analysis)
+- **Before**: `feature-engineering` (assemble the rolling, calendar, and exogenous features)
+- **Alongside**: `baseline-forecasting` (establish a naive reference to benchmark the model against)
+- **After**: `hyperparameter-optimization` (tune the forecaster once a baseline is trained)
+- **After**: `prediction-intervals` (add bootstrap or conformal intervals on top of the point forecasts)
 
 ## Overview
 
@@ -1020,9 +1021,10 @@ holiday distance features, rolling statistics, differencing, or data scaling.
 
 ### Related skills
 
-- **Prerequisite**: `autocorrelation-and-lag-selection` (use ACF/PACF to choose a candidate set of lags before adding rolling and calendar features)
-- **Next**: `feature-selection` (prune redundant features with `select_features` after engineering)
-- **Next**: `hyperparameter-optimization` (jointly tune the engineered configuration and the estimator hyperparameters)
+- **Before**: `autocorrelation-and-lag-selection` (read ACF/PACF to identify ARIMA orders `p`, `d`, `q` before fitting)
+- **Alongside**: `baseline-forecasting` (the other benchmark family: naive equivalent-date baselines)
+- **After**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals via the `interval_method` argument)
+- **After**: `hyperparameter-optimization` (tune ARIMA `order` / `seasonal_order` via grid search)
 
 ## Stop Conditions
 
@@ -2053,8 +2055,10 @@ forecaster = ForecasterRecursive(
 # 4. Train
 forecaster.fit(y=y_train)
 
-# 5. Predict
-predictions = forecaster.predict(steps=10)
+- **After**: `choosing-a-forecaster` (the forecaster type determines which metrics apply)
+- **Before**: `hyperparameter-optimization` (the chosen metric drives the search objective)
+- **Alongside**: `baseline-forecasting` (MASE < 1 means the model beats the naive baseline)
+- **Before**: `prediction-intervals` (probabilistic metrics evaluate interval quality)
 
 # 6. Backtesting (proper evaluation)
 cv = TimeSeriesFold(
@@ -2725,11 +2729,11 @@ cannot beat the naive baseline, the added complexity is not justified.
 
 ### Related skills
 
-- **Prerequisite**: `choosing-a-forecaster` (decide whether a baseline or an ML model fits the problem)
-- **Alongside**: `forecasting-single-series` (train the ML model you are benchmarking against)
-- **Next**: `metric-selection` (use MASE to compare the model against the naive baseline)
-- **Next**: `hyperparameter-optimization` (route: baselines are tuned with `grid_search_equivalent_date`, not the generic search)
-- **Next**: `prediction-intervals` (add conformal intervals to the baseline)
+- **Before**: `autocorrelation-and-lag-selection` (narrow the `lags` search space to a statistically informed candidate set)
+- **Before**: `feature-selection` (run the search on a reduced feature set to make it tractable)
+- **Related**: `baseline-forecasting` (tune `ForecasterEquivalentDate` baselines with `grid_search_equivalent_date`)
+- **Related**: `foundation-forecasting` (tune zero-shot `ForecasterFoundation` inference parameters with `bayesian_search_foundation`)
+- **After**: `prediction-intervals` (add uncertainty quantification once the configuration is fixed)
 
 ## Stop Conditions
 
@@ -2737,10 +2741,10 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 
 | Rule | Symptom | Recovery |
 |------|---------|----------|
-| Set the index frequency before fitting | `ValueError: ... DatetimeIndex with frequency` | Call `y = y.asfreq('D')` (or the correct alias) |
-| A pandas `DateOffset` offset requires a `DatetimeIndex` with frequency | `TypeError: ... the index must be a pandas DatetimeIndex with frequency` | Use a `DatetimeIndex` with `asfreq`, or use an integer `offset` for a `RangeIndex` |
-| `offset * n_offsets` must be smaller than the training window | `ValueError: ... offset ... is larger than the available data` (or configs silently skipped in search) | Reduce `offset`/`n_offsets`, or increase `initial_train_size` |
-| Baselines have no `estimator`, `lags`, or `exog` | Error from `grid_search_forecaster` (baselines lack `set_lags`) | Tune with `grid_search_equivalent_date`; do not pass `exog` |
+| The search refits the forecaster in place with the best params when `return_best=True` (the default) | With `return_best=False`, the forecaster keeps its pre-search params | Rely on the default, or refit with the best params from the results table |
+| Use the `*_multiseries` / `*_stats` search variant matching the forecaster type | Search function raises on the wrong forecaster type | Call e.g. `bayesian_search_forecaster_multiseries` / `grid_search_stats` / `grid_search_equivalent_date` |
+| `ForecasterFoundation` is tuned only with `bayesian_search_foundation` and `TimeSeriesFold` | `TypeError` from the generic search functions, or from passing `OneStepAheadFold` | Call `bayesian_search_foundation` with a `TimeSeriesFold` |
+| Include `lags` in the Bayesian `search_space()` | Suboptimal search; the highest-impact parameter stays fixed | Add `trial.suggest_categorical('lags', [...])` to the search space |
 
 ## Overview
 
@@ -2824,10 +2828,51 @@ baseline.
 
 ## Selecting a configuration
 
-Use `grid_search_equivalent_date` (baselines are not compatible with the generic
-`grid_search_forecaster`). Because `offset`/`n_offsets` are coupled and
-`agg_func` is a third searchable parameter, prefer the **list-of-configs** form
-so every configuration is explicit:
+## Foundation Model Search
+
+`ForecasterFoundation` is zero-shot: no weights are trained, so only the
+**inference-time** configuration is tuned. The highest-impact parameter is
+`context_length` (how many past observations are fed to the model). Use
+`bayesian_search_foundation`, which evaluates each trial with
+`backtesting_foundation`.
+
+```python
+from skforecast.foundation import FoundationModel, ForecasterFoundation
+from skforecast.model_selection import bayesian_search_foundation, TimeSeriesFold
+
+forecaster = ForecasterFoundation(
+    estimator=FoundationModel(model_id='autogluon/chronos-2-small', device_map='auto')
+)
+
+# TimeSeriesFold only — OneStepAheadFold raises TypeError
+cv = TimeSeriesFold(steps=24, initial_train_size=len(series) - 200, refit=False)
+
+def search_space(trial):
+    return {
+        'context_length': trial.suggest_categorical('context_length', [512, 1024, 2048, 4096]),
+        'cross_learning': trial.suggest_categorical('cross_learning', [True, False]),
+    }
+
+results, study = bayesian_search_foundation(
+    forecaster=forecaster,
+    series=series,
+    cv=cv,
+    search_space=search_space,
+    metric='mean_absolute_error',
+    n_trials=30,
+    return_best=True,
+)
+```
+
+Differences from `bayesian_search_forecaster`: no `lags` in `search_space`, no
+`n_jobs`, `TimeSeriesFold` only, and every `search_space` key must be a valid
+adapter parameter. Search `context_length` and the adapter's quality-relevant
+parameters; device/dtype and other runtime settings are accepted but cannot
+improve accuracy, and several parameters force an expensive model reload per
+trial. Per-adapter tunables and reload matrix: the `foundation-forecasting`
+skill (`references/adapter-parameters.md`).
+
+## Fast Tuning with OneStepAheadFold
 
 ```python
 from skforecast.model_selection import grid_search_equivalent_date, TimeSeriesFold
@@ -2854,8 +2899,11 @@ results = grid_search_equivalent_date(
   meaningless `offset`/`n_offsets` combinations; each dict may carry an optional
   `alias` label that appears as the first results column.
 
-Details and the full parameter table: `hyperparameter-optimization`
-(`references/search-parameters.md`).
+1. **Not setting `return_best=True`**: The forecaster is not updated with the best parameters unless this is True.
+2. **Too few trials in Bayesian search**: Start with at least 20-50 trials for meaningful exploration.
+3. **Using TimeSeriesFold for initial tuning**: Use `OneStepAheadFold` first for fast screening, then validate the top candidates with `TimeSeriesFold`.
+4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()` — this is often the most impactful parameter.
+5. **Putting `lags` in a foundation `search_space`**: `bayesian_search_foundation` has no lag concept; any key that is not an adapter parameter raises `ValueError`.
 
 ## Prediction intervals
 
@@ -2868,7 +2916,17 @@ forecaster.fit(y=y_train, store_in_sample_residuals=True)
 predictions = forecaster.predict_interval(steps=14, method='conformal', interval=[0.1, 0.9])
 ```
 
-See `prediction-intervals` for the conformal method details.
+| Forecaster | Grid Search | Random Search | Bayesian Search |
+|------------|-------------|---------------|-----------------|
+| ForecasterRecursive | `grid_search_forecaster` | `random_search_forecaster` | `bayesian_search_forecaster` |
+| ForecasterDirect | `grid_search_forecaster` | `random_search_forecaster` | `bayesian_search_forecaster` |
+| ForecasterRecursiveMultiSeries | `grid_search_forecaster_multiseries` | `random_search_forecaster_multiseries` | `bayesian_search_forecaster_multiseries` |
+| ForecasterDirectMultiVariate | `grid_search_forecaster_multiseries` | `random_search_forecaster_multiseries` | `bayesian_search_forecaster_multiseries` |
+| ForecasterRnn | `grid_search_forecaster_multiseries` | `random_search_forecaster_multiseries` | `bayesian_search_forecaster_multiseries` |
+| ForecasterStats | `grid_search_stats` | `random_search_stats` | N/A |
+| ForecasterEquivalentDate | `grid_search_equivalent_date` | N/A | N/A |
+| ForecasterFoundation | N/A | N/A | `bayesian_search_foundation` |
+| ForecasterRecursiveClassifier | `grid_search_forecaster` | `random_search_forecaster` | `bayesian_search_forecaster` |
 
 ## Related API
 
@@ -2908,7 +2966,143 @@ If unsure, start here:
 | Compare across series | `'mean_absolute_scaled_error'` | Scale-independent — the only fair comparison across differently-scaled series |
 | Classification | `'balanced_accuracy_score'` | Handles class imbalance common in time series classification |
 
-**Probabilistic metrics** (computed post-hoc on interval/quantile predictions):
+### Foundation Function (zero-shot inference-time tuning)
+
+`bayesian_search_foundation` tunes the **inference-time** configuration of a
+`ForecasterFoundation`. Foundation models are zero-shot, so no weights are
+trained; only how the pre-trained model is queried is optimized. Each trial is
+evaluated with `backtesting_foundation`.
+
+| Parameter | `bayesian_search_foundation` |
+|-----------|:---:|
+| `forecaster` | ✓ (must be `ForecasterFoundation`) |
+| `series` | ✓ (`pd.Series`, `pd.DataFrame` or `dict`) |
+| `cv` | **TimeSeriesFold only** |
+| `search_space` | ✓ (Callable) |
+| `metric` | ✓ |
+| `aggregate_metric` | ✓ (default: `['weighted_average', 'average', 'pooling']`) |
+| `levels` | ✓ |
+| `exog` | ✓ |
+| `n_trials` | ✓ (default: 20) |
+| `random_state` | ✓ (default: 123) |
+| `return_best` | ✓ (default: True) |
+| `n_jobs` | — |
+| `verbose` / `show_progress` / `suppress_warnings` | ✓ |
+| `output_file` | ✓ (optuna log, not results TSV) |
+| `kwargs_create_study` / `kwargs_study_optimize` | ✓ (default: None) |
+| **Returns** | `tuple[pd.DataFrame, optuna Study]` |
+
+> **Note:** No `n_jobs`, no `lags` / `lags_grid` (foundation models have no lag
+> concept), no `OneStepAheadFold` (raises `TypeError`), and no grid/random
+> variant. Passing a `ForecasterFoundation` to `bayesian_search_forecaster*`
+> raises `TypeError`.
+
+Every key returned by `search_space` is validated against
+`forecaster.estimator.adapter.get_params()`; an unknown key raises `ValueError`.
+Being accepted is not the same as being worth searching:
+
+| Model | Worth searching |
+|-------|-----------------|
+| All models | `context_length` |
+| Amazon Chronos-2 | `cross_learning` |
+| TabICL, Prior Labs TabPFN-TS | `point_estimate`, `temporal_features` |
+| Synthefy Nori | `point_estimate`, `add_calendar_features`, `n_fourier_terms` |
+| Moirai-2, T0 | `context_length` only |
+
+Do not search `device`, `device_map`, `torch_dtype`, `mode`, `show_progress`,
+`allow_auto_download` or `max_horizon`: they are accepted but cannot improve
+accuracy. `model_id` and `checkpoint_version` do, but they select a different
+pre-trained model — compare those with separate searches.
+
+Cost warning: `model_id` and device/dtype arguments force a full model reload,
+and `context_length` does too on TimesFM 2.5, Moirai-2, TabICL and TabPFN-TS.
+Full matrix: the `foundation-forecasting` skill
+(`references/adapter-parameters.md`).
+
+```python
+from skforecast.foundation import FoundationModel, ForecasterFoundation
+from skforecast.model_selection import bayesian_search_foundation, TimeSeriesFold
+
+forecaster = ForecasterFoundation(
+    estimator=FoundationModel(model_id='autogluon/chronos-2-small', device_map='auto')
+)
+cv = TimeSeriesFold(steps=24, initial_train_size=len(series) - 200, refit=False)
+
+def search_space(trial):
+    return {
+        'context_length': trial.suggest_categorical('context_length', [512, 1024, 2048, 4096]),
+        'cross_learning': trial.suggest_categorical('cross_learning', [True, False]),
+    }
+
+results, study = bayesian_search_foundation(
+    forecaster=forecaster,
+    series=series,
+    cv=cv,
+    search_space=search_space,
+    metric='mean_absolute_error',
+    n_trials=30,
+    return_best=True,
+)
+# results columns: trial_number, levels, params, metric/s, one column per searched param
+```
+
+### Equivalent Date Function (baseline tuning)
+
+`grid_search_equivalent_date` selects the best `ForecasterEquivalentDate`
+baseline configuration. Only grid search exists (random/Bayesian are
+unnecessary for such a small, discrete space).
+
+| Parameter | `grid_search_equivalent_date` |
+|-----------|:---:|
+| `forecaster` | ✓ (must be `ForecasterEquivalentDate`) |
+| `y` | ✓ |
+| `cv` | **TimeSeriesFold only** |
+| `param_grid` | ✓ (dict **or** list of dicts, see below) |
+| `metric` | ✓ |
+| `return_best` | ✓ (default: True) |
+| `n_jobs` | ✓ (default: 'auto') |
+| `output_file` | ✓ |
+| **Returns** | `pd.DataFrame` |
+
+> **Note:** No `exog` (baseline does not use exogenous variables), no
+> `lags_grid`, no `OneStepAheadFold`, no random/Bayesian variant.
+
+`param_grid` behaves differently from the other search functions because
+`offset` and `n_offsets` are **coupled** (together they define the equivalent
+window). A third parameter, `agg_func`, sets how the `n_offsets` values are
+aggregated (when `n_offsets > 1`) and is searchable too, so remember to include
+it when the aggregation matters:
+
+```python
+from skforecast.recursive import ForecasterEquivalentDate
+from skforecast.model_selection import grid_search_equivalent_date, TimeSeriesFold
+import numpy as np
+
+forecaster = ForecasterEquivalentDate(offset=1, n_offsets=1)
+cv = TimeSeriesFold(steps=7, initial_train_size=len(y) - 70, refit=False)
+
+# dict -> Cartesian product (use only when every combination is meaningful)
+param_grid = {'offset': [1, 7], 'n_offsets': [1, 2], 'agg_func': [np.mean, np.median]}
+
+# list of dicts -> one explicit configuration per dict (no cross product).
+# Values must be scalar. Add one dict per configuration to avoid the coupled
+# offset/n_offsets footgun. Each dict may carry an optional `alias` label.
+param_grid = [
+    {'alias': '7-day moving average',     'offset': 1, 'n_offsets': 7, 'agg_func': np.mean},
+    {'alias': 'mean of lag-7 and lag-14', 'offset': 7, 'n_offsets': 2, 'agg_func': np.mean},
+]
+
+results = grid_search_equivalent_date(
+    forecaster=forecaster, y=y, cv=cv, param_grid=param_grid,
+    metric='mean_absolute_error', return_best=True,
+)
+```
+
+When at least one configuration defines `alias`, an `alias` column is added as
+the first column of the results table. The `alias` key is stripped before the
+forecaster is configured (it never reaches `set_params`).
+
+## How `lags_grid` Works
 
 | Task | Metric | Why |
 |------|--------|-----|
@@ -3025,7 +3219,17 @@ metric = 'mean_absolute_scaled_error'            # Option 1: as string
 metric = mean_absolute_scaled_error              # Option 2: as callable (import from skforecast.metrics)
 ```
 
-## Step 3 — Probabilistic Forecast Metrics
+For `bayesian_search_foundation` the same `search_space` contract applies, but
+`lags` must NOT be included and every key must be a valid adapter parameter:
+
+```python
+def search_space(trial):
+    return {
+        'context_length': trial.suggest_categorical('context_length', [512, 2048, 8192]),
+    }
+```
+
+## Stats Model param_grid
 
 Use these metrics when evaluating prediction intervals or quantile forecasts.
 
@@ -3058,26 +3262,13 @@ coverage = calculate_coverage(
 
 ### CRPS (Continuous Ranked Probability Score)
 
-CRPS is a proper scoring rule that rewards both calibration and sharpness.
-Lower is better.
-
-```python
-from skforecast.metrics import crps_from_predictions, crps_from_quantiles
-import numpy as np
-
-# From bootstrap samples (e.g., predict_bootstrapping output)
-crps = crps_from_predictions(
-    y_true=100.0,
-    y_pred=np.array([98.2, 101.5, 99.8, 102.1, 97.5])  # Bootstrap predictions
-)
-
-# From quantile predictions (e.g., foundation model output)
-crps = crps_from_quantiles(
-    y_true=100.0,
-    pred_quantiles=np.array([90.0, 95.0, 100.5, 105.0, 110.0]),
-    quantile_levels=np.array([0.1, 0.25, 0.5, 0.75, 0.9]),
-)
-```
+| Function | Returns | Study object |
+|----------|---------|:-:|
+| `grid_search_*` | `pd.DataFrame` sorted by metric | — |
+| `random_search_*` | `pd.DataFrame` sorted by metric | — |
+| `bayesian_search_*` | `tuple[pd.DataFrame, optuna Study]` | ✓ |
+| `*_stats` | `pd.DataFrame` sorted by metric | — |
+| `bayesian_search_foundation` | `tuple[pd.DataFrame, optuna Study]`, no `lags` column | ✓ |
 
 ### Winkler Score (Interval Score)
 
@@ -5468,7 +5659,55 @@ predictions = forecaster.predict_interval(
 )
 ```
 
-## Backtesting
+# SKILL: foundation-forecasting
+
+# Foundation Model Forecasting (Zero-Shot)
+
+## References
+
+See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, and `TSICLAdapter`.
+
+## When to Use
+
+Use `ForecasterFoundation` when:
+- You want a **zero-shot baseline** before investing in model training.
+- You have **very short histories** where ML models struggle.
+- You need to forecast **cold-start** series (new product, new sensor).
+- You want to compare against pre-trained generalist models.
+
+Foundation models are **pre-trained on massive corpora** — `fit()` does not train them; it only stores the recent context and metadata.
+
+## Stop Conditions
+
+Scan before writing code. Each row lists a rule, the symptom when it is broken, and the recovery. Full pitfall catalog: the `troubleshooting-common-errors` skill.
+
+| Rule | Symptom | Recovery |
+|------|---------|----------|
+| `fit()` stores context only; it never trains the model | Expecting training to happen or weights to update | Treat the model as pre-trained; evaluate with `backtesting_foundation` |
+| `cv.refit` and `cv.fixed_train_size` are overridden by `backtesting_foundation` | `IgnoredArgumentWarning` when `refit=True` or `fixed_train_size=False` | Leave them at their defaults; the context window expands per fold either way |
+| Only Chronos-2, TabICL, TabPFN-TS, T0, Nori, and TS-ICL use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `exog` silently dropped, no error raised | Pick an exog-capable adapter when covariates matter |
+| TimesFM 2.5 and Moirai-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]` | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
+| Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
+| Tuning uses `bayesian_search_foundation`, never `bayesian_search_forecaster*` | `TypeError` on the forecaster type or on `OneStepAheadFold` | Call `bayesian_search_foundation` with a `TimeSeriesFold` |
+
+## Installation
+
+Foundation model backends are **not** bundled with skforecast. Install only the backend(s) you need:
+
+```bash
+pip install chronos-forecasting    # For Chronos-2
+pip install timesfm                # For TimesFM 2.5
+pip install uni2ts                 # For Moirai-2
+pip install tabicl[forecast]       # For TabICL
+pip install tabpfn-time-series     # For TabPFN-TS
+pip install tfc-t0                 # For T0
+pip install tsicl                  # For TS-ICL
+pip install synthefy-nori          # For Nori
+```
+
+Models are downloaded from HuggingFace on first use.
+
+## Quick Start (single series)
 
 ```python
 from skforecast.model_selection import backtesting_forecaster_multiseries, TimeSeriesFold
@@ -5553,17 +5792,59 @@ model = create_and_compile_model(
 
 ## Architecture Building Blocks
 
-### Single recurrent layer
+Use the dedicated `backtesting_foundation` function — it is the only backtester that accepts a `ForecasterFoundation`. Internally `cv` is deep-copied and forced to `refit=True`, `fixed_train_size=False`, so the context window expands with each fold up to `context_length`; no weights are ever trained. Probabilistic output is requested via `quantiles`, not `interval`.
 
 ```python
-model = create_and_compile_model(
-    series=series, lags=48, steps=24, levels='target',
-    recurrent_layer='LSTM',
-    recurrent_units=64,           # single int → 1 recurrent layer
-    dense_units=32,               # single int → 1 dense layer
+from skforecast.model_selection import backtesting_foundation, TimeSeriesFold
+
+cv = TimeSeriesFold(
+    steps=24,
+    initial_train_size=len(series) - 200,
+    refit=False,      # Overridden internally; passing True emits IgnoredArgumentWarning
 )
-# Architecture: Input → LSTM(64) → Dense(32) → Dense(24)
+
+metric, predictions = backtesting_foundation(
+    forecaster=forecaster,
+    series=series,
+    cv=cv,
+    metric='mean_absolute_error',
+    quantiles=[0.1, 0.5, 0.9],   # Native model quantiles; no bootstrapping
+)
 ```
+
+## Tuning Inference-Time Parameters
+
+No weights are trained, so tuning means choosing how the pre-trained model is
+queried. `context_length` is the highest-impact parameter. Use
+`bayesian_search_foundation` (`TimeSeriesFold` only, no `lags`, no `n_jobs`):
+
+```python
+from skforecast.model_selection import bayesian_search_foundation, TimeSeriesFold
+
+def search_space(trial):
+    return {
+        'context_length': trial.suggest_categorical('context_length', [512, 1024, 2048, 4096]),
+    }
+
+results, study = bayesian_search_foundation(
+    forecaster=forecaster,
+    series=series,
+    cv=cv,
+    search_space=search_space,
+    metric='mean_absolute_error',
+    n_trials=30,
+    return_best=True,
+)
+```
+
+Keys are validated against the adapter's `get_params()`. Search
+`context_length` and the adapter's quality-relevant parameters; runtime
+settings (`device`, `torch_dtype`, `mode`, `show_progress`, `max_horizon`) are
+accepted but cannot improve accuracy, and several parameters force an expensive
+model reload per trial. Per-adapter matrix:
+[references/adapter-parameters.md](references/adapter-parameters.md).
+
+## Override the Stored Context
 
 ### Stacked recurrent layers
 
@@ -5579,15 +5860,13 @@ model = create_and_compile_model(
 
 ### No dense layers
 
-```python
-model = create_and_compile_model(
-    series=series, lags=48, steps=24, levels='target',
-    recurrent_layer='GRU',
-    recurrent_units=64,
-    dense_units=None,               # None → no intermediate dense layers
-)
-# Architecture: Input → GRU(64) → Dense(24)  (output layer only)
-```
+1. **Expecting `fit()` to train the model**: it only stores context. The weights come from HuggingFace.
+2. **Index without frequency**: call `series.asfreq('h')` (or similar) before `fit` — skforecast requires a frequency.
+3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL support exogenous variables.
+4. **Requesting unsupported quantiles**: TimesFM 2.5 and Moirai-2 are restricted to the nine deciles `0.1 … 0.9` ; TS-ICL is restricted to a 0.01 grid in `[0.01, 0.99]`.
+5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
+6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`). Install only the one(s) you need.
+7. **Tuning a parameter that forces a model reload**: `model_id` and device/dtype arguments reload the model on every trial, and `context_length` does the same on TimesFM 2.5, Moirai-2, TabICL and TabPFN-TS.
 
 ## Output Layer Shape
 
@@ -5701,12 +5980,36 @@ forecaster = ForecasterRnn(
 
 ## Custom Keras Model Requirements
 
-When building a custom model instead of using `create_and_compile_model`:
+| Parameter        | Type   | Default  | Description                                                                |
+|------------------|--------|----------|------------------------------------------------------------------------------|
+| `model_id`       | str    | —        | HuggingFace model ID (e.g. `theforecastingcompany/t0-alpha`).             |
+| `model`          | obj    | `None`   | Pre-loaded `T0Forecaster`. If `None`, loaded lazily on first `predict`.    |
+| `context_length` | int    | `8192`   | Max historical observations kept as context.                               |
+| `device_map`     | str    | `'auto'` | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`. |
+| `torch_dtype`    | object | `None`   | Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).           |
 
 ### Single level (no exog)
 
-```python
-import keras
+**Gated checkpoints**: `theforecastingcompany/t0*` repos are gated on the Hugging Face Hub. Before first use, log in at the model page (e.g. `https://huggingface.co/theforecastingcompany/t0-alpha`) to accept its license, then authenticate locally (`hf auth login` or the `HF_TOKEN` environment variable). Skipping this step surfaces as a confusing `TypeError` about missing `T0Forecaster` constructor arguments rather than an authentication error.
+
+## TSICLAdapter — EDF Lab TS-ICL
+
+- **`model_id` prefix**: `taharnbl/TS-ICL`. Used only for adapter resolution; the checkpoint is always downloaded from the `taharnbl/TS-ICL` Hugging Face repository, controlled by `checkpoint_version`.
+- **`allow_exog`**: `True` (past and future covariates, mirroring `ChronosAdapter`'s `past_covariates`/`future_covariates` format)
+- **Quantiles**: subset of a 0.01 grid in `[0.01, 0.99]` (e.g. `0.05`, `0.5`, `0.37`); other levels raise a `ValueError`
+
+| Parameter              | Type | Default            | Description                                                                |
+|------------------------|------|--------------------|------------------------------------------------------------------------------|
+| `model_id`             | str  | —                  | Model ID (e.g. `taharnbl/TS-ICL`). Used only for adapter resolution.        |
+| `model`                | obj  | `None`             | Pre-instantiated `TSICL` model. If `None`, created lazily on first `predict`.|
+| `checkpoint_version`   | str  | `'tsicl-v1.ckpt'`  | Checkpoint filename downloaded from the `taharnbl/TS-ICL` Hugging Face repo. |
+| `context_length`       | int  | `4096`             | Max historical observations kept as context.                                |
+| `device`               | str  | `'auto'`           | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`. Verified empirically: the installed `tsicl` version currently falls back to CPU internally whenever CUDA is unavailable, regardless of the requested device, so `'mps'` has no effect on Apple Silicon. |
+| `allow_auto_download`  | bool | `True`             | Whether to allow automatic download of the checkpoint from Hugging Face Hub. |
+
+Covariates must be numeric; encode categoricals as numbers before passing them.
+
+## NoriAdapter — Synthefy Nori
 
 inputs = keras.layers.Input(shape=(lags, n_series))  # (lags, number of input series)
 x = keras.layers.LSTM(64, return_sequences=True)(inputs)
@@ -5720,26 +6023,31 @@ model.compile(optimizer='adam', loss='mse')
 
 ### Multiple levels (no exog)
 
-```python
-inputs = keras.layers.Input(shape=(lags, n_series))
-x = keras.layers.LSTM(64, return_sequences=True)(inputs)
-x = keras.layers.LSTM(32)(x)
-x = keras.layers.Dense(64, activation='relu')(x)
-x = keras.layers.Dense(steps * n_levels)(x)           # units = steps × n_levels
-outputs = keras.layers.Reshape((steps, n_levels))(x)   # reshape required
+## Tunable Parameters and Model Reload Cost
 
-model = keras.Model(inputs=inputs, outputs=outputs)
-model.compile(optimizer='adam', loss='mse')
-```
+The parameters that can be changed after construction (via `set_params`, and therefore searched with `bayesian_search_foundation`) are exactly the keys returned by each adapter's `get_params()`. Any other key raises `ValueError`. Note that `model` / `pipeline` / `module` are constructor-only and are **not** settable.
 
-### Input shape reference
+Being accepted is not the same as being worth searching. Most adapters expose runtime settings that cannot improve accuracy: `device`, `device_map`, `torch_dtype`, `mode` (local vs cloud inference), `show_progress`, `allow_auto_download`, and `max_horizon` (a ceiling only, the TimesFM model is recompiled for the requested `steps` regardless). Keep these fixed. `model_id` (and `checkpoint_version` on TS-ICL) does change accuracy, but it selects a different pre-trained model, so compare those with separate searches instead of mixing them into one search space.
 
-| Scenario | Input shape | Output shape |
-|----------|-------------|-------------|
-| 1 level, no exog | `(lags, 1)` | `(steps,)` |
-| M levels, no exog | `(lags, M)` | `(steps, M)` after Reshape |
-| 1 level, K exog features | Two inputs: `(lags, 1)` + `(lags, K)` | `(steps,)` |
-| M levels, K exog features | Two inputs: `(lags, M)` + `(lags, K)` | `(steps, M)` after Reshape |
+| Adapter | Accepted by `set_params` (`get_params()` keys) | Worth searching | Changing these forces a model reload |
+|---------|-----------------------------------------------|-----------------|--------------------------------------|
+| ChronosAdapter | `model_id`, `cross_learning`, `context_length`, `device_map`, `torch_dtype`, `predict_kwargs` | `context_length`, `cross_learning`, (`predict_kwargs`) | `model_id`, `device_map`, `torch_dtype` |
+| TimesFMAdapter | `model_id`, `context_length`, `max_horizon`, `forecast_config_kwargs` | `context_length`, (`forecast_config_kwargs`) | **all of them** |
+| MoiraiAdapter | `model_id`, `context_length`, `device` | `context_length` | **all of them** |
+| TabICLAdapter | `model_id`, `context_length`, `point_estimate`, `tabicl_config`, `temporal_features`, `show_progress` | `context_length`, `point_estimate`, `temporal_features`, (`tabicl_config`) | all except `show_progress` |
+| TabPFNAdapter | `model_id`, `context_length`, `mode`, `point_estimate`, `tabpfn_model_config`, `temporal_features`, `show_progress` | `context_length`, `point_estimate`, `temporal_features`, (`tabpfn_model_config`) | all except `show_progress` |
+| T0Adapter | `model_id`, `context_length`, `device_map`, `torch_dtype` | `context_length` | `model_id`, `device_map`, `torch_dtype` |
+| TSICLAdapter | `model_id`, `checkpoint_version`, `context_length`, `device`, `allow_auto_download` | `context_length` | `checkpoint_version`, `allow_auto_download` (`device` only clears the cached resolved device) |
+| NoriAdapter | `model_id`, `context_length`, `point_estimate`, `add_calendar_features`, `n_fourier_terms`, `nori_config` | `context_length`, `point_estimate`, `add_calendar_features`, `n_fourier_terms`, (`nori_config`) | `model_id`, `nori_config` |
+
+Parameters in parentheses are backend passthrough dicts: they can hold quality-relevant settings but are awkward to search, so treat them as advanced.
+
+Two consequences that matter when tuning:
+
+- **`context_length` is not uniformly cheap.** It reloads the model on TimesFM 2.5, Moirai-2, TabICL and TabPFN-TS; it is free on Chronos-2, T0, TS-ICL and Nori.
+- **Reset on presence vs on change.** `TabICLAdapter`, `TabPFNAdapter` and `NoriAdapter` compare the old and new values first, so re-sampling an identical value costs nothing. `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `T0Adapter` and `TSICLAdapter` reset whenever the key is passed, even if the value is unchanged, so on TimesFM 2.5 and Moirai-2 every single trial that samples `context_length` triggers a reload.
+
+`model_id` forces a reload on every adapter except `TSICLAdapter`, where the checkpoint is selected by `checkpoint_version` instead.
 
 ## Prediction Intervals
 
@@ -5776,12 +6084,21 @@ Use drift detection to monitor whether new data falls outside the patterns seen 
 
 ### Related skills
 
-- **Prerequisite**: `forecasting-single-series` / `forecasting-multiple-series` (the detector is fitted on the training data of an existing forecaster)
-- **Prerequisite**: `prediction-intervals` (intervals quantify uncertainty under the training distribution; drift detection flags when that distribution changes)
+- **After**: `forecasting-single-series` (apply the chosen forecaster to one target series)
+- **After**: `forecasting-multiple-series` (apply the chosen forecaster to several series jointly)
+- **After**: `baseline-forecasting` (build and benchmark a naive baseline with `ForecasterEquivalentDate`)
+- **After**: `autocorrelation-and-lag-selection` (analyse the series dynamics before configuring `lags`)
+- **After**: `feature-engineering` (build the input feature set: calendar, rolling, exogenous)
 
 ## RangeDriftDetector
 
-Checks whether new observations fall within the ranges seen during training. Lightweight and suitable for real-time scoring.
+Skforecast is a **machine learning-first** library. The primary tools are the
+sklearn-compatible ML forecasters (`ForecasterRecursive`, `ForecasterDirect`,
+and their multi-series variants) and the zero-shot foundation models
+(`ForecasterFoundation`, e.g. Chronos-2, TimesFM 2.5) - reach for an ML or a
+foundation forecaster first. Statistical models (`ForecasterStats`) and naive
+baselines (`ForecasterEquivalentDate`) serve as comparison benchmarks to confirm
+the chosen model adds value.
 
 > `fit()` accepts `series` and `exog` as a pandas Series, DataFrame, or dict
 > (useful for multi-series pipelines with `ForecasterRecursiveMultiSeries`).
@@ -5794,9 +6111,13 @@ from skforecast.recursive import ForecasterRecursive
 forecaster = ForecasterRecursive(estimator=estimator, lags=24)
 forecaster.fit(y=y_train, exog=exog_train)
 
-# 2. Fit the drift detector on training data
-detector = RangeDriftDetector()
-detector.fit(series=y_train, exog=exog_train)
+| Scenario | Recommended Forecaster | Why |
+|----------|----------------------|-----|
+| **General purpose** (start here) | `ForecasterRecursive` | Default choice. One model, recursive multi-step. Works with any sklearn-compatible estimator (LightGBM, XGBoost, CatBoost, RandomForest, etc.). Supports lags, window features, exog, differentiation, transformers, weight functions, and all probabilistic prediction methods (bootstrapping, conformal, quantiles, distributions) |
+| **Horizon-dependent patterns** (e.g., predicting at 1h vs 24h requires different relationships) | `ForecasterDirect` | Trains one independent model per step — no error propagation. Better when the predictive relationship changes significantly across the forecast horizon. Requires `steps` at init; parallelizable with `n_jobs` |
+| **Statistical baseline** | `ForecasterStats` | Wraps ARIMA, SARIMAX, ETS, ARAR. Use as a benchmark to compare against ML models, or when the series is very short (< 200 obs) and ML overfits |
+| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL). `fit()` only stores context — no training. Good baseline and cold-start option. See the `foundation-forecasting` skill |
+| **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Use as a sanity-check baseline. See the `baseline-forecasting` skill |
 
 # 3. Check new data before making predictions
 flag_drift, out_of_range_series, out_of_range_exog = detector.predict(
@@ -7110,6 +7431,149 @@ random_search_stats(
     show_progress=True,      # bool
     suppress_warnings=False, # bool
     output_file=None         # str | None
+) -> pd.DataFrame
+
+grid_search_equivalent_date(
+    forecaster,              # ForecasterEquivalentDate
+    y,                       # pd.Series with DatetimeIndex
+    cv,                      # TimeSeriesFold
+    param_grid,              # dict | list[dict] (coupled offset/n_offsets, plus searchable agg_func; list config supports optional 'alias')
+    metric,                  # str | Callable | list[str | Callable]
+    return_best=True,        # bool
+    n_jobs='auto',           # int | str
+    verbose=False,           # bool
+    show_progress=True,      # bool
+    suppress_warnings=False, # bool
+    output_file=None         # str | None
+) -> pd.DataFrame
+```
+
+### Foundation Models
+
+```python
+bayesian_search_foundation(
+    forecaster,              # ForecasterFoundation
+    series,                  # pd.Series | pd.DataFrame | dict
+    cv,                      # TimeSeriesFold (OneStepAheadFold raises TypeError)
+    search_space,            # Callable, keys validated against adapter.get_params(); no 'lags'
+    metric,                  # str | Callable | list[str | Callable]
+    aggregate_metric=None,   # str | list[str] | None
+    levels=None,             # str | list[str] | None
+    exog=None,               # pd.Series | pd.DataFrame | dict | None
+    n_trials=20,             # int
+    random_state=123,        # int
+    return_best=True,        # bool
+    verbose=False,           # bool
+    show_progress=True,      # bool
+    suppress_warnings=False, # bool
+    output_file=None,        # str | None, optuna log
+    kwargs_create_study=None,     # dict | None
+    kwargs_study_optimize=None    # dict | None
+) -> tuple[pd.DataFrame, object]
+```
+
+## Forecaster Methods: predict_quantiles()
+
+```python
+# ForecasterRecursive
+forecaster.predict_quantiles(
+    steps,                              # int | str | pd.Timestamp (required)
+    last_window=None,                   # pd.Series | pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    quantiles=[0.05, 0.5, 0.95],       # list[float] | tuple[float]
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterRecursiveMultiSeries
+forecaster.predict_quantiles(
+    steps,                              # int (required)
+    levels=None,                        # str | list[str] | None
+    last_window=None,                   # pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | dict | None
+    quantiles=[0.05, 0.5, 0.95],       # list[float] | tuple[float]
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterDirect
+forecaster.predict_quantiles(
+    steps=None,                         # int | list[int] | None
+    last_window=None,                   # pd.Series | pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    quantiles=[0.05, 0.5, 0.95],       # list[float] | tuple[float]
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterDirectMultiVariate
+forecaster.predict_quantiles(
+    steps=None,                         # int | list[int] | None
+    last_window=None,                   # pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    quantiles=[0.05, 0.5, 0.95],       # list[float] | tuple[float]
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False,            # bool
+    levels=None,                        # Any, ignored (API compatibility)
+) -> pd.DataFrame
+
+# NOT available in: ForecasterRecursiveClassifier, ForecasterStats,
+#                    ForecasterEquivalentDate, ForecasterRnn
+```
+
+## Forecaster Methods: predict_dist()
+
+```python
+# ForecasterRecursive
+forecaster.predict_dist(
+    steps,                              # int | str | pd.Timestamp (required)
+    distribution,                       # scipy.stats distribution object (required)
+    last_window=None,                   # pd.Series | pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterRecursiveMultiSeries
+forecaster.predict_dist(
+    steps,                              # int (required)
+    distribution,                       # scipy.stats distribution object (required)
+    levels=None,                        # str | list[str] | None
+    last_window=None,                   # pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | dict | None
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
+) -> pd.DataFrame
+
+# ForecasterDirect
+forecaster.predict_dist(
+    distribution,                       # scipy.stats distribution object (required)
+    steps=None,                         # int | list[int] | None
+    last_window=None,                   # pd.Series | pd.DataFrame | None
+    exog=None,                          # pd.Series | pd.DataFrame | None
+    n_boot=250,                         # int
+    use_in_sample_residuals=True,       # bool
+    use_binned_residuals=True,          # bool
+    random_state=123,                   # int
+    suppress_warnings=False             # bool
 ) -> pd.DataFrame
 
 grid_search_equivalent_date(
