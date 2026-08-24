@@ -5332,10 +5332,12 @@
 <h2 id="0.24.0">0.24.0 <small>Aug 24, 2026</small><a class="headerlink" href="#0.24.0" title="Permanent link">&para;</a></h2>
 <p>The main changes in this release are:</p>
 <ul>
-<li><span class="badge text-bg-feature">Feature</span> New function <code><a href="../api/model_selection.html#skforecast.model_selection._search.bayesian_search_foundation">bayesian_search_foundation</a></code> in the <code><a href="../api/model_selection.html">model_selection</a></code> module to tune the inference-time configuration (e.g. <code>context_length</code>) of <code><a href="../api/ForecasterFoundation.html">ForecasterFoundation</a></code> models using optuna. <a href="../user_guides/foundation-forecasting-models.html#selection-of-context-length">User guide</a></li>
-</ul>
+<li>
+<p><span class="badge text-bg-feature">Feature</span> New function <code><a href="../api/model_selection.html#skforecast.model_selection._search.bayesian_search_foundation">bayesian_search_foundation</a></code> in the <code><a href="../api/model_selection.html">model_selection</a></code> module to tune the inference-time configuration (e.g. <code>context_length</code>) of <code><a href="../api/ForecasterFoundation.html">ForecasterFoundation</a></code> models using optuna. <a href="../user_guides/foundation-forecasting-models.html#selection-of-context-length">User guide</a></p>
+</li>
+<li>
 <p><span class="badge text-bg-feature">Feature</span> New function <code><a href="../api/model_selection.html#skforecast.model_selection._search.grid_search_equivalent_date">grid_search_equivalent_date</a></code> in the <code><a href="../api/model_selection.html">model_selection</a></code> module to search the best baseline configuration (<code>offset</code>, <code>n_offsets</code>, <code>agg_func</code>) of a <code><a href="../api/ForecasterEquivalentDate.html">ForecasterEquivalentDate</a></code> using time series backtesting. <a href="../user_guides/forecasting-baseline.html#searching-for-the-best-configuration">User guide</a></p>
-<ul>
+</li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> New <code><a href="../api/FoundationModel.html#skforecast.foundation._adapters.NoriAdapter">NoriAdapter</a></code> in the <code>foundation</code> module wrapping <code>Synthefy Nori</code>, registered under the <code>'Synthefy/Nori</code> <code>model_id</code> prefix. Supports future-known exogenous variables, arbitrary quantiles in the 0-1 range, and lazy backend import. <a href="../user_guides/foundation-forecasting-models.html">User guide</a> (<a href="https://github.com/skforecast/skforecast/issues/1252">#1252</a>)</p>
 </li>
