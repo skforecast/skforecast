@@ -25,6 +25,7 @@ import ast
 import re
 import sys
 import textwrap
+import time
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -39,6 +40,11 @@ PYPROJECT_LLM_CONTEXT_RE = re.compile(
     r'^"LLM Context"\s*=\s*"([^"]+)"', re.MULTILINE
 )
 ALLOWED_REDIRECT_PREFIXES = ("https://doi.org/",)
+URL_CHECK_TIMEOUT = 20
+URL_CHECK_ATTEMPTS = 3
+URL_CHECK_RETRY_DELAY = 3
+# HTTP status codes that usually indicate a transient failure, not a broken link.
+RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504})
 
 # Reading order for llms-full.txt, following the prerequisite edges the skills
 # declare in their "### Related skills" sections.
@@ -348,40 +354,66 @@ def extract_urls(text: str) -> list[str]:
     return unique_urls
 
 
-def check_url(url: str, label: str) -> list[str]:
-    """Check a URL with HEAD and fallback to GET."""
+def _is_transient_error(exc: BaseException) -> bool:
+    """Return True if the exception looks like a temporary network failure."""
+    if isinstance(exc, urllib.error.HTTPError):
+        return exc.code in RETRYABLE_STATUS_CODES
+    if isinstance(exc, urllib.error.URLError):
+        if isinstance(exc.reason, BaseException):
+            return _is_transient_error(exc.reason)
+        return True
+
+    return isinstance(exc, (TimeoutError, ConnectionError))
+
+
+def _request_url(url: str, label: str, method: str, allow_redirect: bool) -> list[str]:
+    """Request a URL with the given HTTP method. May raise on network errors."""
     errors: list[str] = []
+    req = urllib.request.Request(url, method=method)
+    req.add_header("User-Agent", "skforecast-link-checker/1.0")
+    with urllib.request.urlopen(req, timeout=URL_CHECK_TIMEOUT) as resp:
+        code = resp.getcode()
+        if code and code >= 400:
+            errors.append(f"  {label}: HTTP {code} - {url}")
+        elif resp.url != url and not allow_redirect:
+            errors.append(f"  {label}: redirected {url} -> {resp.url}")
+
+    return errors
+
+
+def _check_url_once(url: str, label: str, allow_redirect: bool) -> list[str]:
+    """Check a URL with HEAD and fallback to GET. May raise on network errors."""
+    try:
+        return _request_url(url, label, "HEAD", allow_redirect)
+    except Exception:
+        # Some servers reject or stall on HEAD; retry with GET
+        return _request_url(url, label, "GET", allow_redirect)
+
+
+def check_url(url: str, label: str) -> list[str]:
+    """Check a URL, retrying transient network failures before reporting an error."""
     allow_redirect = any(
         url.startswith(prefix) for prefix in ALLOWED_REDIRECT_PREFIXES
     )
-    try:
-        req = urllib.request.Request(url, method="HEAD")
-        req.add_header("User-Agent", "skforecast-link-checker/1.0")
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            code = resp.getcode()
-            if code and code >= 400:
-                errors.append(f"  {label}: HTTP {code} - {url}")
-            elif resp.url != url and not allow_redirect:
-                errors.append(f"  {label}: redirected {url} -> {resp.url}")
-    except urllib.error.HTTPError as exc:
-        # Some servers reject HEAD; retry with GET
+    for attempt in range(1, URL_CHECK_ATTEMPTS + 1):
         try:
-            req_get = urllib.request.Request(url, method="GET")
-            req_get.add_header("User-Agent", "skforecast-link-checker/1.0")
-            with urllib.request.urlopen(req_get, timeout=15) as resp:
-                code = resp.getcode()
-                if code and code >= 400:
-                    errors.append(f"  {label}: HTTP {code} - {url}")
-                elif resp.url != url and not allow_redirect:
-                    errors.append(f"  {label}: redirected {url} -> {resp.url}")
-        except Exception:
-            errors.append(f"  {label}: HTTP {exc.code} - {url}")
-    except urllib.error.URLError as exc:
-        errors.append(f"  {label}: Connection error ({exc.reason}) - {url}")
-    except Exception as exc:
-        errors.append(f"  {label}: {exc} - {url}")
+            return _check_url_once(url, label, allow_redirect)
+        except Exception as exc:
+            last_attempt = attempt == URL_CHECK_ATTEMPTS
+            if not last_attempt and _is_transient_error(exc):
+                print(
+                    f"  {label}: transient failure ({exc}) on {url}, "
+                    f"retrying ({attempt}/{URL_CHECK_ATTEMPTS - 1}) ..."
+                )
+                time.sleep(URL_CHECK_RETRY_DELAY * attempt)
+                continue
+            if isinstance(exc, urllib.error.HTTPError):
+                return [f"  {label}: HTTP {exc.code} - {url}"]
+            if isinstance(exc, urllib.error.URLError):
+                return [f"  {label}: Connection error ({exc.reason}) - {url}"]
+            return [f"  {label}: {exc} - {url}"]
 
-    return errors
+    return []
 
 
 def validate_urls_in_file(

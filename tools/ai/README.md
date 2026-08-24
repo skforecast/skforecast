@@ -187,6 +187,10 @@ python tools/ai/generate_ai_context_files.py --check-urls
 python tools/ai/generate_ai_context_files.py --check-urls --ignore-urls llms-full.txt
 ```
 
+URL validation requests each link with `HEAD`, falls back to `GET` when the server
+rejects or stalls on `HEAD`, and retries transient failures (timeouts, connection
+errors, HTTP 408/425/429/5xx) up to 3 times with an increasing delay.
+
 ### What `--check` validates
 
 | Check | What it verifies |
