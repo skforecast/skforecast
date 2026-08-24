@@ -3,7 +3,7 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License      #
 ################################################################################
-# coding=utf-8
+
 
 from __future__ import annotations
 
@@ -53,10 +53,10 @@ try:
     import keras
 except ImportError as e:
     import sys
-    if sys.version_info >= (3, 13):
+    if sys.version_info >= (3, 14):
         raise ImportError(
-            "Python 3.13+ is not supported by TensorFlow, which is the default "
-            "backend used by Keras. To use Keras with Python 3.13+, the KERAS_BACKEND "
+            "Python 3.14+ is not supported by TensorFlow, which is the default "
+            "backend used by Keras. To use Keras with Python 3.14+, the KERAS_BACKEND "
             "environment variable needs to be set to 'torch', `os.environ['KERAS_BACKEND'] = 'torch'`."
             "Make sure you have PyTorch installed to use Keras with the torch backend. "
             "For installation instructions, visit https://pytorch.org/get-started/locally/"

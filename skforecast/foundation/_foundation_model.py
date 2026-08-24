@@ -3,7 +3,6 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
 
 from __future__ import annotations
 from typing import Any
@@ -15,8 +14,8 @@ import pandas as pd
 
 from .. import __version__
 from ._adapters import _resolve_adapter
-from ._utils import check_preprocess_series_foundation
 from ..exceptions import IgnoredArgumentWarning, InputTypeWarning, MissingValuesWarning
+from ._utils import check_preprocess_series_foundation
 from ..utils import (
     check_preprocess_exog_multiseries,
     align_series_and_exog_multiseries,
@@ -30,9 +29,9 @@ class FoundationModel:
     Scikit-learn compatible interface for foundation time-series models.
 
     Currently supports Amazon Chronos-2, Google TimesFM 2.5, Salesforce
-    Moirai-2, TabICLv2, TabPFN-TS, and TFC-T0. For full skforecast ecosystem
-    integration (backtesting, model selection, etc.) use `ForecasterFoundation` 
-    instead.
+    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori and EDF Lab TS-ICL.
+    For full skforecast ecosystem integration (backtesting, model selection, etc.)
+    use `ForecasterFoundation` instead.
 
     Parameters
     ----------
@@ -66,14 +65,54 @@ class FoundationModel:
 
         - `'theforecastingcompany/t0-alpha'`
 
+        Synthefy Nori (supports `exog`):
+
+        - `'Synthefy/Nori'`
+
+        EDF Lab TS-ICL (supports `exog`):
+
+        - `'taharnbl/TS-ICL'`
+
         See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
-        Valid keys depend on the adapter selected by `model_id`. See the
-        corresponding adapter class (`ChronosAdapter`, `TimesFMAdapter`,
-        `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`) 
-        for the full parameter list, or refer to the model documentation 
-        linked in the References section below.
+        Valid keys depend on the model selected by `model_id`. See the
+        corresponding adapter class documentation or the model card linked
+        in the References section below for the full parameter list.
+
+        Commonly used kwargs by model:
+
+        - **Amazon Chronos-2** (`ChronosAdapter`): `context_length` (int,
+          default 8192), `device_map` (str, default `'auto'`),
+          `torch_dtype` (object, default None), `predict_kwargs` (dict,
+          default None), `cross_learning` (bool, default False).
+        - **Google TimesFM 2.5** (`TimesFMAdapter`): `context_length` (int,
+          default 512), `max_horizon` (int, default 512),
+          `forecast_config_kwargs` (dict, default None).
+        - **Salesforce Moirai-2** (`MoiraiAdapter`): `context_length` (int,
+          default 2048), `device` (str, default `'auto'`).
+        - **TabICLv2** (`TabICLAdapter`): `context_length` (int, default
+          4096), `point_estimate` (str, default `'mean'`), `tabicl_config`
+          (dict, default None), `temporal_features` (list, default None),
+          `show_progress` (bool, default False; set to True to show the
+          tqdm bar emitted during inference).
+        - **Prior Labs TabPFN-TS** (`TabPFNAdapter`): `context_length`
+          (int, default 32768), `mode` (str, default `'local'`),
+          `point_estimate` (str, default `'median'`), `tabpfn_model_config`
+          (dict, default None), `temporal_features` (list, default None),
+          `show_progress` (bool, default False; set to True to show the
+          tqdm bar emitted during inference).
+        - **The Forecasting Company T0** (`T0Adapter`): `context_length`
+          (int, default 8192), `device_map` (str, default `'auto'`),
+          `torch_dtype` (object, default None).
+        - **Synthefy Nori** (`NoriAdapter`): `context_length` (int, default
+          4096), `point_estimate` (str, default `'mean'`),
+          `add_calendar_features` (bool, default True), `n_fourier_terms`
+          (int, default 2), `nori_config` (dict, default None).
+        - **EDF Lab TS-ICL** (`TSICLAdapter`): `checkpoint_version` (str,
+          default `'tsicl-v1.ckpt'`), `context_length` (int, default 4096),
+          `device` (str, default `'auto'`), `allow_auto_download` (bool,
+          default True).
 
     Attributes
     ----------
@@ -138,6 +177,19 @@ class FoundationModel:
     that only the library required by the adapter you actually use needs to
     be installed, other foundation-model backends remain optional.
 
+    Device handling is not uniform across adapters; each mirrors the
+    convention of its own backend, so the kwarg used to select the device
+    differs by model:
+
+    - `device_map` (plus `torch_dtype`), HuggingFace `from_pretrained`
+      style: Chronos, T0.
+    - `device` string, resolved internally to a concrete accelerator:
+      Moirai, TS-ICL.
+    - Through the backend configuration dict: TabICL (`tabicl_config`),
+      TabPFN (`tabpfn_model_config`), Nori (`nori_config`).
+    - No device parameter: TimesFM, which relies on its backend's own
+      default device selection.
+
     References
     ----------
     .. [1] Amazon Chronos - GitHub repository.
@@ -175,7 +227,18 @@ class FoundationModel:
 
     .. [12] The Forecasting Company T0 - HuggingFace model card.
             https://huggingface.co/theforecastingcompany/t0-alpha
-    
+            
+    .. [13] Synthefy Nori - GitHub repository.
+            https://github.com/Synthefy/synthefy-nori
+
+    .. [14] Synthefy Nori - HuggingFace model card.
+            https://huggingface.co/Synthefy/Nori
+
+    .. [15] EDF Lab TS-ICL - GitHub repository.
+            https://github.com/EDF-Lab/ts-icl
+
+    .. [16] EDF Lab TS-ICL - HuggingFace model card.
+            https://huggingface.co/taharnbl/TS-ICL
 
     """
 
@@ -395,6 +458,9 @@ class FoundationModel:
             Names of the exogenous variables. `None` if `exog` is `None`.
 
         """
+
+        if len(series) == 0:
+            raise ValueError("`series` cannot be an empty dictionary or an empty DataFrame.")
 
         series_dict, series_indexes = check_preprocess_series_foundation(series)
         series_names_in_ = list(series_dict.keys())
@@ -826,7 +892,11 @@ class FoundationModel:
                 "Call `fit` before `predict`, or pass `context`."
             )
 
-        if not isinstance(steps, (int, np.integer)) or steps < 1:
+        if (
+            isinstance(steps, bool)
+            or not isinstance(steps, (int, np.integer))
+            or steps < 1
+        ):
             raise ValueError("`steps` must be a positive integer.")
 
         if quantiles is not None:
@@ -859,9 +929,13 @@ class FoundationModel:
                 exog   = context_exog,
             )
         else:
+            if not context:
+                raise ValueError("`context` cannot be an empty dictionary.")
             series_names_in = list(context.keys())
         
         if levels is not None:
+            if len(levels) == 0:
+                raise ValueError("`levels` must be a single string or a list-like of strings, but cannot be empty.")
             requested_levels = [levels] if isinstance(levels, str) else list(levels)
             unknown = [lv for lv in requested_levels if lv not in series_names_in]
             if unknown:
@@ -944,13 +1018,13 @@ class FoundationModel:
 
         return predictions
 
-    def get_params(self, deep: Any = None) -> dict:
+    def get_params(self, deep: bool = True) -> dict:
         """
         Get parameters for this estimator (sklearn-compatible).
 
         Parameters
         ----------
-        deep : Any, default None
+        deep : bool, default True
             Not used, present here for API consistency by convention.
 
         Returns
@@ -960,11 +1034,13 @@ class FoundationModel:
 
         Notes
         -----
-        Required so that `sklearn.base.clone` can create an unfitted copy
-        of this object, which is used internally by `deepcopy_forecaster`
-        during backtesting. The pre-loaded pipeline is intentionally excluded
-        so that clones are created without copying heavy model weights; the
-        pipeline is reloaded lazily on the first `predict` call.
+        Required so that `sklearn.base.clone` can create an unfitted copy of
+        this object. `clone` is invoked when a `ForecasterFoundation` is
+        constructed (in its `__init__`) and by `deepcopy_forecaster` during
+        model selection and hyperparameter search. The pre-loaded pipeline is
+        intentionally excluded so that clones are created without copying heavy
+        model weights; the pipeline is reloaded lazily on the first `predict`
+        call.
         
         """
 
@@ -993,9 +1069,12 @@ class FoundationModel:
         try:
             self.adapter.set_params(**params)
         except ValueError as exc:
-            raise ValueError(
-                str(exc).replace(type(self.adapter).__name__, "FoundationModel")
-            ) from exc
+            adapter_name = type(self.adapter).__name__
+            message = str(exc).replace(
+                f"Invalid parameter(s) for {adapter_name}:",
+                "Invalid parameter(s) for FoundationModel:",
+            )
+            raise ValueError(message) from exc
 
         self.index_type_               = None
         self.index_freq_               = None

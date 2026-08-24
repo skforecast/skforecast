@@ -5,8 +5,8 @@ This script is the single entry point for producing all derived AI context
 files used by IDEs, the web site, and LLMs.  The source files that are
 maintained by hand are:
 
-  1. tools/ai/llms-base.txt        - core API reference (~730 lines)
-  2. llms.txt                      - public index per llmstxt.org spec (~120 lines)
+  1. tools/ai/llms-base.txt        - core API reference
+  2. llms.txt                      - public index per llmstxt.org spec
   3. skills/*/SKILL.md             - modular Agent Skills (one per directory)
   4. tools/ai/ai_context_header.md - dev-only header (testing, code style)
 
@@ -25,6 +25,7 @@ import ast
 import re
 import sys
 import textwrap
+import time
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -39,22 +40,30 @@ PYPROJECT_LLM_CONTEXT_RE = re.compile(
     r'^"LLM Context"\s*=\s*"([^"]+)"', re.MULTILINE
 )
 ALLOWED_REDIRECT_PREFIXES = ("https://doi.org/",)
+URL_CHECK_TIMEOUT = 20
+URL_CHECK_ATTEMPTS = 3
+URL_CHECK_RETRY_DELAY = 3
+# HTTP status codes that usually indicate a transient failure, not a broken link.
+RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504})
 
+# Reading order for llms-full.txt, following the prerequisite edges the skills
+# declare in their "### Related skills" sections.
 SKILL_ORDER: list[str] = [
+    "choosing-a-forecaster",
+    "autocorrelation-and-lag-selection",
+    "feature-engineering",
     "forecasting-single-series",
     "forecasting-multiple-series",
-    "statistical-models",
+    "foundation-forecasting",
+    "baseline-forecasting",
     "metric-selection",
     "backtesting-configuration",
     "hyperparameter-optimization",
-    "prediction-intervals",
-    "autocorrelation-and-lag-selection",
-    "feature-engineering",
     "feature-selection",
-    "drift-detection",
+    "prediction-intervals",
+    "statistical-models",
     "deep-learning-forecasting",
-    "foundation-forecasting",
-    "choosing-a-forecaster",
+    "drift-detection",
     "troubleshooting-common-errors",
     "complete-api-reference",
 ]
@@ -64,6 +73,10 @@ IDE_TARGETS: list[str] = [
     ".github/copilot-instructions.md",
     "AGENTS.md",
 ]
+
+# Marker delimiting the generated skill roster inside CLAUDE.md
+SKILLS_LIST_START = "<!-- SKILLS-LIST:START"
+SKILLS_LIST_END = "<!-- SKILLS-LIST:END -->"
 
 AUTOGEN_NOTICE_IDE = textwrap.dedent("""\
     <!-- AUTO-GENERATED FILE. DO NOT EDIT MANUALLY. -->
@@ -135,9 +148,35 @@ def validate_skill(skill_dir: Path) -> list[str]:
                     errors.append(
                         f"  {name}: frontmatter name '{fm_name}' != directory name '{name}'"
                     )
+            # Descriptions are injected into the system prompt, so they must be
+            # third person: a first/second person voice degrades skill discovery.
+            desc_match = re.search(
+                r"^description:(.*?)(?=^[A-Za-z][\w-]*:|\Z)",
+                fm,
+                re.MULTILINE | re.DOTALL,
+            )
+            description = desc_match.group(1) if desc_match else ""
+            for phrase in ("I can ", "I will ", "You can ", "You should ", "We "):
+                if phrase in description:
+                    errors.append(
+                        f"  {name}: description must be written in third person "
+                        f"(found {phrase.strip()!r})"
+                    )
+
+    # --- required section headings ---
+    body = strip_yaml_frontmatter(raw)
+    renamed = False
+    for banned, expected in (
+        ("## When to Use This Skill", "## When to Use"),
+        ("## Common Pitfalls", "## Common Mistakes"),
+    ):
+        if re.search(rf"^{re.escape(banned)}[ \t]*$", body, re.MULTILINE):
+            errors.append(f"  {name}: use '{expected}' instead of '{banned}'")
+            renamed = renamed or expected == "## When to Use"
+    if not renamed and not re.search(r"^## When to Use[ \t]*$", body, re.MULTILINE):
+        errors.append(f"  {name}: SKILL.md is missing a '## When to Use' section")
 
     # --- line count ---
-    body = strip_yaml_frontmatter(raw)
     line_count = body.count("\n") + 1
     if line_count > 500:
         errors.append(f"  {name}: SKILL.md body is {line_count} lines (max 500)")
@@ -145,6 +184,11 @@ def validate_skill(skill_dir: Path) -> list[str]:
     # --- references ---
     refs_dir = skill_dir / "references"
     if refs_dir.exists():
+        if not re.search(r"^## References[ \t]*$", body, re.MULTILINE):
+            errors.append(
+                f"  {name}: has references/ but no '## References' section in SKILL.md"
+            )
+
         for ref_file in sorted(refs_dir.glob("*.md")):
             ref_body = ref_file.read_text(encoding="utf-8")
             if not ref_body.strip():
@@ -155,14 +199,26 @@ def validate_skill(skill_dir: Path) -> list[str]:
                     f"  {name}: references/{ref_file.name} is "
                     f"{ref_line_count} lines (max 1000)"
                 )
+            # Claude previews long files with partial reads, so the full scope
+            # has to be visible from the top.
+            if ref_line_count > 100 and not re.search(
+                r"^## Contents[ \t]*$", ref_body, re.MULTILINE
+            ):
+                errors.append(
+                    f"  {name}: references/{ref_file.name} is {ref_line_count} "
+                    f"lines and needs a '## Contents' section"
+                )
+            # References must stay one level deep from SKILL.md.
+            for linked in re.findall(r"\]\(([^)]+\.md)\)", ref_body):
+                if not linked.startswith(("http://", "https://")):
+                    errors.append(
+                        f"  {name}: references/{ref_file.name} links to "
+                        f"'{linked}'; reference files must not link to other files"
+                    )
             if f"references/{ref_file.name}" not in raw:
                 errors.append(
                     f"  {name}: references/{ref_file.name} is not linked from SKILL.md"
                 )
-
-    # --- name must be in SKILL_ORDER ---
-    if name not in SKILL_ORDER:
-        errors.append(f"  {name}: not listed in SKILL_ORDER")
 
     return errors
 
@@ -298,40 +354,66 @@ def extract_urls(text: str) -> list[str]:
     return unique_urls
 
 
-def check_url(url: str, label: str) -> list[str]:
-    """Check a URL with HEAD and fallback to GET."""
+def _is_transient_error(exc: BaseException) -> bool:
+    """Return True if the exception looks like a temporary network failure."""
+    if isinstance(exc, urllib.error.HTTPError):
+        return exc.code in RETRYABLE_STATUS_CODES
+    if isinstance(exc, urllib.error.URLError):
+        if isinstance(exc.reason, BaseException):
+            return _is_transient_error(exc.reason)
+        return True
+
+    return isinstance(exc, (TimeoutError, ConnectionError))
+
+
+def _request_url(url: str, label: str, method: str, allow_redirect: bool) -> list[str]:
+    """Request a URL with the given HTTP method. May raise on network errors."""
     errors: list[str] = []
+    req = urllib.request.Request(url, method=method)
+    req.add_header("User-Agent", "skforecast-link-checker/1.0")
+    with urllib.request.urlopen(req, timeout=URL_CHECK_TIMEOUT) as resp:
+        code = resp.getcode()
+        if code and code >= 400:
+            errors.append(f"  {label}: HTTP {code} - {url}")
+        elif resp.url != url and not allow_redirect:
+            errors.append(f"  {label}: redirected {url} -> {resp.url}")
+
+    return errors
+
+
+def _check_url_once(url: str, label: str, allow_redirect: bool) -> list[str]:
+    """Check a URL with HEAD and fallback to GET. May raise on network errors."""
+    try:
+        return _request_url(url, label, "HEAD", allow_redirect)
+    except Exception:
+        # Some servers reject or stall on HEAD; retry with GET
+        return _request_url(url, label, "GET", allow_redirect)
+
+
+def check_url(url: str, label: str) -> list[str]:
+    """Check a URL, retrying transient network failures before reporting an error."""
     allow_redirect = any(
         url.startswith(prefix) for prefix in ALLOWED_REDIRECT_PREFIXES
     )
-    try:
-        req = urllib.request.Request(url, method="HEAD")
-        req.add_header("User-Agent", "skforecast-link-checker/1.0")
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            code = resp.getcode()
-            if code and code >= 400:
-                errors.append(f"  {label}: HTTP {code} - {url}")
-            elif resp.url != url and not allow_redirect:
-                errors.append(f"  {label}: redirected {url} -> {resp.url}")
-    except urllib.error.HTTPError as exc:
-        # Some servers reject HEAD; retry with GET
+    for attempt in range(1, URL_CHECK_ATTEMPTS + 1):
         try:
-            req_get = urllib.request.Request(url, method="GET")
-            req_get.add_header("User-Agent", "skforecast-link-checker/1.0")
-            with urllib.request.urlopen(req_get, timeout=15) as resp:
-                code = resp.getcode()
-                if code and code >= 400:
-                    errors.append(f"  {label}: HTTP {code} - {url}")
-                elif resp.url != url and not allow_redirect:
-                    errors.append(f"  {label}: redirected {url} -> {resp.url}")
-        except Exception:
-            errors.append(f"  {label}: HTTP {exc.code} - {url}")
-    except urllib.error.URLError as exc:
-        errors.append(f"  {label}: Connection error ({exc.reason}) - {url}")
-    except Exception as exc:
-        errors.append(f"  {label}: {exc} - {url}")
+            return _check_url_once(url, label, allow_redirect)
+        except Exception as exc:
+            last_attempt = attempt == URL_CHECK_ATTEMPTS
+            if not last_attempt and _is_transient_error(exc):
+                print(
+                    f"  {label}: transient failure ({exc}) on {url}, "
+                    f"retrying ({attempt}/{URL_CHECK_ATTEMPTS - 1}) ..."
+                )
+                time.sleep(URL_CHECK_RETRY_DELAY * attempt)
+                continue
+            if isinstance(exc, urllib.error.HTTPError):
+                return [f"  {label}: HTTP {exc.code} - {url}"]
+            if isinstance(exc, urllib.error.URLError):
+                return [f"  {label}: Connection error ({exc.reason}) - {url}"]
+            return [f"  {label}: {exc} - {url}"]
 
-    return errors
+    return []
 
 
 def validate_urls_in_file(
@@ -392,16 +474,10 @@ def validate_python_snippets() -> list[str]:
     source_files.extend((ROOT / "skills").glob("*/references/*.md"))
 
     # Signature reference blocks intentionally use non-executable notation.
-    skip_files = {
-        ROOT
-        / "skills"
-        / "complete-api-reference"
-        / "references"
-        / "method-signatures.md",
-    }
+    skip_dirs = {ROOT / "skills" / "complete-api-reference" / "references"}
 
     for path in sorted(source_files):
-        if path in skip_files or not path.exists():
+        if path.parent in skip_dirs or not path.exists():
             continue
         text = path.read_text(encoding="utf-8")
         for match in re.finditer(
@@ -444,12 +520,105 @@ def validate_ai_context_urls(
 # Builders
 # ---------------------------------------------------------------------------
 
+def discover_skills(skills_dir: Path) -> list[str]:
+    """Return every skill directory containing a SKILL.md, alphabetically."""
+    if not skills_dir.exists():
+        return []
+    return sorted(
+        p.name
+        for p in skills_dir.iterdir()
+        if p.is_dir() and not p.name.startswith(".") and (p / "SKILL.md").exists()
+    )
+
+
+def parse_related_skills(skill_md: Path) -> dict[str, set[str]]:
+    """Return {'Prerequisite': {...}, 'Next': {...}} from '### Related skills'."""
+    body = skill_md.read_text(encoding="utf-8")
+    # The block may be the last section, so the trailing '## ' is optional.
+    block = re.search(
+        r"^### Related skills(.*?)(?=^## |\Z)", body, re.DOTALL | re.MULTILINE
+    )
+    edges: dict[str, set[str]] = {"Prerequisite": set(), "Next": set()}
+    if not block:
+        return edges
+    for line in block.group(1).splitlines():
+        m = re.match(r"-\s+\*\*(Prerequisite|Next)\*\*:\s*(.*)", line.strip())
+        if m:
+            edges[m.group(1)].update(re.findall(r"`([a-z][a-z-]+)`", m.group(2)))
+    return edges
+
+
+def validate_related_skills(skills_dir: Path) -> list[str]:
+    """Check the declared skill graph against SKILL_ORDER and itself."""
+    errors: list[str] = []
+    skills = discover_skills(skills_dir)
+    known = set(skills)
+    position = {name: i for i, name in enumerate(resolve_skill_order(skills_dir))}
+    graph = {
+        name: parse_related_skills(skills_dir / name / "SKILL.md") for name in skills
+    }
+
+    banned = ("Before", "After", "With")
+    for name in skills:
+        raw = (skills_dir / name / "SKILL.md").read_text(encoding="utf-8")
+        for label in banned:
+            if re.search(rf"^-\s+\*\*{label}\*\*:", raw, re.MULTILINE):
+                errors.append(
+                    f"  {name}: '**{label}**:' is ambiguous; use "
+                    f"'**Prerequisite**', '**Next**', '**Alongside**' or '**Related**'"
+                )
+
+        for target in graph[name]["Prerequisite"]:
+            if target not in known:
+                continue
+            # A prerequisite has to be readable before the skill that needs it.
+            if position[target] > position[name]:
+                errors.append(
+                    f"  {name}: declares prerequisite '{target}', which comes "
+                    f"later in SKILL_ORDER (#{position[target] + 1} > #{position[name] + 1})"
+                )
+            if name in graph[target]["Prerequisite"]:
+                errors.append(
+                    f"  {name}: mutual prerequisite with '{target}'; one of them "
+                    f"should be '**Alongside**' or '**Next**'"
+                )
+
+    return errors
+
+
+def resolve_skill_order(skills_dir: Path) -> list[str]:
+    """Curated reading order first, then any skill missing from SKILL_ORDER.
+
+    Omission from SKILL_ORDER is a validation error; appending is only a safety
+    net so that generation forced past that error still emits every skill.
+    """
+    found = discover_skills(skills_dir)
+    ordered = [s for s in SKILL_ORDER if s in found]
+    return ordered + [s for s in found if s not in ordered]
+
+
+def build_claude_md(claude_md: str, skills: list[str]) -> str:
+    """Refresh the generated skill roster delimited by the SKILLS-LIST markers."""
+    start = claude_md.find(SKILLS_LIST_START)
+    end = claude_md.find(SKILLS_LIST_END)
+    if start == -1 or end == -1:
+        raise SystemExit(
+            "CLAUDE.md: SKILLS-LIST:START / SKILLS-LIST:END markers not found"
+        )
+    block = (
+        f"{SKILLS_LIST_START} - generated, do not edit by hand -->\n"
+        f"  {', '.join(skills)}\n"
+        f"  {SKILLS_LIST_END}"
+    )
+    return claude_md[:start] + block + claude_md[end + len(SKILLS_LIST_END):]
+
+
 def build_llms_full(llms_base_txt: str) -> str:
     """Assemble llms-full.txt = llms-base.txt + all skills (no frontmatter)."""
     parts: list[str] = [AUTOGEN_NOTICE_FULL.rstrip("\n"), "", llms_base_txt.rstrip("\n")]
 
     skills_dir = ROOT / "skills"
-    for skill_name in SKILL_ORDER:
+    for skill_name in resolve_skill_order(skills_dir):
         skill_dir = skills_dir / skill_name
         skill_md = skill_dir / "SKILL.md"
         if not skill_md.exists():
@@ -509,6 +678,15 @@ def generate(*, check_only: bool = False) -> bool:
             if not sd.exists():
                 all_errors.append(f"  {skill_name}: directory not found in skills/")
 
+        for skill_name in discover_skills(skills_dir):
+            if skill_name not in SKILL_ORDER:
+                all_errors.append(
+                    f"  {skill_name}: not listed in SKILL_ORDER "
+                    f"(add it in the position it should be read)"
+                )
+
+        all_errors.extend(validate_related_skills(skills_dir))
+
     # ── validate version consistency ─────────────────────────────────
     all_errors.extend(validate_version_consistency())
 
@@ -542,6 +720,11 @@ def generate(*, check_only: bool = False) -> bool:
     # docs/ copies — index + full
     outputs[ROOT / "docs" / "llms.txt"] = llms_index_txt
     outputs[ROOT / "docs" / "llms-full.txt"] = outputs[ROOT / "llms-full.txt"]
+
+    # CLAUDE.md — only the marked skill roster is generated
+    outputs[ROOT / "CLAUDE.md"] = build_claude_md(
+        read_source(ROOT / "CLAUDE.md", "CLAUDE.md"), discover_skills(skills_dir)
+    )
 
     # ── check or write ───────────────────────────────────────────────
     if check_only:

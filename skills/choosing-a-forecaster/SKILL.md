@@ -9,20 +9,27 @@ description: >
 
 # Choosing a Forecaster
 
-## When to Use This Skill
+## When to Use
 
 Use this skill when the user needs help choosing a forecaster, comparing forecaster types (recursive vs direct, single vs multi-series), or understanding which skforecast class fits their problem.
 
 ### Related skills
 
-- **After**: `forecasting-single-series` (apply the chosen forecaster to one target series)
-- **After**: `forecasting-multiple-series` (apply the chosen forecaster to several series jointly)
-- **After**: `autocorrelation-and-lag-selection` (analyse the series dynamics before configuring `lags`)
-- **After**: `feature-engineering` (build the input feature set: calendar, rolling, exogenous)
+- **Next**: `forecasting-single-series` (apply the chosen forecaster to one target series)
+- **Next**: `forecasting-multiple-series` (apply the chosen forecaster to several series jointly)
+- **Next**: `baseline-forecasting` (build and benchmark a naive baseline with `ForecasterEquivalentDate`)
+- **Next**: `autocorrelation-and-lag-selection` (analyse the series dynamics before configuring `lags`)
+- **Next**: `feature-engineering` (build the input feature set: calendar, rolling, exogenous)
 
 ## Overview
 
-Skforecast is a **machine learning-first** library. The ML forecasters are the primary tools; statistical models (`ForecasterStats`) and naive baselines (`ForecasterEquivalentDate`) serve as comparison benchmarks.
+Skforecast is a **machine learning-first** library. The primary tools are the
+sklearn-compatible ML forecasters (`ForecasterRecursive`, `ForecasterDirect`,
+and their multi-series variants) and the zero-shot foundation models
+(`ForecasterFoundation`, e.g. Chronos-2, TimesFM 2.5) - reach for an ML or a
+foundation forecaster first. Statistical models (`ForecasterStats`) and naive
+baselines (`ForecasterEquivalentDate`) serve as comparison benchmarks to confirm
+the chosen model adds value.
 
 ## Step 1 — How Many Series?
 
@@ -40,8 +47,8 @@ Skforecast is a **machine learning-first** library. The ML forecasters are the p
 | **General purpose** (start here) | `ForecasterRecursive` | Default choice. One model, recursive multi-step. Works with any sklearn-compatible estimator (LightGBM, XGBoost, CatBoost, RandomForest, etc.). Supports lags, window features, exog, differentiation, transformers, weight functions, and all probabilistic prediction methods (bootstrapping, conformal, quantiles, distributions) |
 | **Horizon-dependent patterns** (e.g., predicting at 1h vs 24h requires different relationships) | `ForecasterDirect` | Trains one independent model per step — no error propagation. Better when the predictive relationship changes significantly across the forecast horizon. Requires `steps` at init; parallelizable with `n_jobs` |
 | **Statistical baseline** | `ForecasterStats` | Wraps ARIMA, SARIMAX, ETS, ARAR. Use as a benchmark to compare against ML models, or when the series is very short (< 200 obs) and ML overfits |
-| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0). `fit()` only stores context — no training. Good baseline and cold-start option. See the `foundation-forecasting` skill |
-| **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Use as a sanity-check baseline |
+| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL). `fit()` only stores context — no training. Good baseline and cold-start option. See the `foundation-forecasting` skill |
+| **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Use as a sanity-check baseline. See the `baseline-forecasting` skill |
 
 ## Step 2b — Multiple Series
 
@@ -50,7 +57,7 @@ Skforecast is a **machine learning-first** library. The ML forecasters are the p
 | **Forecast many series with a shared model** (start here) | `ForecasterRecursiveMultiSeries` | One global model learns cross-series patterns. Supports DataFrame or dict input (dict allows series with different date ranges). Encoding options: `'ordinal'` (default), `'ordinal_category'`, `'onehot'`, `None`. Supports per-series transformers, per-series differentiation, series_weights |
 | **Other series are features for one target** | `ForecasterDirectMultiVariate` | All series become input features to predict a single `level`. Per-series lags via dict (`{'sales': [1,7], 'price': [1]}`). One model per step — no error propagation |
 | **Deep learning / complex nonlinear patterns** | `ForecasterRnn` | Keras-based RNN/LSTM/GRU. Single model outputs all steps and levels simultaneously via 3D tensors. Only conformal intervals (no bootstrapping). Requires keras |
-| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0. `fit()` only stores context. Native quantile intervals. Chronos-2, TabICL, TabPFN-TS, and TFC-T0 support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
+| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL. `fit()` only stores context. Native quantile intervals. Chronos-2, TabICL, TabPFN-TS, TFC-T0, and Nori support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
 
 ## Decision Flowchart
 
@@ -83,7 +90,7 @@ How many series?
         └─► ForecasterRnn
 
 Zero-shot / no training data / cold-start (single or multi-series)?
-    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0)
+    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori/ TS-ICL)
 ```
 
 ## Key Comparisons
@@ -151,7 +158,7 @@ Zero-shot / no training data / cold-start (single or multi-series)?
 
 > **Legend:** ✓ = supported, — = not supported/not applicable.
 
-## Quick Start Recommendations
+## Next Steps
 
 Once you have chosen a forecaster, follow these steps to get started:
 

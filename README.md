@@ -48,7 +48,7 @@ Whether you're building quick prototypes or deploying models in production, skfo
 > :sparkles: **Try [skforecast-ai](https://ai.skforecast.org/)**, an **AI forecasting assistant** that pairs a deterministic engine, powered by [**skforecast**](https://skforecast.org/), with an **LLM reasoning layer**.
 
 > [!TIP]
-> :computer: **Try [Skforecast Studio](https://studio.skforecast.org/)** — an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
+> :computer: **Try [Skforecast Studio](https://studio.skforecast.org/)**, an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
 
 ### Quick Example
 
@@ -203,12 +203,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.23.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.24.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.23.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.24.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
 **BibTeX**:
@@ -216,8 +216,8 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.23.0) [Compu
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.23.0},
-  month   = {7},
+  version = {0.24.0},
+  month   = {8},
   year    = {2026},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},

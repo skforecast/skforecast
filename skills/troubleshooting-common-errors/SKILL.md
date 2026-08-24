@@ -9,7 +9,18 @@ description: >
 
 # Troubleshooting Common Errors
 
-This skill is the full pitfall catalog. The highest-risk skills also carry a focused `## Stop Conditions` table at the top (forecasting-single-series, forecasting-multiple-series, prediction-intervals, statistical-models, foundation-forecasting, feature-engineering, deep-learning-forecasting, hyperparameter-optimization); this skill remains the canonical source they point back to.
+## When to Use
+
+Use this skill when generated skforecast code raises an error, produces unexpected
+results, or uses an import path, class name or function that no longer exists. It is
+the full pitfall catalog; the highest-risk skills also carry a focused
+`## Stop Conditions` table that points back here.
+
+### Related skills
+
+- **Alongside**: every skill — this is the canonical pitfall catalog their `## Stop Conditions` tables point back to
+- **Related**: `complete-api-reference` (confirm the exact signature before assuming a bug)
+- **Related**: `choosing-a-forecaster` (many errors come from using the wrong forecaster for the data shape)
 
 ## Deprecated Import Paths
 
@@ -132,6 +143,19 @@ grid_search_forecaster(forecaster=forecaster_stats, y=y, cv=cv, param_grid=param
 from skforecast.model_selection import grid_search_stats
 grid_search_stats(forecaster=forecaster_stats, y=y, cv=cv, param_grid=param_grid)
 
+# ❌ WRONG: grid_search_forecaster with ForecasterEquivalentDate
+grid_search_forecaster(forecaster=forecaster_baseline, y=y, cv=cv, param_grid=param_grid)
+
+# ✅ CORRECT: grid_search_equivalent_date for baselines (offset/n_offsets are coupled;
+#            agg_func is also searchable; pass a list of dicts to test explicit
+#            configs, optional 'alias' label)
+from skforecast.model_selection import grid_search_equivalent_date
+grid_search_equivalent_date(
+    forecaster=forecaster_baseline, y=y, cv=cv,
+    param_grid=[{'offset': 1, 'n_offsets': 7}, {'offset': 7, 'n_offsets': 2}],
+    metric='mean_absolute_error',
+)
+
 # ❌ WRONG: grid_search_forecaster with ForecasterRecursiveMultiSeries
 grid_search_forecaster(forecaster=forecaster_multi, y=y, cv=cv, param_grid=param_grid)
 
@@ -139,6 +163,19 @@ grid_search_forecaster(forecaster=forecaster_multi, y=y, cv=cv, param_grid=param
 from skforecast.model_selection import grid_search_forecaster_multiseries
 grid_search_forecaster_multiseries(
     forecaster=forecaster_multi, series=series, cv=cv, param_grid=param_grid
+)
+
+# ❌ WRONG: bayesian_search_forecaster with ForecasterFoundation
+bayesian_search_forecaster(forecaster=forecaster_foundation, y=y, cv=cv, search_space=search_space)
+
+# ✅ CORRECT: bayesian_search_foundation (TimeSeriesFold only, no 'lags' in search_space)
+from skforecast.model_selection import bayesian_search_foundation
+bayesian_search_foundation(
+    forecaster=forecaster_foundation, series=series, cv=cv,
+    search_space=lambda trial: {
+        'context_length': trial.suggest_categorical('context_length', [512, 2048])
+    },
+    metric='mean_absolute_error',
 )
 ```
 

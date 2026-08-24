@@ -43,10 +43,10 @@ performance. Use `TimeSeriesFold` for realistic multi-step backtesting.
 
 ### Related skills
 
-- **Before**: `forecasting-single-series` / `forecasting-multiple-series` (have a fitted forecaster before backtesting)
-- **With**: `metric-selection` (choose the metric(s) backtesting reports)
-- **With**: `hyperparameter-optimization` (the same `cv` object drives the search functions)
-- **After**: `prediction-intervals` (add `interval=` / `interval_method=` to backtest uncertainty)
+- **Prerequisite**: `forecasting-single-series` / `forecasting-multiple-series` (have a fitted forecaster before backtesting)
+- **Alongside**: `metric-selection` (choose the metric(s) backtesting reports)
+- **Alongside**: `hyperparameter-optimization` (the same `cv` object drives the search functions)
+- **Next**: `prediction-intervals` (add `interval=` / `interval_method=` to backtest uncertainty)
 
 ## Stop Conditions
 

@@ -77,6 +77,25 @@ def test_T0Adapter_set_params_resets_model_on_loader_keys():
     assert adapter.device_map == "cpu"
 
 
+def test_T0Adapter_set_params_no_reset_when_value_unchanged():
+    """
+    Test that set_params does not clear the loaded model when reset keys are
+    set to their current values (no actual change).
+    """
+    adapter = T0Adapter(
+        model_id="theforecastingcompany/t0-alpha", model=FakeT0Forecaster()
+    )
+    assert adapter._model is not None
+
+    adapter.set_params(
+        model_id="theforecastingcompany/t0-alpha",
+        device_map="auto",
+        torch_dtype=None,
+    )
+
+    assert adapter._model is not None  # not reset because values unchanged
+
+
 def test_T0Adapter_set_params_ValueError_on_invalid_key():
     """
     Test that set_params raises ValueError for unknown parameters.
@@ -175,6 +194,40 @@ def test_T0Adapter_predict_builds_future_covariates_from_past_and_future():
     np.testing.assert_allclose(fc[0, 0, context_length:], future_exog_values["feat_a"].to_numpy())
 
 
+def test_T0Adapter_build_future_covariates_dedups_columns_preserving_order():
+    """
+    Test that _build_future_covariates pools covariate columns across series
+    in first-seen order, deduplicating repeated column names.
+    """
+    adapter = T0Adapter(model_id="theforecastingcompany/t0-alpha")
+    steps = 2
+    context_length = 3
+    idx = pd.date_range("2020-01-01", periods=steps, freq="D")
+    exog_future = {
+        "s1": pd.DataFrame({"a": [10.0, 10.0], "b": [20.0, 20.0]}, index=idx),
+        "s2": pd.DataFrame({"b": [21.0, 21.0], "c": [30.0, 30.0]}, index=idx),
+    }
+
+    result = adapter._build_future_covariates(
+        series_names=["s1", "s2"],
+        context_exog=None,
+        exog=exog_future,
+        context_length=context_length,
+        steps=steps,
+    )
+
+    # Pooled columns in first-seen order are (a, b, c): 3 covariates, not 4.
+    assert result.shape == (2, 3, context_length + steps)
+    # Future values land in the horizon region at the expected column slot
+    # (a -> 0, b -> 1, c -> 2), missing columns stay NaN.
+    np.testing.assert_array_equal(result[0, 0, context_length:], [10.0, 10.0])
+    np.testing.assert_array_equal(result[0, 1, context_length:], [20.0, 20.0])
+    assert np.all(np.isnan(result[0, 2, context_length:]))
+    np.testing.assert_array_equal(result[1, 1, context_length:], [21.0, 21.0])
+    np.testing.assert_array_equal(result[1, 2, context_length:], [30.0, 30.0])
+    assert np.all(np.isnan(result[1, 0, context_length:]))
+
+
 def test_T0Adapter_predict_batches_all_series_in_one_call():
     """
     Test that all series are forecast in a single batched call and that
@@ -254,3 +307,40 @@ def test_T0Adapter_load_model_noop_when_already_set():
     adapter = T0Adapter(model_id="theforecastingcompany/t0-alpha", model=fake)
     adapter._load_model()
     assert adapter._model is fake
+
+
+def test_T0Adapter_load_model_OSError_when_from_pretrained_raises_TypeError(monkeypatch):
+    """
+    Test that _load_model converts a TypeError raised by
+    T0Forecaster.from_pretrained into a clear OSError. This mirrors the real
+    failure mode: huggingface_hub's from_pretrained silently swallows a
+    gated-repository config download failure and falls back to
+    instantiating the model with no constructor arguments, raising a
+    confusing TypeError about missing hyperparameters. The `t0` package is
+    faked so the test does not depend on `tfc-t0` being installed.
+    """
+    import sys
+    import types
+
+    class FakeGatedT0Forecaster:
+        @classmethod
+        def from_pretrained(cls, model_id):
+            raise TypeError(
+                "T0Forecaster.__init__() missing 8 required positional "
+                "arguments: 'embed_dim', 'num_layers', 'num_heads', "
+                "'mlp_hidden_dim', 'patch_size', 'group_every_n', 'dropout', "
+                "and 'quantile_levels'"
+            )
+
+    fake_t0_module = types.ModuleType("t0")
+    fake_t0_module.T0Forecaster = FakeGatedT0Forecaster
+    monkeypatch.setitem(sys.modules, "t0", fake_t0_module)
+
+    adapter = T0Adapter(model_id="theforecastingcompany/t0-alpha")
+    err_msg = re.escape(
+        "Could not load model 'theforecastingcompany/t0-alpha' from the "
+        "Hugging Face Hub."
+    )
+    with pytest.raises(OSError, match=err_msg):
+        adapter._load_model()
+    assert adapter._model is None

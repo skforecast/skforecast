@@ -1,18 +1,29 @@
 # Prediction Intervals — Compatibility Reference
 
-## Interval Scale: Quantiles (Changed in 0.23.0)
+## Contents
 
-Since skforecast 0.23.0, `interval` is expressed as **quantiles in `[0, 1]`**,
+- Interval scale: quantiles
+- Method compatibility by forecaster
+- Parameter differences by forecaster
+- Backtesting with intervals
+- Prerequisites for bootstrapping
+- Binned residuals
+- Probabilistic prediction methods beyond intervals
+- Common error patterns
+
+## Interval Scale: Quantiles
+
+`interval` is expressed as **quantiles in `[0, 1]`**,
 not percentiles in `[0, 100]`.
 
 | Input | Behavior |
 |-------|----------|
 | All values in `[0, 1]`, e.g. `[0.05, 0.95]` | Treated as quantiles (recommended). |
 | Single `float`, e.g. `0.9` | Nominal coverage; expands to symmetric quantiles `[0.05, 0.95]`. |
-| All values in `(1, 100]`, e.g. `[5, 95]` | Legacy percentiles. Converted to quantiles with a `FutureWarning`. Removed in 0.25.0. |
+| All values in `(1, 100]`, e.g. `[5, 95]` | Legacy percentiles. Converted to quantiles with a `FutureWarning`; removal planned. |
 | Mixed scale, e.g. `[0.05, 95]` | `ValueError` — ambiguous scale. |
 
-`predict_quantiles(quantiles=...)` already used the 0-1 scale and is unaffected.
+`predict_quantiles(quantiles=...)` uses the same 0-1 scale.
 
 ## Method Compatibility by Forecaster
 
@@ -191,7 +202,7 @@ forecaster.predict_dist(
 | Error | Cause | Fix |
 |-------|-------|-----|
 | "No in-sample residuals stored" | `store_in_sample_residuals=False` in `fit()` | Set `store_in_sample_residuals=True` |
-| `FutureWarning` about percentiles | `interval` passed as percentiles, e.g. `[5, 95]` | Use quantiles, e.g. `interval=[0.05, 0.95]` (removed in 0.25.0) |
+| `FutureWarning` about percentiles | `interval` passed as percentiles, e.g. `[5, 95]` | Use quantiles, e.g. `interval=[0.05, 0.95]` |
 | `ValueError` about ambiguous scale | `interval` mixes quantile and percentile values, e.g. `[0.05, 95]` | Use a single scale, e.g. `interval=[0.05, 0.95]` |
 | `method='bootstrapping'` on ForecasterRnn | Bootstrapping not supported | Use `method='conformal'` |
 | `method='bootstrapping'` on ForecasterEquivalentDate | Bootstrapping not supported | Use `method='conformal'` |

@@ -3,7 +3,6 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
 # Each adapter imports its own backend library lazily (i.e. inside the method
 # that first needs it) rather than at module level. This means that only the
 # library required by the adapter you actually use needs to be installed, other
@@ -11,9 +10,18 @@
 
 from __future__ import annotations
 from typing import Any
+import contextlib
+import io
 import numpy as np
 import pandas as pd
 import warnings
+
+from ..utils import expand_index
+from ._utils import (
+    _validate_positive_int,
+    _tensor_to_numpy,
+    _apply_set_params,
+)
 
 
 def _resolve_torch_device(device: str) -> str:
@@ -161,10 +169,7 @@ class ChronosAdapter:
         
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
 
         self.model_id       = model_id
         self._pipeline      = pipeline
@@ -199,8 +204,9 @@ class ChronosAdapter:
 
     def set_params(self, **params) -> ChronosAdapter:
         """
-        Set adapter parameters. Resets the pipeline when a device or dtype
-        param changes, since those are baked into the loaded pipeline.
+        Set adapter parameters. Resets the pipeline when `model_id`,
+        `device_map`, or `torch_dtype` changes, since those are baked into the
+        loaded pipeline.
 
         Parameters
         ----------
@@ -214,34 +220,23 @@ class ChronosAdapter:
 
         """
 
-        valid = {
-            'model_id', 'cross_learning', 'context_length',
-            'device_map', 'torch_dtype', 'predict_kwargs',
-        }
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for ChronosAdapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
-        
-        pipeline_reset_keys = {'model_id', 'device_map', 'torch_dtype'}
-        if params.keys() & pipeline_reset_keys:
-            self._pipeline = None
-        
-        for key, value in params.items():
-            if key == 'predict_kwargs':
-                self.predict_kwargs = value or {}
-            elif key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
-                self.context_length = value
-            else:
-                setattr(self, key, value)
-        
-        return self
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            if "predict_kwargs" in p:
+                p["predict_kwargs"] = p["predict_kwargs"] or {}
+            return p
+
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                (
+                    {"model_id", "device_map", "torch_dtype"},
+                    lambda: setattr(self, "_pipeline", None),
+                ),
+            ),
+        )
 
     def fit(
         self,
@@ -338,11 +333,7 @@ class ChronosAdapter:
 
         predictions: dict[str, np.ndarray] = {}
         for i, name in enumerate(series_names_in):
-            q_arr = quantile_preds[i].squeeze(0)
-            if hasattr(q_arr, "detach"):
-                q_arr = q_arr.detach().cpu().numpy()
-            else:
-                q_arr = np.asarray(q_arr)
+            q_arr = _tensor_to_numpy(quantile_preds[i].squeeze(0))
             predictions[name] = q_arr
 
         return predictions
@@ -549,6 +540,16 @@ class TimesFMAdapter:
     yet implemented. Passing `exog` or `context_exog` issues an
     `IgnoredArgumentWarning` and the values are discarded.
 
+    Compilation behavior. The model is compiled lazily on the first
+    `predict` call, sized for the exact number of `steps` requested (not
+    for `max_horizon`, which only acts as an upper bound and validation
+    ceiling). When `steps` is constant across calls, as in a typical
+    backtesting loop, compilation happens only once, on the first fold. A
+    later `predict` that requests more `steps` than any previous call
+    triggers a single recompilation for the larger horizon. To avoid any
+    runtime compilation altogether, pass an already-compiled model via the
+    `model` argument.
+
     References
     ----------
     .. [1] https://github.com/google-research/timesfm
@@ -598,14 +599,8 @@ class TimesFMAdapter:
         
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
-        if not isinstance(max_horizon, int) or max_horizon < 1:
-            raise ValueError(
-                f"`max_horizon` must be a positive integer. Got {max_horizon!r}."
-            )
+        _validate_positive_int("context_length", context_length)
+        _validate_positive_int("max_horizon", max_horizon)
 
         self.model_id               = model_id
         self._model                 = model
@@ -613,7 +608,7 @@ class TimesFMAdapter:
         self.context_exog_          = None
         self.context_length         = context_length
         self.max_horizon            = max_horizon
-        self.forecast_config_kwargs = dict(forecast_config_kwargs) if forecast_config_kwargs else {}
+        self.forecast_config_kwargs = forecast_config_kwargs or {}
         self.is_fitted              = False
 
     def get_params(self) -> dict:
@@ -652,35 +647,25 @@ class TimesFMAdapter:
 
         """
 
-        valid = {'model_id', 'context_length', 'max_horizon', 'forecast_config_kwargs'}
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for TimesFMAdapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
-        model_reset_keys = {'model_id', 'context_length', 'max_horizon', 'forecast_config_kwargs'}
-        if params.keys() & model_reset_keys:
-            self._model = None
-        for key, value in params.items():
-            if key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
-                self.context_length = value
-            elif key == 'max_horizon':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`max_horizon` must be a positive integer. Got {value!r}."
-                    )
-                self.max_horizon = value
-            elif key == 'forecast_config_kwargs':
-                self.forecast_config_kwargs = dict(value) if value else {}
-            else:
-                setattr(self, key, value)
-        
-        return self
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            if "max_horizon" in p:
+                _validate_positive_int("max_horizon", p["max_horizon"])
+            if "forecast_config_kwargs" in p:
+                p["forecast_config_kwargs"] = p["forecast_config_kwargs"] or {}
+            return p
+
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                (
+                    {"model_id", "context_length", "max_horizon", "forecast_config_kwargs"},
+                    lambda: setattr(self, "_model", None),
+                ),
+            ),
+        )
 
     def fit(
         self,
@@ -831,7 +816,7 @@ class TimesFMAdapter:
         except ImportError as exc:
             raise ImportError(
                 "timesfm is required for TimesFMAdapter. "
-                "Install it with `pip install git+https://github.com/google-research/timesfm.git`."
+                "Install it with `pip install timesfm`."
             ) from exc
 
         # Workaround for a compatibility issue between huggingface_hub and
@@ -992,11 +977,7 @@ class MoiraiAdapter:
         
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. "
-                f"Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
 
         self.model_id       = model_id
         self._module        = module
@@ -1025,7 +1006,7 @@ class MoiraiAdapter:
     def set_params(self, **params) -> MoiraiAdapter:
         """
         Set adapter parameters. Resets the module and forecast object when
-        `model_id` or `context_length` changes.
+        `model_id`, `context_length`, or `device` changes.
 
         Parameters
         ----------
@@ -1038,28 +1019,22 @@ class MoiraiAdapter:
 
         """
 
-        valid = {'model_id', 'context_length', 'device'}
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for MoiraiAdapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
-        if params.keys() & {'model_id', 'context_length', 'device'}:
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            return p
+
+        def _reset_module() -> None:
             self._module = None
             self._forecast_obj = None
-        for key, value in params.items():
-            if key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. "
-                        f"Got {value!r}."
-                    )
-                self.context_length = value
-            else:
-                setattr(self, key, value)
-        
-        return self
+
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                ({"model_id", "context_length", "device"}, _reset_module),
+            ),
+        )
 
     def fit(
         self,
@@ -1311,6 +1286,9 @@ class TabICLAdapter:
         inference. If `None`, TabICL uses its default transforms:
         `[IndexEncoder(), DatetimeEncoder(), AutoPeriodicEncoder()]`. Pass
         an empty list to disable all temporal feature engineering.
+    show_progress : bool, default False
+        If `False`, the tqdm progress bar emitted by the underlying TabICL
+        dispatch loop (`GPU 0: ...`) is suppressed.
 
     Attributes
     ----------
@@ -1328,6 +1306,8 @@ class TabICLAdapter:
         Additional configuration forwarded to `TabICLRegressor`.
     temporal_features : list
         Temporal feature transforms applied to the series.
+    show_progress : bool
+        Whether the TabICL dispatch progress bar is shown.
     is_fitted : bool
         Whether the adapter has been fitted.
     _model : object
@@ -1370,6 +1350,7 @@ class TabICLAdapter:
         point_estimate: str = "mean",
         tabicl_config: dict[str, Any] | None = None,
         temporal_features: list[Any] | None = None,
+        show_progress: bool = False,
     ) -> None:
         """
         Initialise the adapter.
@@ -1399,13 +1380,14 @@ class TabICLAdapter:
             List of `TimeTransform` instances applied before inference. If
             `None`, TabICL uses its defaults. Pass `[]` to disable all
             temporal feature engineering.
+        show_progress : bool, default False
+            If `False`, the tqdm progress bar emitted by the underlying
+            TabICL dispatch loop (`GPU 0: ...`) is suppressed by
+            redirecting stderr during the `predict_df` call.
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
         if point_estimate not in ("mean", "median"):
             raise ValueError(
                 f"`point_estimate` must be 'mean' or 'median'. Got {point_estimate!r}."
@@ -1417,8 +1399,9 @@ class TabICLAdapter:
         self.context_exog_     = None
         self.context_length    = context_length
         self.point_estimate    = point_estimate
-        self.tabicl_config     = dict(tabicl_config) if tabicl_config else {}
+        self.tabicl_config     = tabicl_config or {}
         self.temporal_features = temporal_features
+        self.show_progress     = show_progress
         self.is_fitted         = False
 
     def get_params(self) -> dict:
@@ -1429,9 +1412,9 @@ class TabICLAdapter:
         -------
         params : dict
             Keys: `model_id`, `context_length`, `point_estimate`,
-            `tabicl_config`, `temporal_features`. `tabicl_config` is
-            returned as `None` when no additional config was set (i.e.
-            when the internal dict is empty).
+            `tabicl_config`, `temporal_features`, `show_progress`.
+            `tabicl_config` is returned as `None` when no additional
+            config was set (i.e. when the internal dict is empty).
 
         """
         return {
@@ -1440,19 +1423,20 @@ class TabICLAdapter:
             "point_estimate":    self.point_estimate,
             "tabicl_config":     self.tabicl_config or None,
             "temporal_features": self.temporal_features,
+            "show_progress":     self.show_progress,
         }
 
     def set_params(self, **params) -> TabICLAdapter:
         """
-        Set adapter parameters. Resets the model when any parameter changes,
-        since the `TabICLForecaster` is instantiated lazily on the first
-        `predict` call using the current adapter state.
+        Set adapter parameters. Resets the model when a parameter that affects
+        the `TabICLForecaster` instance changes; toggling `show_progress` does
+        not reset the model.
 
         Parameters
         ----------
         **params :
             Valid keys: `model_id`, `context_length`, `point_estimate`,
-            `tabicl_config`, `temporal_features`.
+            `tabicl_config`, `temporal_features`, `show_progress`.
 
         Returns
         -------
@@ -1460,46 +1444,33 @@ class TabICLAdapter:
 
         """
 
-        valid = {
-            "model_id", "context_length", "point_estimate",
-            "tabicl_config", "temporal_features",
-        }
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for TabICLAdapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            if "point_estimate" in p and p["point_estimate"] not in ("mean", "median"):
+                raise ValueError(
+                    f"`point_estimate` must be 'mean' or 'median'. "
+                    f"Got {p['point_estimate']!r}."
+                )
+            if "tabicl_config" in p:
+                p["tabicl_config"] = p["tabicl_config"] or {}
+            if "show_progress" in p and not isinstance(p["show_progress"], bool):
+                raise ValueError(
+                    f"`show_progress` must be a bool. Got {p['show_progress']!r}."
+                )
+            return p
 
-        validated = {}
-        for key, value in params.items():
-            if key == "context_length":
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "point_estimate":
-                if value not in ("mean", "median"):
-                    raise ValueError(
-                        f"`point_estimate` must be 'mean' or 'median'. Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "tabicl_config":
-                validated[key] = dict(value) if value else {}
-            else:
-                validated[key] = value
-
-        actually_changed = {
-            k: v for k, v in validated.items()
-            if getattr(self, k) != v
-        }
-        if actually_changed:
-            self._model = None
-            for key, value in actually_changed.items():
-                setattr(self, key, value)
-
-        return self
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                (
+                    {"model_id", "context_length", "point_estimate",
+                     "tabicl_config", "temporal_features"},
+                    lambda: setattr(self, "_model", None),
+                ),
+            ),
+        )
 
     def fit(
         self,
@@ -1613,11 +1584,17 @@ class TabICLAdapter:
                         is_datetime  = is_datetime
                     )
 
-        result_df = self._model.predict_df(
-                        context_df = context_df,
-                        future_df  = future_df,
-                        quantiles  = tabicl_quantiles,
-                    )
+        _stderr_cm = (
+            contextlib.redirect_stderr(io.StringIO())
+            if not self.show_progress
+            else contextlib.nullcontext()
+        )
+        with _stderr_cm:
+            result_df = self._model.predict_df(
+                            context_df = context_df,
+                            future_df  = future_df,
+                            quantiles  = tabicl_quantiles,
+                        )
 
         # result_df is a plain DataFrame with MultiIndex (item_id, timestamp).
         # columns: "target" (str) and quantile levels as float column names.
@@ -1727,16 +1704,7 @@ class TabICLAdapter:
         """
 
         if is_datetime:
-            freq = series.index.freq
-            if freq is None:
-                freq = pd.tseries.frequencies.to_offset(
-                    pd.infer_freq(series.index)
-                )
-            timestamps = pd.date_range(
-                             start   = series.index[-1] + freq,
-                             periods = steps,
-                             freq    = freq,
-                         )
+            timestamps = expand_index(series.index, steps=steps)
         else:
             n = len(series)
             timestamps = pd.date_range(
@@ -1903,6 +1871,10 @@ class TabPFNAdapter:
         before inference. If `None`, TabPFN-TS uses its default transforms:
         `[RunningIndexFeature(), CalendarFeature(), AutoSeasonalFeature()]`.
         Pass an empty list to disable all temporal feature engineering.
+    show_progress : bool, default False
+        If `False`, the tqdm progress bar emitted by the underlying TabPFN-TS
+        dispatch loop (`Predicting time series: ...` on CPU, `GPU 0: ...` on
+        GPU) is suppressed.
 
     Attributes
     ----------
@@ -1922,6 +1894,8 @@ class TabPFNAdapter:
         Additional configuration forwarded to the TabPFN regressor.
     temporal_features : list
         Temporal feature transforms applied to the series.
+    show_progress : bool
+        Whether the tqdm progress bar is shown during inference.
     is_fitted : bool
         Whether the adapter has been fitted.
     _model : object
@@ -1964,6 +1938,7 @@ class TabPFNAdapter:
         point_estimate: str = "median",
         tabpfn_model_config: dict[str, Any] | None = None,
         temporal_features: list[Any] | None = None,
+        show_progress: bool = False,
     ) -> None:
         """
         Initialise the adapter.
@@ -1995,13 +1970,14 @@ class TabPFNAdapter:
             List of `FeatureGenerator` instances applied before inference.
             If `None`, TabPFN-TS uses its defaults. Pass `[]` to disable all
             temporal feature engineering.
+        show_progress : bool, default False
+            If `False`, the tqdm progress bar emitted by the underlying
+            TabPFN-TS dispatch loop (`Predicting time series: ...` on CPU,
+            `GPU 0: ...` on GPU) is suppressed.
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
         if mode not in ("local", "client"):
             raise ValueError(
                 f"`mode` must be 'local' or 'client'. Got {mode!r}."
@@ -2019,8 +1995,9 @@ class TabPFNAdapter:
         self.context_length      = context_length
         self.mode                = mode
         self.point_estimate      = point_estimate
-        self.tabpfn_model_config = dict(tabpfn_model_config) if tabpfn_model_config else {}
+        self.tabpfn_model_config = tabpfn_model_config or {}
         self.temporal_features   = temporal_features
+        self.show_progress       = show_progress
         self.is_fitted           = False
 
     def get_params(self) -> dict:
@@ -2031,9 +2008,9 @@ class TabPFNAdapter:
         -------
         params : dict
             Keys: `model_id`, `context_length`, `mode`, `point_estimate`,
-            `tabpfn_model_config`, `temporal_features`. `tabpfn_model_config`
-            is returned as `None` when no additional config was set (i.e.
-            when the internal dict is empty).
+            `tabpfn_model_config`, `temporal_features`, `show_progress`.
+            `tabpfn_model_config` is returned as `None` when no additional
+            config was set (i.e. when the internal dict is empty).
 
         """
         return {
@@ -2043,19 +2020,21 @@ class TabPFNAdapter:
             "point_estimate":      self.point_estimate,
             "tabpfn_model_config": self.tabpfn_model_config or None,
             "temporal_features":   self.temporal_features,
+            "show_progress":       self.show_progress,
         }
 
     def set_params(self, **params) -> TabPFNAdapter:
         """
-        Set adapter parameters. Resets the model when any parameter changes,
-        since the `TabPFNTSPipeline` is instantiated lazily on the first
-        `predict` call using the current adapter state.
+        Set adapter parameters. Resets the model when a parameter that affects
+        the `TabPFNTSPipeline` instance changes; toggling `show_progress` does
+        not reset the model.
 
         Parameters
         ----------
         **params :
             Valid keys: `model_id`, `context_length`, `mode`,
-            `point_estimate`, `tabpfn_model_config`, `temporal_features`.
+            `point_estimate`, `tabpfn_model_config`, `temporal_features`,
+            `show_progress`.
 
         Returns
         -------
@@ -2063,53 +2042,37 @@ class TabPFNAdapter:
 
         """
 
-        valid = {
-            "model_id", "context_length", "mode", "point_estimate",
-            "tabpfn_model_config", "temporal_features",
-        }
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for TabPFNAdapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            if "mode" in p and p["mode"] not in ("local", "client"):
+                raise ValueError(
+                    f"`mode` must be 'local' or 'client'. Got {p['mode']!r}."
+                )
+            if "point_estimate" in p and p["point_estimate"] not in ("mean", "median", "mode"):
+                raise ValueError(
+                    f"`point_estimate` must be 'mean', 'median' or 'mode'. "
+                    f"Got {p['point_estimate']!r}."
+                )
+            if "tabpfn_model_config" in p:
+                p["tabpfn_model_config"] = p["tabpfn_model_config"] or {}
+            if "show_progress" in p and not isinstance(p["show_progress"], bool):
+                raise ValueError(
+                    f"`show_progress` must be a bool. Got {p['show_progress']!r}."
+                )
+            return p
 
-        validated = {}
-        for key, value in params.items():
-            if key == "context_length":
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "mode":
-                if value not in ("local", "client"):
-                    raise ValueError(
-                        f"`mode` must be 'local' or 'client'. Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "point_estimate":
-                if value not in ("mean", "median", "mode"):
-                    raise ValueError(
-                        f"`point_estimate` must be 'mean', 'median' or 'mode'. "
-                        f"Got {value!r}."
-                    )
-                validated[key] = value
-            elif key == "tabpfn_model_config":
-                validated[key] = dict(value) if value else {}
-            else:
-                validated[key] = value
-
-        actually_changed = {
-            k: v for k, v in validated.items()
-            if getattr(self, k) != v
-        }
-        if actually_changed:
-            self._model = None
-            for key, value in actually_changed.items():
-                setattr(self, key, value)
-
-        return self
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                (
+                    {"model_id", "context_length", "mode", "point_estimate",
+                     "tabpfn_model_config", "temporal_features"},
+                    lambda: setattr(self, "_model", None),
+                ),
+            ),
+        )
 
     def fit(
         self,
@@ -2223,11 +2186,17 @@ class TabPFNAdapter:
                         is_datetime  = is_datetime
                     )
 
-        result_df = self._model.predict_df(
-                        context_df = context_df,
-                        future_df  = future_df,
-                        quantiles  = tabpfn_quantiles,
-                    )
+        _stderr_cm = (
+            contextlib.redirect_stderr(io.StringIO())
+            if not self.show_progress
+            else contextlib.nullcontext()
+        )
+        with _stderr_cm:
+            result_df = self._model.predict_df(
+                            context_df = context_df,
+                            future_df  = future_df,
+                            quantiles  = tabpfn_quantiles,
+                        )
 
         # result_df is a DataFrame with MultiIndex (item_id, timestamp).
         # columns: "target" (str) and quantile levels as float column names.
@@ -2344,16 +2313,7 @@ class TabPFNAdapter:
         """
 
         if is_datetime:
-            freq = series.index.freq
-            if freq is None:
-                freq = pd.tseries.frequencies.to_offset(
-                    pd.infer_freq(series.index)
-                )
-            timestamps = pd.date_range(
-                             start   = series.index[-1] + freq,
-                             periods = steps,
-                             freq    = freq,
-                         )
+            timestamps = expand_index(series.index, steps=steps)
         else:
             n = len(series)
             timestamps = pd.date_range(
@@ -2528,6 +2488,11 @@ class T0Adapter:
     before passing them. A series with no future exog is forecast without
     covariates.
 
+    T0 checkpoints (e.g. `theforecastingcompany/t0-alpha`) are gated on the
+    Hugging Face Hub: visit the model page while logged in to accept its
+    license, then authenticate locally (`hf auth login` or the `HF_TOKEN`
+    environment variable) before first use.
+
     References
     ----------
     .. [1] https://github.com/theforecastingcompany/tfc-t0
@@ -2574,10 +2539,7 @@ class T0Adapter:
 
         """
 
-        if not isinstance(context_length, int) or context_length < 1:
-            raise ValueError(
-                f"`context_length` must be a positive integer. Got {context_length!r}."
-            )
+        _validate_positive_int("context_length", context_length)
 
         self.model_id       = model_id
         self._model         = model
@@ -2622,29 +2584,21 @@ class T0Adapter:
 
         """
 
-        valid = {'model_id', 'context_length', 'device_map', 'torch_dtype'}
-        invalid = set(params) - valid
-        if invalid:
-            raise ValueError(
-                f"Invalid parameter(s) for T0Adapter: {sorted(invalid)}. "
-                f"Valid parameters are: {sorted(valid)}."
-            )
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            return p
 
-        model_reset_keys = {'model_id', 'device_map', 'torch_dtype'}
-        if params.keys() & model_reset_keys:
-            self._model = None
-
-        for key, value in params.items():
-            if key == 'context_length':
-                if not isinstance(value, int) or value < 1:
-                    raise ValueError(
-                        f"`context_length` must be a positive integer. Got {value!r}."
-                    )
-                self.context_length = value
-            else:
-                setattr(self, key, value)
-
-        return self
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                (
+                    {"model_id", "device_map", "torch_dtype"},
+                    lambda: setattr(self, "_model", None),
+                ),
+            ),
+        )
 
     def fit(
         self,
@@ -2751,11 +2705,7 @@ class T0Adapter:
             future_covariates = future_covariates,
         )
 
-        q_arr = forecast.quantiles
-        if hasattr(q_arr, "detach"):
-            q_arr = q_arr.detach().cpu().numpy()
-        else:
-            q_arr = np.asarray(q_arr)
+        q_arr = _tensor_to_numpy(forecast.quantiles)
 
         column_for = [query_levels.index(q) for q in requested]
         return {name: q_arr[i][:, column_for] for i, name in enumerate(series_names)}
@@ -2772,6 +2722,10 @@ class T0Adapter:
         ------
         ImportError
             If `tfc-t0` is not installed.
+        OSError
+            If `T0Forecaster.from_pretrained` fails to build the model, most
+            commonly because the repository is gated on the Hugging Face Hub
+            and the active credentials have not accepted its license.
 
         Notes
         -----
@@ -2779,6 +2733,15 @@ class T0Adapter:
         `T0Forecaster.from_pretrained`, then moved to the resolved device and
         switched to eval mode. This method is a no-op when `self._model` is
         already populated.
+
+        T0 checkpoints are gated on the Hugging Face Hub. When the
+        repository's `config.json` cannot be downloaded (e.g. the license
+        has not been accepted, or no valid token is available),
+        `huggingface_hub`'s `from_pretrained` silently swallows the download
+        failure and falls back to instantiating the model with no
+        constructor arguments, raising a confusing `TypeError` about missing
+        hyperparameters. That `TypeError` is caught here and re-raised as a
+        clearer `OSError` pointing to the likely cause.
 
         """
 
@@ -2792,8 +2755,20 @@ class T0Adapter:
                 "Install it with `pip install tfc-t0`."
             ) from exc
 
+        try:
+            model = T0Forecaster.from_pretrained(self.model_id)
+        except TypeError as exc:
+            raise OSError(
+                f"Could not load model '{self.model_id}' from the Hugging "
+                f"Face Hub. This is often caused by a gated repository "
+                f"whose license has not been accepted: visit "
+                f"https://huggingface.co/{self.model_id} while logged in "
+                f"to accept it, then authenticate locally (`hf auth login` "
+                f"or the `HF_TOKEN` environment variable) before retrying."
+            ) from exc
+
         device = _resolve_torch_device(self.device_map)
-        model = T0Forecaster.from_pretrained(self.model_id).to(device)
+        model = model.to(device)
         if self.torch_dtype is not None:
             model = model.to(self.torch_dtype)
         self._model = model.eval()
@@ -2849,11 +2824,11 @@ class T0Adapter:
         if not future_frames:
             return None
 
-        columns: list[str] = []
-        for frame in future_frames.values():
-            for col in frame.columns:
-                if col not in columns:
-                    columns.append(col)
+        columns: list[str] = list(
+            dict.fromkeys(
+                col for frame in future_frames.values() for col in frame.columns
+            )
+        )
 
         total_length = context_length + steps
         covariates = np.full(
@@ -2911,6 +2886,1066 @@ class T0Adapter:
         )
 
 
+class TSICLAdapter:
+    """
+    Adapter for EDF Lab TS-ICL foundation model.
+
+    Parameters
+    ----------
+    model_id : str
+        Model ID, e.g. `"taharnbl/TS-ICL"`. Used only to resolve this
+        adapter; the underlying checkpoint is always downloaded from the
+        `taharnbl/TS-ICL` Hugging Face repository, controlled by
+        `checkpoint_version`.
+    model : object, default None
+        Pre-instantiated `TSICL` model instance. If `None`, a new instance
+        is created lazily on the first call to `predict`. Intended for
+        testing only.
+    checkpoint_version : str, default 'tsicl-v1.ckpt'
+        Checkpoint filename to download from the `taharnbl/TS-ICL`
+        Hugging Face repository.
+    context_length : int, default 4096
+        Maximum number of historical observations to use as context. At fit
+        time only the last `context_length` observations are stored. At
+        predict time, if `context` is longer than `context_length` it is
+        trimmed to this length; if it is shorter, all available observations
+        are used as-is. Must be a positive integer.
+    device : str, default 'auto'
+        Device placement for inference. `"auto"` selects the best available
+        accelerator (CUDA > MPS > CPU). Also accepts explicit values such as
+        `"cuda"`, `"mps"`, or `"cpu"`. Note that TS-ICL currently falls back
+        to CPU whenever CUDA is unavailable, so `"mps"` has no effect on
+        Apple Silicon.
+    allow_auto_download : bool, default True
+        Whether to allow automatic download of the checkpoint from Hugging
+        Face Hub if it is not already cached locally.
+
+    Attributes
+    ----------
+    model_id : str
+        Model ID.
+    context_ : dict
+        Stored training series after fitting.
+    context_exog_ : dict
+        Stored historical exogenous variables after fitting.
+    checkpoint_version : str
+        Checkpoint filename downloaded from Hugging Face Hub.
+    context_length : int
+        Maximum number of historical observations used as context.
+    device : str
+        Device placement for inference.
+    allow_auto_download : bool
+        Whether automatic checkpoint download is allowed.
+    is_fitted : bool
+        Whether the adapter has been fitted.
+
+    Notes
+    -----
+    TS-ICL conditions on covariates that are known over the context, the
+    forecast horizon, or both. skforecast exogenous variables map directly
+    onto this channel: historical values (`context_exog`) are forwarded as
+    `past_covariates` and future values (`exog`) as `future_covariates`.
+    Covariates must be numeric; encode categoricals as numbers before
+    passing them.
+
+    TS-ICL only supports quantile levels on a 0.01 grid in `[0.01, 0.99]`
+    (i.e. a subset of `[0.01, 0.02, ..., 0.99]`); requesting any other level
+    raises a `ValueError` from the underlying library.
+
+    References
+    ----------
+    .. [1] https://github.com/EDF-Lab/ts-icl
+
+    .. [2] https://huggingface.co/taharnbl/TS-ICL
+
+    """
+
+    allow_exog: bool = True
+
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        model: Any | None = None,
+        checkpoint_version: str = "tsicl-v1.ckpt",
+        context_length: int = 4096,
+        device: str = "auto",
+        allow_auto_download: bool = True,
+    ) -> None:
+        """
+        Initialise the adapter.
+
+        Parameters
+        ----------
+        model_id : str
+            Model ID, e.g. `"taharnbl/TS-ICL"`. Used only to resolve this
+            adapter.
+        model : object, default None
+            Pre-instantiated `TSICL` model instance. If `None`, a new
+            instance is created lazily on the first call to `predict`.
+        checkpoint_version : str, default 'tsicl-v1.ckpt'
+            Checkpoint filename to download from the `taharnbl/TS-ICL`
+            Hugging Face repository.
+        context_length : int, default 4096
+            Maximum number of historical observations to retain as context.
+            At `fit` time only the last `context_length` observations of
+            `series` (and `exog`) are stored. At `predict` time, if
+            `context` is longer than `context_length` it is trimmed to
+            this length before inference; if it is shorter, all available
+            observations are passed as-is. Must be a positive integer.
+        device : str, default 'auto'
+            Device placement for inference. `"auto"` selects the best
+            available accelerator (CUDA > MPS > CPU).
+        allow_auto_download : bool, default True
+            Whether to allow automatic download of the checkpoint from
+            Hugging Face Hub if it is not already cached locally.
+
+        """
+
+        _validate_positive_int("context_length", context_length)
+
+        self.model_id             = model_id
+        self._model               = model
+        self._resolved_device     = None
+        self.context_             = None
+        self.context_exog_        = None
+        self.checkpoint_version   = checkpoint_version
+        self.context_length       = context_length
+        self.device               = device
+        self.allow_auto_download  = allow_auto_download
+        self.is_fitted            = False
+
+    def get_params(self) -> dict:
+        """
+        Return the adapter's constructor parameters.
+
+        Returns
+        -------
+        params : dict
+            Keys: `model_id`, `checkpoint_version`, `context_length`,
+            `device`, `allow_auto_download`.
+
+        """
+        return {
+            'model_id':             self.model_id,
+            'checkpoint_version':   self.checkpoint_version,
+            'context_length':       self.context_length,
+            'device':               self.device,
+            'allow_auto_download':  self.allow_auto_download,
+        }
+
+    def set_params(self, **params) -> TSICLAdapter:
+        """
+        Set adapter parameters. Resets the model when `checkpoint_version`
+        or `allow_auto_download` changes, since those control which
+        checkpoint is loaded.
+
+        Parameters
+        ----------
+        **params :
+            Valid keys: `model_id`, `checkpoint_version`, `context_length`,
+            `device`, `allow_auto_download`.
+
+        Returns
+        -------
+        self : TSICLAdapter
+
+        """
+
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            return p
+
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                (
+                    {"checkpoint_version", "allow_auto_download"},
+                    lambda: setattr(self, "_model", None),
+                ),
+                ({"device"}, lambda: setattr(self, "_resolved_device", None)),
+            ),
+        )
+
+    def fit(
+        self,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+    ) -> TSICLAdapter:
+        """
+        Store the training series and optional historical exogenous variables.
+        No model training occurs since TS-ICL is a zero-shot inference model.
+
+        All input normalization and validation is performed upstream by
+        `FoundationModel`; this method receives canonical dicts only.
+
+        Parameters
+        ----------
+        context : dict pandas Series
+            Normalized training series, one entry per series.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series historical exogenous variables (past covariates).
+
+        Returns
+        -------
+        self : TSICLAdapter
+
+        """
+
+        self.context_ = context
+        self.context_exog_ = context_exog
+        self.is_fitted = True
+
+        return self
+
+    def predict(
+        self,
+        steps: int,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        exog: dict[str, pd.DataFrame | pd.Series | None],
+        quantiles: list[float] | tuple[float] | None
+    ) -> dict[str, np.ndarray]:
+        """
+        Generate predictions using the TS-ICL model.
+
+        All input normalization, validation, and context trimming is
+        performed upstream by `FoundationModel`; this method receives
+        pre-processed dicts only.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        context : dict
+            Per-series context windows (already trimmed to
+            `context_length`).
+        context_exog : dict
+            Per-series past covariates (already trimmed).
+        exog : dict
+            Per-series future covariates for the forecast horizon.
+        quantiles : list of float or None
+            Quantile levels to return. If `None`, a point forecast
+            (median, quantile 0.5) is produced.
+
+        Returns
+        -------
+        predictions : dict
+            Keys are series names. Each value is a 2-D array of shape
+            `(steps, n_quantiles)`.
+
+        """
+
+        # NOTE: the model is loaded lazily here so that the adapter can be
+        # instantiated and fitted without requiring tsicl to be installed.
+        self._load_model()
+
+        import torch
+
+        quantile_list = list(quantiles) if quantiles is not None else None
+        query_levels = quantile_list if quantile_list is not None else [0.5]
+
+        series_names_in = list(context.keys())
+        inputs_list = [
+            self._build_tsicl_input(
+                context      = context[name].to_numpy(),
+                context_exog = context_exog[name] if context_exog is not None else None,
+                exog         = exog[name] if exog is not None else None,
+            )
+            for name in series_names_in
+        ]
+
+        if self._resolved_device is None:
+            self._resolved_device = _resolve_torch_device(self.device)
+        device = torch.device(self._resolved_device)
+
+        _, quantile_preds = self._model.forecast(
+            inputs            = inputs_list,
+            prediction_length = steps,
+            quantile_levels   = query_levels,
+            context_length    = self.context_length,
+            device            = device,
+            denormalize       = True,
+            squeeze_output    = False,
+        )
+
+        predictions: dict[str, np.ndarray] = {}
+        for i, name in enumerate(series_names_in):
+            q_arr = _tensor_to_numpy(quantile_preds[i])
+            predictions[name] = q_arr[0]  # drop the single-variate dim
+
+        return predictions
+
+    def _load_model(self) -> None:
+        """
+        Load the TS-ICL model into `self._model` if not already set.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ImportError
+            If `tsicl` is not installed.
+
+        Notes
+        -----
+        The model is imported lazily from `tsicl` and instantiated via
+        `TSICL(checkpoint_version=..., allow_auto_download=...)`, which
+        downloads (or loads from cache) the checkpoint from the
+        `taharnbl/TS-ICL` Hugging Face repository. This method is a no-op
+        when `self._model` is already populated.
+
+        """
+
+        if self._model is not None:
+            return
+        try:
+            from tsicl import TSICL
+        except ImportError as exc:
+            raise ImportError(
+                "tsicl is required for TSICLAdapter. "
+                "Install it with `pip install tsicl`."
+            ) from exc
+
+        self._model = TSICL(
+            checkpoint_version   = self.checkpoint_version,
+            allow_auto_download  = self.allow_auto_download,
+        )
+
+    @staticmethod
+    def _to_covariate_array(col_data: Any) -> np.ndarray:
+        """
+        Convert a covariate column to a `float32` numpy array.
+
+        Parameters
+        ----------
+        col_data : array-like
+            A single covariate column (e.g. a pandas Series or 1-D array).
+
+        Returns
+        -------
+        col_array : numpy ndarray
+            A 1-D `float32` numpy array.
+
+        Raises
+        ------
+        ValueError
+            If the column is neither numeric nor boolean. TS-ICL only
+            conditions on numeric covariates; categoricals must be encoded
+            as numbers.
+
+        """
+
+        if isinstance(col_data, pd.Series):
+            if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
+                return col_data.astype(np.float32).to_numpy()
+            raise ValueError(
+                f"TSICLAdapter supports only numeric covariates. Column "
+                f"{col_data.name!r} has dtype {col_data.dtype}. Encode "
+                f"categorical covariates as numeric values before passing them."
+            )
+
+        arr = np.asarray(col_data)
+        if arr.dtype.kind in ("i", "u", "f", "b"):  # integer, unsigned int, float, bool
+            return arr.astype(np.float32)
+
+        raise ValueError(
+            f"TSICLAdapter supports only numeric covariates. Got array of "
+            f"dtype {arr.dtype}. Encode categorical covariates as numeric "
+            f"values before passing them."
+        )
+
+    def _build_tsicl_input(
+        self,
+        context: np.ndarray,
+        context_exog: pd.DataFrame | pd.Series | None = None,
+        exog: pd.DataFrame | pd.Series | None = None,
+    ) -> dict[str, Any]:
+        """
+        Build the input dict consumed by `TSICL.forecast`.
+
+        Parameters
+        ----------
+        context : numpy ndarray
+            1-D array of observed time series values used as context. Must be
+            castable to `float32`.
+        context_exog : pandas DataFrame, pandas Series, default None
+            Historical exogenous variables whose index is aligned to
+            `context`. Each column (or the single Series, referenced by
+            its name) becomes an entry in the returned "past_covariates"
+            dict. Must be numeric or boolean.
+        exog : pandas DataFrame, pandas Series, default None
+            Future-known exogenous variables covering the forecast horizon.
+            Must have exactly `steps` rows. Each column becomes an entry in
+            the returned "future_covariates" dict. Must be numeric or
+            boolean.
+
+        Returns
+        -------
+        input_dict : dict
+            Dictionary with mandatory key "target" (1-D `float32`
+            `numpy ndarray`) and optional keys "past_covariates" and
+            "future_covariates", each mapping column names to 1-D
+            `float32` arrays.
+
+        """
+
+        input_dict = {"target": np.asarray(context, dtype=np.float32)}
+        if context_exog is not None:
+            df = (
+                context_exog
+                if isinstance(context_exog, pd.DataFrame)
+                else context_exog.to_frame()
+            )
+            input_dict["past_covariates"] = {
+                col: TSICLAdapter._to_covariate_array(df[col]) for col in df.columns
+            }
+        if exog is not None:
+            df = (
+                exog
+                if isinstance(exog, pd.DataFrame)
+                else exog.to_frame()
+            )
+            input_dict["future_covariates"] = {
+                col: TSICLAdapter._to_covariate_array(df[col]) for col in df.columns
+            }
+
+        return input_dict
+
+
+class NoriAdapter:
+    """
+    Adapter for Synthefy Nori zero-shot tabular foundation models.
+
+    Nori is a tabular regression foundation model that predicts via in-context
+    learning: given labeled context rows it predicts query rows in a single
+    forward pass, with no task-specific training or fine-tuning. This adapter
+    frames forecasting as tabular regression: each series is featurized (running
+    index, calendar features, Fourier seasonal terms, and optional known-future
+    covariates) and a `NoriRegressor` predicts the forecast horizon zero-shot.
+
+    Parameters
+    ----------
+    model_id : str
+        Model ID, e.g. `"Synthefy/Nori"`. Used to resolve this adapter; the
+        underlying checkpoint is controlled by `nori_config` (key `model_path`)
+        and defaults to the public HuggingFace checkpoint.
+    model : object, default None
+        Pre-instantiated `NoriRegressor` instance. If `None`, a new instance
+        is created lazily on the first call to `predict`. Intended for testing
+        only.
+    context_length : int, default 4096
+        Maximum number of historical observations to use as context rows. At fit
+        time only the last `context_length` observations are stored. At predict
+        time, if `context` is longer than `context_length` it is trimmed to this
+        length; if it is shorter, all available observations are used as-is. Must
+        be a positive integer.
+    point_estimate : str, default 'mean'
+        Method used to derive the point forecast from Nori's predictive
+        distribution. Accepted values: `'mean'`, `'median'`, `'mode'`.
+    add_calendar_features : bool, default True
+        If `True`, add calendar features (month, day, day-of-week, day-of-year,
+        quarter, hour) when the series has a `DatetimeIndex`. Ignored for
+        `RangeIndex` series.
+    n_fourier_terms : int, default 2
+        Number of Fourier (sin/cos) seasonal harmonics added on the yearly and
+        weekly cycles for datetime series (or on the running index for
+        `RangeIndex` series). Set `0` to disable. Must be a non-negative integer.
+    nori_config : dict, default None
+        Additional keyword arguments forwarded verbatim to `NoriRegressor` at
+        instantiation (e.g. `model_path`, `device`, `token`, `augmentations`).
+        If `None`, the library defaults are used.
+
+    Attributes
+    ----------
+    model_id : str
+        Model ID.
+    context_ : dict
+        Stored training series after fitting.
+    context_exog_ : dict
+        Stored historical exogenous variables after fitting.
+    context_length : int
+        Maximum number of historical observations used as context.
+    point_estimate : str
+        Point forecast method.
+    add_calendar_features : bool
+        Whether calendar features are added for datetime series.
+    n_fourier_terms : int
+        Number of Fourier seasonal harmonics added.
+    nori_config : dict
+        Additional configuration forwarded to `NoriRegressor`.
+    is_fitted : bool
+        Whether the adapter has been fitted.
+    _model : object
+        Internal `NoriRegressor` instance. `None` until the first call to
+        `predict`, after which it is cached for reuse.
+
+    Notes
+    -----
+    Nori supports arbitrary quantile levels (any float strictly in `(0, 1)`),
+    unlike models with fixed quantile sets such as TimesFM or Moirai. A
+    `bar_distribution` checkpoint does not support quantiles.
+
+    Covariate support is available for *known-future* covariates: columns present
+    in both the historical context and the forecast horizon are used as features.
+    Covariates without future values are ignored. Covariates must be numeric;
+    encode categoricals as numbers before passing them.
+
+    Series with a `RangeIndex` are accepted; only running-index and
+    Fourier(index) features are meaningful there (calendar features are skipped).
+
+    References
+    ----------
+    .. [1] https://github.com/Synthefy/synthefy-nori
+
+    .. [2] https://huggingface.co/Synthefy/Nori
+
+    .. [3] https://docs.synthefy.com/nori/
+
+    """
+
+    allow_exog: bool = True
+
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        model: Any | None = None,
+        context_length: int = 4096,
+        point_estimate: str = "mean",
+        add_calendar_features: bool = True,
+        n_fourier_terms: int = 2,
+        nori_config: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Initialise the adapter.
+
+        Parameters
+        ----------
+        model_id : str
+            Model ID, e.g. `"Synthefy/Nori"`.
+        model : object, default None
+            Pre-instantiated `NoriRegressor` instance. If `None`, a new
+            instance is created lazily on the first call to `predict`.
+            Intended for testing only.
+        context_length : int, default 4096
+            Maximum number of historical observations to retain as context.
+            At `fit` time only the last `context_length` observations of
+            `series` (and `exog`) are stored. At `predict` time, if `context`
+            is longer than `context_length` it is trimmed to this length
+            before inference; if it is shorter, all available observations are
+            passed as-is. Must be a positive integer.
+        point_estimate : str, default 'mean'
+            Method used to derive the point forecast. Accepted values:
+            `'mean'`, `'median'`, `'mode'`.
+        add_calendar_features : bool, default True
+            If `True`, add calendar features when the series has a
+            `DatetimeIndex`. Ignored for `RangeIndex` series.
+        n_fourier_terms : int, default 2
+            Number of Fourier seasonal harmonics added. Set `0` to disable.
+            Must be a non-negative integer.
+        nori_config : dict, default None
+            Additional keyword arguments forwarded verbatim to `NoriRegressor`
+            at instantiation.
+
+        """
+
+        _validate_positive_int("context_length", context_length)
+        if point_estimate not in ("mean", "median", "mode"):
+            raise ValueError(
+                f"`point_estimate` must be 'mean', 'median' or 'mode'. "
+                f"Got {point_estimate!r}."
+            )
+        if not isinstance(add_calendar_features, bool):
+            raise ValueError(
+                f"`add_calendar_features` must be a bool. "
+                f"Got {add_calendar_features!r}."
+            )
+        if not isinstance(n_fourier_terms, int) or n_fourier_terms < 0:
+            raise ValueError(
+                f"`n_fourier_terms` must be a non-negative integer. "
+                f"Got {n_fourier_terms!r}."
+            )
+
+        self.model_id              = model_id
+        self._model                = model
+        self.context_              = None
+        self.context_exog_         = None
+        self.context_length        = context_length
+        self.point_estimate        = point_estimate
+        self.add_calendar_features = add_calendar_features
+        self.n_fourier_terms       = n_fourier_terms
+        self.nori_config           = nori_config or {}
+        self.is_fitted             = False
+
+    def get_params(self) -> dict:
+        """
+        Return the adapter's constructor parameters.
+
+        Returns
+        -------
+        params : dict
+            Keys: `model_id`, `context_length`, `point_estimate`,
+            `add_calendar_features`, `n_fourier_terms`, `nori_config`.
+            `nori_config` is returned as `None` when no additional config was
+            set (i.e. when the internal dict is empty).
+
+        """
+        return {
+            "model_id":              self.model_id,
+            "context_length":        self.context_length,
+            "point_estimate":        self.point_estimate,
+            "add_calendar_features": self.add_calendar_features,
+            "n_fourier_terms":       self.n_fourier_terms,
+            "nori_config":           self.nori_config or None,
+        }
+
+    def set_params(self, **params) -> NoriAdapter:
+        """
+        Set adapter parameters. Resets the loaded model when a parameter baked
+        into the `NoriRegressor` instance changes (`model_id`, `nori_config`);
+        featurization/inference-time parameters (`context_length`,
+        `point_estimate`, `add_calendar_features`, `n_fourier_terms`) do not
+        reset the model.
+
+        Parameters
+        ----------
+        **params :
+            Valid keys: `model_id`, `context_length`, `point_estimate`,
+            `add_calendar_features`, `n_fourier_terms`, `nori_config`.
+
+        Returns
+        -------
+        self : NoriAdapter
+
+        """
+
+        def validate(p: dict) -> dict:
+            if "context_length" in p:
+                _validate_positive_int("context_length", p["context_length"])
+            if "point_estimate" in p and p["point_estimate"] not in ("mean", "median", "mode"):
+                raise ValueError(
+                    f"`point_estimate` must be 'mean', 'median' or 'mode'. "
+                    f"Got {p['point_estimate']!r}."
+                )
+            if "add_calendar_features" in p and not isinstance(p["add_calendar_features"], bool):
+                raise ValueError(
+                    f"`add_calendar_features` must be a bool. "
+                    f"Got {p['add_calendar_features']!r}."
+                )
+            if "n_fourier_terms" in p and (
+                not isinstance(p["n_fourier_terms"], int) or p["n_fourier_terms"] < 0
+            ):
+                raise ValueError(
+                    f"`n_fourier_terms` must be a non-negative integer. "
+                    f"Got {p['n_fourier_terms']!r}."
+                )
+            if "nori_config" in p:
+                p["nori_config"] = p["nori_config"] or {}
+            return p
+
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                ({"model_id", "nori_config"}, lambda: setattr(self, "_model", None)),
+            ),
+        )
+
+    def fit(
+        self,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+    ) -> NoriAdapter:
+        """
+        Store the training series and optional historical exogenous variables.
+        No model training occurs since Nori is a zero-shot inference model.
+
+        All input normalization and validation is performed upstream by
+        `FoundationModel`; this method receives canonical dicts only.
+
+        Parameters
+        ----------
+        context : dict pandas Series
+            Normalized training series, one entry per series.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series historical exogenous variables (past covariates).
+
+        Returns
+        -------
+        self : NoriAdapter
+
+        """
+
+        self.context_      = context
+        self.context_exog_ = context_exog
+        self.is_fitted     = True
+
+        return self
+
+    def predict(
+        self,
+        steps: int,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float] | None,
+    ) -> dict[str, np.ndarray]:
+        """
+        Generate predictions using Nori.
+
+        All input normalization, validation, and context trimming is
+        performed upstream by `FoundationModel`; this method receives
+        pre-processed dicts only.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        context : dict pandas Series
+            Per-series context windows (already trimmed to `context_length`).
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series past covariates (already trimmed).
+        exog : dict pandas DataFrame, pandas Series, or None
+            Per-series future covariates for the forecast horizon.
+        quantiles : list of float or None
+            Quantile levels to return, in the requested order. Must lie
+            strictly in `(0, 1)`. If `None`, a point forecast is produced
+            (shape `(steps, 1)`).
+
+        Returns
+        -------
+        predictions : dict
+            Keys are series names. Each value is a 2-D numpy ndarray of shape
+            `(steps, n_quantiles)` with columns ordered to match `quantiles`.
+
+        Raises
+        ------
+        ValueError
+            If a requested quantile level is not strictly in `(0, 1)`.
+
+        """
+
+        quantile_list = list(quantiles) if quantiles is not None else None
+        if quantile_list is not None and any(
+            (q <= 0.0) or (q >= 1.0) for q in quantile_list
+        ):
+            raise ValueError(
+                "NoriAdapter quantiles must lie strictly in (0, 1). "
+                f"Got {quantile_list!r}."
+            )
+
+        # Nori does not guarantee that the output column order matches the
+        # requested quantiles, so query sorted, unique levels and reindex the
+        # columns back to the caller's order afterwards.
+        if quantile_list is not None:
+            query_levels = sorted(set(quantile_list))
+            column_for = [query_levels.index(q) for q in quantile_list]
+
+        self._load_model()
+
+        first_series = next(iter(context.values()))
+        is_datetime = isinstance(first_series.index, pd.DatetimeIndex)
+        if not is_datetime and self.add_calendar_features:
+            warnings.warn(
+                "NoriAdapter received series with a non-DatetimeIndex; "
+                "calendar features are skipped. Only running-index and "
+                "Fourier(index) features are used.",
+                # stacklevel=3: NoriAdapter.predict → FoundationModel.predict → user
+                stacklevel=3,
+            )
+
+        predictions: dict[str, np.ndarray] = {}
+        for name, series in context.items():
+            ctx_exog = context_exog.get(name) if context_exog is not None else None
+            fut_exog = exog.get(name) if exog is not None else None
+            exog_cols = self._known_future_columns(ctx_exog, fut_exog)
+
+            X_ctx = self._featurize(
+                series, is_datetime, ctx_exog, exog_cols, offset=0, n=len(series)
+            )
+            X_fut = self._featurize(
+                series, is_datetime, fut_exog, exog_cols, offset=len(series), n=steps
+            )
+            y_ctx = series.to_numpy(dtype=float)
+
+            # Nori fits in-context (no gradient training); the cached model is
+            # re-conditioned on each series' context rows before predicting.
+            self._model.fit(X_ctx, y_ctx)
+
+            if quantile_list is None:
+                y_hat = self._model.predict(X_fut, output_type=self.point_estimate)
+                predictions[name] = self._to_numpy(y_hat).reshape(-1, 1)
+            else:
+                q = self._to_numpy(
+                    self._model.predict(
+                        X_fut, output_type="quantiles", quantiles=query_levels
+                    )
+                )
+                # Nori returns (n_quantiles, steps); skforecast expects
+                # (steps, n_quantiles). Reorder columns to the requested order.
+                q = q.reshape(len(query_levels), steps).T
+                predictions[name] = q[:, column_for]
+
+        return predictions
+
+    def _load_model(self) -> None:
+        """
+        Load the `NoriRegressor` into `self._model` if not already set.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ImportError
+            If `synthefy-nori` is not installed.
+
+        Notes
+        -----
+        The regressor is imported lazily from `synthefy_nori` and instantiated
+        with `nori_config`. This method is a no-op when `self._model` is
+        already populated (either by a prior call or by the `model`
+        test-injection parameter). The same instance is reused across series
+        and folds; it is re-conditioned per series via its in-context `fit`.
+        """
+
+        if self._model is not None:
+            return
+        try:
+            from synthefy_nori import NoriRegressor
+        except ImportError as exc:
+            raise ImportError(
+                "synthefy-nori is required for NoriAdapter. "
+                "Install it with `pip install synthefy-nori`."
+            ) from exc
+
+        self._model = NoriRegressor(**self.nori_config)
+
+    @staticmethod
+    def _to_numpy(values: Any) -> np.ndarray:
+        """
+        Convert a model output to a float numpy array.
+
+        Torch tensors (including those on a non-CPU device or requiring grad)
+        are detached, moved to CPU, and converted before casting to `float`.
+
+        Parameters
+        ----------
+        values : array-like
+            Model output, either a numpy array or a torch tensor.
+
+        Returns
+        -------
+        array : numpy ndarray
+            Float numpy array.
+
+        """
+
+        if hasattr(values, "detach"):
+            values = values.detach().cpu().numpy()
+
+        return np.asarray(values, dtype=float)
+
+    @staticmethod
+    def _known_future_columns(
+        ctx_exog: pd.DataFrame | pd.Series | None,
+        fut_exog: pd.DataFrame | pd.Series | None,
+    ) -> list:
+        """
+        Return covariate columns present in both context and future exog.
+
+        Only known-future covariates (columns available over both the
+        historical context and the forecast horizon) are usable by Nori.
+
+        Parameters
+        ----------
+        ctx_exog : pandas DataFrame, pandas Series, or None
+            Historical (past) covariates for a single series.
+        fut_exog : pandas DataFrame, pandas Series, or None
+            Future covariates for a single series.
+
+        Returns
+        -------
+        columns : list
+            Column names present in both `ctx_exog` and `fut_exog`, in the
+            order they appear in `ctx_exog`. Empty when either input is `None`.
+
+        """
+
+        if ctx_exog is None or fut_exog is None:
+            return []
+        c = (
+            ctx_exog.columns
+            if isinstance(ctx_exog, pd.DataFrame)
+            else pd.Index([ctx_exog.name])
+        )
+        f = (
+            fut_exog.columns
+            if isinstance(fut_exog, pd.DataFrame)
+            else pd.Index([fut_exog.name])
+        )
+        f_set = set(f)
+
+        return [col for col in c if col in f_set]
+
+    def _featurize(
+        self,
+        series: pd.Series,
+        is_datetime: bool,
+        exog_block: pd.DataFrame | pd.Series | None,
+        exog_cols: list,
+        offset: int,
+        n: int,
+    ) -> np.ndarray:
+        """
+        Build the tabular feature matrix for `n` rows starting at `offset`.
+
+        Features are a running index, optional calendar features and Fourier
+        seasonal harmonics (datetime series) or Fourier(index) terms
+        (`RangeIndex` series), and the known-future covariate columns.
+
+        Parameters
+        ----------
+        series : pandas Series
+            The context series (used for its index and length).
+        is_datetime : bool
+            Whether the series has a `DatetimeIndex`.
+        exog_block : pandas DataFrame, pandas Series, or None
+            Covariate values for the rows being featurized (`context_exog` for
+            the context block, `exog` for the horizon block).
+        exog_cols : list
+            Known-future covariate column names to include.
+        offset : int
+            Row offset of the block (`0` for the context, `len(series)` for the
+            forecast horizon).
+        n : int
+            Number of rows to featurize.
+
+        Returns
+        -------
+        X : numpy ndarray
+            2-D `float32` feature matrix of shape `(n, n_features)`.
+
+        """
+
+        idx = np.arange(offset, offset + n, dtype=float)
+        feats = [idx]  # running index
+
+        if is_datetime and (self.add_calendar_features or self.n_fourier_terms > 0):
+            ts = self._timestamps(series, offset, n)
+            if self.add_calendar_features:
+                feats += [
+                    ts.month.to_numpy(dtype=float),
+                    ts.day.to_numpy(dtype=float),
+                    ts.dayofweek.to_numpy(dtype=float),
+                    ts.dayofyear.to_numpy(dtype=float),
+                    ts.quarter.to_numpy(dtype=float),
+                    ts.hour.to_numpy(dtype=float),
+                ]
+            doy = ts.dayofyear.to_numpy(dtype=float)
+            dow = ts.dayofweek.to_numpy(dtype=float)
+            for k in range(1, self.n_fourier_terms + 1):
+                feats += [
+                    np.sin(2 * np.pi * k * doy / 365.25),
+                    np.cos(2 * np.pi * k * doy / 365.25),
+                    np.sin(2 * np.pi * k * dow / 7.0),
+                    np.cos(2 * np.pi * k * dow / 7.0),
+                ]
+        elif self.n_fourier_terms > 0:
+            period = max(len(series), 1)
+            for k in range(1, self.n_fourier_terms + 1):
+                feats += [
+                    np.sin(2 * np.pi * k * idx / period),
+                    np.cos(2 * np.pi * k * idx / period),
+                ]
+
+        X = np.column_stack(feats)
+
+        if exog_cols and exog_block is not None:
+            block = (
+                exog_block.to_frame()
+                if isinstance(exog_block, pd.Series)
+                else exog_block
+            )
+            exog_values = np.column_stack(
+                [self._to_float_array(block[col]) for col in exog_cols]
+            )
+            X = np.column_stack([X, exog_values])
+
+        return X.astype(np.float32)
+
+    @staticmethod
+    def _to_float_array(col_data: pd.Series) -> np.ndarray:
+        """
+        Convert a numeric or boolean covariate column to a `float32` array.
+
+        Parameters
+        ----------
+        col_data : pandas Series
+            A single covariate column.
+
+        Returns
+        -------
+        col_array : numpy ndarray
+            1-D `float32` array.
+
+        Raises
+        ------
+        ValueError
+            If the column is neither numeric nor boolean. Nori conditions only
+            on numeric covariates; categoricals must be encoded as numbers.
+
+        """
+
+        if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
+            return col_data.astype(np.float32).to_numpy()
+
+        raise ValueError(
+            f"NoriAdapter supports only numeric covariates. Column "
+            f"{col_data.name!r} has dtype {col_data.dtype}. Encode categorical "
+            f"covariates as numeric values before passing them."
+        )
+
+    def _timestamps(
+        self, series: pd.Series, offset: int, n: int
+    ) -> pd.DatetimeIndex:
+        """
+        Return datetime timestamps for `n` rows starting at `offset`.
+
+        For the context block (`offset == 0`) the series' own index is
+        returned. For the forecast horizon the index is extended by `n` steps
+        at the series' frequency (inferred when not set).
+
+        Parameters
+        ----------
+        series : pandas Series
+            The context series (used to determine the end timestamp and
+            frequency).
+        offset : int
+            Row offset of the block. `0` selects the context index; any other
+            value selects the extended forecast-horizon index.
+        n : int
+            Number of timestamps to return.
+
+        Returns
+        -------
+        timestamps : pandas DatetimeIndex
+            Datetime timestamps for the requested block.
+
+        """
+
+        if offset == 0:
+            return series.index
+
+        return expand_index(series.index, steps=n)
+
+
 _ADAPTER_REGISTRY: dict[str, type] = {
     "amazon/chronos":    ChronosAdapter,
     "autogluon/chronos": ChronosAdapter,
@@ -2919,7 +3954,8 @@ _ADAPTER_REGISTRY: dict[str, type] = {
     "soda-inria/tabicl": TabICLAdapter,
     "priorlabs/tabpfn":  TabPFNAdapter,
     "theforecastingcompany/t0": T0Adapter,
-    # "ibm/TTM": TTMAdapter,
+    "Synthefy/Nori":     NoriAdapter,
+    "taharnbl/TS-ICL":   TSICLAdapter
 }
 
 

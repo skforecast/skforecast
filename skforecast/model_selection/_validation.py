@@ -3,7 +3,7 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
+
 
 from __future__ import annotations
 from typing import Callable
@@ -15,7 +15,11 @@ import pandas as pd
 from joblib import Parallel, delayed, cpu_count
 from tqdm.auto import tqdm
 from ..metrics import add_y_train_argument, _any_metric_needs_y_train, _get_metric
-from ..exceptions import LongTrainingWarning, IgnoredArgumentWarning
+from ..exceptions import (
+    LongTrainingWarning,
+    IgnoredArgumentWarning,
+    MissingValuesWarning
+)
 from ..model_selection._split import TimeSeriesFold
 from ..model_selection._utils import (
     _initialize_levels_model_selection_multiseries,
@@ -30,6 +34,7 @@ from ..utils import (
     align_series_and_exog_multiseries,
     manage_warnings,
     deepcopy_forecaster,
+    estimator_has_native_nan_support,
     _normalize_interval_scale
 )
 from ..foundation._utils import check_preprocess_series_foundation
@@ -950,6 +955,16 @@ def _fit_predict_forecaster_multiseries(
 
     preds = []
     levels_predict = [level for level in levels if level in last_window_levels]
+    if not levels_predict:
+        warnings.warn(
+            f"Fold {fold[0]} has been skipped because none of the levels to predict "
+            f"{levels} have a last window free of missing values. "
+            f"{type(forecaster.estimator).__name__} cannot predict when NaNs are "
+            f"present, so these levels are excluded. No predictions are generated for "
+            f"this fold.",
+            MissingValuesWarning
+        )
+
     if interval is not None:
         kwargs_interval = {
             'steps': steps,
@@ -1259,6 +1274,23 @@ def _backtesting_forecaster_multiseries(
     initial_train_size = cv.initial_train_size_as_int
     gap = cv.gap
 
+    # ForecasterDirectMultiVariate and ForecasterRnn use all series to create the
+    # predictors, so no series can be dropped from the last window. Folds whose last
+    # window has NaNs are still predicted and return NaN predictions (or raise, if the
+    # estimator rejects NaNs).
+    if type(forecaster).__name__ in {'ForecasterDirectMultiVariate', 'ForecasterRnn'}:
+        dropna_last_window = False
+    else:
+        # Levels with NaNs in the last window are kept when the estimator natively
+        # supports NaNs. Otherwise they are dropped, and if no level survives the fold
+        # produces no predictions. Differentiation is a hard exclusion: `numpy.diff`
+        # expands the NaN footprint and the inverse transform propagates a single NaN
+        # across the whole forecast horizon.
+        dropna_last_window = (
+            forecaster.differentiation_max is not None
+            or not estimator_has_native_nan_support(forecaster.estimator)
+        )
+    
     # Save out-of-sample residuals before any fit() call. Since fit() resets
     # them to None, they must be preserved and restored after each fit so that
     # probabilistic predictions with use_in_sample_residuals=False keep working.
@@ -1279,7 +1311,7 @@ def _backtesting_forecaster_multiseries(
                         span_index         = span_index,
                         window_size        = forecaster.window_size,
                         exog               = exog,
-                        dropna_last_window = forecaster.dropna_from_series,
+                        dropna_last_window = dropna_last_window,
                         externally_fitted  = False
                     )
         series_train, _, last_window_levels, exog_train, _, _ = next(data_fold)
@@ -1319,7 +1351,7 @@ def _backtesting_forecaster_multiseries(
                      span_index         = span_index,
                      window_size        = forecaster.window_size,
                      exog               = exog,
-                     dropna_last_window = forecaster.dropna_from_series,
+                     dropna_last_window = dropna_last_window,
                      externally_fitted  = externally_fitted
                  )
 
@@ -2559,6 +2591,7 @@ def _backtesting_foundation(
     return metrics_levels, backtest_predictions
 
 
+@manage_warnings
 def backtesting_foundation(
     forecaster: object,
     series: pd.Series | pd.DataFrame | dict,
@@ -2689,8 +2722,7 @@ def backtesting_foundation(
             exog_dict         = {name: None for name in series_names_in_},
         )
 
-        # NOTE: As no trim is applied to the series, it is only needed to 
-        # align exog.
+        # NOTE: As no trim is applied to the series, it is only needed to align exog.
         series_dict, exog_dict = align_series_and_exog_multiseries(
                                      series_dict      = series_dict,
                                      exog_dict        = exog_dict,

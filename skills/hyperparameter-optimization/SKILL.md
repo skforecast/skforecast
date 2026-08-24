@@ -9,13 +9,6 @@ description: >
 
 # Hyperparameter Optimization
 
-## References
-
-See [references/search-parameters.md](references/search-parameters.md) for
-the complete parameter comparison across all 9 search functions, function
-routing by forecaster type, and `lags_grid` / `search_space` / `param_grid`
-usage details.
-
 ## When to Use
 
 Use hyperparameter search after establishing a baseline forecaster to improve prediction accuracy. Skforecast supports three strategies:
@@ -28,9 +21,11 @@ Use hyperparameter search after establishing a baseline forecaster to improve pr
 
 ### Related skills
 
-- **Before**: `autocorrelation-and-lag-selection` (narrow the `lags` search space to a statistically informed candidate set)
-- **Before**: `feature-selection` (run the search on a reduced feature set to make it tractable)
-- **After**: `prediction-intervals` (add uncertainty quantification once the configuration is fixed)
+- **Prerequisite**: `autocorrelation-and-lag-selection` (narrow the `lags` search space to a statistically informed candidate set)
+- **Related**: `baseline-forecasting` (tune `ForecasterEquivalentDate` baselines with `grid_search_equivalent_date`)
+- **Related**: `foundation-forecasting` (tune zero-shot `ForecasterFoundation` inference parameters with `bayesian_search_foundation`)
+- **Related**: `feature-selection` (optional trim of the feature set afterwards; re-tune if the reduction is large)
+- **Next**: `prediction-intervals` (add uncertainty quantification once the configuration is fixed)
 
 ## Stop Conditions
 
@@ -39,7 +34,8 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Rule | Symptom | Recovery |
 |------|---------|----------|
 | The search refits the forecaster in place with the best params when `return_best=True` (the default) | With `return_best=False`, the forecaster keeps its pre-search params | Rely on the default, or refit with the best params from the results table |
-| Use the `*_multiseries` / `*_stats` search variant matching the forecaster type | Search function raises on the wrong forecaster type | Call e.g. `bayesian_search_forecaster_multiseries` / `grid_search_stats` |
+| Use the `*_multiseries` / `*_stats` search variant matching the forecaster type | Search function raises on the wrong forecaster type | Call e.g. `bayesian_search_forecaster_multiseries` / `grid_search_stats` / `grid_search_equivalent_date` |
+| `ForecasterFoundation` is tuned only with `bayesian_search_foundation` and `TimeSeriesFold` | `TypeError` from the generic search functions, or from passing `OneStepAheadFold` | Call `bayesian_search_foundation` with a `TimeSeriesFold` |
 | Include `lags` in the Bayesian `search_space()` | Suboptimal search; the highest-impact parameter stays fixed | Add `trial.suggest_categorical('lags', [...])` to the search space |
 
 ## Bayesian Search (Recommended)
@@ -207,6 +203,50 @@ results = grid_search_stats(
 )
 ```
 
+## Foundation Model Search
+
+`ForecasterFoundation` is zero-shot: no weights are trained, so only the
+**inference-time** configuration is tuned. The highest-impact parameter is
+`context_length` (how many past observations are fed to the model). Use
+`bayesian_search_foundation`, which evaluates each trial with
+`backtesting_foundation`.
+
+```python
+from skforecast.foundation import FoundationModel, ForecasterFoundation
+from skforecast.model_selection import bayesian_search_foundation, TimeSeriesFold
+
+forecaster = ForecasterFoundation(
+    estimator=FoundationModel(model_id='autogluon/chronos-2-small', device_map='auto')
+)
+
+# TimeSeriesFold only — OneStepAheadFold raises TypeError
+cv = TimeSeriesFold(steps=24, initial_train_size=len(series) - 200, refit=False)
+
+def search_space(trial):
+    return {
+        'context_length': trial.suggest_categorical('context_length', [512, 1024, 2048, 4096]),
+        'cross_learning': trial.suggest_categorical('cross_learning', [True, False]),
+    }
+
+results, study = bayesian_search_foundation(
+    forecaster=forecaster,
+    series=series,
+    cv=cv,
+    search_space=search_space,
+    metric='mean_absolute_error',
+    n_trials=30,
+    return_best=True,
+)
+```
+
+Differences from `bayesian_search_forecaster`: no `lags` in `search_space`, no
+`n_jobs`, `TimeSeriesFold` only, and every `search_space` key must be a valid
+adapter parameter. Search `context_length` and the adapter's quality-relevant
+parameters; device/dtype and other runtime settings are accepted but cannot
+improve accuracy, and several parameters force an expensive model reload per
+trial. Per-adapter tunables and reload matrix: the `foundation-forecasting`
+skill (`references/adapter-parameters.md`).
+
 ## Fast Tuning with OneStepAheadFold
 
 ```python
@@ -235,3 +275,11 @@ results, study = bayesian_search_forecaster(
 2. **Too few trials in Bayesian search**: Start with at least 20-50 trials for meaningful exploration.
 3. **Using TimeSeriesFold for initial tuning**: Use `OneStepAheadFold` first for fast screening, then validate the top candidates with `TimeSeriesFold`.
 4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()` — this is often the most impactful parameter.
+5. **Putting `lags` in a foundation `search_space`**: `bayesian_search_foundation` has no lag concept; any key that is not an adapter parameter raises `ValueError`.
+
+## References
+
+See [references/search-parameters.md](references/search-parameters.md) for
+the complete parameter comparison across all 9 search functions, function
+routing by forecaster type, and `lags_grid` / `search_space` / `param_grid`
+usage details.

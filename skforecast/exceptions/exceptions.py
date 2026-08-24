@@ -3,7 +3,7 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
+
 
 """
 The skforecast.exceptions module contains all the custom warnings and error 

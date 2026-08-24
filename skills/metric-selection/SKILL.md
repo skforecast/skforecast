@@ -10,7 +10,7 @@ description: >
 
 # Metric Selection
 
-## When to Use This Skill
+## When to Use
 
 Use this skill when the user needs help choosing an evaluation metric, comparing
 metrics, understanding trade-offs between error measures, or configuring the
@@ -19,9 +19,10 @@ or any other model selection function.
 
 ### Related skills
 
-- **After**: `choosing-a-forecaster` (the forecaster type determines which metrics apply)
-- **Before**: `hyperparameter-optimization` (the chosen metric drives the search objective)
-- **Before**: `prediction-intervals` (probabilistic metrics evaluate interval quality)
+- **Prerequisite**: `choosing-a-forecaster` (the forecaster type determines which metrics apply)
+- **Alongside**: `baseline-forecasting` (MASE < 1 means the model beats the naive baseline)
+- **Next**: `hyperparameter-optimization` (the chosen metric drives the search objective)
+- **Next**: `prediction-intervals` (probabilistic metrics evaluate interval quality)
 
 ## Quick Recommendations
 
@@ -42,6 +43,8 @@ If unsure, start here:
 | Interval calibration | `calculate_coverage` | Check if actual coverage matches the nominal level |
 | Interval quality (overall) | `crps_from_predictions` | Evaluates sharpness and calibration together |
 | Quantile quality (foundation models) | `crps_from_quantiles` | Proper scoring rule for quantile predictions |
+| Single-interval quality | `winkler_score` | Proper interval score; tune the miscoverage penalty via `alpha` |
+| Full-distribution quality | `weighted_interval_score` | Scores K intervals + median in one number; approximates CRPS |
 | Single-quantile optimization | `create_mean_pinball_loss(alpha)` | Can be passed as `metric=` to optimize for a specific quantile |
 
 ## Step 1 — What Are You Evaluating?
@@ -82,16 +85,9 @@ What is your forecaster producing?
 
 ### Metric Properties
 
-| Metric | Scale-independent | Robust to outliers | Handles zeros | Requires `y_train` | Range |
-|--------|:-----------------:|:------------------:|:-------------:|:-------------------:|-------|
-| MAE | — | ✓ | ✓ | — | [0, ∞) |
-| MSE | — | — | ✓ | — | [0, ∞) |
-| MedAE | — | ✓✓ | ✓ | — | [0, ∞) |
-| MAPE | ✓ | — | — | — | [0, ∞) |
-| SMAPE | ✓ | — | ✓ | — | [0, 200] % |
-| MSLE | — | — | ✓ (if ≥ 0) | — | [0, ∞) |
-| MASE | ✓ | ✓ | ✓ | ✓ | [0, ∞) |
-| RMSSE | ✓ | — | ✓ | ✓ | [0, ∞) |
+Full property matrix (scale independence, robustness, zero handling, `y_train`
+requirement, range and interpretation) for every metric:
+[references/metric-compatibility.md](references/metric-compatibility.md).
 
 ### Using Metrics in Code
 
@@ -166,6 +162,8 @@ Use these metrics when evaluating prediction intervals or quantile forecasts.
 | `calculate_coverage` | Calibration | y_true, lower_bound, upper_bound | Check if actual coverage matches nominal level |
 | `crps_from_predictions` | Calibration + sharpness | y_true (scalar), y_pred (array of bootstrap samples) | Evaluate bootstrapped interval quality |
 | `crps_from_quantiles` | Calibration + sharpness | y_true (scalar), pred_quantiles, quantile_levels | Evaluate quantile predictions (foundation models) |
+| `winkler_score` | Calibration + sharpness (single interval) | y_true, lower_bound, upper_bound, alpha | Evaluate one interval; penalty tuned by `alpha` |
+| `weighted_interval_score` | Calibration + sharpness (full distribution) | y_true, y_pred, lower_bounds, upper_bounds, alphas | Evaluate K intervals + median in one CRPS-like score |
 | `create_mean_pinball_loss(alpha)` | Single-quantile accuracy | y_true, y_pred (at quantile alpha) | Evaluate a specific quantile forecast |
 
 ### Coverage
@@ -208,6 +206,53 @@ crps = crps_from_quantiles(
     quantile_levels=np.array([0.1, 0.25, 0.5, 0.75, 0.9]),
 )
 ```
+
+### Winkler Score (Interval Score)
+
+Scores a single prediction interval: it rewards narrow intervals but adds a
+penalty, scaled by `alpha`, whenever the true value falls outside. Strictly
+proper scoring rule; lower is better. `alpha` must match the interval's nominal
+level (e.g. an 80% interval given by the 10th/90th percentiles uses `alpha=0.2`).
+
+```python
+from skforecast.metrics import winkler_score
+
+# 80% interval -> alpha = 0.2
+score = winkler_score(
+    y_true=y_test,
+    lower_bound=predictions['lower_bound'],
+    upper_bound=predictions['upper_bound'],
+    alpha=0.2,
+)
+```
+
+### Weighted Interval Score (WIS)
+
+Generalises the Winkler Score to K intervals plus the median forecast, producing
+a single number that behaves like a discrete approximation of CRPS. Ideal when a
+model outputs several quantile levels (foundation models, `ForecasterStats`, or
+bootstrapping). `y_pred` is the median (0.5 quantile); `alphas` lists the K
+interval levels and must line up, by position, with the columns of the bound
+arrays. Lower is better.
+
+```python
+import numpy as np
+from skforecast.metrics import weighted_interval_score
+
+# Two intervals: 80% (alpha=0.2) and 95% (alpha=0.05)
+score = weighted_interval_score(
+    y_true=y_test.to_numpy(),
+    y_pred=predictions_median,                   # 0.5 quantile
+    lower_bounds=np.column_stack([q10, q025]),   # columns match `alphas` order
+    upper_bounds=np.column_stack([q90, q975]),
+    alphas=[0.2, 0.05],
+)
+```
+
+> **Note:** Like `calculate_coverage` and CRPS, `winkler_score` and
+> `weighted_interval_score` are computed post-hoc. Their signatures differ from
+> `func(y_true, y_pred)`, so they cannot be passed as a `metric=` string in
+> backtesting or hyperparameter search.
 
 ### Pinball Loss (Quantile Loss)
 
@@ -351,8 +396,8 @@ argument is silently ignored.
 | Using only point metrics for probabilistic forecasts | Ignores uncertainty quality entirely | Add `calculate_coverage` and/or CRPS alongside point metrics |
 | Passing MASE as callable without understanding y_train | Works fine — skforecast detects the `y_train` parameter automatically | Just pass the callable or string; no extra work needed |
 
-## Metric Compatibility Reference
+## References
 
 See [references/metric-compatibility.md](references/metric-compatibility.md) for the
-complete matrix of all 18 metrics with their properties, compatible forecasters,
+complete matrix of all available metrics with their properties, compatible forecasters,
 and usage guidance.

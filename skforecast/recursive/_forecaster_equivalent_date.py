@@ -3,7 +3,7 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
+
 
 from __future__ import annotations
 from typing import Callable, Any
@@ -14,7 +14,11 @@ import pandas as pd
 from sklearn.exceptions import NotFittedError
 
 from .. import __version__
-from ..exceptions import MissingValuesWarning, ResidualsUsageWarning
+from ..exceptions import (
+    IgnoredArgumentWarning,
+    MissingValuesWarning,
+    ResidualsUsageWarning
+)
 from ..utils import (
     check_y,
     check_predict_input,
@@ -1195,6 +1199,46 @@ class ForecasterEquivalentDate():
 
         self.out_sample_residuals_ = out_sample_residuals
         self.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin
+
+    def set_params(
+        self,
+        params: dict[str, object]
+    ) -> None:
+        """
+        Set new values to the parameters of the forecaster. After calling this
+        method, the forecaster is reset to an unfitted state. The `fit` method
+        must be called before prediction.
+
+        Parameters
+        ----------
+        params : dict
+            Parameter values. Valid keys are `offset`, `n_offsets` and `agg_func`.
+            Any other key is ignored and raises an `IgnoredArgumentWarning`.
+
+        Returns
+        -------
+        None
+
+        """
+
+        allowed_params = {'offset', 'n_offsets', 'agg_func'}
+        invalid_params = set(params) - allowed_params
+        if invalid_params:
+            warnings.warn(
+                f"Unknown parameters {sorted(invalid_params)} will be ignored. "
+                f"Valid parameters are {sorted(allowed_params)}.",
+                IgnoredArgumentWarning
+            )
+
+        for k, v in params.items():
+            if k in allowed_params:
+                setattr(self, k, v)
+
+        # NOTE: When `offset` is a DateOffset, `window_size` is a DateOffset until
+        # `fit` converts it into the equivalent number of steps.
+        self.window_size = self.offset * self.n_offsets
+
+        self.is_fitted = False
 
     def get_tags(self) -> dict[str, Any]:
         """

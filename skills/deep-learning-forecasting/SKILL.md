@@ -10,13 +10,6 @@ description: >
 
 # Deep Learning Forecasting (RNN/LSTM)
 
-## References
-
-See [references/architecture-options.md](references/architecture-options.md) for
-the complete `create_and_compile_model` signature, recurrent layer types,
-output shape rules, exog architecture, custom Keras model requirements,
-and `fit_kwargs` options.
-
 ## When to Use
 
 Use `ForecasterRnn` when:
@@ -28,10 +21,10 @@ Use `ForecasterRnn` when:
 
 ### Related skills
 
-- **Before**: `choosing-a-forecaster` (confirm `ForecasterRnn` is the right choice for the data size and pattern)
-- **Before**: `feature-engineering` (RNN models still benefit from cyclical / calendar exogenous features)
-- **After**: `hyperparameter-optimization` (tune RNN architecture and training hyperparameters)
-- **After**: `prediction-intervals` (only conformal intervals are supported for `ForecasterRnn`)
+- **Prerequisite**: `choosing-a-forecaster` (confirm `ForecasterRnn` is the right choice for the data size and pattern)
+- **Prerequisite**: `feature-engineering` (RNN models still benefit from cyclical / calendar exogenous features)
+- **Next**: `hyperparameter-optimization` (tune RNN architecture and training hyperparameters)
+- **Next**: `prediction-intervals` (only conformal intervals are supported for `ForecasterRnn`)
 
 ## Stop Conditions
 
@@ -244,3 +237,10 @@ metric, predictions = backtesting_forecaster_multiseries(
 5. **No GPU**: Training is slow on CPU. Use GPU if available.
 6. **Using `predict_interval(method='bootstrapping')`**: ForecasterRnn only supports `method='conformal'`.
 7. **Forgetting `exog` in `create_and_compile_model`**: If you use exog in `fit()`/`predict()`, you must also pass `exog` when building the model so the architecture accounts for the extra input features.
+
+## References
+
+See [references/architecture-options.md](references/architecture-options.md) for
+the complete `create_and_compile_model` signature, recurrent layer types,
+output shape rules, exog architecture, custom Keras model requirements,
+and `fit_kwargs` options.

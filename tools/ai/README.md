@@ -166,7 +166,7 @@ All marked with `<!-- AUTO-GENERATED -->` header and tracked in `.gitattributes`
 | `feature-selection` | — | RFECV, SelectFromModel |
 | `drift-detection` | — | RangeDriftDetector, PopulationDriftDetector |
 | `deep-learning-forecasting` | `architecture-options.md` | ForecasterRnn, LSTM/GRU |
-| `foundation-forecasting` | `adapter-parameters.md` | ForecasterFoundation, Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0 |
+| `foundation-forecasting` | `adapter-parameters.md` | ForecasterFoundation, Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL |
 | `choosing-a-forecaster` | — | Decision guide for forecaster selection |
 | `troubleshooting-common-errors` | — | Common mistakes and fixes |
 | `complete-api-reference` | `method-signatures.md` | All constructor and method signatures |
@@ -186,6 +186,10 @@ python tools/ai/generate_ai_context_files.py --check-urls
 # Skip specific URL patterns during validation
 python tools/ai/generate_ai_context_files.py --check-urls --ignore-urls llms-full.txt
 ```
+
+URL validation requests each link with `HEAD`, falls back to `GET` when the server
+rejects or stalls on `HEAD`, and retries transient failures (timeouts, connection
+errors, HTTP 408/425/429/5xx) up to 3 times with an increasing delay.
 
 ### What `--check` validates
 

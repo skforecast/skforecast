@@ -6,7 +6,6 @@ forecaster:
 - **Delegated** — pass a `CalendarFeatures` instance to the forecaster's
   `calendar_features` parameter. The forecaster generates the features
   automatically during **training and prediction**. No manual `exog`.
-  **New in skforecast 0.23.0.**
 - **Manual** — build the features yourself with `CalendarFeatures`
   (`fit_transform`) or `create_calendar_features` and pass the result as `exog`
   (or wire `CalendarFeatures` as `transformer_exog`). Required for forecasters
@@ -14,6 +13,14 @@ forecaster:
 
 Both paths use the same `CalendarFeatures` class, so the constructor and
 encoding options below apply to either workflow.
+
+## Contents
+
+- Which workflow to use
+- CalendarFeatures constructor
+- Workflow A — delegated (`calendar_features` parameter)
+- Workflow B — manual (`exog` / `transformer_exog` / function)
+- Gotchas
 
 ## Which workflow to use
 

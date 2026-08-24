@@ -152,6 +152,21 @@ def test_ChronosAdapter_set_params_predict_kwargs_none_normalises_to_empty_dict(
     assert adapter.predict_kwargs == {}
 
 
+def test_ChronosAdapter_set_params_no_reset_when_value_unchanged():
+    """
+    Test that set_params does not reset _pipeline when reset keys are set to
+    their current values (no actual change).
+    """
+    adapter = ChronosAdapter(
+        model_id="autogluon/chronos-2-small", pipeline=FakePipeline()
+    )
+    assert adapter._pipeline is not None
+
+    adapter.set_params(model_id="autogluon/chronos-2-small", device_map="auto")
+
+    assert adapter._pipeline is not None  # not reset because values unchanged
+
+
 # ==============================================================================
 # Tests ChronosAdapter.fit
 # ==============================================================================

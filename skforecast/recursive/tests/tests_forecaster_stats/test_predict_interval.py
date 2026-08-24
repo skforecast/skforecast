@@ -13,6 +13,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 
 # Fixtures
+from .fixtures_forecaster_stats import WINDOWS_LEGACY_BLAS
 from .fixtures_forecaster_stats import y
 from .fixtures_forecaster_stats import y_lw
 from .fixtures_forecaster_stats import exog
@@ -527,7 +528,7 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators(estimator, 
     forecaster.fit(y=y)
     predictions = forecaster.predict_interval(steps=10, alpha=0.05)
 
-    if isinstance(estimator, Sarimax) and platform.system() == 'Windows':
+    if isinstance(estimator, Sarimax) and WINDOWS_LEGACY_BLAS:
         expected_data = np.array([
             [ 0.63432268, -1.62088311,  2.88952848],
             [ 0.62507372, -3.25642788,  4.50657533],

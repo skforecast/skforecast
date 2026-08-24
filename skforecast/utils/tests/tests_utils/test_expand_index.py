@@ -29,6 +29,40 @@ def test_TypeError_expand_index_when_index_is_no_pandas_DatetimeIndex_or_RangeIn
         expand_index(index, steps=3)
 
 
+def test_ValueError_expand_index_when_index_has_fewer_than_3_observations():
+    """
+    Test ValueError is raised when a DatetimeIndex with no freq has fewer
+    than 3 observations, since pandas cannot infer a frequency from it.
+    """
+    index = pd.DatetimeIndex(['1990-01-01', '1990-01-03'])
+
+    err_msg = re.escape(
+        "Could not infer a frequency from `index`. This can happen when "
+        "the index has fewer than 3 observations or is irregularly "
+        "spaced. Set an explicit frequency (e.g. `index.freq = 'D'` or "
+        "`series = series.asfreq('D')`) before calling this function."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        expand_index(index, steps=3)
+
+
+def test_ValueError_expand_index_when_index_is_irregularly_spaced():
+    """
+    Test ValueError is raised when a DatetimeIndex with no freq is
+    irregularly spaced, since pandas cannot infer a frequency from it.
+    """
+    index = pd.DatetimeIndex(['1990-01-01', '1990-01-03', '1990-01-10'])
+
+    err_msg = re.escape(
+        "Could not infer a frequency from `index`. This can happen when "
+        "the index has fewer than 3 observations or is irregularly "
+        "spaced. Set an explicit frequency (e.g. `index.freq = 'D'` or "
+        "`series = series.asfreq('D')`) before calling this function."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        expand_index(index, steps=3)
+
+
 @pytest.mark.parametrize(
     'freq, start, expected_dates',
     [
@@ -49,6 +83,20 @@ def test_output_expand_index_when_index_is_DatetimeIndex(freq, start, expected_d
     expected = pd.DatetimeIndex(expected_dates, freq=freq)
     results = expand_index(index, steps=3)
     
+    pd.testing.assert_index_equal(results, expected)
+
+
+def test_output_expand_index_when_index_is_DatetimeIndex_with_no_freq_but_inferable():
+    """
+    Test expand_index infers the frequency when `index.freq` is None but the
+    index is regularly spaced.
+    """
+    index = pd.DatetimeIndex(['1990-01-01', '1990-01-02', '1990-01-03'])
+    expected = pd.DatetimeIndex(
+        ['1990-01-04', '1990-01-05', '1990-01-06'], freq='D'
+    )
+    results = expand_index(index, steps=3)
+
     pd.testing.assert_index_equal(results, expected)
 
 

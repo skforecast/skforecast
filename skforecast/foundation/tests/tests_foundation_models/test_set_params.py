@@ -67,6 +67,21 @@ def test_set_params_ValueError_when_invalid_key():
     assert "ChronosAdapter" not in str(exc_info.value)
 
 
+def test_set_params_ValueError_invalid_key_matching_adapter_name_not_mangled():
+    """
+    Test that when the invalid parameter name itself equals the adapter's
+    class name, the anchored message rewrite still lists it correctly in
+    the invalid-key list (only the leading class-name token is rewritten).
+    """
+    m = FoundationModel("autogluon/chronos-2-small")
+    with pytest.raises(ValueError, match=re.escape("Invalid parameter")) as exc_info:
+        m.set_params(**{"ChronosAdapter": 1})
+    message = str(exc_info.value)
+    assert message.startswith("Invalid parameter(s) for FoundationModel:")
+    assert "ChronosAdapter" in message
+    assert "'ChronosAdapter'" in message
+
+
 def test_set_params_resets_fitted_state_and_metadata():
     """
     Test that set_params resets is_fitted, fit_date, and all metadata

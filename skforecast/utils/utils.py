@@ -3,7 +3,7 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
+
 
 from __future__ import annotations
 from copy import copy, deepcopy
@@ -46,6 +46,22 @@ from ..exceptions import (
 # type, so that type checkers see the original signatures through the wrapper.
 P = ParamSpec('P')
 R = TypeVar('R')
+
+# sklearn estimators that natively support NaN values in the input features.
+# Tree-based models gained this support in scikit-learn 1.3 (single trees) and
+# 1.4 (forests), both at or below the minimum version required by skforecast.
+_SKLEARN_NAN_TOLERANT_ESTIMATORS = frozenset({
+    'DecisionTreeClassifier',
+    'DecisionTreeRegressor',
+    'ExtraTreeClassifier',
+    'ExtraTreeRegressor',
+    'ExtraTreesClassifier',
+    'ExtraTreesRegressor',
+    'HistGradientBoostingClassifier',
+    'HistGradientBoostingRegressor',
+    'RandomForestClassifier',
+    'RandomForestRegressor',
+})
 
 optional_dependencies = {
     'stats': [
@@ -1376,7 +1392,8 @@ def check_predict_input(
     if last_window.isna().to_numpy().any():
         warnings.warn(
             "`last_window` has missing values. Most of machine learning models do "
-            "not allow missing values. Prediction method may fail.", 
+            "not allow missing values. Prediction method may either raise an "
+            "error or return NaN predictions.",
             MissingValuesWarning
         )
     
@@ -2065,10 +2082,26 @@ def expand_index(
     if isinstance(index, pd.Index):
         
         if isinstance(index, pd.DatetimeIndex):
+            freq = index.freq
+            if freq is None:
+                inferred = pd.infer_freq(index) if len(index) >= 3 else None
+                freq = (
+                    pd.tseries.frequencies.to_offset(inferred)
+                    if inferred is not None
+                    else None
+                )
+            if freq is None:
+                raise ValueError(
+                    "Could not infer a frequency from `index`. This can happen "
+                    "when the index has fewer than 3 observations or is "
+                    "irregularly spaced. Set an explicit frequency (e.g. "
+                    "`index.freq = 'D'` or `series = series.asfreq('D')`) "
+                    "before calling this function."
+                )
             new_index = pd.date_range(
-                            start   = index[-1] + index.freq,
+                            start   = index[-1] + freq,
                             periods = steps,
-                            freq    = index.freq
+                            freq    = freq
                         )
         elif isinstance(index, pd.RangeIndex):
             new_index = pd.RangeIndex(
@@ -3211,7 +3244,7 @@ def set_cpu_gpu_device(
 
 def _build_predict_function(
     estimator: object,
-) -> callable:
+) -> Callable:
     """
     Build an optimized predict callable for a fitted estimator. The returned
     function takes a 2D numpy array `X` of shape `(n_samples, n_features)` and
@@ -3230,7 +3263,10 @@ def _build_predict_function(
     indices are resolved once at build time and the array is cast to `object`
     dtype with those columns converted to `int` before each prediction call.
     CatBoost requires integer values (not float) for categorical features when
-    the input is a numpy array.
+    the input is a numpy array. For `CatBoostRegressor` without categorical
+    features, the array is passed directly and its `writeable` flag is restored
+    after prediction, since CatBoost borrows an F-contiguous array without a
+    copy and leaves it read-only.
 
     For any other estimator the standard `estimator.predict` method is used.
 
@@ -3244,6 +3280,7 @@ def _build_predict_function(
     predict_fn : callable
         A function `predict_fn(X) -> np.ndarray` where `X` has shape
         `(n_samples, n_features)` and the output has shape `(n_samples,)`.
+    
     """
 
     estimator_name = type(estimator).__name__
@@ -3252,6 +3289,9 @@ def _build_predict_function(
         coef = estimator.coef_
         intercept = estimator.intercept_
 
+        # NOTE: np.dot does not validate its input, so NaN in `X` propagates to the
+        # prediction instead of raising as sklearn's `predict` would. Inputs must be
+        # validated upstream (see `check_predict_input`).
         def predict_fn(X):
             return np.dot(X, coef) + intercept
 
@@ -3277,7 +3317,9 @@ def _build_predict_function(
         trees = estimator.estimators_
 
         def predict_fn(X):
-            X_f32 = X.astype(np.float32)
+            # ascontiguousarray gives a C-contiguous float32 copy (the cast
+            # copies anyway), which is the layout tree traversal expects.
+            X_f32 = np.ascontiguousarray(X, dtype=np.float32)
             preds = [tree.tree_.predict(X_f32)[:, 0] for tree in trees]
             return np.mean(preds, axis=0)
 
@@ -3287,7 +3329,9 @@ def _build_predict_function(
         tree_ = estimator.tree_
 
         def predict_fn(X):
-            return tree_.predict(X.astype(np.float32))[:, 0]
+            # ascontiguousarray gives a C-contiguous float32 copy (the cast
+            # copies anyway), which is the layout tree traversal expects.
+            return tree_.predict(np.ascontiguousarray(X, dtype=np.float32))[:, 0]
 
         return predict_fn
 
@@ -3303,6 +3347,18 @@ def _build_predict_function(
                 return estimator.predict(X_obj).ravel()
 
             return predict_fn
+
+        # Without categorical features CatBoost ingests the numpy array
+        # directly. When the array is F-contiguous it is borrowed without a
+        # copy and left read-only after predict, so the writeable flag is
+        # restored to let callers keep filling the array in place across steps.
+        def predict_fn(X):
+            preds = estimator.predict(X).ravel()
+            if not X.flags.writeable:
+                X.flags.writeable = True
+            return preds
+
+        return predict_fn
 
     # Generic fallback
     def predict_fn(X):
@@ -3774,6 +3830,13 @@ def preprocess_levels_self_last_window_multiseries(
 
     """
 
+    if not levels:
+        raise ValueError(
+            "No series to predict. `levels` is an empty list. Provide at least "
+            "one series name in `levels`, or set it to `None` to predict all "
+            "the series stored in the `last_window_` attribute."
+        )
+
     available_last_windows = set() if last_window_ is None else set(last_window_.keys())
     not_available_last_window = set(levels) - available_last_windows
     if not_available_last_window:
@@ -4197,3 +4260,48 @@ def scale_correction_factor_differentiation(
     )
 
     return correction_factor * scaling_factor
+
+
+def estimator_has_native_nan_support(estimator: object) -> bool:
+    """
+    Check whether an estimator natively supports NaN values in its input
+    features.
+
+    Uses the same module-based family detection as
+    `configure_estimator_categorical_features`. Recognized families are
+    lightgbm, catboost, xgboost, and sklearn's tree-based estimators
+    (`DecisionTree`, `ExtraTree`, `ExtraTrees`, `RandomForest` and
+    `HistGradientBoosting`, both regressors and classifiers). If `estimator`
+    is a Pipeline, the last step is inspected.
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator object. If the estimator is a Pipeline, the last step is used.
+
+    Returns
+    -------
+    has_native_nan_support : bool
+        `True` if the estimator natively supports NaN inputs, otherwise `False`.
+
+    Notes
+    -----
+    Detection is based on the estimator family and class name, not on its
+    hyperparameters. Uncommon configurations that disable NaN support are not
+    detected, in which case the estimator raises its own error.
+
+    """
+
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+
+    estimator_name = type(estimator).__name__
+    module = type(estimator).__module__.split('.')[0]
+
+    if module in ('lightgbm', 'catboost', 'xgboost'):
+        return True
+
+    if module == 'sklearn' and estimator_name in _SKLEARN_NAN_TOLERANT_ESTIMATORS:
+        return True
+
+    return False

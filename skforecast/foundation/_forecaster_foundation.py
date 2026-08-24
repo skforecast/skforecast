@@ -3,7 +3,6 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
 
 from __future__ import annotations
 import html
@@ -11,16 +10,17 @@ import sys
 import textwrap
 import warnings
 import pandas as pd
+from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 
 from .. import __version__
 from ..exceptions import IgnoredArgumentWarning
+from ._foundation_model import FoundationModel
 from ..utils import (
     _normalize_interval_scale,
     check_interval,
     get_style_repr_html,
 )
-from ._foundation_model import FoundationModel
 
 
 class ForecasterFoundation:
@@ -51,7 +51,7 @@ class ForecasterFoundation:
     Attributes
     ----------
     estimator : FoundationModel
-        The `FoundationModel` instance provided by the user.
+        A clone of the `FoundationModel` instance provided by the user.
     model_id : str
         HuggingFace model ID. Delegates to `estimator.model_id`.
     context_ : dict
@@ -136,7 +136,7 @@ class ForecasterFoundation:
                 f"Got {type(estimator)}."
             )
 
-        self.estimator          = estimator
+        self.estimator          = clone(estimator)
         self.creation_date      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted          = False
         self.skforecast_version = __version__
@@ -282,9 +282,10 @@ class ForecasterFoundation:
         Returns
         -------
         index_type_ : type, None
-            Index type. Delegates to `estimator.index_type_`.
+            Index type. Delegates to `estimator.index_type_`. `None` before
+            fitting.
         """
-        return self.estimator.index_type_
+        return self.estimator.index_type_ if self.is_fitted else None
 
     @property
     def index_freq_(self) -> object:
@@ -294,9 +295,10 @@ class ForecasterFoundation:
         Returns
         -------
         index_freq_ : pandas DateOffset, int, None
-            Index frequency. Delegates to `estimator.index_freq_`.
+            Index frequency. Delegates to `estimator.index_freq_`. `None`
+            before fitting.
         """
-        return self.estimator.index_freq_
+        return self.estimator.index_freq_ if self.is_fitted else None
 
     @property
     def context_range_(self) -> dict[str, pd.Index] | None:
@@ -307,8 +309,9 @@ class ForecasterFoundation:
         -------
         context_range_ : dict, None
             Per-series index range. Delegates to `estimator.context_range_`.
+            `None` before fitting.
         """
-        return self.estimator.context_range_
+        return self.estimator.context_range_ if self.is_fitted else None
 
     @property
     def series_names_in_(self) -> list[str] | None:
@@ -318,9 +321,10 @@ class ForecasterFoundation:
         Returns
         -------
         series_names_in_ : list, None
-            Series names. Delegates to `estimator.series_names_in_`.
+            Series names. Delegates to `estimator.series_names_in_`. `None`
+            before fitting.
         """
-        return self.estimator.series_names_in_
+        return self.estimator.series_names_in_ if self.is_fitted else None
 
     @property
     def is_multiple_series_(self) -> bool:
@@ -330,9 +334,10 @@ class ForecasterFoundation:
         Returns
         -------
         is_multiple_series_ : bool
-            Delegates to `estimator.is_multiple_series_`.
+            Delegates to `estimator.is_multiple_series_`. `False` before
+            fitting.
         """
-        return self.estimator.is_multiple_series_
+        return self.estimator.is_multiple_series_ if self.is_fitted else False
 
     @property
     def exog_in_(self) -> bool:
@@ -342,9 +347,9 @@ class ForecasterFoundation:
         Returns
         -------
         exog_in_ : bool
-            Delegates to `estimator.exog_in_`.
+            Delegates to `estimator.exog_in_`. `False` before fitting.
         """
-        return self.estimator.exog_in_
+        return self.estimator.exog_in_ if self.is_fitted else False
 
     @property
     def exog_names_in_(self) -> list[str] | None:
@@ -354,9 +359,9 @@ class ForecasterFoundation:
         Returns
         -------
         exog_names_in_ : list, None
-            Delegates to `estimator.exog_names_in_`.
+            Delegates to `estimator.exog_names_in_`. `None` before fitting.
         """
-        return self.estimator.exog_names_in_
+        return self.estimator.exog_names_in_ if self.is_fitted else None
 
     @property
     def exog_names_in_per_series_(self) -> dict | None:
@@ -366,9 +371,10 @@ class ForecasterFoundation:
         Returns
         -------
         exog_names_in_per_series_ : dict, None
-            Delegates to `estimator.exog_names_in_per_series_`.
+            Delegates to `estimator.exog_names_in_per_series_`. `None`
+            before fitting.
         """
-        return self.estimator.exog_names_in_per_series_
+        return self.estimator.exog_names_in_per_series_ if self.is_fitted else None
 
     @property
     def exog_type_in_(self) -> type | None:
@@ -378,9 +384,9 @@ class ForecasterFoundation:
         Returns
         -------
         exog_type_in_ : type, None
-            Delegates to `estimator.exog_type_in_`.
+            Delegates to `estimator.exog_type_in_`. `None` before fitting.
         """
-        return self.estimator.exog_type_in_
+        return self.estimator.exog_type_in_ if self.is_fitted else None
 
     @property
     def fit_date(self) -> str | None:
@@ -390,9 +396,9 @@ class ForecasterFoundation:
         Returns
         -------
         fit_date : str, None
-            Delegates to `estimator.fit_date`.
+            Delegates to `estimator.fit_date`. `None` before fitting.
         """
-        return self.estimator.fit_date
+        return self.estimator.fit_date if self.is_fitted else None
 
     @staticmethod
     def _truncate_names(
@@ -497,7 +503,7 @@ class ForecasterFoundation:
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Context range: {context_range_repr} \n"
-            f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
+            f"Training index type: {self.index_type_.__name__ if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
             f"Creation date: {self.creation_date} \n"
             f"Last fit date: {self.fit_date} \n"
@@ -579,7 +585,7 @@ class ForecasterFoundation:
                 <summary>Training Information</summary>
                 <ul>
                     <li><strong>Context range:</strong> {context_range_html}</li>
-                    <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index type:</strong> {self.index_type_.__name__ if self.is_fitted else 'Not fitted'}</li>
                     <li><strong>Training index frequency:</strong> {self.index_freq_.freqstr if hasattr(self.index_freq_, 'freqstr') else str(self.index_freq_) if self.is_fitted else 'Not fitted'}</li>
                 </ul>
             </details>
@@ -801,10 +807,10 @@ class ForecasterFoundation:
             Future-known exogenous variables for the forecast horizon
             (future covariates).
         interval : float, list, tuple, default [0.1, 0.9]
-            Confidence level of the prediction interval. Interpretation depends 
+            Confidence level of the prediction interval. Interpretation depends
             on the method used:
-            
-            - If `float`, represents the nominal (expected) coverage (between 0 
+
+            - If `float`, represents the nominal (expected) coverage (between 0
             and 1). For instance, `interval=0.95` corresponds to `[0.025, 0.975]` 
             quantiles.
             - If `list` or `tuple`, defines the exact quantiles to compute, which 

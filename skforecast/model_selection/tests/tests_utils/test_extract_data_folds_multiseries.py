@@ -3,7 +3,14 @@
 import pytest
 import numpy as np
 import pandas as pd
+from lightgbm import LGBMRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVR
 from skforecast.model_selection._utils import _extract_data_folds_multiseries
+from skforecast.utils import estimator_has_native_nan_support
 
 # Fixtures
 series_wide_range = pd.DataFrame({
@@ -697,4 +704,138 @@ def test_extract_data_folds_multiseries_series_dict_exog_dict_DatetimeIndex_with
                 else:
                     pd.testing.assert_series_equal(data_fold[4][key], expected_data_folds[i][4][key])
 
+        assert data_fold[5] == expected_data_folds[i][5]
+
+
+@pytest.mark.parametrize(
+    "estimator, differentiation, keep_nan_level",
+    [
+        (LGBMRegressor(verbose=-1), None, True),
+        (HistGradientBoostingRegressor(), None, True),
+        (RandomForestRegressor(n_estimators=2), None, True),
+        (Pipeline([('scaler', StandardScaler()),
+                   ('model', LGBMRegressor(verbose=-1))]), None, True),
+        (LinearRegression(), None, False),
+        (SVR(), None, False),
+        (Pipeline([('scaler', StandardScaler()),
+                   ('model', LinearRegression())]), None, False),
+        (LGBMRegressor(verbose=-1), 1, False),
+    ],
+    ids=[
+        'LGBMRegressor',
+        'HistGradientBoostingRegressor',
+        'RandomForestRegressor',
+        'Pipeline-LGBMRegressor',
+        'LinearRegression',
+        'SVR',
+        'Pipeline-LinearRegression',
+        'LGBMRegressor-differentiation'
+    ]
+)
+def test_extract_data_folds_multiseries_dropna_last_window_nan_tolerant_estimator(
+    estimator, differentiation, keep_nan_level
+):
+    """
+    Test _extract_data_folds_multiseries when the last window of a level contains
+    NaNs. The level is only kept when the estimator natively supports NaN inputs
+    and no differentiation is applied. `dropna_last_window` is derived as done by
+    the callers of the function.
+    """
+    series_nan = series_wide_range.copy()
+    series_nan.loc[28, 'l2'] = np.nan
+
+    dropna_last_window = not (
+        differentiation is None and estimator_has_native_nan_support(estimator)
+    )
+
+    # Train, last_window, test_no_gap
+    folds = [
+        [0, [0, 30], [25, 30], [30, 37], True], 
+        [1, [0, 35], [30, 35], [35, 42], True]
+    ]
+    span_index = pd.RangeIndex(start=0, stop=50, step=1)
+    window_size = 5
+
+    data_folds = list(
+        _extract_data_folds_multiseries(
+            series             = series_nan, 
+            folds              = folds, 
+            span_index         = span_index, 
+            window_size        = window_size, 
+            exog               = None, 
+            dropna_last_window = dropna_last_window, 
+            externally_fitted  = False
+        )
+    )
+
+    l2_train_fold_0 = np.arange(50, 80, dtype=float)
+    l2_train_fold_0[28] = np.nan
+    l2_train_fold_1 = np.arange(50, 85, dtype=float)
+    l2_train_fold_1[28] = np.nan
+
+    if keep_nan_level:
+        last_window_fold_0 = pd.DataFrame(
+            data = {'l1': np.arange(25, 30, dtype=float),
+                    'l2': np.array([75., 76., 77., np.nan, 79.]),
+                    'l3': np.arange(125, 130, dtype=float)
+            },
+            index = pd.RangeIndex(start=25, stop=30, step=1)
+        )
+        levels_fold_0 = ['l1', 'l2', 'l3']
+    else:
+        last_window_fold_0 = pd.DataFrame(
+            data = {'l1': np.arange(25, 30, dtype=float),
+                    'l3': np.arange(125, 130, dtype=float)
+            },
+            index = pd.RangeIndex(start=25, stop=30, step=1)
+        )
+        levels_fold_0 = ['l1', 'l3']
+
+    expected_data_folds = [
+        (
+            pd.DataFrame(
+                data = {'l1': np.arange(0, 30, dtype=float),
+                        'l2': l2_train_fold_0,
+                        'l3': np.arange(100, 130, dtype=float)
+                },
+                index = pd.RangeIndex(start=0, stop=30, step=1)
+            ),
+            last_window_fold_0,
+            levels_fold_0,
+            None,
+            None,
+            folds[0]
+        ),
+        (
+            pd.DataFrame(
+                data = {'l1': np.arange(0, 35, dtype=float),
+                        'l2': l2_train_fold_1,
+                        'l3': np.arange(100, 135, dtype=float)
+                },
+                index = pd.RangeIndex(start=0, stop=35, step=1)
+            ),
+            pd.DataFrame(
+                data = {'l1': np.arange(30, 35, dtype=float),
+                        'l2': np.arange(80, 85, dtype=float),
+                        'l3': np.arange(130, 135, dtype=float)
+                },
+                index = pd.RangeIndex(start=30, stop=35, step=1)
+            ),
+            ['l1', 'l2', 'l3'],
+            None,
+            None,
+            folds[1]
+        )
+    ]
+
+    for i, data_fold in enumerate(data_folds):
+
+        assert isinstance(data_fold, tuple)
+        assert len(data_fold) == 6
+
+        pd.testing.assert_frame_equal(data_fold[0], expected_data_folds[i][0])
+        pd.testing.assert_frame_equal(data_fold[1], expected_data_folds[i][1])
+        assert data_fold[2] == expected_data_folds[i][2]
+        assert data_fold[3] is None
+        assert data_fold[4] is None
         assert data_fold[5] == expected_data_folds[i][5]

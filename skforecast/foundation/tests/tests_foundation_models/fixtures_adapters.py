@@ -5,7 +5,6 @@ import pandas as pd
 from skforecast.foundation._utils import (
     check_preprocess_series_foundation,
 )
-from skforecast.utils import expand_index
 
 
 def normalize_exog_to_dict(exog, series_names):
@@ -173,6 +172,59 @@ class FakeMoirai2Forecast:
         for q_idx in range(9):
             raw[:, q_idx, :] = (q_idx + 1) / 10.0
         return raw
+
+
+# Fake TS-ICL model
+# ==============================================================================
+class FakeTSICL:
+    """
+    Fake TSICL model for testing without torch/tsicl.
+
+    `forecast()` returns quantile values equal to the quantile level itself
+    for all steps (the `mean` output is ignored by `TSICLAdapter`, so its
+    content is irrelevant). Records last call arguments for inspection.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.last_inputs = None
+        self.last_prediction_length = None
+        self.last_quantile_levels = None
+        self.last_context_length = None
+        self.last_device = None
+        self.last_kwargs = None
+
+    def forecast(
+        self,
+        inputs,
+        covars=None,
+        prediction_length=0,
+        batch_size=64,
+        quantile_levels=None,
+        context_length=None,
+        device=None,
+        denormalize=True,
+        point_estimator="mean",
+        allow_auto_complete=False,
+        allow_covar_forecast=False,
+        squeeze_output=True,
+        **kwargs,
+    ):
+        self.last_inputs = inputs
+        self.last_prediction_length = prediction_length
+        self.last_quantile_levels = quantile_levels
+        self.last_context_length = context_length
+        self.last_device = device
+        self.last_kwargs = kwargs
+
+        n_q = len(quantile_levels)
+        q_values = np.array(quantile_levels, dtype=float)
+        quantile_arr = np.broadcast_to(q_values, (1, prediction_length, n_q)).copy()
+        mean_arr = np.zeros((1, prediction_length, 1))
+
+        mean = [mean_arr.copy() for _ in inputs]
+        quantiles = [quantile_arr.copy() for _ in inputs]
+
+        return mean, quantiles
 
 
 # Helper: prepare dicts for adapter.fit()
@@ -418,3 +470,54 @@ class FakeTabPFNTSPipeline:
             data[q] = [r[q] for r in rows]
 
         return pd.DataFrame(data, index=index)
+
+
+# RangeIndex fixture (for adapters that accept integer-indexed series)
+# ==============================================================================
+y_range = pd.Series(np.arange(50, dtype=float), name="sales")
+
+
+# Fake Nori regressor
+# ==============================================================================
+class FakeNoriRegressor:
+    """
+    Fake `NoriRegressor` for testing without synthefy-nori.
+
+    `fit()` records the feature-matrix width (`n_features_in_`) and the target
+    (`y_`). `predict()` returns deterministic output:
+
+    - point (`output_type` in {'mean', 'median', 'mode'}): a length-`n` array
+      filled with the corresponding statistic of the fitted target.
+    - quantiles: shape `(n_quantiles, n)` where row `i` equals `quantiles[i]`,
+      making quantile column-order assertions trivial.
+
+    Records the last call arguments for inspection.
+    """
+
+    def __init__(self, **kwargs):
+        self.n_features_in_ = None
+        self.y_ = None
+        self.last_output_type = None
+        self.last_quantiles = None
+
+    def fit(self, X, y):
+        self.n_features_in_ = X.shape[1]
+        self.y_ = np.asarray(y, dtype=float)
+        return self
+
+    def predict(self, X, *, output_type="mean", quantiles=None):
+        n = len(X)
+        self.last_output_type = output_type
+        self.last_quantiles = list(quantiles) if quantiles is not None else None
+
+        if quantiles is None:
+            fill = {
+                "mean":   self.y_.mean(),
+                "median": np.median(self.y_),
+                "mode":   self.y_.mean(),
+            }[output_type]
+            return np.full(n, fill)
+
+        return np.tile(
+            np.asarray(quantiles, dtype=float).reshape(-1, 1), (1, n)
+        )

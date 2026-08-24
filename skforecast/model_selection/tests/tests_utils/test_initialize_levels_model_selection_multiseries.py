@@ -25,8 +25,9 @@ def test_initialize_levels_model_selection_multiseries_TypeError_when_levels_not
     err_msg = re.escape(
         "`levels` must be a `list` of column names, a `str` of a column "
         "name or `None` when using a forecaster of type "
-        "['ForecasterRecursiveMultiSeries', 'ForecasterRnn']. If the forecaster "
-        "is of type `ForecasterDirectMultiVariate`, this argument is ignored."
+        "['ForecasterRecursiveMultiSeries', 'ForecasterRnn', "
+        "'ForecasterFoundation']. If the forecaster is of type "
+        "`ForecasterDirectMultiVariate`, this argument is ignored."
     )
     with pytest.raises(TypeError, match = err_msg):
         _initialize_levels_model_selection_multiseries(

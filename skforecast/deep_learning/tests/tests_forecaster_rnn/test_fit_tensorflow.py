@@ -4,8 +4,8 @@ import sys
 import pytest
 
 pytestmark = pytest.mark.skipif(
-    sys.version_info >= (3, 13, 0),
-    reason="TensorFlow does not support Python 3.13+",
+    sys.version_info >= (3, 14, 0),
+    reason="TensorFlow does not support Python 3.14+",
 )
 
 import os

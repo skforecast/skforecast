@@ -10,15 +10,64 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-fix">Fix</span>                 | Bug fix                               |
 
 
+## 0.24.0 <small>Aug 24, 2026</small> { id="0.24.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span> New function <code>[bayesian_search_foundation]</code> in the <code>[model_selection]</code> module to tune the inference-time configuration (e.g. `context_length`) of <code>[ForecasterFoundation]</code> models using optuna.
+
++ <span class="badge text-bg-feature">Feature</span> New function <code>[grid_search_equivalent_date]</code> in the <code>[model_selection]</code> module to search the best baseline configuration (`offset`, `n_offsets`, `agg_func`) of a <code>[ForecasterEquivalentDate]</code> using time series backtesting.
+
++ <span class="badge text-bg-feature">Feature</span> New functions <code>[winkler_score]</code> and <code>[weighted_interval_score]</code> in the <code>[metrics]</code> module to evaluate the quality of prediction intervals. The Winkler score assesses a single interval (balancing sharpness and calibration), while the Weighted Interval Score (WIS) aggregates several intervals together with the median forecast and approximates the CRPS. [User guide](../user_guides/probabilistic-forecasting-metrics.ipynb) ([#1254](https://github.com/skforecast/skforecast/pull/1254), [#1262](https://github.com/skforecast/skforecast/pull/1262))
+
++ <span class="badge text-bg-feature">Feature</span> New <code>[NoriAdapter]</code> in the <code>foundation</code> module wrapping `Synthefy Nori`, registered under the `'Synthefy/Nori` `model_id` prefix. Supports future-known exogenous variables, arbitrary quantiles in the 0-1 range, and lazy backend import. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1252](https://github.com/skforecast/skforecast/issues/1252))
+
++ <span class="badge text-bg-feature">Feature</span> New <code>[TSICLAdapter]</code> in the <code>foundation</code> module wrapping `tsicl` (`TSICL`), registered under the `'taharnbl/TS-ICL'` `model_id` prefix. Supports past and future known exogenous variables, a 0.01 quantile grid in `[0.01, 0.99]`, and lazy import of the `tsicl` backend. Thanks to the [EDF Lab](https://github.com/EDF-Lab) team for contributing this adapter. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1265](https://github.com/skforecast/skforecast/pull/1265))
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Optimized the memory layout (`order='F'`) of the bootstrapping prediction matrix in <code>[ForecasterRecursive]</code>, giving a notable speed-up for CatBoost estimators.
+
+
+**Added**
+
++ New function <code>[bayesian_search_foundation]</code> in the <code>[model_selection]</code> module to tune the inference-time configuration (e.g. `context_length`) of <code>[ForecasterFoundation]</code> models using optuna.
+
++ New function <code>[grid_search_equivalent_date]</code> in the <code>[model_selection]</code> module to search the best baseline configuration (`offset`, `n_offsets`, `agg_func`) of a <code>[ForecasterEquivalentDate]</code> using time series backtesting.
+
++ New functions <code>[winkler_score]</code> and <code>[weighted_interval_score]</code> in the <code>[metrics]</code> module to evaluate the quality of prediction intervals. The Winkler score assesses a single interval (balancing sharpness and calibration), while the Weighted Interval Score (WIS) aggregates several intervals together with the median forecast and approximates the CRPS. [User guide](../user_guides/probabilistic-forecasting-metrics.ipynb) ([#1254](https://github.com/skforecast/skforecast/pull/1254), [#1262](https://github.com/skforecast/skforecast/pull/1262))
+
++ New <code>[NoriAdapter]</code> in the <code>foundation</code> module wrapping `Synthefy Nori`, registered under the `'Synthefy/Nori` `model_id` prefix. Supports future-known exogenous variables, arbitrary quantiles in the 0-1 range, and lazy backend import. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1252](https://github.com/skforecast/skforecast/issues/1252))
+
++ New <code>[TSICLAdapter]</code> in the <code>foundation</code> module wrapping `tsicl` (`TSICL`), registered under the `'taharnbl/TS-ICL'` `model_id` prefix. Supports past and future known exogenous variables, a 0.01 quantile grid in `[0.01, 0.99]`, and lazy import of the `tsicl` backend. Thanks to the [EDF Lab](https://github.com/EDF-Lab) team for contributing this adapter. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1265](https://github.com/skforecast/skforecast/pull/1265))
+
+
+**Changed**
+
++ The main branch of the repository has been renamed from `master` to `main`. All references to the default branch in CI, documentation, and test fixtures have been updated accordingly.
+
++ During backtesting and one-step-ahead validation of <code>[ForecasterRecursiveMultiSeries]</code>, a level is now kept whenever the estimator natively supports NaN inputs (LightGBM, XGBoost, CatBoost and scikit-learn's tree-based models: `DecisionTree`, `ExtraTree`, `ExtraTrees`, `RandomForest` and `HistGradientBoosting`) and no `differentiation` is applied. As a result, metrics may change for series with interspersed NaN values, as previously skipped levels now produce predictions. ([#1196](https://github.com/skforecast/skforecast/issues/1196), [#1260](https://github.com/skforecast/skforecast/pull/1260))
+
++ <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterRnn]</code> build their predictors from every series, so no level can be dropped from the last window. Folds whose last window contains NaNs are now always predicted, and either return NaN predictions or raise, depending on the estimator. ([#1260](https://github.com/skforecast/skforecast/pull/1260))
+
++ Optimized the memory layout (`order='F'`) of the bootstrapping prediction matrix in <code>[ForecasterRecursive]</code>, giving a notable speed-up for CatBoost estimators. As a side effect, bootstrap prediction intervals produced by linear estimators may differ at floating-point precision (~1e-15) because BLAS summation order depends on the array memory layout.
+
+
+**Fixed**
+
++ Fixed an issue where <code>[FoundationModel]</code> was not fully compatible with `sklearn.base.clone`. The `TimesFMAdapter`, `TabICLAdapter`, `TabPFNAdapter`, and `NoriAdapter` stored their configuration dictionaries (`forecast_config_kwargs`, `tabicl_config`, `tabpfn_model_config`, `nori_config`) as a fresh copy in `__init__`, which broke the parameter identity check performed by `clone` and raised a `RuntimeError` whenever a non-empty configuration dictionary was passed. Because <code>[ForecasterFoundation]</code> clones its estimator at construction, this also prevented building a forecaster from a `FoundationModel` configured with those settings. The configuration is now stored by reference, following the scikit-learn convention of keeping constructor parameters unchanged.
+
++ Fixed a misleading error raised by the `predict`, `predict_interval`, `predict_bootstrapping` and `create_predict_X` methods of <code>[ForecasterRecursiveMultiSeries]</code> when `levels` was an empty list and no `last_window` was passed. The internal length validation reported that `last_window` did not contain enough observations to generate the predictors, pointing at the wrong cause. A `ValueError` stating that no series were requested is now raised instead.
+
+
+
 ## 0.23.0 <small>Jul 8, 2026</small> { id="0.23.0" }
 
 The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New `calendar_features` parameter in all ML Forecasters (<code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>). Users can now pass a <code>[CalendarFeatures]</code> instance to delegate the automatic creation of calendar features (e.g. month, day of week, hour) from the datetime index to the forecaster. Calendar features are generated during both training and prediction, requiring no manual feature engineering. [User guide](../user_guides/calendar-features.ipynb)
 
-+ <span class="badge text-bg-feature">Feature</span> New <code>TabPFNAdapter</code> in the <code>foundation</code> module for zero-shot forecasting with **TabPFN-TS** (Prior Labs), registered under the `'priorlabs/tabpfn'` `model_id` prefix. The adapter supports known-future exogenous variables, arbitrary quantiles in the 0-1 range, local and cloud-API inference modes, and lazy import of the `tabpfn-time-series` backend. This brings the number of foundation model adapters available out of the box to five. Thanks to the [Prior Labs](https://priorlabs.ai) team for contributing this adapter. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1206](https://github.com/skforecast/skforecast/issues/1206), [#1213](https://github.com/skforecast/skforecast/pull/1213))
++ <span class="badge text-bg-feature">Feature</span> New <code>[TabPFNAdapter]</code> in the <code>foundation</code> module for zero-shot forecasting with **TabPFN-TS** (Prior Labs), registered under the `'priorlabs/tabpfn'` `model_id` prefix. The adapter supports known-future exogenous variables, arbitrary quantiles in the 0-1 range, local and cloud-API inference modes, and lazy import of the `tabpfn-time-series` backend. This brings the number of foundation model adapters available out of the box to five. Thanks to the [Prior Labs](https://priorlabs.ai) team for contributing this adapter. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1206](https://github.com/skforecast/skforecast/issues/1206), [#1213](https://github.com/skforecast/skforecast/pull/1213))
 
-+ <span class="badge text-bg-feature">Feature</span> New <code>T0Adapter</code> in the <code>foundation</code> module wrapping `tfc-t0` (`T0Forecaster`), registered under the `'theforecastingcompany/t0'` `model_id` prefix. Supports future-known exogenous variables, arbitrary quantiles in the 0-1 range, and lazy backend import. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1221](https://github.com/skforecast/skforecast/issues/1221), [#1219](https://github.com/skforecast/skforecast/pull/1219))
++ <span class="badge text-bg-feature">Feature</span> New <code>[T0Adapter]</code> in the <code>foundation</code> module wrapping `tfc-t0` (`T0Forecaster`), registered under the `'theforecastingcompany/t0'` `model_id` prefix. Supports future-known exogenous variables, arbitrary quantiles in the 0-1 range, and lazy backend import. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1221](https://github.com/skforecast/skforecast/issues/1221), [#1219](https://github.com/skforecast/skforecast/pull/1219))
 
 + <span class="badge text-bg-feature">Feature</span> New functions <code>[acf]</code>, <code>[pacf]</code> and <code>[calculate_lag_autocorrelation]</code> in the <code>[stats]</code> module. Fast ACF and PACF implementations via FFT and Levinson-Durbin, removing the dependency on `statsmodels` for autocorrelation calculations. [User guide](../user_guides/autocorrelation-and-lag-selection.ipynb)
 
@@ -45,9 +94,9 @@ The main changes in this release are:
 
 + New `calendar_features` parameter in all ML Forecasters (<code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>). Users can now pass a <code>[CalendarFeatures]</code> instance to delegate the automatic creation of calendar features (e.g. month, day of week, hour) from the datetime index to the forecaster. Calendar features are generated during both training and prediction, requiring no manual feature engineering. Only supported when the index of the input data is a `pandas.DatetimeIndex`. [User guide](../user_guides/calendar-features.ipynb)
 
-+ New <code>TabPFNAdapter</code> in the <code>foundation</code> module wrapping `tabpfn-time-series` (`TabPFNTSPipeline`), registered under the `'priorlabs/tabpfn'` `model_id` prefix. Supports known-future exogenous variables, arbitrary quantiles in the 0-1 range, local and cloud-API inference modes, and lazy backend import. Includes a `FakeTabPFNTSPipeline` fixture and a full mock-based test suite mirroring the TabICL adapter tests. Contributed by the [Prior Labs](https://priorlabs.ai) team. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1206](https://github.com/skforecast/skforecast/issues/1206), [#1213](https://github.com/skforecast/skforecast/pull/1213))
++ New <code>[TabPFNAdapter]</code> in the <code>foundation</code> module wrapping `tabpfn-time-series` (`TabPFNTSPipeline`), registered under the `'priorlabs/tabpfn'` `model_id` prefix. Supports known-future exogenous variables, arbitrary quantiles in the 0-1 range, local and cloud-API inference modes, and lazy backend import. Includes a `FakeTabPFNTSPipeline` fixture and a full mock-based test suite mirroring the TabICL adapter tests. Contributed by the [Prior Labs](https://priorlabs.ai) team. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1206](https://github.com/skforecast/skforecast/issues/1206), [#1213](https://github.com/skforecast/skforecast/pull/1213))
 
-+ New <code>T0Adapter</code> in the <code>foundation</code> module wrapping `tfc-t0` (`T0Forecaster`), registered under the `'theforecastingcompany/t0'` `model_id` prefix. Supports future-known exogenous variables, arbitrary quantiles in the 0-1 range, and lazy backend import. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1221](https://github.com/skforecast/skforecast/issues/1221), [#1219](https://github.com/skforecast/skforecast/pull/1219))
++ New <code>[T0Adapter]</code> in the <code>foundation</code> module wrapping `tfc-t0` (`T0Forecaster`), registered under the `'theforecastingcompany/t0'` `model_id` prefix. Supports future-known exogenous variables, arbitrary quantiles in the 0-1 range, and lazy backend import. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1221](https://github.com/skforecast/skforecast/issues/1221), [#1219](https://github.com/skforecast/skforecast/pull/1219))
 
 + New functions <code>[acf]</code>, <code>[pacf]</code> and <code>[calculate_lag_autocorrelation]</code> in the <code>[stats]</code> module. Fast ACF and PACF implementations via FFT and Levinson-Durbin, removing the dependency on `statsmodels` for autocorrelation calculations. [User guide](../user_guides/autocorrelation-and-lag-selection.ipynb)
 
@@ -1583,6 +1632,14 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- foundation -->
 [FoundationModel]: ../api/FoundationModel.md#skforecast.foundation._foundation_model.FoundationModel
+[ChronosAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.ChronosAdapter
+[TimesFMAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TimesFMAdapter
+[MoiraiAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.MoiraiAdapter
+[TabICLAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TabICLAdapter
+[TabPFNAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TabPFNAdapter
+[T0Adapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.T0Adapter
+[NoriAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.NoriAdapter
+[TSICLAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TSICLAdapter
 
 <!-- stats -->
 [stats]: ../api/stats.md
@@ -1607,15 +1664,18 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [random_search_forecaster_multiseries]: ../api/model_selection.md#skforecast.model_selection._search.random_search_forecaster_multiseries
 [bayesian_search_forecaster_multiseries]: ../api/model_selection.md#skforecast.model_selection._search.bayesian_search_forecaster_multiseries
 
+[backtesting_foundation]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_foundation
+[bayesian_search_foundation]: ../api/model_selection.md#skforecast.model_selection._search.bayesian_search_foundation
+
 [backtesting_stats]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_stats
 [grid_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.grid_search_stats
 [random_search_stats]: ../api/model_selection.md#skforecast.model_selection._search.random_search_stats
 
-[backtesting_foundation]: ../api/model_selection.md#skforecast.model_selection._validation.backtesting_foundation
+[grid_search_equivalent_date]: ../api/model_selection.md#skforecast.model_selection._search.grid_search_equivalent_date
 
-[BaseFold]: ../api/model_selection.md#skforecast.model_selection._split.BaseFold
 [TimeSeriesFold]: ../api/model_selection.md#skforecast.model_selection._split.TimeSeriesFold
 [OneStepAheadFold]: ../api/model_selection.md#skforecast.model_selection._split.OneStepAheadFold
+[BaseFold]: ../api/model_selection.md#skforecast.model_selection._split.BaseFold
 
 <!-- feature_selection -->
 [feature_selection]: ../api/feature_selection.md
@@ -1647,6 +1707,12 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [mean_absolute_scaled_error]: ../api/metrics.md#skforecast.metrics.mean_absolute_scaled_error
 [root_mean_squared_scaled_error]: ../api/metrics.md#skforecast.metrics.root_mean_squared_scaled_error
 [symmetric_mean_absolute_percentage_error]: ../api/metrics.md#skforecast.metrics.symmetric_mean_absolute_percentage_error
+[calculate_coverage]: ../api/metrics.md#skforecast.metrics.calculate_coverage
+[crps_from_predictions]: ../api/metrics.md#skforecast.metrics.crps_from_predictions
+[crps_from_quantiles]: ../api/metrics.md#skforecast.metrics.crps_from_quantiles
+[winkler_score]: ../api/metrics.md#skforecast.metrics.winkler_score
+[weighted_interval_score]: ../api/metrics.md#skforecast.metrics.weighted_interval_score
+[create_mean_pinball_loss]: ../api/metrics.md#skforecast.metrics.create_mean_pinball_loss
 [add_y_train_argument]: ../api/metrics.md#skforecast.metrics.add_y_train_argument
 
 <!-- plot -->
@@ -1676,6 +1742,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- exceptions -->
 [exceptions]: ../api/exceptions.md
 [IgnoredArgumentWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.IgnoredArgumentWarning
+[MissingValuesWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.MissingValuesWarning
 
 <!-- OLD -->
 [ForecasterAutoreg]: https://skforecast.org/0.13.0/api/forecasterautoreg

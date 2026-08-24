@@ -8,6 +8,8 @@ from .metrics import (
     crps_from_quantiles,
     calculate_coverage,
     create_mean_pinball_loss,
+    winkler_score,
+    weighted_interval_score,
     _get_metric,
 )
 
@@ -20,4 +22,6 @@ __all__ = [
     "crps_from_quantiles",
     "calculate_coverage",
     "create_mean_pinball_loss",
+    "winkler_score",
+    "weighted_interval_score",
 ]

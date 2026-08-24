@@ -9,6 +9,8 @@ from skforecast.foundation._adapters import (
     TabICLAdapter,
     TabPFNAdapter,
     T0Adapter,
+    NoriAdapter,
+    TSICLAdapter,
     _resolve_adapter,
     _ADAPTER_REGISTRY,
 )
@@ -27,6 +29,8 @@ from skforecast.foundation._adapters import (
         ("soda-inria/tabicl", TabICLAdapter),
         ("priorlabs/tabpfn-ts", TabPFNAdapter),
         ("theforecastingcompany/t0-alpha", T0Adapter),
+        ("Synthefy/Nori", NoriAdapter),
+        ("taharnbl/TS-ICL", TSICLAdapter),
     ],
     ids=lambda x: str(x),
 )
@@ -62,6 +66,8 @@ def test_ADAPTER_REGISTRY_contains_all_expected_entries():
         "soda-inria/tabicl": TabICLAdapter,
         "priorlabs/tabpfn": TabPFNAdapter,
         "theforecastingcompany/t0": T0Adapter,
+        "Synthefy/Nori": NoriAdapter,
+        "taharnbl/TS-ICL": TSICLAdapter,
     }
     for prefix, cls in expected.items():
         assert prefix in _ADAPTER_REGISTRY

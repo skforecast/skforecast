@@ -3,7 +3,7 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
+
 
 from __future__ import annotations
 from typing import Callable, Generator
@@ -833,7 +833,7 @@ def _initialize_levels_model_selection_multiseries(
 
     Parameters
     ----------
-    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRnn
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRnn, ForecasterFoundation
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -851,7 +851,8 @@ def _initialize_levels_model_selection_multiseries(
 
     multi_series_forecasters_with_levels = [
         'ForecasterRecursiveMultiSeries', 
-        'ForecasterRnn'
+        'ForecasterRnn',
+        'ForecasterFoundation'
     ]
 
     if type(forecaster).__name__ in multi_series_forecasters_with_levels  \
@@ -1022,8 +1023,6 @@ def _extract_data_folds_multiseries(
 
         if dropna_last_window:
             series_last_window = series_last_window.dropna(axis=1, how="any")
-            # TODO: add the option to drop the series without minimum non NaN values.
-            # Similar to how pandas does in the rolling window function.
         
         levels_last_window = list(series_last_window.columns)
 

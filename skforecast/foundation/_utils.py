@@ -3,11 +3,123 @@
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
-# coding=utf-8
+
 
 from __future__ import annotations
+from typing import Any, Callable
+import numpy as np
 import pandas as pd
 from ..utils import check_preprocess_series
+
+
+def _validate_positive_int(name: str, value: Any) -> None:
+    """
+    Validate that a parameter is a positive integer.
+
+    Parameters
+    ----------
+    name : str
+        Parameter name, used in the raised error message.
+    value : Any
+        Value to validate.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if not isinstance(value, int) or value < 1:
+        raise ValueError(f"`{name}` must be a positive integer. Got {value!r}.")
+
+
+def _apply_set_params(
+    instance: Any,
+    params: dict[str, Any],
+    *,
+    validate: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+    resets: tuple[tuple[set[str], Callable[[], None]], ...] = (),
+) -> Any:
+    """
+    Shared `set_params` skeleton for the foundation-model adapters.
+
+    Rejects keys not present in `instance.get_params()`, validates and
+    normalizes the values through the adapter-provided `validate` callback,
+    applies only the values that actually change, and invalidates the cached
+    artifacts whose trigger keys changed. Value validation is left to each
+    adapter (via `validate`) because it is model specific; only the mechanical
+    key check, compare-and-reset, and assignment are shared here.
+
+    Parameters
+    ----------
+    instance : object
+        The adapter whose parameters are being set. Its `get_params` keys
+        define the set of valid parameters.
+    params : dict
+        Parameters to set.
+    validate : callable, default None
+        Callback that receives the parameters (already checked for unknown
+        keys) and returns them validated and normalized, raising `ValueError`
+        on invalid values. If `None`, the parameters are applied verbatim.
+    resets : tuple of (set, callable), default ()
+        Each entry pairs a set of trigger keys with a reset callback. A
+        callback is invoked once when at least one of its trigger keys is
+        among the parameters that actually changed.
+
+    Returns
+    -------
+    instance : object
+        The same adapter, to allow chaining.
+
+    """
+
+    valid = set(instance.get_params())
+    invalid = set(params) - valid
+    if invalid:
+        raise ValueError(
+            f"Invalid parameter(s) for {type(instance).__name__}: {sorted(invalid)}. "
+            f"Valid parameters are: {sorted(valid)}."
+        )
+
+    if validate is not None:
+        params = validate(params)
+
+    changed = {
+        key: value
+        for key, value in params.items()
+        if getattr(instance, key) != value
+    }
+    if changed:
+        for trigger_keys, reset in resets:
+            if changed.keys() & trigger_keys:
+                reset()
+        for key, value in changed.items():
+            setattr(instance, key, value)
+
+    return instance
+
+
+def _tensor_to_numpy(values: Any) -> np.ndarray:
+    """
+    Detach a torch tensor to a numpy array, preserving its native dtype.
+
+    Parameters
+    ----------
+    values : array-like
+        Model output, either a numpy array or a torch tensor.
+
+    Returns
+    -------
+    array : numpy ndarray
+        Numpy array. Torch tensors are detached, moved to CPU, and
+        converted, keeping their native dtype.
+
+    """
+
+    if hasattr(values, "detach"):
+        return values.detach().cpu().numpy()
+
+    return np.asarray(values)
 
 
 def check_preprocess_series_foundation(

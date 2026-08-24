@@ -26,6 +26,7 @@ def test_TabICLAdapter_init_default_params():
     assert adapter.point_estimate == "mean"
     assert adapter.tabicl_config == {}
     assert adapter.temporal_features is None
+    assert adapter.show_progress is False
     assert adapter._model is None
     assert adapter.context_ is None
     assert adapter.context_exog_ is None
@@ -43,11 +44,13 @@ def test_TabICLAdapter_init_custom_params_stored():
         point_estimate="median",
         tabicl_config={"n_estimators": 10},
         temporal_features=[],
+        show_progress=True,
     )
     assert adapter.context_length == 512
     assert adapter.point_estimate == "median"
     assert adapter.tabicl_config == {"n_estimators": 10}
     assert adapter.temporal_features == []
+    assert adapter.show_progress is True
 
 
 @pytest.mark.parametrize(
@@ -93,13 +96,14 @@ def test_TabICLAdapter_get_params_returns_expected_keys_and_values():
     params = adapter.get_params()
     assert set(params.keys()) == {
         "model_id", "context_length", "point_estimate",
-        "tabicl_config", "temporal_features",
+        "tabicl_config", "temporal_features", "show_progress",
     }
     assert params["model_id"] == "soda-inria/tabicl"
     assert params["context_length"] == 512
     assert params["point_estimate"] == "median"
     assert params["tabicl_config"] is None   # empty dict → None
     assert params["temporal_features"] is None
+    assert params["show_progress"] is False
 
 
 def test_TabICLAdapter_get_params_tabicl_config_non_empty():
@@ -120,9 +124,13 @@ def test_TabICLAdapter_get_params_tabicl_config_non_empty():
         ({"context_length": 0}, "`context_length` must be a positive integer"),
         ({"context_length": -5}, "`context_length` must be a positive integer"),
         ({"point_estimate": "mode"}, "`point_estimate` must be 'mean' or 'median'"),
+        ({"show_progress": "yes"}, "`show_progress` must be a bool"),
         ({"unknown_param": 42}, "Invalid parameter"),
     ],
-    ids=["context_length=0", "context_length=-5", "point_estimate=mode", "unknown_param"]
+    ids=[
+        "context_length=0", "context_length=-5", "point_estimate=mode",
+        "show_progress=yes", "unknown_param",
+    ]
 )
 def test_TabICLAdapter_set_params_ValueError_when_invalid(params, match):
     """
@@ -178,6 +186,24 @@ def test_TabICLAdapter_set_params_no_reset_when_value_unchanged():
     adapter.set_params(context_length=4096, point_estimate="mean")
 
     assert adapter._model is not None  # not reset because values unchanged
+
+
+def test_TabICLAdapter_set_params_show_progress_does_not_reset_model():
+    """
+    Test that set_params does not reset _model when only show_progress
+    changes, since it does not affect the underlying TabICLForecaster.
+    """
+    fake = FakeTabICLForecaster()
+    adapter = TabICLAdapter(
+        model_id="soda-inria/tabicl", model=fake, show_progress=False
+    )
+    assert adapter._model is not None
+
+    result = adapter.set_params(show_progress=True)
+
+    assert result is adapter
+    assert adapter.show_progress is True
+    assert adapter._model is not None  # not reset, show_progress is not a model param
 
 
 def test_TabICLAdapter_set_params_tabicl_config_none_normalises_to_empty_dict():
@@ -627,6 +653,45 @@ def test_TabICLAdapter_predict_range_index_timestamps_are_datetime():
     ctx_max = fake.last_context_df["timestamp"].max()
     fut_min = fake.last_future_df["timestamp"].min()
     assert fut_min > ctx_max
+
+
+# ==============================================================================
+# Tests TabICLAdapter._get_future_timestamps
+# ==============================================================================
+def test_TabICLAdapter_get_future_timestamps_ValueError_when_index_has_fewer_than_3_observations():
+    """
+    Test that _get_future_timestamps raises ValueError, instead of an
+    unhandled TypeError, when the context has a DatetimeIndex with no
+    freq and fewer than 3 observations (pandas cannot infer a frequency).
+    """
+    adapter = TabICLAdapter(model_id="soda-inria/tabicl")
+    series = pd.Series(
+        data=[1.0, 2.0],
+        index=pd.DatetimeIndex(["2020-01-01", "2020-01-03"]),
+        name="ts",
+    )
+
+    err_msg = re.escape("Could not infer a frequency from `index`.")
+    with pytest.raises(ValueError, match=err_msg):
+        adapter._get_future_timestamps(series, steps=3, is_datetime=True)
+
+
+def test_TabICLAdapter_get_future_timestamps_ValueError_when_index_is_irregularly_spaced():
+    """
+    Test that _get_future_timestamps raises ValueError, instead of an
+    unhandled TypeError, when the context has an irregularly spaced
+    DatetimeIndex with no freq (pandas cannot infer a frequency).
+    """
+    adapter = TabICLAdapter(model_id="soda-inria/tabicl")
+    series = pd.Series(
+        data=[1.0, 2.0, 3.0],
+        index=pd.DatetimeIndex(["2020-01-01", "2020-01-03", "2020-01-10"]),
+        name="ts",
+    )
+
+    err_msg = re.escape("Could not infer a frequency from `index`.")
+    with pytest.raises(ValueError, match=err_msg):
+        adapter._get_future_timestamps(series, steps=3, is_datetime=True)
 
 
 # ==============================================================================

@@ -1,6 +1,6 @@
 [project]
 name = "skforecast"
-version = "0.23.0"
+version = "0.24.0"
 description = "Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others."
 readme = "README.md"
 authors = [
@@ -84,7 +84,7 @@ all = [
     "statsmodels>=0.13, <0.15",
     "keras>=3.0, <4.0",
     'tensorflow>=2.18, <2.22; python_version < "3.14"',
-    "torch>=2.4, <2.13"
+    "torch>=2.4, <2.14"
 ]
 
 full = ["skforecast[all]"]
@@ -93,9 +93,9 @@ docs = [
     "mike==2.1.3",
     "mkdocs==1.6.1",
     "mkdocs-jupyter==0.26.3",
-    "mkdocs-material==9.7.6",
-    "mkdocstrings==1.0.4",
-    "mkdocstrings-python==2.0.5",
+    "mkdocs-material==9.7.7",
+    "mkdocstrings==1.0.6",
+    "mkdocstrings-python==2.0.7",
     "black==26.5.1",
 ]
 
@@ -114,7 +114,7 @@ test = [
     "xgboost>=2.1, <4.0",
     "catboost>=1.2, <2.0",
     "keras>=3.0, <4.0",
-    "torch>=2.4, <2.13",
+    "torch>=2.4, <2.14",
     "cloudpickle>=3.0",
     "skops>=0.14",
     "tomli>=2.0",
