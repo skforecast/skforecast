@@ -5656,7 +5656,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Conformal prediction is a framework for constructing prediction intervals that are guaranteed to contain the true value with a specified probability (coverage probability). It works by combining the predictions of a point-forecasting model with its past residuals—differences between previous predictions and actual values. These residuals help estimate the uncertainty in the forecast and determine the width of the prediction interval that is then added to the point forecast. Skforecast implements <a href="https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method">Split Conformal Prediction (SCP)</a>.</p>
+<p>Conformal prediction is a framework for constructing prediction intervals that are guaranteed to contain the true value with a specified probability (coverage probability). It works by combining the predictions of a point-forecasting model with its past residuals—differences between previous predictions and actual values. These residuals help estimate the uncertainty in the forecast and determine the width of the prediction interval that is then added to the point forecast. Skforecast implements <a href="https://mapie.readthedocs.io/en/stable/content/conformal-prediction/regression/#2-the-split-method">Split Conformal Prediction (SCP)</a>.</p>
 <p style="text-align: center">
 <img alt="No description has been provided for this image" src="../img/conformal-regression.png" style="width: 450px"/>
 <br/>
@@ -5686,7 +5686,7 @@ by Christoph Molnar https://leanpub.com/conformal-prediction</i></font>
 <i style="font-size: 18px; color:#ff9100; border-color: #ff1744;"></i>
 <b style="color: #ff9100;"> <span style="color: #ff9100;">⚠</span> Warning</b>
 </p>
-<p>There are several well-established <a href="https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html" target="_blank">methods for conformal prediction</a>, each with its own characteristics and assumptions. However, when applied to time series forecasting, their coverage guarantees are only valid for one-step-ahead predictions. For multi-step-ahead predictions, the coverage probability is not guaranteed. Skforecast implements Split Conformal Prediction (SCP) due to its simplicity and efficiency.</p>
+<p>There are several well-established <a href="https://mapie.readthedocs.io/en/stable/content/conformal-prediction/regression/" target="_blank">methods for conformal prediction</a>, each with its own characteristics and assumptions. However, when applied to time series forecasting, their coverage guarantees are only valid for one-step-ahead predictions. For multi-step-ahead predictions, the coverage probability is not guaranteed. Skforecast implements Split Conformal Prediction (SCP) due to its simplicity and efficiency.</p>
 </div>
 </div>
 </div>
