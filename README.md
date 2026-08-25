@@ -143,19 +143,19 @@ All significant changes to this project are documented in the release file.
 
 A **Forecaster** object in the skforecast library is a comprehensive **container that provides essential functionality and methods** for training a forecasting model and generating predictions for future points in time.
 
-The **skforecast** library offers a **variety of forecaster types**, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, statistical models (ARIMA, ETS), deep learning (RNN/LSTM), and foundation models. Regardless of the forecaster type, all share a unified API for training, prediction, and validation.
+The **skforecast** library offers a **variety of forecaster types**, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, statistical models (ARIMA, ETS), deep learning (RNN/LSTM), and foundation models. Regardless of the forecaster type, all share a unified API for training, prediction, and validation, and **all support probabilistic forecasting** (prediction intervals).
 
-| Forecaster | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Window features |
-|:-----------|:-------------:|:---------------:|:------------------:|:---------------:|:------------------------:|:---------------------------:|:------------------:|:---------------:|
-|[ForecasterRecursive]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|[ForecasterDirect]|:heavy_check_mark:|||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|[ForecasterRecursiveMultiSeries]||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|[ForecasterDirectMultiVariate]||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|[ForecasterRecursiveClassifier]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|
-|[ForecasterRnn]|:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:||
-|[ForecasterStats]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:||
-|[ForecasterFoundation]|:heavy_check_mark:|:heavy_check_mark:|||:heavy_check_mark:||:heavy_check_mark:||
-|[ForecasterEquivalentDate]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:||||
+| Forecaster | Estimator | Series | Strategy | Exog | Window features | Differentiation |
+|:--|:--|:--:|:--:|:--:|:--:|:--:|
+|[ForecasterRecursive]| scikit-learn regressor | single | recursive | ✓ | ✓ | ✓ |
+|[ForecasterDirect]| scikit-learn regressor | single | direct | ✓ | ✓ | ✓ |
+|[ForecasterRecursiveMultiSeries]| scikit-learn regressor | multiple | recursive | ✓ | ✓ | ✓ |
+|[ForecasterDirectMultiVariate]| scikit-learn regressor | multiple | direct | ✓ | ✓ | ✓ |
+|[ForecasterFoundation]| pre-trained, zero-shot | single or multiple | multi-output | ✓ | | |
+|[ForecasterStats]| Arima, Sarimax, Ets, Arar | single | recursive | ✓ | | |
+|[ForecasterRnn]| Keras model (RNN/LSTM) | single or multiple | multi-output | ✓ | | |
+|[ForecasterRecursiveClassifier]| scikit-learn classifier | single | recursive | ✓ | ✓ | |
+|[ForecasterEquivalentDate]| Rule-based (baseline) | single | recursive | | | |
 
 [ForecasterRecursive]: https://skforecast.org/latest/user_guides/autoregressive-forecaster.html
 [ForecasterDirect]: https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html
