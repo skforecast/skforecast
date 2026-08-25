@@ -2298,7 +2298,7 @@ class ForecasterRecursive(ForecasterBase):
         References
         ----------
         .. [1] MAPIE - Model Agnostic Prediction Interval Estimator.
-               https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
+               https://mapie.readthedocs.io/en/stable/content/conformal-prediction/regression/#2-the-split-method
 
         """
         
@@ -2469,7 +2469,7 @@ class ForecasterRecursive(ForecasterBase):
                https://otexts.com/fpp3/prediction-intervals.html
         
         .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
-               https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
+               https://mapie.readthedocs.io/en/stable/content/conformal-prediction/regression/#2-the-split-method
     
         """
 

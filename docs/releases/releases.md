@@ -14,30 +14,30 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> New function <code>[bayesian_search_foundation]</code> in the <code>[model_selection]</code> module to tune the inference-time configuration (e.g. `context_length`) of <code>[ForecasterFoundation]</code> models using optuna.
++ <span class="badge text-bg-feature">Feature</span> New function <code>[bayesian_search_foundation]</code> in the <code>[model_selection]</code> module to tune the inference-time configuration (e.g. `context_length`) of <code>[ForecasterFoundation]</code> models using optuna. [User guide](../user_guides/foundation-forecasting-models.ipynb#selection-of-context-length)
 
-+ <span class="badge text-bg-feature">Feature</span> New function <code>[grid_search_equivalent_date]</code> in the <code>[model_selection]</code> module to search the best baseline configuration (`offset`, `n_offsets`, `agg_func`) of a <code>[ForecasterEquivalentDate]</code> using time series backtesting.
-
-+ <span class="badge text-bg-feature">Feature</span> New functions <code>[winkler_score]</code> and <code>[weighted_interval_score]</code> in the <code>[metrics]</code> module to evaluate the quality of prediction intervals. The Winkler score assesses a single interval (balancing sharpness and calibration), while the Weighted Interval Score (WIS) aggregates several intervals together with the median forecast and approximates the CRPS. [User guide](../user_guides/probabilistic-forecasting-metrics.ipynb) ([#1254](https://github.com/skforecast/skforecast/pull/1254), [#1262](https://github.com/skforecast/skforecast/pull/1262))
++ <span class="badge text-bg-feature">Feature</span> New function <code>[grid_search_equivalent_date]</code> in the <code>[model_selection]</code> module to search the best baseline configuration (`offset`, `n_offsets`, `agg_func`) of a <code>[ForecasterEquivalentDate]</code> using time series backtesting. [User guide](../user_guides/forecasting-baseline.ipynb#searching-for-the-best-configuration)
 
 + <span class="badge text-bg-feature">Feature</span> New <code>[NoriAdapter]</code> in the <code>foundation</code> module wrapping `Synthefy Nori`, registered under the `'Synthefy/Nori` `model_id` prefix. Supports future-known exogenous variables, arbitrary quantiles in the 0-1 range, and lazy backend import. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1252](https://github.com/skforecast/skforecast/issues/1252))
 
 + <span class="badge text-bg-feature">Feature</span> New <code>[TSICLAdapter]</code> in the <code>foundation</code> module wrapping `tsicl` (`TSICL`), registered under the `'taharnbl/TS-ICL'` `model_id` prefix. Supports past and future known exogenous variables, a 0.01 quantile grid in `[0.01, 0.99]`, and lazy import of the `tsicl` backend. Thanks to the [EDF Lab](https://github.com/EDF-Lab) team for contributing this adapter. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1265](https://github.com/skforecast/skforecast/pull/1265))
+
++ <span class="badge text-bg-feature">Feature</span> New functions <code>[winkler_score]</code> and <code>[weighted_interval_score]</code> in the <code>[metrics]</code> module to evaluate the quality of prediction intervals. The Winkler score assesses a single interval (balancing sharpness and calibration), while the Weighted Interval Score (WIS) aggregates several intervals together with the median forecast and approximates the CRPS. [User guide](../user_guides/probabilistic-forecasting-metrics.ipynb) ([#1254](https://github.com/skforecast/skforecast/pull/1254), [#1262](https://github.com/skforecast/skforecast/pull/1262))
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Optimized the memory layout (`order='F'`) of the bootstrapping prediction matrix in <code>[ForecasterRecursive]</code>, giving a notable speed-up for CatBoost estimators.
 
 
 **Added**
 
-+ New function <code>[bayesian_search_foundation]</code> in the <code>[model_selection]</code> module to tune the inference-time configuration (e.g. `context_length`) of <code>[ForecasterFoundation]</code> models using optuna.
++ New function <code>[bayesian_search_foundation]</code> in the <code>[model_selection]</code> module to tune the inference-time configuration (e.g. `context_length`) of <code>[ForecasterFoundation]</code> models using optuna. [User guide](../user_guides/foundation-forecasting-models.ipynb#selection-of-context-length)
 
-+ New function <code>[grid_search_equivalent_date]</code> in the <code>[model_selection]</code> module to search the best baseline configuration (`offset`, `n_offsets`, `agg_func`) of a <code>[ForecasterEquivalentDate]</code> using time series backtesting.
-
-+ New functions <code>[winkler_score]</code> and <code>[weighted_interval_score]</code> in the <code>[metrics]</code> module to evaluate the quality of prediction intervals. The Winkler score assesses a single interval (balancing sharpness and calibration), while the Weighted Interval Score (WIS) aggregates several intervals together with the median forecast and approximates the CRPS. [User guide](../user_guides/probabilistic-forecasting-metrics.ipynb) ([#1254](https://github.com/skforecast/skforecast/pull/1254), [#1262](https://github.com/skforecast/skforecast/pull/1262))
++ New function <code>[grid_search_equivalent_date]</code> in the <code>[model_selection]</code> module to search the best baseline configuration (`offset`, `n_offsets`, `agg_func`) of a <code>[ForecasterEquivalentDate]</code> using time series backtesting. [User guide](../user_guides/forecasting-baseline.ipynb#searching-for-the-best-configuration)
 
 + New <code>[NoriAdapter]</code> in the <code>foundation</code> module wrapping `Synthefy Nori`, registered under the `'Synthefy/Nori` `model_id` prefix. Supports future-known exogenous variables, arbitrary quantiles in the 0-1 range, and lazy backend import. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1252](https://github.com/skforecast/skforecast/issues/1252))
 
 + New <code>[TSICLAdapter]</code> in the <code>foundation</code> module wrapping `tsicl` (`TSICL`), registered under the `'taharnbl/TS-ICL'` `model_id` prefix. Supports past and future known exogenous variables, a 0.01 quantile grid in `[0.01, 0.99]`, and lazy import of the `tsicl` backend. Thanks to the [EDF Lab](https://github.com/EDF-Lab) team for contributing this adapter. [User guide](../user_guides/foundation-forecasting-models.ipynb) ([#1265](https://github.com/skforecast/skforecast/pull/1265))
+
++ New functions <code>[winkler_score]</code> and <code>[weighted_interval_score]</code> in the <code>[metrics]</code> module to evaluate the quality of prediction intervals. The Winkler score assesses a single interval (balancing sharpness and calibration), while the Weighted Interval Score (WIS) aggregates several intervals together with the median forecast and approximates the CRPS. [User guide](../user_guides/probabilistic-forecasting-metrics.ipynb) ([#1254](https://github.com/skforecast/skforecast/pull/1254), [#1262](https://github.com/skforecast/skforecast/pull/1262))
 
 
 **Changed**
@@ -555,7 +555,7 @@ The main changes in this release are:
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> Added [conformal framework for probabilistic forecasting](../user_guides/probabilistic-forecasting-conformal-prediction.ipynb). Generate prediction intervals using the [conformal prediction split method](https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method).
++ <span class="badge text-bg-feature">Feature</span> Added [conformal framework for probabilistic forecasting](../user_guides/probabilistic-forecasting-conformal-prediction.ipynb). Generate prediction intervals using the [conformal prediction split method](https://mapie.readthedocs.io/en/stable/content/conformal-prediction/regression/#2-the-split-method).
 
 + <span class="badge text-bg-feature">Feature</span> [Binned residuals](../user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> forecasters. 
 

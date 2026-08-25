@@ -436,7 +436,7 @@ def _backtesting_forecaster(
            https://otexts.com/fpp3/prediction-intervals.html
     
     .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
-           https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
+           https://mapie.readthedocs.io/en/stable/content/conformal-prediction/regression/#2-the-split-method
     
     """
 
@@ -788,7 +788,7 @@ def backtesting_forecaster(
            https://otexts.com/fpp3/prediction-intervals.html
     
     .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
-           https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
+           https://mapie.readthedocs.io/en/stable/content/conformal-prediction/regression/#2-the-split-method
     
     """
 
@@ -1200,7 +1200,7 @@ def _backtesting_forecaster_multiseries(
            https://otexts.com/fpp3/prediction-intervals.html
     
     .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
-           https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
+           https://mapie.readthedocs.io/en/stable/content/conformal-prediction/regression/#2-the-split-method
 
     """
 
@@ -1606,7 +1606,7 @@ def backtesting_forecaster_multiseries(
            https://otexts.com/fpp3/prediction-intervals.html
     
     .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
-           https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
+           https://mapie.readthedocs.io/en/stable/content/conformal-prediction/regression/#2-the-split-method
     
     """
 

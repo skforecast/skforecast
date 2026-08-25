@@ -77,28 +77,28 @@ For more installation options, including dependencies and additional features, c
 
 A **Forecaster** object in the skforecast library is a comprehensive **container that provides essential functionality and methods** for training a forecasting model and generating predictions for future points in time.
 
-The **skforecast** library offers a **variety of forecaster types**, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, statistical models (ARIMA, ETS), deep learning (RNN/LSTM), and foundation models. Regardless of the forecaster type, all share a unified API for training, prediction, and validation.
+The **skforecast** library offers a **variety of forecaster types**, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, statistical models (ARIMA, ETS), deep learning (RNN/LSTM), and foundation models. Regardless of the forecaster type, all share a unified API for training, prediction, and validation, and **all support probabilistic forecasting** (prediction intervals).
 
-| Forecaster                      | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Window features |
-|:--------------------------------|:-------------:|:---------------:|:------------------:|:---------------:|:------------------------:|:---------------------------:|:------------------:|:---------------:|
-|[ForecasterRecursive]            |✔️||✔️||✔️|✔️|✔️|✔️|
-|[ForecasterDirect]               |✔️|||✔️|✔️|✔️|✔️|✔️|
-|[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
-|[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
-|[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
-|[ForecasterRnn]                  |✔️|✔️||✔️|✔️||✔️||
-|[ForecasterStats]                |✔️||✔️||✔️|✔️|✔️||
-|[ForecasterFoundation]           |✔️|✔️|||✔️||✔️||
-|[ForecasterEquivalentDate]       |✔️||✔️||✔️||||
+| Forecaster | Estimator | Series | Strategy | Exog | Window features | Differentiation |
+|:--|:--|:--:|:--:|:--:|:--:|:--:|
+|[ForecasterRecursive]| scikit-learn regressor | single | recursive | ✔️ | ✔️ | ✔️ |
+|[ForecasterDirect]| scikit-learn regressor | single | direct | ✔️ | ✔️ | ✔️ |
+|[ForecasterRecursiveMultiSeries]| scikit-learn regressor | multiple | recursive | ✔️ | ✔️ | ✔️ |
+|[ForecasterDirectMultiVariate]| scikit-learn regressor | multiple | direct | ✔️ | ✔️ | ✔️ |
+|[ForecasterFoundation]| pre-trained, zero-shot | single or multiple | multi-output | ✔️ | | |
+|[ForecasterStats]| Arima, Sarimax, Ets, Arar | single | recursive | ✔️ | | |
+|[ForecasterRnn]| Keras model (RNN/LSTM) | single or multiple | multi-output | ✔️ | | |
+|[ForecasterRecursiveClassifier]| scikit-learn classifier | single | recursive | ✔️ | ✔️ | |
+|[ForecasterEquivalentDate]| Rule-based (baseline) | single | recursive | | | |
 
 [ForecasterRecursive]: ./user_guides/autoregressive-forecaster.ipynb
 [ForecasterDirect]: ./user_guides/direct-multi-step-forecasting.ipynb
 [ForecasterRecursiveMultiSeries]: ./user_guides/independent-multi-time-series-forecasting.ipynb
 [ForecasterDirectMultiVariate]: ./user_guides/dependent-multi-series-multivariate-forecasting.ipynb
-[ForecasterRecursiveClassifier]: ./user_guides/autoregressive-classification-forecasting.ipynb
-[ForecasterRnn]: ./user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
-[ForecasterStats]: ./user_guides/forecasting-sarimax-arima.ipynb
 [ForecasterFoundation]: ./user_guides/foundation-forecasting-models.ipynb
+[ForecasterStats]: ./user_guides/forecasting-sarimax-arima.ipynb
+[ForecasterRnn]: ./user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
+[ForecasterRecursiveClassifier]: ./user_guides/autoregressive-classification-forecasting.ipynb
 [ForecasterEquivalentDate]: ./user_guides/forecasting-baseline.ipynb
 
 
