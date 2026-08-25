@@ -91,7 +91,7 @@ The **skforecast** library offers a **variety of forecaster types**, each tailor
 |[ForecasterRecursiveClassifier]| scikit-learn classifier | single | recursive | ✔️ | ✔️ | |
 |[ForecasterEquivalentDate]| Rule-based (baseline) | single | recursive | | | |
 
-
+[ForecasterRecursive]: ./user_guides/autoregressive-forecaster.ipynb
 [ForecasterDirect]: ./user_guides/direct-multi-step-forecasting.ipynb
 [ForecasterRecursiveMultiSeries]: ./user_guides/independent-multi-time-series-forecasting.ipynb
 [ForecasterDirectMultiVariate]: ./user_guides/dependent-multi-series-multivariate-forecasting.ipynb
