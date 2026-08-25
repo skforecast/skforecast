@@ -173,7 +173,7 @@ Using the [`ForecasterRnn`](../user_guides/forecasting-with-deep-learning-rnn-ls
 
 In the skforecast library, a **Forecaster** object is a comprehensive **container that provides the essential functionality and methods** necessary to train a forecasting model and generate predictions for future time periods.
 
-There are **several types of forecasters**, each suited to a different combination of data and modeling strategy. These include single or multiple time series, direct or recursive strategies, and statistical models (ARIMA and ETS) as well as deep learning (RNN/LSTM) and foundation models. All forecaster types share an unified API for training, prediction, and validation, and they support **probabilistic forecasting**.
+There are **several types of forecasters**, each suited to a different combination of data and modeling strategy. These include single or multiple time series, direct or recursive strategies, and statistical models (ARIMA and ETS) as well as deep learning (RNN/LSTM) and foundation models. All forecaster types share a unified API for training, prediction, and validation, and they support **probabilistic forecasting**.
 
 | Forecaster | Estimator | Series | Strategy | Exog | Window features | Differentiation |
 |:--|:--|:--:|:--:|:--:|:--:|:--:|
