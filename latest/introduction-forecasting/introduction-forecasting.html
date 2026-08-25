@@ -5265,117 +5265,97 @@
 <p>Using the <a href="../user_guides/forecasting-with-deep-learning-rnn-lstm.html"><code>ForecasterRnn</code></a> class, it is possible to easily build machine learning models using <strong>deep learning</strong>.</p>
 <h2 id="forecasters">Forecasters<a class="headerlink" href="#forecasters" title="Permanent link">&para;</a></h2>
 <p>A <strong>Forecaster</strong> object in the skforecast library is a comprehensive <strong>container that provides essential functionality and methods</strong> for training a forecasting model and generating predictions for future points in time.</p>
-<p>The <strong>skforecast</strong> library offers a <strong>variety of forecaster types</strong>, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, statistical models (ARIMA, ETS), deep learning (RNN/LSTM), and foundation models. Regardless of the forecaster type, all share a unified API for training, prediction, and validation.</p>
+<p>The <strong>skforecast</strong> library offers a <strong>variety of forecaster types</strong>, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, statistical models (ARIMA, ETS), deep learning (RNN/LSTM), and foundation models. Regardless of the forecaster type, all share a unified API for training, prediction, and validation, and <strong>all support probabilistic forecasting</strong> (prediction intervals).</p>
 <table>
 <thead>
 <tr>
 <th style="text-align: left;">Forecaster</th>
-<th style="text-align: center;">Single series</th>
-<th style="text-align: center;">Multiple series</th>
-<th style="text-align: center;">Recursive strategy</th>
-<th style="text-align: center;">Direct strategy</th>
-<th style="text-align: center;">Probabilistic prediction</th>
-<th style="text-align: center;">Time series differentiation</th>
-<th style="text-align: center;">Exogenous features</th>
+<th style="text-align: left;">Estimator</th>
+<th style="text-align: center;">Series</th>
+<th style="text-align: center;">Strategy</th>
+<th style="text-align: center;">Exog</th>
 <th style="text-align: center;">Window features</th>
+<th style="text-align: center;">Differentiation</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align: left;"><a href="../user_guides/autoregressive-forecaster.html">ForecasterRecursive</a></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: left;">scikit-learn regressor</td>
+<td style="text-align: center;">single</td>
+<td style="text-align: center;">recursive</td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;">✔️</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../user_guides/direct-multi-step-forecasting.html">ForecasterDirect</a></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: left;">scikit-learn regressor</td>
+<td style="text-align: center;">single</td>
+<td style="text-align: center;">direct</td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;">✔️</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../user_guides/independent-multi-time-series-forecasting.html">ForecasterRecursiveMultiSeries</a></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: left;">scikit-learn regressor</td>
+<td style="text-align: center;">multiple</td>
+<td style="text-align: center;">recursive</td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;">✔️</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../user_guides/dependent-multi-series-multivariate-forecasting.html">ForecasterDirectMultiVariate</a></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: left;">scikit-learn regressor</td>
+<td style="text-align: center;">multiple</td>
+<td style="text-align: center;">direct</td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;">✔️</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href="../user_guides/autoregressive-classification-forecasting.html">ForecasterRecursiveClassifier</a></td>
+<td style="text-align: left;"><a href="../user_guides/foundation-forecasting-models.html">ForecasterFoundation</a></td>
+<td style="text-align: left;">pre-trained, zero-shot</td>
+<td style="text-align: center;">single or multiple</td>
+<td style="text-align: center;">multi-output</td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;">✔️</td>
-</tr>
-<tr>
-<td style="text-align: left;"><a href="../user_guides/forecasting-with-deep-learning-rnn-lstm.html">ForecasterRnn</a></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
 <td style="text-align: center;"></td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../user_guides/forecasting-sarimax-arima.html">ForecasterStats</a></td>
+<td style="text-align: left;">Arima, Sarimax, Ets, Arar</td>
+<td style="text-align: center;">single</td>
+<td style="text-align: center;">recursive</td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;">✔️</td>
 <td style="text-align: center;"></td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href="../user_guides/foundation-forecasting-models.html">ForecasterFoundation</a></td>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: left;"><a href="../user_guides/forecasting-with-deep-learning-rnn-lstm.html">ForecasterRnn</a></td>
+<td style="text-align: left;">Keras model (RNN/LSTM)</td>
+<td style="text-align: center;">single or multiple</td>
+<td style="text-align: center;">multi-output</td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../user_guides/autoregressive-classification-forecasting.html">ForecasterRecursiveClassifier</a></td>
+<td style="text-align: left;">scikit-learn classifier</td>
+<td style="text-align: center;">single</td>
+<td style="text-align: center;">recursive</td>
 <td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;"></td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../user_guides/forecasting-baseline.html">ForecasterEquivalentDate</a></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;">✔️</td>
+<td style="text-align: left;">Rule-based (baseline)</td>
+<td style="text-align: center;">single</td>
+<td style="text-align: center;">recursive</td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;"></td>
