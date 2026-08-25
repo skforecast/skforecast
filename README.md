@@ -161,10 +161,10 @@ The **skforecast** library offers a **variety of forecaster types**, each tailor
 [ForecasterDirect]: https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html
 [ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html
 [ForecasterDirectMultiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
-[ForecasterRecursiveClassifier]: https://skforecast.org/latest/user_guides/autoregressive-classification-forecasting.html
-[ForecasterRnn]: https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm.html
-[ForecasterStats]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
 [ForecasterFoundation]: https://skforecast.org/latest/user_guides/foundation-forecasting-models.html
+[ForecasterStats]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
+[ForecasterRnn]: https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm.html
+[ForecasterRecursiveClassifier]: https://skforecast.org/latest/user_guides/autoregressive-classification-forecasting.html
 [ForecasterEquivalentDate]: https://skforecast.org/latest/user_guides/forecasting-baseline.html
 
 
