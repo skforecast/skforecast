@@ -5660,38 +5660,99 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <p>Skforecast is compatible with most of the metrics from scikit-learn and includes additional metrics specifically designed for time series forecasting.</p>
 <p><strong>Regression Metrics</strong></p>
 <p>These metrics are used when the target variable is <strong>continuous</strong> (e.g., predicting temperature, sales, or energy consumption).</p>
-<ul>
-<li><p>Mean Squared Error (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html"><code>mean_squared_error</code></a>)</p>
-</li>
-<li><p>Mean Absolute Error (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_error.html"><code>mean_absolute_error</code></a>)</p>
-</li>
-<li><p>Mean Absolute Percentage Error (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_percentage_error.html"><code>mean_absolute_percentage_error</code></a>)</p>
-</li>
-<li><p>Symmetric Mean Absolute Percentage Error (<a href="https://en.wikipedia.org/wiki/Symmetric_mean_absolute_percentage_error"><code>symmetric_mean_absolute_percentage_error</code></a>)</p>
-</li>
-<li><p>Mean Squared Log Error (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_log_error.html"><code>mean_squared_log_error</code></a>)</p>
-</li>
-<li><p>Median Absolute Error (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.median_absolute_error.html"><code>median_absolute_error</code></a>)</p>
-</li>
-<li><p>Mean Absolute Scaled Error (<a href="https://en.wikipedia.org/wiki/Mean_absolute_scaled_error#:~:text=In%20statistics%2C%20the%20mean%20absolute,2005%20by%20statistician%20Rob%20J."><code>mean_absolute_scaled_error</code></a>)</p>
-</li>
-<li><p>Root Mean Squared Scaled Error (<code>root_mean_squared_scaled_error</code>)</p>
-</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Metric</th>
+<th style="text-align:left">Aspect evaluated</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Mean Squared Error (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html"><code>mean_squared_error</code></a>)</td>
+<td style="text-align:left">Squared error</td>
+<td style="text-align:left">Average of the squared errors. Penalizes large errors heavily, so it is sensitive to outliers. Expressed in squared units of the target.</td>
+</tr>
+<tr>
+<td style="text-align:left">Mean Absolute Error (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_error.html"><code>mean_absolute_error</code></a>)</td>
+<td style="text-align:left">Absolute error (absolute)</td>
+<td style="text-align:left">Average of the absolute errors. Easy to interpret since it is expressed in the same units as the target, and less sensitive to outliers than MSE.</td>
+</tr>
+<tr>
+<td style="text-align:left">Median Absolute Error (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.median_absolute_error.html"><code>median_absolute_error</code></a>)</td>
+<td style="text-align:left">Robust error</td>
+<td style="text-align:left">Median of the absolute errors. Highly robust to outliers and to occasional very large errors.</td>
+</tr>
+<tr>
+<td style="text-align:left">Mean Absolute Percentage Error (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_percentage_error.html"><code>mean_absolute_percentage_error</code></a>)</td>
+<td style="text-align:left">Relative error</td>
+<td style="text-align:left">Average of the absolute errors expressed as a percentage of the true value. Scale independent, but undefined or unstable when the true values are zero or near zero.</td>
+</tr>
+<tr>
+<td style="text-align:left">Symmetric Mean Absolute Percentage Error (<a href="https://en.wikipedia.org/wiki/Symmetric_mean_absolute_percentage_error"><code>symmetric_mean_absolute_percentage_error</code></a>)</td>
+<td style="text-align:left">Relative error (symmetric)</td>
+<td style="text-align:left">Variant of MAPE that scales the error by the average of the true and predicted values. More stable near zero and treats over and under predictions more evenly.</td>
+</tr>
+<tr>
+<td style="text-align:left">Mean Squared Log Error (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_log_error.html"><code>mean_squared_log_error</code></a>)</td>
+<td style="text-align:left">Relative error (log scale)</td>
+<td style="text-align:left">Mean squared error computed on the log transformed values. Penalizes under prediction more than over prediction and requires non negative values.</td>
+</tr>
+<tr>
+<td style="text-align:left">Mean Absolute Scaled Error (<a href="https://en.wikipedia.org/wiki/Mean_absolute_scaled_error"><code>mean_absolute_scaled_error</code></a>)</td>
+<td style="text-align:left">Skill vs naive baseline</td>
+<td style="text-align:left">MAE divided by the MAE of a naive forecast computed on the training data. Values below 1 indicate the model beats the baseline. Scale independent, so it can be compared and aggregated across series.</td>
+</tr>
+<tr>
+<td style="text-align:left">Root Mean Squared Scaled Error (<code>root_mean_squared_scaled_error</code>)</td>
+<td style="text-align:left">Skill vs naive baseline</td>
+<td style="text-align:left">RMSE divided by the RMSE of a naive forecast computed on the training data. Same interpretation as MASE, but penalizes large errors more.</td>
+</tr>
+</tbody>
+</table>
+<br/>
 <p><strong>Classification Metrics</strong></p>
-<p>These metrics are used when the target variable is <strong>categorical</strong> (e.g., predicting market direction, discrete events, or class intervals).</p>
-<ul>
-<li><p>Accuracy Score (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.accuracy_score.html"><code>accuracy_score</code></a>)</p>
-</li>
-<li><p>Balanced Accuracy Score (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.balanced_accuracy_score.html"><code>balanced_accuracy_score</code></a>)</p>
-</li>
-<li><p>F1 Score (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html"><code>f1_score</code></a>)</p>
-</li>
-<li><p>Precision Score (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html"><code>precision_score</code></a>)</p>
-</li>
-<li><p>Recall Score (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.recall_score.html"><code>recall_score</code></a>)</p>
-</li>
-</ul>
+<p>These metrics are used when the target variable is <strong>categorical</strong> (e.g. predicting market direction, discrete events, or class intervals).</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Metric</th>
+<th style="text-align:left">Aspect evaluated</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Accuracy Score (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.accuracy_score.html"><code>accuracy_score</code></a>)</td>
+<td style="text-align:left">Overall correctness</td>
+<td style="text-align:left">Proportion of correctly predicted observations. Simple to interpret, but misleading when classes are imbalanced.</td>
+</tr>
+<tr>
+<td style="text-align:left">Balanced Accuracy Score (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.balanced_accuracy_score.html"><code>balanced_accuracy_score</code></a>)</td>
+<td style="text-align:left">Correctness under imbalance</td>
+<td style="text-align:left">Average of the recall obtained on each class. Preferred over accuracy when the classes are imbalanced.</td>
+</tr>
+<tr>
+<td style="text-align:left">Precision Score (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html"><code>precision_score</code></a>)</td>
+<td style="text-align:left">Cost of false positives</td>
+<td style="text-align:left">Proportion of predicted positives that are actually positive. Use it when raising a false alarm is expensive.</td>
+</tr>
+<tr>
+<td style="text-align:left">Recall Score (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.recall_score.html"><code>recall_score</code></a>)</td>
+<td style="text-align:left">Cost of false negatives</td>
+<td style="text-align:left">Proportion of actual positives that are correctly identified. Use it when missing a true event is expensive.</td>
+</tr>
+<tr>
+<td style="text-align:left">F1 Score (<a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html"><code>f1_score</code></a>)</td>
+<td style="text-align:left">Precision + recall</td>
+<td style="text-align:left">Harmonic mean of precision and recall. Useful when both types of error matter and the classes are imbalanced.</td>
+</tr>
+</tbody>
+</table>
+<br/>
+<p><strong>Probabilistic Metrics</strong></p>
+<p>When the forecast is probabilistic, meaning it produces prediction intervals or quantiles, skforecast provides specific metrics. Visit <a href="../user_guides/probabilistic-forecasting-metrics.html">Probabilistic forecasting metrics</a> for more details.</p>
 <p><strong>Custom Metrics</strong></p>
 <p>In addition, Skforecast allows the user to define their own custom metrics. This can be done by creating a function that takes two arguments: the true values (<code>y_true</code>) and the predicted values (<code>y_pred</code>), and returns a single value representing the metric. The custom metric, optionally takes an additional argument <code>y_train</code> with the training data used to fit the model.</p>
 <p>In most cases, the metrics are calculated using the predictions generated in a <a href="../user_guides/backtesting.html">backtesting</a> process. For this, the <code>backtesting_forecaster</code> and <code>backtesting_forecaster_multiseries</code> functions take the <code>metrics</code> argument to specify the metric(s) to be calculated in addition to the predictions.</p>
@@ -5944,9 +6005,9 @@ backtest_metrics</div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jupyter-widgets jp-OutputArea-output" id="e0b8be82-7632-4de3-86bd-215ba1ee62fb" tabindex="0">
+<div class="jupyter-widgets jp-OutputArea-output" id="59496868-a103-46e8-9160-305e5066879f" tabindex="0">
 <script type="text/javascript">
-var element = document.getElementById('e0b8be82-7632-4de3-86bd-215ba1ee62fb');
+var element = document.getElementById('59496868-a103-46e8-9160-305e5066879f');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
 {"model_id": "ee518437fe3048d4bdada37a3b8253d9", "version_major": 2, "version_minor": 0}
@@ -6069,9 +6130,9 @@ backtest_metrics</div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jupyter-widgets jp-OutputArea-output" id="976b509b-cf35-4d4a-a835-4a256f881d8d" tabindex="0">
+<div class="jupyter-widgets jp-OutputArea-output" id="365eb4c7-c599-4df0-9ef6-a3510955d71d" tabindex="0">
 <script type="text/javascript">
-var element = document.getElementById('976b509b-cf35-4d4a-a835-4a256f881d8d');
+var element = document.getElementById('365eb4c7-c599-4df0-9ef6-a3510955d71d');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
 {"model_id": "f525c9d3347f48dda795fb529f7b4f72", "version_major": 2, "version_minor": 0}
@@ -6200,9 +6261,9 @@ backtest_metrics</div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jupyter-widgets jp-OutputArea-output" id="c9caafea-47bf-4c28-953c-c59959562ca5" tabindex="0">
+<div class="jupyter-widgets jp-OutputArea-output" id="9c3e60e4-d6ba-4efa-8cc2-8e8cae7b43b5" tabindex="0">
 <script type="text/javascript">
-var element = document.getElementById('c9caafea-47bf-4c28-953c-c59959562ca5');
+var element = document.getElementById('9c3e60e4-d6ba-4efa-8cc2-8e8cae7b43b5');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
 {"model_id": "0f0a649500e743158e6b6ea3af23d032", "version_major": 2, "version_minor": 0}
@@ -6733,9 +6794,9 @@ backtest_metrics</div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jupyter-widgets jp-OutputArea-output" id="e013d384-2e50-4921-b908-4ae62bcf03b9" tabindex="0">
+<div class="jupyter-widgets jp-OutputArea-output" id="1fe0a1f8-bf49-4976-832d-1bbd1eb26693" tabindex="0">
 <script type="text/javascript">
-var element = document.getElementById('e013d384-2e50-4921-b908-4ae62bcf03b9');
+var element = document.getElementById('1fe0a1f8-bf49-4976-832d-1bbd1eb26693');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
 {"model_id": "58cecd78ddf84e78a699a7ea330a95a4", "version_major": 2, "version_minor": 0}
@@ -7070,9 +7131,9 @@ results</div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jupyter-widgets jp-OutputArea-output" id="f0018b45-7d2e-4ba8-bff4-4fdfa3e22e7f" tabindex="0">
+<div class="jupyter-widgets jp-OutputArea-output" id="881eb39f-4b6e-4f8a-a254-5948939aea25" tabindex="0">
 <script type="text/javascript">
-var element = document.getElementById('f0018b45-7d2e-4ba8-bff4-4fdfa3e22e7f');
+var element = document.getElementById('881eb39f-4b6e-4f8a-a254-5948939aea25');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
 {"model_id": "1756ca619c1545a58e732be46ffa5a4e", "version_major": 2, "version_minor": 0}
@@ -7081,9 +7142,9 @@ var element = document.getElementById('f0018b45-7d2e-4ba8-bff4-4fdfa3e22e7f');
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jupyter-widgets jp-OutputArea-output" id="a54ec38b-1299-4994-8f9e-b5c454933110" tabindex="0">
+<div class="jupyter-widgets jp-OutputArea-output" id="ad4cda63-6d36-48f7-9e90-0e97119433f0" tabindex="0">
 <script type="text/javascript">
-var element = document.getElementById('a54ec38b-1299-4994-8f9e-b5c454933110');
+var element = document.getElementById('ad4cda63-6d36-48f7-9e90-0e97119433f0');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
 {"model_id": "f3859d64932849cf93070d1be86a4661", "version_major": 2, "version_minor": 0}
@@ -7092,9 +7153,9 @@ var element = document.getElementById('a54ec38b-1299-4994-8f9e-b5c454933110');
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jupyter-widgets jp-OutputArea-output" id="87aefa4b-d4ec-4d2d-8b69-bc14147290c3" tabindex="0">
+<div class="jupyter-widgets jp-OutputArea-output" id="e25aaa39-131a-4503-9766-05b91c11b6af" tabindex="0">
 <script type="text/javascript">
-var element = document.getElementById('87aefa4b-d4ec-4d2d-8b69-bc14147290c3');
+var element = document.getElementById('e25aaa39-131a-4503-9766-05b91c11b6af');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
 {"model_id": "8c8d9a6157a848f98747c0b839770666", "version_major": 2, "version_minor": 0}
@@ -7964,9 +8025,9 @@ metrics</div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jupyter-widgets jp-OutputArea-output" id="fa1bad72-3589-4898-a76a-d3c8608262e4" tabindex="0">
+<div class="jupyter-widgets jp-OutputArea-output" id="97149835-58f9-4048-ac14-4fcce24965bf" tabindex="0">
 <script type="text/javascript">
-var element = document.getElementById('fa1bad72-3589-4898-a76a-d3c8608262e4');
+var element = document.getElementById('97149835-58f9-4048-ac14-4fcce24965bf');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
 {"model_id": "87ac3f3334174563b761a34d8dc3dab0", "version_major": 2, "version_minor": 0}

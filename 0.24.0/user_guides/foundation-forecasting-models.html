@@ -6068,30 +6068,28 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     font-family: system-ui, -apple-system, sans-serif;
     background: #fff;
   }
-  
+
   .forecasting-table-premium {
     width: 100%;
     border-collapse: collapse;
     min-width: 1200px;
     text-align: left;
-    font-size: 0.875rem;
+    font-size: 0.6875rem;
+    color: #334155;
   }
 
-  .forecasting-table-premium th, 
+  .forecasting-table-premium th,
   .forecasting-table-premium td {
-    padding: 14px 16px;
+    padding: 8px 10px;
     border-bottom: 1px solid #e2e8f0;
     vertical-align: middle; /* Centrado vertical para alinear con botones e iconos */
   }
 
   /* Encabezados accesibles (scope="col") */
   .forecasting-table-premium thead th {
-    position: sticky;
-    top: 0;
     background-color: #f8fafc;
     color: #334155;
     font-weight: 600;
-    z-index: 10;
     border-bottom: 2px solid #cbd5e1;
     white-space: nowrap;
   }
@@ -6150,26 +6148,26 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     margin-left: 2px;
   }
 
-  /* Badges (Etiquetas visuales) */
-  .badge {
+  /* Badges (Etiquetas visuales) - scoped to this table to avoid colliding with the site-wide .badge class */
+  .ffm-badge {
     display: inline-flex;
     align-items: center;
     gap: 4px;
     padding: 4px 8px;
     border-radius: 9999px;
-    font-size: 0.75rem;
+    font-size: 0.625rem;
     font-weight: 600;
     white-space: nowrap;
   }
-  .badge-yes {
+  .ffm-badge-yes {
     background-color: #dcfce7;
     color: #166534;
   }
-  .badge-no {
+  .ffm-badge-no {
     background-color: #fee2e2;
     color: #991b1b;
   }
-  .badge-warn {
+  .ffm-badge-warn {
     background-color: #fef9c3;
     color: #854d0e;
   }
@@ -6185,12 +6183,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   }
   .code-block code {
     padding: 6px 12px;
+    background-color: #f1f5f9;
     color: #0f172a;
     font-family: ui-monospace, monospace;
-    font-size: 0.8rem;
+    font-size: 0.6rem;
     white-space: nowrap;
   }
-  .copy-btn {
+  .ffm-copy-btn {
     background-color: #e2e8f0;
     border: none;
     border-left: 1px solid #cbd5e1;
@@ -6202,11 +6201,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     justify-content: center;
     transition: background-color 0.2s;
   }
-  .copy-btn:hover {
+  .ffm-copy-btn:hover {
     background-color: #cbd5e1;
     color: #0f172a;
   }
-  .copy-btn:active {
+  .ffm-copy-btn:active {
     background-color: #94a3b8;
   }
 </style>
@@ -6251,12 +6250,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <td>8192</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Median (0.5 quantile)</td>
-<td><span class="badge badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
-<td><span class="badge badge-warn"><svg fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> Multi-series only</span></td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
+<td><span class="ffm-badge ffm-badge-warn"><svg fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> Multi-series only</span></td>
 <td>
 <div class="code-block">
 <code>pip install chronos-forecasting</code>
-<button class="copy-btn" onclick="copyText('pip install chronos-forecasting', this)" title="Copy command">
+<button class="ffm-copy-btn" data-copy="pip install chronos-forecasting" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
 </div>
@@ -6283,12 +6282,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <td>16384</td>
 <td>512</td>
 <td>Mean (dedicated output)</td>
-<td><span class="badge badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
-<td><span class="badge badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
 <td>
 <div class="code-block">
 <code>pip install timesfm</code>
-<button class="copy-btn" onclick="copyText('pip install timesfm', this)" title="Copy command">
+<button class="ffm-copy-btn" data-copy="pip install timesfm" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
 </div>
@@ -6315,12 +6314,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <td>2048</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Median (0.5 quantile)</td>
-<td><span class="badge badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
-<td><span class="badge badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
 <td>
 <div class="code-block">
 <code>pip install uni2ts</code>
-<button class="copy-btn" onclick="copyText('pip install uni2ts', this)" title="Copy command">
+<button class="ffm-copy-btn" data-copy="pip install uni2ts" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
 </div>
@@ -6347,12 +6346,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <td>4096</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Mean (default)</td>
-<td><span class="badge badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
-<td><span class="badge badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
+<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
 <td>
 <div class="code-block">
 <code>pip install tabicl[forecast]</code>
-<button class="copy-btn" onclick="copyText('pip install tabicl[forecast]', this)" title="Copy command">
+<button class="ffm-copy-btn" data-copy="pip install tabicl[forecast]" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
 </div>
@@ -6379,12 +6378,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <td>No hard limit (~65536)</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Median (default)</td>
-<td><span class="badge badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
-<td><span class="badge badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
+<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
 <td>
 <div class="code-block">
 <code>pip install tabpfn-time-series</code>
-<button class="copy-btn" onclick="copyText('pip install tabpfn-time-series', this)" title="Copy command">
+<button class="ffm-copy-btn" data-copy="pip install tabpfn-time-series" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
 </div>
@@ -6411,12 +6410,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <td>No hard limit</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Median (0.5 quantile)</td>
-<td><span class="badge badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
-<td><span class="badge badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
+<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
 <td>
 <div class="code-block">
 <code>pip install tfc-t0</code>
-<button class="copy-btn" onclick="copyText('pip install tfc-t0', this)" title="Copy command">
+<button class="ffm-copy-btn" data-copy="pip install tfc-t0" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
 </div>
@@ -6443,12 +6442,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <td>No hard limit</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Mean (default)</td>
-<td><span class="badge badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
-<td><span class="badge badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
+<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
 <td>
 <div class="code-block">
 <code>pip install synthefy-nori</code>
-<button class="copy-btn" onclick="copyText('pip install synthefy-nori', this)" title="Copy command">
+<button class="ffm-copy-btn" data-copy="pip install synthefy-nori" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
 </div>
@@ -6476,12 +6475,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <td>No hard limit</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Median (0.5)</td>
-<td><span class="badge badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
-<td><span class="badge badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
+<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
 <td>
 <div class="code-block">
 <code>pip install tsicl</code>
-<button class="copy-btn" onclick="copyText('pip install tsicl', this)" title="Copy command">
+<button class="ffm-copy-btn" data-copy="pip install tsicl" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
 </div>
@@ -6491,23 +6490,23 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </table>
 </div>
 <script>
-  // Función para copiar el código al portapapeles
-  function copyText(text, buttonElement) {
-    navigator.clipboard.writeText(text).then(() => {
-      // Guardar el icono original
-      const originalHTML = buttonElement.innerHTML;
-      
-      // Cambiar a un icono de "Check" temporalmente
-      buttonElement.innerHTML = '<svg width="16" height="16" fill="none" stroke="#166534" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"></path></svg>';
-      
-      // Restaurar el icono después de 2 segundos
-      setTimeout(() => {
-        buttonElement.innerHTML = originalHTML;
-      }, 2000);
-    }).catch(err => {
-      console.error('Error al copiar: ', err);
+  // Copy-to-clipboard for the install-command buttons. Registered via document$.subscribe
+  // so it re-runs after mkdocs-material's instant (client-side) navigation, not just on a
+  // full page load.
+  document$.subscribe(function () {
+    document.querySelectorAll('.ffm-copy-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var text = btn.getAttribute('data-copy');
+        navigator.clipboard.writeText(text).then(function () {
+          var originalHTML = btn.innerHTML;
+          btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="#166534" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"></path></svg>';
+          setTimeout(function () {
+            btn.innerHTML = originalHTML;
+          }, 2000);
+        });
+      });
     });
-  }
+  });
 </script>
 </div>
 </div>
