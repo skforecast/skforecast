@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -4608,12 +4608,12 @@
   <a href="#skforecast.stats._arima.Arima-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5143,12 +5143,12 @@
   <a href="#skforecast.stats._sarimax.Sarimax-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5667,12 +5667,12 @@
   <a href="#skforecast.stats._ets.Ets-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -6092,12 +6092,12 @@
   <a href="#skforecast.stats._arar.Arar-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -10535,7 +10535,7 @@ values and provides efficient recursive prediction.</p>
 </div>
 
 
-<h3 id="skforecast.stats._arima.Arima-functions">Methods:<a href="#skforecast.stats._arima.Arima-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.stats._arima.Arima-functions">Functions<a href="#skforecast.stats._arima.Arima-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -14784,7 +14784,7 @@ This is updated after fitting to reflect the selected model.</p>
 <a href="#skforecast.stats._sarimax.Sarimax._sarimax_params" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">_sarimax_params</span> <span class="o">=</span> <span class="p">{</span>
     <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">(</span><span class="n">_sarimax_params</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">(</span><span class="n">items</span><span class="p">())</span>
     <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"self"</span><span class="p">,</span> <span class="s2">"_"</span><span class="p">,</span> <span class="s2">"_sarimax_params"</span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
@@ -14928,7 +14928,7 @@ This is updated after fitting to reflect the selected model.</p>
 </div>
 
 
-<h3 id="skforecast.stats._sarimax.Sarimax-functions">Methods:<a href="#skforecast.stats._sarimax.Sarimax-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.stats._sarimax.Sarimax-functions">Functions<a href="#skforecast.stats._sarimax.Sarimax-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -19025,7 +19025,7 @@ the parameters of the selected best model. Otherwise, it is None.</p>
   </span>
 
 <a href="#skforecast.stats._ets.Ets.is_auto" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">is_auto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s1">'ZZZ'</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">is_auto</span> <span class="o">=</span> <span class="n">model</span> <span class="o">==</span> <span class="s1">'ZZZ'</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -19057,7 +19057,7 @@ the parameters of the selected best model. Otherwise, it is None.</p>
 </div>
 
 
-<h3 id="skforecast.stats._ets.Ets-functions">Methods:<a href="#skforecast.stats._ets.Ets-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.stats._ets.Ets-functions">Functions<a href="#skforecast.stats._ets.Ets-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -22211,7 +22211,7 @@ otherwise univariate ARAR framework.</p>
 </div>
 
 
-<h3 id="skforecast.stats._arar.Arar-functions">Methods:<a href="#skforecast.stats._arar.Arar-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.stats._arar.Arar-functions">Functions<a href="#skforecast.stats._arar.Arar-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -25893,7 +25893,7 @@ to speed up calculations when the series is very long.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       

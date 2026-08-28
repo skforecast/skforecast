@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -4070,12 +4070,12 @@
   <a href="#skforecast.foundation._foundation_model.FoundationModel-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4330,12 +4330,12 @@
   <a href="#skforecast.foundation._adapters.ChronosAdapter-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4568,12 +4568,12 @@
   <a href="#skforecast.foundation._adapters.TimesFMAdapter-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4795,12 +4795,12 @@
   <a href="#skforecast.foundation._adapters.MoiraiAdapter-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5044,12 +5044,12 @@
   <a href="#skforecast.foundation._adapters.TabICLAdapter-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5326,12 +5326,12 @@
   <a href="#skforecast.foundation._adapters.TabPFNAdapter-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5575,12 +5575,12 @@
   <a href="#skforecast.foundation._adapters.T0Adapter-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5824,12 +5824,12 @@
   <a href="#skforecast.foundation._adapters.NoriAdapter-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -6106,12 +6106,12 @@
   <a href="#skforecast.foundation._adapters.TSICLAdapter-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -8149,9 +8149,7 @@ differs by model:</p>
   </span>
 
 <a href="#skforecast.foundation._foundation_model.FoundationModel.creation_date" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
-    <span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S"</span>
-<span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8217,7 +8215,7 @@ differs by model:</p>
   </span>
 
 <a href="#skforecast.foundation._foundation_model.FoundationModel.python_version" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8518,7 +8516,7 @@ ignores covariates (e.g. TimesFM 2.5, Moirai-2).</p>
 </div>
 
 
-<h3 id="skforecast.foundation._foundation_model.FoundationModel-functions">Methods:<a href="#skforecast.foundation._foundation_model.FoundationModel-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.foundation._foundation_model.FoundationModel-functions">Functions<a href="#skforecast.foundation._foundation_model.FoundationModel-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -11834,7 +11832,7 @@ directly to <code>predict_quantiles</code>. Ignored in single-series mode.</p>
 </div>
 
 
-<h3 id="skforecast.foundation._adapters.ChronosAdapter-functions">Methods:<a href="#skforecast.foundation._adapters.ChronosAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.foundation._adapters.ChronosAdapter-functions">Functions<a href="#skforecast.foundation._adapters.ChronosAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -13879,7 +13877,7 @@ be a positive integer.</p>
 </div>
 
 
-<h3 id="skforecast.foundation._adapters.TimesFMAdapter-functions">Methods:<a href="#skforecast.foundation._adapters.TimesFMAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.foundation._adapters.TimesFMAdapter-functions">Functions<a href="#skforecast.foundation._adapters.TimesFMAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -15716,7 +15714,7 @@ explicit values such as <code>"cuda"</code>, <code>"mps"</code>, or <code>"cpu"<
 </div>
 
 
-<h3 id="skforecast.foundation._adapters.MoiraiAdapter-functions">Methods:<a href="#skforecast.foundation._adapters.MoiraiAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.foundation._adapters.MoiraiAdapter-functions">Functions<a href="#skforecast.foundation._adapters.MoiraiAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -17830,7 +17828,7 @@ redirecting stderr during the <code>predict_df</code> call.</p>
 </div>
 
 
-<h3 id="skforecast.foundation._adapters.TabICLAdapter-functions">Methods:<a href="#skforecast.foundation._adapters.TabICLAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.foundation._adapters.TabICLAdapter-functions">Functions<a href="#skforecast.foundation._adapters.TabICLAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -20645,7 +20643,7 @@ TabPFN-TS dispatch loop (<code>Predicting time series: ...</code> on CPU,
 </div>
 
 
-<h3 id="skforecast.foundation._adapters.TabPFNAdapter-functions">Methods:<a href="#skforecast.foundation._adapters.TabPFNAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.foundation._adapters.TabPFNAdapter-functions">Functions<a href="#skforecast.foundation._adapters.TabPFNAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -23187,7 +23185,7 @@ When <code>None</code> the model keeps its default <code>float32</code> weights.
 </div>
 
 
-<h3 id="skforecast.foundation._adapters.T0Adapter-functions">Methods:<a href="#skforecast.foundation._adapters.T0Adapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.foundation._adapters.T0Adapter-functions">Functions<a href="#skforecast.foundation._adapters.T0Adapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -25539,7 +25537,7 @@ at instantiation.</p>
 </div>
 
 
-<h3 id="skforecast.foundation._adapters.NoriAdapter-functions">Methods:<a href="#skforecast.foundation._adapters.NoriAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.foundation._adapters.NoriAdapter-functions">Functions<a href="#skforecast.foundation._adapters.NoriAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -28350,7 +28348,7 @@ Hugging Face Hub if it is not already cached locally.</p>
 </div>
 
 
-<h3 id="skforecast.foundation._adapters.TSICLAdapter-functions">Methods:<a href="#skforecast.foundation._adapters.TSICLAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.foundation._adapters.TSICLAdapter-functions">Functions<a href="#skforecast.foundation._adapters.TSICLAdapter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -29849,7 +29847,7 @@ boolean.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       

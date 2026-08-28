@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -4519,12 +4519,12 @@
   <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -8290,9 +8290,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.creation_date" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
-    <span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S"</span>
-<span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8402,7 +8400,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.python_version" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8644,9 +8642,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.layers_names" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">layers_names</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
-<span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">layers_names</span> <span class="o">=</span> <span class="p">[(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="p">(</span><span class="n">layers</span><span class="p">)]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8668,11 +8664,8 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.lags_are_contiguous" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">lags_are_contiguous</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">lags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-    <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lags</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_lag</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">lags_are_contiguous</span> <span class="o">=</span> <span class="n">lags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">array_equal</span><span class="p">(</span>
+    <span class="n">lags</span><span class="p">,</span> <span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_lag</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -8695,7 +8688,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.window_size" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">window_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_lag</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">window_size</span> <span class="o">=</span> <span class="n">max_lag</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8717,7 +8710,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.steps" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">layer_end</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">steps</span> <span class="o">=</span> <span class="n">arange</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8739,7 +8732,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.max_step" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">max_step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">max_step</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8761,9 +8754,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.n_series_in" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_series_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span>
-    <span class="s2">"series_input"</span>
-<span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_series_in</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8785,9 +8776,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.n_levels_out" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_levels_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span>
-    <span class="s2">"output_dense_td_layer"</span>
-<span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_levels_out</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8809,9 +8798,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.exog_in_" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">exog_in_</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="kc">True</span> <span class="k">if</span> <span class="s2">"exog_input"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers_names</span> <span class="k">else</span> <span class="kc">False</span>
-<span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">exog_in_</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="s1">'exog_input'</span> <span class="ow">in</span> <span class="n">layers_names</span> <span class="k">else</span> <span class="kc">False</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8833,9 +8820,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.n_exog_in" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_exog_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span>
-    <span class="s2">"exog_input"</span>
-<span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_exog_in</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8902,7 +8887,7 @@ some calculations during backtesting.</p>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.fit_kwargs" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">fit_kwargs</span> <span class="o">=</span> <span class="n">check_select_fit_kwargs</span><span class="p">(</span>
-    <span class="n">estimator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">,</span> <span class="n">fit_kwargs</span><span class="o">=</span><span class="n">fit_kwargs</span>
+    <span class="n">estimator</span><span class="o">=</span><span class="n">estimator</span><span class="p">,</span> <span class="n">fit_kwargs</span><span class="o">=</span><span class="n">fit_kwargs</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -8979,7 +8964,7 @@ some calculations during backtesting.</p>
 </div>
 
 
-<h3 id="skforecast.deep_learning._forecaster_rnn.ForecasterRnn-functions">Methods:<a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.deep_learning._forecaster_rnn.ForecasterRnn-functions">Functions<a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -15429,7 +15414,7 @@ kept.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       

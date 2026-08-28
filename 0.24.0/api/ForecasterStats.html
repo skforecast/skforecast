@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -4012,12 +4012,12 @@
   <a href="#skforecast.recursive._forecaster_stats.ForecasterStats-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methods:
+        Functions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Methods:">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -6942,7 +6942,7 @@ some exogenous variables are transformed during the training process.</p>
   </span>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.estimators_" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">estimators_</span> <span class="o">=</span> <span class="p">[(</span><span class="n">clone</span><span class="p">(</span><span class="n">est</span><span class="p">))</span> <span class="k">for</span> <span class="n">est</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimators</span><span class="p">)]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">estimators_</span> <span class="o">=</span> <span class="p">[(</span><span class="n">clone</span><span class="p">(</span><span class="n">est</span><span class="p">))</span> <span class="k">for</span> <span class="n">est</span> <span class="ow">in</span> <span class="p">(</span><span class="n">estimators</span><span class="p">)]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6964,7 +6964,7 @@ some exogenous variables are transformed during the training process.</p>
   </span>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.estimator_ids" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">estimator_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_estimator_ids</span><span class="p">()</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">estimator_ids</span> <span class="o">=</span> <span class="n">_generate_estimator_ids</span><span class="p">()</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7008,7 +7008,7 @@ some exogenous variables are transformed during the training process.</p>
   </span>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.estimator_names_" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">estimator_names_</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimators</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">estimator_names_</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">estimators</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7030,7 +7030,7 @@ some exogenous variables are transformed during the training process.</p>
   </span>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.n_estimators" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_estimators</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimators</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_estimators</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">estimators</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7360,9 +7360,7 @@ some exogenous variables are transformed during the training process.</p>
   </span>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.creation_date" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
-    <span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S"</span>
-<span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7450,7 +7448,7 @@ some exogenous variables are transformed during the training process.</p>
   </span>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.python_version" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7539,10 +7537,8 @@ some exogenous variables are transformed during the training process.</p>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.estimator_params_" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">estimator_params_</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">est_id</span><span class="p">:</span> <span class="p">(</span><span class="n">est</span><span class="o">.</span><span class="n">get_params</span><span class="p">())</span>
-    <span class="k">for</span> <span class="n">est_id</span><span class="p">,</span> <span class="n">est</span> <span class="ow">in</span> <span class="p">(</span>
-        <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimators_</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="n">est_id</span><span class="p">:</span> <span class="p">(</span><span class="n">get_params</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">est_id</span><span class="p">,</span> <span class="n">est</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">estimator_ids</span><span class="p">,</span> <span class="n">estimators_</span><span class="p">))</span>
 <span class="p">}</span>
 </code></pre></div>
 
@@ -7671,13 +7667,13 @@ some exogenous variables are transformed during the training process.</p>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats._predict_dispatch" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">_predict_dispatch</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">"skforecast.stats._arima.Arima"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._arar.Arar"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._ets.Ets"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._sarimax.Sarimax"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_sarimax</span><span class="p">,</span>
-    <span class="s2">"aeon.forecasting.stats._arima.ARIMA"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_aeon</span><span class="p">,</span>
-    <span class="s2">"aeon.forecasting.stats._ets.ETS"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_aeon</span><span class="p">,</span>
-    <span class="s2">"sktime.forecasting.arima._pmdarima.ARIMA"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_sktime_arima</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._arima.Arima"</span><span class="p">:</span> <span class="n">_predict_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._arar.Arar"</span><span class="p">:</span> <span class="n">_predict_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._ets.Ets"</span><span class="p">:</span> <span class="n">_predict_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._sarimax.Sarimax"</span><span class="p">:</span> <span class="n">_predict_sarimax</span><span class="p">,</span>
+    <span class="s2">"aeon.forecasting.stats._arima.ARIMA"</span><span class="p">:</span> <span class="n">_predict_aeon</span><span class="p">,</span>
+    <span class="s2">"aeon.forecasting.stats._ets.ETS"</span><span class="p">:</span> <span class="n">_predict_aeon</span><span class="p">,</span>
+    <span class="s2">"sktime.forecasting.arima._pmdarima.ARIMA"</span><span class="p">:</span> <span class="n">_predict_sktime_arima</span><span class="p">,</span>
 <span class="p">}</span>
 </code></pre></div>
 
@@ -7701,11 +7697,11 @@ some exogenous variables are transformed during the training process.</p>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats._predict_interval_dispatch" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">_predict_interval_dispatch</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">"skforecast.stats._arima.Arima"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._arar.Arar"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._ets.Ets"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._sarimax.Sarimax"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_sarimax</span><span class="p">,</span>
-    <span class="s2">"sktime.forecasting.arima._pmdarima.ARIMA"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_sktime_arima</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._arima.Arima"</span><span class="p">:</span> <span class="n">_predict_interval_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._arar.Arar"</span><span class="p">:</span> <span class="n">_predict_interval_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._ets.Ets"</span><span class="p">:</span> <span class="n">_predict_interval_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._sarimax.Sarimax"</span><span class="p">:</span> <span class="n">_predict_interval_sarimax</span><span class="p">,</span>
+    <span class="s2">"sktime.forecasting.arima._pmdarima.ARIMA"</span><span class="p">:</span> <span class="n">_predict_interval_sktime_arima</span><span class="p">,</span>
 <span class="p">}</span>
 </code></pre></div>
 
@@ -7729,13 +7725,13 @@ some exogenous variables are transformed during the training process.</p>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats._feature_importances_dispatch" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">_feature_importances_dispatch</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">"skforecast.stats._arima.Arima"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._arar.Arar"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._ets.Ets"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._sarimax.Sarimax"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"aeon.forecasting.stats._arima.ARIMA"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_aeon_arima</span><span class="p">,</span>
-    <span class="s2">"aeon.forecasting.stats._ets.ETS"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_aeon_ets</span><span class="p">,</span>
-    <span class="s2">"sktime.forecasting.arima._pmdarima.ARIMA"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_sktime_arima</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._arima.Arima"</span><span class="p">:</span> <span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._arar.Arar"</span><span class="p">:</span> <span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._ets.Ets"</span><span class="p">:</span> <span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._sarimax.Sarimax"</span><span class="p">:</span> <span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"aeon.forecasting.stats._arima.ARIMA"</span><span class="p">:</span> <span class="n">_get_feature_importances_aeon_arima</span><span class="p">,</span>
+    <span class="s2">"aeon.forecasting.stats._ets.ETS"</span><span class="p">:</span> <span class="n">_get_feature_importances_aeon_ets</span><span class="p">,</span>
+    <span class="s2">"sktime.forecasting.arima._pmdarima.ARIMA"</span><span class="p">:</span> <span class="n">_get_feature_importances_sktime_arima</span><span class="p">,</span>
 <span class="p">}</span>
 </code></pre></div>
 
@@ -7759,13 +7755,13 @@ some exogenous variables are transformed during the training process.</p>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats._info_criteria_dispatch" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">_info_criteria_dispatch</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">"skforecast.stats._arima.Arima"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._arar.Arar"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._ets.Ets"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_skforecast_stats</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._sarimax.Sarimax"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_sarimax</span><span class="p">,</span>
-    <span class="s2">"aeon.forecasting.stats._arima.ARIMA"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_aeon</span><span class="p">,</span>
-    <span class="s2">"aeon.forecasting.stats._ets.ETS"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_aeon</span><span class="p">,</span>
-    <span class="s2">"sktime.forecasting.arima._pmdarima.ARIMA"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_sktime_arima</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._arima.Arima"</span><span class="p">:</span> <span class="n">_get_info_criteria_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._arar.Arar"</span><span class="p">:</span> <span class="n">_get_info_criteria_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._ets.Ets"</span><span class="p">:</span> <span class="n">_get_info_criteria_skforecast_stats</span><span class="p">,</span>
+    <span class="s2">"skforecast.stats._sarimax.Sarimax"</span><span class="p">:</span> <span class="n">_get_info_criteria_sarimax</span><span class="p">,</span>
+    <span class="s2">"aeon.forecasting.stats._arima.ARIMA"</span><span class="p">:</span> <span class="n">_get_info_criteria_aeon</span><span class="p">,</span>
+    <span class="s2">"aeon.forecasting.stats._ets.ETS"</span><span class="p">:</span> <span class="n">_get_info_criteria_aeon</span><span class="p">,</span>
+    <span class="s2">"sktime.forecasting.arima._pmdarima.ARIMA"</span><span class="p">:</span> <span class="n">_get_info_criteria_sktime_arima</span><span class="p">,</span>
 <span class="p">}</span>
 </code></pre></div>
 
@@ -7776,7 +7772,7 @@ some exogenous variables are transformed during the training process.</p>
 </div>
 
 
-<h3 id="skforecast.recursive._forecaster_stats.ForecasterStats-functions">Methods:<a href="#skforecast.recursive._forecaster_stats.ForecasterStats-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.recursive._forecaster_stats.ForecasterStats-functions">Functions<a href="#skforecast.recursive._forecaster_stats.ForecasterStats-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -11909,7 +11905,7 @@ The arrays removed depend on the specific estimator used.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       
