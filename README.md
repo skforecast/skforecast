@@ -141,9 +141,9 @@ All significant changes to this project are documented in the release file.
 
 # Forecasters
 
-A **Forecaster** object in the skforecast library is a comprehensive **container that provides essential functionality and methods** for training a forecasting model and generating predictions for future points in time.
+In the skforecast library, a **Forecaster** object is a comprehensive **container that provides the essential functionality and methods** necessary to train a forecasting model and generate predictions for future time periods.
 
-The **skforecast** library offers a **variety of forecaster types**, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, statistical models (ARIMA, ETS), deep learning (RNN/LSTM), and foundation models. Regardless of the forecaster type, all share a unified API for training, prediction, and validation, and **all support probabilistic forecasting** (prediction intervals).
+There are **several types of forecasters**, each suited to a different combination of data and modeling strategy. These include single or multiple time series, direct or recursive strategies, and statistical models (ARIMA and ETS) as well as deep learning (RNN/LSTM) and foundation models. All forecaster types share a unified API for training, prediction, and validation, and they support **probabilistic forecasting**.
 
 | Forecaster | Estimator | Series | Strategy | Exog | Window features | Differentiation |
 |:--|:--|:--:|:--:|:--:|:--:|:--:|
