@@ -30,6 +30,10 @@ applyBannerLayout();
         var observer = new MutationObserver(function(mutations) {
             for (var i = 0; i < mutations.length; i++) {
                 if (mutations[i].attributeName === 'hidden' && !outdated.hidden) {
+                    // The announcement bar is only meant for readers on the latest
+                    // version; hide it once we know this is an old/dev version.
+                    var announce = document.querySelector('[data-md-component=announce]');
+                    if (announce) announce.hidden = true;
                     applyBannerLayout();
                     observer.disconnect();
                     break;
