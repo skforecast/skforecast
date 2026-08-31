@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -100,6 +100,25 @@
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+  👋 New in the skforecast ecosystem:
+<a href="https://studio.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast studio</strong></a> (train and evaluate models visually, no coding required) and
+<a href="https://ai.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast-ai</strong></a> (agentic time series forecasting).
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
       
     </div>
     
@@ -3908,12 +3927,12 @@
   <a href="#skforecast.recursive._forecaster_equivalent_date.ForecasterEquivalentDate-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Functions
+        Methods:
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Functions">
+    <nav class="md-nav" aria-label="Methods:">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -6044,7 +6063,7 @@ some calculations during backtesting.</p>
 
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
+                    <summary>Source code in <code>skforecast\recursive\_forecaster_equivalent_date.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">186</span>
 <span class="normal">187</span>
 <span class="normal">188</span>
@@ -6145,22 +6164,22 @@ some calculations during backtesting.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span>        <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">in_sample_residuals_by_bin_</span>  <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_by_bin_</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span>                <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span>                <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span>                    <span class="o">=</span> <span class="kc">False</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span>                     <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">skforecast_version</span>           <span class="o">=</span> <span class="n">__version__</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span>               <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span>               <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">forecaster_id</span>                <span class="o">=</span> <span class="n">forecaster_id</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_probabilistic_mode</span>          <span class="o">=</span> <span class="s2">"binned"</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_probabilistic_mode</span>          <span class="o">=</span> <span class="s2">&quot;binned&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span>                    <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">differentiation</span>              <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">differentiation_max</span>          <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">)):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="s2">"`offset` must be an integer greater than 0 or a "</span>
-            <span class="s2">"pandas.tseries.offsets. Find more information about offsets in "</span>
-            <span class="s2">"https://pandas.pydata.org/docs/reference/offset_frequency.html"</span>
+            <span class="s2">&quot;`offset` must be an integer greater than 0 or a &quot;</span>
+            <span class="s2">&quot;pandas.tseries.offsets. Find more information about offsets in &quot;</span>
+            <span class="s2">&quot;https://pandas.pydata.org/docs/reference/offset_frequency.html&quot;</span>
         <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span>
@@ -6168,41 +6187,41 @@ some calculations during backtesting.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">binner_kwargs</span> <span class="o">=</span> <span class="n">binner_kwargs</span>
     <span class="k">if</span> <span class="n">binner_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binner_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">'n_bins'</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s1">'method'</span><span class="p">:</span> <span class="s1">'linear'</span><span class="p">,</span> <span class="s1">'subsample'</span><span class="p">:</span> <span class="mi">200000</span><span class="p">,</span>
-            <span class="s1">'random_state'</span><span class="p">:</span> <span class="mi">789654</span><span class="p">,</span> <span class="s1">'dtype'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+            <span class="s1">&#39;n_bins&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;method&#39;</span><span class="p">:</span> <span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="s1">&#39;subsample&#39;</span><span class="p">:</span> <span class="mi">200000</span><span class="p">,</span>
+            <span class="s1">&#39;random_state&#39;</span><span class="p">:</span> <span class="mi">789654</span><span class="p">,</span> <span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
         <span class="p">}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">binner</span> <span class="o">=</span> <span class="n">QuantileBinner</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">binner_kwargs</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">binner_intervals_</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">__skforecast_tags__</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">"library"</span><span class="p">:</span> <span class="s2">"skforecast"</span><span class="p">,</span>
-        <span class="s2">"forecaster_name"</span><span class="p">:</span> <span class="s2">"ForecasterEquivalentDate"</span><span class="p">,</span>
-        <span class="s2">"forecaster_task"</span><span class="p">:</span> <span class="s2">"regression"</span><span class="p">,</span>
-        <span class="s2">"forecasting_scope"</span><span class="p">:</span> <span class="s2">"single-series"</span><span class="p">,</span>  <span class="c1"># single-series | global</span>
-        <span class="s2">"forecasting_strategy"</span><span class="p">:</span> <span class="s2">"recursive"</span><span class="p">,</span>   <span class="c1"># recursive | direct | deep_learning | foundation</span>
-        <span class="s2">"multiple_estimators"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"index_types_supported"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"pandas.RangeIndex"</span><span class="p">,</span> <span class="s2">"pandas.DatetimeIndex"</span><span class="p">],</span>
-        <span class="s2">"requires_index_frequency"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="s2">&quot;skforecast&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecaster_name&quot;</span><span class="p">:</span> <span class="s2">&quot;ForecasterEquivalentDate&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecaster_task&quot;</span><span class="p">:</span> <span class="s2">&quot;regression&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecasting_scope&quot;</span><span class="p">:</span> <span class="s2">&quot;single-series&quot;</span><span class="p">,</span>  <span class="c1"># single-series | global</span>
+        <span class="s2">&quot;forecasting_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;recursive&quot;</span><span class="p">,</span>   <span class="c1"># recursive | direct | deep_learning | foundation</span>
+        <span class="s2">&quot;multiple_estimators&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;index_types_supported&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pandas.RangeIndex&quot;</span><span class="p">,</span> <span class="s2">&quot;pandas.DatetimeIndex&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;requires_index_frequency&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
 
-        <span class="s2">"allowed_input_types_series"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"pandas.Series"</span><span class="p">],</span>
-        <span class="s2">"supports_exog"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"allowed_input_types_exog"</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">"handles_missing_values_series"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
-        <span class="s2">"handles_missing_values_exog"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
+        <span class="s2">&quot;allowed_input_types_series&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pandas.Series&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;supports_exog&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;allowed_input_types_exog&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;handles_missing_values_series&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
+        <span class="s2">&quot;handles_missing_values_exog&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
 
-        <span class="s2">"supports_lags"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_window_features"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_calendar_features"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_transformer_series"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_transformer_exog"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_categorical_features"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_weight_func"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_differentiation"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_lags&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_window_features&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_calendar_features&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_transformer_series&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_transformer_exog&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_categorical_features&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_weight_func&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_differentiation&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
 
-        <span class="s2">"prediction_types"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"point"</span><span class="p">,</span> <span class="s2">"interval"</span><span class="p">],</span>
-        <span class="s2">"supports_probabilistic"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"probabilistic_methods"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"conformal"</span><span class="p">],</span>
-        <span class="s2">"handles_binned_residuals"</span><span class="p">:</span> <span class="kc">True</span>
+        <span class="s2">&quot;prediction_types&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="s2">&quot;interval&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;supports_probabilistic&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;probabilistic_methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;conformal&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;handles_binned_residuals&quot;</span><span class="p">:</span> <span class="kc">True</span>
     <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
                   </details>
@@ -6494,7 +6513,9 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.recursive._forecaster_equivalent_date.ForecasterEquivalentDate.creation_date" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
+    <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span>
+<span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6582,7 +6603,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.recursive._forecaster_equivalent_date.ForecasterEquivalentDate.python_version" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6626,7 +6647,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.recursive._forecaster_equivalent_date.ForecasterEquivalentDate._probabilistic_mode" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">_probabilistic_mode</span> <span class="o">=</span> <span class="s1">'binned'</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">_probabilistic_mode</span> <span class="o">=</span> <span class="s1">&#39;binned&#39;</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6714,7 +6735,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.recursive._forecaster_equivalent_date.ForecasterEquivalentDate.window_size" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">window_size</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">*</span> <span class="n">n_offsets</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">window_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6758,7 +6779,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.recursive._forecaster_equivalent_date.ForecasterEquivalentDate.binner" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">binner</span> <span class="o">=</span> <span class="n">QuantileBinner</span><span class="p">(</span><span class="o">**</span><span class="p">(</span><span class="n">binner_kwargs</span><span class="p">))</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">binner</span> <span class="o">=</span> <span class="n">QuantileBinner</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">binner_kwargs</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6790,7 +6811,7 @@ some calculations during backtesting.</p>
 </div>
 
 
-<h3 id="skforecast.recursive._forecaster_equivalent_date.ForecasterEquivalentDate-functions">Functions<a href="#skforecast.recursive._forecaster_equivalent_date.ForecasterEquivalentDate-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.recursive._forecaster_equivalent_date.ForecasterEquivalentDate-functions">Methods:<a href="#skforecast.recursive._forecaster_equivalent_date.ForecasterEquivalentDate-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -6810,7 +6831,7 @@ The "General Information" section is expanded by default.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_equivalent_date.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">295</span>
 <span class="normal">296</span>
 <span class="normal">297</span>
@@ -6854,16 +6875,16 @@ The "General Information" section is expanded by default.</p>
 <span class="normal">335</span>
 <span class="normal">336</span>
 <span class="normal">337</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    HTML representation of the object.</span>
-<span class="sd">    The "General Information" section is expanded by default.</span>
-<span class="sd">    """</span>
+<span class="sd">    The &quot;General Information&quot; section is expanded by default.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">style</span><span class="p">,</span> <span class="n">unique_id</span> <span class="o">=</span> <span class="n">get_style_repr_html</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">)</span>
 
-    <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
-<span class="s2">    &lt;div class="container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2">"&gt;</span>
-<span class="s2">        &lt;p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;"&gt;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    &lt;div class=&quot;container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2">&quot;&gt;</span>
+<span class="s2">        &lt;p style=&quot;font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;&quot;&gt;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
 <span class="s2">        &lt;details open&gt;</span>
 <span class="s2">            &lt;summary&gt;General Information&lt;/summary&gt;</span>
 <span class="s2">            &lt;ul&gt;</span>
@@ -6882,18 +6903,18 @@ The "General Information" section is expanded by default.</p>
 <span class="s2">        &lt;details&gt;</span>
 <span class="s2">            &lt;summary&gt;Training Information&lt;/summary&gt;</span>
 <span class="s2">            &lt;ul&gt;</span>
-<span class="s2">                &lt;li&gt;&lt;strong&gt;Training range:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'Not fitted'</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
-<span class="s2">                &lt;li&gt;&lt;strong&gt;Training index type:&lt;/strong&gt; </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_type_</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'Not fitted'</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
-<span class="s2">                &lt;li&gt;&lt;strong&gt;Training index frequency:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="o">.</span><span class="n">freqstr</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="p">,</span><span class="w"> </span><span class="s1">'freqstr'</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'Not fitted'</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">                &lt;li&gt;&lt;strong&gt;Training range:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;Not fitted&#39;</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">                &lt;li&gt;&lt;strong&gt;Training index type:&lt;/strong&gt; </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_type_</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;Not fitted&#39;</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">                &lt;li&gt;&lt;strong&gt;Training index frequency:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="o">.</span><span class="n">freqstr</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;freqstr&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;Not fitted&#39;</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
 <span class="s2">            &lt;/ul&gt;</span>
 <span class="s2">        &lt;/details&gt;</span>
 <span class="s2">        &lt;p&gt;</span>
-<span class="s2">            &lt;a href="https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/api/forecasterequivalentdate.html"&gt;&amp;#128214; &lt;strong&gt;API Reference&lt;/strong&gt;&lt;/a&gt;</span>
+<span class="s2">            &lt;a href=&quot;https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/api/forecasterequivalentdate.html&quot;&gt;&amp;#128214; &lt;strong&gt;API Reference&lt;/strong&gt;&lt;/a&gt;</span>
 <span class="s2">            &amp;nbsp;&amp;nbsp;</span>
-<span class="s2">            &lt;a href="https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/user_guides/forecasting-baseline.html"&gt;&amp;#128221; &lt;strong&gt;User Guide&lt;/strong&gt;&lt;/a&gt;</span>
+<span class="s2">            &lt;a href=&quot;https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/user_guides/forecasting-baseline.html&quot;&gt;&amp;#128221; &lt;strong&gt;User Guide&lt;/strong&gt;&lt;/a&gt;</span>
 <span class="s2">        &lt;/p&gt;</span>
 <span class="s2">    &lt;/div&gt;</span>
-<span class="s2">    """</span>
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="n">style</span> <span class="o">+</span> <span class="n">content</span>
 </code></pre></div></td></tr></table></div>
@@ -7049,7 +7070,7 @@ list of warnings that are suppressed.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_equivalent_date.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">339</span>
 <span class="normal">340</span>
 <span class="normal">341</span>
@@ -7186,7 +7207,7 @@ list of warnings that are suppressed.</p>
     <span class="n">exog</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Training Forecaster.</span>
 
 <span class="sd">    Parameters</span>
@@ -7212,24 +7233,24 @@ list of warnings that are suppressed.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`y` must be a pandas Series with a DatetimeIndex or a RangeIndex. "</span>
-            <span class="sa">f</span><span class="s2">"Found </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`y` must be a pandas Series with a DatetimeIndex or a RangeIndex. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">"If `offset` is a pandas DateOffset, the index of `y` must be a "</span>
-                <span class="s2">"pandas DatetimeIndex with frequency."</span>
+                <span class="s2">&quot;If `offset` is a pandas DateOffset, the index of `y` must be a &quot;</span>
+                <span class="s2">&quot;pandas DatetimeIndex with frequency.&quot;</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">freq</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">"If `offset` is a pandas DateOffset, the index of `y` must be a "</span>
-                <span class="s2">"pandas DatetimeIndex with frequency."</span>
+                <span class="s2">&quot;If `offset` is a pandas DateOffset, the index of `y` must be a &quot;</span>
+                <span class="s2">&quot;pandas DatetimeIndex with frequency.&quot;</span>
             <span class="p">)</span>
 
     <span class="c1"># Reset values in case the forecaster has already been fitted.</span>
@@ -7247,7 +7268,7 @@ list of warnings that are suppressed.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span>                     <span class="o">=</span> <span class="kc">None</span>
 
     <span class="n">_</span><span class="p">,</span> <span class="n">y_index</span> <span class="o">=</span> <span class="n">check_extract_values_and_index</span><span class="p">(</span>
-        <span class="n">data</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">data_label</span><span class="o">=</span><span class="s1">'`y`'</span><span class="p">,</span> <span class="n">return_values</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">data_label</span><span class="o">=</span><span class="s1">&#39;`y`&#39;</span><span class="p">,</span> <span class="n">return_values</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">):</span>
@@ -7263,29 +7284,29 @@ list of warnings that are suppressed.</p>
             <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span> <span class="o">=</span> <span class="n">window_size_idx_end</span> <span class="o">-</span> <span class="n">window_size_idx_start</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"The length of `y` (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">), must be greater than or equal "</span>
-                <span class="sa">f</span><span class="s2">"to the window size (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="si">}</span><span class="s2">). This is because "</span>
-                <span class="sa">f</span><span class="s2">"the offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">) is larger than the available "</span>
-                <span class="sa">f</span><span class="s2">"data. Try to decrease the size of the offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">), "</span>
-                <span class="sa">f</span><span class="s2">"the number of `n_offsets` (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2">) or increase the "</span>
-                <span class="sa">f</span><span class="s2">"size of `y`."</span>
+                <span class="sa">f</span><span class="s2">&quot;The length of `y` (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">), must be greater than or equal &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;to the window size (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="si">}</span><span class="s2">). This is because &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">) is larger than the available &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;data. Try to decrease the size of the offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">), &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the number of `n_offsets` (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2">) or increase the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;size of `y`.&quot;</span>
             <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Length of `y` must be greater than the maximum window size "</span>
-                <span class="sa">f</span><span class="s2">"needed by the forecaster. This is because "</span>
-                <span class="sa">f</span><span class="s2">"the offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">) is larger than the available "</span>
-                <span class="sa">f</span><span class="s2">"data. Try to decrease the size of the offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">), "</span>
-                <span class="sa">f</span><span class="s2">"the number of `n_offsets` (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2">) or increase the "</span>
-                <span class="sa">f</span><span class="s2">"size of `y`.</span><span class="se">\n</span><span class="s2">"</span>
-                <span class="sa">f</span><span class="s2">"    Length `y`: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">"</span>
-                <span class="sa">f</span><span class="s2">"    Max window size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">&quot;Length of `y` must be greater than the maximum window size &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;needed by the forecaster. This is because &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">) is larger than the available &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;data. Try to decrease the size of the offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">), &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the number of `n_offsets` (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2">) or increase the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;size of `y`.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;    Length `y`: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;    Max window size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">series_name_in_</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">'y'</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">series_name_in_</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;y&#39;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span> <span class="o">=</span> <span class="n">y_index</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">index_type_</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">y_index</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span> <span class="o">=</span> <span class="p">(</span>
@@ -7429,7 +7450,7 @@ residuals are always deterministic.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_equivalent_date.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">468</span>
 <span class="normal">469</span>
 <span class="normal">470</span>
@@ -7548,7 +7569,7 @@ residuals are always deterministic.</p>
     <span class="n">store_in_sample_residuals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Bin residuals according to the predicted value each residual is</span>
 <span class="sd">    associated with. First a `skforecast.preprocessing.QuantileBinner` object</span>
 <span class="sd">    is fitted to the predicted values. Then, residuals are binned according</span>
@@ -7578,7 +7599,7 @@ residuals are always deterministic.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">):</span>
         <span class="n">y_preds</span> <span class="o">=</span> <span class="p">[]</span>
@@ -7608,22 +7629,22 @@ residuals are always deterministic.</p>
 
     <span class="n">residuals</span> <span class="o">=</span> <span class="n">y_true</span> <span class="o">-</span> <span class="n">y_pred</span>
 
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_probabilistic_mode</span> <span class="o">==</span> <span class="s2">"binned"</span><span class="p">:</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_probabilistic_mode</span> <span class="o">==</span> <span class="s2">&quot;binned&quot;</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-            <span class="p">{</span><span class="s1">'prediction'</span><span class="p">:</span> <span class="n">y_pred</span><span class="p">,</span> <span class="s1">'residuals'</span><span class="p">:</span> <span class="n">residuals</span><span class="p">}</span>
+            <span class="p">{</span><span class="s1">&#39;prediction&#39;</span><span class="p">:</span> <span class="n">y_pred</span><span class="p">,</span> <span class="s1">&#39;residuals&#39;</span><span class="p">:</span> <span class="n">residuals</span><span class="p">}</span>
         <span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-        <span class="n">y_pred</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'prediction'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
-        <span class="n">residuals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'residuals'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="n">y_pred</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;prediction&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="n">residuals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;residuals&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">binner</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binner_intervals_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binner</span><span class="o">.</span><span class="n">intervals_</span>
 
     <span class="k">if</span> <span class="n">store_in_sample_residuals</span><span class="p">:</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_probabilistic_mode</span> <span class="o">==</span> <span class="s2">"binned"</span><span class="p">:</span>
-            <span class="n">data</span><span class="p">[</span><span class="s1">'bin'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binner</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_probabilistic_mode</span> <span class="o">==</span> <span class="s2">&quot;binned&quot;</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s1">&#39;bin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binner</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">in_sample_residuals_by_bin_</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">'bin'</span><span class="p">)[</span><span class="s1">'residuals'</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;bin&#39;</span><span class="p">)[</span><span class="s1">&#39;residuals&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
             <span class="p">)</span>
 
             <span class="n">max_sample</span> <span class="o">=</span> <span class="mi">10_000</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">binner</span><span class="o">.</span><span class="n">n_bins_</span>
@@ -7809,7 +7830,7 @@ list of warnings that are suppressed.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_equivalent_date.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">582</span>
 <span class="normal">583</span>
 <span class="normal">584</span>
@@ -7967,7 +7988,7 @@ list of warnings that are suppressed.</p>
     <span class="n">exog</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Predict n steps ahead.</span>
 
 <span class="sd">    Parameters</span>
@@ -7995,7 +8016,7 @@ list of warnings that are suppressed.</p>
 <span class="sd">    predictions : pandas Series</span>
 <span class="sd">        Predicted values.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">last_window</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">last_window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_window_</span>
@@ -8043,7 +8064,7 @@ list of warnings that are suppressed.</p>
         <span class="n">predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
                           <span class="n">data</span>  <span class="o">=</span> <span class="n">predictions</span><span class="p">,</span>
                           <span class="n">index</span> <span class="o">=</span> <span class="n">prediction_index</span><span class="p">,</span>
-                          <span class="n">name</span>  <span class="o">=</span> <span class="s1">'pred'</span>
+                          <span class="n">name</span>  <span class="o">=</span> <span class="s1">&#39;pred&#39;</span>
                       <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">):</span>
@@ -8076,18 +8097,18 @@ list of warnings that are suppressed.</p>
         <span class="n">equivalent_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
                                 <span class="n">data</span>    <span class="o">=</span> <span class="n">equivalent_values</span><span class="p">,</span>
                                 <span class="n">index</span>   <span class="o">=</span> <span class="n">prediction_index</span><span class="p">,</span>
-                                <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">'offset_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">'</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="p">)]</span>
+                                <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;offset_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="p">)]</span>
                             <span class="p">)</span>
 
         <span class="c1"># Error if all values are missing</span>
         <span class="k">if</span> <span class="n">equivalent_values</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"All equivalent values are missing. This is caused by using "</span>
-                <span class="sa">f</span><span class="s2">"an offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">) larger than the available data. "</span>
-                <span class="sa">f</span><span class="s2">"Try to decrease the size of the offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">), "</span>
-                <span class="sa">f</span><span class="s2">"the number of `n_offsets` (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2">) or increase the "</span>
-                <span class="sa">f</span><span class="s2">"size of `last_window`. In backtesting, this error may be "</span>
-                <span class="sa">f</span><span class="s2">"caused by using an `initial_train_size` too small."</span>
+                <span class="sa">f</span><span class="s2">&quot;All equivalent values are missing. This is caused by using &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;an offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">) larger than the available data. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Try to decrease the size of the offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">), &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the number of `n_offsets` (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2">) or increase the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;size of `last_window`. In backtesting, this error may be &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;caused by using an `initial_train_size` too small.&quot;</span>
             <span class="p">)</span>
 
         <span class="c1"># Warning if equivalent values are missing</span>
@@ -8095,16 +8116,16 @@ list of warnings that are suppressed.</p>
         <span class="n">incomplete_offsets</span> <span class="o">=</span> <span class="n">incomplete_offsets</span><span class="p">[</span><span class="n">incomplete_offsets</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">incomplete_offsets</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Steps: </span><span class="si">{</span><span class="n">incomplete_offsets</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1">'</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span><span class="si">}</span><span class="s2"> "</span>
-                <span class="sa">f</span><span class="s2">"are calculated with less than </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2"> `n_offsets`. "</span>
-                <span class="sa">f</span><span class="s2">"To avoid this, increase the `last_window` size or decrease "</span>
-                <span class="sa">f</span><span class="s2">"the number of `n_offsets`. The current configuration requires "</span> 
-                <span class="sa">f</span><span class="s2">"a total offset of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2">."</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;Steps: </span><span class="si">{</span><span class="n">incomplete_offsets</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;are calculated with less than </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2"> `n_offsets`. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;To avoid this, increase the `last_window` size or decrease &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the number of `n_offsets`. The current configuration requires &quot;</span> 
+                <span class="sa">f</span><span class="s2">&quot;a total offset of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
                 <span class="n">MissingValuesWarning</span>
             <span class="p">)</span>
 
         <span class="n">aggregate_values</span> <span class="o">=</span> <span class="n">equivalent_values</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">agg_func</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">predictions</span> <span class="o">=</span> <span class="n">aggregate_values</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">'pred'</span><span class="p">)</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="n">aggregate_values</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;pred&#39;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">predictions</span>
 </code></pre></div></td></tr></table></div>
@@ -8124,7 +8145,7 @@ list of warnings that are suppressed.</p>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">predict_interval</span><span class="p">(</span>
     <span class="n">steps</span><span class="p">,</span>
     <span class="n">last_window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">method</span><span class="o">=</span><span class="s2">"conformal"</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;conformal&quot;</span><span class="p">,</span>
     <span class="n">interval</span><span class="o">=</span><span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">],</span>
     <span class="n">use_in_sample_residuals</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">use_binned_residuals</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -8381,7 +8402,7 @@ list of warnings that are suppressed.</p>
 </details>
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_equivalent_date.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">732</span>
 <span class="normal">733</span>
 <span class="normal">734</span>
@@ -8629,7 +8650,7 @@ list of warnings that are suppressed.</p>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">last_window</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'conformal'</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;conformal&#39;</span><span class="p">,</span>
     <span class="n">interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">],</span>
     <span class="n">use_in_sample_residuals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">use_binned_residuals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -8638,7 +8659,7 @@ list of warnings that are suppressed.</p>
     <span class="n">n_boot</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Predict n steps ahead and estimate prediction intervals using conformal </span>
 <span class="sd">    prediction method. Refer to the References section for additional </span>
 <span class="sd">    details on this method.</span>
@@ -8652,10 +8673,10 @@ list of warnings that are suppressed.</p>
 <span class="sd">        the offset. If `last_window = None`, the values stored in </span>
 <span class="sd">        `self.last_window_` are used and the predictions start immediately </span>
 <span class="sd">        after the training data.</span>
-<span class="sd">    method : str, default 'conformal'</span>
+<span class="sd">    method : str, default &#39;conformal&#39;</span>
 <span class="sd">        Technique used to estimate prediction intervals. Available options:</span>
 
-<span class="sd">        - 'conformal': Employs the conformal prediction split method for </span>
+<span class="sd">        - &#39;conformal&#39;: Employs the conformal prediction split method for </span>
 <span class="sd">        interval estimation [1]_.</span>
 <span class="sd">    interval : float, list, tuple, default [0.05, 0.95]</span>
 <span class="sd">        Confidence level of the prediction interval. Interpretation depends </span>
@@ -8667,7 +8688,7 @@ list of warnings that are suppressed.</p>
 <span class="sd">        - If `list` or `tuple`, defines the exact quantiles to compute, which </span>
 <span class="sd">        must be between 0 and 1 inclusive. For example, interval </span>
 <span class="sd">        of 95% should be as `interval = [0.025, 0.975]`.</span>
-<span class="sd">        - When using `method='conformal'`, the interval must be a float or </span>
+<span class="sd">        - When using `method=&#39;conformal&#39;`, the interval must be a float or </span>
 <span class="sd">        a list/tuple defining a symmetric interval.</span>
 
 <span class="sd">        **Changed in version 0.23.0:** `interval` is now expressed as</span>
@@ -8677,7 +8698,7 @@ list of warnings that are suppressed.</p>
 <span class="sd">        If `True`, residuals from the training data are used as proxy of</span>
 <span class="sd">        prediction error to create predictions. </span>
 <span class="sd">        If `False`, out of sample residuals (calibration) are used. </span>
-<span class="sd">        Out-of-sample residuals must be precomputed using Forecaster's</span>
+<span class="sd">        Out-of-sample residuals must be precomputed using Forecaster&#39;s</span>
 <span class="sd">        `set_out_sample_residuals()` method.</span>
 <span class="sd">    use_binned_residuals : bool, default True</span>
 <span class="sd">        If `True`, residuals are selected based on the predicted values </span>
@@ -8708,11 +8729,11 @@ list of warnings that are suppressed.</p>
 <span class="sd">    .. [1] MAPIE - Model Agnostic Prediction Interval Estimator.</span>
 <span class="sd">           https://mapie.readthedocs.io/en/stable/content/conformal-prediction/regression/#2-the-split-method</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="n">method</span> <span class="o">!=</span> <span class="s1">'conformal'</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">!=</span> <span class="s1">&#39;conformal&#39;</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Method '</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">' is not supported. Only 'conformal' is available."</span>
+            <span class="sa">f</span><span class="s2">&quot;Method &#39;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&#39; is not supported. Only &#39;conformal&#39; is available.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">last_window</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -8747,7 +8768,7 @@ list of warnings that are suppressed.</p>
         <span class="p">)</span>
         <span class="n">nominal_coverage</span> <span class="o">=</span> <span class="n">interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">interval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">check_interval</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span> <span class="n">alpha_literal</span><span class="o">=</span><span class="s1">'interval'</span><span class="p">)</span>
+        <span class="n">check_interval</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span> <span class="n">alpha_literal</span><span class="o">=</span><span class="s1">&#39;interval&#39;</span><span class="p">)</span>
         <span class="n">nominal_coverage</span> <span class="o">=</span> <span class="n">interval</span>
 
     <span class="k">if</span> <span class="n">use_in_sample_residuals</span><span class="p">:</span>
@@ -8815,18 +8836,18 @@ list of warnings that are suppressed.</p>
         <span class="n">equivalent_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
                                 <span class="n">data</span>    <span class="o">=</span> <span class="n">equivalent_values</span><span class="p">,</span>
                                 <span class="n">index</span>   <span class="o">=</span> <span class="n">prediction_index</span><span class="p">,</span>
-                                <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">'offset_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">'</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="p">)]</span>
+                                <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;offset_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="p">)]</span>
                             <span class="p">)</span>
 
         <span class="c1"># Error if all values are missing</span>
         <span class="k">if</span> <span class="n">equivalent_values</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"All equivalent values are missing. This is caused by using "</span>
-                <span class="sa">f</span><span class="s2">"an offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">) larger than the available data. "</span>
-                <span class="sa">f</span><span class="s2">"Try to decrease the size of the offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">), "</span>
-                <span class="sa">f</span><span class="s2">"the number of `n_offsets` (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2">) or increase the "</span>
-                <span class="sa">f</span><span class="s2">"size of `last_window`. In backtesting, this error may be "</span>
-                <span class="sa">f</span><span class="s2">"caused by using an `initial_train_size` too small."</span>
+                <span class="sa">f</span><span class="s2">&quot;All equivalent values are missing. This is caused by using &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;an offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">) larger than the available data. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Try to decrease the size of the offset (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s2">), &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the number of `n_offsets` (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2">) or increase the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;size of `last_window`. In backtesting, this error may be &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;caused by using an `initial_train_size` too small.&quot;</span>
             <span class="p">)</span>
 
         <span class="c1"># Warning if equivalent values are missing</span>
@@ -8834,11 +8855,11 @@ list of warnings that are suppressed.</p>
         <span class="n">incomplete_offsets</span> <span class="o">=</span> <span class="n">incomplete_offsets</span><span class="p">[</span><span class="n">incomplete_offsets</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">incomplete_offsets</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Steps: </span><span class="si">{</span><span class="n">incomplete_offsets</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1">'</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span><span class="si">}</span><span class="s2"> "</span>
-                <span class="sa">f</span><span class="s2">"are calculated with less than </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2"> `n_offsets`. "</span>
-                <span class="sa">f</span><span class="s2">"To avoid this, increase the `last_window` size or decrease "</span>
-                <span class="sa">f</span><span class="s2">"the number of `n_offsets`. The current configuration requires "</span> 
-                <span class="sa">f</span><span class="s2">"a total offset of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2">."</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;Steps: </span><span class="si">{</span><span class="n">incomplete_offsets</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;are calculated with less than </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2"> `n_offsets`. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;To avoid this, increase the `last_window` size or decrease &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the number of `n_offsets`. The current configuration requires &quot;</span> 
+                <span class="sa">f</span><span class="s2">&quot;a total offset of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">n_offsets</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
                 <span class="n">MissingValuesWarning</span>
             <span class="p">)</span>
 
@@ -8863,7 +8884,7 @@ list of warnings that are suppressed.</p>
     <span class="n">predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
                       <span class="n">data</span>    <span class="o">=</span> <span class="n">predictions</span><span class="p">,</span>
                       <span class="n">index</span>   <span class="o">=</span> <span class="n">prediction_index</span><span class="p">,</span>
-                      <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"pred"</span><span class="p">,</span> <span class="s2">"lower_bound"</span><span class="p">,</span> <span class="s2">"upper_bound"</span><span class="p">]</span>
+                      <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;pred&quot;</span><span class="p">,</span> <span class="s2">&quot;lower_bound&quot;</span><span class="p">,</span> <span class="s2">&quot;upper_bound&quot;</span><span class="p">]</span>
                   <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">predictions</span>
@@ -8993,7 +9014,7 @@ limited to <code>10_000 // self.binner.n_bins_</code>.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_equivalent_date.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 976</span>
 <span class="normal"> 977</span>
 <span class="normal"> 978</span>
@@ -9065,7 +9086,7 @@ limited to <code>10_000 // self.binner.n_bins_</code>.</p>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span><span class="p">,</span>
     <span class="n">exog</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set in-sample residuals in case they were not calculated during the</span>
 <span class="sd">    training process. </span>
 
@@ -9099,25 +9120,25 @@ limited to <code>10_000 // self.binner.n_bins_</code>.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This forecaster is not fitted yet. Call `fit` with appropriate "</span>
-            <span class="s2">"arguments before using `set_in_sample_residuals()`."</span>
+            <span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
+            <span class="s2">&quot;arguments before using `set_in_sample_residuals()`.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">check_y</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
     <span class="n">y_index_range</span> <span class="o">=</span> <span class="n">check_extract_values_and_index</span><span class="p">(</span>
-        <span class="n">data</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">data_label</span><span class="o">=</span><span class="s1">'`y`'</span><span class="p">,</span> <span class="n">return_values</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">data_label</span><span class="o">=</span><span class="s1">&#39;`y`&#39;</span><span class="p">,</span> <span class="n">return_values</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)[</span><span class="mi">1</span><span class="p">][[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">y_index_range</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"The index range of `y` does not match the range "</span>
-            <span class="sa">f</span><span class="s2">"used during training. Please ensure the index is aligned "</span>
-            <span class="sa">f</span><span class="s2">"with the training data.</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"    Expected : </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"    Received : </span><span class="si">{</span><span class="n">y_index_range</span><span class="si">}</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">&quot;The index range of `y` does not match the range &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;used during training. Please ensure the index is aligned &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;with the training data.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;    Expected : </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;    Received : </span><span class="si">{</span><span class="n">y_index_range</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">_binning_in_sample_residuals</span><span class="p">(</span>
@@ -9272,7 +9293,7 @@ sample of residuals is stored.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_equivalent_date.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1043</span>
 <span class="normal">1044</span>
 <span class="normal">1045</span>
@@ -9438,7 +9459,7 @@ sample of residuals is stored.</p>
     <span class="n">append</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set new values to the attribute `out_sample_residuals_`. Out of sample</span>
 <span class="sd">    residuals are meant to be calculated using observations that did not</span>
 <span class="sd">    participate in the training process. Two internal attributes are updated:</span>
@@ -9476,36 +9497,36 @@ sample of residuals is stored.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This forecaster is not fitted yet. Call `fit` with appropriate "</span>
-            <span class="s2">"arguments before using `set_out_sample_residuals()`."</span>
+            <span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
+            <span class="s2">&quot;arguments before using `set_out_sample_residuals()`.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`y_true` argument must be `numpy ndarray` or `pandas Series`. "</span>
-            <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_true</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`y_true` argument must be `numpy ndarray` or `pandas Series`. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_true</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`y_pred` argument must be `numpy ndarray` or `pandas Series`. "</span>
-            <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`y_pred` argument must be `numpy ndarray` or `pandas Series`. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_pred</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`y_true` and `y_pred` must have the same length. "</span>
-            <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">)</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`y_true` and `y_pred` must have the same length. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">)</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">y_true</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">y_pred</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"`y_true` and `y_pred` must have the same index."</span>
+                <span class="s2">&quot;`y_true` and `y_pred` must have the same index.&quot;</span>
             <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
@@ -9514,13 +9535,13 @@ sample of residuals is stored.</p>
         <span class="n">y_true</span> <span class="o">=</span> <span class="n">y_true</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
 
     <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-        <span class="p">{</span><span class="s1">'prediction'</span><span class="p">:</span> <span class="n">y_pred</span><span class="p">,</span> <span class="s1">'residuals'</span><span class="p">:</span> <span class="n">y_true</span> <span class="o">-</span> <span class="n">y_pred</span><span class="p">}</span>
+        <span class="p">{</span><span class="s1">&#39;prediction&#39;</span><span class="p">:</span> <span class="n">y_pred</span><span class="p">,</span> <span class="s1">&#39;residuals&#39;</span><span class="p">:</span> <span class="n">y_true</span> <span class="o">-</span> <span class="n">y_pred</span><span class="p">}</span>
     <span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'prediction'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
-    <span class="n">residuals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'residuals'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;prediction&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">residuals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;residuals&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
 
-    <span class="n">data</span><span class="p">[</span><span class="s1">'bin'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binner</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-    <span class="n">residuals_by_bin</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">'bin'</span><span class="p">)[</span><span class="s1">'residuals'</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;bin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binner</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">residuals_by_bin</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;bin&#39;</span><span class="p">)[</span><span class="s1">&#39;residuals&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
 
     <span class="n">out_sample_residuals</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> 
@@ -9567,10 +9588,10 @@ sample of residuals is stored.</p>
     <span class="p">]</span>
     <span class="k">if</span> <span class="n">empty_bins</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"The following bins have no out of sample residuals: </span><span class="si">{</span><span class="n">empty_bins</span><span class="si">}</span><span class="s2">. "</span>
-            <span class="sa">f</span><span class="s2">"No predicted values fall in the interval "</span>
-            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">binner_intervals_</span><span class="p">[</span><span class="nb">bin</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nb">bin</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">empty_bins</span><span class="p">]</span><span class="si">}</span><span class="s2">. "</span>
-            <span class="sa">f</span><span class="s2">"Empty bins will be filled with a random sample of residuals."</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;The following bins have no out of sample residuals: </span><span class="si">{</span><span class="n">empty_bins</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;No predicted values fall in the interval &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">binner_intervals_</span><span class="p">[</span><span class="nb">bin</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nb">bin</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">empty_bins</span><span class="p">]</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Empty bins will be filled with a random sample of residuals.&quot;</span><span class="p">,</span>
             <span class="n">ResidualsUsageWarning</span>
         <span class="p">)</span>
         <span class="n">empty_bin_size</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_samples</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">out_sample_residuals</span><span class="p">))</span>
@@ -9670,7 +9691,7 @@ Any other key is ignored and raises an <code>IgnoredArgumentWarning</code>.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_equivalent_date.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1203</span>
 <span class="normal">1204</span>
 <span class="normal">1205</span>
@@ -9713,7 +9734,7 @@ Any other key is ignored and raises an <code>IgnoredArgumentWarning</code>.</p>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set new values to the parameters of the forecaster. After calling this</span>
 <span class="sd">    method, the forecaster is reset to an unfitted state. The `fit` method</span>
 <span class="sd">    must be called before prediction.</span>
@@ -9728,14 +9749,14 @@ Any other key is ignored and raises an <code>IgnoredArgumentWarning</code>.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">allowed_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'offset'</span><span class="p">,</span> <span class="s1">'n_offsets'</span><span class="p">,</span> <span class="s1">'agg_func'</span><span class="p">}</span>
+    <span class="n">allowed_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;offset&#39;</span><span class="p">,</span> <span class="s1">&#39;n_offsets&#39;</span><span class="p">,</span> <span class="s1">&#39;agg_func&#39;</span><span class="p">}</span>
     <span class="n">invalid_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">-</span> <span class="n">allowed_params</span>
     <span class="k">if</span> <span class="n">invalid_params</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Unknown parameters </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">invalid_params</span><span class="p">)</span><span class="si">}</span><span class="s2"> will be ignored. "</span>
-            <span class="sa">f</span><span class="s2">"Valid parameters are </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">allowed_params</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Unknown parameters </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">invalid_params</span><span class="p">)</span><span class="si">}</span><span class="s2"> will be ignored. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Valid parameters are </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">allowed_params</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
             <span class="n">IgnoredArgumentWarning</span>
         <span class="p">)</span>
 
@@ -9794,7 +9815,7 @@ Any other key is ignored and raises an <code>IgnoredArgumentWarning</code>.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_equivalent_date.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1243</span>
 <span class="normal">1244</span>
 <span class="normal">1245</span>
@@ -9807,7 +9828,7 @@ Any other key is ignored and raises an <code>IgnoredArgumentWarning</code>.</p>
 <span class="normal">1252</span>
 <span class="normal">1253</span>
 <span class="normal">1254</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return the tags that characterize the behavior of the forecaster.</span>
 
 <span class="sd">    Returns</span>
@@ -9815,7 +9836,7 @@ Any other key is ignored and raises an <code>IgnoredArgumentWarning</code>.</p>
 <span class="sd">    skforecast_tags : dict</span>
 <span class="sd">        Dictionary with forecaster tags.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__skforecast_tags__</span>
 </code></pre></div></td></tr></table></div>
@@ -9894,7 +9915,7 @@ Any other key is ignored and raises an <code>IgnoredArgumentWarning</code>.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_equivalent_date.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1256</span>
 <span class="normal">1257</span>
 <span class="normal">1258</span>
@@ -9910,7 +9931,7 @@ Any other key is ignored and raises an <code>IgnoredArgumentWarning</code>.</p>
 <span class="normal">1268</span>
 <span class="normal">1269</span>
 <span class="normal">1270</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Show forecaster information.</span>
 
 <span class="sd">    Parameters</span>
@@ -9921,7 +9942,7 @@ Any other key is ignored and raises an <code>IgnoredArgumentWarning</code>.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -10164,10 +10185,10 @@ Any other key is ignored and raises an <code>IgnoredArgumentWarning</code>.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       

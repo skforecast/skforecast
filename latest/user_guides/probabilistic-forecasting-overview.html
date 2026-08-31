@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -100,6 +100,25 @@
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+  👋 New in the skforecast ecosystem:
+<a href="https://studio.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast studio</strong></a> (train and evaluate models visually, no coding required) and
+<a href="https://ai.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast-ai</strong></a> (agentic time series forecasting).
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
       
     </div>
     
@@ -5640,7 +5659,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="probabilistic-forecasting">Probabilistic forecasting<a class="anchor-link" href="#probabilistic-forecasting">¶</a></h1><p>When trying to predict future values, most forecasting models try to predict what will be the most likely value. This is called point-forecasting. Although knowing the expected value of a time series in advance is useful in almost any business case, this type of prediction does not provide any information about the confidence of the model or the uncertainty of the prediction.</p>
+<h1 id="probabilistic-forecasting">Probabilistic forecasting<a class="anchor-link" href="#probabilistic-forecasting">¶</a></h1><p>When trying to predict future values, most forecasting models try to predict what the most likely value will be. This is called point-forecasting. Although knowing the expected value of a time series in advance is useful in almost any business case, this type of prediction does not provide any information about the confidence of the model or the uncertainty of the prediction.</p>
 <p>Probabilistic forecasting, as opposed to point-forecasting, is a family of techniques that allow the prediction of the expected distribution of the outcome rather than a single future value. This type of forecasting provides much richer information because it allows the creation of prediction intervals, the range of likely values where the true value may fall. More formally, a prediction interval defines the interval within which the true value of the response variable is expected to be found with a given probability.</p>
 <p>Skforecast implements several methods for probabilistic forecasting.</p>
 </div>
@@ -5664,7 +5683,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <li><p><code>predict_dist</code>: this method fits a parametric distribution using the values generated with <code>predict_bootstrapping</code>. Any of the continuous distributions available in <a href="https://docs.scipy.org/doc/scipy/reference/stats.html#continuous-distributions">scipy.stats</a> can be used.</p>
 </li>
 </ul>
-<p>The four methods can use in-sample residuals (default) or out-of-sample residuals. In both cases, the residuals can be conditioned on the predicted value to try to account for the existence of a correlation between the predicted values and the residuals.</p>
+<p>The four methods can use in-sample residuals (the default) or out-of-sample residuals. In both cases, the residuals can be conditioned on the predicted value to try to account for the existence of a correlation between the predicted values and the residuals.</p>
 <p>Discover how to use these methods in <a href="./probabilistic-forecasting-bootstrapped-residuals.html">Probabilistic forecasting with bootstrapped residuals</a>.</p>
 </div>
 </div>
@@ -5746,7 +5765,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <i style="font-size: 18px; color:#ff9100; border-color: #ff1744;"></i>
 <b style="color: #ff9100;"> <span style="color: #ff9100;">⚠</span> Warning</b>
 </p>
-<p>As Rob J Hyndman explains in his <a href="https://robjhyndman.com/hyndsight/narrow-pi/">blog</a>, in real-world problems, almost all prediction intervals are too narrow. For example, nominal 95% intervals may only provide coverage between 71% and 87%. This is a well-known phenomenon and arises because they do not account for all sources of uncertainty. With forecasting models, there are at least four sources of uncertainty:</p>
+<p>As Rob J Hyndman explains in his <a href="https://robjhyndman.com/hyndsight/narrow-pi/">blog</a>, in real-world problems, almost all prediction intervals are too narrow. For example, nominal 95% intervals may only provide coverage between 71% and 87%. This is a well-known phenomenon that arises because they do not account for all sources of uncertainty. With forecasting models, there are at least four sources of uncertainty:</p>
 <ul>
 <li>The random error term</li>
 <li>The parameter estimates</li>
@@ -6027,10 +6046,10 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       

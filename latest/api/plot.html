@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -100,6 +100,25 @@
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+  👋 New in the skforecast ecosystem:
+<a href="https://studio.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast studio</strong></a> (train and evaluate models visually, no coding required) and
+<a href="https://ai.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast-ai</strong></a> (agentic time series forecasting).
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
       
     </div>
     
@@ -5014,7 +5033,7 @@ using the <code>plt.rcParams.update()</code> method.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/plot/plot.py</code></summary>
+              <summary>Source code in <code>skforecast\plot\plot.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">228</span>
 <span class="normal">229</span>
 <span class="normal">230</span>
@@ -5065,7 +5084,7 @@ using the <code>plt.rcParams.update()</code> method.</p>
 <span class="normal">275</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_dark_theme</span><span class="p">(</span>
     <span class="n">custom_style</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set aspects of the visual theme for all matplotlib plots.</span>
 <span class="sd">    This function changes the global defaults for all plots using the matplotlib</span>
 <span class="sd">    rcParams system. The theme includes specific colors for figure and axes</span>
@@ -5083,27 +5102,27 @@ using the <code>plt.rcParams.update()</code> method.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">'fivethirtyeight'</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;fivethirtyeight&#39;</span><span class="p">)</span>
     <span class="n">dark_style</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">'figure.facecolor'</span><span class="p">:</span> <span class="s1">'#001633'</span><span class="p">,</span>
-        <span class="s1">'axes.facecolor'</span><span class="p">:</span> <span class="s1">'#001633'</span><span class="p">,</span>
-        <span class="s1">'savefig.facecolor'</span><span class="p">:</span> <span class="s1">'#001633'</span><span class="p">,</span>
-        <span class="s1">'axes.grid'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s1">'axes.grid.which'</span><span class="p">:</span> <span class="s1">'both'</span><span class="p">,</span>
-        <span class="s1">'axes.spines.left'</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s1">'axes.spines.right'</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s1">'axes.spines.top'</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s1">'axes.spines.bottom'</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s1">'grid.color'</span><span class="p">:</span> <span class="s1">'#212946'</span><span class="p">,</span>
-        <span class="s1">'grid.linewidth'</span><span class="p">:</span> <span class="s1">'1'</span><span class="p">,</span>
-        <span class="s1">'text.color'</span><span class="p">:</span> <span class="s1">'0.9'</span><span class="p">,</span>
-        <span class="s1">'axes.labelcolor'</span><span class="p">:</span> <span class="s1">'0.9'</span><span class="p">,</span>
-        <span class="s1">'xtick.color'</span><span class="p">:</span> <span class="s1">'0.9'</span><span class="p">,</span>
-        <span class="s1">'ytick.color'</span><span class="p">:</span> <span class="s1">'0.9'</span><span class="p">,</span>
-        <span class="s1">'font.size'</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
-        <span class="s1">'lines.linewidth'</span><span class="p">:</span> <span class="mf">1.5</span>
+        <span class="s1">&#39;figure.facecolor&#39;</span><span class="p">:</span> <span class="s1">&#39;#001633&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;axes.facecolor&#39;</span><span class="p">:</span> <span class="s1">&#39;#001633&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;savefig.facecolor&#39;</span><span class="p">:</span> <span class="s1">&#39;#001633&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;axes.grid&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;axes.grid.which&#39;</span><span class="p">:</span> <span class="s1">&#39;both&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;axes.spines.left&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;axes.spines.right&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;axes.spines.top&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;axes.spines.bottom&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;grid.color&#39;</span><span class="p">:</span> <span class="s1">&#39;#212946&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;grid.linewidth&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;text.color&#39;</span><span class="p">:</span> <span class="s1">&#39;0.9&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;axes.labelcolor&#39;</span><span class="p">:</span> <span class="s1">&#39;0.9&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;xtick.color&#39;</span><span class="p">:</span> <span class="s1">&#39;0.9&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ytick.color&#39;</span><span class="p">:</span> <span class="s1">&#39;0.9&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="s1">&#39;lines.linewidth&#39;</span><span class="p">:</span> <span class="mf">1.5</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="n">custom_style</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -5258,7 +5277,7 @@ internally.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/plot/plot.py</code></summary>
+              <summary>Source code in <code>skforecast\plot\plot.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">30</span>
 <span class="normal">31</span>
 <span class="normal">32</span>
@@ -5335,7 +5354,7 @@ internally.</p>
     <span class="n">fig</span><span class="p">:</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">Figure</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">fig_kw</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    residuals : pandas Series, numpy ndarray, default None.</span>
@@ -5356,11 +5375,11 @@ internally.</p>
 <span class="sd">    fig: matplotlib.figure.Figure</span>
 <span class="sd">        Matplotlib Figure.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">residuals</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">y_true</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">y_pred</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"If `residuals` argument is None then, `y_true` and `y_pred` must be provided."</span>
+            <span class="s2">&quot;If `residuals` argument is None then, `y_true` and `y_pred` must be provided.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">residuals</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -5377,12 +5396,12 @@ internally.</p>
     <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">residuals</span><span class="p">)</span>
     <span class="n">residuals_kde</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">residuals</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">residuals_kde</span> <span class="o">=</span> <span class="n">residuals_kde</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">residuals_kde</span><span class="p">)]</span>
-    <span class="n">hist_color</span> <span class="o">=</span> <span class="s2">"C0"</span>
+    <span class="n">hist_color</span> <span class="o">=</span> <span class="s2">&quot;C0&quot;</span>
     <span class="n">_</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ax2</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span>
         <span class="n">residuals_kde</span><span class="p">,</span>
         <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
         <span class="n">facecolor</span><span class="o">=</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">to_rgba</span><span class="p">(</span><span class="n">hist_color</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
-        <span class="n">edgecolor</span><span class="o">=</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">"patch.edgecolor"</span><span class="p">],</span>
+        <span class="n">edgecolor</span><span class="o">=</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;patch.edgecolor&quot;</span><span class="p">],</span>
         <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">residuals_kde</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">ptp</span><span class="p">(</span><span class="n">residuals_kde</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -5390,12 +5409,12 @@ internally.</p>
         <span class="n">x_kde</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">200</span><span class="p">)</span>
         <span class="n">bin_width</span> <span class="o">=</span> <span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_kde</span><span class="p">,</span> <span class="n">kde</span><span class="p">(</span><span class="n">x_kde</span><span class="p">)</span> <span class="o">*</span> <span class="n">residuals_kde</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">bin_width</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">hist_color</span><span class="p">)</span>
-    <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"Count"</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Count&quot;</span><span class="p">)</span>
     <span class="n">plot_acf</span><span class="p">(</span><span class="n">residuals</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax3</span><span class="p">,</span> <span class="n">lags</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
 
-    <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Residuals"</span><span class="p">)</span>
-    <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Distribution"</span><span class="p">)</span>
-    <span class="n">ax3</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Autocorrelation"</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Residuals&quot;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Distribution&quot;</span><span class="p">)</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Autocorrelation&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">fig</span>
 </code></pre></div></td></tr></table></div>
@@ -5512,7 +5531,7 @@ is used. See scipy.stats.gaussian_kde for more information.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/plot/plot.py</code></summary>
+              <summary>Source code in <code>skforecast\plot\plot.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">164</span>
 <span class="normal">165</span>
 <span class="normal">166</span>
@@ -5579,7 +5598,7 @@ is used. See scipy.stats.gaussian_kde for more information.</p>
     <span class="n">bw_method</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">fig_kw</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Ridge plot of bootstrapping predictions. This plot is very useful to understand </span>
 <span class="sd">    the uncertainty of forecasting predictions.</span>
 
@@ -5588,8 +5607,8 @@ is used. See scipy.stats.gaussian_kde for more information.</p>
 <span class="sd">    bootstrapping_predictions : pandas DataFrame</span>
 <span class="sd">        Bootstrapping predictions created with `Forecaster.predict_bootstrapping`.</span>
 <span class="sd">    bw_method : str, scalar, Callable, default None</span>
-<span class="sd">        The method used to calculate the estimator bandwidth. This can be 'scott', </span>
-<span class="sd">        'silverman', a scalar constant or a Callable. If None (default), 'scott' </span>
+<span class="sd">        The method used to calculate the estimator bandwidth. This can be &#39;scott&#39;, </span>
+<span class="sd">        &#39;silverman&#39;, a scalar constant or a Callable. If None (default), &#39;scott&#39; </span>
 <span class="sd">        is used. See scipy.stats.gaussian_kde for more information.</span>
 <span class="sd">    fig_kw : dict</span>
 <span class="sd">        All additional keyword arguments are passed to the `pyplot.figure` call.</span>
@@ -5599,10 +5618,10 @@ is used. See scipy.stats.gaussian_kde for more information.</p>
 <span class="sd">    fig : matplotlib.figure.Figure</span>
 <span class="sd">        Matplotlib Figure.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">index</span> <span class="o">=</span> <span class="n">bootstrapping_predictions</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">palette</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s1">'cubehelix'</span><span class="p">)(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)))</span>
+    <span class="n">palette</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s1">&#39;cubehelix&#39;</span><span class="p">)(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)))</span>
     <span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">fig_kw</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axs</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
         <span class="n">axs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">axs</span><span class="p">])</span>
@@ -5621,19 +5640,19 @@ is used. See scipy.stats.gaussian_kde for more information.</p>
 
         <span class="c1"># Closest point on x to the prediction mean</span>
         <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">prediction_mean</span><span class="p">)</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">ymin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=</span><span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">"dashed"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'w'</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">ymin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=</span><span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;dashed&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
 
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">'top'</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">'right'</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">'bottom'</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">'left'</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;right&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;bottom&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([])</span>
         <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="s1">'horizontal'</span><span class="p">)</span>
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'prediction'</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="s1">&#39;horizontal&#39;</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;prediction&#39;</span><span class="p">)</span>
 
     <span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=-</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'Forecasting distribution per step'</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;Forecasting distribution per step&#39;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">fig</span>
 </code></pre></div></td></tr></table></div>
@@ -5659,11 +5678,11 @@ is used. See scipy.stats.gaussian_kde for more information.</p>
     <span class="n">xaxis_title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">yaxis_title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">kwargs_subplots</span><span class="o">=</span><span class="p">{</span><span class="s2">"figsize"</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">)},</span>
+    <span class="n">kwargs_subplots</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">)},</span>
     <span class="n">kwargs_fill_between</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">"color"</span><span class="p">:</span> <span class="s2">"#444444"</span><span class="p">,</span>
-        <span class="s2">"alpha"</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
-        <span class="s2">"zorder"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;#444444&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
+        <span class="s2">&quot;zorder&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
     <span class="p">},</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -5873,7 +5892,7 @@ and 'upper_bound'.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/plot/plot.py</code></summary>
+              <summary>Source code in <code>skforecast\plot\plot.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">278</span>
 <span class="normal">279</span>
 <span class="normal">280</span>
@@ -5959,17 +5978,17 @@ and 'upper_bound'.</p>
     <span class="n">xaxis_title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">yaxis_title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">kwargs_subplots</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'figsize'</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">)},</span>
-    <span class="n">kwargs_fill_between</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'color'</span><span class="p">:</span> <span class="s1">'#444444'</span><span class="p">,</span> <span class="s1">'alpha'</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span> <span class="s1">'zorder'</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+    <span class="n">kwargs_subplots</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;figsize&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">)},</span>
+    <span class="n">kwargs_fill_between</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;#444444&#39;</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span> <span class="s1">&#39;zorder&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plot predicted intervals vs real values using matplotlib.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    predictions : pandas DataFrame</span>
-<span class="sd">        Predicted values and intervals. Expected columns are 'pred', 'lower_bound'</span>
-<span class="sd">        and 'upper_bound'.</span>
+<span class="sd">        Predicted values and intervals. Expected columns are &#39;pred&#39;, &#39;lower_bound&#39;</span>
+<span class="sd">        and &#39;upper_bound&#39;.</span>
 <span class="sd">    y_true : pandas Series, pandas DataFrame</span>
 <span class="sd">        Real values of target variable.</span>
 <span class="sd">    target_variable : str</span>
@@ -5984,16 +6003,16 @@ and 'upper_bound'.</p>
 <span class="sd">        Title of y-axis, by default None.</span>
 <span class="sd">    ax : matplotlib axes, default None</span>
 <span class="sd">        Axes where to plot, by default None.</span>
-<span class="sd">    kwargs_subplots : dict, default {'figsize': (7, 3)}</span>
+<span class="sd">    kwargs_subplots : dict, default {&#39;figsize&#39;: (7, 3)}</span>
 <span class="sd">        Additional keyword arguments (key, value mappings) to pass to `plt.subplots`.</span>
-<span class="sd">    kwargs_fill_between : dict, default {'color': '#444444', 'alpha': 0.3}</span>
+<span class="sd">    kwargs_fill_between : dict, default {&#39;color&#39;: &#39;#444444&#39;, &#39;alpha&#39;: 0.3}</span>
 <span class="sd">        Additional keyword arguments (key, value mappings) to pass to `ax.fill_between`.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs_subplots</span><span class="p">)</span>
@@ -6004,13 +6023,13 @@ and 'upper_bound'.</p>
     <span class="c1"># NOTE: matplotlib is used directly instead of the pandas plotting backend</span>
     <span class="c1"># to avoid the deprecated pandas matplotlib converters.</span>
     <span class="n">y_true_to_plot</span> <span class="o">=</span> <span class="n">y_true</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">predictions</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">target_variable</span><span class="p">]</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">y_true_to_plot</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">y_true_to_plot</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">label</span><span class="o">=</span><span class="s1">'real value'</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">predictions</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">predictions</span><span class="p">[</span><span class="s1">'pred'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">label</span><span class="o">=</span><span class="s1">'prediction'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">y_true_to_plot</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">y_true_to_plot</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;real value&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">predictions</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">predictions</span><span class="p">[</span><span class="s1">&#39;pred&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;prediction&#39;</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
         <span class="n">predictions</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
-        <span class="n">predictions</span><span class="p">[</span><span class="s1">'lower_bound'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
-        <span class="n">predictions</span><span class="p">[</span><span class="s1">'upper_bound'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
-        <span class="n">label</span><span class="o">=</span><span class="s1">'prediction interval'</span><span class="p">,</span>
+        <span class="n">predictions</span><span class="p">[</span><span class="s1">&#39;lower_bound&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+        <span class="n">predictions</span><span class="p">[</span><span class="s1">&#39;upper_bound&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+        <span class="n">label</span><span class="o">=</span><span class="s1">&#39;prediction interval&#39;</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs_fill_between</span>
     <span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">yaxis_title</span><span class="p">)</span>
@@ -6046,11 +6065,11 @@ and 'upper_bound'.</p>
     <span class="n">cv</span><span class="p">,</span>
     <span class="n">series_to_plot</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">plot_last_window</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">filename</span><span class="o">=</span><span class="s2">"backtesting.gif"</span><span class="p">,</span>
-    <span class="n">plt_style</span><span class="o">=</span><span class="s2">"ggplot"</span><span class="p">,</span>
+    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;backtesting.gif&quot;</span><span class="p">,</span>
+    <span class="n">plt_style</span><span class="o">=</span><span class="s2">&quot;ggplot&quot;</span><span class="p">,</span>
     <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
     <span class="n">colors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">title_template</span><span class="o">=</span><span class="s2">"Backtesting — Fold </span><span class="si">{fold_num}</span><span class="s2"> (refit: </span><span class="si">{refit}</span><span class="s2">)"</span><span class="p">,</span>
+    <span class="n">title_template</span><span class="o">=</span><span class="s2">&quot;Backtesting — Fold </span><span class="si">{fold_num}</span><span class="s2"> (refit: </span><span class="si">{refit}</span><span class="s2">)&quot;</span><span class="p">,</span>
     <span class="n">fps</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
     <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
 <span class="p">)</span>
@@ -6282,7 +6301,7 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/plot/plot.py</code></summary>
+              <summary>Source code in <code>skforecast\plot\plot.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">357</span>
 <span class="normal">358</span>
 <span class="normal">359</span>
@@ -6561,15 +6580,15 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
     <span class="n">cv</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">series_to_plot</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">plot_last_window</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"backtesting.gif"</span><span class="p">,</span>
-    <span class="n">plt_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"ggplot"</span><span class="p">,</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;backtesting.gif&quot;</span><span class="p">,</span>
+    <span class="n">plt_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ggplot&quot;</span><span class="p">,</span>
     <span class="n">figsize</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
     <span class="n">colors</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">title_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Backtesting — Fold </span><span class="si">{fold_num}</span><span class="s2"> (refit: </span><span class="si">{refit}</span><span class="s2">)"</span><span class="p">,</span>
+    <span class="n">title_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Backtesting — Fold </span><span class="si">{fold_num}</span><span class="s2"> (refit: </span><span class="si">{refit}</span><span class="s2">)&quot;</span><span class="p">,</span>
     <span class="n">fps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
     <span class="n">dpi</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a GIF of the backtesting folds using Matplotlib FuncAnimation.</span>
 
 <span class="sd">    Parameters</span>
@@ -6584,19 +6603,19 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
 <span class="sd">    plot_last_window : bool, default False</span>
 <span class="sd">        Whether to plot the last window of the time series. If True, window_size </span>
 <span class="sd">        must be specified in the cv object. </span>
-<span class="sd">    filename : str, default "backtesting.gif"</span>
+<span class="sd">    filename : str, default &quot;backtesting.gif&quot;</span>
 <span class="sd">        Name of the output GIF file.</span>
 <span class="sd">    figsize : tuple, default (9, 4)</span>
 <span class="sd">        Size of the figure.</span>
-<span class="sd">    plt_style : str, default "ggplot"</span>
+<span class="sd">    plt_style : str, default &quot;ggplot&quot;</span>
 <span class="sd">        Style to use for the plots. See Matplotlib styles for available options </span>
 <span class="sd">        here: https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html.</span>
 <span class="sd">    colors : dict, default None</span>
 <span class="sd">        Dictionary with colors for the different elements of the plot. Must </span>
-<span class="sd">        contain the following keys: ['train', 'last_window', 'gap', 'test', 'v_lines'].</span>
-<span class="sd">        Defaults colors are {"train": "#329239", "last_window": "#f7931a",</span>
-<span class="sd">        "gap": "#4d4d4d", "test": "#0d579b", "v_lines": "#252525"}</span>
-<span class="sd">    title_template : str, default "Backtesting — Fold {fold_num} (refit: {refit})"</span>
+<span class="sd">        contain the following keys: [&#39;train&#39;, &#39;last_window&#39;, &#39;gap&#39;, &#39;test&#39;, &#39;v_lines&#39;].</span>
+<span class="sd">        Defaults colors are {&quot;train&quot;: &quot;#329239&quot;, &quot;last_window&quot;: &quot;#f7931a&quot;,</span>
+<span class="sd">        &quot;gap&quot;: &quot;#4d4d4d&quot;, &quot;test&quot;: &quot;#0d579b&quot;, &quot;v_lines&quot;: &quot;#252525&quot;}</span>
+<span class="sd">    title_template : str, default &quot;Backtesting — Fold {fold_num} (refit: {refit})&quot;</span>
 <span class="sd">        Template for the title of each plot.</span>
 <span class="sd">    fps : int, default 2</span>
 <span class="sd">        Frames per second for the GIF.</span>
@@ -6608,45 +6627,45 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
 <span class="sd">    filename_path : Path</span>
 <span class="sd">        Path to the output GIF file.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">input_to_frame</span><span class="p">(</span>
                    <span class="n">data</span>       <span class="o">=</span> <span class="n">data</span><span class="p">,</span> 
-                   <span class="n">input_name</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">'y'</span>
+                   <span class="n">input_name</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;y&#39;</span>
                <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`data` must be a pandas Series or DataFrame. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`data` must be a pandas Series or DataFrame. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">RangeIndex</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">)):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`data` must have a pandas RangeIndex or DatetimeIndex. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`data` must have a pandas RangeIndex or DatetimeIndex. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">cv_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">cv</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
-    <span class="k">if</span> <span class="n">cv_name</span> <span class="o">!=</span> <span class="s2">"TimeSeriesFold"</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">cv_name</span> <span class="o">!=</span> <span class="s2">&quot;TimeSeriesFold&quot;</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`cv` must be a 'TimeSeriesFold' object. Got '</span><span class="si">{</span><span class="n">cv_name</span><span class="si">}</span><span class="s2">'."</span>
+            <span class="sa">f</span><span class="s2">&quot;`cv` must be a &#39;TimeSeriesFold&#39; object. Got &#39;</span><span class="si">{</span><span class="n">cv_name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fps</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">fps</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"`fps` must be a positive integer. Got </span><span class="si">{</span><span class="n">fps</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`fps` must be a positive integer. Got </span><span class="si">{</span><span class="n">fps</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dpi</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">dpi</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"`dpi` must be a positive integer. Got </span><span class="si">{</span><span class="n">dpi</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`dpi` must be a positive integer. Got </span><span class="si">{</span><span class="n">dpi</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">series_to_plot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">series_to_plot</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">series_to_plot</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"`series_to_plot` must be a list of column names. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">series_to_plot</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;`series_to_plot` must be a list of column names. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">series_to_plot</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
         <span class="n">missing_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">series_to_plot</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">missing_cols</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Columns not found in `data`: </span><span class="si">{</span><span class="n">missing_cols</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Columns not found in `data`: </span><span class="si">{</span><span class="n">missing_cols</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="n">folds</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">cv</span><span class="o">.</span><span class="n">return_all_indexes</span><span class="p">:</span>
@@ -6669,17 +6688,17 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
 
     <span class="k">if</span> <span class="n">colors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">colors</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">"train"</span><span class="p">:</span> <span class="s2">"#329239"</span><span class="p">,</span>
-            <span class="s2">"last_window"</span><span class="p">:</span> <span class="s2">"#f7931a"</span><span class="p">,</span>
-            <span class="s2">"gap"</span><span class="p">:</span> <span class="s2">"#4d4d4d"</span><span class="p">,</span>
-            <span class="s2">"test"</span><span class="p">:</span> <span class="s2">"#0d579b"</span><span class="p">,</span>
-            <span class="s2">"v_lines"</span><span class="p">:</span> <span class="s2">"#252525"</span><span class="p">,</span>
+            <span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="s2">&quot;#329239&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;last_window&quot;</span><span class="p">:</span> <span class="s2">&quot;#f7931a&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;gap&quot;</span><span class="p">:</span> <span class="s2">&quot;#4d4d4d&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="s2">&quot;#0d579b&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;v_lines&quot;</span><span class="p">:</span> <span class="s2">&quot;#252525&quot;</span><span class="p">,</span>
         <span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">colors</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;=</span> <span class="p">{</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"last_window"</span><span class="p">,</span> <span class="s2">"gap"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">,</span> <span class="s2">"v_lines"</span><span class="p">}:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">colors</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;=</span> <span class="p">{</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;last_window&quot;</span><span class="p">,</span> <span class="s2">&quot;gap&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="s2">&quot;v_lines&quot;</span><span class="p">}:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"`colors` must contain the following keys: "</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="p">[</span><span class="s1">'train'</span><span class="p">,</span><span class="w"> </span><span class="s1">'last_window'</span><span class="p">,</span><span class="w"> </span><span class="s1">'gap'</span><span class="p">,</span><span class="w"> </span><span class="s1">'test'</span><span class="p">,</span><span class="w"> </span><span class="s1">'v_lines'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">&quot;`colors` must contain the following keys: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;last_window&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;gap&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;test&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;v_lines&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
     <span class="n">y_values</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">series_to_plot</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
@@ -6717,18 +6736,18 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
                 <span class="n">x_index</span><span class="p">[</span><span class="n">train_end</span><span class="p">],</span>
                 <span class="n">y_min_relative</span><span class="p">,</span>
                 <span class="n">y_max_relative</span><span class="p">,</span>
-                <span class="n">facecolor</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">"train"</span><span class="p">],</span>
+                <span class="n">facecolor</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">],</span>
                 <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span> <span class="k">if</span> <span class="n">plot_last_window</span> <span class="k">else</span> <span class="mf">0.4</span><span class="p">,</span>
                 <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">label</span><span class="o">=</span><span class="s2">"Train"</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span>
             <span class="p">)</span>
 
             <span class="c1"># last_window</span>
             <span class="k">if</span> <span class="n">plot_last_window</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">cv</span><span class="o">.</span><span class="n">window_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                        <span class="s2">"Last window cannot be calculated because the `window_size` "</span>
-                        <span class="s2">"of the `cv` object is None."</span><span class="p">,</span>
+                        <span class="s2">&quot;Last window cannot be calculated because the `window_size` &quot;</span>
+                        <span class="s2">&quot;of the `cv` object is None.&quot;</span><span class="p">,</span>
                         <span class="n">IgnoredArgumentWarning</span>
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -6738,10 +6757,10 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
                         <span class="n">x_index</span><span class="p">[</span><span class="n">last_window_end</span><span class="p">],</span>
                         <span class="n">y_min_relative</span><span class="p">,</span>
                         <span class="n">y_max_relative</span><span class="p">,</span>
-                        <span class="n">facecolor</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">"last_window"</span><span class="p">],</span>
+                        <span class="n">facecolor</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">&quot;last_window&quot;</span><span class="p">],</span>
                         <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
                         <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                        <span class="n">label</span><span class="o">=</span><span class="s2">"Last window"</span><span class="p">,</span>
+                        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Last window&quot;</span><span class="p">,</span>
                     <span class="p">)</span>
 
             <span class="c1"># Gap (if exists)</span>
@@ -6753,12 +6772,12 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
                     <span class="n">x_index</span><span class="p">[</span><span class="n">gap_end</span><span class="p">],</span>
                     <span class="n">y_min_relative</span><span class="p">,</span>
                     <span class="n">y_max_relative</span><span class="p">,</span>
-                    <span class="n">facecolor</span><span class="o">=</span><span class="s2">"#bababa"</span><span class="p">,</span>
+                    <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;#bababa&quot;</span><span class="p">,</span>
                     <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
                     <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">label</span><span class="o">=</span><span class="s2">"Gap"</span><span class="p">,</span>
-                    <span class="n">hatch</span><span class="o">=</span><span class="s2">"////"</span><span class="p">,</span>
-                    <span class="n">edgecolor</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">"gap"</span><span class="p">],</span> 
+                    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Gap&quot;</span><span class="p">,</span>
+                    <span class="n">hatch</span><span class="o">=</span><span class="s2">&quot;////&quot;</span><span class="p">,</span>
+                    <span class="n">edgecolor</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">&quot;gap&quot;</span><span class="p">],</span> 
                 <span class="p">)</span>
 
             <span class="c1"># Test</span>
@@ -6768,10 +6787,10 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
                 <span class="n">x_index</span><span class="p">[</span><span class="n">test_end</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
                 <span class="n">y_min_relative</span><span class="p">,</span>
                 <span class="n">y_max_relative</span><span class="p">,</span>
-                <span class="n">facecolor</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">"test"</span><span class="p">],</span>
+                <span class="n">facecolor</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">],</span>
                 <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
                 <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">label</span><span class="o">=</span><span class="s2">"Test"</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">,</span>
             <span class="p">)</span>
 
             <span class="k">def</span><span class="w"> </span><span class="nf">vline</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
@@ -6780,9 +6799,9 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
                     <span class="n">ymin</span><span class="o">=</span><span class="n">y_min_relative</span><span class="p">,</span>
                     <span class="n">ymax</span><span class="o">=</span><span class="n">y_max_relative</span><span class="p">,</span>
                     <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                    <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span>
+                    <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span>
                     <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
-                    <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">"v_lines"</span><span class="p">],</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">&quot;v_lines&quot;</span><span class="p">],</span>
                 <span class="p">)</span>
 
             <span class="n">vline</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">train_end</span><span class="p">)</span>
@@ -6790,7 +6809,7 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
 
             <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">y_min_plot</span><span class="p">,</span> <span class="n">y_max_plot</span><span class="p">)</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"upper left"</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">)</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
 
         <span class="c1"># --------- Animation functions ----------</span>
@@ -6824,7 +6843,7 @@ Defaults colors are {"train": "#329239", "last_window": "#f7931a",
 
         <span class="c1"># Save GIF</span>
         <span class="n">writer</span> <span class="o">=</span> <span class="n">PillowWriter</span><span class="p">(</span><span class="n">fps</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">fps</span><span class="p">)))</span>
-        <span class="n">ani</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s1">'.gif'</span><span class="p">),</span> <span class="n">writer</span><span class="o">=</span><span class="n">writer</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="n">dpi</span><span class="p">)</span>
+        <span class="n">ani</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s1">&#39;.gif&#39;</span><span class="p">),</span> <span class="n">writer</span><span class="o">=</span><span class="n">writer</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="n">dpi</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
 
     <span class="n">filename_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="n">filename</span><span class="p">)</span>
@@ -6940,7 +6959,7 @@ internally.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/plot/plot.py</code></summary>
+              <summary>Source code in <code>skforecast\plot\plot.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
@@ -7005,7 +7024,7 @@ internally.</p>
     <span class="n">ax</span><span class="p">:</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">fig_kw</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Heatmap plot of a correlation matrix.</span>
 
 <span class="sd">    Parameters</span>
@@ -7023,7 +7042,7 @@ internally.</p>
 <span class="sd">    fig: matplotlib.figure.Figure</span>
 <span class="sd">        Matplotlib Figure.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">fig_kw</span><span class="p">)</span>
@@ -7031,7 +7050,7 @@ internally.</p>
         <span class="n">fig</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_figure</span><span class="p">()</span>
 
     <span class="n">values</span> <span class="o">=</span> <span class="n">corr</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
-    <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">'viridis'</span><span class="p">,</span> <span class="n">aspect</span><span class="o">=</span><span class="s1">'auto'</span><span class="p">)</span>
+    <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">,</span> <span class="n">aspect</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">)</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
 
     <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">corr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
@@ -7042,8 +7061,8 @@ internally.</p>
     <span class="c1"># Minor ticks to draw separating grid lines between cells</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">corr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">minor</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">corr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">minor</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s1">'minor'</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'w'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s1">'minor'</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="c1"># Annotate each cell, choosing text color for contrast with the background</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
@@ -7052,12 +7071,12 @@ internally.</p>
             <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">cmap</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
             <span class="n">luminance</span> <span class="o">=</span> <span class="mf">0.299</span> <span class="o">*</span> <span class="n">r</span> <span class="o">+</span> <span class="mf">0.587</span> <span class="o">*</span> <span class="n">g</span> <span class="o">+</span> <span class="mf">0.114</span> <span class="o">*</span> <span class="n">b</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
-                <span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.2g</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
-                <span class="n">ha</span><span class="o">=</span><span class="s1">'center'</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">'center'</span><span class="p">,</span>
-                <span class="n">color</span><span class="o">=</span><span class="s1">'white'</span> <span class="k">if</span> <span class="n">luminance</span> <span class="o">&lt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="s1">'black'</span>
+                <span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.2g</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span> <span class="k">if</span> <span class="n">luminance</span> <span class="o">&lt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="s1">&#39;black&#39;</span>
             <span class="p">)</span>
 
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Time series'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time series&#39;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">fig</span>
 </code></pre></div></td></tr></table></div>
@@ -7292,10 +7311,10 @@ internally.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       

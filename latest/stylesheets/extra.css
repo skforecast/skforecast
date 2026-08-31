@@ -257,3 +257,18 @@ Sticky Banner Styles
 */
 /* The outdated version banner positioning and offset are handled by
    version-switcher.js to avoid layout issues when the banner is not visible. */
+
+/*
+===============================
+Announcement Bar Styles
+===============================
+*/
+/* Brand accent, scoped to the announce bar only (not the outdated banner). */
+[data-md-component="announce"] .md-banner a {
+  color: var(--md-accent-fg-color);
+  font-weight: 600;
+}
+
+[data-md-component="announce"] .md-banner a:hover {
+  text-decoration: underline;
+}

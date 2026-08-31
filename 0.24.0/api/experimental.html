@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -100,6 +100,25 @@
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+  👋 New in the skforecast ecosystem:
+<a href="https://studio.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast studio</strong></a> (train and evaluate models visually, no coding required) and
+<a href="https://ai.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast-ai</strong></a> (agentic time series forecasting).
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
       
     </div>
     
@@ -4304,12 +4323,12 @@
   <a href="#skforecast.experimental._splitter.TimeSeriesSplitter-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Functions
+        Methods:
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Functions">
+    <nav class="md-nav" aria-label="Methods:">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5368,13 +5387,13 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 </code></pre></div>
     <div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Single series (backward compatible)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="p">{</span><span class="s1">'series_a'</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="s1">'series_b'</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">)},</span>
-<span class="gp">... </span>    <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="s1">'2023-01-01'</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">'d'</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;series_a&#39;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="s1">&#39;series_b&#39;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">)},</span>
+<span class="gp">... </span>    <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="s1">&#39;2023-01-01&#39;</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">splitter</span> <span class="o">=</span> <span class="n">TimeSeriesSplitter</span><span class="p">(</span><span class="n">df1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">train_set</span><span class="p">,</span> <span class="n">test_set</span> <span class="o">=</span> <span class="n">splitter</span><span class="o">.</span><span class="n">split_by_date</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">end_train</span><span class="o">=</span><span class="s1">'2023-03-11'</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">output_format</span><span class="o">=</span><span class="s1">'wide'</span>
+<span class="gp">... </span>    <span class="n">end_train</span><span class="o">=</span><span class="s1">&#39;2023-03-11&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">output_format</span><span class="o">=</span><span class="s1">&#39;wide&#39;</span>
 <span class="gp">... </span><span class="p">)</span>
 </code></pre></div>
 
@@ -5486,7 +5505,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/experimental/_splitter.py</code></summary>
+                    <summary>Source code in <code>skforecast\experimental\_splitter.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 76</span>
 <span class="normal"> 77</span>
 <span class="normal"> 78</span>
@@ -5551,7 +5570,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 <span class="normal">137</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Initialize TimeSeriesSplitter with one or more series.</span>
 
 <span class="sd">    Parameters</span>
@@ -5565,9 +5584,9 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 <span class="sd">        If no series provided or series have invalid format.</span>
 <span class="sd">    TypeError</span>
 <span class="sd">        If series are not in a supported format.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'At least one series must be provided.'</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;At least one series must be provided.&#39;</span><span class="p">)</span>
 
     <span class="c1"># -- Process each series argument independently</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">series_groups_</span> <span class="o">=</span> <span class="p">[]</span>
@@ -5609,7 +5628,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 
     <span class="c1"># -- Store version information</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">skforecast_version</span> <span class="o">=</span> <span class="n">__version__</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -5790,7 +5809,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
   </span>
 
 <a href="#skforecast.experimental._splitter.TimeSeriesSplitter.n_timeseries" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_timeseries</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="n">series_indexes_</span><span class="p">))</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_timeseries</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">series_indexes_</span><span class="p">))</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5834,7 +5853,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
   </span>
 
 <a href="#skforecast.experimental._splitter.TimeSeriesSplitter.python_version" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5844,7 +5863,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 </div>
 
 
-<h3 id="skforecast.experimental._splitter.TimeSeriesSplitter-functions">Functions<a href="#skforecast.experimental._splitter.TimeSeriesSplitter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.experimental._splitter.TimeSeriesSplitter-functions">Methods:<a href="#skforecast.experimental._splitter.TimeSeriesSplitter-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -5886,7 +5905,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/experimental/_splitter.py</code></summary>
+              <summary>Source code in <code>skforecast\experimental\_splitter.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">139</span>
 <span class="normal">140</span>
 <span class="normal">141</span>
@@ -6016,26 +6035,26 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 <span class="normal">265</span>
 <span class="normal">266</span>
 <span class="normal">267</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return HTML representation for Jupyter notebooks.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    str</span>
 <span class="sd">        HTML string with embedded CSS styling and object information.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># -- Define a component id</span>
-    <span class="n">unique_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'-'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span>
+    <span class="n">unique_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
 
     <span class="c1"># -- Define render colors</span>
-    <span class="n">background_color</span> <span class="o">=</span> <span class="s1">'#f0f8ff'</span>
-    <span class="n">section_color</span> <span class="o">=</span> <span class="s1">'#b3dbfd'</span>
+    <span class="n">background_color</span> <span class="o">=</span> <span class="s1">&#39;#f0f8ff&#39;</span>
+    <span class="n">section_color</span> <span class="o">=</span> <span class="s1">&#39;#b3dbfd&#39;</span>
 
     <span class="c1"># -- Define CSS styles</span>
-    <span class="n">style</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+    <span class="n">style</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">    &lt;style&gt;</span>
 <span class="s2">        .container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2"> </span><span class="se">{{</span>
-<span class="s2">            font-family: 'Arial', sans-serif;</span>
+<span class="s2">            font-family: &#39;Arial&#39;, sans-serif;</span>
 <span class="s2">            font-size: 0.9em;</span>
 <span class="s2">            color: #333333;</span>
 <span class="s2">            border: 1px solid #ddd;</span>
@@ -6070,7 +6089,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 <span class="s2">            background-color: #e0e0e0;</span>
 <span class="s2">        </span><span class="se">}}</span>
 <span class="s2">        .container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2"> ul </span><span class="se">{{</span>
-<span class="s2">            font-family: 'Courier New', monospace;</span>
+<span class="s2">            font-family: &#39;Courier New&#39;, monospace;</span>
 <span class="s2">            list-style-type: none;</span>
 <span class="s2">            padding-left: 20px;</span>
 <span class="s2">            margin: 10px 0;</span>
@@ -6078,14 +6097,14 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 <span class="s2">        </span><span class="se">}}</span>
 <span class="s2">        .container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2"> li </span><span class="se">{{</span>
 <span class="s2">            margin: 5px 0;</span>
-<span class="s2">            font-family: 'Courier New', monospace;</span>
+<span class="s2">            font-family: &#39;Courier New&#39;, monospace;</span>
 <span class="s2">        </span><span class="se">}}</span>
 <span class="s2">        .container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2"> li strong </span><span class="se">{{</span>
 <span class="s2">            font-weight: bold;</span>
 <span class="s2">            color: #444444;</span>
 <span class="s2">        </span><span class="se">}}</span>
 <span class="s2">        .container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2"> li::before </span><span class="se">{{</span>
-<span class="s2">            content: "- ";</span>
+<span class="s2">            content: &quot;- &quot;;</span>
 <span class="s2">            color: #666666;</span>
 <span class="s2">        </span><span class="se">}}</span>
 <span class="s2">        .container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2"> .group-section </span><span class="se">{{</span>
@@ -6096,33 +6115,33 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 <span class="s2">            margin-top: 5px;</span>
 <span class="s2">        </span><span class="se">}}</span>
 <span class="s2">    &lt;/style&gt;</span>
-<span class="s2">    """</span>
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="c1"># -- Build series groups html content</span>
-    <span class="n">groups_html</span> <span class="o">=</span> <span class="s1">''</span>
+    <span class="n">groups_html</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_groups_</span><span class="p">):</span>
         <span class="n">index_freq_info</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s1">'&lt;strong&gt;Frequency:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freqs_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">freqstr</span><span class="si">}</span><span class="s1">'</span>
+            <span class="sa">f</span><span class="s1">&#39;&lt;strong&gt;Frequency:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freqs_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">freqstr</span><span class="si">}</span><span class="s1">&#39;</span>
             <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_types_</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">)</span>
-            <span class="k">else</span> <span class="sa">f</span><span class="s1">'&lt;strong&gt;Step:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freqs_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1">'</span>
+            <span class="k">else</span> <span class="sa">f</span><span class="s1">&#39;&lt;strong&gt;Step:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freqs_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
         <span class="p">)</span>
         <span class="n">n_timeseries</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series_groups_</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
-        <span class="n">groups_html</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"""</span>
-<span class="s2">            &lt;div class="group-section"&gt;</span>
+        <span class="n">groups_html</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            &lt;div class=&quot;group-section&quot;&gt;</span>
 <span class="s2">                &lt;strong&gt;Group </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">:&lt;/strong&gt;</span>
-<span class="s2">                &lt;ul style="margin-top: 3px;margin-bottom: 3px;"&gt;</span>
+<span class="s2">                &lt;ul style=&quot;margin-top: 3px;margin-bottom: 3px;&quot;&gt;</span>
 <span class="s2">                    &lt;li&gt;&lt;strong&gt;Series count:&lt;/strong&gt; </span><span class="si">{</span><span class="n">n_timeseries</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
 <span class="s2">                    &lt;li&gt;&lt;strong&gt;Index type:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_types_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
 <span class="s2">                    &lt;li&gt;</span><span class="si">{</span><span class="n">index_freq_info</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
 <span class="s2">                    &lt;li&gt;&lt;strong&gt;Range:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_min_indexes_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_indexes_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
 <span class="s2">                &lt;/ul&gt;</span>
 <span class="s2">            &lt;/div&gt;</span>
-<span class="s2">        """</span>
+<span class="s2">        &quot;&quot;&quot;</span>
 
     <span class="c1"># -- Build global html content</span>
-    <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
-<span class="s2">    &lt;div class="container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2">"&gt;</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    &lt;div class=&quot;container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2">&quot;&gt;</span>
 <span class="s2">        &lt;h2&gt;TimeSeriesSplitter&lt;/h2&gt;</span>
 <span class="s2">        &lt;details open&gt;</span>
 <span class="s2">            &lt;summary&gt;Configuration&lt;/summary&gt;</span>
@@ -6141,7 +6160,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 <span class="s2">            &lt;/ul&gt;</span>
 <span class="s2">        &lt;/details&gt;</span>
 <span class="s2">    &lt;/div&gt;</span>
-<span class="s2">    """</span>
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="n">style</span> <span class="o">+</span> <span class="n">content</span>
 </code></pre></div></td></tr></table></div>
@@ -6158,7 +6177,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 
 
 <a href="#skforecast.experimental._splitter.TimeSeriesSplitter._convert_date_to_position" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">_convert_date_to_position</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">date_name</span><span class="o">=</span><span class="s1">'date'</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">_convert_date_to_position</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">date_name</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6276,7 +6295,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/experimental/_splitter.py</code></summary>
+              <summary>Source code in <code>skforecast\experimental\_splitter.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">269</span>
 <span class="normal">270</span>
 <span class="normal">271</span>
@@ -6321,9 +6340,9 @@ splits are returned as a list of tuples (one tuple per series group).</p>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">date</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">,</span>
     <span class="n">index</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span>
-    <span class="n">date_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'date'</span><span class="p">,</span>
+    <span class="n">date_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert a date to its position in the given index.</span>
 
 <span class="sd">    Parameters</span>
@@ -6332,7 +6351,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 <span class="sd">        Date to convert.</span>
 <span class="sd">    index : pd.Index</span>
 <span class="sd">        Index to search in.</span>
-<span class="sd">    date_name : str, default 'date'</span>
+<span class="sd">    date_name : str, default &#39;date&#39;</span>
 <span class="sd">        Name of the date parameter (for error messages).</span>
 
 <span class="sd">    Returns</span>
@@ -6344,7 +6363,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 <span class="sd">    ------</span>
 <span class="sd">    ValueError</span>
 <span class="sd">        If date is outside the valid range.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># -- Convert any string date input to Timestamp object</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
@@ -6352,8 +6371,8 @@ splits are returned as a list of tuples (one tuple per series group).</p>
     <span class="c1"># -- Raise error if data is not in required time range</span>
     <span class="k">if</span> <span class="n">date</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">index</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">date_name</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s1"> is not present in the series index. '</span>
-            <span class="sa">f</span><span class="s1">'Available range: </span><span class="si">{</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1"> to </span><span class="si">{</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">.'</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">date_name</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s1"> is not present in the series index. &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;Available range: </span><span class="si">{</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1"> to </span><span class="si">{</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">.&#39;</span>
         <span class="p">)</span>
 
     <span class="c1"># -- Extract the numeric position</span>
@@ -6441,7 +6460,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/experimental/_splitter.py</code></summary>
+              <summary>Source code in <code>skforecast\experimental\_splitter.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">311</span>
 <span class="normal">312</span>
 <span class="normal">313</span>
@@ -6529,7 +6548,7 @@ splits are returned as a list of tuples (one tuple per series group).</p>
     <span class="n">end_validation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">end_test</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Validate and convert date split arguments to positions for a specific group.</span>
 
 <span class="sd">    Parameters</span>
@@ -6541,13 +6560,13 @@ splits are returned as a list of tuples (one tuple per series group).</p>
 <span class="sd">    -------</span>
 <span class="sd">    tuple[int, int, int | None, int | None]</span>
 <span class="sd">        Positions for (start_train, end_train, end_validation, end_test).</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># -- Force index to be DatetimeIndex object</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_types_</span><span class="p">[</span><span class="n">group_idx</span><span class="p">]</span> <span class="o">!=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">'Group </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">: `split_by_date` requires `DatetimeIndex` object. '</span>
-            <span class="sa">f</span><span class="s1">'Current index type: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_types_</span><span class="p">[</span><span class="n">group_idx</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">. '</span>
-            <span class="s1">'Consider using `split_by_size` instead.'</span>
+            <span class="sa">f</span><span class="s1">&#39;Group </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">: `split_by_date` requires `DatetimeIndex` object. &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;Current index type: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_types_</span><span class="p">[</span><span class="n">group_idx</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">. &#39;</span>
+            <span class="s1">&#39;Consider using `split_by_size` instead.&#39;</span>
         <span class="p">)</span>
 
     <span class="n">first_index</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series_indexes_</span><span class="p">[</span><span class="n">group_idx</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
@@ -6557,47 +6576,47 @@ splits are returned as a list of tuples (one tuple per series group).</p>
         <span class="n">start_train_pos</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">start_train_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_date_to_position</span><span class="p">(</span>
-            <span class="n">start_train</span><span class="p">,</span> <span class="n">first_index</span><span class="p">,</span> <span class="s1">'start_train'</span>
+            <span class="n">start_train</span><span class="p">,</span> <span class="n">first_index</span><span class="p">,</span> <span class="s1">&#39;start_train&#39;</span>
         <span class="p">)</span>
 
     <span class="n">end_train_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_date_to_position</span><span class="p">(</span>
-        <span class="n">end_train</span><span class="p">,</span> <span class="n">first_index</span><span class="p">,</span> <span class="s1">'end_train'</span>
+        <span class="n">end_train</span><span class="p">,</span> <span class="n">first_index</span><span class="p">,</span> <span class="s1">&#39;end_train&#39;</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">end_validation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">end_validation_pos</span> <span class="o">=</span> <span class="n">end_train_pos</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">end_validation_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_date_to_position</span><span class="p">(</span>
-            <span class="n">end_validation</span><span class="p">,</span> <span class="n">first_index</span><span class="p">,</span> <span class="s1">'end_validation'</span>
+            <span class="n">end_validation</span><span class="p">,</span> <span class="n">first_index</span><span class="p">,</span> <span class="s1">&#39;end_validation&#39;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">end_test</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">end_test_pos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">first_index</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">end_test_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_date_to_position</span><span class="p">(</span>
-            <span class="n">end_test</span><span class="p">,</span> <span class="n">first_index</span><span class="p">,</span> <span class="s1">'end_test'</span>
+            <span class="n">end_test</span><span class="p">,</span> <span class="n">first_index</span><span class="p">,</span> <span class="s1">&#39;end_test&#39;</span>
         <span class="p">)</span>
 
     <span class="c1"># -- Validate position order</span>
     <span class="k">if</span> <span class="n">start_train_pos</span> <span class="o">&gt;=</span> <span class="n">end_train_pos</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">'Group </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">: start_train must be earlier than end_train. '</span>
-            <span class="sa">f</span><span class="s1">'Got start_train=</span><span class="si">{</span><span class="n">first_index</span><span class="p">[</span><span class="n">start_train_pos</span><span class="p">]</span><span class="si">}</span><span class="s1">, '</span>
-            <span class="sa">f</span><span class="s1">'end_train=</span><span class="si">{</span><span class="n">first_index</span><span class="p">[</span><span class="n">end_train_pos</span><span class="p">]</span><span class="si">}</span><span class="s1">.'</span>
+            <span class="sa">f</span><span class="s1">&#39;Group </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">: start_train must be earlier than end_train. &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;Got start_train=</span><span class="si">{</span><span class="n">first_index</span><span class="p">[</span><span class="n">start_train_pos</span><span class="p">]</span><span class="si">}</span><span class="s1">, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;end_train=</span><span class="si">{</span><span class="n">first_index</span><span class="p">[</span><span class="n">end_train_pos</span><span class="p">]</span><span class="si">}</span><span class="s1">.&#39;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">end_train_pos</span> <span class="o">&gt;</span> <span class="n">end_validation_pos</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">'Group </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">: end_train must be earlier than or equal to end_validation. '</span>
-            <span class="sa">f</span><span class="s1">'Got end_train=</span><span class="si">{</span><span class="n">first_index</span><span class="p">[</span><span class="n">end_train_pos</span><span class="p">]</span><span class="si">}</span><span class="s1">, '</span>
-            <span class="sa">f</span><span class="s1">'end_validation=</span><span class="si">{</span><span class="n">first_index</span><span class="p">[</span><span class="n">end_validation_pos</span><span class="p">]</span><span class="si">}</span><span class="s1">.'</span>
+            <span class="sa">f</span><span class="s1">&#39;Group </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">: end_train must be earlier than or equal to end_validation. &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;Got end_train=</span><span class="si">{</span><span class="n">first_index</span><span class="p">[</span><span class="n">end_train_pos</span><span class="p">]</span><span class="si">}</span><span class="s1">, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;end_validation=</span><span class="si">{</span><span class="n">first_index</span><span class="p">[</span><span class="n">end_validation_pos</span><span class="p">]</span><span class="si">}</span><span class="s1">.&#39;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">end_validation_pos</span> <span class="o">&gt;</span> <span class="n">end_test_pos</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">'Group </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">: end_validation must be earlier than or equal to end_test. '</span>
-            <span class="sa">f</span><span class="s1">'Got end_validation=</span><span class="si">{</span><span class="n">first_index</span><span class="p">[</span><span class="n">end_validation_pos</span><span class="p">]</span><span class="si">}</span><span class="s1">, '</span>
-            <span class="sa">f</span><span class="s1">'end_test=</span><span class="si">{</span><span class="n">first_index</span><span class="p">[</span><span class="n">end_test_pos</span><span class="p">]</span><span class="si">}</span><span class="s1">.'</span>
+            <span class="sa">f</span><span class="s1">&#39;Group </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">: end_validation must be earlier than or equal to end_test. &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;Got end_validation=</span><span class="si">{</span><span class="n">first_index</span><span class="p">[</span><span class="n">end_validation_pos</span><span class="p">]</span><span class="si">}</span><span class="s1">, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;end_test=</span><span class="si">{</span><span class="n">first_index</span><span class="p">[</span><span class="n">end_test_pos</span><span class="p">]</span><span class="si">}</span><span class="s1">.&#39;</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">start_train_pos</span><span class="p">,</span> <span class="n">end_train_pos</span><span class="p">,</span> <span class="n">end_validation_pos</span><span class="p">,</span> <span class="n">end_test_pos</span>
@@ -6736,7 +6755,7 @@ proportion is included.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/experimental/_splitter.py</code></summary>
+              <summary>Source code in <code>skforecast\experimental\_splitter.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">392</span>
 <span class="normal">393</span>
 <span class="normal">394</span>
@@ -6798,7 +6817,7 @@ proportion is included.</p>
     <span class="n">total_len</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">group_idx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert a size specification to an absolute integer count.</span>
 
 <span class="sd">    This method handles both absolute (integer) and proportional (float)</span>
@@ -6813,12 +6832,12 @@ proportion is included.</p>
 <span class="sd">        - If float: Proportion of total_len (must be between 0 and 1)</span>
 <span class="sd">        - If None: Returns None (indicates no size specified)</span>
 <span class="sd">    size_name : str</span>
-<span class="sd">        Name of the size parameter (e.g., 'train_size', 'validation_size').</span>
+<span class="sd">        Name of the size parameter (e.g., &#39;train_size&#39;, &#39;validation_size&#39;).</span>
 <span class="sd">        Used in error messages for clarity.</span>
 <span class="sd">    total_len : int</span>
 <span class="sd">        Total length of the series against which proportions are calculated.</span>
 <span class="sd">    group_idx : int | None, default None</span>
-<span class="sd">        Index of the series group being processed. If provided, it's included</span>
+<span class="sd">        Index of the series group being processed. If provided, it&#39;s included</span>
 <span class="sd">        in error messages for multi-group scenarios.</span>
 
 <span class="sd">    Returns</span>
@@ -6827,19 +6846,19 @@ proportion is included.</p>
 <span class="sd">        Absolute count as integer, or None if size was None.</span>
 <span class="sd">        For float inputs, uses ceiling to ensure at least the requested</span>
 <span class="sd">        proportion is included.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="c1"># -- Build error message prefix with optional group index</span>
-    <span class="n">error_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'Group </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">: '</span> <span class="k">if</span> <span class="n">group_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">''</span>
+    <span class="n">error_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Group </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">: &#39;</span> <span class="k">if</span> <span class="n">group_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
         <span class="c1"># -- Validate proportion is in valid range</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">error_prefix</span><span class="si">}{</span><span class="n">size_name</span><span class="si">}</span><span class="s1"> proportion must be between 0 and 1. '</span>
-                <span class="sa">f</span><span class="s1">'Got </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s1">.'</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">error_prefix</span><span class="si">}{</span><span class="n">size_name</span><span class="si">}</span><span class="s1"> proportion must be between 0 and 1. &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;Got </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s1">.&#39;</span>
             <span class="p">)</span>
         <span class="c1"># -- Convert proportion to count using ceiling to ensure minimum coverage</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">size</span> <span class="o">*</span> <span class="n">total_len</span><span class="p">))</span>
@@ -6925,7 +6944,7 @@ proportion is included.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/experimental/_splitter.py</code></summary>
+              <summary>Source code in <code>skforecast\experimental\_splitter.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">448</span>
 <span class="normal">449</span>
 <span class="normal">450</span>
@@ -6980,7 +6999,7 @@ proportion is included.</p>
     <span class="n">validation_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">test_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Validate and convert size split arguments for a specific group.</span>
 
 <span class="sd">    Parameters</span>
@@ -6992,19 +7011,19 @@ proportion is included.</p>
 <span class="sd">    -------</span>
 <span class="sd">    tuple[int, int | None, int | None]</span>
 <span class="sd">        Absolute sizes for (train, validation, test).</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># -- Extract sample index (first one)</span>
     <span class="n">first_index</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series_indexes_</span><span class="p">[</span><span class="n">group_idx</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
     <span class="n">total_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">first_index</span><span class="p">)</span>
 
     <span class="c1"># Convert all sizes using the helper method</span>
-    <span class="n">train_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_size</span><span class="p">(</span><span class="n">train_size</span><span class="p">,</span> <span class="s1">'train_size'</span><span class="p">,</span> <span class="n">total_len</span><span class="p">,</span> <span class="n">group_idx</span><span class="p">)</span>
+    <span class="n">train_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_size</span><span class="p">(</span><span class="n">train_size</span><span class="p">,</span> <span class="s1">&#39;train_size&#39;</span><span class="p">,</span> <span class="n">total_len</span><span class="p">,</span> <span class="n">group_idx</span><span class="p">)</span>
     <span class="n">validation_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_size</span><span class="p">(</span>
-        <span class="n">validation_size</span><span class="p">,</span> <span class="s1">'validation_size'</span><span class="p">,</span> <span class="n">total_len</span><span class="p">,</span> <span class="n">group_idx</span>
+        <span class="n">validation_size</span><span class="p">,</span> <span class="s1">&#39;validation_size&#39;</span><span class="p">,</span> <span class="n">total_len</span><span class="p">,</span> <span class="n">group_idx</span>
     <span class="p">)</span>
-    <span class="n">test_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_size</span><span class="p">(</span><span class="n">test_size</span><span class="p">,</span> <span class="s1">'test_size'</span><span class="p">,</span> <span class="n">total_len</span><span class="p">,</span> <span class="n">group_idx</span><span class="p">)</span>
+    <span class="n">test_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_size</span><span class="p">(</span><span class="n">test_size</span><span class="p">,</span> <span class="s1">&#39;test_size&#39;</span><span class="p">,</span> <span class="n">total_len</span><span class="p">,</span> <span class="n">group_idx</span><span class="p">)</span>
 
-    <span class="c1"># -- Validate total doesn't exceed series length</span>
+    <span class="c1"># -- Validate total doesn&#39;t exceed series length</span>
     <span class="n">total_requested</span> <span class="o">=</span> <span class="n">train_count</span>
     <span class="k">if</span> <span class="n">validation_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">total_requested</span> <span class="o">+=</span> <span class="n">validation_count</span>
@@ -7013,10 +7032,10 @@ proportion is included.</p>
 
     <span class="k">if</span> <span class="n">total_requested</span> <span class="o">&gt;</span> <span class="n">total_len</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">'Group </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">: Sum of requested sizes (</span><span class="si">{</span><span class="n">total_requested</span><span class="si">}</span><span class="s1">) '</span>
-            <span class="sa">f</span><span class="s1">'exceeds series length (</span><span class="si">{</span><span class="n">total_len</span><span class="si">}</span><span class="s1">). '</span>
-            <span class="sa">f</span><span class="s1">'Got train_size=</span><span class="si">{</span><span class="n">train_count</span><span class="si">}</span><span class="s1">, validation_size=</span><span class="si">{</span><span class="n">validation_count</span><span class="si">}</span><span class="s1">, '</span>
-            <span class="sa">f</span><span class="s1">'test_size=</span><span class="si">{</span><span class="n">test_count</span><span class="si">}</span><span class="s1">.'</span>
+            <span class="sa">f</span><span class="s1">&#39;Group </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">: Sum of requested sizes (</span><span class="si">{</span><span class="n">total_requested</span><span class="si">}</span><span class="s1">) &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;exceeds series length (</span><span class="si">{</span><span class="n">total_len</span><span class="si">}</span><span class="s1">). &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;Got train_size=</span><span class="si">{</span><span class="n">train_count</span><span class="si">}</span><span class="s1">, validation_size=</span><span class="si">{</span><span class="n">validation_count</span><span class="si">}</span><span class="s1">, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;test_size=</span><span class="si">{</span><span class="n">test_count</span><span class="si">}</span><span class="s1">.&#39;</span>
         <span class="p">)</span>
 
     <span class="c1"># -- Return set sample counts</span>
@@ -7114,7 +7133,7 @@ proportion is included.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/experimental/_splitter.py</code></summary>
+              <summary>Source code in <code>skforecast\experimental\_splitter.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">497</span>
 <span class="normal">498</span>
 <span class="normal">499</span>
@@ -7151,7 +7170,7 @@ proportion is included.</p>
     <span class="n">series_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span>
     <span class="n">positions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Split a single series dictionary according to positions.</span>
 
 <span class="sd">    Parameters</span>
@@ -7165,7 +7184,7 @@ proportion is included.</p>
 <span class="sd">    -------</span>
 <span class="sd">    list[dict[str, pd.Series]]</span>
 <span class="sd">        List of dictionaries, one for each split.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># -- Collect series ids</span>
     <span class="n">split_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">positions</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="n">split_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">split_names</span><span class="p">}</span>
@@ -7192,7 +7211,7 @@ proportion is included.</p>
 
 
 <a href="#skforecast.experimental._splitter.TimeSeriesSplitter._convert_output" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">_convert_output</span><span class="p">(</span><span class="n">split_dicts</span><span class="p">,</span> <span class="n">output_format</span><span class="o">=</span><span class="s1">'wide'</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">_convert_output</span><span class="p">(</span><span class="n">split_dicts</span><span class="p">,</span> <span class="n">output_format</span><span class="o">=</span><span class="s1">&#39;wide&#39;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7271,7 +7290,7 @@ proportion is included.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/experimental/_splitter.py</code></summary>
+              <summary>Source code in <code>skforecast\experimental\_splitter.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">530</span>
 <span class="normal">531</span>
 <span class="normal">532</span>
@@ -7317,45 +7336,45 @@ proportion is included.</p>
 <span class="normal">572</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_convert_output</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">split_dicts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]],</span>
-    <span class="n">output_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">'wide'</span><span class="p">,</span> <span class="s1">'long'</span><span class="p">,</span> <span class="s1">'long_multi_index'</span><span class="p">,</span> <span class="s1">'dict'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'wide'</span><span class="p">,</span>
+    <span class="n">output_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wide&#39;</span><span class="p">,</span> <span class="s1">&#39;long&#39;</span><span class="p">,</span> <span class="s1">&#39;long_multi_index&#39;</span><span class="p">,</span> <span class="s1">&#39;dict&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;wide&#39;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert split data to requested output format.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    split_dicts : list[dict[str, pd.Series]]</span>
 <span class="sd">        List of split data as dictionaries.</span>
-<span class="sd">    output_format : {'wide', 'long', 'long_multi_index', 'dict'}, default 'wide'</span>
+<span class="sd">    output_format : {&#39;wide&#39;, &#39;long&#39;, &#39;long_multi_index&#39;, &#39;dict&#39;}, default &#39;wide&#39;</span>
 <span class="sd">        Output format.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    tuple</span>
 <span class="sd">        Splits in requested format.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">match</span> <span class="n">output_format</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s1">'dict'</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s1">&#39;dict&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">split_dicts</span><span class="p">)</span>
 
-        <span class="k">case</span> <span class="s1">'wide'</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s1">&#39;wide&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
                 <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">split_dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">split_dict</span> <span class="ow">in</span> <span class="n">split_dicts</span>
             <span class="p">)</span>
 
-        <span class="k">case</span> <span class="s1">'long'</span> <span class="o">|</span> <span class="s1">'long_multi_index'</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s1">&#39;long&#39;</span> <span class="o">|</span> <span class="s1">&#39;long_multi_index&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
                 <span class="n">reshape_series_wide_to_long</span><span class="p">(</span>
                     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">split_dict</span><span class="p">),</span>
-                    <span class="n">return_multi_index</span><span class="o">=</span><span class="p">(</span><span class="n">output_format</span> <span class="o">==</span> <span class="s1">'long_multi_index'</span><span class="p">),</span>
+                    <span class="n">return_multi_index</span><span class="o">=</span><span class="p">(</span><span class="n">output_format</span> <span class="o">==</span> <span class="s1">&#39;long_multi_index&#39;</span><span class="p">),</span>
                 <span class="p">)</span>
                 <span class="k">for</span> <span class="n">split_dict</span> <span class="ow">in</span> <span class="n">split_dicts</span>
             <span class="p">)</span>
 
         <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">'Output format `</span><span class="si">{</span><span class="n">output_format</span><span class="si">}</span><span class="s1">` is not supported. '</span>
-                <span class="sa">f</span><span class="s1">'Choose one of ["wide", "long", "long_multi_index", "dict"].'</span>
+                <span class="sa">f</span><span class="s1">&#39;Output format `</span><span class="si">{</span><span class="n">output_format</span><span class="si">}</span><span class="s1">` is not supported. &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;Choose one of [&quot;wide&quot;, &quot;long&quot;, &quot;long_multi_index&quot;, &quot;dict&quot;].&#39;</span>
             <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -7376,7 +7395,7 @@ proportion is included.</p>
     <span class="n">start_train</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">end_validation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">end_test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">output_format</span><span class="o">=</span><span class="s2">"wide"</span><span class="p">,</span>
+    <span class="n">output_format</span><span class="o">=</span><span class="s2">&quot;wide&quot;</span><span class="p">,</span>
     <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -7564,17 +7583,17 @@ If multiple series groups: list of tuples, one per group</p>
 <p><span class="doc-section-title">Examples:</span></p>
     <div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Single group</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">splitter</span> <span class="o">=</span> <span class="n">TimeSeriesSplitter</span><span class="p">(</span><span class="n">df1</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">splitter</span><span class="o">.</span><span class="n">split_by_date</span><span class="p">(</span><span class="n">end_train</span><span class="o">=</span><span class="s1">'2023-03-11'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">splitter</span><span class="o">.</span><span class="n">split_by_date</span><span class="p">(</span><span class="n">end_train</span><span class="o">=</span><span class="s1">&#39;2023-03-11&#39;</span><span class="p">)</span>
 </code></pre></div>
     <div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multiple groups</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">splitter</span> <span class="o">=</span> <span class="n">TimeSeriesSplitter</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">df3</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">splits</span> <span class="o">=</span> <span class="n">splitter</span><span class="o">.</span><span class="n">split_by_date</span><span class="p">(</span><span class="n">end_train</span><span class="o">=</span><span class="s1">'2023-03-11'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">splits</span> <span class="o">=</span> <span class="n">splitter</span><span class="o">.</span><span class="n">split_by_date</span><span class="p">(</span><span class="n">end_train</span><span class="o">=</span><span class="s1">&#39;2023-03-11&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># splits = [(df1_train, df1_test), (df2_train, df2_test), (df3_train, df3_test)]</span>
 </code></pre></div>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/experimental/_splitter.py</code></summary>
+              <summary>Source code in <code>skforecast\experimental\_splitter.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">574</span>
 <span class="normal">575</span>
 <span class="normal">576</span>
@@ -7677,10 +7696,10 @@ If multiple series groups: list of tuples, one per group</p>
     <span class="n">start_train</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">end_validation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">end_test</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">output_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">'wide'</span><span class="p">,</span> <span class="s1">'long'</span><span class="p">,</span> <span class="s1">'long_multi_index'</span><span class="p">,</span> <span class="s1">'dict'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'wide'</span><span class="p">,</span>
+    <span class="n">output_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wide&#39;</span><span class="p">,</span> <span class="s1">&#39;long&#39;</span><span class="p">,</span> <span class="s1">&#39;long_multi_index&#39;</span><span class="p">,</span> <span class="s1">&#39;dict&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;wide&#39;</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Split time series based on date ranges.</span>
 
 <span class="sd">    Creates training, validation (optional), and test sets by splitting</span>
@@ -7702,7 +7721,7 @@ If multiple series groups: list of tuples, one per group</p>
 <span class="sd">    end_test : str | pd.Timestamp | None, default None</span>
 <span class="sd">        Test set end date (inclusive).</span>
 <span class="sd">        Defaults to last date in each group.</span>
-<span class="sd">    output_format : {'wide', 'long', 'long_multi_index', 'dict'}, default 'wide'</span>
+<span class="sd">    output_format : {&#39;wide&#39;, &#39;long&#39;, &#39;long_multi_index&#39;, &#39;dict&#39;}, default &#39;wide&#39;</span>
 <span class="sd">        Output format for the splits.</span>
 <span class="sd">    verbose : bool, default False</span>
 <span class="sd">        If True, print detailed split information for each group.</span>
@@ -7716,7 +7735,7 @@ If multiple series groups: list of tuples, one per group</p>
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    TypeError</span>
-<span class="sd">        If series don't have DatetimeIndex.</span>
+<span class="sd">        If series don&#39;t have DatetimeIndex.</span>
 <span class="sd">    ValueError</span>
 <span class="sd">        If dates are invalid or outside available range.</span>
 
@@ -7724,13 +7743,13 @@ If multiple series groups: list of tuples, one per group</p>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; # Single group</span>
 <span class="sd">    &gt;&gt;&gt; splitter = TimeSeriesSplitter(df1)</span>
-<span class="sd">    &gt;&gt;&gt; train, test = splitter.split_by_date(end_train='2023-03-11')</span>
+<span class="sd">    &gt;&gt;&gt; train, test = splitter.split_by_date(end_train=&#39;2023-03-11&#39;)</span>
 
 <span class="sd">    &gt;&gt;&gt; # Multiple groups</span>
 <span class="sd">    &gt;&gt;&gt; splitter = TimeSeriesSplitter(df1, df2, df3)</span>
-<span class="sd">    &gt;&gt;&gt; splits = splitter.split_by_date(end_train='2023-03-11')</span>
+<span class="sd">    &gt;&gt;&gt; splits = splitter.split_by_date(end_train=&#39;2023-03-11&#39;)</span>
 <span class="sd">    &gt;&gt;&gt; # splits = [(df1_train, df1_test), (df2_train, df2_test), (df3_train, df3_test)]</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">for</span> <span class="n">group_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_groups_</span><span class="p">):</span>
@@ -7742,13 +7761,13 @@ If multiple series groups: list of tuples, one per group</p>
         <span class="p">)</span>
 
         <span class="c1"># -- Define positions split dict</span>
-        <span class="n">positions</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'train'</span><span class="p">:</span> <span class="p">(</span><span class="n">start_pos</span><span class="p">,</span> <span class="n">end_train_pos</span><span class="p">)}</span>
+        <span class="n">positions</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;train&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">start_pos</span><span class="p">,</span> <span class="n">end_train_pos</span><span class="p">)}</span>
 
         <span class="k">if</span> <span class="n">end_validation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">positions</span><span class="p">[</span><span class="s1">'validation'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">end_train_pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">end_val_pos</span><span class="p">)</span>
-            <span class="n">positions</span><span class="p">[</span><span class="s1">'test'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">end_val_pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">end_test_pos</span><span class="p">)</span>
+            <span class="n">positions</span><span class="p">[</span><span class="s1">&#39;validation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">end_train_pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">end_val_pos</span><span class="p">)</span>
+            <span class="n">positions</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">end_val_pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">end_test_pos</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">positions</span><span class="p">[</span><span class="s1">'test'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">end_train_pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">end_test_pos</span><span class="p">)</span>
+            <span class="n">positions</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">end_train_pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">end_test_pos</span><span class="p">)</span>
 
         <span class="c1"># -- Perform split on current group</span>
         <span class="n">split_dicts</span> <span class="o">=</span> <span class="p">[</span>
@@ -7786,7 +7805,7 @@ If multiple series groups: list of tuples, one per group</p>
     <span class="n">train_size</span><span class="p">,</span>
     <span class="n">validation_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">test_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">output_format</span><span class="o">=</span><span class="s2">"wide"</span><span class="p">,</span>
+    <span class="n">output_format</span><span class="o">=</span><span class="s2">&quot;wide&quot;</span><span class="p">,</span>
     <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -7959,7 +7978,7 @@ If multiple series groups: list of tuples, one per group</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/experimental/_splitter.py</code></summary>
+              <summary>Source code in <code>skforecast\experimental\_splitter.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">672</span>
 <span class="normal">673</span>
 <span class="normal">674</span>
@@ -8060,10 +8079,10 @@ If multiple series groups: list of tuples, one per group</p>
     <span class="n">train_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">validation_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">test_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">output_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">'wide'</span><span class="p">,</span> <span class="s1">'long'</span><span class="p">,</span> <span class="s1">'long_multi_index'</span><span class="p">,</span> <span class="s1">'dict'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'wide'</span><span class="p">,</span>
+    <span class="n">output_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wide&#39;</span><span class="p">,</span> <span class="s1">&#39;long&#39;</span><span class="p">,</span> <span class="s1">&#39;long_multi_index&#39;</span><span class="p">,</span> <span class="s1">&#39;dict&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;wide&#39;</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Split time series based on size (absolute or proportional).</span>
 
 <span class="sd">    Creates training, validation (optional), and test sets by splitting</span>
@@ -8084,7 +8103,7 @@ If multiple series groups: list of tuples, one per group</p>
 <span class="sd">    test_size : int | float | None, default None</span>
 <span class="sd">        Test set size. Same as train_size.</span>
 <span class="sd">        If None, remainder is used as test set.</span>
-<span class="sd">    output_format : {'wide', 'long', 'long_multi_index', 'dict'}, default 'wide'</span>
+<span class="sd">    output_format : {&#39;wide&#39;, &#39;long&#39;, &#39;long_multi_index&#39;, &#39;dict&#39;}, default &#39;wide&#39;</span>
 <span class="sd">        Output format for the splits.</span>
 <span class="sd">    verbose : bool, default False</span>
 <span class="sd">        If True, print detailed split information for each group.</span>
@@ -8110,7 +8129,7 @@ If multiple series groups: list of tuples, one per group</p>
 <span class="sd">    &gt;&gt;&gt; splitter = TimeSeriesSplitter(df1, df2, df3)</span>
 <span class="sd">    &gt;&gt;&gt; splits = splitter.split_by_size(train_size=70, test_size=30)</span>
 <span class="sd">    &gt;&gt;&gt; # Each group split with 70 training samples and 30 test samples</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">for</span> <span class="n">group_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_groups_</span><span class="p">):</span>
@@ -8128,13 +8147,13 @@ If multiple series groups: list of tuples, one per group</p>
         <span class="n">val_end</span> <span class="o">=</span> <span class="n">train_end</span> <span class="o">+</span> <span class="p">(</span><span class="n">val_count</span> <span class="k">if</span> <span class="n">val_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">test_end</span> <span class="o">=</span> <span class="n">total_len</span> <span class="o">-</span> <span class="mi">1</span>
 
-        <span class="n">positions</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'train'</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">train_end</span><span class="p">)}</span>
+        <span class="n">positions</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;train&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">train_end</span><span class="p">)}</span>
 
         <span class="k">if</span> <span class="n">val_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">positions</span><span class="p">[</span><span class="s1">'validation'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">train_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">val_end</span><span class="p">)</span>
-            <span class="n">positions</span><span class="p">[</span><span class="s1">'test'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">test_end</span><span class="p">)</span>
+            <span class="n">positions</span><span class="p">[</span><span class="s1">&#39;validation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">train_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">val_end</span><span class="p">)</span>
+            <span class="n">positions</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">test_end</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">positions</span><span class="p">[</span><span class="s1">'test'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">train_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">test_end</span><span class="p">)</span>
+            <span class="n">positions</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">train_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">test_end</span><span class="p">)</span>
 
         <span class="c1"># -- Perform split on current group</span>
         <span class="n">split_dicts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split_series_dict</span><span class="p">(</span>
@@ -8237,7 +8256,7 @@ If multiple series groups: list of tuples, one per group</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/experimental/_splitter.py</code></summary>
+              <summary>Source code in <code>skforecast\experimental\_splitter.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">769</span>
 <span class="normal">770</span>
 <span class="normal">771</span>
@@ -8291,7 +8310,7 @@ If multiple series groups: list of tuples, one per group</p>
     <span class="n">positions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
     <span class="n">output_format</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Print detailed split information for a specific group.</span>
 
 <span class="sd">    Parameters</span>
@@ -8302,37 +8321,37 @@ If multiple series groups: list of tuples, one per group</p>
 <span class="sd">        Position ranges for each split.</span>
 <span class="sd">    output_format : str</span>
 <span class="sd">        Output format being used.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># -- Extract a sample index (first one)</span>
     <span class="n">first_index</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series_indexes_</span><span class="p">[</span><span class="n">group_idx</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
     <span class="n">total_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">first_index</span><span class="p">)</span>
 
     <span class="c1"># -- Print header</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Split Information (Group id: </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">)'</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">'='</span> <span class="o">*</span> <span class="mi">32</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Split Information (Group id: </span><span class="si">{</span><span class="n">group_idx</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;=&#39;</span> <span class="o">*</span> <span class="mi">32</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">split_name</span><span class="p">,</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span> <span class="ow">in</span> <span class="n">positions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">length</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">percentage</span> <span class="o">=</span> <span class="p">(</span><span class="n">length</span> <span class="o">/</span> <span class="n">total_len</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_len</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">first_index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">):</span>
-            <span class="n">start_date</span> <span class="o">=</span> <span class="n">first_index</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">first_index</span><span class="p">)</span> <span class="k">else</span> <span class="s1">'N/A'</span>
-            <span class="n">end_date</span> <span class="o">=</span> <span class="n">first_index</span><span class="p">[</span><span class="n">end</span><span class="p">]</span> <span class="k">if</span> <span class="n">end</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">first_index</span><span class="p">)</span> <span class="k">else</span> <span class="s1">'N/A'</span>
+            <span class="n">start_date</span> <span class="o">=</span> <span class="n">first_index</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">first_index</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;N/A&#39;</span>
+            <span class="n">end_date</span> <span class="o">=</span> <span class="n">first_index</span><span class="p">[</span><span class="n">end</span><span class="p">]</span> <span class="k">if</span> <span class="n">end</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">first_index</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;N/A&#39;</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">split_name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">:</span><span class="s1">12</span><span class="si">}</span><span class="s1"> | '</span>
-                <span class="sa">f</span><span class="s1">'Range: </span><span class="si">{</span><span class="n">start_date</span><span class="si">}</span><span class="s1"> to </span><span class="si">{</span><span class="n">end_date</span><span class="si">}</span><span class="s1"> | '</span>
-                <span class="sa">f</span><span class="s1">'Length: </span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">percentage</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1">%)'</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">split_name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">:</span><span class="s1">12</span><span class="si">}</span><span class="s1"> | &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;Range: </span><span class="si">{</span><span class="n">start_date</span><span class="si">}</span><span class="s1"> to </span><span class="si">{</span><span class="n">end_date</span><span class="si">}</span><span class="s1"> | &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;Length: </span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">percentage</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1">%)&#39;</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">split_name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">:</span><span class="s1">12</span><span class="si">}</span><span class="s1"> | '</span>
-                <span class="sa">f</span><span class="s1">'Positions: </span><span class="si">{</span><span class="n">start</span><span class="si">}</span><span class="s1"> to </span><span class="si">{</span><span class="n">end</span><span class="si">}</span><span class="s1"> | '</span>
-                <span class="sa">f</span><span class="s1">'Length: </span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">percentage</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1">%)'</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">split_name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">:</span><span class="s1">12</span><span class="si">}</span><span class="s1"> | &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;Positions: </span><span class="si">{</span><span class="n">start</span><span class="si">}</span><span class="s1"> to </span><span class="si">{</span><span class="n">end</span><span class="si">}</span><span class="s1"> | &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;Length: </span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">percentage</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1">%)&#39;</span>
             <span class="p">)</span>
     <span class="c1"># -- Print the given output format</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Output format: </span><span class="si">{</span><span class="n">output_format</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Output format: </span><span class="si">{</span><span class="n">output_format</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">group_idx</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_groups_</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">'</span><span class="se">\n</span><span class="s1">'</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -8573,10 +8592,10 @@ If multiple series groups: list of tuples, one per group</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       

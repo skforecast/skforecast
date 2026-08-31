@@ -19,32 +19,41 @@ function applyBannerLayout() {
     }
 }
 
-// Run on initial load
-applyBannerLayout();
+// The announcement bar is only meant for readers on the latest version, so it is
+// hidden as soon as the outdated version banner is shown.
+var outdatedObserver = null;
+function syncBanners() {
+    if (outdatedObserver) outdatedObserver.disconnect();
 
-// The outdated component starts hidden and the bundle unhides it asynchronously
-// after checking versions.json. Watch for when the parent becomes visible.
-(function() {
     var outdated = document.querySelector('[data-md-component=outdated]');
-    if (outdated && outdated.hidden) {
-        var observer = new MutationObserver(function(mutations) {
-            for (var i = 0; i < mutations.length; i++) {
-                if (mutations[i].attributeName === 'hidden' && !outdated.hidden) {
-                    applyBannerLayout();
-                    observer.disconnect();
-                    break;
-                }
-            }
-        });
-        observer.observe(outdated, { attributes: true });
+    if (!outdated) {
+        applyBannerLayout();
+        return;
     }
-})();
 
-// Re-run on instant navigation (mkdocs-material replaces content without full reload)
+    if (!outdated.hidden) {
+        var announce = document.querySelector('[data-md-component=announce]');
+        if (announce) announce.hidden = true;
+        applyBannerLayout();
+        return;
+    }
+
+    // The outdated component starts hidden and the bundle unhides it asynchronously
+    // after checking versions.json, so wait for it instead of reading it right away.
+    applyBannerLayout();
+    outdatedObserver = new MutationObserver(function() {
+        if (!outdated.hidden) syncBanners();
+    });
+    outdatedObserver.observe(outdated, { attributes: true, attributeFilter: ['hidden'] });
+}
+
+// Run on initial load, and again on instant navigation, which replaces both the
+// announce and outdated components with fresh markup from the fetched page.
+syncBanners();
 if (typeof document$ !== 'undefined') {
-    document$.subscribe(function() { applyBannerLayout(); });
+    document$.subscribe(syncBanners);
 } else {
-    document.addEventListener('DOMContentLoaded', applyBannerLayout);
+    document.addEventListener('DOMContentLoaded', syncBanners);
 }
 
 document.addEventListener('DOMContentLoaded', function() {

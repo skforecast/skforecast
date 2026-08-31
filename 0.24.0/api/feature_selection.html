@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -100,6 +100,25 @@
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+  👋 New in the skforecast ecosystem:
+<a href="https://studio.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast studio</strong></a> (train and evaluate models visually, no coding required) and
+<a href="https://ai.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast-ai</strong></a> (agentic time series forecasting).
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
       
     </div>
     
@@ -5178,7 +5197,7 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/feature_selection/feature_selection.py</code></summary>
+              <summary>Source code in <code>skforecast\feature_selection\feature_selection.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 17</span>
 <span class="normal"> 18</span>
 <span class="normal"> 19</span>
@@ -5500,7 +5519,7 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Feature selection using any of the sklearn.feature_selection module selectors </span>
 <span class="sd">    (such as `RFECV`, `SelectFromModel`, etc.). Three groups of features are</span>
 <span class="sd">    evaluated: autoregressive features (lags and window features), exogenous</span>
@@ -5534,19 +5553,19 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 <span class="sd">    select_only : str, list, default None</span>
 <span class="sd">        Decide what type of features to include in the selection process.</span>
 
-<span class="sd">        - If `'autoreg'` (or `['autoreg']`), only autoregressive features (lags</span>
+<span class="sd">        - If `&#39;autoreg&#39;` (or `[&#39;autoreg&#39;]`), only autoregressive features (lags</span>
 <span class="sd">        and window features) are evaluated by the selector. All exogenous and</span>
 <span class="sd">        calendar features are kept and returned in `selected_exog` and</span>
 <span class="sd">        `selected_calendar_features`.</span>
-<span class="sd">        - If `'exog'` (or `['exog']`), only exogenous features are evaluated. All</span>
+<span class="sd">        - If `&#39;exog&#39;` (or `[&#39;exog&#39;]`), only exogenous features are evaluated. All</span>
 <span class="sd">        autoregressive and calendar features are kept and returned in</span>
 <span class="sd">        `selected_lags`, `selected_window_features` and</span>
 <span class="sd">        `selected_calendar_features`.</span>
-<span class="sd">        - If `'calendar'` (or `['calendar']`), only calendar features are</span>
+<span class="sd">        - If `&#39;calendar&#39;` (or `[&#39;calendar&#39;]`), only calendar features are</span>
 <span class="sd">        evaluated. All autoregressive and exogenous features are kept and</span>
 <span class="sd">        returned in `selected_lags`, `selected_window_features` and</span>
 <span class="sd">        `selected_exog`.</span>
-<span class="sd">        - If `list`, any combination of `'autoreg'`, `'exog'` and `'calendar'`.</span>
+<span class="sd">        - If `list`, any combination of `&#39;autoreg&#39;`, `&#39;exog&#39;` and `&#39;calendar&#39;`.</span>
 <span class="sd">        Only the groups listed are evaluated by the selector; the remaining</span>
 <span class="sd">        groups are kept unchanged.</span>
 <span class="sd">        - If `None`, all features are evaluated by the selector.</span>
@@ -5555,8 +5574,8 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 
 <span class="sd">        - If `list`, list of feature names to force include.</span>
 <span class="sd">        - If `str`, regular expression to identify features to force include. </span>
-<span class="sd">        For example, if `force_inclusion="^sun_"`, all features that begin </span>
-<span class="sd">        with "sun_" will be included in the final list of selected features.</span>
+<span class="sd">        For example, if `force_inclusion=&quot;^sun_&quot;`, all features that begin </span>
+<span class="sd">        with &quot;sun_&quot; will be included in the final list of selected features.</span>
 
 <span class="sd">        For calendar features, `force_inclusion` is matched against the encoded</span>
 <span class="sd">        column names (e.g. `month_sin`); forcing any encoded column keeps its</span>
@@ -5581,17 +5600,17 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 <span class="sd">        List of selected calendar features (source-level names, without the</span>
 <span class="sd">        encoding suffix). Empty list if the forecaster has no calendar features.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">forecaster_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">forecaster</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
-    <span class="n">valid_forecasters</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'ForecasterRecursive'</span><span class="p">,</span> <span class="s1">'ForecasterDirect'</span><span class="p">]</span>
+    <span class="n">valid_forecasters</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ForecasterRecursive&#39;</span><span class="p">,</span> <span class="s1">&#39;ForecasterDirect&#39;</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">forecaster_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_forecasters</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`forecaster` must be one of the following classes: </span><span class="si">{</span><span class="n">valid_forecasters</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`forecaster` must be one of the following classes: </span><span class="si">{</span><span class="n">valid_forecasters</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
-    <span class="n">valid_select_only</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'autoreg'</span><span class="p">,</span> <span class="s1">'exog'</span><span class="p">,</span> <span class="s1">'calendar'</span><span class="p">]</span>
+    <span class="n">valid_select_only</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;autoreg&#39;</span><span class="p">,</span> <span class="s1">&#39;exog&#39;</span><span class="p">,</span> <span class="s1">&#39;calendar&#39;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">select_only</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">select_only_list</span> <span class="o">=</span> <span class="n">valid_select_only</span>
     <span class="k">else</span><span class="p">:</span>
@@ -5600,27 +5619,27 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
         <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">select_only_list</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">"`select_only` must be a str, a list of str, or None."</span>
+                <span class="s2">&quot;`select_only` must be a str, a list of str, or None.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">select_only_list</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">valid_select_only</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"`select_only` must be one or more of the following values: "</span>
-                <span class="s2">"'autoreg', 'exog', 'calendar', or None."</span>
+                <span class="s2">&quot;`select_only` must be one or more of the following values: &quot;</span>
+                <span class="s2">&quot;&#39;autoreg&#39;, &#39;exog&#39;, &#39;calendar&#39;, or None.&quot;</span>
             <span class="p">)</span>
 
-    <span class="n">eval_autoreg</span> <span class="o">=</span> <span class="s1">'autoreg'</span> <span class="ow">in</span> <span class="n">select_only_list</span>
-    <span class="n">eval_exog</span> <span class="o">=</span> <span class="s1">'exog'</span> <span class="ow">in</span> <span class="n">select_only_list</span>
-    <span class="n">eval_calendar</span> <span class="o">=</span> <span class="s1">'calendar'</span> <span class="ow">in</span> <span class="n">select_only_list</span>
+    <span class="n">eval_autoreg</span> <span class="o">=</span> <span class="s1">&#39;autoreg&#39;</span> <span class="ow">in</span> <span class="n">select_only_list</span>
+    <span class="n">eval_exog</span> <span class="o">=</span> <span class="s1">&#39;exog&#39;</span> <span class="ow">in</span> <span class="n">select_only_list</span>
+    <span class="n">eval_calendar</span> <span class="o">=</span> <span class="s1">&#39;calendar&#39;</span> <span class="ow">in</span> <span class="n">select_only_list</span>
 
     <span class="k">if</span> <span class="n">subsample</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">subsample</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"`subsample` must be a number greater than 0 and less than or equal to 1."</span>
+            <span class="s2">&quot;`subsample` must be a number greater than 0 and less than or equal to 1.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">forecaster</span> <span class="o">=</span> <span class="n">deepcopy_forecaster</span><span class="p">(</span><span class="n">forecaster</span><span class="p">)</span>
     <span class="n">forecaster</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">create_train_X_y</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="n">exog</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">'ForecasterDirect'</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">&#39;ForecasterDirect&#39;</span><span class="p">:</span>
         <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">filter_train_X_y_for_step</span><span class="p">(</span>
                                <span class="n">step</span>          <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
                                <span class="n">X_train</span>       <span class="o">=</span> <span class="n">X_train</span><span class="p">,</span>
@@ -5684,9 +5703,9 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 
     <span class="k">if</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"No features remain to be evaluated by the selector. The group(s) "</span>
-            <span class="s2">"requested in `select_only` contain no features. Make sure the "</span>
-            <span class="s2">"forecaster includes features for the selected group(s)."</span>
+            <span class="s2">&quot;No features remain to be evaluated by the selector. The group(s) &quot;</span>
+            <span class="s2">&quot;requested in `select_only` contain no features. Make sure the &quot;</span>
+            <span class="s2">&quot;forecaster includes features for the selected group(s).&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subsample</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
@@ -5742,9 +5761,9 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_autoreg</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">"No autoregressive features have been selected. Since a Forecaster "</span>
-            <span class="s2">"cannot be created without them, be sure to include at least one "</span>
-            <span class="s2">"using the `force_inclusion` parameter."</span>
+            <span class="s2">&quot;No autoregressive features have been selected. Since a Forecaster &quot;</span>
+            <span class="s2">&quot;cannot be created without them, be sure to include at least one &quot;</span>
+            <span class="s2">&quot;using the `force_inclusion` parameter.&quot;</span>
         <span class="p">)</span>
         <span class="n">selected_lags</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">selected_window_features</span> <span class="o">=</span> <span class="p">[]</span>
@@ -5752,7 +5771,7 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
         <span class="n">lags_cols_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">lags_cols</span><span class="p">)</span>
         <span class="n">window_features_cols_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">window_features_cols</span><span class="p">)</span>
         <span class="n">selected_lags</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'lag_'</span><span class="p">,</span> <span class="s1">''</span><span class="p">))</span> 
+            <span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;lag_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> 
             <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selected_autoreg</span> <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">lags_cols_set</span>
         <span class="p">]</span>
         <span class="n">selected_window_features</span> <span class="o">=</span> <span class="p">[</span>
@@ -5769,7 +5788,7 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
     <span class="n">seen_calendar_features</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">selected_calendar_cols</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">source_features_sorted</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">col</span> <span class="o">==</span> <span class="n">feature</span> <span class="ow">or</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">feature</span><span class="si">}</span><span class="s2">_"</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">col</span> <span class="o">==</span> <span class="n">feature</span> <span class="ow">or</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">feature</span><span class="si">}</span><span class="s2">_&quot;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">feature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_calendar_features</span><span class="p">:</span>
                     <span class="n">seen_calendar_features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
                     <span class="n">selected_calendar_features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
@@ -5780,24 +5799,24 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
     <span class="n">selected_calendar_features</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">calendar_features_order</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
 
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Recursive feature elimination (</span><span class="si">{</span><span class="n">selector</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"--------------------------------"</span> <span class="o">+</span> <span class="s2">"-"</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">selector</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total number of records available: </span><span class="si">{</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total number of records used for feature selection: </span><span class="si">{</span><span class="n">X_train_sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of features available: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">autoreg_cols</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">calendar_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> 
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Lags            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lags_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Window features (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">window_features_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Exog            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Calendar        (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">calendar_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recursive feature elimination (</span><span class="si">{</span><span class="n">selector</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------------------------------&quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">selector</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of records available: </span><span class="si">{</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of records used for feature selection: </span><span class="si">{</span><span class="n">X_train_sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of features available: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">autoreg_cols</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">calendar_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Lags            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lags_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Window features (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">window_features_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Exog            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Calendar        (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">calendar_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
         <span class="n">n_selected</span> <span class="o">=</span> <span class="p">(</span>
             <span class="nb">len</span><span class="p">(</span><span class="n">selected_lags</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_window_features</span><span class="p">)</span>
             <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_exog</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_calendar_features</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of features selected: </span><span class="si">{</span><span class="n">n_selected</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Lags            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_lags</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_lags</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Window features (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_window_features</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_window_features</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Exog            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_exog</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_exog</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Calendar        (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_calendar_features</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_calendar_features</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of features selected: </span><span class="si">{</span><span class="n">n_selected</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Lags            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_lags</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_lags</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Window features (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_window_features</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_window_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Exog            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_exog</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_exog</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Calendar        (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_calendar_features</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_calendar_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">selected_lags</span><span class="p">,</span> <span class="n">selected_window_features</span><span class="p">,</span> <span class="n">selected_exog</span><span class="p">,</span> <span class="n">selected_calendar_features</span>
 </code></pre></div></td></tr></table></div>
@@ -6091,7 +6110,7 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/feature_selection/feature_selection.py</code></summary>
+              <summary>Source code in <code>skforecast\feature_selection\feature_selection.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">330</span>
 <span class="normal">331</span>
 <span class="normal">332</span>
@@ -6462,7 +6481,7 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Feature selection using any of the sklearn.feature_selection module selectors </span>
 <span class="sd">    (such as `RFECV`, `SelectFromModel`, etc.). Three groups of features are</span>
 <span class="sd">    evaluated: autoregressive features (lags and window features), exogenous</span>
@@ -6494,19 +6513,19 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 <span class="sd">    select_only : str, list, default None</span>
 <span class="sd">        Decide what type of features to include in the selection process. </span>
 
-<span class="sd">        - If `'autoreg'` (or `['autoreg']`), only autoregressive features (lags</span>
+<span class="sd">        - If `&#39;autoreg&#39;` (or `[&#39;autoreg&#39;]`), only autoregressive features (lags</span>
 <span class="sd">        and window features) are evaluated by the selector. All exogenous and</span>
 <span class="sd">        calendar features are kept and returned in `selected_exog` and</span>
 <span class="sd">        `selected_calendar_features`.</span>
-<span class="sd">        - If `'exog'` (or `['exog']`), only exogenous features are evaluated. All</span>
+<span class="sd">        - If `&#39;exog&#39;` (or `[&#39;exog&#39;]`), only exogenous features are evaluated. All</span>
 <span class="sd">        autoregressive and calendar features are kept and returned in</span>
 <span class="sd">        `selected_lags`, `selected_window_features` and</span>
 <span class="sd">        `selected_calendar_features`.</span>
-<span class="sd">        - If `'calendar'` (or `['calendar']`), only calendar features are</span>
+<span class="sd">        - If `&#39;calendar&#39;` (or `[&#39;calendar&#39;]`), only calendar features are</span>
 <span class="sd">        evaluated. All autoregressive and exogenous features are kept and</span>
 <span class="sd">        returned in `selected_lags`, `selected_window_features` and</span>
 <span class="sd">        `selected_exog`.</span>
-<span class="sd">        - If `list`, any combination of `'autoreg'`, `'exog'` and `'calendar'`.</span>
+<span class="sd">        - If `list`, any combination of `&#39;autoreg&#39;`, `&#39;exog&#39;` and `&#39;calendar&#39;`.</span>
 <span class="sd">        Only the groups listed are evaluated by the selector; the remaining</span>
 <span class="sd">        groups are kept unchanged.</span>
 <span class="sd">        - If `None`, all features are evaluated by the selector.</span>
@@ -6515,8 +6534,8 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 
 <span class="sd">        - If `list`, list of feature names to force include.</span>
 <span class="sd">        - If `str`, regular expression to identify features to force include. </span>
-<span class="sd">        For example, if `force_inclusion="^sun_"`, all features that begin </span>
-<span class="sd">        with "sun_" will be included in the final list of selected features.</span>
+<span class="sd">        For example, if `force_inclusion=&quot;^sun_&quot;`, all features that begin </span>
+<span class="sd">        with &quot;sun_&quot; will be included in the final list of selected features.</span>
 
 <span class="sd">        For calendar features, `force_inclusion` is matched against the encoded</span>
 <span class="sd">        column names (e.g. `month_sin`); forcing any encoded column keeps its</span>
@@ -6543,20 +6562,20 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 <span class="sd">        List of selected calendar features (source-level names, without the</span>
 <span class="sd">        encoding suffix). Empty list if the forecaster has no calendar features.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">forecaster_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">forecaster</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
     <span class="n">valid_forecasters</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s1">'ForecasterRecursiveMultiSeries'</span><span class="p">,</span>
-        <span class="s1">'ForecasterDirectMultiVariate'</span>
+        <span class="s1">&#39;ForecasterRecursiveMultiSeries&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ForecasterDirectMultiVariate&#39;</span>
     <span class="p">]</span>
 
     <span class="k">if</span> <span class="n">forecaster_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_forecasters</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`forecaster` must be one of the following classes: </span><span class="si">{</span><span class="n">valid_forecasters</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`forecaster` must be one of the following classes: </span><span class="si">{</span><span class="n">valid_forecasters</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
-    <span class="n">valid_select_only</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'autoreg'</span><span class="p">,</span> <span class="s1">'exog'</span><span class="p">,</span> <span class="s1">'calendar'</span><span class="p">]</span>
+    <span class="n">valid_select_only</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;autoreg&#39;</span><span class="p">,</span> <span class="s1">&#39;exog&#39;</span><span class="p">,</span> <span class="s1">&#39;calendar&#39;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">select_only</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">select_only_list</span> <span class="o">=</span> <span class="n">valid_select_only</span>
     <span class="k">else</span><span class="p">:</span>
@@ -6565,26 +6584,26 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
         <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">select_only_list</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">"`select_only` must be a str, a list of str, or None."</span>
+                <span class="s2">&quot;`select_only` must be a str, a list of str, or None.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">select_only_list</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">valid_select_only</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"`select_only` must be one or more of the following values: "</span>
-                <span class="s2">"'autoreg', 'exog', 'calendar', or None."</span>
+                <span class="s2">&quot;`select_only` must be one or more of the following values: &quot;</span>
+                <span class="s2">&quot;&#39;autoreg&#39;, &#39;exog&#39;, &#39;calendar&#39;, or None.&quot;</span>
             <span class="p">)</span>
 
-    <span class="n">eval_autoreg</span> <span class="o">=</span> <span class="s1">'autoreg'</span> <span class="ow">in</span> <span class="n">select_only_list</span>
-    <span class="n">eval_exog</span> <span class="o">=</span> <span class="s1">'exog'</span> <span class="ow">in</span> <span class="n">select_only_list</span>
-    <span class="n">eval_calendar</span> <span class="o">=</span> <span class="s1">'calendar'</span> <span class="ow">in</span> <span class="n">select_only_list</span>
+    <span class="n">eval_autoreg</span> <span class="o">=</span> <span class="s1">&#39;autoreg&#39;</span> <span class="ow">in</span> <span class="n">select_only_list</span>
+    <span class="n">eval_exog</span> <span class="o">=</span> <span class="s1">&#39;exog&#39;</span> <span class="ow">in</span> <span class="n">select_only_list</span>
+    <span class="n">eval_calendar</span> <span class="o">=</span> <span class="s1">&#39;calendar&#39;</span> <span class="ow">in</span> <span class="n">select_only_list</span>
 
     <span class="k">if</span> <span class="n">subsample</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">subsample</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"`subsample` must be a number greater than 0 and less than or equal to 1."</span>
+            <span class="s2">&quot;`subsample` must be a number greater than 0 and less than or equal to 1.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">forecaster</span> <span class="o">=</span> <span class="n">deepcopy_forecaster</span><span class="p">(</span><span class="n">forecaster</span><span class="p">)</span>
     <span class="n">forecaster</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">'ForecasterDirectMultiVariate'</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">&#39;ForecasterDirectMultiVariate&#39;</span><span class="p">:</span>
         <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">create_train_X_y</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="n">series</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="n">exog</span><span class="p">)</span>
         <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">filter_train_X_y_for_step</span><span class="p">(</span>
                                <span class="n">step</span>          <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -6603,10 +6622,10 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
         <span class="n">y_train</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">lags_cols</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">lags_names</span>
         <span class="n">window_features_cols</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span>  <span class="c1"># X_train_window_features_names_out_ output</span>
-        <span class="k">if</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">encoding</span> <span class="o">==</span> <span class="s1">'onehot'</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">encoding</span> <span class="o">==</span> <span class="s1">&#39;onehot&#39;</span><span class="p">:</span>
             <span class="n">encoding_cols</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>  <span class="c1"># X_train_series_names_in_ output</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">encoding_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'_level_skforecast'</span><span class="p">]</span>
+            <span class="n">encoding_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_level_skforecast&#39;</span><span class="p">]</span>
 
     <span class="n">lags_cols</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">lags_cols</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">lags_cols</span>
     <span class="n">window_features_cols</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">window_features_cols</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">window_features_cols</span>
@@ -6667,9 +6686,9 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 
     <span class="k">if</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"No features remain to be evaluated by the selector. The group(s) "</span>
-            <span class="s2">"requested in `select_only` contain no features. Make sure the "</span>
-            <span class="s2">"forecaster includes features for the selected group(s)."</span>
+            <span class="s2">&quot;No features remain to be evaluated by the selector. The group(s) &quot;</span>
+            <span class="s2">&quot;requested in `select_only` contain no features. Make sure the &quot;</span>
+            <span class="s2">&quot;forecaster includes features for the selected group(s).&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subsample</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
@@ -6731,9 +6750,9 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_autoreg</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">"No autoregressive features have been selected. Since a Forecaster "</span>
-            <span class="s2">"cannot be created without them, be sure to include at least one "</span>
-            <span class="s2">"using the `force_inclusion` parameter."</span>
+            <span class="s2">&quot;No autoregressive features have been selected. Since a Forecaster &quot;</span>
+            <span class="s2">&quot;cannot be created without them, be sure to include at least one &quot;</span>
+            <span class="s2">&quot;using the `force_inclusion` parameter.&quot;</span>
         <span class="p">)</span>
         <span class="n">selected_lags</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">selected_window_features</span> <span class="o">=</span> <span class="p">[]</span>
@@ -6741,11 +6760,11 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">lags_cols_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">lags_cols</span><span class="p">)</span>
         <span class="n">window_features_cols_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">window_features_cols</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">'ForecasterDirectMultiVariate'</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">&#39;ForecasterDirectMultiVariate&#39;</span><span class="p">:</span>
             <span class="n">selected_lags</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="n">series_name</span><span class="p">:</span> <span class="p">(</span>
                     <span class="p">[</span>
-                        <span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">series_name</span><span class="si">}</span><span class="s2">_lag_"</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">series_name</span><span class="si">}</span><span class="s2">_lag_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
                         <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selected_autoreg</span>
                         <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">lags_names</span>
                     <span class="p">]</span>
@@ -6759,7 +6778,7 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
             <span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">selected_lags</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'lag_'</span><span class="p">,</span> <span class="s1">''</span><span class="p">))</span> 
+                <span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;lag_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> 
                 <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selected_autoreg</span> 
                 <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">lags_cols_set</span>
             <span class="p">]</span>
@@ -6780,7 +6799,7 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
     <span class="n">seen_calendar_features</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">selected_calendar_cols</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">source_features_sorted</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">col</span> <span class="o">==</span> <span class="n">feature</span> <span class="ow">or</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">feature</span><span class="si">}</span><span class="s2">_"</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">col</span> <span class="o">==</span> <span class="n">feature</span> <span class="ow">or</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">feature</span><span class="si">}</span><span class="s2">_&quot;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">feature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_calendar_features</span><span class="p">:</span>
                     <span class="n">seen_calendar_features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
                     <span class="n">selected_calendar_features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
@@ -6791,24 +6810,24 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
     <span class="n">selected_calendar_features</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">calendar_features_order</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
 
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Recursive feature elimination (</span><span class="si">{</span><span class="n">selector</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"--------------------------------"</span> <span class="o">+</span> <span class="s2">"-"</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">selector</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total number of records available: </span><span class="si">{</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total number of records used for feature selection: </span><span class="si">{</span><span class="n">X_train_sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of features available: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">autoreg_cols</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">calendar_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> 
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Lags            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lags_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Window features (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">window_features_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Exog            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Calendar        (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">calendar_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recursive feature elimination (</span><span class="si">{</span><span class="n">selector</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------------------------------&quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">selector</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of records available: </span><span class="si">{</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of records used for feature selection: </span><span class="si">{</span><span class="n">X_train_sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of features available: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">autoreg_cols</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">calendar_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Lags            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lags_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Window features (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">window_features_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Exog            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Calendar        (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">calendar_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
         <span class="n">n_selected</span> <span class="o">=</span> <span class="p">(</span>
             <span class="nb">len</span><span class="p">(</span><span class="n">verbose_selected_lags</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_window_features</span><span class="p">)</span>
             <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_exog</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_calendar_features</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of features selected: </span><span class="si">{</span><span class="n">n_selected</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Lags            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">verbose_selected_lags</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">verbose_selected_lags</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Window features (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_window_features</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_window_features</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Exog            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_exog</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_exog</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    Calendar        (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_calendar_features</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_calendar_features</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of features selected: </span><span class="si">{</span><span class="n">n_selected</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Lags            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">verbose_selected_lags</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">verbose_selected_lags</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Window features (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_window_features</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_window_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Exog            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_exog</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_exog</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Calendar        (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_calendar_features</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_calendar_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">selected_lags</span><span class="p">,</span> <span class="n">selected_window_features</span><span class="p">,</span> <span class="n">selected_exog</span><span class="p">,</span> <span class="n">selected_calendar_features</span>
 </code></pre></div></td></tr></table></div>
@@ -7043,10 +7062,10 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       

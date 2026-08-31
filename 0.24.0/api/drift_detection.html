@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -100,6 +100,25 @@
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+  👋 New in the skforecast ecosystem:
+<a href="https://studio.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast studio</strong></a> (train and evaluate models visually, no coding required) and
+<a href="https://ai.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast-ai</strong></a> (agentic time series forecasting).
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
       
     </div>
     
@@ -4159,12 +4178,12 @@
   <a href="#skforecast.drift_detection._range_drift.RangeDriftDetector-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Functions
+        Methods:
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Functions">
+    <nav class="md-nav" aria-label="Methods:">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4551,12 +4570,12 @@
   <a href="#skforecast.drift_detection._population_drift.PopulationDriftDetector-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Functions
+        Methods:
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Functions">
+    <nav class="md-nav" aria-label="Methods:">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5692,7 +5711,7 @@ rather than global).</p>
 
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/drift_detection/_range_drift.py</code></summary>
+                    <summary>Source code in <code>skforecast\drift_detection\_range_drift.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">57</span>
 <span class="normal">58</span>
 <span class="normal">59</span>
@@ -5878,7 +5897,7 @@ rather than global).</p>
 </div>
 
 
-<h3 id="skforecast.drift_detection._range_drift.RangeDriftDetector-functions">Functions<a href="#skforecast.drift_detection._range_drift.RangeDriftDetector-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.drift_detection._range_drift.RangeDriftDetector-functions">Methods:<a href="#skforecast.drift_detection._range_drift.RangeDriftDetector-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -5898,7 +5917,7 @@ The "General Information" section is expanded by default.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_range_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_range_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">103</span>
 <span class="normal">104</span>
 <span class="normal">105</span>
@@ -5956,31 +5975,31 @@ The "General Information" section is expanded by default.</p>
 <span class="normal">157</span>
 <span class="normal">158</span>
 <span class="normal">159</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    HTML representation of the object.</span>
-<span class="sd">    The "General Information" section is expanded by default.</span>
-<span class="sd">    """</span>
+<span class="sd">    The &quot;General Information&quot; section is expanded by default.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">series_names_in_</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">50</span><span class="p">:</span>
-            <span class="n">series_names_in_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span><span class="p">[:</span><span class="mi">25</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"..."</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span><span class="p">[</span><span class="o">-</span><span class="mi">25</span><span class="p">:]</span>
-            <span class="n">series_names_in_</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">series_names_in_</span><span class="p">)</span>
+            <span class="n">series_names_in_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span><span class="p">[:</span><span class="mi">25</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span><span class="p">[</span><span class="o">-</span><span class="mi">25</span><span class="p">:]</span>
+            <span class="n">series_names_in_</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">series_names_in_</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">series_names_in_</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span><span class="p">)</span>
+            <span class="n">series_names_in_</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span><span class="p">)</span>
 
     <span class="n">exog_names_in_</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">50</span><span class="p">:</span>
-            <span class="n">exog_names_in_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span><span class="p">[:</span><span class="mi">25</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"..."</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span><span class="p">[</span><span class="o">-</span><span class="mi">25</span><span class="p">:]</span>
-            <span class="n">exog_names_in_</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">exog_names_in_</span><span class="p">)</span>
+            <span class="n">exog_names_in_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span><span class="p">[:</span><span class="mi">25</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span><span class="p">[</span><span class="o">-</span><span class="mi">25</span><span class="p">:]</span>
+            <span class="n">exog_names_in_</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">exog_names_in_</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">exog_names_in_</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span><span class="p">)</span>
+            <span class="n">exog_names_in_</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span><span class="p">)</span>
 
     <span class="n">style</span><span class="p">,</span> <span class="n">unique_id</span> <span class="o">=</span> <span class="n">get_style_repr_html</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">)</span>
-    <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
-<span class="s2">    &lt;div class="container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2">"&gt;</span>
-<span class="s2">        &lt;p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;"&gt;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    &lt;div class=&quot;container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2">&quot;&gt;</span>
+<span class="s2">        &lt;p style=&quot;font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;&quot;&gt;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
 <span class="s2">        &lt;details open&gt;</span>
 <span class="s2">            &lt;summary&gt;General Information&lt;/summary&gt;</span>
 <span class="s2">            &lt;ul&gt;</span>
@@ -6004,12 +6023,12 @@ The "General Information" section is expanded by default.</p>
 <span class="s2">            &lt;/ul&gt;</span>
 <span class="s2">        &lt;/details&gt;</span>
 <span class="s2">        &lt;p&gt;</span>
-<span class="s2">            &lt;a href="https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/api/drift_detection.html#skforecast.drift_detection._range_drift.RangeDriftDetector"&gt;&amp;#128214; &lt;strong&gt;API Reference&lt;/strong&gt;&lt;/a&gt;</span>
+<span class="s2">            &lt;a href=&quot;https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/api/drift_detection.html#skforecast.drift_detection._range_drift.RangeDriftDetector&quot;&gt;&amp;#128214; &lt;strong&gt;API Reference&lt;/strong&gt;&lt;/a&gt;</span>
 <span class="s2">            &amp;nbsp;&amp;nbsp;</span>
-<span class="s2">            &lt;a href="https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/user_guides/drift-detection.html"&gt;&amp;#128221; &lt;strong&gt;User Guide&lt;/strong&gt;&lt;/a&gt;</span>
+<span class="s2">            &lt;a href=&quot;https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/user_guides/drift-detection.html&quot;&gt;&amp;#128221; &lt;strong&gt;User Guide&lt;/strong&gt;&lt;/a&gt;</span>
 <span class="s2">        &lt;/p&gt;</span>
 <span class="s2">    &lt;/div&gt;</span>
-<span class="s2">    """</span>
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="n">style</span> <span class="o">+</span> <span class="n">content</span>
 </code></pre></div></td></tr></table></div>
@@ -6098,7 +6117,7 @@ returns a dictionary with column names as keys and their respective ranges
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_range_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_range_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">161</span>
 <span class="normal">162</span>
 <span class="normal">163</span>
@@ -6152,7 +6171,7 @@ returns a dictionary with column names as keys and their respective ranges
     <span class="bp">cls</span><span class="p">,</span> 
     <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="nb">set</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="nb">set</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get a summary of the features in the DataFrame or Series. For numeric</span>
 <span class="sd">    features, it returns the min and max values. For categorical features,</span>
 <span class="sd">    it returns the unique values.</span>
@@ -6170,10 +6189,10 @@ returns a dictionary with column names as keys and their respective ranges
 <span class="sd">        returns a dictionary with column names as keys and their respective ranges</span>
 <span class="sd">        (tuple or set) as values.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Input must be a pandas DataFrame or Series."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Input must be a pandas DataFrame or Series.&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
@@ -6295,7 +6314,7 @@ it checks if the values are among the seen categories.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_range_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_range_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">211</span>
 <span class="normal">212</span>
 <span class="normal">213</span>
@@ -6331,7 +6350,7 @@ it checks if the values are among the seen categories.</p>
     <span class="n">feature_range</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="nb">set</span><span class="p">,</span>
     <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Check if there is any value outside the training range. For numeric features,</span>
 <span class="sd">    it checks if the values are within the min and max range. For categorical features,</span>
 <span class="sd">    it checks if the values are among the seen categories.</span>
@@ -6348,7 +6367,7 @@ it checks if the values are among the seen categories.</p>
 <span class="sd">    bool</span>
 <span class="sd">        True if there is any value outside the training range, False otherwise.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature_range</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">feature_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">X</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">feature_range</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
@@ -6470,7 +6489,7 @@ it checks if the values are among the seen categories.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_range_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_range_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">242</span>
 <span class="normal">243</span>
 <span class="normal">244</span>
@@ -6520,7 +6539,7 @@ it checks if the values are among the seen categories.</p>
     <span class="n">feature_range</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="nb">set</span><span class="p">,</span>
     <span class="n">series_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Display warnings for features with values outside the training range.</span>
 
 <span class="sd">    Parameters</span>
@@ -6536,24 +6555,24 @@ it checks if the values are among the seen categories.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature_range</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
         <span class="c1"># Numeric</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">not_compliant_feature</span><span class="si">}</span><span class="s2">' has values outside the range seen during training "</span>
-            <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">feature_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">feature_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">]. "</span>
-            <span class="sa">f</span><span class="s2">"This may affect the accuracy of the predictions."</span>
+            <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">not_compliant_feature</span><span class="si">}</span><span class="s2">&#39; has values outside the range seen during training &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">feature_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">feature_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">]. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;This may affect the accuracy of the predictions.&quot;</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Categorical</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">not_compliant_feature</span><span class="si">}</span><span class="s2">' has values not seen during training. Seen values: "</span>
-            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">feature_range</span><span class="si">}</span><span class="s2">. This may affect the accuracy of the predictions."</span>
+            <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">not_compliant_feature</span><span class="si">}</span><span class="s2">&#39; has values not seen during training. Seen values: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">feature_range</span><span class="si">}</span><span class="s2">. This may affect the accuracy of the predictions.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">series_name</span><span class="p">:</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">series_name</span><span class="si">}</span><span class="s2">': "</span> <span class="o">+</span> <span class="n">msg</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">series_name</span><span class="si">}</span><span class="s2">&#39;: &quot;</span> <span class="o">+</span> <span class="n">msg</span>
 
     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">FeatureOutOfRangeWarning</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -6690,7 +6709,7 @@ it checks if the values are among the seen categories.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_range_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_range_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">286</span>
 <span class="normal">287</span>
 <span class="normal">288</span>
@@ -6787,7 +6806,7 @@ it checks if the values are among the seen categories.</p>
     <span class="n">out_of_range_exog</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
     <span class="n">out_of_range_exog_ranges</span><span class="p">:</span> <span class="nb">list</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Summarize the results of the range check.</span>
 
 <span class="sd">    Parameters</span>
@@ -6805,24 +6824,24 @@ it checks if the values are among the seen categories.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">msg_series</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">msg_series</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
     <span class="k">if</span> <span class="n">out_of_range_series</span><span class="p">:</span>
         <span class="n">series_msgs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">series</span><span class="p">,</span> <span class="n">series_range</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
             <span class="n">out_of_range_series</span><span class="p">,</span> <span class="n">out_of_range_series_ranges</span>
         <span class="p">):</span>
             <span class="n">msg_temp</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">series</span><span class="si">}</span><span class="s2">' has values outside the observed range "</span>
-                <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">series_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">series_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">]."</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">series</span><span class="si">}</span><span class="s2">&#39; has values outside the observed range &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">series_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">series_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">].&quot;</span>
             <span class="p">)</span>
             <span class="n">series_msgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">msg_temp</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">80</span><span class="p">))</span>
-        <span class="n">msg_series</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">series_msgs</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="n">msg_series</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">series_msgs</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">msg_series</span> <span class="o">=</span> <span class="s2">"No series with out-of-range values found.</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="n">msg_series</span> <span class="o">=</span> <span class="s2">&quot;No series with out-of-range values found.</span><span class="se">\n</span><span class="s2">&quot;</span>
 
-    <span class="n">msg_exog</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">msg_exog</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
     <span class="k">if</span> <span class="n">out_of_range_exog</span><span class="p">:</span>
         <span class="n">exog_msgs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out_of_range_exog</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
@@ -6830,14 +6849,14 @@ it checks if the values are among the seen categories.</p>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exog_range</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
                     <span class="c1"># Numeric</span>
                     <span class="n">msg_temp</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">exog</span><span class="si">}</span><span class="s2">' has values outside the observed range "</span>
-                        <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">exog_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">exog_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">]."</span>
+                        <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">exog</span><span class="si">}</span><span class="s2">&#39; has values outside the observed range &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">exog_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">exog_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">].&quot;</span>
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Categorical</span>
                     <span class="n">msg_temp</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">exog</span><span class="si">}</span><span class="s2">' has values not seen during training. Seen values: "</span>
-                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">exog_range</span><span class="si">}</span><span class="s2">."</span>
+                        <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">exog</span><span class="si">}</span><span class="s2">&#39; has values not seen during training. Seen values: &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exog_range</span><span class="si">}</span><span class="s2">.&quot;</span>
                     <span class="p">)</span>
                 <span class="n">exog_msgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">msg_temp</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">80</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
@@ -6846,28 +6865,28 @@ it checks if the values are among the seen categories.</p>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exog_range</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
                         <span class="c1"># Numeric</span>
                         <span class="n">msg_temp</span> <span class="o">=</span> <span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">exog</span><span class="si">}</span><span class="s2">' has values outside the observed range "</span>
-                            <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">exog_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">exog_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">]."</span>
+                            <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">exog</span><span class="si">}</span><span class="s2">&#39; has values outside the observed range &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">exog_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">exog_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">].&quot;</span>
                         <span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="c1"># Categorical</span>
                         <span class="n">msg_temp</span> <span class="o">=</span> <span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">exog</span><span class="si">}</span><span class="s2">' has values not seen during training. Seen values: "</span>
-                            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">exog_range</span><span class="si">}</span><span class="s2">."</span>
+                            <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">exog</span><span class="si">}</span><span class="s2">&#39; has values not seen during training. Seen values: &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exog_range</span><span class="si">}</span><span class="s2">.&quot;</span>
                         <span class="p">)</span>
-                    <span class="n">msg_temp</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">': "</span> <span class="o">+</span> <span class="n">msg_temp</span>
+                    <span class="n">msg_temp</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39;: &quot;</span> <span class="o">+</span> <span class="n">msg_temp</span>
                     <span class="n">exog_msgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">msg_temp</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">80</span><span class="p">))</span>
 
-        <span class="n">msg_exog</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">exog_msgs</span><span class="p">)</span>
+        <span class="n">msg_exog</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">exog_msgs</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">msg_exog</span> <span class="o">=</span> <span class="s2">"No exogenous variables with out-of-range values found."</span>
+        <span class="n">msg_exog</span> <span class="o">=</span> <span class="s2">&quot;No exogenous variables with out-of-range values found.&quot;</span>
 
     <span class="n">console</span> <span class="o">=</span> <span class="n">Console</span><span class="p">()</span>
     <span class="n">content</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s2">"[bold]Series:[/bold]</span><span class="se">\n</span><span class="si">{</span><span class="n">msg_series</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
-        <span class="sa">f</span><span class="s2">"[bold]Exogenous Variables:[/bold]</span><span class="se">\n</span><span class="si">{</span><span class="n">msg_exog</span><span class="si">}</span><span class="s2">"</span>
+        <span class="sa">f</span><span class="s2">&quot;[bold]Series:[/bold]</span><span class="se">\n</span><span class="si">{</span><span class="n">msg_series</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;[bold]Exogenous Variables:[/bold]</span><span class="se">\n</span><span class="si">{</span><span class="n">msg_exog</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="p">)</span>
-    <span class="n">console</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">Panel</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"[bold]Out-of-range summary[/bold]"</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">console</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">Panel</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;[bold]Out-of-range summary[/bold]&quot;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6979,7 +6998,7 @@ Expected values are 'series', 'last_window' or 'exog'.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_range_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_range_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">376</span>
 <span class="normal">377</span>
 <span class="normal">378</span>
@@ -7050,7 +7069,7 @@ Expected values are 'series', 'last_window' or 'exog'.</p>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">series_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert pd.Series, pd.DataFrame or dict into a standardized dict of</span>
 <span class="sd">    pd.Series or pd.DataFrames.</span>
 
@@ -7060,7 +7079,7 @@ Expected values are 'series', 'last_window' or 'exog'.</p>
 <span class="sd">        Input data to normalize.</span>
 <span class="sd">    name : str</span>
 <span class="sd">        Name of the input being normalized. Used for error messages.</span>
-<span class="sd">        Expected values are 'series', 'last_window' or 'exog'.</span>
+<span class="sd">        Expected values are &#39;series&#39;, &#39;last_window&#39; or &#39;exog&#39;.</span>
 <span class="sd">    series_ids : list, default None</span>
 <span class="sd">        Series IDs to include in the normalization of exogenous variables.</span>
 
@@ -7069,23 +7088,23 @@ Expected values are 'series', 'last_window' or 'exog'.</p>
 <span class="sd">    X : dict</span>
 <span class="sd">        Normalized input as a dictionary of pandas Series or DataFrames.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">X</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must have a name when a pandas Series is provided."</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must have a name when a pandas Series is provided.&quot;</span>
             <span class="p">)</span>
         <span class="n">X</span> <span class="o">=</span> <span class="p">{</span><span class="n">X</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">X</span><span class="p">}</span>
 
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"series"</span><span class="p">,</span> <span class="s2">"last_window"</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;series&quot;</span><span class="p">,</span> <span class="s2">&quot;last_window&quot;</span><span class="p">]:</span>
                 <span class="n">col</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"`</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">` DataFrame has multiple columns. Only the "</span>
-                        <span class="sa">f</span><span class="s2">"first column, '</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">', will be used. Others ignored."</span><span class="p">,</span>
+                        <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">` DataFrame has multiple columns. Only the &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;first column, &#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&#39;, will be used. Others ignored.&quot;</span><span class="p">,</span>
                         <span class="n">IgnoredArgumentWarning</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="n">X</span> <span class="o">=</span> <span class="p">{</span>
@@ -7098,14 +7117,14 @@ Expected values are 'series', 'last_window' or 'exog'.</p>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">series_specific_exog_</span> <span class="ow">and</span> <span class="n">series_ids</span><span class="p">:</span>
                 <span class="n">X</span> <span class="o">=</span> <span class="p">{</span><span class="n">series_id</span><span class="p">:</span> <span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">series_id</span> <span class="ow">in</span> <span class="n">series_ids</span><span class="p">}</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">"series"</span><span class="p">)</span>
+                <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;series&quot;</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">X</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">"All values in `</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">` must be a pandas Series or DataFrame. "</span>
-                    <span class="sa">f</span><span class="s2">"Review the value for key '</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">'."</span>
+                    <span class="sa">f</span><span class="s2">&quot;All values in `</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">` must be a pandas Series or DataFrame. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Review the value for key &#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
                 <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">X</span>
@@ -7203,7 +7222,7 @@ used to fit the forecaster.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_range_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_range_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">442</span>
 <span class="normal">443</span>
 <span class="normal">444</span>
@@ -7281,7 +7300,7 @@ used to fit the forecaster.</p>
     <span class="n">exog</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Fit detector, storing training ranges.</span>
 
 <span class="sd">    Parameters</span>
@@ -7296,25 +7315,25 @@ used to fit the forecaster.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="n">series</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="s1">'y'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">'y'</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">series</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="s1">&#39;y&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"One of `series` or `y` must be provided."</span>
+            <span class="s2">&quot;One of `series` or `y` must be provided.&quot;</span>
         <span class="p">)</span>
-    <span class="k">if</span> <span class="s1">'y'</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s1">&#39;y&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">series</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"Cannot specify both `series` and `y`. Please provide only one of them."</span>
+                <span class="s2">&quot;Cannot specify both `series` and `y`. Please provide only one of them.&quot;</span>
             <span class="p">)</span>
-        <span class="n">series</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">'y'</span><span class="p">)</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Input must be a pandas Series, DataFrame or dict."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Input must be a pandas Series, DataFrame or dict.&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exog</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="s2">"Exogenous variables must be a pandas Series, DataFrame or dict."</span>
+            <span class="s2">&quot;Exogenous variables must be a pandas Series, DataFrame or dict.&quot;</span>
         <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span>      <span class="o">=</span> <span class="p">[]</span>
@@ -7324,14 +7343,14 @@ used to fit the forecaster.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">series_specific_exog_</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span>             <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="n">series</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_input</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"series"</span><span class="p">)</span>
+    <span class="n">series</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_input</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;series&quot;</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">series</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">series_values_range_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_features_range</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">exog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
 
-        <span class="n">exog</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_input</span><span class="p">(</span><span class="n">exog</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"exog"</span><span class="p">)</span>
+        <span class="n">exog</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_input</span><span class="p">(</span><span class="n">exog</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;exog&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exog_values_range_</span> <span class="o">=</span> <span class="p">{}</span>
@@ -7505,7 +7524,7 @@ variables for each series.</li>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_range_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_range_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">515</span>
 <span class="normal">516</span>
 <span class="normal">517</span>
@@ -7657,7 +7676,7 @@ variables for each series.</li>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Check if there is any value outside the training range for last_window and exog.</span>
 
 <span class="sd">    Parameters</span>
@@ -7687,19 +7706,19 @@ variables for each series.</li>
 <span class="sd">        keys are series names and values are lists of out-of-range exogenous</span>
 <span class="sd">        variables for each series.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Model is not fitted yet."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Model is not fitted yet.&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last_window</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="s2">"`last_window` must be a pandas Series, DataFrame, dict or None."</span>
+            <span class="s2">&quot;`last_window` must be a pandas Series, DataFrame, dict or None.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exog</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="s2">"`exog` must be a pandas Series, DataFrame, dict or None."</span>
+            <span class="s2">&quot;`exog` must be a pandas Series, DataFrame, dict or None.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">flag_out_of_range</span> <span class="o">=</span> <span class="kc">False</span>
@@ -7707,7 +7726,7 @@ variables for each series.</li>
     <span class="n">out_of_range_series</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">out_of_range_series_ranges</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="n">last_window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">last_window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_input</span><span class="p">(</span><span class="n">last_window</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"last_window"</span><span class="p">)</span>
+        <span class="n">last_window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_input</span><span class="p">(</span><span class="n">last_window</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;last_window&quot;</span><span class="p">)</span>
         <span class="n">series_names_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">last_window</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
@@ -7715,7 +7734,7 @@ variables for each series.</li>
             <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">series_names_set</span><span class="p">:</span>
                     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">' was not seen during training. Its range is unknown."</span><span class="p">,</span>
+                        <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; was not seen during training. Its range is unknown.&quot;</span><span class="p">,</span>
                         <span class="n">UnknownLevelWarning</span>
                     <span class="p">)</span>
                     <span class="k">continue</span>
@@ -7736,7 +7755,7 @@ variables for each series.</li>
     <span class="n">out_of_range_exog_ranges</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">series_specific_exog_</span> <span class="k">else</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="n">exog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">series_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">last_window</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">if</span> <span class="n">last_window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span>
-        <span class="n">exog</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_input</span><span class="p">(</span><span class="n">exog</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"exog"</span><span class="p">,</span> <span class="n">series_ids</span><span class="o">=</span><span class="n">series_ids</span><span class="p">)</span>
+        <span class="n">exog</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_input</span><span class="p">(</span><span class="n">exog</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;exog&quot;</span><span class="p">,</span> <span class="n">series_ids</span><span class="o">=</span><span class="n">series_ids</span><span class="p">)</span>
         <span class="n">exog_names_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span> <span class="k">else</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">exog</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
 
@@ -7755,7 +7774,7 @@ variables for each series.</li>
 
                 <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">exog_names_set</span><span class="p">:</span>
                     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">' was not seen during training. Its range is unknown."</span><span class="p">,</span>
+                        <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&#39; was not seen during training. Its range is unknown.&quot;</span><span class="p">,</span>
                         <span class="n">MissingExogWarning</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="k">continue</span>
@@ -7819,7 +7838,7 @@ variables for each series.</li>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">PopulationDriftDetector</span><span class="p">(</span>
     <span class="n">chunk_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">threshold</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-    <span class="n">threshold_method</span><span class="o">=</span><span class="s2">"std"</span><span class="p">,</span>
+    <span class="n">threshold_method</span><span class="o">=</span><span class="s2">&quot;std&quot;</span><span class="p">,</span>
     <span class="n">max_out_of_range_proportion</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -8398,7 +8417,7 @@ using NannyML directly: <a href="https://nannyml.readthedocs.io/en/stable/">http
 
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/drift_detection/_population_drift.py</code></summary>
+                    <summary>Source code in <code>skforecast\drift_detection\_population_drift.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">206</span>
 <span class="normal">207</span>
 <span class="normal">208</span>
@@ -8477,7 +8496,7 @@ using NannyML directly: <a href="https://nannyml.readthedocs.io/en/stable/">http
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
-    <span class="n">threshold_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'std'</span><span class="p">,</span>
+    <span class="n">threshold_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;std&#39;</span><span class="p">,</span>
     <span class="n">max_out_of_range_proportion</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 
@@ -8502,50 +8521,50 @@ using NannyML directly: <a href="https://nannyml.readthedocs.io/en/stable/">http
     <span class="bp">self</span><span class="o">.</span><span class="n">skforecast_version</span>        <span class="o">=</span> <span class="n">__version__</span>
 
     <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s2">"`chunk_size` must be a positive integer, a string compatible with "</span>
-        <span class="s2">"pandas frequencies (e.g., 'D', 'W', 'MS'), or None."</span>
+        <span class="s2">&quot;`chunk_size` must be a positive integer, a string compatible with &quot;</span>
+        <span class="s2">&quot;pandas frequencies (e.g., &#39;D&#39;, &#39;W&#39;, &#39;MS&#39;), or None.&quot;</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)))):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2"> Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2"> Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">chunk_size</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">frequencies</span><span class="o">.</span><span class="n">to_offset</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2"> Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2"> Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">chunk_size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2"> Got </span><span class="si">{</span><span class="n">chunk_size</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2"> Got </span><span class="si">{</span><span class="n">chunk_size</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="o">=</span> <span class="n">chunk_size</span>
 
-    <span class="n">valid_threshold_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'quantile'</span><span class="p">,</span> <span class="s1">'std'</span><span class="p">]</span>
+    <span class="n">valid_threshold_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;quantile&#39;</span><span class="p">,</span> <span class="s1">&#39;std&#39;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">threshold_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_threshold_methods</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`threshold_method` must be one of </span><span class="si">{</span><span class="n">valid_threshold_methods</span><span class="si">}</span><span class="s2">. "</span>
-            <span class="sa">f</span><span class="s2">"Got '</span><span class="si">{</span><span class="n">threshold_method</span><span class="si">}</span><span class="s2">'."</span>
+            <span class="sa">f</span><span class="s2">&quot;`threshold_method` must be one of </span><span class="si">{</span><span class="n">valid_threshold_methods</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got &#39;</span><span class="si">{</span><span class="n">threshold_method</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
         <span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">threshold_method</span> <span class="o">=</span> <span class="n">threshold_method</span>
 
-    <span class="k">if</span> <span class="n">threshold_method</span> <span class="o">==</span> <span class="s1">'quantile'</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">threshold_method</span> <span class="o">==</span> <span class="s1">&#39;quantile&#39;</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"When `threshold_method='quantile'`, `threshold` must be between "</span>
-                <span class="sa">f</span><span class="s2">"0 and 1. Got </span><span class="si">{</span><span class="n">threshold</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;When `threshold_method=&#39;quantile&#39;`, `threshold` must be between &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;0 and 1. Got </span><span class="si">{</span><span class="n">threshold</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"When `threshold_method='std'`, `threshold` must be &gt;= 0. "</span>
-                <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="n">threshold</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;When `threshold_method=&#39;std&#39;`, `threshold` must be &gt;= 0. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">threshold</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">max_out_of_range_proportion</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`max_out_of_range_proportion` must be between 0 and 1. "</span>
-            <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="n">max_out_of_range_proportion</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`max_out_of_range_proportion` must be between 0 and 1. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">max_out_of_range_proportion</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">max_out_of_range_proportion</span> <span class="o">=</span> <span class="n">max_out_of_range_proportion</span>
 </code></pre></div></td></tr></table></div>
@@ -9068,7 +9087,7 @@ using NannyML directly: <a href="https://nannyml.readthedocs.io/en/stable/">http
 </div>
 
 
-<h3 id="skforecast.drift_detection._population_drift.PopulationDriftDetector-functions">Functions<a href="#skforecast.drift_detection._population_drift.PopulationDriftDetector-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.drift_detection._population_drift.PopulationDriftDetector-functions">Methods:<a href="#skforecast.drift_detection._population_drift.PopulationDriftDetector-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -9088,7 +9107,7 @@ The "General Information" section is expanded by default.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_population_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_population_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">308</span>
 <span class="normal">309</span>
 <span class="normal">310</span>
@@ -9133,10 +9152,10 @@ The "General Information" section is expanded by default.</p>
 <span class="normal">349</span>
 <span class="normal">350</span>
 <span class="normal">351</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    HTML representation of the object.</span>
-<span class="sd">    The "General Information" section is expanded by default.</span>
-<span class="sd">    """</span>
+<span class="sd">    The &quot;General Information&quot; section is expanded by default.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">style</span><span class="p">,</span> <span class="n">unique_id</span> <span class="o">=</span> <span class="n">get_style_repr_html</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">)</span>
 
@@ -9147,9 +9166,9 @@ The "General Information" section is expanded by default.</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">chunk_size_display</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span>
 
-    <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
-<span class="s2">    &lt;div class="container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2">"&gt;</span>
-<span class="s2">        &lt;p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;"&gt;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    &lt;div class=&quot;container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2">&quot;&gt;</span>
+<span class="s2">        &lt;p style=&quot;font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;&quot;&gt;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
 <span class="s2">        &lt;details open&gt;</span>
 <span class="s2">            &lt;summary&gt;General Information&lt;/summary&gt;</span>
 <span class="s2">            &lt;ul&gt;</span>
@@ -9168,12 +9187,12 @@ The "General Information" section is expanded by default.</p>
 <span class="s2">            &lt;/ul&gt;</span>
 <span class="s2">        &lt;/details&gt;</span>
 <span class="s2">        &lt;p&gt;</span>
-<span class="s2">            &lt;a href="https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector"&gt;&amp;#128214; &lt;strong&gt;API Reference&lt;/strong&gt;&lt;/a&gt;</span>
+<span class="s2">            &lt;a href=&quot;https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector&quot;&gt;&amp;#128214; &lt;strong&gt;API Reference&lt;/strong&gt;&lt;/a&gt;</span>
 <span class="s2">            &amp;nbsp;&amp;nbsp;</span>
-<span class="s2">            &lt;a href="https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/user_guides/drift-detection.html"&gt;&amp;#128221; &lt;strong&gt;User Guide&lt;/strong&gt;&lt;/a&gt;</span>
+<span class="s2">            &lt;a href=&quot;https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/user_guides/drift-detection.html&quot;&gt;&amp;#128221; &lt;strong&gt;User Guide&lt;/strong&gt;&lt;/a&gt;</span>
 <span class="s2">        &lt;/p&gt;</span>
 <span class="s2">    &lt;/div&gt;</span>
-<span class="s2">    """</span>
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="n">style</span> <span class="o">+</span> <span class="n">content</span>
 </code></pre></div></td></tr></table></div>
@@ -9199,7 +9218,7 @@ The "General Information" section is expanded by default.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_population_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_population_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">353</span>
 <span class="normal">354</span>
 <span class="normal">355</span>
@@ -9220,9 +9239,9 @@ The "General Information" section is expanded by default.</p>
 <span class="normal">370</span>
 <span class="normal">371</span>
 <span class="normal">372</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_reset_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Reset all fitted attributes to their initial state.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">ref_features_</span>             <span class="o">=</span> <span class="p">[]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">ref_ecdf_</span>                 <span class="o">=</span> <span class="p">{}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">ref_bins_edges_</span>           <span class="o">=</span> <span class="p">{}</span>
@@ -9316,7 +9335,7 @@ The "General Information" section is expanded by default.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_population_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_population_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">374</span>
 <span class="normal">375</span>
 <span class="normal">376</span>
@@ -9355,7 +9374,7 @@ The "General Information" section is expanded by default.</p>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Split X into chunks based on chunk_size.</span>
 
 <span class="sd">    Parameters</span>
@@ -9368,12 +9387,12 @@ The "General Information" section is expanded by default.</p>
 <span class="sd">    chunks : list</span>
 <span class="sd">        List of DataFrames, each representing a chunk of the data.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"`chunk_size` is a pandas frequency but `X` does not have a DatetimeIndex."</span>
+                <span class="s2">&quot;`chunk_size` is a pandas frequency but `X` does not have a DatetimeIndex.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span>
@@ -9485,7 +9504,7 @@ normalized counts for categorical).</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_population_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_population_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">410</span>
 <span class="normal">411</span>
 <span class="normal">412</span>
@@ -9528,13 +9547,13 @@ normalized counts for categorical).</p>
     <span class="n">ref_probs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
     <span class="n">new_probs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute Jensen-Shannon distance handling out-of-range/unseen values.</span>
 
 <span class="sd">    If new data contains values outside the reference range (numeric) or</span>
-<span class="sd">    unseen categories (categorical), they won't be counted in the probability</span>
+<span class="sd">    unseen categories (categorical), they won&#39;t be counted in the probability</span>
 <span class="sd">    distribution, leading to a sum &lt; 1. To ensure distributions are comparable,</span>
-<span class="sd">    we add an extra bin for "leftover" probability mass in the new distribution</span>
+<span class="sd">    we add an extra bin for &quot;leftover&quot; probability mass in the new distribution</span>
 <span class="sd">    and a corresponding zero bin in the reference distribution.</span>
 
 <span class="sd">    Parameters</span>
@@ -9550,7 +9569,7 @@ normalized counts for categorical).</p>
 <span class="sd">    js_distance : float</span>
 <span class="sd">        Jensen-Shannon distance between the two distributions.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">leftover</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">new_probs</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">leftover</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -9618,7 +9637,7 @@ the statistics for each chunk.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_population_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_population_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">449</span>
 <span class="normal">450</span>
 <span class="normal">451</span>
@@ -9821,7 +9840,7 @@ the statistics for each chunk.</p>
 <span class="normal">648</span>
 <span class="normal">649</span>
 <span class="normal">650</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Fit the drift detector by calculating empirical distributions and thresholds</span>
 <span class="sd">    from reference data. The empirical distributions are computed by chunking</span>
 <span class="sd">    the reference data according to the specified `chunk_size` and calculating</span>
@@ -9832,7 +9851,7 @@ the statistics for each chunk.</p>
 <span class="sd">    X : pandas DataFrame</span>
 <span class="sd">        Reference data used as the baseline for drift detection.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">_reset_attributes</span><span class="p">()</span>
 
@@ -9840,8 +9859,8 @@ the statistics for each chunk.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">n_chunks_reference_data_</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunks</span><span class="p">)</span>
 
     <span class="c1"># NOTE: Precompute Leave One Chunk Out (LOO) indices once per feature </span>
-    <span class="c1"># (only for 'quantile' method)</span>
-    <span class="n">use_loo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold_method</span> <span class="o">==</span> <span class="s1">'quantile'</span>
+    <span class="c1"># (only for &#39;quantile&#39; method)</span>
+    <span class="n">use_loo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold_method</span> <span class="o">==</span> <span class="s1">&#39;quantile&#39;</span>
     <span class="k">if</span> <span class="n">use_loo</span><span class="p">:</span>
         <span class="n">chunk_indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">chunk</span><span class="o">.</span><span class="n">index</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">]</span>
         <span class="c1"># List of indices of the reference DataFrame excluding each time </span>
@@ -9857,8 +9876,8 @@ the statistics for each chunk.</p>
         <span class="n">ref</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">ref</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Feature '</span><span class="si">{</span><span class="n">feature</span><span class="si">}</span><span class="s2">' contains only NaN values in the reference dataset. "</span>
-                <span class="sa">f</span><span class="s2">"Drift detection skipped."</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;Feature &#39;</span><span class="si">{</span><span class="n">feature</span><span class="si">}</span><span class="s2">&#39; contains only NaN values in the reference dataset. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Drift detection skipped.&quot;</span><span class="p">,</span>
                 <span class="n">UnknownLevelWarning</span>
             <span class="p">)</span>
             <span class="k">continue</span>
@@ -9873,7 +9892,7 @@ the statistics for each chunk.</p>
             <span class="c1"># This may not perfectly align with bins used in predict if new data</span>
             <span class="c1"># extends the range, but it provides a reasonable approximation</span>
             <span class="c1"># for efficiency.</span>
-            <span class="n">bins_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram_bin_edges</span><span class="p">(</span><span class="n">ref</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">bins</span><span class="o">=</span><span class="s1">'doane'</span><span class="p">)</span>
+            <span class="n">bins_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram_bin_edges</span><span class="p">(</span><span class="n">ref</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">bins</span><span class="o">=</span><span class="s1">&#39;doane&#39;</span><span class="p">)</span>
             <span class="n">ref_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins_edges</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">ref_bins_edges_</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span> <span class="o">=</span> <span class="n">bins_edges</span>
@@ -9896,7 +9915,7 @@ the statistics for each chunk.</p>
             <span class="k">if</span> <span class="n">new</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># If 'quantile', use LOO and exclude current chunk from reference data</span>
+            <span class="c1"># If &#39;quantile&#39;, use LOO and exclude current chunk from reference data</span>
             <span class="k">if</span> <span class="n">use_loo</span><span class="p">:</span>
                 <span class="n">ref_data_for_stats</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">loo_indices</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">feature</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">ref_data_for_stats</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
@@ -9920,7 +9939,7 @@ the statistics for each chunk.</p>
 
                 <span class="c1"># Handle out-of-bin data: if new data contains values outside the reference range,</span>
                 <span class="c1"># they will not be counted in the histogram, leading to a sum &lt; 1. To ensure</span>
-                <span class="c1"># the histograms are comparable, we add an extra bin for "out-of-range" data with</span>
+                <span class="c1"># the histograms are comparable, we add an extra bin for &quot;out-of-range&quot; data with</span>
                 <span class="c1"># the leftover probability mass in the new histogram and a corresponding zero bin</span>
                 <span class="c1"># in the reference histogram.</span>
                 <span class="n">js_distance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_js_with_leftover</span><span class="p">(</span>
@@ -9930,7 +9949,7 @@ the statistics for each chunk.</p>
                 <span class="n">ks_stat</span> <span class="o">=</span> <span class="n">ks_2samp_from_ecdf</span><span class="p">(</span>
                     <span class="n">ecdf1</span><span class="o">=</span><span class="n">ref_stats_ecdf</span><span class="p">,</span>
                     <span class="n">ecdf2</span><span class="o">=</span><span class="n">new_ecdf</span><span class="p">,</span>
-                    <span class="n">alternative</span><span class="o">=</span><span class="s2">"two-sided"</span>
+                    <span class="n">alternative</span><span class="o">=</span><span class="s2">&quot;two-sided&quot;</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Compute counts and probs for reference</span>
@@ -9963,7 +9982,7 @@ the statistics for each chunk.</p>
             <span class="bp">self</span><span class="o">.</span><span class="n">empirical_dist_chi2_</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chi2_stat</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">empirical_dist_js_</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">js_distance</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold_method</span> <span class="o">==</span> <span class="s1">'quantile'</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold_method</span> <span class="o">==</span> <span class="s1">&#39;quantile&#39;</span><span class="p">:</span>
             <span class="c1"># Calculate empirical thresholds using the specified quantile</span>
             <span class="c1"># Using pandas Series quantile method to handle NaNs properly and warnings</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">empirical_threshold_ks_</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
@@ -9983,8 +10002,8 @@ the statistics for each chunk.</p>
 
             <span class="c1"># Suppress RuntimeWarnings when all values are NaN</span>
             <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s1">'Mean of empty slice'</span><span class="p">)</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s1">'Degrees of freedom &lt;= 0 for slice'</span><span class="p">)</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s1">&#39;Mean of empty slice&#39;</span><span class="p">)</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s1">&#39;Degrees of freedom &lt;= 0 for slice&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">empirical_threshold_ks_</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                     <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">ks_values</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">ks_values</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
                 <span class="p">)</span>
@@ -10016,9 +10035,9 @@ the statistics for each chunk.</p>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_chunks_reference_data_</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Only </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_chunks_reference_data_</span><span class="si">}</span><span class="s2"> chunks in reference data. "</span>
-            <span class="sa">f</span><span class="s2">"Empirical thresholds may not be reliable. Consider using more "</span>
-            <span class="sa">f</span><span class="s2">"data or smaller chunk_size."</span>
+            <span class="sa">f</span><span class="s2">&quot;Only </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_chunks_reference_data_</span><span class="si">}</span><span class="s2"> chunks in reference data. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Empirical thresholds may not be reliable. Consider using more &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;data or smaller chunk_size.&quot;</span>
         <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">True</span>
@@ -10086,7 +10105,7 @@ each series.</li>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_population_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_population_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">652</span>
 <span class="normal">653</span>
 <span class="normal">654</span>
@@ -10134,7 +10153,7 @@ each series.</li>
 <span class="normal">696</span>
 <span class="normal">697</span>
 <span class="normal">698</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Fit the drift detector by calculating empirical distributions and thresholds</span>
 <span class="sd">    from reference data. The empirical distributions are computed by chunking</span>
 <span class="sd">    the reference data according to the specified `chunk_size` and calculating</span>
@@ -10151,7 +10170,7 @@ each series.</li>
 <span class="sd">        and the second level the temporal index. A separate detector is fitted for</span>
 <span class="sd">        each series.        </span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">_reset_attributes</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">detectors_</span>       <span class="o">=</span> <span class="p">{}</span>    <span class="c1"># NOTE: Only used for multiseries</span>
@@ -10159,7 +10178,7 @@ each series.</li>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`X` must be a pandas DataFrame. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead."</span>
+            <span class="sa">f</span><span class="s2">&quot;`X` must be a pandas DataFrame. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="p">):</span>
@@ -10258,7 +10277,7 @@ reference thresholds.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_population_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_population_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">700</span>
 <span class="normal">701</span>
 <span class="normal">702</span>
@@ -10383,7 +10402,7 @@ reference thresholds.</p>
 <span class="normal">821</span>
 <span class="normal">822</span>
 <span class="normal">823</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Predict drift in new data by comparing the estimated statistics to</span>
 <span class="sd">    reference thresholds.</span>
 
@@ -10397,7 +10416,7 @@ reference thresholds.</p>
 <span class="sd">    results : pandas DataFrame</span>
 <span class="sd">        DataFrame with the drift detection results for each chunk.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">chunks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_chunks</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
@@ -10406,8 +10425,8 @@ reference thresholds.</p>
     <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">feature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_features_</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Feature '</span><span class="si">{</span><span class="n">feature</span><span class="si">}</span><span class="s2">' was not present during fitting. Drift detection skipped "</span>
-                <span class="sa">f</span><span class="s2">"for this feature."</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;Feature &#39;</span><span class="si">{</span><span class="n">feature</span><span class="si">}</span><span class="s2">&#39; was not present during fitting. Drift detection skipped &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;for this feature.&quot;</span><span class="p">,</span>
                 <span class="n">UnknownLevelWarning</span>
             <span class="p">)</span>
             <span class="k">continue</span>
@@ -10425,7 +10444,7 @@ reference thresholds.</p>
 
         <span class="k">for</span> <span class="n">chunk_idx</span><span class="p">,</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chunks</span><span class="p">):</span>
 
-            <span class="n">chunk_label</span> <span class="o">=</span> <span class="n">chunk_idx</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="k">else</span> <span class="s2">"full"</span>
+            <span class="n">chunk_label</span> <span class="o">=</span> <span class="n">chunk_idx</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="k">else</span> <span class="s2">&quot;full&quot;</span>
             <span class="n">new</span> <span class="o">=</span> <span class="n">chunk</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
             <span class="n">ks_stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
             <span class="n">chi2_stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
@@ -10447,7 +10466,7 @@ reference thresholds.</p>
                     <span class="n">ks_stat</span> <span class="o">=</span> <span class="n">ks_2samp_from_ecdf</span><span class="p">(</span>
                         <span class="n">ecdf1</span><span class="o">=</span><span class="n">ref_ecdf</span><span class="p">,</span>
                         <span class="n">ecdf2</span><span class="o">=</span><span class="n">new_ecdf</span><span class="p">,</span>
-                        <span class="n">alternative</span><span class="o">=</span><span class="s2">"two-sided"</span>
+                        <span class="n">alternative</span><span class="o">=</span><span class="s2">&quot;two-sided&quot;</span>
                     <span class="p">)</span>
                     <span class="n">n_out_of_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">new</span> <span class="o">&lt;</span> <span class="n">ref_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">|</span> <span class="p">(</span><span class="n">new</span> <span class="o">&gt;</span> <span class="n">ref_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
                     <span class="n">prop_out_of_range</span> <span class="o">=</span> <span class="n">n_out_of_range</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">new</span><span class="p">)</span>
@@ -10478,31 +10497,31 @@ reference thresholds.</p>
                         <span class="n">chi2_stat</span> <span class="o">=</span> <span class="n">chi2_contingency</span><span class="p">(</span><span class="n">contingency_table</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
             <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                <span class="s2">"chunk"</span><span class="p">:</span> <span class="n">chunk_label</span><span class="p">,</span>
-                <span class="s2">"chunk_start"</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
-                <span class="s2">"chunk_end"</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span>
-                <span class="s2">"feature"</span><span class="p">:</span> <span class="n">feature</span><span class="p">,</span>
-                <span class="s2">"ks_statistic"</span><span class="p">:</span> <span class="n">ks_stat</span><span class="p">,</span>
-                <span class="s2">"ks_threshold"</span><span class="p">:</span> <span class="n">ks_threshold</span><span class="p">,</span>
-                <span class="s2">"chi2_statistic"</span><span class="p">:</span> <span class="n">chi2_stat</span><span class="p">,</span>
-                <span class="s2">"chi2_threshold"</span><span class="p">:</span> <span class="n">chi2_threshold</span><span class="p">,</span>
-                <span class="s2">"js_statistic"</span><span class="p">:</span> <span class="n">js_distance</span><span class="p">,</span>
-                <span class="s2">"js_threshold"</span><span class="p">:</span> <span class="n">js_threshold</span><span class="p">,</span>
-                <span class="s2">"reference_range"</span><span class="p">:</span> <span class="n">ref_range</span><span class="p">,</span>
-                <span class="s2">"prop_out_of_range"</span><span class="p">:</span> <span class="n">prop_out_of_range</span><span class="p">,</span>
-                <span class="s2">"max_out_of_range_proportion"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_out_of_range_proportion</span><span class="p">,</span>
-                <span class="s2">"is_out_of_range"</span><span class="p">:</span> <span class="n">is_out_of_range</span><span class="p">,</span>
+                <span class="s2">&quot;chunk&quot;</span><span class="p">:</span> <span class="n">chunk_label</span><span class="p">,</span>
+                <span class="s2">&quot;chunk_start&quot;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
+                <span class="s2">&quot;chunk_end&quot;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span>
+                <span class="s2">&quot;feature&quot;</span><span class="p">:</span> <span class="n">feature</span><span class="p">,</span>
+                <span class="s2">&quot;ks_statistic&quot;</span><span class="p">:</span> <span class="n">ks_stat</span><span class="p">,</span>
+                <span class="s2">&quot;ks_threshold&quot;</span><span class="p">:</span> <span class="n">ks_threshold</span><span class="p">,</span>
+                <span class="s2">&quot;chi2_statistic&quot;</span><span class="p">:</span> <span class="n">chi2_stat</span><span class="p">,</span>
+                <span class="s2">&quot;chi2_threshold&quot;</span><span class="p">:</span> <span class="n">chi2_threshold</span><span class="p">,</span>
+                <span class="s2">&quot;js_statistic&quot;</span><span class="p">:</span> <span class="n">js_distance</span><span class="p">,</span>
+                <span class="s2">&quot;js_threshold&quot;</span><span class="p">:</span> <span class="n">js_threshold</span><span class="p">,</span>
+                <span class="s2">&quot;reference_range&quot;</span><span class="p">:</span> <span class="n">ref_range</span><span class="p">,</span>
+                <span class="s2">&quot;prop_out_of_range&quot;</span><span class="p">:</span> <span class="n">prop_out_of_range</span><span class="p">,</span>
+                <span class="s2">&quot;max_out_of_range_proportion&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_out_of_range_proportion</span><span class="p">,</span>
+                <span class="s2">&quot;is_out_of_range&quot;</span><span class="p">:</span> <span class="n">is_out_of_range</span><span class="p">,</span>
             <span class="p">})</span>
 
     <span class="n">results_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
-    <span class="n">results_df</span><span class="p">[</span><span class="s1">'drift_ks_statistic'</span><span class="p">]</span> <span class="o">=</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">'ks_statistic'</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">'ks_threshold'</span><span class="p">]</span>
-    <span class="n">results_df</span><span class="p">[</span><span class="s1">'drift_chi2_statistic'</span><span class="p">]</span> <span class="o">=</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">'chi2_statistic'</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">'chi2_threshold'</span><span class="p">]</span>
-    <span class="n">results_df</span><span class="p">[</span><span class="s1">'drift_js'</span><span class="p">]</span> <span class="o">=</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">'js_statistic'</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">'js_threshold'</span><span class="p">]</span>
-    <span class="n">results_df</span><span class="p">[</span><span class="s1">'drift_detected'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">results_df</span><span class="p">[</span><span class="s1">'drift_ks_statistic'</span><span class="p">]</span>
-        <span class="o">|</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">'drift_chi2_statistic'</span><span class="p">]</span>
-        <span class="o">|</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">'drift_js'</span><span class="p">]</span>
-        <span class="o">|</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">'is_out_of_range'</span><span class="p">]</span>
+    <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;drift_ks_statistic&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;ks_statistic&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;ks_threshold&#39;</span><span class="p">]</span>
+    <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;drift_chi2_statistic&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;chi2_statistic&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;chi2_threshold&#39;</span><span class="p">]</span>
+    <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;drift_js&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;js_statistic&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;js_threshold&#39;</span><span class="p">]</span>
+    <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;drift_detected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;drift_ks_statistic&#39;</span><span class="p">]</span>
+        <span class="o">|</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;drift_chi2_statistic&#39;</span><span class="p">]</span>
+        <span class="o">|</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;drift_js&#39;</span><span class="p">]</span>
+        <span class="o">|</span> <span class="n">results_df</span><span class="p">[</span><span class="s1">&#39;is_out_of_range&#39;</span><span class="p">]</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">results_df</span>
@@ -10596,7 +10615,7 @@ MultiIndex), and the list of chunk IDs where drift was detected.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_population_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_population_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">825</span>
 <span class="normal">826</span>
 <span class="normal">827</span>
@@ -10670,7 +10689,7 @@ MultiIndex), and the list of chunk IDs where drift was detected.</p>
 <span class="normal">895</span>
 <span class="normal">896</span>
 <span class="normal">897</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Predict drift in new data by comparing the estimated statistics to</span>
 <span class="sd">    reference thresholds.</span>
 
@@ -10688,16 +10707,16 @@ MultiIndex), and the list of chunk IDs where drift was detected.</p>
 <span class="sd">        with detected drift per feature (or per series_id and feature if</span>
 <span class="sd">        MultiIndex), and the list of chunk IDs where drift was detected.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This PopulationDriftDetector instance is not fitted yet. "</span>
-            <span class="s2">"Call 'fit' with appropriate arguments before using this estimator."</span>
+            <span class="s2">&quot;This PopulationDriftDetector instance is not fitted yet. &quot;</span>
+            <span class="s2">&quot;Call &#39;fit&#39; with appropriate arguments before using this estimator.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"`X` must be a pandas DataFrame. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`X` must be a pandas DataFrame. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead.&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="p">):</span>
         <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
@@ -10705,41 +10724,41 @@ MultiIndex), and the list of chunk IDs where drift was detected.</p>
             <span class="n">group</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">droplevel</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors_</span><span class="p">:</span>
                 <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">"Series '</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">' was not present during fitting. Drift detection skipped."</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;Series &#39;</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&#39; was not present during fitting. Drift detection skipped.&quot;</span><span class="p">,</span>
                     <span class="n">UnknownLevelWarning</span>
                 <span class="p">)</span>
                 <span class="k">continue</span>
 
             <span class="n">detector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors_</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">_predict</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'series_id'</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;series_id&#39;</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
             <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 
         <span class="n">results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">results</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'series_id'</span><span class="p">:</span>
-        <span class="n">groupby_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'series_id'</span><span class="p">,</span> <span class="s1">'feature'</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">results</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;series_id&#39;</span><span class="p">:</span>
+        <span class="n">groupby_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;series_id&#39;</span><span class="p">,</span> <span class="s1">&#39;feature&#39;</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">groupby_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'feature'</span><span class="p">]</span>
+        <span class="n">groupby_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;feature&#39;</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_drift_chunk_ids</span><span class="p">(</span><span class="n">group</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">group</span><span class="p">[</span><span class="s1">'drift_detected'</span><span class="p">],</span> <span class="s1">'chunk'</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;drift_detected&#39;</span><span class="p">],</span> <span class="s1">&#39;chunk&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
     <span class="n">summary</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">results</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">groupby_cols</span><span class="p">)</span>
         <span class="o">.</span><span class="n">agg</span><span class="p">(</span>
-            <span class="n">n_chunks_with_drift</span><span class="o">=</span><span class="p">(</span><span class="s1">'drift_detected'</span><span class="p">,</span> <span class="s1">'sum'</span><span class="p">),</span>
-            <span class="n">pct_chunks_with_drift</span><span class="o">=</span><span class="p">(</span><span class="s1">'drift_detected'</span><span class="p">,</span> <span class="s1">'mean'</span><span class="p">),</span>
-            <span class="n">chunks_with_drift</span><span class="o">=</span><span class="p">(</span><span class="s1">'drift_detected'</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">_get_drift_chunk_ids</span><span class="p">(</span>
+            <span class="n">n_chunks_with_drift</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;drift_detected&#39;</span><span class="p">,</span> <span class="s1">&#39;sum&#39;</span><span class="p">),</span>
+            <span class="n">pct_chunks_with_drift</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;drift_detected&#39;</span><span class="p">,</span> <span class="s1">&#39;mean&#39;</span><span class="p">),</span>
+            <span class="n">chunks_with_drift</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;drift_detected&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">_get_drift_chunk_ids</span><span class="p">(</span>
                 <span class="n">results</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
             <span class="p">))</span>
         <span class="p">)</span>
         <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
     <span class="p">)</span>
 
-    <span class="n">summary</span><span class="p">[</span><span class="s1">'pct_chunks_with_drift'</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="p">[</span><span class="s1">'pct_chunks_with_drift'</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span>
+    <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;pct_chunks_with_drift&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;pct_chunks_with_drift&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span>
 
     <span class="k">return</span> <span class="n">results</span><span class="p">,</span> <span class="n">summary</span>
 </code></pre></div></td></tr></table></div>
@@ -10791,7 +10810,7 @@ detector names. For single-series, attributes remain unchanged.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_population_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_population_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">899</span>
 <span class="normal">900</span>
 <span class="normal">901</span>
@@ -10830,7 +10849,7 @@ detector names. For single-series, attributes remain unchanged.</p>
 <span class="normal">934</span>
 <span class="normal">935</span>
 <span class="normal">936</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_collect_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Collect attributes for representation and inspection and update the instance</span>
 <span class="sd">    dictionary with the collected values. For multi-series (when detectors_ is</span>
 <span class="sd">    populated), attributes are aggregated into nested dictionaries keyed by</span>
@@ -10840,18 +10859,18 @@ detector names. For single-series, attributes remain unchanged.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Attributes to exclude from aggregation</span>
     <span class="n">excluded_attrs</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s1">'chunk_size'</span><span class="p">,</span>
-        <span class="s1">'threshold'</span><span class="p">,</span>
-        <span class="s1">'threshold_method'</span><span class="p">,</span>
-        <span class="s1">'max_out_of_range_proportion'</span><span class="p">,</span>
-        <span class="s1">'is_fitted'</span><span class="p">,</span> 
-        <span class="s1">'detectors_'</span><span class="p">,</span> 
-        <span class="s1">'series_names_in_'</span><span class="p">,</span>
-        <span class="s1">'skforecast_version'</span>
+        <span class="s1">&#39;chunk_size&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;threshold&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;threshold_method&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;max_out_of_range_proportion&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;is_fitted&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;detectors_&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;series_names_in_&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast_version&#39;</span>
     <span class="p">]</span>
 
     <span class="n">attr_names</span> <span class="o">=</span> <span class="p">[</span>
@@ -10915,7 +10934,7 @@ if MultiIndex was used during fitting).</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/drift_detection/_population_drift.py</code></summary>
+              <summary>Source code in <code>skforecast\drift_detection\_population_drift.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 938</span>
 <span class="normal"> 939</span>
 <span class="normal"> 940</span>
@@ -10990,7 +11009,7 @@ if MultiIndex was used during fitting).</p>
 <span class="normal">1009</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_thresholds</span><span class="p">(</span>
     <span class="bp">self</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return a DataFrame with all computed thresholds per feature.</span>
 <span class="sd">    For multi-series, returns thresholds per series_id and feature.</span>
 
@@ -11000,61 +11019,61 @@ if MultiIndex was used during fitting).</p>
 <span class="sd">        DataFrame with the computed thresholds per feature (and per series_id</span>
 <span class="sd">        if MultiIndex was used during fitting).</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This PopulationDriftDetector instance is not fitted yet. "</span>
-            <span class="s2">"Call 'fit' with appropriate arguments before using this estimator."</span>
+            <span class="s2">&quot;This PopulationDriftDetector instance is not fitted yet. &quot;</span>
+            <span class="s2">&quot;Call &#39;fit&#39; with appropriate arguments before using this estimator.&quot;</span>
         <span class="p">)</span>
 
     <span class="c1"># Multi-series case: ref_features_ is a dict keyed by series_id</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors_</span><span class="p">:</span>
         <span class="n">thresholds</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">"series_id"</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">"feature"</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">"ks_threshold"</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">"chi2_threshold"</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">"js_threshold"</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">"max_out_of_range_proportion"</span><span class="p">:</span> <span class="p">[]</span>
+            <span class="s2">&quot;series_id&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;feature&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;ks_threshold&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;chi2_threshold&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;js_threshold&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;max_out_of_range_proportion&quot;</span><span class="p">:</span> <span class="p">[]</span>
         <span class="p">}</span>
         <span class="k">for</span> <span class="n">series_id</span><span class="p">,</span> <span class="n">detector</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors_</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">detector</span><span class="o">.</span><span class="n">ref_features_</span><span class="p">:</span>
-                <span class="n">thresholds</span><span class="p">[</span><span class="s2">"series_id"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">series_id</span><span class="p">)</span>
-                <span class="n">thresholds</span><span class="p">[</span><span class="s2">"feature"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
-                <span class="n">thresholds</span><span class="p">[</span><span class="s2">"ks_threshold"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">thresholds</span><span class="p">[</span><span class="s2">&quot;series_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">series_id</span><span class="p">)</span>
+                <span class="n">thresholds</span><span class="p">[</span><span class="s2">&quot;feature&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
+                <span class="n">thresholds</span><span class="p">[</span><span class="s2">&quot;ks_threshold&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">detector</span><span class="o">.</span><span class="n">empirical_threshold_ks_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
                 <span class="p">)</span>
-                <span class="n">thresholds</span><span class="p">[</span><span class="s2">"chi2_threshold"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">thresholds</span><span class="p">[</span><span class="s2">&quot;chi2_threshold&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">detector</span><span class="o">.</span><span class="n">empirical_threshold_chi2_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
                 <span class="p">)</span>
-                <span class="n">thresholds</span><span class="p">[</span><span class="s2">"js_threshold"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">thresholds</span><span class="p">[</span><span class="s2">&quot;js_threshold&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">detector</span><span class="o">.</span><span class="n">empirical_threshold_js_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
                 <span class="p">)</span>
-                <span class="n">thresholds</span><span class="p">[</span><span class="s2">"max_out_of_range_proportion"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">thresholds</span><span class="p">[</span><span class="s2">&quot;max_out_of_range_proportion&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">detector</span><span class="o">.</span><span class="n">max_out_of_range_proportion</span>
                 <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Single-series case</span>
         <span class="n">thresholds</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">"feature"</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">"ks_threshold"</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">"chi2_threshold"</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">"js_threshold"</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">"max_out_of_range_proportion"</span><span class="p">:</span> <span class="p">[]</span>
+            <span class="s2">&quot;feature&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;ks_threshold&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;chi2_threshold&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;js_threshold&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;max_out_of_range_proportion&quot;</span><span class="p">:</span> <span class="p">[]</span>
         <span class="p">}</span>
         <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_features_</span><span class="p">:</span>
-            <span class="n">thresholds</span><span class="p">[</span><span class="s2">"feature"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
-            <span class="n">thresholds</span><span class="p">[</span><span class="s2">"ks_threshold"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">thresholds</span><span class="p">[</span><span class="s2">&quot;feature&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
+            <span class="n">thresholds</span><span class="p">[</span><span class="s2">&quot;ks_threshold&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">empirical_threshold_ks_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">thresholds</span><span class="p">[</span><span class="s2">"chi2_threshold"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">thresholds</span><span class="p">[</span><span class="s2">&quot;chi2_threshold&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">empirical_threshold_chi2_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">thresholds</span><span class="p">[</span><span class="s2">"js_threshold"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">thresholds</span><span class="p">[</span><span class="s2">&quot;js_threshold&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">empirical_threshold_js_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">thresholds</span><span class="p">[</span><span class="s2">"max_out_of_range_proportion"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">thresholds</span><span class="p">[</span><span class="s2">&quot;max_out_of_range_proportion&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">max_out_of_range_proportion</span>
             <span class="p">)</span>
 
@@ -11299,10 +11318,10 @@ if MultiIndex was used during fitting).</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       

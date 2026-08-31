@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -100,6 +100,25 @@
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+  👋 New in the skforecast ecosystem:
+<a href="https://studio.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast studio</strong></a> (train and evaluate models visually, no coding required) and
+<a href="https://ai.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast-ai</strong></a> (agentic time series forecasting).
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
       
     </div>
     
@@ -5689,7 +5708,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Skforecast allows to apply all its implemented probabilistic forecasting methods (bootstrapping, conformal prediction and quantile regression) to <a href="../introduction-forecasting/introduction-forecasting.html#global-forecasting-models">global models</a>. This means that the model is trained with all the available time series and the forecast is made for all the time series.</p>
+<p>Skforecast allows applying all its implemented probabilistic forecasting methods (bootstrapping, conformal prediction and quantile regression) to <a href="../introduction-forecasting/introduction-forecasting.html#global-forecasting-models">global models</a>. This means that the model is trained with all the available time series and the forecast is made for all the time series.</p>
 <p>For detailed information about the available probabilistic forecasting methods, see the following user guides:</p>
 <ul>
 <li><p><a href="../user_guides/probabilistic-forecasting-overview.html">Probabilistic forecasting: Overview</a></p>
@@ -6646,9 +6665,9 @@ metric_val, predictions_val = backtesting_forecaster_multiseries(
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jupyter-widgets jp-OutputArea-output" id="357dedd4-7925-4c11-b8c6-a6d25670b639" tabindex="0">
+<div class="jupyter-widgets jp-OutputArea-output" id="4a8aabce-4a96-4071-88d1-bf6694a3dc80" tabindex="0">
 <script type="text/javascript">
-var element = document.getElementById('357dedd4-7925-4c11-b8c6-a6d25670b639');
+var element = document.getElementById('4a8aabce-4a96-4071-88d1-bf6694a3dc80');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
 {"model_id": "0f36b9ebd41f45dd8219f5751331fe14", "version_major": 2, "version_minor": 0}
@@ -7043,7 +7062,7 @@ fig.tight_layout()</div>
 <ul>
 <li><p><code>use_in_sample_residuals</code>: If <code>True</code>, the in-sample residuals are used to compute the prediction intervals. Since these residuals are obtained from the training set, they are always available, but usually lead to overoptimistic intervals. If <code>False</code>, the out-of-sample residuals (calibration) are used to calculate the prediction intervals. These residuals are obtained from the validation/calibration set and are only available if the <code>set_out_sample_residuals()</code> method has been called. It is recommended to use out-of-sample residuals to achieve the desired coverage.</p>
 </li>
-<li><p><code>use_binned_residuals</code>: If <code>False</code>, a single correction factor is applied to all predictions during conformalization. If <code>True</code>, the conformalization process uses a correction factor that depends on the bin where the prediction falls. This can be thought as a type of <b>Adaptive Conformal Predictions</b> and it can lead to more accurate prediction intervals since the correction factor is conditioned on the region of the prediction space.</p>
+<li><p><code>use_binned_residuals</code>: If <code>False</code>, a single correction factor is applied to all predictions during conformalization. If <code>True</code>, the conformalization process uses a correction factor that depends on the bin where the prediction falls. This can be thought of as a type of <b>Adaptive Conformal Predictions</b> and it can lead to more accurate prediction intervals since the correction factor is conditioned on the region of the prediction space.</p>
 </li>
 </ul>
 </div>
@@ -7148,9 +7167,9 @@ predictions_test</div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jupyter-widgets jp-OutputArea-output" id="7b610339-622a-4543-b147-4fcf840e0806" tabindex="0">
+<div class="jupyter-widgets jp-OutputArea-output" id="7e9bfe3f-0151-45be-9f50-afb240e858a9" tabindex="0">
 <script type="text/javascript">
-var element = document.getElementById('7b610339-622a-4543-b147-4fcf840e0806');
+var element = document.getElementById('7e9bfe3f-0151-45be-9f50-afb240e858a9');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
 {"model_id": "a17804c5ef8b4c879acc4c8ec40499fc", "version_major": 2, "version_minor": 0}
@@ -7524,9 +7543,9 @@ predictions_test</div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jupyter-widgets jp-OutputArea-output" id="5a4b535d-b40e-4781-acab-7d02bb228c11" tabindex="0">
+<div class="jupyter-widgets jp-OutputArea-output" id="847a7cbd-dfd4-403c-b6ca-39c64481528a" tabindex="0">
 <script type="text/javascript">
-var element = document.getElementById('5a4b535d-b40e-4781-acab-7d02bb228c11');
+var element = document.getElementById('847a7cbd-dfd4-403c-b6ca-39c64481528a');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
 {"model_id": "9db1a1e7511c49948862a16585f3150a", "version_major": 2, "version_minor": 0}
@@ -7841,7 +7860,7 @@ Area of the interval: 36174.64
 </div>
 </clipboard-copy>
 </div>
-<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Predictions for an known series</span>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Predictions for an unknown series</span>
 <span class="c1"># ==============================================================================</span>
 <span class="c1"># Simulate last_window of the new series</span>
 <span class="n">len_last_window</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">max_lag</span>
@@ -7858,7 +7877,7 @@ Area of the interval: 36174.64
     <span class="n">use_in_sample_residuals</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-20"># Predictions for an known series
+<div class="clipboard-copy-txt" id="cell-20"># Predictions for an unknown series
 # ==============================================================================
 # Simulate last_window of the new series
 len_last_window = forecaster.max_lag
@@ -8390,10 +8409,10 @@ forecaster.predict_interval(
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       

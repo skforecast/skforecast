@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -100,6 +100,25 @@
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+  👋 New in the skforecast ecosystem:
+<a href="https://studio.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast studio</strong></a> (train and evaluate models visually, no coding required) and
+<a href="https://ai.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast-ai</strong></a> (agentic time series forecasting).
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
       
     </div>
     
@@ -4011,12 +4030,12 @@
   <a href="#skforecast.recursive._forecaster_recursive_classifier.ForecasterRecursiveClassifier-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Functions
+        Methods:
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Functions">
+    <nav class="md-nav" aria-label="Methods:">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5619,9 +5638,9 @@
     <span class="n">estimator</span><span class="p">,</span>
     <span class="n">lags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">window_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">features_encoding</span><span class="o">=</span><span class="s2">"auto"</span><span class="p">,</span>
+    <span class="n">features_encoding</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
     <span class="n">transformer_exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">categorical_features</span><span class="o">=</span><span class="s2">"auto"</span><span class="p">,</span>
+    <span class="n">categorical_features</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
     <span class="n">weight_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">dropna_from_series</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">fit_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -6775,7 +6794,7 @@ series</strong> (lags and window features that return class codes).</li>
 
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+                    <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">259</span>
 <span class="normal">260</span>
 <span class="normal">261</span>
@@ -6948,9 +6967,9 @@ series</strong> (lags and window features that return class codes).</li>
     <span class="n">estimator</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">lags</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">range</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">window_features</span><span class="p">:</span> <span class="nb">object</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">features_encoding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
+    <span class="n">features_encoding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span><span class="p">,</span>
     <span class="n">transformer_exog</span><span class="p">:</span> <span class="nb">object</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">categorical_features</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
+    <span class="n">categorical_features</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span><span class="p">,</span>
     <span class="n">weight_func</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">dropna_from_series</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">fit_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6977,11 +6996,11 @@ series</strong> (lags and window features that return class codes).</li>
     <span class="bp">self</span><span class="o">.</span><span class="n">X_train_exog_names_out_</span>            <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span>        <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">categorical_features_names_in_</span>     <span class="o">=</span> <span class="kc">None</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span>                      <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span>                      <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span>                          <span class="o">=</span> <span class="kc">False</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span>                           <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">skforecast_version</span>                 <span class="o">=</span> <span class="n">skforecast</span><span class="o">.</span><span class="n">__version__</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span>                     <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span>                     <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">forecaster_id</span>                      <span class="o">=</span> <span class="n">forecaster_id</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_probabilistic_mode</span>                <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># NOTE: Ignored in this forecaster</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">transformer_y</span>                      <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># NOTE: Ignored in this forecaster</span>
@@ -6996,29 +7015,29 @@ series</strong> (lags and window features that return class codes).</li>
     <span class="bp">self</span><span class="o">.</span><span class="n">encoding_mapping_</span>                  <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">code_to_class_mapping_</span>             <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="n">valid_encodings</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'auto'</span><span class="p">,</span> <span class="s1">'categorical'</span><span class="p">,</span> <span class="s1">'ordinal'</span><span class="p">]</span>
+    <span class="n">valid_encodings</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="s1">&#39;categorical&#39;</span><span class="p">,</span> <span class="s1">&#39;ordinal&#39;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">features_encoding</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_encodings</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`features_encoding` must be one of </span><span class="si">{</span><span class="n">valid_encodings</span><span class="si">}</span><span class="s2">. "</span>
-            <span class="sa">f</span><span class="s2">"Got '</span><span class="si">{</span><span class="n">features_encoding</span><span class="si">}</span><span class="s2">'."</span>
+            <span class="sa">f</span><span class="s2">&quot;`features_encoding` must be one of </span><span class="si">{</span><span class="n">valid_encodings</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got &#39;</span><span class="si">{</span><span class="n">features_encoding</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">supports_categorical</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_categorical_support</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">features_encoding</span> <span class="o">==</span> <span class="s1">'categorical'</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">features_encoding</span> <span class="o">==</span> <span class="s1">&#39;categorical&#39;</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">supports_categorical</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">use_native_categoricals</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"`features_encoding='categorical'` requires a estimator that "</span>
-                <span class="sa">f</span><span class="s2">"supports native categorical features (LightGBM, CatBoost, XGBoost). "</span>
-                <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. Use 'auto' or 'ordinal' instead."</span>
+                <span class="sa">f</span><span class="s2">&quot;`features_encoding=&#39;categorical&#39;` requires a estimator that &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;supports native categorical features (LightGBM, CatBoost, XGBoost). &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. Use &#39;auto&#39; or &#39;ordinal&#39; instead.&quot;</span>
             <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">features_encoding</span> <span class="o">==</span> <span class="s1">'auto'</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">features_encoding</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">supports_categorical</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">use_native_categoricals</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">OrdinalEncoder</span><span class="p">(</span>
-                       <span class="n">categories</span> <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
+                       <span class="n">categories</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span><span class="p">,</span>
                        <span class="n">dtype</span>      <span class="o">=</span> <span class="nb">int</span>
                    <span class="p">)</span>
 
@@ -7032,9 +7051,9 @@ series</strong> (lags and window features that return class codes).</li>
     <span class="p">)</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_features</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"At least one of the arguments `lags` or `window_features` "</span>
-            <span class="s2">"must be different from None. This is required to create the "</span>
-            <span class="s2">"predictors used in training the forecaster."</span>
+            <span class="s2">&quot;At least one of the arguments `lags` or `window_features` &quot;</span>
+            <span class="s2">&quot;must be different from None. This is required to create the &quot;</span>
+            <span class="s2">&quot;predictors used in training the forecaster.&quot;</span>
         <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
@@ -7049,26 +7068,26 @@ series</strong> (lags and window features that return class codes).</li>
 
     <span class="k">if</span> <span class="n">categorical_features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
-            <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">categorical_features</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">categorical_features</span> <span class="o">==</span> <span class="s1">'auto'</span><span class="p">)</span>
+            <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">categorical_features</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">categorical_features</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span><span class="p">)</span>
             <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">categorical_features</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Argument `categorical_features` must be `'auto'`, a list of "</span>
-                <span class="sa">f</span><span class="s2">"column names, or `None`. Got </span><span class="si">{</span><span class="n">categorical_features</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;Argument `categorical_features` must be `&#39;auto&#39;`, a list of &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;column names, or `None`. Got </span><span class="si">{</span><span class="n">categorical_features</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">categorical_features</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">categorical_features</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">"Argument `categorical_features` must not be an empty list. "</span>
-                    <span class="s2">"Use `None` to disable categorical encoding."</span>
+                    <span class="s2">&quot;Argument `categorical_features` must not be an empty list. &quot;</span>
+                    <span class="s2">&quot;Use `None` to disable categorical encoding.&quot;</span>
                 <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">categorical_encoder</span> <span class="o">=</span> <span class="n">OrdinalEncoder</span><span class="p">(</span>
                                    <span class="n">dtype</span>                 <span class="o">=</span> <span class="nb">float</span><span class="p">,</span>
-                                   <span class="n">handle_unknown</span>        <span class="o">=</span> <span class="s1">'use_encoded_value'</span><span class="p">,</span>
+                                   <span class="n">handle_unknown</span>        <span class="o">=</span> <span class="s1">&#39;use_encoded_value&#39;</span><span class="p">,</span>
                                    <span class="n">unknown_value</span>         <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
                                    <span class="n">encoded_missing_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-                               <span class="p">)</span><span class="o">.</span><span class="n">set_output</span><span class="p">(</span><span class="n">transform</span><span class="o">=</span><span class="s2">"pandas"</span><span class="p">)</span>
+                               <span class="p">)</span><span class="o">.</span><span class="n">set_output</span><span class="p">(</span><span class="n">transform</span><span class="o">=</span><span class="s2">&quot;pandas&quot;</span><span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">weight_func</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_code_weight_func</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">initialize_weights</span><span class="p">(</span>
         <span class="n">forecaster_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> 
@@ -7083,33 +7102,33 @@ series</strong> (lags and window features that return class codes).</li>
                       <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">__skforecast_tags__</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">"library"</span><span class="p">:</span> <span class="s2">"skforecast"</span><span class="p">,</span>
-        <span class="s2">"forecaster_name"</span><span class="p">:</span> <span class="s2">"ForecasterRecursiveClassifier"</span><span class="p">,</span>
-        <span class="s2">"forecaster_task"</span><span class="p">:</span> <span class="s2">"classification"</span><span class="p">,</span>
-        <span class="s2">"forecasting_scope"</span><span class="p">:</span> <span class="s2">"single-series"</span><span class="p">,</span>  <span class="c1"># single-series | global</span>
-        <span class="s2">"forecasting_strategy"</span><span class="p">:</span> <span class="s2">"recursive"</span><span class="p">,</span>   <span class="c1"># recursive | direct | deep_learning | foundation</span>
-        <span class="s2">"multiple_estimators"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"index_types_supported"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"pandas.RangeIndex"</span><span class="p">,</span> <span class="s2">"pandas.DatetimeIndex"</span><span class="p">],</span>
-        <span class="s2">"requires_index_frequency"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="s2">&quot;skforecast&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecaster_name&quot;</span><span class="p">:</span> <span class="s2">&quot;ForecasterRecursiveClassifier&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecaster_task&quot;</span><span class="p">:</span> <span class="s2">&quot;classification&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecasting_scope&quot;</span><span class="p">:</span> <span class="s2">&quot;single-series&quot;</span><span class="p">,</span>  <span class="c1"># single-series | global</span>
+        <span class="s2">&quot;forecasting_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;recursive&quot;</span><span class="p">,</span>   <span class="c1"># recursive | direct | deep_learning | foundation</span>
+        <span class="s2">&quot;multiple_estimators&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;index_types_supported&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pandas.RangeIndex&quot;</span><span class="p">,</span> <span class="s2">&quot;pandas.DatetimeIndex&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;requires_index_frequency&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
 
-        <span class="s2">"allowed_input_types_series"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"pandas.Series"</span><span class="p">],</span>
-        <span class="s2">"supports_exog"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"allowed_input_types_exog"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"pandas.Series"</span><span class="p">,</span> <span class="s2">"pandas.DataFrame"</span><span class="p">],</span>
-        <span class="s2">"handles_missing_values_series"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> 
-        <span class="s2">"handles_missing_values_exog"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> 
+        <span class="s2">&quot;allowed_input_types_series&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pandas.Series&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;supports_exog&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;allowed_input_types_exog&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pandas.Series&quot;</span><span class="p">,</span> <span class="s2">&quot;pandas.DataFrame&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;handles_missing_values_series&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> 
+        <span class="s2">&quot;handles_missing_values_exog&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> 
 
-        <span class="s2">"supports_lags"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"supports_window_features"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"supports_transformer_series"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_transformer_exog"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"supports_categorical_features"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"supports_weight_func"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"supports_differentiation"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_lags&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;supports_window_features&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;supports_transformer_series&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_transformer_exog&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;supports_categorical_features&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;supports_weight_func&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;supports_differentiation&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
 
-        <span class="s2">"prediction_types"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"point"</span><span class="p">,</span> <span class="s2">"probabilities"</span><span class="p">],</span>
-        <span class="s2">"supports_probabilistic"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"probabilistic_methods"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"class-probabilities"</span><span class="p">],</span>
-        <span class="s2">"handles_binned_residuals"</span><span class="p">:</span> <span class="kc">False</span>
+        <span class="s2">&quot;prediction_types&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="s2">&quot;probabilities&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;supports_probabilistic&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;probabilistic_methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;class-probabilities&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;handles_binned_residuals&quot;</span><span class="p">:</span> <span class="kc">False</span>
     <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
                   </details>
@@ -7577,7 +7596,9 @@ series</strong> (lags and window features that return class codes).</li>
   </span>
 
 <a href="#skforecast.recursive._forecaster_recursive_classifier.ForecasterRecursiveClassifier.creation_date" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
+    <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span>
+<span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7643,7 +7664,7 @@ series</strong> (lags and window features that return class codes).</li>
   </span>
 
 <a href="#skforecast.recursive._forecaster_recursive_classifier.ForecasterRecursiveClassifier.skforecast_version" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">skforecast_version</span> <span class="o">=</span> <span class="n">__version__</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">skforecast_version</span> <span class="o">=</span> <span class="n">skforecast</span><span class="o">.</span><span class="n">__version__</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7665,7 +7686,7 @@ series</strong> (lags and window features that return class codes).</li>
   </span>
 
 <a href="#skforecast.recursive._forecaster_recursive_classifier.ForecasterRecursiveClassifier.python_version" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7951,7 +7972,7 @@ series</strong> (lags and window features that return class codes).</li>
   </span>
 
 <a href="#skforecast.recursive._forecaster_recursive_classifier.ForecasterRecursiveClassifier.encoder" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">encoder</span> <span class="o">=</span> <span class="n">OrdinalEncoder</span><span class="p">(</span><span class="n">categories</span><span class="o">=</span><span class="s1">'auto'</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">encoder</span> <span class="o">=</span> <span class="n">OrdinalEncoder</span><span class="p">(</span><span class="n">categories</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7973,8 +7994,11 @@ series</strong> (lags and window features that return class codes).</li>
   </span>
 
 <a href="#skforecast.recursive._forecaster_recursive_classifier.ForecasterRecursiveClassifier.lags_are_contiguous" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">lags_are_contiguous</span> <span class="o">=</span> <span class="n">lags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">array_equal</span><span class="p">(</span>
-    <span class="n">lags</span><span class="p">,</span> <span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_lag</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">lags_are_contiguous</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">lags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lags</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_lag</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -8000,7 +8024,10 @@ series</strong> (lags and window features that return class codes).</li>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">window_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
     <span class="p">[</span>
         <span class="n">ws</span>
-        <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="p">[</span><span class="n">max_lag</span><span class="p">,</span> <span class="n">max_size_window_features</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_lag</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_size_window_features</span><span class="p">,</span>
+        <span class="p">]</span>
         <span class="k">if</span> <span class="n">ws</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="p">]</span>
 <span class="p">)</span>
@@ -8047,7 +8074,12 @@ series</strong> (lags and window features that return class codes).</li>
   </span>
 
 <a href="#skforecast.recursive._forecaster_recursive_classifier.ForecasterRecursiveClassifier.categorical_encoder" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">categorical_encoder</span> <span class="o">=</span> <span class="n">set_output</span><span class="p">(</span><span class="n">transform</span><span class="o">=</span><span class="s1">'pandas'</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">categorical_encoder</span> <span class="o">=</span> <span class="n">OrdinalEncoder</span><span class="p">(</span>
+    <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+    <span class="n">handle_unknown</span><span class="o">=</span><span class="s2">&quot;use_encoded_value&quot;</span><span class="p">,</span>
+    <span class="n">unknown_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+    <span class="n">encoded_missing_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+<span class="p">)</span><span class="o">.</span><span class="n">set_output</span><span class="p">(</span><span class="n">transform</span><span class="o">=</span><span class="s2">&quot;pandas&quot;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8081,7 +8113,7 @@ series</strong> (lags and window features that return class codes).</li>
 </div>
 
 
-<h3 id="skforecast.recursive._forecaster_recursive_classifier.ForecasterRecursiveClassifier-functions">Functions<a href="#skforecast.recursive._forecaster_recursive_classifier.ForecasterRecursiveClassifier-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.recursive._forecaster_recursive_classifier.ForecasterRecursiveClassifier-functions">Methods:<a href="#skforecast.recursive._forecaster_recursive_classifier.ForecasterRecursiveClassifier-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -8101,7 +8133,7 @@ The "General Information" section is expanded by default.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">481</span>
 <span class="normal">482</span>
 <span class="normal">483</span>
@@ -8186,10 +8218,10 @@ The "General Information" section is expanded by default.</p>
 <span class="normal">562</span>
 <span class="normal">563</span>
 <span class="normal">564</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    HTML representation of the object.</span>
-<span class="sd">    The "General Information" section is expanded by default.</span>
-<span class="sd">    """</span>
+<span class="sd">    The &quot;General Information&quot; section is expanded by default.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="p">(</span>
         <span class="n">params</span><span class="p">,</span>
@@ -8206,9 +8238,9 @@ The "General Information" section is expanded by default.</p>
 
     <span class="n">style</span><span class="p">,</span> <span class="n">unique_id</span> <span class="o">=</span> <span class="n">get_style_repr_html</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">)</span>
 
-    <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
-<span class="s2">    &lt;div class="container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2">"&gt;</span>
-<span class="s2">        &lt;p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;"&gt;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    &lt;div class=&quot;container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2">&quot;&gt;</span>
+<span class="s2">        &lt;p style=&quot;font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;&quot;&gt;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
 <span class="s2">        &lt;details open&gt;</span>
 <span class="s2">            &lt;summary&gt;General Information&lt;/summary&gt;</span>
 <span class="s2">            &lt;ul&gt;</span>
@@ -8238,14 +8270,14 @@ The "General Information" section is expanded by default.</p>
 <span class="s2">        &lt;/details&gt;</span>
 <span class="s2">        &lt;details&gt;</span>
 <span class="s2">            &lt;summary&gt;Exogenous Variables&lt;/summary&gt;</span>
-<span class="s2">            &lt;p style="margin: 0.2em 0 0.2em 1.5em;"&gt;</span><span class="si">{</span><span class="n">exog_names_in_</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
+<span class="s2">            &lt;p style=&quot;margin: 0.2em 0 0.2em 1.5em;&quot;&gt;</span><span class="si">{</span><span class="n">exog_names_in_</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
 <span class="s2">        &lt;/details&gt;</span>
 <span class="s2">        &lt;details&gt;</span>
 <span class="s2">            &lt;summary&gt;Training Information&lt;/summary&gt;</span>
 <span class="s2">            &lt;ul&gt;</span>
-<span class="s2">                &lt;li&gt;&lt;strong&gt;Training range:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'Not fitted'</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
-<span class="s2">                &lt;li&gt;&lt;strong&gt;Training index type:&lt;/strong&gt; </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_type_</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'Not fitted'</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
-<span class="s2">                &lt;li&gt;&lt;strong&gt;Training index frequency:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="o">.</span><span class="n">freqstr</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="p">,</span><span class="w"> </span><span class="s1">'freqstr'</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'Not fitted'</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">                &lt;li&gt;&lt;strong&gt;Training range:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;Not fitted&#39;</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">                &lt;li&gt;&lt;strong&gt;Training index type:&lt;/strong&gt; </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_type_</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;Not fitted&#39;</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">                &lt;li&gt;&lt;strong&gt;Training index frequency:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="o">.</span><span class="n">freqstr</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;freqstr&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;Not fitted&#39;</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
 <span class="s2">            &lt;/ul&gt;</span>
 <span class="s2">        &lt;/details&gt;</span>
 <span class="s2">        &lt;details&gt;</span>
@@ -8261,12 +8293,12 @@ The "General Information" section is expanded by default.</p>
 <span class="s2">            &lt;/ul&gt;</span>
 <span class="s2">        &lt;/details&gt;</span>
 <span class="s2">        &lt;p&gt;</span>
-<span class="s2">            &lt;a href="https://skforecast.org/</span><span class="si">{</span><span class="n">skforecast</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/api/forecasterrecursiveclassifier.html"&gt;&amp;#128214; &lt;strong&gt;API Reference&lt;/strong&gt;&lt;/a&gt;</span>
+<span class="s2">            &lt;a href=&quot;https://skforecast.org/</span><span class="si">{</span><span class="n">skforecast</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/api/forecasterrecursiveclassifier.html&quot;&gt;&amp;#128214; &lt;strong&gt;API Reference&lt;/strong&gt;&lt;/a&gt;</span>
 <span class="s2">            &amp;nbsp;&amp;nbsp;</span>
-<span class="s2">            &lt;a href="https://skforecast.org/</span><span class="si">{</span><span class="n">skforecast</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/user_guides/autoregressive-classification-forecasting.html"&gt;&amp;#128221; &lt;strong&gt;User Guide&lt;/strong&gt;&lt;/a&gt;</span>
+<span class="s2">            &lt;a href=&quot;https://skforecast.org/</span><span class="si">{</span><span class="n">skforecast</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/user_guides/autoregressive-classification-forecasting.html&quot;&gt;&amp;#128221; &lt;strong&gt;User Guide&lt;/strong&gt;&lt;/a&gt;</span>
 <span class="s2">        &lt;/p&gt;</span>
 <span class="s2">    &lt;/div&gt;</span>
-<span class="s2">    """</span>
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="n">style</span> <span class="o">+</span> <span class="n">content</span>
 </code></pre></div></td></tr></table></div>
@@ -8293,7 +8325,7 @@ Checks by class name to avoid importing optional dependencies.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">566</span>
 <span class="normal">567</span>
 <span class="normal">568</span>
@@ -8329,24 +8361,24 @@ Checks by class name to avoid importing optional dependencies.</p>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">estimator</span><span class="p">:</span> <span class="nb">object</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Check if estimator supports native categorical features.</span>
 <span class="sd">    Checks by class name to avoid importing optional dependencies.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="n">Pipeline</span><span class="p">):</span>
         <span class="n">estimator</span> <span class="o">=</span> <span class="n">estimator</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'CalibratedClassifierCV'</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;CalibratedClassifierCV&#39;</span><span class="p">:</span>
         <span class="n">estimator</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">estimator</span>         
 
     <span class="n">class_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
     <span class="n">module_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__module__</span>
 
     <span class="n">supported_models</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">'LGBMClassifier'</span><span class="p">:</span> <span class="s1">'lightgbm'</span><span class="p">,</span>
-        <span class="s1">'CatBoostClassifier'</span><span class="p">:</span> <span class="s1">'catboost'</span><span class="p">,</span>
-        <span class="s1">'XGBClassifier'</span><span class="p">:</span> <span class="s1">'xgboost'</span><span class="p">,</span>
-        <span class="s1">'HistGradientBoostingClassifier'</span><span class="p">:</span> <span class="s1">'sklearn.ensemble._hist_gradient_boosting'</span>
+        <span class="s1">&#39;LGBMClassifier&#39;</span><span class="p">:</span> <span class="s1">&#39;lightgbm&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;CatBoostClassifier&#39;</span><span class="p">:</span> <span class="s1">&#39;catboost&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;XGBClassifier&#39;</span><span class="p">:</span> <span class="s1">&#39;xgboost&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;HistGradientBoostingClassifier&#39;</span><span class="p">:</span> <span class="s1">&#39;sklearn.ensemble._hist_gradient_boosting&#39;</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="n">supported_models</span><span class="p">:</span>
@@ -8452,7 +8484,7 @@ when modifying them.</p>
 </details>
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">599</span>
 <span class="normal">600</span>
 <span class="normal">601</span>
@@ -8498,7 +8530,7 @@ when modifying them.</p>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create the lagged values and their target variable from a time series.</span>
 
 <span class="sd">    Note that the returned matrix `X_data` contains the lag 1 in the first </span>
@@ -8521,7 +8553,7 @@ when modifying them.</p>
 <span class="sd">    Returned matrices may be views into the original `y` so care must be taken</span>
 <span class="sd">    when modifying them.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">X_data</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -8639,7 +8671,7 @@ when modifying them.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">642</span>
 <span class="normal">643</span>
 <span class="normal">644</span>
@@ -8697,7 +8729,7 @@ when modifying them.</p>
     <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">train_index</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create window features from a time series.</span>
 
 <span class="sd">    Parameters</span>
@@ -8714,7 +8746,7 @@ when modifying them.</p>
 <span class="sd">    X_train_window_features_names_out_ : list</span>
 <span class="sd">        Names of the window features.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">len_train_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_index</span><span class="p">)</span>
     <span class="n">X_train_window_features</span> <span class="o">=</span> <span class="p">[]</span>
@@ -8723,21 +8755,21 @@ when modifying them.</p>
         <span class="n">X_train_wf</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">transform_batch</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X_train_wf</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"The method `transform_batch` of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> "</span>
-                <span class="sa">f</span><span class="s2">"must return a pandas DataFrame."</span>
+                <span class="sa">f</span><span class="s2">&quot;The method `transform_batch` of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;must return a pandas DataFrame.&quot;</span>
             <span class="p">)</span>
         <span class="n">X_train_wf</span> <span class="o">=</span> <span class="n">X_train_wf</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="n">len_train_index</span><span class="p">:]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_train_wf</span><span class="p">)</span> <span class="o">==</span> <span class="n">len_train_index</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"The method `transform_batch` of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> "</span>
-                <span class="sa">f</span><span class="s2">"must return a DataFrame with the same number of rows as "</span>
-                <span class="sa">f</span><span class="s2">"the input time series - `window_size`: </span><span class="si">{</span><span class="n">len_train_index</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;The method `transform_batch` of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;must return a DataFrame with the same number of rows as &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the input time series - `window_size`: </span><span class="si">{</span><span class="n">len_train_index</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">X_train_wf</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="n">train_index</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"The method `transform_batch` of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> "</span>
-                <span class="sa">f</span><span class="s2">"must return a DataFrame with the same index as "</span>
-                <span class="sa">f</span><span class="s2">"the input time series - `window_size`."</span>
+                <span class="sa">f</span><span class="s2">&quot;The method `transform_batch` of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;must return a DataFrame with the same index as &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the input time series - `window_size`.&quot;</span>
             <span class="p">)</span>
 
         <span class="n">X_train_window_features_names_out_</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">X_train_wf</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
@@ -8984,7 +9016,7 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
 </details>
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 696</span>
 <span class="normal"> 697</span>
 <span class="normal"> 698</span>
@@ -9344,7 +9376,7 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
     <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">],</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
 <span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create training matrices from univariate time series and exogenous</span>
 <span class="sd">    variables.</span>
 
@@ -9402,40 +9434,40 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
 <span class="sd">    lagged NaN in `y` or from NaN in `exog`) are removed only if</span>
 <span class="sd">    `dropna_from_series=True`; otherwise a warning is issued.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">check_y</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">input_to_frame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">input_name</span><span class="o">=</span><span class="s1">'y'</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">input_to_frame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">input_name</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Length of `y` must be greater than the maximum window size "</span>
-            <span class="sa">f</span><span class="s2">"needed by the forecaster.</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"    Length `y`: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"    Max window size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"    Lags window size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_lag</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"    Window features window size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_size_window_features</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;Length of `y` must be greater than the maximum window size &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;needed by the forecaster.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;    Length `y`: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;    Max window size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;    Lags window size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_lag</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;    Window features window size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_size_window_features</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
-    <span class="n">y_values</span><span class="p">,</span> <span class="n">y_index</span> <span class="o">=</span> <span class="n">check_extract_values_and_index</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">data_label</span><span class="o">=</span><span class="s1">'`y`'</span><span class="p">)</span>
+    <span class="n">y_values</span><span class="p">,</span> <span class="n">y_index</span> <span class="o">=</span> <span class="n">check_extract_values_and_index</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">data_label</span><span class="o">=</span><span class="s1">&#39;`y`&#39;</span><span class="p">)</span>
 
     <span class="n">nan_mask</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span>
     <span class="n">y_values_clean</span> <span class="o">=</span> <span class="n">y_values</span><span class="p">[</span><span class="o">~</span><span class="n">nan_mask</span><span class="p">]</span> <span class="k">if</span> <span class="n">nan_mask</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="k">else</span> <span class="n">y_values</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_values_clean</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"All values in `y` are NaN. A valid time series with at "</span>
-            <span class="s2">"least some non-NaN values is required for training."</span>
+            <span class="s2">&quot;All values in `y` are NaN. A valid time series with at &quot;</span>
+            <span class="s2">&quot;least some non-NaN values is required for training.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">y_values</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">):</span>
         <span class="n">not_allowed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">y_values_clean</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">not_allowed</span><span class="p">):</span>
-            <span class="n">examples</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y_values_clean</span><span class="p">[</span><span class="n">not_allowed</span><span class="p">])[:</span><span class="mi">5</span><span class="p">]))</span>
+            <span class="n">examples</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y_values_clean</span><span class="p">[</span><span class="n">not_allowed</span><span class="p">])[:</span><span class="mi">5</span><span class="p">]))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Invalid target for classification: targets must be discrete "</span>
-                <span class="sa">f</span><span class="s2">"class labels (strings, integers or floats with decimals "</span>
-                <span class="sa">f</span><span class="s2">"equal to 0). Received float dtype '</span><span class="si">{</span><span class="n">y_values</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">' with "</span>
-                <span class="sa">f</span><span class="s2">"decimals (e.g., </span><span class="si">{</span><span class="n">examples</span><span class="si">}</span><span class="s2">). "</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid target for classification: targets must be discrete &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;class labels (strings, integers or floats with decimals &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;equal to 0). Received float dtype &#39;</span><span class="si">{</span><span class="n">y_values</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&#39; with &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;decimals (e.g., </span><span class="si">{</span><span class="n">examples</span><span class="si">}</span><span class="s2">). &quot;</span>
             <span class="p">)</span>
 
     <span class="c1"># NOTE: See Notes sections for explanation</span>
@@ -9464,15 +9496,15 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
     <span class="n">n_classes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">classes</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">n_classes</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"The target variable must have at least 2 classes. "</span>
-            <span class="sa">f</span><span class="s2">"Found </span><span class="si">{</span><span class="n">classes</span><span class="si">}</span><span class="s2"> class."</span>
+            <span class="sa">f</span><span class="s2">&quot;The target variable must have at least 2 classes. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="n">classes</span><span class="si">}</span><span class="s2"> class.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">y_encoding_info_</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">'classes_'</span><span class="p">:</span> <span class="n">classes</span><span class="p">,</span>
-        <span class="s1">'class_codes_'</span><span class="p">:</span> <span class="n">class_codes</span><span class="p">,</span>
-        <span class="s1">'n_classes_'</span><span class="p">:</span> <span class="n">n_classes</span><span class="p">,</span>
-        <span class="s1">'encoding_mapping_'</span><span class="p">:</span> <span class="n">encoding_mapping_</span>
+        <span class="s1">&#39;classes_&#39;</span><span class="p">:</span> <span class="n">classes</span><span class="p">,</span>
+        <span class="s1">&#39;class_codes_&#39;</span><span class="p">:</span> <span class="n">class_codes</span><span class="p">,</span>
+        <span class="s1">&#39;n_classes_&#39;</span><span class="p">:</span> <span class="n">n_classes</span><span class="p">,</span>
+        <span class="s1">&#39;encoding_mapping_&#39;</span><span class="p">:</span> <span class="n">encoding_mapping_</span>
     <span class="p">}</span>
     <span class="n">train_index</span> <span class="o">=</span> <span class="n">y_index</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="p">:]</span>
 
@@ -9483,9 +9515,9 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
     <span class="n">categorical_features_names_in_</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">exog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">check_exog</span><span class="p">(</span><span class="n">exog</span><span class="o">=</span><span class="n">exog</span><span class="p">,</span> <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">exog</span> <span class="o">=</span> <span class="n">input_to_frame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">exog</span><span class="p">,</span> <span class="n">input_name</span><span class="o">=</span><span class="s1">'exog'</span><span class="p">)</span>
+        <span class="n">exog</span> <span class="o">=</span> <span class="n">input_to_frame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">exog</span><span class="p">,</span> <span class="n">input_name</span><span class="o">=</span><span class="s1">&#39;exog&#39;</span><span class="p">)</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">exog_index</span> <span class="o">=</span> <span class="n">check_extract_values_and_index</span><span class="p">(</span>
-            <span class="n">data</span><span class="o">=</span><span class="n">exog</span><span class="p">,</span> <span class="n">data_label</span><span class="o">=</span><span class="s1">'`exog`'</span><span class="p">,</span> <span class="n">ignore_freq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_values</span><span class="o">=</span><span class="kc">False</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">exog</span><span class="p">,</span> <span class="n">data_label</span><span class="o">=</span><span class="s1">&#39;`exog`&#39;</span><span class="p">,</span> <span class="n">ignore_freq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_values</span><span class="o">=</span><span class="kc">False</span>
         <span class="p">)</span>
 
         <span class="n">len_y</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span>
@@ -9493,12 +9525,12 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
         <span class="n">len_exog</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">exog</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">len_exog</span> <span class="o">==</span> <span class="n">len_y</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">len_exog</span> <span class="o">==</span> <span class="n">len_train_index</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Length of `exog` must be equal to the length of `y` (if index is "</span>
-                <span class="sa">f</span><span class="s2">"fully aligned) or length of `y` - `window_size` (if `exog` "</span>
-                <span class="sa">f</span><span class="s2">"starts after the first `window_size` values).</span><span class="se">\n</span><span class="s2">"</span>
-                <span class="sa">f</span><span class="s2">"    `exog`              : (</span><span class="si">{</span><span class="n">exog_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -- </span><span class="si">{</span><span class="n">exog_index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">)  (n=</span><span class="si">{</span><span class="n">len_exog</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">"</span>
-                <span class="sa">f</span><span class="s2">"    `y`                 : (</span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -- </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">)  (n=</span><span class="si">{</span><span class="n">len_y</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">"</span>
-                <span class="sa">f</span><span class="s2">"    `y` - `window_size` : (</span><span class="si">{</span><span class="n">train_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -- </span><span class="si">{</span><span class="n">train_index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">)  (n=</span><span class="si">{</span><span class="n">len_train_index</span><span class="si">}</span><span class="s2">)"</span>
+                <span class="sa">f</span><span class="s2">&quot;Length of `exog` must be equal to the length of `y` (if index is &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;fully aligned) or length of `y` - `window_size` (if `exog` &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;starts after the first `window_size` values).</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;    `exog`              : (</span><span class="si">{</span><span class="n">exog_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -- </span><span class="si">{</span><span class="n">exog_index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">)  (n=</span><span class="si">{</span><span class="n">len_exog</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;    `y`                 : (</span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -- </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">)  (n=</span><span class="si">{</span><span class="n">len_y</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;    `y` - `window_size` : (</span><span class="si">{</span><span class="n">train_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -- </span><span class="si">{</span><span class="n">train_index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">)  (n=</span><span class="si">{</span><span class="n">len_train_index</span><span class="si">}</span><span class="s2">)&quot;</span>
             <span class="p">)</span>
 
         <span class="n">exog_names_in_</span> <span class="o">=</span> <span class="n">exog</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
@@ -9512,7 +9544,7 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
                <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_features</span> <span class="o">==</span> <span class="s1">'auto'</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_features</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span><span class="p">:</span>
                 <span class="n">categorical_features_names_in_</span> <span class="o">=</span> <span class="p">[</span>
                     <span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">exog</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
@@ -9522,9 +9554,9 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
                 <span class="n">missing_cols</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_features</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">exog</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">missing_cols</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"The following columns specified in `categorical_features` "</span>
-                        <span class="sa">f</span><span class="s2">"are not present in `exog` after `transformer_exog`: "</span>
-                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">missing_cols</span><span class="si">}</span><span class="s2">."</span>
+                        <span class="sa">f</span><span class="s2">&quot;The following columns specified in `categorical_features` &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;are not present in `exog` after `transformer_exog`: &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">missing_cols</span><span class="si">}</span><span class="s2">.&quot;</span>
                     <span class="p">)</span>
                 <span class="n">categorical_features_names_in_</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_features</span><span class="p">)</span>
 
@@ -9556,9 +9588,9 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
         <span class="k">if</span> <span class="n">len_exog</span> <span class="o">==</span> <span class="n">len_y</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">exog_index</span> <span class="o">==</span> <span class="n">y_index</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">"When `exog` has the same length as `y`, the index of "</span>
-                    <span class="s2">"`exog` must be aligned with the index of `y` "</span>
-                    <span class="s2">"to ensure the correct alignment of values."</span>
+                    <span class="s2">&quot;When `exog` has the same length as `y`, the index of &quot;</span>
+                    <span class="s2">&quot;`exog` must be aligned with the index of `y` &quot;</span>
+                    <span class="s2">&quot;to ensure the correct alignment of values.&quot;</span>
                 <span class="p">)</span>
             <span class="c1"># The first `self.window_size` positions have to be removed from </span>
             <span class="c1"># exog since they are not in X_train.</span>
@@ -9566,10 +9598,10 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">exog_index</span> <span class="o">==</span> <span class="n">train_index</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">"When `exog` doesn't contain the first `window_size` observations, "</span>
-                    <span class="s2">"the index of `exog` must be aligned with the index of `y` minus "</span>
-                    <span class="s2">"the first `window_size` observations to ensure the correct "</span>
-                    <span class="s2">"alignment of values."</span>
+                    <span class="s2">&quot;When `exog` doesn&#39;t contain the first `window_size` observations, &quot;</span>
+                    <span class="s2">&quot;the index of `exog` must be aligned with the index of `y` minus &quot;</span>
+                    <span class="s2">&quot;the first `window_size` observations to ensure the correct &quot;</span>
+                    <span class="s2">&quot;alignment of values.&quot;</span>
                 <span class="p">)</span>
 
     <span class="n">X_train</span> <span class="o">=</span> <span class="p">[]</span>
@@ -9607,10 +9639,10 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
         <span class="n">X_train</span> <span class="o">=</span> <span class="n">X_train</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
         <span class="n">train_index</span> <span class="o">=</span> <span class="n">train_index</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">"NaNs detected in `y_train`. They have been dropped because the "</span>
-            <span class="s2">"target variable cannot have NaN values. Same rows have been "</span>
-            <span class="s2">"dropped from `X_train` to maintain alignment. This is caused by "</span>
-            <span class="s2">"interspersed NaNs in `y`."</span><span class="p">,</span>
+            <span class="s2">&quot;NaNs detected in `y_train`. They have been dropped because the &quot;</span>
+            <span class="s2">&quot;target variable cannot have NaN values. Same rows have been &quot;</span>
+            <span class="s2">&quot;dropped from `X_train` to maintain alignment. This is caused by &quot;</span>
+            <span class="s2">&quot;interspersed NaNs in `y`.&quot;</span><span class="p">,</span>
             <span class="n">MissingValuesWarning</span>
         <span class="p">)</span>
 
@@ -9622,26 +9654,26 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
             <span class="n">y_train</span> <span class="o">=</span> <span class="n">y_train</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
             <span class="n">train_index</span> <span class="o">=</span> <span class="n">train_index</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">"NaNs detected in `X_train`. They have been dropped. If "</span>
-                <span class="s2">"you want to keep them, set `forecaster.dropna_from_series = False`. "</span>
-                <span class="s2">"Same rows have been removed from `y_train` to maintain alignment. "</span>
-                <span class="s2">"This is caused by interspersed NaNs in `y` or `exog`."</span><span class="p">,</span>
+                <span class="s2">&quot;NaNs detected in `X_train`. They have been dropped. If &quot;</span>
+                <span class="s2">&quot;you want to keep them, set `forecaster.dropna_from_series = False`. &quot;</span>
+                <span class="s2">&quot;Same rows have been removed from `y_train` to maintain alignment. &quot;</span>
+                <span class="s2">&quot;This is caused by interspersed NaNs in `y` or `exog`.&quot;</span><span class="p">,</span>
                 <span class="n">MissingValuesWarning</span>
             <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">"NaNs detected in `X_train`. Some estimators do not allow "</span>
-                <span class="s2">"NaN values during training. If you want to drop them, "</span>
-                <span class="s2">"set `forecaster.dropna_from_series = True`."</span><span class="p">,</span>
+                <span class="s2">&quot;NaNs detected in `X_train`. Some estimators do not allow &quot;</span>
+                <span class="s2">&quot;NaN values during training. If you want to drop them, &quot;</span>
+                <span class="s2">&quot;set `forecaster.dropna_from_series = True`.&quot;</span><span class="p">,</span>
                 <span class="n">MissingValuesWarning</span>
             <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_train</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"All samples have been removed due to NaNs. Set "</span>
-            <span class="s2">"`forecaster.dropna_from_series = False` or review `y` and "</span>
-            <span class="s2">"`exog` values."</span>
+            <span class="s2">&quot;All samples have been removed due to NaNs. Set &quot;</span>
+            <span class="s2">&quot;`forecaster.dropna_from_series = False` or review `y` and &quot;</span>
+            <span class="s2">&quot;`exog` values.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">last_window_</span> <span class="o">=</span> <span class="kc">None</span>
@@ -9818,7 +9850,7 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
 </details>
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1038</span>
 <span class="normal">1039</span>
 <span class="normal">1040</span>
@@ -9931,7 +9963,7 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
     <span class="n">exog</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">encoded</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create training matrices from univariate time series and exogenous</span>
 <span class="sd">    variables.</span>
 
@@ -9960,11 +9992,11 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
 <span class="sd">    -----</span>
 <span class="sd">    **Autoregressive Features (`features_encoding`)**</span>
 <span class="sd">    During training, target class labels are ordinal-encoded as integers</span>
-<span class="sd">    using `encoder` (`OrdinalEncoder`). When `features_encoding` is `'auto'` </span>
-<span class="sd">    or `'categorical'`, lag features and window features returning class</span>
-<span class="sd">    codes (e.g., mode) are communicated as categorical to the estimator's</span>
+<span class="sd">    using `encoder` (`OrdinalEncoder`). When `features_encoding` is `&#39;auto&#39;` </span>
+<span class="sd">    or `&#39;categorical&#39;`, lag features and window features returning class</span>
+<span class="sd">    codes (e.g., mode) are communicated as categorical to the estimator&#39;s</span>
 <span class="sd">    native categorical handling (e.g., LightGBM, CatBoost). When set to</span>
-<span class="sd">    `'ordinal'`, they are treated as numeric values.</span>
+<span class="sd">    `&#39;ordinal&#39;`, they are treated as numeric values.</span>
 <span class="sd">    Related attributes: `encoder` (`OrdinalEncoder`), `encoding_mapping_`, </span>
 <span class="sd">    `code_to_class_mapping_`, `classes_`, `class_codes_`, `n_classes_`.</span>
 
@@ -9972,8 +10004,8 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
 <span class="sd">    Exogenous variables specified via `categorical_features` are ordinal-</span>
 <span class="sd">    encoded using `categorical_encoder` (`OrdinalEncoder`) and their column </span>
 <span class="sd">    indices are combined with the autoregressive categorical indices when </span>
-<span class="sd">    configuring the estimator's native categorical handling. The forecaster </span>
-<span class="sd">    always overwrites the estimator's categorical configuration to include </span>
+<span class="sd">    configuring the estimator&#39;s native categorical handling. The forecaster </span>
+<span class="sd">    always overwrites the estimator&#39;s categorical configuration to include </span>
 <span class="sd">    both autoregressive and exogenous categorical indices.</span>
 <span class="sd">    Related attributes: `categorical_encoder` (`OrdinalEncoder`), </span>
 <span class="sd">    `categorical_features_names_in_`.</span>
@@ -9984,7 +10016,7 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
 <span class="sd">    lagged NaN in `y` or from NaN in `exog`) are removed only if</span>
 <span class="sd">    `dropna_from_series=True`; otherwise a warning is issued.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="p">(</span>
         <span class="n">X_train</span><span class="p">,</span>
@@ -10015,7 +10047,7 @@ lagged NaN in <code>y</code> or from NaN in <code>exog</code>) are removed only 
     <span class="n">y_train</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
                   <span class="n">data</span>  <span class="o">=</span> <span class="n">y_train</span><span class="p">,</span>
                   <span class="n">index</span> <span class="o">=</span> <span class="n">train_index</span><span class="p">,</span>
-                  <span class="n">name</span>  <span class="o">=</span> <span class="s1">'y'</span>
+                  <span class="n">name</span>  <span class="o">=</span> <span class="s1">&#39;y&#39;</span>
               <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">encoded</span><span class="p">:</span>
@@ -10199,7 +10231,7 @@ categorical feature configuration.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1146</span>
 <span class="normal">1147</span>
 <span class="normal">1148</span>
@@ -10319,7 +10351,7 @@ categorical feature configuration.</p>
     <span class="n">initial_train_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">exog</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create matrices needed to train and test the forecaster for one-step-ahead</span>
 <span class="sd">    predictions. Uses `_create_train_X_y` to work directly with numpy arrays</span>
 <span class="sd">    and precomputes sample weights and fit kwargs (including categorical</span>
@@ -10352,7 +10384,7 @@ categorical feature configuration.</p>
 <span class="sd">        Precomputed keyword arguments for `estimator.fit`, including</span>
 <span class="sd">        categorical feature configuration.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">is_fitted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span>
     <span class="n">encoding_mapping_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoding_mapping_</span>
@@ -10380,7 +10412,7 @@ categorical feature configuration.</p>
 
     <span class="n">test_init</span> <span class="o">=</span> <span class="n">initial_train_size</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">encoding_mapping_</span> <span class="o">=</span> <span class="n">y_encoding_info_</span><span class="p">[</span><span class="s1">'encoding_mapping_'</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">encoding_mapping_</span> <span class="o">=</span> <span class="n">y_encoding_info_</span><span class="p">[</span><span class="s1">&#39;encoding_mapping_&#39;</span><span class="p">]</span>
 
     <span class="p">(</span>
         <span class="n">X_test</span><span class="p">,</span>
@@ -10404,7 +10436,7 @@ categorical feature configuration.</p>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_native_categoricals</span> <span class="ow">and</span> <span class="n">X_train_window_features_names_out_</span><span class="p">:</span>
         <span class="n">all_categorical_names</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
             <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">X_train_window_features_names_out_</span>
-             <span class="k">if</span> <span class="s1">'mode'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span>
+             <span class="k">if</span> <span class="s1">&#39;mode&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">categorical_features_names_in_</span><span class="p">:</span>
         <span class="n">all_categorical_names</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">categorical_features_names_in_</span><span class="p">)</span>
@@ -10506,7 +10538,7 @@ or the index of the DataFrame.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1261</span>
 <span class="normal">1262</span>
 <span class="normal">1263</span>
@@ -10554,8 +10586,8 @@ or the index of the DataFrame.</p>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">X_train</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Create weights for each observation according to the forecaster's attribute</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create weights for each observation according to the forecaster&#39;s attribute</span>
 <span class="sd">    `weight_func`.</span>
 
 <span class="sd">    Parameters</span>
@@ -10569,7 +10601,7 @@ or the index of the DataFrame.</p>
 <span class="sd">    sample_weight : numpy ndarray</span>
 <span class="sd">        Weights to use in `fit` method.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">sample_weight</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -10581,16 +10613,16 @@ or the index of the DataFrame.</p>
     <span class="k">if</span> <span class="n">sample_weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"The resulting `sample_weight` cannot have NaN values."</span>
+                <span class="s2">&quot;The resulting `sample_weight` cannot have NaN values.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">sample_weight</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"The resulting `sample_weight` cannot have negative values."</span>
+                <span class="s2">&quot;The resulting `sample_weight` cannot have negative values.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"The resulting `sample_weight` cannot be normalized because "</span>
-                <span class="s2">"the sum of the weights is zero."</span>
+                <span class="s2">&quot;The resulting `sample_weight` cannot be normalized because &quot;</span>
+                <span class="s2">&quot;the sum of the weights is zero.&quot;</span>
             <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">sample_weight</span>
@@ -10769,7 +10801,7 @@ Related attributes: <code>categorical_encoder</code> (<code>OrdinalEncoder</code
 </details>
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1306</span>
 <span class="normal">1307</span>
 <span class="normal">1308</span>
@@ -10948,7 +10980,7 @@ Related attributes: <code>categorical_encoder</code> (<code>OrdinalEncoder</code
     <span class="n">store_in_sample_residuals</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Training Forecaster.</span>
 
 <span class="sd">    Additional arguments to be passed to the `fit` method of the estimator </span>
@@ -10979,11 +11011,11 @@ Related attributes: <code>categorical_encoder</code> (<code>OrdinalEncoder</code
 <span class="sd">    -----</span>
 <span class="sd">    **Autoregressive Features (`features_encoding`)**</span>
 <span class="sd">    During training, target class labels are ordinal-encoded as integers</span>
-<span class="sd">    using `encoder` (`OrdinalEncoder`). When `features_encoding` is `'auto'` </span>
-<span class="sd">    or `'categorical'`, lag features and window features returning class</span>
-<span class="sd">    codes (e.g., mode) are communicated as categorical to the estimator's</span>
+<span class="sd">    using `encoder` (`OrdinalEncoder`). When `features_encoding` is `&#39;auto&#39;` </span>
+<span class="sd">    or `&#39;categorical&#39;`, lag features and window features returning class</span>
+<span class="sd">    codes (e.g., mode) are communicated as categorical to the estimator&#39;s</span>
 <span class="sd">    native categorical handling (e.g., LightGBM, CatBoost). When set to</span>
-<span class="sd">    `'ordinal'`, they are treated as numeric values.</span>
+<span class="sd">    `&#39;ordinal&#39;`, they are treated as numeric values.</span>
 <span class="sd">    Related attributes: `encoder` (`OrdinalEncoder`), `encoding_mapping_`, </span>
 <span class="sd">    `code_to_class_mapping_`, `classes_`, `class_codes_`, `n_classes_`.</span>
 
@@ -10991,13 +11023,13 @@ Related attributes: <code>categorical_encoder</code> (<code>OrdinalEncoder</code
 <span class="sd">    Exogenous variables specified via `categorical_features` are ordinal-</span>
 <span class="sd">    encoded using `categorical_encoder` (`OrdinalEncoder`) and their column </span>
 <span class="sd">    indices are combined with the autoregressive categorical indices when </span>
-<span class="sd">    configuring the estimator's native categorical handling. The forecaster </span>
-<span class="sd">    always overwrites the estimator's categorical configuration to include </span>
+<span class="sd">    configuring the estimator&#39;s native categorical handling. The forecaster </span>
+<span class="sd">    always overwrites the estimator&#39;s categorical configuration to include </span>
 <span class="sd">    both autoregressive and exogenous categorical indices.</span>
 <span class="sd">    Related attributes: `categorical_encoder` (`OrdinalEncoder`), </span>
 <span class="sd">    `categorical_features_names_in_`.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">last_window_</span>                       <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">index_type_</span>                        <span class="o">=</span> <span class="kc">None</span>
@@ -11044,11 +11076,11 @@ Related attributes: <code>categorical_encoder</code> (<code>OrdinalEncoder</code
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_native_categoricals</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">all_categorical_names</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lags_names</span><span class="p">)</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_native_categoricals</span> <span class="ow">and</span> <span class="n">X_train_window_features_names_out_</span><span class="p">:</span>
-        <span class="c1"># NOTE: Window features whose name contains 'mode' are treated as</span>
+        <span class="c1"># NOTE: Window features whose name contains &#39;mode&#39; are treated as</span>
         <span class="c1"># categorical (they return class codes).</span>
         <span class="n">all_categorical_names</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
             <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">X_train_window_features_names_out_</span>
-             <span class="k">if</span> <span class="s1">'mode'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span>
+             <span class="k">if</span> <span class="s1">&#39;mode&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">categorical_features_names_in_</span><span class="p">:</span>
         <span class="n">all_categorical_names</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">categorical_features_names_in_</span><span class="p">)</span>
@@ -11077,10 +11109,10 @@ Related attributes: <code>categorical_encoder</code> (<code>OrdinalEncoder</code
     <span class="k">else</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span> <span class="o">**</span><span class="n">fit_kwargs</span><span class="p">)</span>
 
-    <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span> <span class="o">=</span> <span class="n">y_encoding_info_</span><span class="p">[</span><span class="s1">'classes_'</span><span class="p">]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">class_codes_</span> <span class="o">=</span> <span class="n">y_encoding_info_</span><span class="p">[</span><span class="s1">'class_codes_'</span><span class="p">]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">n_classes_</span> <span class="o">=</span> <span class="n">y_encoding_info_</span><span class="p">[</span><span class="s1">'n_classes_'</span><span class="p">]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">encoding_mapping_</span> <span class="o">=</span> <span class="n">y_encoding_info_</span><span class="p">[</span><span class="s1">'encoding_mapping_'</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span> <span class="o">=</span> <span class="n">y_encoding_info_</span><span class="p">[</span><span class="s1">&#39;classes_&#39;</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">class_codes_</span> <span class="o">=</span> <span class="n">y_encoding_info_</span><span class="p">[</span><span class="s1">&#39;class_codes_&#39;</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">n_classes_</span> <span class="o">=</span> <span class="n">y_encoding_info_</span><span class="p">[</span><span class="s1">&#39;n_classes_&#39;</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">encoding_mapping_</span> <span class="o">=</span> <span class="n">y_encoding_info_</span><span class="p">[</span><span class="s1">&#39;encoding_mapping_&#39;</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">code_to_class_mapping_</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">code</span><span class="p">:</span> <span class="bp">cls</span> <span class="k">for</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">code</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoding_mapping_</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
     <span class="p">}</span>
@@ -11089,8 +11121,8 @@ Related attributes: <code>categorical_encoder</code> (<code>OrdinalEncoder</code
     <span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span> <span class="o">=</span> <span class="n">X_train_features_names_out_</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">series_name_in_</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">'y'</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">series_name_in_</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;y&#39;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">index_type_</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">):</span>
@@ -11279,7 +11311,7 @@ iteration of the prediction (t + 1).</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1477</span>
 <span class="normal">1478</span>
 <span class="normal">1479</span>
@@ -11434,7 +11466,7 @@ iteration of the prediction (t + 1).</p>
     <span class="n">exog</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">check_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create the inputs needed for the first iteration of the prediction </span>
 <span class="sd">    process. As this is a recursive process, the last window is updated at </span>
 <span class="sd">    each iteration of the prediction process.</span>
@@ -11471,7 +11503,7 @@ iteration of the prediction (t + 1).</p>
 <span class="sd">    steps: int</span>
 <span class="sd">        Number of future steps predicted.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">last_window</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">last_window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_window_</span>
@@ -11480,8 +11512,8 @@ iteration of the prediction (t + 1).</p>
         <span class="n">steps</span> <span class="o">=</span> <span class="n">date_to_index_position</span><span class="p">(</span>
                     <span class="n">index</span>        <span class="o">=</span> <span class="n">last_window</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
                     <span class="n">date_input</span>   <span class="o">=</span> <span class="n">steps</span><span class="p">,</span>
-                    <span class="n">method</span>       <span class="o">=</span> <span class="s1">'prediction'</span><span class="p">,</span>
-                    <span class="n">date_literal</span> <span class="o">=</span> <span class="s1">'steps'</span>
+                    <span class="n">method</span>       <span class="o">=</span> <span class="s1">&#39;prediction&#39;</span><span class="p">,</span>
+                    <span class="n">date_literal</span> <span class="o">=</span> <span class="s1">&#39;steps&#39;</span>
                 <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">check_inputs</span><span class="p">:</span>
@@ -11514,11 +11546,11 @@ iteration of the prediction (t + 1).</p>
         <span class="n">valid_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">valid_classes</span><span class="p">))[:</span><span class="mi">10</span><span class="p">]</span>
 
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"The `last_window` contains </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">invalid_values</span><span class="p">)</span><span class="si">}</span><span class="s2"> class label(s) "</span>
-            <span class="sa">f</span><span class="s2">"not seen during training: </span><span class="si">{</span><span class="n">invalid_list</span><span class="si">}{</span><span class="s1">'...'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">invalid_values</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"Valid class labels (seen during training): </span><span class="si">{</span><span class="n">valid_list</span><span class="si">}</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'...'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">valid_classes</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"Total valid classes: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">valid_classes</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;The `last_window` contains </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">invalid_values</span><span class="p">)</span><span class="si">}</span><span class="s2"> class label(s) &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;not seen during training: </span><span class="si">{</span><span class="n">invalid_list</span><span class="si">}{</span><span class="s1">&#39;...&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">invalid_values</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Valid class labels (seen during training): </span><span class="si">{</span><span class="n">valid_list</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;...&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">valid_classes</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Total valid classes: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">valid_classes</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="c1"># NOTE: Transform class labels to encoded values (same encoding used in </span>
@@ -11539,7 +11571,7 @@ iteration of the prediction (t + 1).</p>
 
     <span class="k">if</span> <span class="n">exog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
 
-        <span class="n">exog</span> <span class="o">=</span> <span class="n">input_to_frame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">exog</span><span class="p">,</span> <span class="n">input_name</span><span class="o">=</span><span class="s1">'exog'</span><span class="p">)</span>
+        <span class="n">exog</span> <span class="o">=</span> <span class="n">input_to_frame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">exog</span><span class="p">,</span> <span class="n">input_name</span><span class="o">=</span><span class="s1">&#39;exog&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">exog</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span><span class="p">:</span>
             <span class="n">exog</span> <span class="o">=</span> <span class="n">exog</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">exog_names_in_</span><span class="p">]</span>
 
@@ -11709,7 +11741,7 @@ at each step if <code>predict_proba=True</code>.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1626</span>
 <span class="normal">1627</span>
 <span class="normal">1628</span>
@@ -11809,7 +11841,7 @@ at each step if <code>predict_proba=True</code>.</p>
     <span class="n">exog_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">predict_proba</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Predict n steps ahead. It is an iterative process in which, each prediction,</span>
 <span class="sd">    is used as a predictor for the next step.</span>
 
@@ -11832,9 +11864,9 @@ at each step if <code>predict_proba=True</code>.</p>
 <span class="sd">        shape (steps, n_classes) with the predicted probabilities for each class </span>
 <span class="sd">        at each step if `predict_proba=True`.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">original_device</span> <span class="o">=</span> <span class="n">set_cpu_gpu_device</span><span class="p">(</span><span class="n">estimator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">)</span>
+    <span class="n">original_device</span> <span class="o">=</span> <span class="n">set_cpu_gpu_device</span><span class="p">(</span><span class="n">estimator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
 
     <span class="n">n_lags</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lags</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
     <span class="n">n_window_features</span> <span class="o">=</span> <span class="p">(</span>
@@ -12057,7 +12089,7 @@ is the same as the prediction index.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1720</span>
 <span class="normal">1721</span>
 <span class="normal">1722</span>
@@ -12185,7 +12217,7 @@ is the same as the prediction index.</p>
     <span class="n">check_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create the predictors needed to predict `steps` ahead. As it is a recursive</span>
 <span class="sd">    process, the predictors are created at each iteration of the prediction </span>
 <span class="sd">    process.</span>
@@ -12220,7 +12252,7 @@ is the same as the prediction index.</p>
 <span class="sd">        Pandas DataFrame with the predictors for each step. The index </span>
 <span class="sd">        is the same as the prediction index.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="p">(</span>
         <span class="n">last_window_values</span><span class="p">,</span>
@@ -12236,8 +12268,8 @@ is the same as the prediction index.</p>
 
     <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span>
-            <span class="s2">"ignore"</span><span class="p">,</span> 
-            <span class="n">message</span><span class="o">=</span><span class="s2">"X does not have valid feature names"</span><span class="p">,</span> 
+            <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> 
+            <span class="n">message</span><span class="o">=</span><span class="s2">&quot;X does not have valid feature names&quot;</span><span class="p">,</span> 
             <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span>
         <span class="p">)</span>
         <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recursive_predict</span><span class="p">(</span>
@@ -12259,7 +12291,7 @@ is the same as the prediction index.</p>
         <span class="n">X_window_features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
             <span class="n">shape</span>      <span class="o">=</span> <span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_train_window_features_names_out_</span><span class="p">)),</span> 
             <span class="n">fill_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> 
-            <span class="n">order</span>      <span class="o">=</span> <span class="s1">'C'</span><span class="p">,</span>
+            <span class="n">order</span>      <span class="o">=</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span>
             <span class="n">dtype</span>      <span class="o">=</span> <span class="nb">float</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
@@ -12285,12 +12317,12 @@ is the same as the prediction index.</p>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_exog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">"The output matrix is in the transformed scale due to the "</span>
-            <span class="s2">"inclusion of transformations (`transformer_exog`) in the Forecaster. "</span>
-            <span class="s2">"As a result, any predictions generated using this matrix will also "</span>
-            <span class="s2">"be in the transformed scale. Please refer to the documentation "</span>
-            <span class="s2">"for more details: "</span>
-            <span class="s2">"https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html"</span><span class="p">,</span>
+            <span class="s2">&quot;The output matrix is in the transformed scale due to the &quot;</span>
+            <span class="s2">&quot;inclusion of transformations (`transformer_exog`) in the Forecaster. &quot;</span>
+            <span class="s2">&quot;As a result, any predictions generated using this matrix will also &quot;</span>
+            <span class="s2">&quot;be in the transformed scale. Please refer to the documentation &quot;</span>
+            <span class="s2">&quot;for more details: &quot;</span>
+            <span class="s2">&quot;https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html&quot;</span><span class="p">,</span>
             <span class="n">DataTransformationWarning</span>
         <span class="p">)</span>
 
@@ -12413,7 +12445,7 @@ right after training data.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1840</span>
 <span class="normal">1841</span>
 <span class="normal">1842</span>
@@ -12487,7 +12519,7 @@ right after training data.</p>
     <span class="n">last_window</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">exog</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Predict n steps ahead. It is a recursive process in which, each prediction,</span>
 <span class="sd">    is used as a predictor for the next step.</span>
 
@@ -12512,7 +12544,7 @@ right after training data.</p>
 <span class="sd">    predictions : pandas Series</span>
 <span class="sd">        Predicted values (class labels).</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="p">(</span>
         <span class="n">last_window_values</span><span class="p">,</span>
@@ -12527,8 +12559,8 @@ right after training data.</p>
 
     <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span>
-            <span class="s2">"ignore"</span><span class="p">,</span> 
-            <span class="n">message</span><span class="o">=</span><span class="s2">"X does not have valid feature names"</span><span class="p">,</span> 
+            <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> 
+            <span class="n">message</span><span class="o">=</span><span class="s2">&quot;X does not have valid feature names&quot;</span><span class="p">,</span> 
             <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span>
         <span class="p">)</span>
         <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recursive_predict</span><span class="p">(</span>
@@ -12545,7 +12577,7 @@ right after training data.</p>
     <span class="n">predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
                       <span class="n">data</span>  <span class="o">=</span> <span class="n">predictions</span><span class="p">,</span>
                       <span class="n">index</span> <span class="o">=</span> <span class="n">prediction_index</span><span class="p">,</span>
-                      <span class="n">name</span>  <span class="o">=</span> <span class="s1">'pred'</span>
+                      <span class="n">name</span>  <span class="o">=</span> <span class="s1">&#39;pred&#39;</span>
                   <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">predictions</span>
@@ -12692,7 +12724,7 @@ Columns are the original class labels.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1909</span>
 <span class="normal">1910</span>
 <span class="normal">1911</span>
@@ -12779,7 +12811,7 @@ Columns are the original class labels.</p>
     <span class="n">exog</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Predict class probabilities n steps ahead. It is a recursive process in </span>
 <span class="sd">    which the predicted class (argmax of probabilities) is used as a predictor </span>
 <span class="sd">    for the next step.</span>
@@ -12810,13 +12842,13 @@ Columns are the original class labels.</p>
 <span class="sd">        Predicted probabilities for each class. Shape (steps, n_classes).</span>
 <span class="sd">        Columns are the original class labels.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">,</span> <span class="s1">'predict_proba'</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">,</span> <span class="s1">&#39;predict_proba&#39;</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"The estimator </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not have a "</span>
-            <span class="sa">f</span><span class="s2">"`predict_proba` method. Use a estimator that supports probability "</span>
-            <span class="sa">f</span><span class="s2">"predictions (e.g., XGBClassifier, HistGradientBoostingClassifier, etc.)."</span>
+            <span class="sa">f</span><span class="s2">&quot;The estimator </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not have a &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;`predict_proba` method. Use a estimator that supports probability &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;predictions (e.g., XGBClassifier, HistGradientBoostingClassifier, etc.).&quot;</span>
         <span class="p">)</span>
 
     <span class="p">(</span>
@@ -12832,8 +12864,8 @@ Columns are the original class labels.</p>
 
     <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span>
-            <span class="s2">"ignore"</span><span class="p">,</span> 
-            <span class="n">message</span><span class="o">=</span><span class="s2">"X does not have valid feature names"</span><span class="p">,</span> 
+            <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> 
+            <span class="n">message</span><span class="o">=</span><span class="s2">&quot;X does not have valid feature names&quot;</span><span class="p">,</span> 
             <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span>
         <span class="p">)</span>
         <span class="n">probabilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recursive_predict</span><span class="p">(</span>
@@ -12846,7 +12878,7 @@ Columns are the original class labels.</p>
     <span class="n">probabilities</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
                         <span class="n">data</span>    <span class="o">=</span> <span class="n">probabilities</span><span class="p">,</span>
                         <span class="n">index</span>   <span class="o">=</span> <span class="n">prediction_index</span><span class="p">,</span>
-                        <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">cls</span><span class="si">}</span><span class="s2">_proba"</span> <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">]</span>
+                        <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="si">}</span><span class="s2">_proba&quot;</span> <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">]</span>
                     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">probabilities</span>
@@ -12929,7 +12961,7 @@ unfitted state. The <code>fit</code> method must be called before prediction.</p
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1989</span>
 <span class="normal">1990</span>
 <span class="normal">1991</span>
@@ -12956,7 +12988,7 @@ unfitted state. The <code>fit</code> method must be called before prediction.</p
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set new values to the parameters of the scikit-learn model stored in the</span>
 <span class="sd">    forecaster. After calling this method, the forecaster is reset to an </span>
 <span class="sd">    unfitted state. The `fit` method must be called before prediction.</span>
@@ -12970,7 +13002,7 @@ unfitted state. The <code>fit</code> method must be called before prediction.</p
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
@@ -13059,7 +13091,7 @@ unfitted state. The <code>fit</code> method must be called before prediction.</p
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2013</span>
 <span class="normal">2014</span>
 <span class="normal">2015</span>
@@ -13103,7 +13135,7 @@ unfitted state. The <code>fit</code> method must be called before prediction.</p
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">lags</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">range</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set new value to the attribute `lags`. Attributes `lags_names`, </span>
 <span class="sd">    `max_lag` and `window_size` are also updated.</span>
 
@@ -13121,13 +13153,13 @@ unfitted state. The <code>fit</code> method must be called before prediction.</p
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_features</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">lags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"At least one of the arguments `lags` or `window_features` "</span>
-            <span class="s2">"must be different from None. This is required to create the "</span>
-            <span class="s2">"predictors used in training the forecaster."</span>
+            <span class="s2">&quot;At least one of the arguments `lags` or `window_features` &quot;</span>
+            <span class="s2">&quot;must be different from None. This is required to create the &quot;</span>
+            <span class="s2">&quot;predictors used in training the forecaster.&quot;</span>
         <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">lags</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lags_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_lag</span> <span class="o">=</span> <span class="n">initialize_lags</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">lags</span><span class="p">)</span>
@@ -13219,7 +13251,7 @@ are created from the original time series and are included as predictors.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2054</span>
 <span class="normal">2055</span>
 <span class="normal">2056</span>
@@ -13263,7 +13295,7 @@ are created from the original time series and are included as predictors.</p>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">window_features</span><span class="p">:</span> <span class="nb">object</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set new value to the attribute `window_features`. Attributes </span>
 <span class="sd">    `max_size_window_features`, `window_features_names`, </span>
 <span class="sd">    `window_features_class_names` and `window_size` are also updated.</span>
@@ -13278,13 +13310,13 @@ are created from the original time series and are included as predictors.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">window_features</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"At least one of the arguments `lags` or `window_features` "</span>
-            <span class="s2">"must be different from None. This is required to create the "</span>
-            <span class="s2">"predictors used in training the forecaster."</span>
+            <span class="s2">&quot;At least one of the arguments `lags` or `window_features` &quot;</span>
+            <span class="s2">&quot;must be different from None. This is required to create the &quot;</span>
+            <span class="s2">&quot;predictors used in training the forecaster.&quot;</span>
         <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">window_features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_features_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size_window_features</span> <span class="o">=</span> <span class="p">(</span>
@@ -13377,7 +13409,7 @@ method of the estimator.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2095</span>
 <span class="normal">2096</span>
 <span class="normal">2097</span>
@@ -13401,20 +13433,20 @@ method of the estimator.</p>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">fit_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set new values for the additional keyword arguments passed to the `fit` </span>
 <span class="sd">    method of the estimator.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    fit_kwargs : dict</span>
-<span class="sd">        Dict of the form {"argument": new_value}.</span>
+<span class="sd">        Dict of the form {&quot;argument&quot;: new_value}.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">fit_kwargs</span> <span class="o">=</span> <span class="n">check_select_fit_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">,</span> <span class="n">fit_kwargs</span><span class="o">=</span><span class="n">fit_kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -13496,7 +13528,7 @@ attribute <code>feature_importances_</code> or <code>coef_</code>. Otherwise, re
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_classifier.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_classifier.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2116</span>
 <span class="normal">2117</span>
 <span class="normal">2118</span>
@@ -13596,7 +13628,7 @@ attribute <code>feature_importances_</code> or <code>coef_</code>. Otherwise, re
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">sort_importance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return feature importances of the estimator stored in the forecaster.</span>
 <span class="sd">    Only valid when estimator stores internally the feature importances in the</span>
 <span class="sd">    attribute `feature_importances_` or `coef_`. Otherwise, returns `None`.</span>
@@ -13611,12 +13643,12 @@ attribute <code>feature_importances_</code> or <code>coef_</code>. Otherwise, re
 <span class="sd">    feature_importances : pandas DataFrame</span>
 <span class="sd">        Feature importances associated with each predictor.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This forecaster is not fitted yet. Call `fit` with appropriate "</span>
-            <span class="s2">"arguments before using `get_feature_importances()`."</span>
+            <span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
+            <span class="s2">&quot;arguments before using `get_feature_importances()`.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">estimator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span>
@@ -13624,12 +13656,12 @@ attribute <code>feature_importances_</code> or <code>coef_</code>. Otherwise, re
         <span class="n">estimator</span> <span class="o">=</span> <span class="n">estimator</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="c1"># Unify the estimators into a list of tuples: (sub_estimator, cv_fold_index)</span>
-    <span class="c1"># If it's a single estimator, fold_index is None.</span>
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'CalibratedClassifierCV'</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="s1">'calibrated_classifiers_'</span><span class="p">):</span>
+    <span class="c1"># If it&#39;s a single estimator, fold_index is None.</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;CalibratedClassifierCV&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="s1">&#39;calibrated_classifiers_&#39;</span><span class="p">):</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">"The CalibratedClassifierCV instance is not fitted or does not "</span>
-                <span class="s2">"expose 'calibrated_classifiers_'. Unable to retrieve importances."</span>
+                <span class="s2">&quot;The CalibratedClassifierCV instance is not fitted or does not &quot;</span>
+                <span class="s2">&quot;expose &#39;calibrated_classifiers_&#39;. Unable to retrieve importances.&quot;</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
 
@@ -13643,48 +13675,48 @@ attribute <code>feature_importances_</code> or <code>coef_</code>. Otherwise, re
     <span class="n">dfs_to_concat</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">sub_est</span><span class="p">,</span> <span class="n">fold_idx</span> <span class="ow">in</span> <span class="n">estimators_list</span><span class="p">:</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sub_est</span><span class="p">,</span> <span class="s1">'feature_importances_'</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sub_est</span><span class="p">,</span> <span class="s1">&#39;feature_importances_&#39;</span><span class="p">):</span>
             <span class="n">df_fold</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-                <span class="s1">'feature'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span><span class="p">,</span>
-                <span class="s1">'importance'</span><span class="p">:</span> <span class="n">sub_est</span><span class="o">.</span><span class="n">feature_importances_</span>
+                <span class="s1">&#39;feature&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span><span class="p">,</span>
+                <span class="s1">&#39;importance&#39;</span><span class="p">:</span> <span class="n">sub_est</span><span class="o">.</span><span class="n">feature_importances_</span>
             <span class="p">})</span>
-        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sub_est</span><span class="p">,</span> <span class="s1">'coef_'</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sub_est</span><span class="p">,</span> <span class="s1">&#39;coef_&#39;</span><span class="p">):</span>
             <span class="n">df_fold</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
                 <span class="n">data</span><span class="o">=</span><span class="n">sub_est</span><span class="o">.</span><span class="n">coef_</span><span class="p">,</span>
                 <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span>
             <span class="p">)</span>
-            <span class="n">df_fold</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'classes'</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">)</span>
+            <span class="n">df_fold</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;classes&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">continue</span>
 
         <span class="k">if</span> <span class="n">fold_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">df_fold</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'cv_fold'</span><span class="p">,</span> <span class="n">fold_idx</span><span class="p">)</span>
+            <span class="n">df_fold</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;cv_fold&#39;</span><span class="p">,</span> <span class="n">fold_idx</span><span class="p">)</span>
 
         <span class="n">dfs_to_concat</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_fold</span><span class="p">)</span>
 
     <span class="c1"># Handle cases where no importances could be extracted</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">dfs_to_concat</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Impossible to access feature importances for estimator of type "</span>
-            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="si">}</span><span class="s2">. This method is only valid when the "</span>
-            <span class="sa">f</span><span class="s2">"estimator stores internally the feature importances in the "</span>
-            <span class="sa">f</span><span class="s2">"attribute `feature_importances_` or `coef_`."</span>
+            <span class="sa">f</span><span class="s2">&quot;Impossible to access feature importances for estimator of type &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="si">}</span><span class="s2">. This method is only valid when the &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;estimator stores internally the feature importances in the &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;attribute `feature_importances_` or `coef_`.&quot;</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="n">feature_importances</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs_to_concat</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">sort_importance</span> <span class="ow">and</span> <span class="s1">'importance'</span> <span class="ow">in</span> <span class="n">feature_importances</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">sort_importance</span> <span class="ow">and</span> <span class="s1">&#39;importance&#39;</span> <span class="ow">in</span> <span class="n">feature_importances</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
         <span class="c1"># If it has folds, sort by importance but keep folds grouped nicely? </span>
         <span class="c1"># Usually, just sorting by importance globally is expected, </span>
         <span class="c1"># or (Fold, -Importance). Here we prioritize global importance.</span>
-        <span class="k">if</span> <span class="s1">'cv_fold'</span> <span class="ow">in</span> <span class="n">feature_importances</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;cv_fold&#39;</span> <span class="ow">in</span> <span class="n">feature_importances</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
             <span class="n">feature_importances</span> <span class="o">=</span> <span class="n">feature_importances</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
-                <span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">'cv_fold'</span><span class="p">,</span> <span class="s1">'importance'</span><span class="p">],</span> <span class="n">ascending</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">]</span>
+                <span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;cv_fold&#39;</span><span class="p">,</span> <span class="s1">&#39;importance&#39;</span><span class="p">],</span> <span class="n">ascending</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">]</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">feature_importances</span> <span class="o">=</span> <span class="n">feature_importances</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
-                <span class="n">by</span><span class="o">=</span><span class="s1">'importance'</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span>
+                <span class="n">by</span><span class="o">=</span><span class="s1">&#39;importance&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span>
             <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">feature_importances</span>
@@ -13928,10 +13960,10 @@ attribute <code>feature_importances_</code> or <code>coef_</code>. Otherwise, re
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       

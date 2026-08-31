@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -100,6 +100,25 @@
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+  👋 New in the skforecast ecosystem:
+<a href="https://studio.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast studio</strong></a> (train and evaluate models visually, no coding required) and
+<a href="https://ai.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast-ai</strong></a> (agentic time series forecasting).
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
       
     </div>
     
@@ -4075,12 +4094,12 @@
   <a href="#skforecast.foundation._forecaster_foundation.ForecasterFoundation-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Functions
+        Methods:
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Functions">
+    <nav class="md-nav" aria-label="Methods:">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5844,7 +5863,7 @@ series. Delegates to <code>estimator.exog_names_in_per_series_</code>.</p>
 
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/foundation/_forecaster_foundation.py</code></summary>
+                    <summary>Source code in <code>skforecast\foundation\_forecaster_foundation.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">127</span>
 <span class="normal">128</span>
 <span class="normal">129</span>
@@ -5911,56 +5930,56 @@ series. Delegates to <code>estimator.exog_names_in_per_series_</code>.</p>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="n">FoundationModel</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`estimator` must be a `FoundationModel` instance. "</span>
-            <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`estimator` must be a `FoundationModel` instance. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span>          <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span>      <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span>      <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span>          <span class="o">=</span> <span class="kc">False</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">skforecast_version</span> <span class="o">=</span> <span class="n">__version__</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span>     <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span>     <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">forecaster_id</span>      <span class="o">=</span> <span class="n">forecaster_id</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">__skforecast_tags__</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">"library"</span><span class="p">:</span> <span class="s2">"skforecast"</span><span class="p">,</span>
-        <span class="s2">"forecaster_name"</span><span class="p">:</span> <span class="s2">"ForecasterFoundation"</span><span class="p">,</span>
-        <span class="s2">"forecaster_task"</span><span class="p">:</span> <span class="s2">"regression"</span><span class="p">,</span>
-        <span class="s2">"forecasting_scope"</span><span class="p">:</span> <span class="s2">"single-series | global"</span><span class="p">,</span>
-        <span class="s2">"forecasting_strategy"</span><span class="p">:</span> <span class="s2">"foundation"</span><span class="p">,</span>
-        <span class="s2">"multiple_estimators"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
-        <span class="s2">"index_types_supported"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"pandas.RangeIndex"</span><span class="p">,</span> <span class="s2">"pandas.DatetimeIndex"</span><span class="p">],</span>
-        <span class="s2">"requires_index_frequency"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="s2">&quot;skforecast&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecaster_name&quot;</span><span class="p">:</span> <span class="s2">&quot;ForecasterFoundation&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecaster_task&quot;</span><span class="p">:</span> <span class="s2">&quot;regression&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecasting_scope&quot;</span><span class="p">:</span> <span class="s2">&quot;single-series | global&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecasting_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;foundation&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;multiple_estimators&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
+        <span class="s2">&quot;index_types_supported&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pandas.RangeIndex&quot;</span><span class="p">,</span> <span class="s2">&quot;pandas.DatetimeIndex&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;requires_index_frequency&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
 
-        <span class="s2">"allowed_input_types_series"</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">"pandas.Series"</span><span class="p">,</span>
-            <span class="s2">"pandas.DataFrame"</span><span class="p">,</span>
-            <span class="s2">"long-format pandas.DataFrame"</span><span class="p">,</span>
-            <span class="s2">"dict[str, pandas.Series]"</span><span class="p">,</span>
+        <span class="s2">&quot;allowed_input_types_series&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;pandas.Series&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;pandas.DataFrame&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;long-format pandas.DataFrame&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dict[str, pandas.Series]&quot;</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">"supports_exog"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"allowed_input_types_exog"</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">"pandas.Series"</span><span class="p">,</span>
-            <span class="s2">"pandas.DataFrame"</span><span class="p">,</span>
-            <span class="s2">"long-format pandas.DataFrame"</span><span class="p">,</span>
-            <span class="s2">"dict[str, pandas.Series | pandas.DataFrame | None]"</span><span class="p">,</span>
+        <span class="s2">&quot;supports_exog&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;allowed_input_types_exog&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;pandas.Series&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;pandas.DataFrame&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;long-format pandas.DataFrame&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dict[str, pandas.Series | pandas.DataFrame | None]&quot;</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">"handles_missing_values_series"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"handles_missing_values_exog"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;handles_missing_values_series&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;handles_missing_values_exog&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
 
-        <span class="s2">"supports_lags"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_window_features"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_calendar_features"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_transformer_series"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_transformer_exog"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_categorical_features"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"supports_weight_func"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_differentiation"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_lags&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_window_features&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_calendar_features&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_transformer_series&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_transformer_exog&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_categorical_features&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;supports_weight_func&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_differentiation&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
 
-        <span class="s2">"prediction_types"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"point"</span><span class="p">,</span> <span class="s2">"interval"</span><span class="p">,</span> <span class="s2">"quantiles"</span><span class="p">],</span>
-        <span class="s2">"supports_probabilistic"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"probabilistic_methods"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"quantile_native"</span><span class="p">],</span>
-        <span class="s2">"handles_binned_residuals"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;prediction_types&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="s2">&quot;interval&quot;</span><span class="p">,</span> <span class="s2">&quot;quantiles&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;supports_probabilistic&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;probabilistic_methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;quantile_native&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;handles_binned_residuals&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
                   </details>
@@ -6010,7 +6029,9 @@ series. Delegates to <code>estimator.exog_names_in_per_series_</code>.</p>
   </span>
 
 <a href="#skforecast.foundation._forecaster_foundation.ForecasterFoundation.creation_date" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
+    <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span>
+<span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6076,7 +6097,7 @@ series. Delegates to <code>estimator.exog_names_in_per_series_</code>.</p>
   </span>
 
 <a href="#skforecast.foundation._forecaster_foundation.ForecasterFoundation.python_version" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6919,7 +6940,7 @@ before fitting.</p>
 </div>
 
 
-<h3 id="skforecast.foundation._forecaster_foundation.ForecasterFoundation-functions">Functions<a href="#skforecast.foundation._forecaster_foundation.ForecasterFoundation-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+<h3 id="skforecast.foundation._forecaster_foundation.ForecasterFoundation-functions">Methods:<a href="#skforecast.foundation._forecaster_foundation.ForecasterFoundation-functions" class="headerlink" title="Permanent link">&para;</a></h3>
 
 <div class="doc doc-object doc-function">
 
@@ -7015,7 +7036,7 @@ copy so callers can mutate the result freely.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/foundation/_forecaster_foundation.py</code></summary>
+              <summary>Source code in <code>skforecast\foundation\_forecaster_foundation.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">403</span>
 <span class="normal">404</span>
 <span class="normal">405</span>
@@ -7055,11 +7076,11 @@ copy so callers can mutate the result freely.</p>
     <span class="n">names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">max_items</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Truncate a list of names for display.</span>
 
 <span class="sd">    Returns the first and last `max_items // 2` elements (joined by</span>
-<span class="sd">    `'...'`) when the list exceeds `max_items`. Returns a shallow</span>
+<span class="sd">    `&#39;...&#39;`) when the list exceeds `max_items`. Returns a shallow</span>
 <span class="sd">    copy so callers can mutate the result freely.</span>
 
 <span class="sd">    Parameters</span>
@@ -7074,7 +7095,7 @@ copy so callers can mutate the result freely.</p>
 <span class="sd">    truncated : list, None</span>
 <span class="sd">        Truncated list, or `None` if `names` is `None`.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
@@ -7082,7 +7103,7 @@ copy so callers can mutate the result freely.</p>
     <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_items</span><span class="p">:</span>
         <span class="n">half</span> <span class="o">=</span> <span class="n">max_items</span> <span class="o">//</span> <span class="mi">2</span>
-        <span class="n">names</span> <span class="o">=</span> <span class="n">names</span><span class="p">[:</span><span class="n">half</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"..."</span><span class="p">]</span> <span class="o">+</span> <span class="n">names</span><span class="p">[</span><span class="o">-</span><span class="n">half</span><span class="p">:]</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">names</span><span class="p">[:</span><span class="n">half</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">names</span><span class="p">[</span><span class="o">-</span><span class="n">half</span><span class="p">:]</span>
 
     <span class="k">return</span> <span class="n">names</span>
 </code></pre></div></td></tr></table></div>
@@ -7202,7 +7223,7 @@ resulting string with <code>textwrap.fill</code> when it exceeds
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/foundation/_forecaster_foundation.py</code></summary>
+              <summary>Source code in <code>skforecast\foundation\_forecaster_foundation.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">439</span>
 <span class="normal">440</span>
 <span class="normal">441</span>
@@ -7249,11 +7270,11 @@ resulting string with <code>textwrap.fill</code> when it exceeds
     <span class="n">max_items</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
     <span class="n">max_text_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">58</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Format a list of names for text `__repr__`.</span>
 
 <span class="sd">    Truncates the list to the first and last `max_items // 2` elements</span>
-<span class="sd">    (joined by `'...'`) when it exceeds `max_items`, then wraps the</span>
+<span class="sd">    (joined by `&#39;...&#39;`) when it exceeds `max_items`, then wraps the</span>
 <span class="sd">    resulting string with `textwrap.fill` when it exceeds</span>
 <span class="sd">    `max_text_length` characters.</span>
 
@@ -7271,16 +7292,16 @@ resulting string with <code>textwrap.fill</code> when it exceeds
 <span class="sd">    formatted : str, None</span>
 <span class="sd">        Formatted string, or `None` if `names` is `None`.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">names</span> <span class="o">=</span> <span class="n">ForecasterFoundation</span><span class="o">.</span><span class="n">_truncate_names</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">max_items</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="n">formatted</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+    <span class="n">formatted</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">formatted</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_text_length</span><span class="p">:</span>
-        <span class="n">formatted</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">    "</span> <span class="o">+</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span>
-            <span class="n">formatted</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">subsequent_indent</span><span class="o">=</span><span class="s2">"    "</span>
+        <span class="n">formatted</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">    &quot;</span> <span class="o">+</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span>
+            <span class="n">formatted</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">subsequent_indent</span><span class="o">=</span><span class="s2">&quot;    &quot;</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">formatted</span>
@@ -7308,7 +7329,7 @@ The "General Information" section is expanded by default.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/foundation/_forecaster_foundation.py</code></summary>
+              <summary>Source code in <code>skforecast\foundation\_forecaster_foundation.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">517</span>
 <span class="normal">518</span>
 <span class="normal">519</span>
@@ -7399,10 +7420,10 @@ The "General Information" section is expanded by default.</p>
 <span class="normal">604</span>
 <span class="normal">605</span>
 <span class="normal">606</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    HTML representation of the object.</span>
-<span class="sd">    The "General Information" section is expanded by default.</span>
-<span class="sd">    """</span>
+<span class="sd">    The &quot;General Information&quot; section is expanded by default.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">style</span><span class="p">,</span> <span class="n">unique_id</span> <span class="o">=</span> <span class="n">get_style_repr_html</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">)</span>
 
@@ -7410,42 +7431,42 @@ The "General Information" section is expanded by default.</p>
     <span class="k">if</span> <span class="n">exog_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">exog_names</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="s2">"..."</span><span class="p">:</span>
-                <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">'&lt;em style="color: #999;"&gt;</span><span class="se">\u2026</span><span class="s1">&lt;/em&gt;'</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="s2">&quot;...&quot;</span><span class="p">:</span>
+                <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&lt;em style=&quot;color: #999;&quot;&gt;</span><span class="se">\u2026</span><span class="s1">&lt;/em&gt;&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)))</span>
-        <span class="n">exog_names_html</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+        <span class="n">exog_names_html</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">exog_names_html</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 
     <span class="n">series_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_truncate_names</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">series_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">series_value_html</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">series_names</span><span class="p">)</span>
+        <span class="n">series_value_html</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">series_names</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">series_value_html</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
         <span class="n">context_range_parts</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">v</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">v</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_range_</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
         <span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">context_range_parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
             <span class="n">context_range_parts</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">context_range_parts</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"..."</span><span class="p">]</span> <span class="o">+</span> <span class="n">context_range_parts</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span>
+                <span class="n">context_range_parts</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">context_range_parts</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span>
             <span class="p">)</span>
-        <span class="n">context_range_html</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">context_range_parts</span><span class="p">)</span>
+        <span class="n">context_range_html</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">context_range_parts</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">context_range_html</span> <span class="o">=</span> <span class="s2">"Not fitted"</span>
+        <span class="n">context_range_html</span> <span class="o">=</span> <span class="s2">&quot;Not fitted&quot;</span>
 
-    <span class="n">params_html</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">"&lt;li&gt;&lt;strong&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">))</span><span class="si">}</span><span class="s2">:&lt;/strong&gt; </span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">))</span><span class="si">}</span><span class="s2">&lt;/li&gt;"</span>
+    <span class="n">params_html</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;&lt;li&gt;&lt;strong&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">))</span><span class="si">}</span><span class="s2">:&lt;/strong&gt; </span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">))</span><span class="si">}</span><span class="s2">&lt;/li&gt;&quot;</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">adapter</span><span class="o">.</span><span class="n">get_params</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">"model_id"</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;model_id&quot;</span>
     <span class="p">)</span>
 
-    <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
-<span class="s2">    &lt;div class="container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2">"&gt;</span>
-<span class="s2">        &lt;p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;"&gt;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    &lt;div class=&quot;container-</span><span class="si">{</span><span class="n">unique_id</span><span class="si">}</span><span class="s2">&quot;&gt;</span>
+<span class="s2">        &lt;p style=&quot;font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;&quot;&gt;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
 <span class="s2">        &lt;details open&gt;</span>
 <span class="s2">            &lt;summary&gt;General Information&lt;/summary&gt;</span>
 <span class="s2">            &lt;ul&gt;</span>
@@ -7463,14 +7484,14 @@ The "General Information" section is expanded by default.</p>
 <span class="s2">        &lt;/details&gt;</span>
 <span class="s2">        &lt;details&gt;</span>
 <span class="s2">            &lt;summary&gt;Exogenous Variables&lt;/summary&gt;</span>
-<span class="s2">            &lt;p style="margin: 0.2em 0 0.2em 1.5em;"&gt;</span><span class="si">{</span><span class="n">exog_names_html</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
+<span class="s2">            &lt;p style=&quot;margin: 0.2em 0 0.2em 1.5em;&quot;&gt;</span><span class="si">{</span><span class="n">exog_names_html</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
 <span class="s2">        &lt;/details&gt;</span>
 <span class="s2">        &lt;details&gt;</span>
 <span class="s2">            &lt;summary&gt;Training Information&lt;/summary&gt;</span>
 <span class="s2">            &lt;ul&gt;</span>
 <span class="s2">                &lt;li&gt;&lt;strong&gt;Context range:&lt;/strong&gt; </span><span class="si">{</span><span class="n">context_range_html</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
-<span class="s2">                &lt;li&gt;&lt;strong&gt;Training index type:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_type_</span><span class="o">.</span><span class="vm">__name__</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'Not fitted'</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
-<span class="s2">                &lt;li&gt;&lt;strong&gt;Training index frequency:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="o">.</span><span class="n">freqstr</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="p">,</span><span class="w"> </span><span class="s1">'freqstr'</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'Not fitted'</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">                &lt;li&gt;&lt;strong&gt;Training index type:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_type_</span><span class="o">.</span><span class="vm">__name__</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;Not fitted&#39;</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">                &lt;li&gt;&lt;strong&gt;Training index frequency:&lt;/strong&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="o">.</span><span class="n">freqstr</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;freqstr&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_freq_</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;Not fitted&#39;</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
 <span class="s2">            &lt;/ul&gt;</span>
 <span class="s2">        &lt;/details&gt;</span>
 <span class="s2">        &lt;details&gt;</span>
@@ -7480,12 +7501,12 @@ The "General Information" section is expanded by default.</p>
 <span class="s2">            &lt;/ul&gt;</span>
 <span class="s2">        &lt;/details&gt;</span>
 <span class="s2">        &lt;p&gt;</span>
-<span class="s2">            &lt;a href="https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/api/forecasterfoundation.html"&gt;&amp;#128214; &lt;strong&gt;API Reference&lt;/strong&gt;&lt;/a&gt;</span>
+<span class="s2">            &lt;a href=&quot;https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/api/forecasterfoundation.html&quot;&gt;&amp;#128214; &lt;strong&gt;API Reference&lt;/strong&gt;&lt;/a&gt;</span>
 <span class="s2">            &amp;nbsp;&amp;nbsp;</span>
-<span class="s2">            &lt;a href="https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/user_guides/foundation-forecasting-models.html"&gt;&amp;#128221; &lt;strong&gt;User Guide&lt;/strong&gt;&lt;/a&gt;</span>
+<span class="s2">            &lt;a href=&quot;https://skforecast.org/</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">/user_guides/foundation-forecasting-models.html&quot;&gt;&amp;#128221; &lt;strong&gt;User Guide&lt;/strong&gt;&lt;/a&gt;</span>
 <span class="s2">        &lt;/p&gt;</span>
 <span class="s2">    &lt;/div&gt;</span>
-<span class="s2">    """</span>
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="n">style</span> <span class="o">+</span> <span class="n">content</span>
 </code></pre></div></td></tr></table></div>
@@ -7604,7 +7625,7 @@ internally; an <code>InputTypeWarning</code> is issued.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/foundation/_forecaster_foundation.py</code></summary>
+              <summary>Source code in <code>skforecast\foundation\_forecaster_foundation.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">608</span>
 <span class="normal">609</span>
 <span class="normal">610</span>
@@ -7678,7 +7699,7 @@ internally; an <code>InputTypeWarning</code> is issued.</p>
         <span class="o">|</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Training Forecaster.</span>
 
 <span class="sd">    Stores index metadata and delegates context storage to the underlying</span>
@@ -7717,14 +7738,14 @@ internally; an <code>InputTypeWarning</code> is issued.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">if</span> <span class="n">exog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">allow_exog</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"The model '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s2">' does not support "</span>
-            <span class="sa">f</span><span class="s2">"exogenous variables. `exog` will be ignored."</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;The model &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s2">&#39; does not support &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;exogenous variables. `exog` will be ignored.&quot;</span><span class="p">,</span>
             <span class="n">IgnoredArgumentWarning</span><span class="p">,</span>
             <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
@@ -7931,7 +7952,7 @@ prediction.</li>
 </details>
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/foundation/_forecaster_foundation.py</code></summary>
+              <summary>Source code in <code>skforecast\foundation\_forecaster_foundation.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">673</span>
 <span class="normal">674</span>
 <span class="normal">675</span>
@@ -8044,7 +8065,7 @@ prediction.</li>
     <span class="p">)</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">check_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Predict n steps ahead.</span>
 
 <span class="sd">    Parameters</span>
@@ -8079,7 +8100,7 @@ prediction.</li>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    predictions : pandas DataFrame</span>
-<span class="sd">        Long-format DataFrame with columns `['level', 'pred']`.</span>
+<span class="sd">        Long-format DataFrame with columns `[&#39;level&#39;, &#39;pred&#39;]`.</span>
 <span class="sd">        The index repeats each forecast timestamp once per series.</span>
 
 <span class="sd">    Notes</span>
@@ -8100,12 +8121,12 @@ prediction.</li>
 <span class="sd">    provided `context` and `context_exog` (if provided) are used for</span>
 <span class="sd">    prediction.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="ow">and</span> <span class="n">context</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This forecaster is not fitted yet. Call `fit` with appropriate "</span>
-            <span class="s2">"arguments before using `predict()`, or pass `context`."</span>
+            <span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
+            <span class="s2">&quot;arguments before using `predict()`, or pass `context`.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
@@ -8342,7 +8363,7 @@ prediction.</li>
 </details>
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/foundation/_forecaster_foundation.py</code></summary>
+              <summary>Source code in <code>skforecast\foundation\_forecaster_foundation.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">768</span>
 <span class="normal">769</span>
 <span class="normal">770</span>
@@ -8482,11 +8503,11 @@ prediction.</li>
     <span class="n">interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span>
     <span class="n">check_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Predict n steps ahead with prediction intervals.</span>
 
 <span class="sd">    Prediction intervals are derived directly from the underlying</span>
-<span class="sd">    foundation model's native quantile output — no bootstrapping or</span>
+<span class="sd">    foundation model&#39;s native quantile output — no bootstrapping or</span>
 <span class="sd">    residual estimation is used.</span>
 
 <span class="sd">    Parameters</span>
@@ -8527,8 +8548,8 @@ prediction.</li>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    predictions : pandas DataFrame</span>
-<span class="sd">        Long-format DataFrame with columns `['level', 'pred', 'lower_bound',</span>
-<span class="sd">        'upper_bound']`.</span>
+<span class="sd">        Long-format DataFrame with columns `[&#39;level&#39;, &#39;pred&#39;, &#39;lower_bound&#39;,</span>
+<span class="sd">        &#39;upper_bound&#39;]`.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
@@ -8548,24 +8569,24 @@ prediction.</li>
 <span class="sd">    provided `context` and `context_exog` (if provided) are used for</span>
 <span class="sd">    prediction.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="ow">and</span> <span class="n">context</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This forecaster is not fitted yet. Call `fit` with appropriate "</span>
-            <span class="s2">"arguments before using `predict_interval()`, or pass `context`."</span>
+            <span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
+            <span class="s2">&quot;arguments before using `predict_interval()`, or pass `context`.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
         <span class="n">interval</span> <span class="o">=</span> <span class="n">_normalize_interval_scale</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span>
         <span class="n">check_interval</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span> <span class="n">ensure_symmetric_intervals</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">check_interval</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span> <span class="n">alpha_literal</span><span class="o">=</span><span class="s1">'interval'</span><span class="p">)</span>
+        <span class="n">check_interval</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span> <span class="n">alpha_literal</span><span class="o">=</span><span class="s1">&#39;interval&#39;</span><span class="p">)</span>
         <span class="n">interval</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.5</span> <span class="o">-</span> <span class="n">interval</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="n">interval</span> <span class="o">/</span> <span class="mi">2</span><span class="p">]</span>
 
     <span class="n">lower_q</span><span class="p">,</span> <span class="n">upper_q</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">interval</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">interval</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
-    <span class="c1"># Always include the median (0.5) so 'pred' is the central forecast.</span>
+    <span class="c1"># Always include the median (0.5) so &#39;pred&#39; is the central forecast.</span>
     <span class="n">quantiles</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">lower_q</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">upper_q</span><span class="p">})</span>
 
     <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_quantiles</span><span class="p">(</span>
@@ -8578,8 +8599,8 @@ prediction.</li>
                       <span class="n">check_inputs</span> <span class="o">=</span> <span class="n">check_inputs</span><span class="p">,</span>
                   <span class="p">)</span>
 
-    <span class="n">predictions</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[[</span><span class="s1">'level'</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'q_</span><span class="si">{</span><span class="mf">0.5</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'q_</span><span class="si">{</span><span class="n">lower_q</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'q_</span><span class="si">{</span><span class="n">upper_q</span><span class="si">}</span><span class="s1">'</span><span class="p">]]</span>
-    <span class="n">predictions</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'level'</span><span class="p">,</span> <span class="s1">'pred'</span><span class="p">,</span> <span class="s1">'lower_bound'</span><span class="p">,</span> <span class="s1">'upper_bound'</span><span class="p">]</span>
+    <span class="n">predictions</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[[</span><span class="s1">&#39;level&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;q_</span><span class="si">{</span><span class="mf">0.5</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;q_</span><span class="si">{</span><span class="n">lower_q</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;q_</span><span class="si">{</span><span class="n">upper_q</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]]</span>
+    <span class="n">predictions</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;level&#39;</span><span class="p">,</span> <span class="s1">&#39;pred&#39;</span><span class="p">,</span> <span class="s1">&#39;lower_bound&#39;</span><span class="p">,</span> <span class="s1">&#39;upper_bound&#39;</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="n">predictions</span>
 </code></pre></div></td></tr></table></div>
@@ -8789,7 +8810,7 @@ prediction.</li>
 </details>
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/foundation/_forecaster_foundation.py</code></summary>
+              <summary>Source code in <code>skforecast\foundation\_forecaster_foundation.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">889</span>
 <span class="normal">890</span>
 <span class="normal">891</span>
@@ -8897,7 +8918,7 @@ prediction.</li>
     <span class="n">quantiles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span>
     <span class="n">check_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Predict n steps ahead at specified quantile levels.</span>
 
 <span class="sd">    Parameters</span>
@@ -8926,7 +8947,7 @@ prediction.</li>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    predictions : pandas DataFrame</span>
-<span class="sd">        Long-format DataFrame with columns `['level', 'q_0.1', 'q_0.5', ...]`.</span>
+<span class="sd">        Long-format DataFrame with columns `[&#39;level&#39;, &#39;q_0.1&#39;, &#39;q_0.5&#39;, ...]`.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
@@ -8946,12 +8967,12 @@ prediction.</li>
 <span class="sd">    provided `context` and `context_exog` (if provided) are used for</span>
 <span class="sd">    prediction.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="ow">and</span> <span class="n">context</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This forecaster is not fitted yet. Call `fit` with appropriate "</span>
-            <span class="s2">"arguments before using `predict_quantiles()`, or pass `context`."</span>
+            <span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
+            <span class="s2">&quot;arguments before using `predict_quantiles()`, or pass `context`.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
@@ -9043,7 +9064,7 @@ prediction.</li>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/foundation/_forecaster_foundation.py</code></summary>
+              <summary>Source code in <code>skforecast\foundation\_forecaster_foundation.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">978</span>
 <span class="normal">979</span>
 <span class="normal">980</span>
@@ -9063,7 +9084,7 @@ prediction.</li>
 <span class="normal">994</span>
 <span class="normal">995</span>
 <span class="normal">996</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set new values to the parameters of the underlying estimator.</span>
 
 <span class="sd">    After calling this method, the forecaster is reset to an unfitted state.</span>
@@ -9077,7 +9098,7 @@ prediction.</li>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">False</span>
@@ -9127,7 +9148,7 @@ prediction.</li>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/foundation/_forecaster_foundation.py</code></summary>
+              <summary>Source code in <code>skforecast\foundation\_forecaster_foundation.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 998</span>
 <span class="normal"> 999</span>
 <span class="normal">1000</span>
@@ -9139,14 +9160,14 @@ prediction.</li>
 <span class="normal">1006</span>
 <span class="normal">1007</span>
 <span class="normal">1008</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Show forecaster information.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">())</span>
 </code></pre></div></td></tr></table></div>
@@ -9389,10 +9410,10 @@ prediction.</li>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       

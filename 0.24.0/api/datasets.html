@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../img/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -100,6 +100,25 @@
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+  👋 New in the skforecast ecosystem:
+<a href="https://studio.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast studio</strong></a> (train and evaluate models visually, no coding required) and
+<a href="https://ai.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast-ai</strong></a> (agentic time series forecasting).
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
       
     </div>
     
@@ -4914,7 +4933,7 @@
 <a href="#skforecast.datasets.fetch_dataset" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">fetch_dataset</span><span class="p">(</span>
     <span class="n">name</span><span class="p">,</span>
-    <span class="n">version</span><span class="o">=</span><span class="s2">"latest"</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">,</span>
     <span class="n">raw</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">kwargs_read</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -5051,7 +5070,7 @@ depending on the dataset file type.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/datasets/datasets.py</code></summary>
+              <summary>Source code in <code>skforecast\datasets\datasets.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">747</span>
 <span class="normal">748</span>
 <span class="normal">749</span>
@@ -5142,20 +5161,20 @@ depending on the dataset file type.</p>
 <span class="normal">834</span>
 <span class="normal">835</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fetch_dataset</span><span class="p">(</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="s1">'latest'</span><span class="p">,</span>
+    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="s1">&#39;latest&#39;</span><span class="p">,</span>
     <span class="n">raw</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">kwargs_read</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Fetch a dataset from the skforecast-datasets repository.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    name: str</span>
 <span class="sd">        Name of the dataset to fetch.</span>
-<span class="sd">    version: str, int, default 'latest'</span>
-<span class="sd">        Version of the dataset to fetch. If 'latest', the latest version will be </span>
+<span class="sd">    version: str, int, default &#39;latest&#39;</span>
+<span class="sd">        Version of the dataset to fetch. If &#39;latest&#39;, the latest version will be </span>
 <span class="sd">        fetched (the one in the main branch). For a list of available versions, </span>
 <span class="sd">        see the repository branches.</span>
 <span class="sd">    raw: bool, default False</span>
@@ -5174,45 +5193,45 @@ depending on the dataset file type.</p>
 <span class="sd">    df: pandas DataFrame</span>
 <span class="sd">        Dataset.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">kwargs_read</span> <span class="o">=</span> <span class="n">kwargs_read</span> <span class="ow">or</span> <span class="p">{}</span>
-    <span class="n">version</span> <span class="o">=</span> <span class="s1">'main'</span> <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s1">'latest'</span> <span class="k">else</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">'</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s1">&#39;main&#39;</span> <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s1">&#39;latest&#39;</span> <span class="k">else</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">&#39;</span>
 
     <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">datasets</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Dataset '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' not found. "</span>
-            <span class="sa">f</span><span class="s2">"Available datasets are: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">datasets</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">&quot;Dataset &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; not found. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Available datasets are: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">datasets</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
-    <span class="n">url</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">'url'</span><span class="p">]</span>
-    <span class="k">if</span> <span class="s1">'</span><span class="si">{version}</span><span class="s1">'</span> <span class="ow">in</span> <span class="n">url</span><span class="p">:</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39;</span><span class="si">{version}</span><span class="s1">&#39;</span> <span class="ow">in</span> <span class="n">url</span><span class="p">:</span>
         <span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">)</span>
-    <span class="n">file_type</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">'file_type'</span><span class="p">]</span>
+    <span class="n">file_type</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;file_type&#39;</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">'csv'</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;csv&#39;</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">sep</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">'sep'</span><span class="p">]</span>
+            <span class="n">sep</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;sep&#39;</span><span class="p">]</span>
             <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs_read</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Error reading dataset '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;Error reading dataset &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">'parquet'</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;parquet&#39;</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs_read</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Error reading dataset '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;Error reading dataset &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">raw</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">index_col</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">'index_col'</span><span class="p">]</span>
-            <span class="n">freq</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">'freq'</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">freq</span> <span class="o">==</span> <span class="s1">'h'</span> <span class="ow">and</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">pd</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)[:</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
-                <span class="n">freq</span> <span class="o">=</span> <span class="s1">'H'</span>
-            <span class="n">date_format</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">'date_format'</span><span class="p">]</span>
+            <span class="n">index_col</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;index_col&#39;</span><span class="p">]</span>
+            <span class="n">freq</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;freq&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">freq</span> <span class="o">==</span> <span class="s1">&#39;h&#39;</span> <span class="ow">and</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">pd</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="n">freq</span> <span class="o">=</span> <span class="s1">&#39;H&#39;</span>
+            <span class="n">date_format</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;date_format&#39;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="n">index_col</span><span class="p">:</span>
                 <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index_col</span><span class="p">)</span>
             <span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">date_format</span><span class="p">)</span>
@@ -5221,7 +5240,7 @@ depending on the dataset file type.</p>
             <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Could not preprocess dataset '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;Could not preprocess dataset &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                 <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span>
             <span class="p">)</span>
 
@@ -5243,7 +5262,7 @@ depending on the dataset file type.</p>
 
 
 <a href="#skforecast.datasets.load_demo_dataset" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_demo_dataset</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s1">'latest'</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_demo_dataset</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s1">&#39;latest&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
@@ -5327,7 +5346,7 @@ see the repository branches.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/datasets/datasets.py</code></summary>
+              <summary>Source code in <code>skforecast\datasets\datasets.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">838</span>
 <span class="normal">839</span>
 <span class="normal">840</span>
@@ -5372,10 +5391,10 @@ see the repository branches.</p>
 <span class="normal">879</span>
 <span class="normal">880</span>
 <span class="normal">881</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_demo_dataset</span><span class="p">(</span>
-    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'latest'</span><span class="p">,</span> 
+    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;latest&#39;</span><span class="p">,</span> 
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Load demo data set with monthly expenditure ($AUD) on corticosteroid drugs that</span>
 <span class="sd">    the Australian health system had between 1991 and 2008. Obtained from the book:</span>
 <span class="sd">    Forecasting: Principles and Practice by Rob J Hyndman and George Athanasopoulos.</span>
@@ -5383,8 +5402,8 @@ see the repository branches.</p>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    version: str, default 'latest'</span>
-<span class="sd">        Version of the dataset to fetch. If 'latest', the latest version will be</span>
+<span class="sd">    version: str, default &#39;latest&#39;</span>
+<span class="sd">        Version of the dataset to fetch. If &#39;latest&#39;, the latest version will be</span>
 <span class="sd">        fetched (the one in the main branch). For a list of available versions,</span>
 <span class="sd">        see the repository branches.</span>
 <span class="sd">    verbose: bool, default True</span>
@@ -5395,24 +5414,24 @@ see the repository branches.</p>
 <span class="sd">    df: pandas Series</span>
 <span class="sd">        Dataset.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">version</span> <span class="o">=</span> <span class="s1">'main'</span> <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s1">'latest'</span> <span class="k">else</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">'</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s1">&#39;main&#39;</span> <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s1">&#39;latest&#39;</span> <span class="k">else</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">&#39;</span>
 
     <span class="n">url</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s1">'https://raw.githubusercontent.com/skforecast/skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/'</span>
-        <span class="s1">'data/h2o.csv'</span>
+        <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/&#39;</span>
+        <span class="s1">&#39;data/h2o.csv&#39;</span>
     <span class="p">)</span>
 
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">','</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">'y'</span><span class="p">,</span> <span class="s1">'datetime'</span><span class="p">])</span>
-    <span class="n">df</span><span class="p">[</span><span class="s1">'datetime'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">'datetime'</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1">'</span><span class="p">)</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">'datetime'</span><span class="p">)</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">asfreq</span><span class="p">(</span><span class="s1">'MS'</span><span class="p">)</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'y'</span><span class="p">]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;datetime&#39;</span><span class="p">])</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;datetime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;datetime&#39;</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;datetime&#39;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">asfreq</span><span class="p">(</span><span class="s1">&#39;MS&#39;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="n">_print_dataset_info</span><span class="p">(</span><span class="s1">'h2o'</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">_print_dataset_info</span><span class="p">(</span><span class="s1">&#39;h2o&#39;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">df</span>
 </code></pre></div></td></tr></table></div>
@@ -5429,7 +5448,7 @@ see the repository branches.</p>
 
 
 <a href="#skforecast.datasets.show_datasets_info" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">show_datasets_info</span><span class="p">(</span><span class="n">datasets_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">'latest'</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">show_datasets_info</span><span class="p">(</span><span class="n">datasets_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;latest&#39;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
@@ -5512,7 +5531,7 @@ available versions, see the repository branches.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/datasets/datasets.py</code></summary>
+              <summary>Source code in <code>skforecast\datasets\datasets.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">653</span>
 <span class="normal">654</span>
 <span class="normal">655</span>
@@ -5549,9 +5568,9 @@ available versions, see the repository branches.</p>
 <span class="normal">686</span>
 <span class="normal">687</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">show_datasets_info</span><span class="p">(</span>
     <span class="n">datasets_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'latest'</span>
+    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;latest&#39;</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Print information about available datasets. If `datasets_names` is provided,</span>
 <span class="sd">    only information about those datasets will be printed.</span>
 
@@ -5560,8 +5579,8 @@ available versions, see the repository branches.</p>
 <span class="sd">    datasets_names: list, default None</span>
 <span class="sd">        List of dataset names to display information about. If None, information </span>
 <span class="sd">        about all datasets will be displayed.</span>
-<span class="sd">    version: str, default 'latest'</span>
-<span class="sd">        Version of the datasets to display information about. If 'latest', the</span>
+<span class="sd">    version: str, default &#39;latest&#39;</span>
+<span class="sd">        Version of the datasets to display information about. If &#39;latest&#39;, the</span>
 <span class="sd">        latest version will be used (the one in the main branch). For a list of</span>
 <span class="sd">        available versions, see the repository branches.</span>
 
@@ -5569,18 +5588,18 @@ available versions, see the repository branches.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">datasets_names</span> <span class="o">=</span> <span class="n">datasets_names</span> <span class="ow">or</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">datasets</span><span class="p">)</span>
-    <span class="n">version</span> <span class="o">=</span> <span class="s1">'main'</span> <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s1">'latest'</span> <span class="k">else</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">'</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s1">&#39;main&#39;</span> <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s1">&#39;latest&#39;</span> <span class="k">else</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">&#39;</span>
 
     <span class="k">for</span> <span class="n">dataset_name</span> <span class="ow">in</span> <span class="n">datasets_names</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">in</span> <span class="n">datasets</span><span class="p">:</span>
             <span class="n">_print_dataset_info</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Dataset '</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">' not available. Set argument "</span>
-                <span class="sa">f</span><span class="s2">"`datasets_names` to None to see all available datasets."</span>
+                <span class="sa">f</span><span class="s2">&quot;Dataset &#39;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">&#39; not available. Set argument &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;`datasets_names` to None to see all available datasets.&quot;</span>
             <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -5814,10 +5833,10 @@ available versions, see the repository branches.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "toc.integrate", "navigation.breadcrumbs", "content.code.copy", "content.code.annotate", "content.code.select", "content.tooltips", "search.suggest", "search.highlight", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
       
