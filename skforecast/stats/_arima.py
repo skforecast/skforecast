@@ -14,7 +14,7 @@ from sklearn.base import BaseEstimator, RegressorMixin
 
 from .arima._arima_base import arima, predict_arima
 from .arima._auto_arima import auto_arima, forecast_arima
-from ._utils import check_is_fitted, check_memory_reduced, _normalize_level
+from ._utils import check_is_fitted, check_memory_reduced, check_level
 
 
 class Arima(BaseEstimator, RegressorMixin):
@@ -685,10 +685,6 @@ class Arima(BaseEstimator, RegressorMixin):
             Confidence levels expressed as coverage proportions in the (0, 1]
             range (e.g., 0.8 for 80% intervals). If None and `alpha` is None,
             defaults to (0.8, 0.95). Cannot be specified together with `alpha`.
-
-            **Changed in version 0.23.0:** `level` is now expressed as coverage
-            proportions (0-1) instead of percentiles (0-100). Passing percentiles
-            is deprecated and emits a `FutureWarning`.
         alpha : float, default None
             The significance level for the prediction interval. 
             If specified, the confidence interval will be (1 - alpha) * 100%.
@@ -735,7 +731,7 @@ class Arima(BaseEstimator, RegressorMixin):
         elif level is None:
             level = (0.8, 0.95)
         
-        level = _normalize_level(level)
+        level = check_level(level)
         
         if exog is not None:
             exog = np.asarray(exog, dtype=float)

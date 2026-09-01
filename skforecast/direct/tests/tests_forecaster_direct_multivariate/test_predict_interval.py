@@ -191,7 +191,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.95, (2.5, 97.5)], 
+                         [0.95, (0.025, 0.975)], 
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_conformal_output_when_estimator_is_LinearRegression(interval):
     """
@@ -225,7 +225,7 @@ def test_predict_interval_conformal_output_when_estimator_is_LinearRegression(in
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.95, (2.5, 97.5)], 
+                         [0.95, (0.025, 0.975)], 
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_conformal_output_when_binned_residuals(interval):
     """

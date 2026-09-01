@@ -26,7 +26,6 @@ from ..utils import (
     check_predict_input,
     expand_index,
     get_exog_dtypes,
-    _normalize_interval_scale,
     check_interval,
     transform_series,
     transform_numpy,
@@ -1053,7 +1052,7 @@ class ForecasterStats(MultiEstimatorMixin):
 
             **Changed in version 0.23.0:** `interval` is now expressed as
             quantiles (0-1) instead of percentiles (0-100). Passing percentiles
-            is deprecated and emits a `FutureWarning`.
+            is not longer supported and will raise a `ValueError`.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -1074,7 +1073,6 @@ class ForecasterStats(MultiEstimatorMixin):
 
         # If interval and alpha take alpha, if interval transform to alpha
         if alpha is None:
-            interval = _normalize_interval_scale(interval=interval)
             check_interval(
                 interval                   = interval,
                 ensure_symmetric_intervals = True
