@@ -146,14 +146,14 @@ def run_benchmark_ForecasterRecursiveClassifier(output_dir, run_id=None):
                 show_progress=False
             )
 
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=30, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursiveClassifier__create_lags, forecaster=forecaster, y=y_values)
     _ = runner.benchmark(ForecasterRecursiveClassifier__create_train_X_y, forecaster=forecaster, y=y, exog=exog)
 
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=10, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursiveClassifier_fit, forecaster=forecaster, y=y, exog=exog)
 
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=30, warmup=3, output_dir=output_dir, run_id=run_id)
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     _ = runner.benchmark(ForecasterRecursiveClassifier_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursiveClassifier__create_predict_inputs, forecaster=forecaster, exog=exog_pred)

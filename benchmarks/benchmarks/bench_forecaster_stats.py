@@ -200,7 +200,7 @@ def run_benchmark_ForecasterStats(output_dir, run_id=None):
             )
 
     # Fit benchmarks
-    runner = BenchmarkRunner(repeat=15, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=15, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_fit, forecaster=forecaster, y=y, exog=exog)
 
     runner = BenchmarkRunner(repeat=8, output_dir=output_dir, run_id=run_id)
@@ -208,7 +208,7 @@ def run_benchmark_ForecasterStats(output_dir, run_id=None):
 
     # Predict benchmarks (fit first)
     forecaster.fit(y=y, exog=exog, suppress_warnings=True)
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=30, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterStats__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterStats_predict, forecaster=forecaster, exog=exog_pred)
