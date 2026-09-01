@@ -34,8 +34,7 @@ from ..utils import (
     align_series_and_exog_multiseries,
     manage_warnings,
     deepcopy_forecaster,
-    estimator_has_native_nan_support,
-    _normalize_interval_scale
+    estimator_has_native_nan_support
 )
 from ..foundation._utils import check_preprocess_series_foundation
 
@@ -703,7 +702,7 @@ def backtesting_forecaster(
 
         **Changed in version 0.23.0:** `interval` is now expressed as
         quantiles (0-1) instead of percentiles (0-100). Passing percentiles
-        is deprecated and emits a `FutureWarning`.
+        is not longer supported and will raise a `ValueError`.
     interval_method : str, default 'bootstrapping'
         Technique used to estimate prediction intervals. Available options:
 
@@ -805,10 +804,6 @@ def backtesting_forecaster(
             f"types of forecasters use the other functions available in the "
             f"`model_selection` module."
         )
-    
-    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
-    if isinstance(interval, (list, tuple)):
-        interval = _normalize_interval_scale(interval)
     
     check_backtesting_input(
         forecaster              = forecaster,
@@ -1519,7 +1514,7 @@ def backtesting_forecaster_multiseries(
 
         **Changed in version 0.23.0:** `interval` is now expressed as
         quantiles (0-1) instead of percentiles (0-100). Passing percentiles
-        is deprecated and emits a `FutureWarning`.
+        is not longer supported and will raise a `ValueError`.
     interval_method : str, default 'conformal'
         Technique used to estimate prediction intervals. Available options:
 
@@ -1636,10 +1631,6 @@ def backtesting_forecaster_multiseries(
                           exog              = exog,
                           exog_dict         = exog_dict
                       )
-    
-    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
-    if isinstance(interval, (list, tuple)):
-        interval = _normalize_interval_scale(interval)
 
     check_backtesting_input(
         forecaster              = forecaster,
@@ -2176,7 +2167,7 @@ def backtesting_stats(
 
         **Changed in version 0.23.0:** `interval` is now expressed as
         quantiles (0-1) instead of percentiles (0-100). Passing percentiles
-        is deprecated and emits a `FutureWarning`.
+        is not longer supported and will raise a `ValueError`.
     freeze_params : bool, default True
         Determines whether to freeze the model parameters after the first fit
         for estimators that perform automatic model selection.
@@ -2247,10 +2238,6 @@ def backtesting_stats(
             "types of forecasters use the other functions available in the "
             "`model_selection` module."
         )
-    
-    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
-    if isinstance(interval, (list, tuple)):
-        interval = _normalize_interval_scale(interval)
     
     check_backtesting_input(
         forecaster        = forecaster,

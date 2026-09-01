@@ -3,7 +3,6 @@
 import re
 import pytest
 from skforecast.utils import check_interval
-from skforecast.utils.utils import _normalize_interval_scale
 
 
 def test_check_interval_TypeError_when_interval_is_not_a_list():
@@ -197,46 +196,13 @@ def test_check_interval_quantile_scale_ValueError_when_not_symmetric():
         )
 
 
-@pytest.mark.parametrize("interval, expected",
-                         [([0.05, 0.95], [0.05, 0.95]),
-                          ((0.025, 0.975), [0.025, 0.975]),
-                          ([0.0, 1.0], [0.0, 1.0])],
-                         ids = lambda value: f'{value}')
-def test_normalize_interval_scale_quantiles_unchanged(interval, expected):
-    """
-    Check values already in the 0-1 scale are returned unchanged.
-    """
-    results = _normalize_interval_scale(interval)
-    assert results == expected
-
-
-def test_normalize_interval_scale_percentiles_converted_with_warning():
-    """
-    Check legacy percentiles (all > 1) are divided by 100 and a `FutureWarning`
-    is emitted.
-    """
-    err_msg = re.escape(
-        "Passing `interval` as percentiles (0-100) is deprecated. Use "
-        "quantiles (0-1) instead. For example, use `interval=[0.05, 0.95]` "
-        "instead of `interval=[5, 95]`. Percentile support will be removed "
-        "in skforecast 0.25.0."
-    )
-    with pytest.warns(FutureWarning, match = err_msg):
-        results = _normalize_interval_scale([5, 95])
-
-    assert results == [0.05, 0.95]
-
-
 @pytest.mark.parametrize("interval",
-                         [[1, 50], [0.5, 95], (1.0, 97.5)],
+                         [[5, 95], (2.5, 97.5), [0.5, 95]],
                          ids = lambda value: f'interval: {value}')
-def test_normalize_interval_scale_ValueError_when_mixed(interval):
+def test_check_interval_ValueError_when_interval_is_a_percentile(interval):
     """
-    Check `ValueError` is raised when interval mixes values <= 1 and > 1.
+    Check `ValueError` is raised when `interval` is given as percentiles. Support
+    for percentiles was removed in skforecast 0.25.0.
     """
-    err_msg = re.escape(
-        "`interval` mixes values <= 1 and > 1, so the scale is ambiguous. "
-        "Use quantiles in the [0, 1] range, e.g. `interval=[0.05, 0.95]`."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        _normalize_interval_scale(interval)
+    with pytest.raises(ValueError, match = 'interval bound'):
+        check_interval(interval=interval)
