@@ -1,6 +1,8 @@
 # Unit test NoriAdapter
 # ==============================================================================
 import re
+import sys
+import types
 import pytest
 import numpy as np
 import pandas as pd
@@ -445,3 +447,49 @@ def test_NoriAdapter_load_model_ImportError_when_backend_missing(monkeypatch):
     adapter.fit({"sales": y}, None)
     with pytest.raises(ImportError, match=re.escape("synthefy-nori is required")):
         adapter.predict(3, {"sales": y}, None, None, None)
+
+
+def test_NoriAdapter_load_model_passes_model_id_as_checkpoint(monkeypatch):
+    """
+    Test that _load_model forwards `model_id` as the `model` argument, since
+    synthefy-nori has no default checkpoint and accepts raw repo ids.
+    """
+    fake_backend = types.ModuleType("synthefy_nori")
+    fake_backend.NoriRegressor = FakeNoriRegressor
+    monkeypatch.setitem(sys.modules, "synthefy_nori", fake_backend)
+
+    adapter = NoriAdapter(model_id="Synthefy/Nori-30M")
+    adapter._load_model()
+
+    assert adapter._model.init_kwargs == {"model": "Synthefy/Nori-30M"}
+
+
+@pytest.mark.parametrize(
+    "nori_config, expected",
+    [
+        ({"model": "nori-6m"}, {"model": "nori-6m"}),
+        (
+            {"model_path": "/path/to/model.pt"},
+            {"model_path": "/path/to/model.pt", "model": "Synthefy/Nori"},
+        ),
+        ({"device": "cpu"}, {"device": "cpu", "model": "Synthefy/Nori"}),
+    ],
+    ids=["model", "model_path", "other_config"],
+)
+def test_NoriAdapter_load_model_nori_config_overrides_model_id(
+    nori_config, expected, monkeypatch
+):
+    """
+    Test that `model` in `nori_config` overrides `model_id`, that other keys
+    are forwarded verbatim, and that `nori_config` is not mutated.
+    """
+    fake_backend = types.ModuleType("synthefy_nori")
+    fake_backend.NoriRegressor = FakeNoriRegressor
+    monkeypatch.setitem(sys.modules, "synthefy_nori", fake_backend)
+
+    original_config = dict(nori_config)
+    adapter = NoriAdapter(model_id="Synthefy/Nori", nori_config=nori_config)
+    adapter._load_model()
+
+    assert adapter._model.init_kwargs == expected
+    assert adapter.nori_config == original_config

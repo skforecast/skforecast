@@ -68,6 +68,8 @@ class FoundationModel:
         Synthefy Nori (supports `exog`):
 
         - `'Synthefy/Nori'`
+        - `'Synthefy/Nori-30M'`
+        - `'Synthefy/Nori-100M'`
 
         EDF Lab TS-ICL (supports `exog`):
 

@@ -495,6 +495,7 @@ class FakeNoriRegressor:
     """
 
     def __init__(self, **kwargs):
+        self.init_kwargs = kwargs
         self.n_features_in_ = None
         self.y_ = None
         self.last_output_type = None
