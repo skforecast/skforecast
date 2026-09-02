@@ -3331,9 +3331,10 @@ class NoriAdapter:
     Parameters
     ----------
     model_id : str
-        Model ID, e.g. `"Synthefy/Nori"`. Used to resolve this adapter; the
-        underlying checkpoint is controlled by `nori_config` (key `model_path`)
-        and defaults to the public HuggingFace checkpoint.
+        Model ID, e.g. `"Synthefy/Nori"` (6M), `"Synthefy/Nori-30M"` or
+        `"Synthefy/Nori-100M"`. Used to resolve this adapter and, unless
+        overridden in `nori_config`, to select the checkpoint downloaded from
+        HuggingFace.
     model : object, default None
         Pre-instantiated `NoriRegressor` instance. If `None`, a new instance
         is created lazily on the first call to `predict`. Intended for testing
@@ -3356,9 +3357,11 @@ class NoriAdapter:
         weekly cycles for datetime series (or on the running index for
         `RangeIndex` series). Set `0` to disable. Must be a non-negative integer.
     nori_config : dict, default None
-        Additional keyword arguments forwarded verbatim to `NoriRegressor` at
-        instantiation (e.g. `model_path`, `device`, `token`, `augmentations`).
-        If `None`, the library defaults are used.
+        Keyword arguments forwarded verbatim to `NoriRegressor` at instantiation
+        (e.g. `device`, `token`, `augmentations`). The checkpoint defaults to
+        `model_id` and can be overridden here with `model` (a registry name such
+        as `'nori-6m'` or a HuggingFace repo id) or `model_path` (a local
+        checkpoint file, which takes precedence over `model`).
 
     Attributes
     ----------
@@ -3449,8 +3452,9 @@ class NoriAdapter:
             Number of Fourier seasonal harmonics added. Set `0` to disable.
             Must be a non-negative integer.
         nori_config : dict, default None
-            Additional keyword arguments forwarded verbatim to `NoriRegressor`
-            at instantiation.
+            Keyword arguments forwarded verbatim to `NoriRegressor` at
+            instantiation. The checkpoint defaults to `model_id` and can be
+            overridden here with `model` or `model_path`.
 
         """
 
@@ -3725,7 +3729,13 @@ class NoriAdapter:
                 "Install it with `pip install synthefy-nori`."
             ) from exc
 
-        self._model = NoriRegressor(**self.nori_config)
+        # synthefy-nori has no default checkpoint. Its `model` argument accepts
+        # either a registry name ('nori-6m') or a raw HuggingFace repo id, so
+        # `model_id` is passed through. It is ignored when `model_path` is set.
+        config = dict(self.nori_config)
+        config.setdefault("model", self.model_id)
+
+        self._model = NoriRegressor(**config)
 
     @staticmethod
     def _to_numpy(values: Any) -> np.ndarray:
