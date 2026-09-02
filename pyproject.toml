@@ -66,12 +66,12 @@ requires-python = ">=3.10"
 
 [project.optional-dependencies]
 stats = [
-    "statsmodels>=0.13, <0.15"
+    "statsmodels>=0.13, <0.16"
 ]
 
 plotting = [
     "matplotlib>=3.7, <3.12",
-    "statsmodels>=0.13, <0.15"
+    "statsmodels>=0.13, <0.16"
 ]
 
 deeplearning = [
@@ -81,7 +81,7 @@ deeplearning = [
 
 all = [
     "matplotlib>=3.7, <3.12",
-    "statsmodels>=0.13, <0.15",
+    "statsmodels>=0.13, <0.16",
     "keras>=3.0, <4.0",
     'tensorflow>=2.18, <2.22; python_version < "3.14"',
     "torch>=2.4, <2.14"
@@ -106,7 +106,7 @@ test = [
     "pytest-xdist>=3.8",
     
     # Stats and plotting
-    "statsmodels>=0.13, <0.15",
+    "statsmodels>=0.13, <0.16",
     "matplotlib>=3.7, <3.12",
     
     # Other optional dependencies
