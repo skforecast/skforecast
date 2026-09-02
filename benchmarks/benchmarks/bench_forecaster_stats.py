@@ -200,21 +200,25 @@ def run_benchmark_ForecasterStats(output_dir, run_id=None):
             )
 
     # Fit benchmarks
-    runner = BenchmarkRunner(repeat=15, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=15, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_fit, forecaster=forecaster, y=y, exog=exog)
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=8 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=8, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_fit_auto, forecaster=forecaster_auto, y=y, exog=exog)
 
     # Predict benchmarks (fit first)
     forecaster.fit(y=y, exog=exog, suppress_warnings=True)
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=30, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterStats__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterStats_predict, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterStats_predict_interval, forecaster=forecaster, exog=exog_pred)
 
     # Backtesting benchmarks
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=8 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=8, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_backtesting, forecaster=forecaster, y=y)
     _ = runner.benchmark(ForecasterStats_backtesting_exog, forecaster=forecaster, y=y, exog=exog)

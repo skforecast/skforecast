@@ -226,24 +226,28 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir, run_id=None):
                 suppress_warnings=True
             )
         
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=30, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_lags, forecaster=forecaster, y=y_values)
 
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=10, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_train_X_y, forecaster=forecaster, series=series, exog=exog)
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_train_X_y_no_exog, forecaster=forecaster, series=series)
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=5 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterDirectMultiVariate_fit, forecaster=forecaster, series=series, exog=exog)
     _ = runner.benchmark(ForecasterDirectMultiVariate_fit_series_no_exog, forecaster=forecaster, series=series)
 
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True, suppress_warnings=True)
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=10, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterDirectMultiVariate_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirectMultiVariate_predict, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirectMultiVariate_predict_interval_conformal, forecaster=forecaster, exog=exog_pred)
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=5 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterDirectMultiVariate_backtesting, forecaster=forecaster, series=series, exog=exog)
     _ = runner.benchmark(ForecasterDirectMultiVariate_backtesting_no_exog, forecaster=forecaster, series=series)
