@@ -203,6 +203,8 @@ def run_benchmark_ForecasterStats(output_dir, run_id=None):
     runner = BenchmarkRunner(repeat=15, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_fit, forecaster=forecaster, y=y, exog=exog)
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=8 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=8, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_fit_auto, forecaster=forecaster_auto, y=y, exog=exog)
 
@@ -215,6 +217,8 @@ def run_benchmark_ForecasterStats(output_dir, run_id=None):
     _ = runner.benchmark(ForecasterStats_predict_interval, forecaster=forecaster, exog=exog_pred)
 
     # Backtesting benchmarks
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=8 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=8, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterStats_backtesting, forecaster=forecaster, y=y)
     _ = runner.benchmark(ForecasterStats_backtesting_exog, forecaster=forecaster, y=y, exog=exog)

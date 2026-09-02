@@ -160,5 +160,7 @@ def run_benchmark_ForecasterRecursiveClassifier(output_dir, run_id=None):
     _ = runner.benchmark(ForecasterRecursiveClassifier_predict, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursiveClassifier_predict_proba, forecaster=forecaster, exog=exog_pred)
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=5 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursiveClassifier_backtesting, forecaster=forecaster, y=y, exog=exog)

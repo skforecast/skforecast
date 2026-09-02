@@ -239,6 +239,8 @@ def run_benchmark_ForecasterRnn(output_dir, run_id=None):
     _ = runner.benchmark(ForecasterRnn__create_train_X_y, forecaster=forecaster_exog, series=series, exog=exog)
     _ = runner.benchmark(ForecasterRnn__create_train_X_y_no_exog, forecaster=forecaster, series=series)
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=5 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRnn_fit, forecaster=forecaster_exog, series=series, exog=exog)
     _ = runner.benchmark(ForecasterRnn_fit_series_no_exog, forecaster=forecaster, series=series)
@@ -250,6 +252,8 @@ def run_benchmark_ForecasterRnn(output_dir, run_id=None):
     _ = runner.benchmark(ForecasterRnn_predict, forecaster=forecaster_exog, exog=exog_pred)
     _ = runner.benchmark(ForecasterRnn_predict_interval_conformal, forecaster=forecaster_exog, exog=exog_pred)
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=5 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRnn_backtesting, forecaster=forecaster_exog, series=series, exog=exog)
     _ = runner.benchmark(ForecasterRnn_backtesting_no_exog, forecaster=forecaster, series=series)

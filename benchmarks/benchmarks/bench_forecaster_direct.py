@@ -203,6 +203,8 @@ def run_benchmark_ForecasterDirect(output_dir, run_id=None):
     _ = runner.benchmark(ForecasterDirect_predict, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirect_predict_interval_conformal, forecaster=forecaster, exog=exog_pred)
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=5 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterDirect_backtesting, forecaster=forecaster, y=y, exog=exog)
     _ = runner.benchmark(ForecasterDirect_backtesting_conformal, forecaster=forecaster, y=y, exog=exog)

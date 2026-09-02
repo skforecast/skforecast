@@ -34,7 +34,8 @@ class BenchmarkRunner:
 
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def get_cpu_model(self):
+    @staticmethod
+    def get_cpu_model():
         """
         Best-effort CPU model name. On Linux, `platform.processor()` only
         reports the architecture (e.g. 'x86_64'), which is identical across
@@ -67,7 +68,7 @@ class BenchmarkRunner:
                 'lightgbm_version': lightgbm.__version__,
                 'platform': platform.platform(),
                 'processor': platform.processor(),
-                'cpu_model': self.get_cpu_model(),
+                'cpu_model': BenchmarkRunner.get_cpu_model(),
                 'cpu_count': psutil.cpu_count(logical=True),
                 'memory_gb': round(psutil.virtual_memory().total / 1e9, 2),
             }

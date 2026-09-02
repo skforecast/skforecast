@@ -441,6 +441,8 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir, run_id=None):
         encoding="ordinal"
     )
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=5 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_fit_series_is_dict_no_exog,
@@ -555,6 +557,8 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir, run_id=None):
         encoding="ordinal"
     )
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=5 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_backtesting_series_is_dict_no_exog,
