@@ -58,7 +58,10 @@ the same duck-typed contract as the other adapters:
 
 ## Refactoring plan
 
-All work is in `skforecast/foundation/_adapters.py` (`TimesFMAdapter`) + tests + docs.
+Most work is in `skforecast/foundation/_adapters.py` (`TimesFMAdapter`) + tests + docs.
+The shared license-notice mechanism (step 3b) also adds a `LicenseWarning` to
+`skforecast/exceptions/__init__.py` and a one-line loader call to the `MoiraiAdapter`,
+`TabPFNAdapter`, and `TSICLAdapter` loaders.
 
 ### 1. Version dispatch
 
@@ -119,6 +122,93 @@ Keep the surface minimal and aligned with the other adapters (Chronos has 6 keys
   other adapters' loaders. Additionally, if `timesfm` imports but lacks
   `TimesFM3Forecaster` (older `timesfm<3.0`), raise a clear error telling the user to
   upgrade.
+
+### 3b. Non-commercial license notice (shared mechanism, all adapters)
+
+**Motivation.** Several foundation-model *weights* carry non-commercial licenses (the
+skforecast code and the backend Python packages stay permissive; the restriction is on
+the checkpoint a user pulls via `from_pretrained`). A user can silently download
+restricted weights without realizing they cannot deploy them. Today no adapter warns
+about this; the only license handling is T0's *access-gating* help
+([_adapters.py:2758-2768](skforecast/foundation/_adapters.py#L2758-L2768)), which is a
+different concern (how to download, not whether you may use it commercially).
+
+Build this as a **shared, registry-driven mechanism** rather than TimesFM-only code, so
+every current and future adapter benefits from one consistent code path.
+
+**License status of the current adapters** (verified against HF model cards, Sep 2026):
+
+| Adapter | `model_id` prefix | Weights license | Commercial |
+|---------|-------------------|-----------------|:---------:|
+| Chronos | `autogluon/chronos`, `amazon/chronos` | Apache 2.0 | yes |
+| TimesFM 2.5 | `google/timesfm-2.5` | Apache 2.0 | yes |
+| **TimesFM 3.0** | `google/timesfm-3.0` | TimesFM Non-Commercial License v1.0 | **no** |
+| **Moirai** | `Salesforce/moirai` | CC-BY-NC-4.0 | **no** |
+| TabICL | `soda-inria/tabicl` | BSD-3-Clause | yes |
+| **TabPFN-TS** | `priorlabs/tabpfn` | TabPFN License v1.0 (non-commercial w/o enterprise) | **no** |
+| T0 | `theforecastingcompany/t0` | Apache 2.0 (gated repo) | yes |
+| Nori | `Synthefy/Nori` | Apache 2.0 | yes |
+| **TS-ICL** | `taharnbl/TS-ICL` | tsicl-v1-license-v1.0 (non-commercial) | **no** |
+
+So four targets need the notice: **TimesFM 3.0, Moirai, TabPFN-TS, TS-ICL**.
+
+**Design.**
+
+1. **`LicenseWarning` category** — add to `skforecast/exceptions/__init__.py` and
+   register it in `warn_skforecast_categories` / `set_warnings_style` alongside the
+   existing categories, so users can filter it by name and the styled-warning system
+   picks it up.
+2. **Registry** in `_adapters.py` (near `_ADAPTER_REGISTRY`), keyed by `model_id`
+   prefix, longest-prefix match wins (so `google/timesfm-3.0` and `google/timesfm-2.5`
+   resolve independently). Only non-commercial entries are listed; anything not matched
+   is treated as unrestricted (no warning):
+   ```python
+   _NON_COMMERCIAL_LICENSES = {
+       "google/timesfm-3.0": ("TimesFM Non-Commercial License v1.0",
+                               "https://huggingface.co/google/timesfm-3.0-pytorch/blob/main/LICENSE"),
+       "Salesforce/moirai":  ("CC-BY-NC-4.0",
+                               "https://huggingface.co/Salesforce/moirai-2.0-R-small"),
+       "priorlabs/tabpfn":   ("TabPFN License v1.0 (non-commercial without an enterprise license)",
+                               "https://github.com/PriorLabs/TabPFN/blob/main/LICENSE"),
+       "taharnbl/TS-ICL":    ("tsicl-v1-license-v1.0 (non-commercial)",
+                               "https://huggingface.co/taharnbl/TS-ICL"),
+   }
+   ```
+   (Confirm each URL/name against the model card at implementation time.)
+3. **Helper** `_warn_if_non_commercial(model_id)` in `_adapters.py` (or `_utils.py`):
+   longest-prefix lookup; if matched, `warnings.warn(msg, category=LicenseWarning, stacklevel=...)`.
+   Message (no en/em dashes, per repo style): the weights for `<model_id>` are released
+   under `<license_name>`, which restricts use to non-commercial / non-production
+   purposes; review the license before deploying; see `<url>`.
+4. **Wiring** — call `_warn_if_non_commercial(self.model_id)` from each adapter's
+   `_load_model` at the point weights are loaded (a no-op-when-already-loaded loader
+   makes it fire once per load). Wire all four affected adapters:
+   - `TimesFMAdapter._load_model` (v3 branch only; v2.5 `model_id` is not in the
+     registry so it stays silent automatically — no special-casing needed).
+   - `MoiraiAdapter`, `TabPFNAdapter`, `TSICLAdapter` loaders.
+   The registry-driven call is a single line per adapter, and Chronos/TabICL/T0/Nori
+   add nothing (their prefixes are absent from the registry).
+5. **Suppressible** — because it routes through the skforecast warnings system, the
+   existing `suppress_warnings` argument / module warning filter silences it in
+   backtesting/refit loops.
+
+**Tests** (`tests_foundation_models/`):
+- Unit-test `_warn_if_non_commercial` directly: matched prefixes warn with
+  `LicenseWarning`; unmatched (e.g. `autogluon/chronos-2-small`, `google/timesfm-2.5-*`)
+  do not.
+- Per affected adapter (via the injected-model path so no download): assert a
+  `LicenseWarning` is raised on load, and that it is silenced under `suppress_warnings`.
+- TimesFM specifically: warning on a v3 `model_id`, no warning on a v2.5 `model_id`.
+
+**Docs** — surface the non-commercial restriction wherever these ids appear
+(user-guide notebook, `AGENTS.md` adapter table, API reference, skill docs). Note in
+the adapter-comparison docs which models are non-commercial so users can choose before
+committing.
+
+**Scope note.** This plan builds the shared mechanism and wires **all four**
+non-commercial adapters (TimesFM 3.0, Moirai, TabPFN-TS, TS-ICL) in this branch, per the
+user's decision. Touching the other three adapters is limited to the one-line loader
+call plus their docstrings/tests; no behavioral change beyond the new warning.
 
 ### 4. `predict` — dispatch to `_predict_v25` (existing body, unchanged) vs `_predict_v3`
 
