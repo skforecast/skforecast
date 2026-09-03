@@ -269,3 +269,35 @@ Call the env python directly with `PYTHONIOENCODING=utf-8`; do not use `conda ru
   skforecast's wide/long dict contract stays univariate-per-series.
 - Exposing `per_core_batch_size` and every v3 predict-time knob beyond the
   `predict_kwargs` passthrough.
+
+## Documentation to update (do not skip)
+
+The code change is not complete until the docstrings and all user-facing
+documentation reflect the upgraded adapter (dual-version support, TimesFM 3.0 id,
+native exog/covariates, the 9-quantile layout, new `device`/`predict_kwargs` params).
+This expands on step 6 and must be treated as part of the deliverable:
+
+- **Docstrings** — `TimesFMAdapter` class and every method docstring in
+  `skforecast/foundation/_adapters.py`, plus the `FoundationModel` docstring in
+  `skforecast/foundation/_foundation_model.py` (version label, ids, exog support).
+  Follow `.github/instructions/docstrings.instructions.md` (NumPy style, no en/em
+  dashes).
+- **User guide notebook** — `docs/user_guides/foundation-forecasting-models.ipynb`:
+  update the TimesFM section(s) with the v3.0 `model_id`, note dual-version support,
+  add an exog/covariate usage example, and update the quantile description. Re-run the
+  affected cells so outputs match.
+- **API reference** — `docs/api/FoundationModel.md` (parameter table / adapter list).
+- **LLM references** — `docs/llms.txt` and `docs/llms-full.txt` (adapter table rows:
+  TimesFM `Exog: Yes` for v3, updated default `context_length`, version label). These
+  mirror `AGENTS.md`; keep them consistent.
+- **Quick start** — `docs/quick-start/ai-assisted-forecasting.md` if it lists the
+  TimesFM adapter/capabilities.
+- **Release notes** — add an entry to `docs/releases/releases.md` describing TimesFM
+  3.0 support and the new exog capability.
+- **Embedded reference + skills** — `AGENTS.md` (source of truth; the auto-generated
+  `.github/copilot-instructions.md` is regenerated from it, do not hand-edit) and the
+  skill docs listed in step 6.
+
+After editing, verify docs consistency: search the repo for `timesfm-2.5` /
+`TimesFM 2.5` / the old `context_length` default and confirm every occurrence is
+either intentionally version-specific or updated.
