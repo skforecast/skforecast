@@ -7,9 +7,11 @@
 
 from __future__ import annotations
 from typing import Any, Callable
+import warnings
 import numpy as np
 import pandas as pd
 from ..utils import check_preprocess_series
+from ..exceptions import LicenseWarning
 
 
 def _validate_positive_int(name: str, value: Any) -> None:
@@ -120,6 +122,65 @@ def _tensor_to_numpy(values: Any) -> np.ndarray:
         return values.detach().cpu().numpy()
 
     return np.asarray(values)
+
+
+_NON_COMMERCIAL_LICENSES: dict[str, tuple[str, str]] = {
+    "google/timesfm-3.0": (
+        "TimesFM Non-Commercial License v1.0",
+        "https://huggingface.co/google/timesfm-3.0-pytorch/blob/main/LICENSE",
+    ),
+    "Salesforce/moirai": (
+        "CC-BY-NC-4.0",
+        "https://huggingface.co/Salesforce/moirai-2.0-R-small",
+    ),
+    "priorlabs/tabpfn": (
+        "TabPFN License v1.0 (non-commercial without an enterprise license)",
+        "https://huggingface.co/Prior-Labs/tabpfn_3/blob/main/LICENSE",
+    ),
+    "taharnbl/TS-ICL": (
+        "tsicl-v1-license-v1.0 (non-commercial)",
+        "https://huggingface.co/taharnbl/TS-ICL",
+    ),
+}
+
+
+def _warn_if_non_commercial(model_id: str) -> None:
+    """
+    Warn when `model_id` resolves to weights released under a non-commercial
+    license.
+
+    Looks up `model_id` in `_NON_COMMERCIAL_LICENSES` using longest-prefix
+    matching. Model ids that do not match any registered prefix are assumed
+    to be unrestricted and no warning is raised.
+
+    Parameters
+    ----------
+    model_id : str
+        Model ID whose weights are about to be loaded.
+
+    Returns
+    -------
+    None
+
+    """
+
+    best_prefix = None
+    for prefix in _NON_COMMERCIAL_LICENSES:
+        if model_id.startswith(prefix):
+            if best_prefix is None or len(prefix) > len(best_prefix):
+                best_prefix = prefix
+
+    if best_prefix is None:
+        return
+
+    license_name, license_url = _NON_COMMERCIAL_LICENSES[best_prefix]
+    warnings.warn(
+        f"The weights for '{model_id}' are released under {license_name}, "
+        "which restricts their use to non-commercial or non-production "
+        f"purposes. Review the license before deploying. See {license_url}.",
+        category=LicenseWarning,
+        stacklevel=3,
+    )
 
 
 def check_preprocess_series_foundation(

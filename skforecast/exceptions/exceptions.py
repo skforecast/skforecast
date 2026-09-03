@@ -324,6 +324,23 @@ class SkforecastVersionWarning(UserWarning):
         return self.message + "\n" + extra_message
 
 
+class LicenseWarning(UserWarning):
+    """
+    Warning used to notify that the weights of a foundation model are released
+    under a non-commercial license, which restricts their use to
+    non-commercial or non-production purposes.
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=LicenseWarning)"
+        )
+        return self.message + "\n" + extra_message
+
+
 warn_skforecast_categories = [
     DataTypeWarning,
     DataTransformationWarning,
@@ -331,6 +348,7 @@ warn_skforecast_categories = [
     FeatureOutOfRangeWarning,
     IgnoredArgumentWarning,
     InputTypeWarning,
+    LicenseWarning,
     LongTrainingWarning,
     MissingExogWarning,
     MissingValuesWarning,

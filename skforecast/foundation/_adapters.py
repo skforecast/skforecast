@@ -21,6 +21,7 @@ from ._utils import (
     _validate_positive_int,
     _tensor_to_numpy,
     _apply_set_params,
+    _warn_if_non_commercial,
 )
 
 
@@ -1165,6 +1166,7 @@ class MoiraiAdapter:
 
         if self._module is not None:
             return
+        _warn_if_non_commercial(self.model_id)
         try:
             from uni2ts.model.moirai2 import Moirai2Module
         except ImportError as exc:
@@ -2233,6 +2235,7 @@ class TabPFNAdapter:
 
         if self._model is not None:
             return
+        _warn_if_non_commercial(self.model_id)
         try:
             from tabpfn_time_series import TabPFNMode, TabPFNTSPipeline
         except ImportError as exc:
@@ -3203,6 +3206,7 @@ class TSICLAdapter:
 
         if self._model is not None:
             return
+        _warn_if_non_commercial(self.model_id)
         try:
             from tsicl import TSICL
         except ImportError as exc:

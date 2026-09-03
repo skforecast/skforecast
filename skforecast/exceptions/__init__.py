@@ -4,6 +4,7 @@ from .exceptions import (
     ExogenousInterpretationWarning,
     IgnoredArgumentWarning,
     InputTypeWarning,
+    LicenseWarning,
     LongTrainingWarning,
     MissingExogWarning,
     MissingValuesWarning,
