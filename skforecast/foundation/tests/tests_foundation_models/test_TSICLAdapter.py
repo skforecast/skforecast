@@ -1,6 +1,8 @@
 # Unit test TSICLAdapter
 # ==============================================================================
 import re
+import sys
+import types
 import builtins
 import warnings
 import pytest
@@ -698,12 +700,11 @@ def test_TSICLAdapter_to_covariate_array_non_pandas_inputs(col_data, expected_er
 # ==============================================================================
 # Tests TSICLAdapter._load_model — LicenseWarning
 # ==============================================================================
-def test_TSICLAdapter_load_model_LicenseWarning_suppressible(monkeypatch):
+def test_TSICLAdapter_load_model_ImportError_no_LicenseWarning(monkeypatch):
     """
-    Test that _load_model issues a LicenseWarning (TS-ICL weights are
-    non-commercial) before raising ImportError when tsicl is not installed,
-    and that the warning is suppressible via warnings.simplefilter, the
-    mechanism used by the `suppress_warnings` argument across skforecast.
+    Test that _load_model raises ImportError when tsicl is not installed,
+    and that no LicenseWarning is issued in that case, since the warning is
+    only relevant once the model is actually about to be instantiated.
     """
     real_import = builtins.__import__
 
@@ -715,13 +716,45 @@ def test_TSICLAdapter_load_model_LicenseWarning_suppressible(monkeypatch):
     adapter = TSICLAdapter(model_id="taharnbl/TS-ICL")
 
     monkeypatch.setattr(builtins, "__import__", mock_import)
-    with pytest.warns(LicenseWarning, match="non-commercial"):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         with pytest.raises(ImportError, match="tsicl"):
             adapter._load_model()
-
-    adapter2 = TSICLAdapter(model_id="taharnbl/TS-ICL")
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("ignore", category=LicenseWarning)
-        with pytest.raises(ImportError, match="tsicl"):
-            adapter2._load_model()
     assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+
+
+def test_TSICLAdapter_load_model_LicenseWarning_on_successful_load():
+    """
+    Test that _load_model issues a LicenseWarning (TS-ICL weights are
+    non-commercial) once tsicl is available and the model is about to be
+    instantiated, and that the warning is suppressible via
+    warnings.simplefilter, the mechanism used by the `suppress_warnings`
+    argument across skforecast. The real `tsicl` package is mocked so no
+    network call happens.
+    """
+
+    class _FakeTSICL:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    mock_module = types.ModuleType("tsicl")
+    mock_module.TSICL = _FakeTSICL
+
+    original = sys.modules.get("tsicl")
+    sys.modules["tsicl"] = mock_module
+    try:
+        adapter = TSICLAdapter(model_id="taharnbl/TS-ICL")
+        with pytest.warns(LicenseWarning, match="non-commercial"):
+            adapter._load_model()
+        assert isinstance(adapter._model, _FakeTSICL)
+
+        adapter2 = TSICLAdapter(model_id="taharnbl/TS-ICL")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("ignore", category=LicenseWarning)
+            adapter2._load_model()
+        assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+    finally:
+        if original is None:
+            del sys.modules["tsicl"]
+        else:
+            sys.modules["tsicl"] = original

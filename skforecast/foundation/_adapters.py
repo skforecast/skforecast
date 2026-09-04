@@ -771,8 +771,7 @@ class TimesFMAdapter:
     def set_params(self, **params) -> TimesFMAdapter:
         """
         Set adapter parameters. Resets the model when parameters that affect
-        loading or compilation change (`model_id`, `context_length`,
-        `max_horizon`, `forecast_config_kwargs`, `device`). Changing
+        loading or compilation change for the active backend. Changing
         `model_id` also re-detects the backend and `allow_exog`.
 
         Parameters
@@ -784,6 +783,15 @@ class TimesFMAdapter:
         Returns
         -------
         self : TimesFMAdapter
+
+        Notes
+        -----
+        The reload trigger keys are backend dependent: for the v2.5 backend
+        `model_id`, `context_length`, `max_horizon`, `forecast_config_kwargs`,
+        and `device` all affect the loaded (and compiled) model. For the
+        v3.0 backend only `model_id` and `device` affect the loaded model,
+        since `context_length`, `max_horizon`, and `forecast_config_kwargs`
+        are v2.5 only and are never passed to `TimesFM3Forecaster`.
 
         """
 
@@ -802,19 +810,20 @@ class TimesFMAdapter:
             return p
 
         def _reset_backend() -> None:
-            new_model_id = params.get("model_id", self.model_id)
-            self._backend = _detect_timesfm_backend(new_model_id)
+            self._backend = _detect_timesfm_backend(params["model_id"])
             self.allow_exog = self._backend == "v3"
+
+        if self._backend == "v3":
+            reload_keys = {"model_id", "device"}
+        else:
+            reload_keys = {"model_id", "context_length", "max_horizon",
+                            "forecast_config_kwargs", "device"}
 
         return _apply_set_params(
             self, params,
             validate=validate,
             resets=(
-                (
-                    {"model_id", "context_length", "max_horizon",
-                     "forecast_config_kwargs", "device"},
-                    lambda: setattr(self, "_model", None),
-                ),
+                (reload_keys, lambda: setattr(self, "_model", None)),
                 ({"model_id"}, _reset_backend),
             ),
         )
@@ -1261,15 +1270,15 @@ class TimesFMAdapter:
         Dispatches to `_load_model_v25` or `_load_model_v3` based on
         `self._backend`. This method is a no-op when `self._model` is
         already populated (either by a prior call or by the `model`
-        test-injection parameter). Issues a `LicenseWarning` when
-        `model_id` resolves to weights released under a non-commercial
-        license (currently only the v3.0 ids are registered).
+        test-injection parameter). Each per-backend loader issues a
+        `LicenseWarning` when `model_id` resolves to weights released under
+        a non-commercial license (currently only the v3.0 ids are
+        registered).
 
         """
 
         if self._model is not None:
             return
-        _warn_if_non_commercial(self.model_id)
         if self._backend == "v3":
             self._load_model_v3()
         else:
@@ -1290,7 +1299,9 @@ class TimesFMAdapter:
         `_ensure_compiled`, which is called from `_predict_v25` with the
         actual forecast horizon so that the compiled decode graph is sized
         exactly for the requested number of steps rather than the (much
-        larger) `max_horizon` ceiling. `timesfm` must be installed.
+        larger) `max_horizon` ceiling. `timesfm` must be installed. A
+        `LicenseWarning` is issued after the import succeeds, immediately
+        before the weights are loaded.
 
         """
 
@@ -1301,6 +1312,8 @@ class TimesFMAdapter:
                 "timesfm is required for TimesFMAdapter. "
                 "Install it with `pip install timesfm`."
             ) from exc
+
+        _warn_if_non_commercial(self.model_id)
 
         # Workaround for a compatibility issue between huggingface_hub and
         # timesfm: huggingface_hub's `from_pretrained` passes `proxies` and
@@ -1332,7 +1345,9 @@ class TimesFMAdapter:
         separate compile step: context length and horizon are handled
         internally by `predict_batch`. If the installed `timesfm` package
         predates 3.0 and does not provide `TimesFM3Forecaster`, an
-        `ImportError` prompts the user to upgrade.
+        `ImportError` prompts the user to upgrade. A `LicenseWarning` is
+        issued only after both checks succeed, immediately before the
+        weights are loaded.
 
         """
 
@@ -1350,6 +1365,8 @@ class TimesFMAdapter:
                 "version does not provide `TimesFM3Forecaster`. Upgrade "
                 "with `pip install -U timesfm`."
             )
+
+        _warn_if_non_commercial(self.model_id)
 
         self._model = timesfm.TimesFM3Forecaster.from_pretrained(
             self.model_id,
@@ -1685,12 +1702,13 @@ class MoiraiAdapter:
         -----
         The module is imported lazily from `uni2ts` and instantiated via
         `Moirai2Module.from_pretrained`, then set to evaluation mode.
-        This method is a no-op when `self._module` is already populated.
+        This method is a no-op when `self._module` is already populated. A
+        `LicenseWarning` is issued after the import succeeds, immediately
+        before the weights are loaded.
         """
 
         if self._module is not None:
             return
-        _warn_if_non_commercial(self.model_id)
         try:
             from uni2ts.model.moirai2 import Moirai2Module
         except ImportError as exc:
@@ -1698,6 +1716,7 @@ class MoiraiAdapter:
                 "uni2ts is required for MoiraiAdapter. "
                 "Install it with `pip install uni2ts`."
             ) from exc
+        _warn_if_non_commercial(self.model_id)
         self._module = Moirai2Module.from_pretrained(self.model_id)
         self._module.eval()
 
@@ -2754,12 +2773,13 @@ class TabPFNAdapter:
         The pipeline is imported lazily from `tabpfn_time_series` and
         instantiated with the current adapter parameters. This method is a
         no-op when `self._model` is already populated (either by a prior
-        call or by the `model` test-injection parameter).
+        call or by the `model` test-injection parameter). A
+        `LicenseWarning` is issued after the import succeeds, immediately
+        before the pipeline is instantiated.
         """
 
         if self._model is not None:
             return
-        _warn_if_non_commercial(self.model_id)
         try:
             from tabpfn_time_series import TabPFNMode, TabPFNTSPipeline
         except ImportError as exc:
@@ -2767,6 +2787,7 @@ class TabPFNAdapter:
                 "tabpfn-time-series is required for TabPFNAdapter. "
                 "Install it with `pip install tabpfn-time-series`."
             ) from exc
+        _warn_if_non_commercial(self.model_id)
 
         kwargs: dict[str, Any] = {
             "max_context_length": self.context_length,
@@ -3724,13 +3745,14 @@ class TSICLAdapter:
         `TSICL(checkpoint_version=..., allow_auto_download=...)`, which
         downloads (or loads from cache) the checkpoint from the
         `taharnbl/TS-ICL` Hugging Face repository. This method is a no-op
-        when `self._model` is already populated.
+        when `self._model` is already populated. A `LicenseWarning` is
+        issued after the import succeeds, immediately before the checkpoint
+        is loaded.
 
         """
 
         if self._model is not None:
             return
-        _warn_if_non_commercial(self.model_id)
         try:
             from tsicl import TSICL
         except ImportError as exc:
@@ -3738,6 +3760,8 @@ class TSICLAdapter:
                 "tsicl is required for TSICLAdapter. "
                 "Install it with `pip install tsicl`."
             ) from exc
+
+        _warn_if_non_commercial(self.model_id)
 
         self._model = TSICL(
             checkpoint_version   = self.checkpoint_version,

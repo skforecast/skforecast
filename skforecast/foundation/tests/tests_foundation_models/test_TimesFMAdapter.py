@@ -292,8 +292,8 @@ def test_TimesFMAdapter_set_params_ValueError_when_predict_kwargs_has_reserved_k
 def test_TimesFMAdapter_set_params_predict_kwargs_does_not_reset_model():
     """
     Test that changing predict_kwargs via set_params does not reset the
-    cached model, unlike model_id/context_length/max_horizon/
-    forecast_config_kwargs/device.
+    cached model, unlike model_id/device (the only two reload triggers for
+    the v3.0 backend).
     """
     adapter = make_v3_adapter()
     assert adapter._model is not None
@@ -302,6 +302,61 @@ def test_TimesFMAdapter_set_params_predict_kwargs_does_not_reset_model():
 
     assert adapter._model is not None
     assert adapter.predict_kwargs == {"use_znorm": True}
+
+
+@pytest.mark.parametrize(
+    "param, value",
+    [
+        ("context_length", 4096),
+        ("max_horizon", 128),
+        ("forecast_config_kwargs", {"normalize_inputs": True}),
+    ],
+    ids=lambda x: str(x)
+)
+def test_TimesFMAdapter_set_params_v3_backend_no_reset_for_v25_only_params(param, value):
+    """
+    Test that, for the v3.0 backend, changing context_length, max_horizon,
+    or forecast_config_kwargs does not reset the cached model, since none
+    of these parameters are passed to TimesFM3Forecaster. The attribute is
+    still updated.
+    """
+    adapter = make_v3_adapter()
+    assert adapter._model is not None
+
+    adapter.set_params(**{param: value})
+
+    assert adapter._model is not None
+    assert getattr(adapter, param) == value
+
+
+def test_TimesFMAdapter_set_params_v3_backend_resets_on_device_change():
+    """
+    Test that, for the v3.0 backend, changing device does reset the cached
+    model, since device is forwarded to TimesFM3Forecaster.from_pretrained.
+    """
+    adapter = make_v3_adapter(device="cpu")
+    assert adapter._model is not None
+
+    adapter.set_params(device="cuda")
+
+    assert adapter._model is None
+    assert adapter.device == "cuda"
+
+
+def test_TimesFMAdapter_set_params_v25_backend_still_resets_for_all_trigger_keys():
+    """
+    Test that the v2.5 backend keeps resetting the cached model for
+    context_length, max_horizon, and forecast_config_kwargs (unlike v3.0),
+    confirming the reload trigger set is backend dependent, not globally
+    relaxed.
+    """
+    adapter = make_adapter()
+    assert adapter._backend == "v25"
+    assert adapter._model is not None
+
+    adapter.set_params(context_length=256)
+
+    assert adapter._model is None
 
 
 # ==============================================================================
@@ -952,7 +1007,8 @@ def test_TimesFMAdapter_load_model_v3_ImportError_when_TimesFM3Forecaster_missin
     """
     Test that _load_model_v3 raises a clear ImportError with an upgrade hint
     when the installed `timesfm` package predates 3.0 (no
-    TimesFM3Forecaster attribute).
+    TimesFM3Forecaster attribute), and that no LicenseWarning is issued
+    since the weights are never loaded.
     """
     mock_timesfm = types.ModuleType("timesfm")
 
@@ -961,8 +1017,33 @@ def test_TimesFMAdapter_load_model_v3_ImportError_when_TimesFM3Forecaster_missin
     try:
         adapter = TimesFMAdapter(model_id="google/timesfm-3.0-pytorch")
         err_msg = re.escape("TimesFM 3.0 requires `timesfm>=3.0`")
-        with pytest.raises(ImportError, match=err_msg):
-            adapter._load_model()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            with pytest.raises(ImportError, match=err_msg):
+                adapter._load_model()
+        assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+    finally:
+        if original is None:
+            del sys.modules["timesfm"]
+        else:
+            sys.modules["timesfm"] = original
+
+
+def test_TimesFMAdapter_load_model_v3_ImportError_when_timesfm_not_installed_no_LicenseWarning():
+    """
+    Test that _load_model_v3 raises ImportError (with no LicenseWarning)
+    when `timesfm` itself is not installed, i.e. the failure happens before
+    the TimesFM3Forecaster attribute check.
+    """
+    original = sys.modules.get("timesfm")
+    sys.modules["timesfm"] = None  # forces `import timesfm` to raise ImportError
+    try:
+        adapter = TimesFMAdapter(model_id="google/timesfm-3.0-pytorch")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            with pytest.raises(ImportError, match="timesfm is required"):
+                adapter._load_model()
+        assert not any(issubclass(w.category, LicenseWarning) for w in caught)
     finally:
         if original is None:
             del sys.modules["timesfm"]

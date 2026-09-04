@@ -1,6 +1,8 @@
 # Unit test MoiraiAdapter
 # ==============================================================================
 import re
+import sys
+import types
 import builtins
 import warnings
 import pytest
@@ -440,12 +442,11 @@ def test_MoiraiAdapter_predict_context_length_trims_history():
 # ==============================================================================
 # Tests MoiraiAdapter._load_module — LicenseWarning
 # ==============================================================================
-def test_MoiraiAdapter_load_module_LicenseWarning_suppressible(monkeypatch):
+def test_MoiraiAdapter_load_module_ImportError_no_LicenseWarning(monkeypatch):
     """
-    Test that _load_module issues a LicenseWarning (Moirai weights are
-    CC-BY-NC-4.0) before raising ImportError when uni2ts is not installed,
-    and that the warning is suppressible via warnings.simplefilter, the
-    mechanism used by the `suppress_warnings` argument across skforecast.
+    Test that _load_module raises ImportError when uni2ts is not installed,
+    and that no LicenseWarning is issued in that case, since the warning is
+    only relevant once the module is actually about to be loaded.
     """
     real_import = builtins.__import__
 
@@ -457,13 +458,57 @@ def test_MoiraiAdapter_load_module_LicenseWarning_suppressible(monkeypatch):
     adapter = MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small")
 
     monkeypatch.setattr(builtins, "__import__", mock_import)
-    with pytest.warns(LicenseWarning, match="CC-BY-NC-4.0"):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         with pytest.raises(ImportError, match="uni2ts"):
             adapter._load_module()
-
-    adapter2 = MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small")
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("ignore", category=LicenseWarning)
-        with pytest.raises(ImportError, match="uni2ts"):
-            adapter2._load_module()
     assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+
+
+def test_MoiraiAdapter_load_module_LicenseWarning_on_successful_load():
+    """
+    Test that _load_module issues a LicenseWarning (Moirai weights are
+    CC-BY-NC-4.0) once uni2ts is available and the module is about to be
+    loaded, and that the warning is suppressible via warnings.simplefilter,
+    the mechanism used by the `suppress_warnings` argument across
+    skforecast. The real `uni2ts` package is mocked so no network call
+    happens.
+    """
+
+    class _FakeMoirai2Module:
+        @classmethod
+        def from_pretrained(cls, model_id):
+            return cls()
+
+        def eval(self):
+            pass
+
+    mock_moirai2 = types.ModuleType("uni2ts.model.moirai2")
+    mock_moirai2.Moirai2Module = _FakeMoirai2Module
+    mock_model = types.ModuleType("uni2ts.model")
+    mock_model.moirai2 = mock_moirai2
+    mock_uni2ts = types.ModuleType("uni2ts")
+    mock_uni2ts.model = mock_model
+
+    module_names = ("uni2ts", "uni2ts.model", "uni2ts.model.moirai2")
+    originals = {name: sys.modules.get(name) for name in module_names}
+    sys.modules["uni2ts"] = mock_uni2ts
+    sys.modules["uni2ts.model"] = mock_model
+    sys.modules["uni2ts.model.moirai2"] = mock_moirai2
+    try:
+        adapter = MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small")
+        with pytest.warns(LicenseWarning, match="CC-BY-NC-4.0"):
+            adapter._load_module()
+        assert isinstance(adapter._module, _FakeMoirai2Module)
+
+        adapter2 = MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("ignore", category=LicenseWarning)
+            adapter2._load_module()
+        assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+    finally:
+        for name, mod in originals.items():
+            if mod is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = mod
