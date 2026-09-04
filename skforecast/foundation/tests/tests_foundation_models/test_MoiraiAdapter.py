@@ -1,10 +1,13 @@
 # Unit test MoiraiAdapter
 # ==============================================================================
 import re
+import builtins
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
 from skforecast.foundation._adapters import MoiraiAdapter
+from skforecast.exceptions import LicenseWarning
 from .fixtures_adapters import (
     y, y_wide, y_dict,
     FakeMoirai2Forecast,
@@ -432,3 +435,35 @@ def test_MoiraiAdapter_predict_context_length_trims_history():
         exog=exog_p, quantiles=None
     )
     assert fake_forecast.last_inputs[0].shape == (context_length, 1)
+
+
+# ==============================================================================
+# Tests MoiraiAdapter._load_module — LicenseWarning
+# ==============================================================================
+def test_MoiraiAdapter_load_module_LicenseWarning_suppressible(monkeypatch):
+    """
+    Test that _load_module issues a LicenseWarning (Moirai weights are
+    CC-BY-NC-4.0) before raising ImportError when uni2ts is not installed,
+    and that the warning is suppressible via warnings.simplefilter, the
+    mechanism used by the `suppress_warnings` argument across skforecast.
+    """
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name.startswith("uni2ts"):
+            raise ImportError("No module named 'uni2ts'")
+        return real_import(name, *args, **kwargs)
+
+    adapter = MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small")
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    with pytest.warns(LicenseWarning, match="CC-BY-NC-4.0"):
+        with pytest.raises(ImportError, match="uni2ts"):
+            adapter._load_module()
+
+    adapter2 = MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small")
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("ignore", category=LicenseWarning)
+        with pytest.raises(ImportError, match="uni2ts"):
+            adapter2._load_module()
+    assert not any(issubclass(w.category, LicenseWarning) for w in caught)

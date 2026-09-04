@@ -2151,7 +2151,7 @@ def bayesian_search_foundation(
 
         Note: changing `model_id`, device arguments, or `torch_dtype` forces a
         full model reload and is expensive. Changing `context_length` also
-        forces a reload on TimesFM 2.5, Moirai-2, TabICL and TabPFN-TS.
+        forces a reload on TimesFM (2.5 and 3.0), Moirai-2, TabICL and TabPFN-TS.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
 

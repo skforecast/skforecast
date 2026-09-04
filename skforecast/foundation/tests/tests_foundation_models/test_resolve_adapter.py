@@ -25,6 +25,7 @@ from skforecast.foundation._adapters import (
         ("autogluon/chronos-2-large", ChronosAdapter),
         ("google/timesfm-2.5-200m-pytorch", TimesFMAdapter),
         ("google/timesfm-2.5-200m-flax", TimesFMAdapter),
+        ("google/timesfm-3.0-pytorch", TimesFMAdapter),
         ("Salesforce/moirai-2-base", MoiraiAdapter),
         ("soda-inria/tabicl", TabICLAdapter),
         ("priorlabs/tabpfn-ts", TabPFNAdapter),

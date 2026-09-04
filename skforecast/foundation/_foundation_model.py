@@ -28,7 +28,7 @@ class FoundationModel:
     """
     Scikit-learn compatible interface for foundation time-series models.
 
-    Currently supports Amazon Chronos-2, Google TimesFM 2.5, Salesforce
+    Currently supports Amazon Chronos-2, Google TimesFM 2.5 and 3.0, Salesforce
     Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori and EDF Lab TS-ICL.
     For full skforecast ecosystem integration (backtesting, model selection, etc.)
     use `ForecasterFoundation` instead.
@@ -48,6 +48,10 @@ class FoundationModel:
         Google TimesFM 2.5 (does not support `exog`):
 
         - `'google/timesfm-2.5-200m-pytorch'`
+
+        Google TimesFM 3.0 (supports `exog`):
+
+        - `'google/timesfm-3.0-pytorch'`
 
         Salesforce Moirai-2 (does not support `exog`):
 
@@ -89,6 +93,9 @@ class FoundationModel:
         - **Google TimesFM 2.5** (`TimesFMAdapter`): `context_length` (int,
           default 512), `max_horizon` (int, default 512),
           `forecast_config_kwargs` (dict, default None).
+        - **Google TimesFM 3.0** (`TimesFMAdapter`): `context_length` (int,
+          default 2048), `device` (str, default `'auto'`), `predict_kwargs`
+          (dict, default None).
         - **Salesforce Moirai-2** (`MoiraiAdapter`): `context_length` (int,
           default 2048), `device` (str, default `'auto'`).
         - **TabICLv2** (`TabICLAdapter`): `context_length` (int, default
@@ -184,10 +191,10 @@ class FoundationModel:
     - `device_map` (plus `torch_dtype`), HuggingFace `from_pretrained`
       style: Chronos, T0.
     - `device` string, resolved internally to a concrete accelerator:
-      Moirai, TS-ICL.
+      Moirai, TS-ICL, TimesFM 3.0.
     - Through the backend configuration dict: TabICL (`tabicl_config`),
       TabPFN (`tabpfn_model_config`), Nori (`nori_config`).
-    - No device parameter: TimesFM, which relies on its backend's own
+    - No device parameter: TimesFM 2.5, which relies on its backend's own
       default device selection.
 
     References
@@ -328,7 +335,9 @@ class FoundationModel:
         -------
         allow_exog : bool
             `True` if the adapter accepts and uses `exog`; `False` if it
-            ignores covariates (e.g. TimesFM 2.5, Moirai-2).
+            ignores covariates (e.g. TimesFM 2.5, Moirai-2). TimesFM 3.0
+            accepts `exog` while TimesFM 2.5 does not, even though both
+            are served by `TimesFMAdapter`.
         """
         return self.adapter.allow_exog
 

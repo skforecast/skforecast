@@ -135,6 +135,90 @@ class FakeTimesFM25Model:
         return point_forecast, quantile_forecast
 
 
+# Fake TimesFM 3.0 forecaster
+# ==============================================================================
+class _FakeTimesFM3ForecastOutput:
+    """
+    Fake `timesfm3.ForecastOutput` returned by
+    `FakeTimesFM3Forecaster.predict_batch`.
+    """
+
+    def __init__(self, forecast, quantiles):
+        self.forecast = forecast
+        self.quantiles = quantiles
+
+
+class FakeTimesFM3Forecaster:
+    """
+    Fake TimesFM3Forecaster for testing without torch/timesfm.
+
+    `predict_batch()` returns, per series:
+
+    - `forecast`: zeros, shape `(horizon,)`.
+    - `quantiles` (only when `return_quantiles=True`): shape
+      `(horizon, len(config.quantiles))` where column `i` equals
+      `config.quantiles[i]` for every step, making quantile column-order
+      assertions trivial.
+
+    `config.quantiles` defaults to the standard 9-level TimesFM grid, but
+    can be overridden at construction time to test quantile-index mapping
+    against a non-default grid. Records the last call arguments for
+    inspection.
+    """
+
+    class _FakeModelConfig:
+        def __init__(self, quantiles=None):
+            self.quantiles = (
+                list(quantiles)
+                if quantiles is not None
+                else [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+            )
+
+    def __init__(self, quantiles=None):
+        self.config = self._FakeModelConfig(quantiles)
+        self.last_contexts = None
+        self.last_horizon = None
+        self.last_past_only_covariates = None
+        self.last_past_future_covariates = None
+        self.last_padding_mode = None
+        self.last_kwargs = None
+
+    @classmethod
+    def from_pretrained(cls, model_id, device=None, **kwargs):
+        return cls()
+
+    def predict_batch(
+        self,
+        contexts,
+        horizon,
+        past_only_covariates=None,
+        past_future_covariates=None,
+        return_quantiles=False,
+        padding_mode="none",
+        **kwargs,
+    ):
+        self.last_contexts = contexts
+        self.last_horizon = horizon
+        self.last_past_only_covariates = past_only_covariates
+        self.last_past_future_covariates = past_future_covariates
+        self.last_padding_mode = padding_mode
+        self.last_kwargs = kwargs
+
+        q_values = np.array(self.config.quantiles, dtype=float)
+        outs = []
+        for _ in contexts:
+            forecast = np.zeros(horizon, dtype=float)
+            quantiles = (
+                np.broadcast_to(q_values, (horizon, len(q_values))).copy()
+                if return_quantiles
+                else None
+            )
+            outs.append(
+                _FakeTimesFM3ForecastOutput(forecast=forecast, quantiles=quantiles)
+            )
+        return iter(outs)
+
+
 # Fake Moirai-2 forecast
 # ==============================================================================
 class FakeMoirai2Forecast:

@@ -8,10 +8,13 @@ import pandas as pd
 
 from skforecast.foundation._utils import (
     check_preprocess_series_foundation,
+    _warn_if_non_commercial,
+    _NON_COMMERCIAL_LICENSES,
 )
 from skforecast.exceptions import (
     IgnoredArgumentWarning,
     InputTypeWarning,
+    LicenseWarning,
 )
 
 
@@ -132,3 +135,85 @@ def test_check_preprocess_series_foundation_invalid_type_raises_TypeError():
     """
     with pytest.raises(TypeError):
         check_preprocess_series_foundation([1.0, 2.0, 3.0])
+
+
+# ===========================================================================
+# _warn_if_non_commercial
+# ===========================================================================
+
+@pytest.mark.parametrize(
+    "model_id",
+    [
+        "google/timesfm-3.0-pytorch",
+        "Salesforce/moirai-2.0-R-small",
+        "priorlabs/tabpfn-ts",
+        "taharnbl/TS-ICL",
+    ],
+    ids=["timesfm-3.0", "moirai", "tabpfn-ts", "tsicl"],
+)
+def test_warn_if_non_commercial_warns_for_registered_prefixes(model_id):
+    """
+    _warn_if_non_commercial should raise a LicenseWarning naming the
+    model_id and its license for every registered non-commercial prefix.
+    """
+    license_name, license_url = next(
+        info for prefix, info in _NON_COMMERCIAL_LICENSES.items()
+        if model_id.startswith(prefix)
+    )
+    warn_msg = re.escape(
+        f"The weights for '{model_id}' are released under {license_name}"
+    )
+    with pytest.warns(LicenseWarning, match=warn_msg) as record:
+        _warn_if_non_commercial(model_id)
+    assert license_url in str(record[0].message)
+
+
+@pytest.mark.parametrize(
+    "model_id",
+    [
+        "autogluon/chronos-2-small",
+        "amazon/chronos-2",
+        "google/timesfm-2.5-200m-pytorch",
+        "soda-inria/tabicl",
+        "theforecastingcompany/t0-alpha",
+        "Synthefy/Nori",
+        "unknown/some-model",
+    ],
+    ids=["chronos-autogluon", "chronos-amazon", "timesfm-2.5", "tabicl", "t0", "nori", "unknown"],
+)
+def test_warn_if_non_commercial_no_warning_for_unmatched_prefixes(model_id):
+    """
+    _warn_if_non_commercial should be a no-op (no warning) for model ids
+    that are not registered as non-commercial.
+    """
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        _warn_if_non_commercial(model_id)
+    assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+
+
+def test_warn_if_non_commercial_uses_longest_prefix_match():
+    """
+    _warn_if_non_commercial should resolve the most specific (longest)
+    matching prefix so that overlapping prefixes do not misclassify a
+    model_id.
+    """
+    with pytest.warns(LicenseWarning, match=re.escape("google/timesfm-3.0-pytorch")):
+        _warn_if_non_commercial("google/timesfm-3.0-pytorch")
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        _warn_if_non_commercial("google/timesfm-2.5-200m-pytorch")
+    assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+
+
+def test_warn_if_non_commercial_suppressible_via_simplefilter():
+    """
+    The LicenseWarning issued by _warn_if_non_commercial should be
+    suppressible through the standard warnings.simplefilter mechanism, the
+    same one used by the `suppress_warnings` argument across skforecast.
+    """
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("ignore", category=LicenseWarning)
+        _warn_if_non_commercial("google/timesfm-3.0-pytorch")
+    assert len(caught) == 0

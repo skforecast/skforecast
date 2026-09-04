@@ -481,38 +481,96 @@ class ChronosAdapter:
         return input_dict
 
 
-class TimesFMAdapter:
+def _detect_timesfm_backend(model_id: str) -> str:
     """
-    Adapter for Google TimesFM foundation models.
+    Detect which TimesFM backend API a `model_id` corresponds to.
 
     Parameters
     ----------
     model_id : str
-        HuggingFace model ID, e.g. "google/timesfm-2.5-200m-pytorch".
+        HuggingFace model ID, e.g. `"google/timesfm-2.5-200m-pytorch"` or
+        `"google/timesfm-3.0-pytorch"`.
+
+    Returns
+    -------
+    backend : str
+        `"v3"` for TimesFM 3.0 ids (containing `"timesfm-3"` or `"3.0"`),
+        `"v25"` for TimesFM 2.5 ids (containing `"timesfm-2.5"` or `"2p5"`).
+
+    Notes
+    -----
+    A `ValueError` is raised for `model_id` values that do not match either
+    pattern, guiding the user towards a supported id.
+
+    """
+
+    if "timesfm-3" in model_id or "3.0" in model_id:
+        return "v3"
+    if "timesfm-2.5" in model_id or "2p5" in model_id:
+        return "v25"
+
+    raise ValueError(
+        f"Could not determine the TimesFM backend for model_id {model_id!r}. "
+        f"Supported ids contain 'timesfm-2.5' (or '2p5') for the v2.5 API, "
+        f"or 'timesfm-3.0' (or 'timesfm-3') for the v3.0 API."
+    )
+
+
+class TimesFMAdapter:
+    """
+    Adapter for Google TimesFM foundation models.
+
+    Dispatches between two backend APIs based on `model_id`: TimesFM 2.5
+    (`"google/timesfm-2.5-*"`, no covariate support) and TimesFM 3.0
+    (`"google/timesfm-3.0-*"`, native covariate support). Parameters and
+    attributes marked "v2.5 only" or "v3.0 only" below are ignored by the
+    other backend.
+
+    Parameters
+    ----------
+    model_id : str
+        HuggingFace model ID. Example v2.5: `"google/timesfm-2.5-200m-pytorch"`.
+        Example v3.0: `"google/timesfm-3.0-pytorch"`.
     model : object, default None
-        Pre-loaded and compiled TimesFM model instance. If `None`, the
-        model is loaded and compiled lazily on the first `predict` call.
-    context_length : int, default 512
+        Pre-loaded model instance. If `None`, the model is loaded lazily on
+        the first `predict` call. For the v2.5 backend this should already
+        be compiled if passed directly; for the v3.0 backend a
+        `TimesFM3Forecaster` instance is expected.
+    context_length : int, default None
         Maximum number of historical observations to use as context. At fit
         time only the last `context_length` observations are stored. At
         predict time, if `context` is longer than `context_length` it
         is trimmed to this length; if it is shorter, all available
-        observations are used as-is. Must be a positive integer. Defaults to
-        512. TimesFM supports up to 16_384.
+        observations are used as-is. Must be a positive integer. If `None`,
+        resolves to 512 for the v2.5 backend or 2048 for the v3.0 backend
+        (v3.0 supports context lengths up to roughly 15,360).
     max_horizon : int, default 512
-        Maximum forecast horizon. If `predict` is called with
+        v2.5 only. Maximum forecast horizon. If `predict` is called with
         `steps > max_horizon`, a `ValueError` is raised. The model is
         compiled lazily for the exact requested `steps` (up to this
         ceiling) to avoid unnecessary decode iterations. Must be a
-        positive integer.
+        positive integer. The v3.0 backend has no compile step and
+        therefore no horizon ceiling.
     forecast_config_kwargs : dict, default None
-        Additional keyword arguments forwarded verbatim to
+        v2.5 only. Additional keyword arguments forwarded verbatim to
         `timesfm.ForecastConfig` at compile time. Supported keys:
         `normalize_inputs`, `use_continuous_quantile_head`,
         `force_flip_invariance`, `infer_is_positive`,
         `fix_quantile_crossing`. Do **not** include `max_context` or
         `max_horizon` here — those are controlled by the corresponding
         adapter parameters.
+    device : str, default 'auto'
+        v3.0 only. Device placement for the model. `"auto"` selects the
+        best available accelerator (CUDA > MPS > CPU). Also accepts
+        explicit values such as `"cuda"`, `"mps"`, or `"cpu"`, forwarded
+        to `TimesFM3Forecaster.from_pretrained`.
+    predict_kwargs : dict, default None
+        v3.0 only. Additional keyword arguments forwarded verbatim to
+        `predict_batch` (e.g. `use_znorm`, `make_positive`,
+        `use_symmetric_averaging`, `sort_quantiles`). Cannot include
+        `contexts`, `horizon`, `return_quantiles`, `past_only_covariates`,
+        `past_future_covariates`, `padding_mode`, or `ts_ids`, which are
+        managed internally.
 
     Attributes
     ----------
@@ -520,36 +578,53 @@ class TimesFMAdapter:
         HuggingFace model ID.
     context_ : dict
         Stored training series after fitting.
-    context_exog_ : dict
-        Not used, present here for API consistency by convention.
+    context_exog_ : dict, None
+        Stored historical exogenous variables after fitting. Only used by
+        the v3.0 backend; ignored by the v2.5 backend.
     context_length : int
         Maximum number of historical observations used as context.
     max_horizon : int
-        Maximum forecast horizon.
+        v2.5 only. Maximum forecast horizon.
     forecast_config_kwargs : dict
-        Additional keyword arguments forwarded to `ForecastConfig`.
+        v2.5 only. Additional keyword arguments forwarded to
+        `ForecastConfig`.
+    device : str
+        v3.0 only. Device placement for the model.
+    predict_kwargs : dict
+        v3.0 only. Additional keyword arguments forwarded to
+        `predict_batch`.
+    allow_exog : bool
+        Whether this adapter instance accepts exogenous variables. `True`
+        for the v3.0 backend, `False` for the v2.5 backend.
     is_fitted : bool
         Whether the adapter has been fitted.
 
     Notes
     -----
     TimesFM supports only the fixed quantile levels
-    `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. Requesting any
-    other level raises a `ValueError`.
+    `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]` on both backends.
+    Requesting any other level raises a `ValueError`.
 
-    Covariate support (via TimesFM's `forecast_with_covariates`) is not
-    yet implemented. Passing `exog` or `context_exog` issues an
-    `IgnoredArgumentWarning` and the values are discarded.
+    Point-forecast semantics differ across backends: the v2.5 point
+    forecast is the mean, while the v3.0 point forecast is the median
+    (quantile 0.5).
 
-    Compilation behavior. The model is compiled lazily on the first
-    `predict` call, sized for the exact number of `steps` requested (not
-    for `max_horizon`, which only acts as an upper bound and validation
-    ceiling). When `steps` is constant across calls, as in a typical
-    backtesting loop, compilation happens only once, on the first fold. A
-    later `predict` that requests more `steps` than any previous call
-    triggers a single recompilation for the larger horizon. To avoid any
-    runtime compilation altogether, pass an already-compiled model via the
-    `model` argument.
+    Covariate support is v3.0 only. Columns present in the future `exog`
+    become known-future covariates spanning `context + horizon`, built by
+    concatenating the matching historical column from `context_exog` with
+    the future values. Columns present only in `context_exog` become
+    past-only covariates. Covariates must be numeric; encode categoricals
+    as numbers (e.g. via `transformer_exog`) before passing them.
+
+    Compilation behavior (v2.5 only). The model is compiled lazily on the
+    first `predict` call, sized for the exact number of `steps` requested
+    (not for `max_horizon`, which only acts as an upper bound and
+    validation ceiling). When `steps` is constant across calls, as in a
+    typical backtesting loop, compilation happens only once, on the first
+    fold. A later `predict` that requests more `steps` than any previous
+    call triggers a single recompilation for the larger horizon. To avoid
+    any runtime compilation altogether, pass an already-compiled model via
+    the `model` argument. The v3.0 backend has no compile step.
 
     References
     ----------
@@ -557,19 +632,28 @@ class TimesFMAdapter:
 
     .. [2] https://huggingface.co/google/timesfm-2.5-200m-pytorch
 
+    .. [3] https://huggingface.co/google/timesfm-3.0-pytorch
+
     """
 
     SUPPORTED_QUANTILES: list[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     allow_exog: bool = False
+
+    _V3_RESERVED_PREDICT_KWARGS: frozenset[str] = frozenset({
+        "contexts", "horizon", "return_quantiles", "past_only_covariates",
+        "past_future_covariates", "padding_mode", "ts_ids",
+    })
 
     def __init__(
         self,
         model_id: str,
         *,
         model: Any | None = None,
-        context_length: int = 512,
+        context_length: int | None = None,
         max_horizon: int = 512,
         forecast_config_kwargs: dict[str, Any] | None = None,
+        device: str = "auto",
+        predict_kwargs: dict[str, Any] | None = None,
     ) -> None:
         """
         Initialise the adapter.
@@ -577,31 +661,48 @@ class TimesFMAdapter:
         Parameters
         ----------
         model_id : str
-            HuggingFace model ID, e.g. "google/timesfm-2.5-200m-pytorch".
+            HuggingFace model ID. Example v2.5:
+            `"google/timesfm-2.5-200m-pytorch"`. Example v3.0:
+            `"google/timesfm-3.0-pytorch"`.
         model : object, default None
-            Pre-loaded and compiled TimesFM model instance. If `None`, the
-            model is loaded and compiled lazily on the first `predict` call.
-        context_length : int, default 512
+            Pre-loaded model instance. If `None`, the model is loaded
+            lazily on the first `predict` call.
+        context_length : int, default None
             Maximum number of historical observations to retain as context.
             At `fit` time only the last `context_length` observations of
             `series` are stored. At `predict` time, if `context` is
             longer than `context_length` it is trimmed to this length;
             if it is shorter, all available observations are passed as-is.
-            Must be a positive integer.
+            Must be a positive integer. If `None`, resolves to 512 for the
+            v2.5 backend or 2048 for the v3.0 backend.
         max_horizon : int, default 512
-            Maximum forecast horizon. If `predict` is called with
-            `steps > max_horizon`, a `ValueError` is raised. The model
+            v2.5 only. Maximum forecast horizon. If `predict` is called
+            with `steps > max_horizon`, a `ValueError` is raised. The model
             is compiled lazily for the exact requested `steps` (up to
             this ceiling) to avoid unnecessary decode iterations. Must
             be a positive integer.
         forecast_config_kwargs : dict, default None
-            Additional keyword arguments forwarded verbatim to
+            v2.5 only. Additional keyword arguments forwarded verbatim to
             `timesfm.ForecastConfig` at compile time.
-        
+        device : str, default 'auto'
+            v3.0 only. Device placement for the model. `"auto"` selects
+            the best available accelerator (CUDA > MPS > CPU).
+        predict_kwargs : dict, default None
+            v3.0 only. Additional keyword arguments forwarded verbatim to
+            `predict_batch`.
+
         """
+
+        self._backend = _detect_timesfm_backend(model_id)
+        self.allow_exog = self._backend == "v3"
+
+        if context_length is None:
+            context_length = 2048 if self._backend == "v3" else 512
 
         _validate_positive_int("context_length", context_length)
         _validate_positive_int("max_horizon", max_horizon)
+        predict_kwargs = predict_kwargs or {}
+        self._validate_predict_kwargs(predict_kwargs)
 
         self.model_id               = model_id
         self._model                 = model
@@ -610,7 +711,42 @@ class TimesFMAdapter:
         self.context_length         = context_length
         self.max_horizon            = max_horizon
         self.forecast_config_kwargs = forecast_config_kwargs or {}
+        self.device                 = device
+        self.predict_kwargs         = predict_kwargs
         self.is_fitted              = False
+
+    @staticmethod
+    def _validate_predict_kwargs(predict_kwargs: dict[str, Any]) -> None:
+        """
+        Reject `predict_kwargs` keys that the v3.0 backend manages itself.
+
+        Parameters
+        ----------
+        predict_kwargs : dict
+            Candidate `predict_kwargs` value.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        A `ValueError` naming the offending keys is raised if any key in
+        `TimesFMAdapter._V3_RESERVED_PREDICT_KWARGS` is present, since those
+        arguments (`contexts`, `horizon`, `return_quantiles`,
+        `past_only_covariates`, `past_future_covariates`, `padding_mode`,
+        `ts_ids`) are built internally from `context`, `context_exog`,
+        `exog`, `steps`, and `quantiles`, and passing them explicitly would
+        collide with the internal `predict_batch` call.
+
+        """
+
+        reserved = TimesFMAdapter._V3_RESERVED_PREDICT_KWARGS & set(predict_kwargs)
+        if reserved:
+            raise ValueError(
+                f"`predict_kwargs` cannot include {sorted(reserved)}. These "
+                f"arguments are managed internally by TimesFMAdapter."
+            )
 
     def get_params(self) -> dict:
         """
@@ -620,27 +756,30 @@ class TimesFMAdapter:
         -------
         params : dict
             Keys: `model_id`, `context_length`, `max_horizon`,
-            `forecast_config_kwargs`.
-        
+            `forecast_config_kwargs`, `device`, `predict_kwargs`.
+
         """
         return {
             'model_id':               self.model_id,
             'context_length':         self.context_length,
             'max_horizon':            self.max_horizon,
             'forecast_config_kwargs': self.forecast_config_kwargs or None,
+            'device':                 self.device,
+            'predict_kwargs':         self.predict_kwargs or None,
         }
 
     def set_params(self, **params) -> TimesFMAdapter:
         """
         Set adapter parameters. Resets the model when parameters that affect
-        compilation change (`model_id`, `context_length`, `max_horizon`,
-        `forecast_config_kwargs`).
+        loading or compilation change (`model_id`, `context_length`,
+        `max_horizon`, `forecast_config_kwargs`, `device`). Changing
+        `model_id` also re-detects the backend and `allow_exog`.
 
         Parameters
         ----------
         **params :
             Valid keys: `model_id`, `context_length`, `max_horizon`,
-            `forecast_config_kwargs`.
+            `forecast_config_kwargs`, `device`, `predict_kwargs`.
 
         Returns
         -------
@@ -649,32 +788,44 @@ class TimesFMAdapter:
         """
 
         def validate(p: dict) -> dict:
+            if "model_id" in p:
+                _detect_timesfm_backend(p["model_id"])
             if "context_length" in p:
                 _validate_positive_int("context_length", p["context_length"])
             if "max_horizon" in p:
                 _validate_positive_int("max_horizon", p["max_horizon"])
             if "forecast_config_kwargs" in p:
                 p["forecast_config_kwargs"] = p["forecast_config_kwargs"] or {}
+            if "predict_kwargs" in p:
+                p["predict_kwargs"] = p["predict_kwargs"] or {}
+                self._validate_predict_kwargs(p["predict_kwargs"])
             return p
+
+        def _reset_backend() -> None:
+            new_model_id = params.get("model_id", self.model_id)
+            self._backend = _detect_timesfm_backend(new_model_id)
+            self.allow_exog = self._backend == "v3"
 
         return _apply_set_params(
             self, params,
             validate=validate,
             resets=(
                 (
-                    {"model_id", "context_length", "max_horizon", "forecast_config_kwargs"},
+                    {"model_id", "context_length", "max_horizon",
+                     "forecast_config_kwargs", "device"},
                     lambda: setattr(self, "_model", None),
                 ),
+                ({"model_id"}, _reset_backend),
             ),
         )
 
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: Any,
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> TimesFMAdapter:
         """
-        Store the training series.
+        Store the training series and optional historical exogenous variables.
         No model training occurs since TimesFM is a zero-shot inference model.
 
         All input normalization and validation is performed upstream by
@@ -684,8 +835,9 @@ class TimesFMAdapter:
         ----------
         context : dict pandas Series
             Normalized training series, one entry per series.
-        context_exog : Any
-            Not used, present here for API consistency by convention.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series historical exogenous variables (past covariates).
+            Only used by the v3.0 backend; ignored by the v2.5 backend.
 
         Returns
         -------
@@ -694,16 +846,17 @@ class TimesFMAdapter:
         """
 
         self.context_ = context
+        self.context_exog_ = context_exog
         self.is_fitted = True
-        
+
         return self
 
     def predict(
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: Any,
-        exog: Any,
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         quantiles: list[float] | tuple[float] | None,
     ) -> dict[str, np.ndarray]:
         """
@@ -711,7 +864,8 @@ class TimesFMAdapter:
 
         All input normalization, validation, and context trimming is
         performed upstream by `FoundationModel`; this method receives
-        pre-processed dicts only.
+        pre-processed dicts only. Dispatches to `_predict_v25` or
+        `_predict_v3` based on `self._backend`.
 
         Parameters
         ----------
@@ -720,10 +874,13 @@ class TimesFMAdapter:
         context : dict
             Per-series context windows (already trimmed to
             `context_length`).
-        context_exog : Any
-            Not used, present here for API consistency by convention.
-        exog : Any
-            Not used, present here for API consistency by convention.
+        context_exog : dict, None
+            Per-series historical exogenous variables. Only used by the
+            v3.0 backend; ignored by the v2.5 backend.
+        exog : dict, None
+            Per-series future exogenous variables for the forecast
+            horizon. Only used by the v3.0 backend; ignored by the v2.5
+            backend.
         quantiles : list of float or None
             Quantile levels. Must be a subset of `SUPPORTED_QUANTILES`.
 
@@ -733,12 +890,13 @@ class TimesFMAdapter:
             Keys are series names. Each value is a 2-D array of shape
             `(steps, n_quantiles)`.
 
-        Raises
-        ------
-        ValueError
-            If a requested quantile level is not in `SUPPORTED_QUANTILES`
-            or `steps` exceeds `max_horizon`.
-        
+        Notes
+        -----
+        A `ValueError` is raised if a requested quantile level is not in
+        `SUPPORTED_QUANTILES`. The `steps > max_horizon` ceiling only
+        applies to the v2.5 backend; the v3.0 backend has no compile step
+        and therefore no horizon ceiling.
+
         """
 
         if quantiles is not None:
@@ -752,6 +910,53 @@ class TimesFMAdapter:
                     )
         else:
             quantile_list = None
+
+        if self._backend == "v3":
+            return self._predict_v3(
+                steps        = steps,
+                context      = context,
+                context_exog = context_exog,
+                exog         = exog,
+                quantiles    = quantile_list,
+            )
+
+        return self._predict_v25(
+            steps     = steps,
+            context   = context,
+            quantiles = quantile_list,
+        )
+
+    def _predict_v25(
+        self,
+        steps: int,
+        context: dict[str, pd.Series],
+        quantiles: list[float] | None,
+    ) -> dict[str, np.ndarray]:
+        """
+        Generate predictions using the TimesFM 2.5 model.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        context : dict
+            Per-series context windows (already trimmed to
+            `context_length`).
+        quantiles : list of float, None
+            Quantile levels, already validated against
+            `SUPPORTED_QUANTILES`.
+
+        Returns
+        -------
+        predictions : dict
+            Keys are series names. Each value is a 2-D array of shape
+            `(steps, n_quantiles)`.
+
+        Notes
+        -----
+        A `ValueError` is raised if `steps` exceeds `max_horizon`.
+
+        """
 
         if steps > self.max_horizon:
             raise ValueError(
@@ -775,43 +980,320 @@ class TimesFMAdapter:
 
         predictions: dict[str, np.ndarray] = {}
         for i, name in enumerate(series_names_in):
-            if quantile_list is None:
+            if quantiles is None:
                 # Point forecast: shape (steps, 1)
                 predictions[name] = np.asarray(point_forecast[i]).reshape(-1, 1)
             else:
-                q_indices = [round(q * 10) for q in quantile_list]
+                q_indices = [round(q * 10) for q in quantiles]
                 qf = np.asarray(quantile_forecast[i])
                 predictions[name] = qf[:, q_indices]  # (steps, n_quantiles)
 
         return predictions
 
+    def _predict_v3(
+        self,
+        steps: int,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | None,
+    ) -> dict[str, np.ndarray]:
+        """
+        Generate predictions using the TimesFM 3.0 model.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        context : dict
+            Per-series context windows (already trimmed to
+            `context_length`).
+        context_exog : dict, None
+            Per-series historical exogenous variables (already trimmed).
+            Columns not also present in `exog` are forwarded as past-only
+            covariates.
+        exog : dict, None
+            Per-series future exogenous variables for the forecast
+            horizon. Each column is forwarded as a known-future
+            covariate.
+        quantiles : list of float, None
+            Quantile levels, already validated against
+            `SUPPORTED_QUANTILES`.
+
+        Returns
+        -------
+        predictions : dict
+            Keys are series names. Each value is a 2-D array of shape
+            `(steps, n_quantiles)`.
+
+        Notes
+        -----
+        `padding_mode="edge"` is used whenever at least one series has
+        covariates: `predict_batch` internally rounds the horizon up to a
+        multiple of the output patch length and expects known-future
+        covariates to already span `context + horizon`; edge padding
+        extends them to the internally rounded length. The point forecast
+        (`quantiles is None`) is the model's median quantile.
+
+        """
+
+        self._load_model()
+
+        names = list(context.keys())
+        contexts = [context[name].to_numpy() for name in names]
+
+        past_only_list: list[np.ndarray | None] = []
+        past_future_list: list[np.ndarray | None] = []
+        for name in names:
+            past_only, past_future = self._build_v3_covariates(
+                context_len  = len(context[name]),
+                context_exog = context_exog.get(name) if context_exog is not None else None,
+                exog         = exog.get(name) if exog is not None else None,
+            )
+            past_only_list.append(past_only)
+            past_future_list.append(past_future)
+
+        has_covariates = any(
+            arr is not None for arr in past_only_list + past_future_list
+        )
+
+        outs = list(
+            self._model.predict_batch(
+                contexts               = contexts,
+                horizon                 = steps,
+                past_only_covariates   = past_only_list if has_covariates else None,
+                past_future_covariates = past_future_list if has_covariates else None,
+                return_quantiles        = quantiles is not None,
+                padding_mode            = "edge" if has_covariates else "none",
+                **self.predict_kwargs,
+            )
+        )
+
+        if quantiles is not None:
+            q_indices = self._match_quantile_indices(
+                list(self._model.config.quantiles), quantiles
+            )
+
+        predictions: dict[str, np.ndarray] = {}
+        for name, out in zip(names, outs):
+            if quantiles is None:
+                predictions[name] = np.asarray(out.forecast).reshape(-1, 1)
+            else:
+                predictions[name] = np.asarray(out.quantiles)[:, q_indices]
+
+        return predictions
+
+    @staticmethod
+    def _to_covariate_array(col_data: Any) -> np.ndarray:
+        """
+        Convert a covariate column to a `float32` numpy array.
+
+        Parameters
+        ----------
+        col_data : array-like
+            A single covariate column (e.g. a pandas Series or 1-D array).
+
+        Returns
+        -------
+        col_array : numpy ndarray
+            A 1-D `float32` numpy array.
+
+        Notes
+        -----
+        Only numeric or boolean columns are accepted; a `ValueError` naming
+        the offending column is raised otherwise. `predict_batch` casts
+        covariates to `float32` internally and has no native categorical
+        support, unlike Chronos. Encode categorical covariates as numeric
+        values (e.g. via `transformer_exog`) before passing them.
+
+        """
+
+        if isinstance(col_data, pd.Series):
+            if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
+                return col_data.astype(np.float32).to_numpy()
+            raise ValueError(
+                f"TimesFMAdapter supports only numeric covariates for the "
+                f"v3.0 backend. Column {col_data.name!r} has dtype "
+                f"{col_data.dtype}. Encode categorical covariates as "
+                f"numeric values before passing them."
+            )
+
+        arr = np.asarray(col_data)
+        if arr.dtype.kind in ("i", "u", "f", "b"):  # integer, unsigned int, float, bool
+            return arr.astype(np.float32)
+
+        raise ValueError(
+            f"TimesFMAdapter supports only numeric covariates for the "
+            f"v3.0 backend. Got array of dtype {arr.dtype}. Encode "
+            f"categorical covariates as numeric values before passing them."
+        )
+
+    @classmethod
+    def _build_v3_covariates(
+        cls,
+        context_len: int,
+        context_exog: pd.DataFrame | pd.Series | None,
+        exog: pd.DataFrame | pd.Series | None,
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
+        """
+        Build the past-only and known-future covariate arrays for one series.
+
+        Parameters
+        ----------
+        context_len : int
+            Length of the context window for this series.
+        context_exog : pandas DataFrame, pandas Series, default None
+            Historical exogenous variables aligned to the context. Columns
+            (or the single Series, referenced by its name) not also
+            present in `exog` become past-only covariates.
+        exog : pandas DataFrame, pandas Series, default None
+            Future-known exogenous variables covering the forecast
+            horizon. Each column becomes a known-future covariate spanning
+            `context_len + steps`, built by concatenating the matching
+            historical column from `context_exog` (NaN-filled if the
+            column is not present there) with the future values.
+
+        Returns
+        -------
+        past_only : numpy ndarray, None
+            Array of shape `(n_past_only, context_len)`, or `None` if
+            there are no past-only covariates.
+        past_future : numpy ndarray, None
+            Array of shape `(n_known_future, context_len + steps)`, or
+            `None` if there are no known-future covariates.
+
+        """
+
+        ctx_df = (
+            context_exog.to_frame()
+            if isinstance(context_exog, pd.Series)
+            else context_exog
+        )
+        fut_df = (
+            exog.to_frame()
+            if isinstance(exog, pd.Series)
+            else exog
+        )
+
+        ctx_cols = list(ctx_df.columns) if ctx_df is not None else []
+        fut_cols = list(fut_df.columns) if fut_df is not None else []
+        past_only_cols = [col for col in ctx_cols if col not in fut_cols]
+
+        past_future_rows = []
+        for col in fut_cols:
+            past_part = (
+                cls._to_covariate_array(ctx_df[col])
+                if ctx_df is not None and col in ctx_df.columns
+                else np.full(context_len, np.nan, dtype=np.float32)
+            )
+            future_part = cls._to_covariate_array(fut_df[col])
+            past_future_rows.append(np.concatenate([past_part, future_part]))
+
+        past_only_rows = [
+            cls._to_covariate_array(ctx_df[col]) for col in past_only_cols
+        ]
+
+        past_only = np.stack(past_only_rows) if past_only_rows else None
+        past_future = np.stack(past_future_rows) if past_future_rows else None
+
+        return past_only, past_future
+
+    @staticmethod
+    def _match_quantile_indices(
+        quantile_grid: list[float],
+        quantiles: list[float],
+        tol: float = 1e-6,
+    ) -> list[int]:
+        """
+        Map requested quantile levels to column indices in `quantile_grid`.
+
+        Parameters
+        ----------
+        quantile_grid : list of float
+            Quantile levels corresponding to the columns of the model's
+            quantile output, in order (e.g. `self._model.config.quantiles`).
+        quantiles : list of float
+            Requested quantile levels.
+        tol : float, default 1e-6
+            Maximum allowed absolute difference between a requested
+            quantile and its nearest match in `quantile_grid`.
+
+        Returns
+        -------
+        indices : list of int
+            Column index in `quantile_grid` for each entry in
+            `quantiles`, in the same order.
+
+        Notes
+        -----
+        A `ValueError` is raised if a requested quantile has no match
+        within `tol`. Matching against the model's own quantile grid
+        (synced from the loaded checkpoint) rather than a fixed formula
+        keeps the mapping correct even if a checkpoint ships a different
+        quantile grid.
+
+        """
+
+        indices = []
+        for q in quantiles:
+            diffs = [abs(g - q) for g in quantile_grid]
+            best_idx = diffs.index(min(diffs))
+            if diffs[best_idx] > tol:
+                raise ValueError(
+                    f"Quantile {q} not found in the model's quantile grid "
+                    f"{quantile_grid} (tolerance {tol})."
+                )
+            indices.append(best_idx)
+
+        return indices
+
     def _load_model(self) -> None:
         """
-        Load (but do not compile) the TimesFM model into `self._model`
-        if not already set.
+        Load (but do not compile, for the v2.5 backend) the TimesFM model
+        into `self._model` if not already set.
 
         Returns
         -------
         None
 
-        Raises
-        ------
-        ImportError
-            If `timesfm[torch]` is not installed.
+        Notes
+        -----
+        Dispatches to `_load_model_v25` or `_load_model_v3` based on
+        `self._backend`. This method is a no-op when `self._model` is
+        already populated (either by a prior call or by the `model`
+        test-injection parameter). Issues a `LicenseWarning` when
+        `model_id` resolves to weights released under a non-commercial
+        license (currently only the v3.0 ids are registered).
+
+        """
+
+        if self._model is not None:
+            return
+        _warn_if_non_commercial(self.model_id)
+        if self._backend == "v3":
+            self._load_model_v3()
+        else:
+            self._load_model_v25()
+
+    def _load_model_v25(self) -> None:
+        """
+        Load the TimesFM 2.5 model into `self._model`.
+
+        Returns
+        -------
+        None
 
         Notes
         -----
         The model is imported lazily from `timesfm` and loaded via
         `TimesFM_2p5_200M_torch.from_pretrained`. Compilation is deferred to
-        `_ensure_compiled`, which is called from `predict` with the actual
-        forecast horizon so that the compiled decode graph is sized exactly
-        for the requested number of steps rather than the (much larger)
-        `max_horizon` ceiling. This method is a no-op when `self._model` is
-        already populated.
+        `_ensure_compiled`, which is called from `_predict_v25` with the
+        actual forecast horizon so that the compiled decode graph is sized
+        exactly for the requested number of steps rather than the (much
+        larger) `max_horizon` ceiling. `timesfm` must be installed.
+
         """
 
-        if self._model is not None:
-            return
         try:
             import timesfm
         except ImportError as exc:
@@ -834,6 +1316,46 @@ class TimesFMAdapter:
 
         self._model = _TimesFMCompat.from_pretrained(self.model_id)
 
+    def _load_model_v3(self) -> None:
+        """
+        Load the TimesFM 3.0 model into `self._model`.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        The model is imported lazily from `timesfm` and loaded via
+        `TimesFM3Forecaster.from_pretrained`, resolving `self.device` to a
+        concrete device name first. Unlike the v2.5 backend there is no
+        separate compile step: context length and horizon are handled
+        internally by `predict_batch`. If the installed `timesfm` package
+        predates 3.0 and does not provide `TimesFM3Forecaster`, an
+        `ImportError` prompts the user to upgrade.
+
+        """
+
+        try:
+            import timesfm
+        except ImportError as exc:
+            raise ImportError(
+                "timesfm is required for TimesFMAdapter. "
+                "Install it with `pip install timesfm`."
+            ) from exc
+
+        if not hasattr(timesfm, "TimesFM3Forecaster"):
+            raise ImportError(
+                "TimesFM 3.0 requires `timesfm>=3.0`, but the installed "
+                "version does not provide `TimesFM3Forecaster`. Upgrade "
+                "with `pip install -U timesfm`."
+            )
+
+        self._model = timesfm.TimesFM3Forecaster.from_pretrained(
+            self.model_id,
+            device=_resolve_torch_device(self.device),
+        )
+
     def _ensure_compiled(self, steps: int) -> None:
         """
         Compile the model for the given forecast horizon if not already
@@ -850,17 +1372,19 @@ class TimesFMAdapter:
 
         Notes
         -----
-        This is separated from `_load_model` so that compilation uses the
-        *actual* number of requested forecast steps rather than `max_horizon`.
-        TimesFM's compiled decode always runs `forecast_config.max_horizon`
-        autoregressive decode iterations regardless of the requested horizon;
-        the true horizon is only used to *slice* the output afterwards. When
-        the compiled `max_horizon` is large (e.g. the default 512) but
-        `steps` is small (e.g. 12), the model performs up to
-        `(max_horizon - 1) // output_patch_len` unnecessary extra transformer
-        forward passes per inference call. Compiling here with
-        `max_horizon = steps` reduces those wasted passes to zero for the
-        typical backtesting case where `steps` is constant across folds.
+        This is separated from `_load_model_v25` so that compilation uses
+        the *actual* number of requested forecast steps rather than
+        `max_horizon`. TimesFM's compiled decode always runs
+        `forecast_config.max_horizon` autoregressive decode iterations
+        regardless of the requested horizon; the true horizon is only used
+        to *slice* the output afterwards. When the compiled `max_horizon`
+        is large (e.g. the default 512) but `steps` is small (e.g. 12),
+        the model performs up to `(max_horizon - 1) // output_patch_len`
+        unnecessary extra transformer forward passes per inference call.
+        Compiling here with `max_horizon = steps` reduces those wasted
+        passes to zero for the typical backtesting case where `steps` is
+        constant across folds. v2.5 only; the v3.0 backend has no compile
+        step.
 
         If the model was already compiled for a horizon `>= steps` (e.g. a
         pre-compiled model passed via the `model` constructor argument), this

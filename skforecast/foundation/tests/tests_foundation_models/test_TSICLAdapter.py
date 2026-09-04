@@ -1,10 +1,13 @@
 # Unit test TSICLAdapter
 # ==============================================================================
 import re
+import builtins
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
 from skforecast.foundation._adapters import TSICLAdapter
+from skforecast.exceptions import LicenseWarning
 from .fixtures_adapters import (
     y, exog, y_wide, y_dict, exog_shared,
     FakeTSICL,
@@ -690,3 +693,35 @@ def test_TSICLAdapter_to_covariate_array_non_pandas_inputs(col_data, expected_er
     else:
         arr = TSICLAdapter._to_covariate_array(col_data)
         assert arr.dtype == np.float32
+
+
+# ==============================================================================
+# Tests TSICLAdapter._load_model — LicenseWarning
+# ==============================================================================
+def test_TSICLAdapter_load_model_LicenseWarning_suppressible(monkeypatch):
+    """
+    Test that _load_model issues a LicenseWarning (TS-ICL weights are
+    non-commercial) before raising ImportError when tsicl is not installed,
+    and that the warning is suppressible via warnings.simplefilter, the
+    mechanism used by the `suppress_warnings` argument across skforecast.
+    """
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name.startswith("tsicl"):
+            raise ImportError("No module named 'tsicl'")
+        return real_import(name, *args, **kwargs)
+
+    adapter = TSICLAdapter(model_id="taharnbl/TS-ICL")
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    with pytest.warns(LicenseWarning, match="non-commercial"):
+        with pytest.raises(ImportError, match="tsicl"):
+            adapter._load_model()
+
+    adapter2 = TSICLAdapter(model_id="taharnbl/TS-ICL")
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("ignore", category=LicenseWarning)
+        with pytest.raises(ImportError, match="tsicl"):
+            adapter2._load_model()
+    assert not any(issubclass(w.category, LicenseWarning) for w in caught)

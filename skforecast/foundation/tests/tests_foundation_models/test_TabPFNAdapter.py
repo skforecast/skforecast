@@ -1,10 +1,12 @@
 # Unit test TabPFNAdapter
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
 from skforecast.foundation._adapters import TabPFNAdapter
+from skforecast.exceptions import LicenseWarning
 from .fixtures_adapters import (
     y, exog, y_wide, y_dict, exog_shared,
     FakeTabPFNTSPipeline,
@@ -744,6 +746,37 @@ def test_TabPFNAdapter_predict_ImportError_when_tabpfn_time_series_not_installed
             exog=future_exog,
             quantiles=None,
         )
+
+
+def test_TabPFNAdapter_load_model_LicenseWarning_suppressible(monkeypatch):
+    """
+    Test that _load_model issues a LicenseWarning (TabPFN weights are
+    non-commercial without an enterprise license) before raising ImportError
+    when tabpfn_time_series is not installed, and that the warning is
+    suppressible via warnings.simplefilter, the mechanism used by the
+    `suppress_warnings` argument across skforecast.
+    """
+    import builtins
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name.startswith("tabpfn_time_series"):
+            raise ImportError("No module named 'tabpfn_time_series'")
+        return real_import(name, *args, **kwargs)
+
+    adapter = TabPFNAdapter(model_id="priorlabs/tabpfn-ts")
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    with pytest.warns(LicenseWarning, match="non-commercial"):
+        with pytest.raises(ImportError, match="tabpfn-time-series"):
+            adapter._load_model()
+
+    adapter2 = TabPFNAdapter(model_id="priorlabs/tabpfn-ts")
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("ignore", category=LicenseWarning)
+        with pytest.raises(ImportError, match="tabpfn-time-series"):
+            adapter2._load_model()
+    assert not any(issubclass(w.category, LicenseWarning) for w in caught)
 
 
 # ==============================================================================
