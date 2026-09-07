@@ -172,7 +172,7 @@ Being accepted is not the same as being worth searching. Most adapters expose ru
 | Adapter | Accepted by `set_params` (`get_params()` keys) | Worth searching | Changing these forces a model reload |
 |---------|-----------------------------------------------|-----------------|--------------------------------------|
 | ChronosAdapter | `model_id`, `cross_learning`, `context_length`, `device_map`, `torch_dtype`, `predict_kwargs` | `context_length`, `cross_learning`, (`predict_kwargs`) | `model_id`, `device_map`, `torch_dtype` |
-| TimesFMAdapter | `model_id`, `context_length`, `max_horizon`, `forecast_config_kwargs`, `device`, `predict_kwargs` | `context_length`, (`forecast_config_kwargs`), (`predict_kwargs`) | **all of them** |
+| TimesFMAdapter | `model_id`, `context_length`, `max_horizon`, `forecast_config_kwargs`, `device`, `predict_kwargs` | `context_length`, (`forecast_config_kwargs`), (`predict_kwargs`) | v2.5: `model_id`, `context_length`, `max_horizon`, `forecast_config_kwargs`; v3.0: `model_id`, `device` |
 | MoiraiAdapter | `model_id`, `context_length`, `device` | `context_length` | **all of them** |
 | TabICLAdapter | `model_id`, `context_length`, `point_estimate`, `tabicl_config`, `temporal_features`, `show_progress` | `context_length`, `point_estimate`, `temporal_features`, (`tabicl_config`) | all except `show_progress` |
 | TabPFNAdapter | `model_id`, `context_length`, `mode`, `point_estimate`, `tabpfn_model_config`, `temporal_features`, `show_progress` | `context_length`, `point_estimate`, `temporal_features`, (`tabpfn_model_config`) | all except `show_progress` |
@@ -184,8 +184,8 @@ Parameters in parentheses are backend passthrough dicts: they can hold quality-r
 
 Two consequences that matter when tuning:
 
-- **`context_length` is not uniformly cheap.** It reloads the model on TimesFM (2.5 and 3.0), Moirai-2, TabICL and TabPFN-TS; it is free on Chronos-2, T0, TS-ICL and Nori.
-- **Reset on presence vs on change.** `TabICLAdapter`, `TabPFNAdapter` and `NoriAdapter` compare the old and new values first, so re-sampling an identical value costs nothing. `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `T0Adapter` and `TSICLAdapter` reset whenever the key is passed, even if the value is unchanged, so on TimesFM (2.5 and 3.0) and Moirai-2 every single trial that samples `context_length` triggers a reload.
+- **`context_length` is not uniformly cheap.** It reloads the model on TimesFM 2.5 (but **not** TimesFM 3.0), Moirai-2, TabICL and TabPFN-TS; it is free on Chronos-2, TimesFM 3.0, T0, TS-ICL and Nori.
+- **Reset only on change.** All foundation adapters compare the old and new values first (via the shared `set_params` helper), so re-sampling an identical value never triggers a reload. A reload happens only when a reload-triggering key is set to a genuinely new value, for example sampling a different `context_length` on TimesFM 2.5, Moirai-2, TabICL or TabPFN-TS.
 
 `model_id` forces a reload on every adapter except `TSICLAdapter`, where the checkpoint is selected by `checkpoint_version` instead.
 

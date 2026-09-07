@@ -50,7 +50,7 @@ Foundation model backends are **not** bundled with skforecast. Install only the 
 
 ```bash
 pip install chronos-forecasting    # For Chronos-2
-pip install timesfm                # For TimesFM 2.5 and 3.0
+pip install "timesfm[torch]"       # For TimesFM 2.5 and 3.0
 pip install uni2ts                 # For Moirai-2
 pip install tabicl[forecast]       # For TabICL
 pip install tabpfn-time-series     # For TabPFN-TS
@@ -243,7 +243,7 @@ automatically to the last `context_length` observations.
 4. **Requesting unsupported quantiles**: TimesFM (2.5 and 3.0) and Moirai-2 are restricted to the nine deciles `0.1 … 0.9` ; TS-ICL is restricted to a 0.01 grid in `[0.01, 0.99]`.
 5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
 6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`). Install only the one(s) you need.
-7. **Tuning a parameter that forces a model reload**: `model_id` and device/dtype arguments reload the model on every trial, and `context_length` does the same on TimesFM (2.5 and 3.0), Moirai-2, TabICL and TabPFN-TS.
+7. **Tuning a parameter that forces a model reload**: `model_id` and device/dtype arguments reload the model on every trial, and `context_length` does the same on TimesFM 2.5 (but **not** TimesFM 3.0), Moirai-2, TabICL and TabPFN-TS.
 8. **Assuming TimesFM 3.0 accepts categorical covariates**: it does not; encode categoricals as numeric (e.g. via `transformer_exog`) before passing them, same as Nori, T0, and TS-ICL.
 
 ## References

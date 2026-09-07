@@ -16,7 +16,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> <code>[TimesFMAdapter]</code> now supports **TimesFM 3.0** in addition to TimesFM 2.5, dispatched automatically from the `model_id` prefix (`'google/timesfm-3.0'`). Unlike TimesFM 2.5, TimesFM 3.0 accepts past and known-future exogenous variables and adds new `device` and `predict_kwargs` parameters. [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
-+ <span class="badge text-bg-feature">Feature</span> New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised the first time a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded. Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
++ <span class="badge text-bg-feature">Feature</span> New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised whenever a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded (deduplicated to once per session by Python's default warning filter). Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 
 + <span class="badge text-bg-api-change">API Change</span> Removed support for percentiles in the `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions. Deprecated since 0.23.0, `interval` must now be expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`). Passing percentiles such as `interval=[5, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
 
@@ -27,7 +27,7 @@ The main changes in this release are:
 
 + <code>[TimesFMAdapter]</code> now supports **TimesFM 3.0** in addition to TimesFM 2.5, dispatched automatically from the `model_id` prefix (`'google/timesfm-3.0'`). Unlike TimesFM 2.5, TimesFM 3.0 accepts past and known-future exogenous variables and adds new `device` and `predict_kwargs` parameters. [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
-+ New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised the first time a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded. Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
++ New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised whenever a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded (deduplicated to once per session by Python's default warning filter). Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 
 **Changed**
 
