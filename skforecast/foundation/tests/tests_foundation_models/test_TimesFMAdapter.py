@@ -431,13 +431,18 @@ def test_TimesFMAdapter_fit_exog_ignored_silently():
     assert adapter.is_fitted is True
 
 
-def test_TimesFMAdapter_fit_stores_context_exog():
+@pytest.mark.parametrize(
+    "make",
+    [make_v3_adapter, make_adapter],
+    ids=["v3", "v25"],
+)
+def test_TimesFMAdapter_fit_stores_context_exog(make):
     """
     Test that fit stores context_exog_ (used by the v3.0 backend at predict
-    time), regardless of backend.
+    time) on both backends.
     """
     exog_df = pd.DataFrame({"feat": np.arange(50, dtype=float)}, index=y.index)
-    adapter = make_v3_adapter()
+    adapter = make()
     ctx, ctx_exog = prepare_fit_args(y, exog=exog_df)
     adapter.fit(context=ctx, context_exog=ctx_exog)
 
@@ -909,6 +914,179 @@ def test_TimesFMAdapter_v3_predict_non_numeric_covariate_raises_ValueError():
         )
 
 
+def test_TimesFMAdapter_v3_build_covariates_fills_missing_history_with_nan():
+    """
+    Test that _build_v3_covariates NaN-fills the historical half of a
+    known-future covariate column that has no matching column in
+    context_exog, instead of raising. TimesFM 3.0 itself linearly
+    interpolates (or fabricates a constant for) that NaN history; skforecast
+    only aligns the batch, it does not police the content.
+    """
+    future_idx = pd.date_range("2024-01-31", periods=3, freq="ME")
+    exog_future = pd.DataFrame({"e": np.arange(3, dtype=float)}, index=future_idx)
+
+    past_only, past_future = TimesFMAdapter._build_v3_covariates(
+        context_exog=None, exog=exog_future,
+        context_len=5, steps=3,
+        past_only_cols=(), fut_cols=("e",),
+    )
+
+    assert past_only is None
+    assert past_future.shape == (1, 5 + 3)
+    assert np.isnan(past_future[0, :5]).all()
+    np.testing.assert_array_almost_equal(past_future[0, 5:], exog_future["e"].to_numpy())
+
+
+def test_TimesFMAdapter_v3_predict_drops_future_covariate_with_no_history_anywhere():
+    """
+    Test that predict excludes (rather than NaN-fills) a future exog column
+    that has no historical values in context_exog for any series in the
+    batch (e.g. fit without exog, then predict with a brand-new exog
+    column): there is no history anywhere to learn from, so the column is
+    dropped from the request and a warning is issued, instead of sending a
+    fabricated NaN-interpolated history.
+    """
+    context_length = 20
+    steps = 3
+    fake_model = FakeTimesFM3Forecaster()
+    adapter = make_v3_adapter(context_length=context_length, model=fake_model)
+    ctx, ctx_exog = prepare_fit_args(y, exog=None, context_length=context_length)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    idx = adapter.context_["sales"].index
+    future_idx = pd.date_range(idx[-1] + pd.DateOffset(months=1), periods=steps, freq="ME")
+    future_exog = pd.DataFrame({"e": np.arange(steps, dtype=float)}, index=future_idx)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(
+        adapter, steps=steps, exog=future_exog
+    )
+
+    warn_msg = re.escape("have no historical values in `context_exog`")
+    with pytest.warns(UserWarning, match=warn_msg):
+        adapter.predict(
+            steps=steps, context=ctx_p, context_exog=ctx_exog_p,
+            exog=exog_p, quantiles=None
+        )
+
+    assert fake_model.last_past_only_covariates is None
+    assert fake_model.last_past_future_covariates is None
+
+
+def test_TimesFMAdapter_v3_predict_aligns_heterogeneous_covariates_across_series():
+    """
+    Test that predict succeeds when the covariate columns differ across
+    series in a batch (here one series has a past-only covariate and the
+    other has none): the missing series is NaN-filled instead of crashing
+    inside the backend with an opaque shape error.
+    """
+    context_length = 20
+    idx = y.index[-context_length:]
+    a = pd.Series(np.arange(context_length, dtype=float), index=idx, name="a")
+    b = pd.Series(np.arange(context_length, dtype=float) * 2, index=idx, name="b")
+    context = {"a": a, "b": b}
+    p_values = np.arange(context_length, dtype=float)
+    context_exog = {
+        "a": pd.DataFrame({"p": p_values}, index=idx),
+        "b": None,
+    }
+
+    fake_model = FakeTimesFM3Forecaster()
+    adapter = make_v3_adapter(context_length=context_length, model=fake_model)
+    adapter.fit(context=context, context_exog=context_exog)
+
+    adapter.predict(
+        steps=5, context=context, context_exog=context_exog,
+        exog=None, quantiles=None
+    )
+
+    past_only = fake_model.last_past_only_covariates
+    assert past_only[0].shape == past_only[1].shape == (1, context_length)
+    np.testing.assert_array_almost_equal(past_only[0][0], p_values)
+    assert np.isnan(past_only[1][0]).all()
+
+
+def test_TimesFMAdapter_v3_predict_forwards_predict_kwargs():
+    """
+    Test that predict_kwargs are forwarded verbatim to predict_batch.
+    """
+    fake_model = FakeTimesFM3Forecaster()
+    adapter = make_v3_adapter(model=fake_model, predict_kwargs={"use_znorm": True})
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=3)
+    adapter.predict(
+        steps=3, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
+    )
+
+    assert fake_model.last_kwargs == {"use_znorm": True}
+
+
+def test_FoundationModel_v3_heterogeneous_exog_aligned_with_nan():
+    """
+    Integration test through FoundationModel: a multi-series batch with exog
+    on only one series succeeds (built from the public fit/predict API),
+    with the other series' missing covariate NaN-filled instead of crashing
+    inside the backend.
+    """
+    from skforecast.foundation import FoundationModel
+
+    fake_model = FakeTimesFM3Forecaster()
+    model = FoundationModel(
+        model_id="google/timesfm-3.0-pytorch",
+        model=fake_model,
+    )
+    idx = y_wide.index
+    exog_s1 = pd.DataFrame({"feat": np.arange(len(idx), dtype=float)}, index=idx)
+    model.fit(series=y_wide, exog={"s1": exog_s1})
+
+    steps = 4
+    future_idx = pd.date_range(idx[-1] + idx.freq, periods=steps, freq=idx.freq)
+    exog_s1_fut = pd.DataFrame(
+        {"feat": np.arange(steps, dtype=float)}, index=future_idx
+    )
+
+    model.predict(steps=steps, exog={"s1": exog_s1_fut})
+
+    past_future = fake_model.last_past_future_covariates
+    names = list(y_wide.columns)
+    s2_row = past_future[names.index("s2")]
+    assert s2_row.shape == (1, len(idx) + steps)
+    assert np.isnan(s2_row[0]).all()
+
+
+def test_TimesFMAdapter_setstate_fills_defaults_for_old_pickle():
+    """
+    Test that unpickling an adapter saved by an older skforecast version
+    (missing _backend, device, predict_kwargs, and instance-level
+    allow_exog) reconstructs those attributes so predict/get_params keep
+    working.
+    """
+    old_state = {
+        "model_id": "google/timesfm-2.5-200m-pytorch",
+        "_model": None,
+        "context_": None,
+        "context_exog_": None,
+        "context_length": 512,
+        "max_horizon": 512,
+        "forecast_config_kwargs": {},
+        "is_fitted": False,
+    }
+
+    adapter = TimesFMAdapter.__new__(TimesFMAdapter)
+    adapter.__setstate__(dict(old_state))
+    assert adapter._backend == "v25"
+    assert adapter.allow_exog is False
+    assert adapter.device == "auto"
+    assert adapter.predict_kwargs == {}
+    assert adapter.get_params()["device"] == "auto"
+
+    adapter_v3 = TimesFMAdapter.__new__(TimesFMAdapter)
+    adapter_v3.__setstate__(dict(old_state, model_id="google/timesfm-3.0-pytorch"))
+    assert adapter_v3._backend == "v3"
+    assert adapter_v3.allow_exog is True
+
+
 # ==============================================================================
 # Tests TimesFMAdapter.predict — v3.0 quantile index mapping
 # ==============================================================================
@@ -1003,14 +1181,17 @@ def test_TimesFMAdapter_load_model_v3_LicenseWarning_and_no_warning_for_v25():
             sys.modules["timesfm"] = original
 
 
-def test_TimesFMAdapter_load_model_v3_ImportError_when_TimesFM3Forecaster_missing():
+def test_TimesFMAdapter_load_model_v3_ImportError_when_timesfm_predates_3(monkeypatch):
     """
     Test that _load_model_v3 raises a clear ImportError with an upgrade hint
     when the installed `timesfm` package predates 3.0 (no
-    TimesFM3Forecaster attribute), and that no LicenseWarning is issued
-    since the weights are never loaded.
+    TimesFM3Forecaster attribute and version < 3), and that no LicenseWarning
+    is issued since the weights are never loaded.
     """
-    mock_timesfm = types.ModuleType("timesfm")
+    import importlib.metadata as ilm
+
+    monkeypatch.setattr(ilm, "version", lambda name: "2.5.0")
+    mock_timesfm = types.ModuleType("timesfm")  # no TimesFM3Forecaster
 
     original = sys.modules.get("timesfm")
     sys.modules["timesfm"] = mock_timesfm
@@ -1027,6 +1208,40 @@ def test_TimesFMAdapter_load_model_v3_ImportError_when_TimesFM3Forecaster_missin
             del sys.modules["timesfm"]
         else:
             sys.modules["timesfm"] = original
+
+
+def test_TimesFMAdapter_load_model_v3_ImportError_when_torch_missing(monkeypatch):
+    """
+    Test that _load_model_v3 raises an ImportError pointing at the missing
+    torch backend (not a misleading "upgrade timesfm") when timesfm>=3 is
+    installed but `TimesFM3Forecaster` is absent because its backend
+    (`timesfm3`, which imports torch) could not be imported.
+    """
+    import importlib.metadata as ilm
+
+    monkeypatch.setattr(ilm, "version", lambda name: "3.0.1")
+    mock_timesfm = types.ModuleType("timesfm")  # no TimesFM3Forecaster
+
+    original = sys.modules.get("timesfm")
+    original_t3 = sys.modules.get("timesfm3")
+    sys.modules["timesfm"] = mock_timesfm
+    sys.modules["timesfm3"] = None  # forces `import timesfm3` to raise ImportError
+    try:
+        adapter = TimesFMAdapter(model_id="google/timesfm-3.0-pytorch")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            with pytest.raises(ImportError, match="torch is missing"):
+                adapter._load_model()
+        assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+    finally:
+        if original is None:
+            del sys.modules["timesfm"]
+        else:
+            sys.modules["timesfm"] = original
+        if original_t3 is None:
+            sys.modules.pop("timesfm3", None)
+        else:
+            sys.modules["timesfm3"] = original_t3
 
 
 def test_TimesFMAdapter_load_model_v3_ImportError_when_timesfm_not_installed_no_LicenseWarning():

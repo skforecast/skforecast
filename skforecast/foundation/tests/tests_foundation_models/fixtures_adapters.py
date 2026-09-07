@@ -204,6 +204,19 @@ class FakeTimesFM3Forecaster:
         self.last_padding_mode = padding_mode
         self.last_kwargs = kwargs
 
+        # Replicate the real backend's covariate handling: `None` entries are
+        # filled with a single zero covariate and all per-series arrays are
+        # stacked, which fails when their shapes differ (heterogeneous
+        # covariates across the batch).
+        for cov in (past_only_covariates, past_future_covariates):
+            if cov is not None:
+                shapes = {
+                    (c.shape if c is not None else (1, len(contexts[j])))
+                    for j, c in enumerate(cov)
+                }
+                if len(shapes) > 1:
+                    raise ValueError("all input arrays must have the same shape")
+
         q_values = np.array(self.config.quantiles, dtype=float)
         outs = []
         for _ in contexts:

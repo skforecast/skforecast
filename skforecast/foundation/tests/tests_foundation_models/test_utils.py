@@ -192,11 +192,36 @@ def test_warn_if_non_commercial_no_warning_for_unmatched_prefixes(model_id):
     assert not any(issubclass(w.category, LicenseWarning) for w in caught)
 
 
-def test_warn_if_non_commercial_uses_longest_prefix_match():
+def test_warn_if_non_commercial_uses_longest_prefix_match(monkeypatch):
     """
     _warn_if_non_commercial should resolve the most specific (longest)
-    matching prefix so that overlapping prefixes do not misclassify a
-    model_id.
+    matching prefix when several registered prefixes share a root, so a more
+    specific prefix is not shadowed by a shorter one. Two overlapping
+    prefixes are injected into the registry to actually exercise the
+    tie-break (the shipped registry has none that overlap).
+    """
+    monkeypatch.setitem(
+        _NON_COMMERCIAL_LICENSES, "vendor/model",
+        ("Short License", "https://example.com/short"),
+    )
+    monkeypatch.setitem(
+        _NON_COMMERCIAL_LICENSES, "vendor/model-pro",
+        ("Long License", "https://example.com/long"),
+    )
+
+    # A model_id matching both prefixes must resolve to the longer one.
+    with pytest.warns(LicenseWarning, match=re.escape("Long License")):
+        _warn_if_non_commercial("vendor/model-pro-v1")
+
+    # A model_id matching only the shorter prefix resolves to it.
+    with pytest.warns(LicenseWarning, match=re.escape("Short License")):
+        _warn_if_non_commercial("vendor/model-basic")
+
+
+def test_warn_if_non_commercial_matches_registered_and_skips_unregistered():
+    """
+    A registered non-commercial prefix (TimesFM 3.0) warns, while an
+    unregistered id (TimesFM 2.5) does not.
     """
     with pytest.warns(LicenseWarning, match=re.escape("google/timesfm-3.0-pytorch")):
         _warn_if_non_commercial("google/timesfm-3.0-pytorch")
