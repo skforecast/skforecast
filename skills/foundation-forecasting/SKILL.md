@@ -42,7 +42,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | TimesFM (2.5 and 3.0) and Moirai-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]` | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
 | Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
 | Tuning uses `bayesian_search_foundation`, never `bayesian_search_forecaster*` | `TypeError` on the forecaster type or on `OneStepAheadFold` | Call `bayesian_search_foundation` with a `TimeSeriesFold` |
-| Weights for TimesFM 3.0, Moirai-2, TabPFN-TS, and TS-ICL are released under non-commercial licenses | `LicenseWarning` on first model load | Check the license before commercial use; suppress the warning with `suppress_warnings=True` if already reviewed |
+| Weights for TimesFM 3.0, Moirai-2, TabPFN-TS, and TS-ICL are released under known non-commercial licenses (terms vary, e.g. TabPFN-TS allows commercial use under an enterprise license); no warning does not mean a model is unrestricted | `LicenseWarning` on first model load | Review the linked license before commercial use; suppress the warning with `suppress_warnings=True` if already reviewed |
 
 ## Installation
 
@@ -162,7 +162,7 @@ For TimesFM (2.5 and 3.0) and Moirai-2, requested quantiles must be a subset of 
 
 The adapter is resolved automatically from the `model_id` prefix — no need to import adapter classes directly.
 
-TimesFM 3.0, Moirai-2, TabPFN-TS, and TS-ICL weights are released under non-commercial licenses; loading them raises a `LicenseWarning` naming the license and a link to the model card.
+TimesFM 3.0, Moirai-2, TabPFN-TS, and TS-ICL weights are released under known non-commercial licenses; loading them raises a `LicenseWarning` naming the license and a link to the model card. Terms vary by provider (e.g. TabPFN-TS permits commercial use under an enterprise license), so review the linked license rather than the warning text alone. A model id not covered by this warning is not confirmed to be unrestricted.
 
 ## Backtesting
 

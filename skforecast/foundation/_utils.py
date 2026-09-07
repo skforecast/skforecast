@@ -124,6 +124,12 @@ def _tensor_to_numpy(values: Any) -> np.ndarray:
     return np.asarray(values)
 
 
+# License terms last verified against the HuggingFace model card on
+# 2026-09-07. This table is not checked automatically against the source, so
+# it can go stale silently if a provider changes its license terms; re-verify
+# periodically. A `model_id` not listed here is not known to carry a
+# commercial-use restriction, it does not mean the license has been confirmed
+# permissive.
 _NON_COMMERCIAL_LICENSES: dict[str, tuple[str, str]] = {
     "google/timesfm-3.0": (
         "TimesFM Non-Commercial License v1.0",
@@ -146,12 +152,13 @@ _NON_COMMERCIAL_LICENSES: dict[str, tuple[str, str]] = {
 
 def _warn_if_non_commercial(model_id: str) -> None:
     """
-    Warn when `model_id` resolves to weights released under a non-commercial
+    Warn when `model_id` matches a prefix known to carry a non-commercial
     license.
 
     Looks up `model_id` in `_NON_COMMERCIAL_LICENSES` using longest-prefix
-    matching. Model ids that do not match any registered prefix are assumed
-    to be unrestricted and no warning is raised.
+    matching. Model ids that do not match any registered prefix do not raise
+    a warning; this only means the id is not in this registry, it does not
+    confirm that the license permits commercial use.
 
     Parameters
     ----------
@@ -175,9 +182,9 @@ def _warn_if_non_commercial(model_id: str) -> None:
 
     license_name, license_url = _NON_COMMERCIAL_LICENSES[best_prefix]
     warnings.warn(
-        f"The weights for '{model_id}' are released under {license_name}, "
-        "which restricts their use to non-commercial or non-production "
-        f"purposes. Review the license before deploying. See {license_url}.",
+        f"The weights for '{model_id}' are released under {license_name}. "
+        "Review the license terms before commercial or production use. "
+        f"See {license_url}.",
         category=LicenseWarning,
         stacklevel=3,
     )

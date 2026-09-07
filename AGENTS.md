@@ -527,7 +527,7 @@ Key points:
 - `predict(..., context=...)` lets you override the stored context (used internally by backtesting).
 - Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. It deep-copies `cv` and forces `refit=True`, `fixed_train_size=False`, so the context window expands with each fold up to `context_length`; no weights are ever trained.
 - Use `bayesian_search_foundation` (not `bayesian_search_forecaster`) to tune inference-time parameters such as `context_length`. Only `TimeSeriesFold` is supported.
-- Loading a model whose weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) raises a `LicenseWarning` naming the license and a link to the model card. Suppress it like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
+- Loading a model whose weights are released under a known non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) raises a `LicenseWarning` naming the license and a link to the model card; review the link, since terms vary (e.g. TabPFN-TS permits commercial use under an enterprise license). Absence of the warning does not guarantee a model's license is unrestricted. Suppress it like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 
 ## Feature Selection
 

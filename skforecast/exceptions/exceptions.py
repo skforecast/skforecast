@@ -326,9 +326,10 @@ class SkforecastVersionWarning(UserWarning):
 
 class LicenseWarning(UserWarning):
     """
-    Warning used to notify that the weights of a foundation model are released
-    under a non-commercial license, which restricts their use to
-    non-commercial or non-production purposes.
+    Warning used to notify that the weights of a foundation model are
+    released under a license known to carry restrictions on commercial or
+    production use. Review the license terms linked in the warning message
+    before deploying.
     """
     def __init__(self, message):
         self.message = message
