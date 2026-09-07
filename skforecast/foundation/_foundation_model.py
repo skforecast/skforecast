@@ -14,7 +14,12 @@ import pandas as pd
 
 from .. import __version__
 from ._adapters import _resolve_adapter
-from ..exceptions import IgnoredArgumentWarning, InputTypeWarning, MissingValuesWarning
+from ..exceptions import (
+    IgnoredArgumentWarning,
+    InputTypeWarning,
+    MissingExogWarning,
+    MissingValuesWarning,
+)
 from ._utils import check_preprocess_series_foundation
 from ..utils import (
     check_preprocess_exog_multiseries,
@@ -812,6 +817,62 @@ class FoundationModel:
 
         return exog_aligned
 
+    def _warn_covariate_column_divergence(
+        self,
+        context_exog: dict[str, pd.DataFrame | None] | None,
+        exog: dict[str, pd.DataFrame | None] | None,
+        series_names_in: list[str],
+    ) -> None:
+        """
+        Warn when predict-time future `exog` columns diverge, per series, from
+        the historical `context_exog` columns.
+
+        Applies to every exog-supporting adapter (this method is only reached
+        when `allow_exog` is True). The warning is informational: the actual
+        effect of a divergent column depends on the adapter. Some treat a
+        one-sided column as a legitimate past-only or future-only covariate
+        (e.g. Chronos, TS-ICL); others reconcile by name and silently drop it
+        or NaN-fill it (e.g. TabICL, TabPFN, Nori, TimesFM 3.0, T0). Either
+        way, surfacing the divergence lets the user confirm it was intended.
+
+        Self-contained: compares only predict-time inputs (never `fit`
+        metadata), so it also fires in zero-shot mode. Emitted only on the
+        user-facing path (`check_inputs=True`); never issued per-fold from the
+        internal backtesting path.
+        """
+
+        def _cols(block: object) -> set:
+            if block is None:
+                return set()
+            if isinstance(block, pd.Series):
+                return {block.name}
+            return set(block.columns)
+
+        missing_future: dict[str, list] = {}
+        no_history: dict[str, list] = {}
+        for name in series_names_in:
+            past = _cols(context_exog.get(name)) if context_exog is not None else set()
+            fut = _cols(exog.get(name)) if exog is not None else set()
+            if past - fut:
+                missing_future[name] = sorted(past - fut)
+            if fut - past:
+                no_history[name] = sorted(fut - past)
+
+        if missing_future or no_history:
+            warnings.warn(
+                f"Predict-time `exog` columns differ from the historical "
+                f"`context_exog` columns for {type(self.adapter).__name__}. "
+                f"Depending on the adapter, a divergent column may be used as "
+                f"a past-only or future-only covariate, or silently dropped or "
+                f"NaN-filled. Check that this matches your intent.\n"
+                f"    In context but missing from future `exog`: "
+                f"{missing_future or None}\n"
+                f"    In future `exog` but absent from context: "
+                f"{no_history or None}",
+                MissingExogWarning,
+                stacklevel=3,
+            )
+
     def predict(
         self,
         steps: int,
@@ -982,6 +1043,11 @@ class FoundationModel:
                            exog            = exog,
                            series_names_in = series_names_in,
                        )
+                self._warn_covariate_column_divergence(
+                    context_exog    = context_exog,
+                    exog            = exog,
+                    series_names_in = series_names_in,
+                )
 
         # Adapter returns dict[str, np.ndarray] with shape (steps, n_q)
         raw_predictions = self.adapter.predict(
