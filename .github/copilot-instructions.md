@@ -32,10 +32,14 @@ Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 (plotting), ker
 
 ### Python environment
 
-Before running any Python command (tests, scripts, notebooks, `pip install`, etc.)
-for the first time in a session, run `conda env list` and ask which environment to
-use. Do not assume the active environment. Once the user confirms an environment,
-reuse it for the rest of the session without asking again.
+Environments are managed with conda. Run every Python command (tests, scripts,
+notebooks, `pip install`, etc.) in the conda environment that is currently
+active. Do not run `conda env list` to ask which environment to use, and do not
+use the `.venv` directory at the repository root.
+
+If the shell does not inherit the active environment (`$CONDA_DEFAULT_ENV` is
+empty), source the user profile first (`source ~/.zshrc`), or call the
+interpreter through `conda run -n <env>`.
 
 ---
 
