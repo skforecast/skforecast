@@ -29,29 +29,6 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
         forecaster.predict_interval(steps=1, method=method)
 
 
-# TODO: Remove in skforecast 0.25.0 when percentile support is removed.
-@pytest.mark.parametrize("method", 
-                         ['bootstrapping', 'conformal'], 
-                         ids = lambda value: f'method: {value}')
-def test_predict_interval_percentile_and_quantile_scales_are_equivalent(method):
-    """
-    Check that the legacy percentile scale [5, 95] produces the same output as
-    the new quantile scale [0.05, 0.95].
-    """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
-
-    with pytest.warns(FutureWarning):
-        results_percentile = forecaster.predict_interval(
-            steps=3, method=method, interval=[5, 95], use_binned_residuals=False
-        )
-    results_quantile = forecaster.predict_interval(
-        steps=3, method=method, interval=[0.05, 0.95], use_binned_residuals=False
-    )
-
-    pd.testing.assert_frame_equal(results_percentile, results_quantile)
-
-
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_in_sample_residuals_is_True():
     """
     Test output when estimator is LinearRegression and one step ahead is predicted

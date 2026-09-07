@@ -26,7 +26,6 @@ from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     check_exog,
     check_interval,
-    _normalize_interval_scale,
     check_predict_input,
     check_residuals_input,
     check_select_fit_kwargs,
@@ -48,7 +47,7 @@ from ..utils import (
 )
 from ..preprocessing import QuantileBinner
 
-# TODO: Review in skforecast 0.23.0
+# TODO: Review in skforecast 0.26.0
 try:
     import keras
 except ImportError as e:
@@ -1827,7 +1826,7 @@ class ForecasterRnn(ForecasterBase):
 
             **Changed in version 0.23.0:** `interval` is now expressed as
             quantiles (0-1) instead of percentiles (0-100). Passing percentiles
-            is deprecated and emits a `FutureWarning`.
+            is not longer supported and will raise a `ValueError`.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
@@ -1864,7 +1863,6 @@ class ForecasterRnn(ForecasterBase):
         if method == "conformal":
 
             if isinstance(interval, (list, tuple)):
-                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=True)
                 nominal_coverage = interval[1] - interval[0]
             else:

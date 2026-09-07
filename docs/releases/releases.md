@@ -18,6 +18,10 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised the first time a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded. Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 
++ <span class="badge text-bg-api-change">API Change</span> Removed support for percentiles in the `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions. Deprecated since 0.23.0, `interval` must now be expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`). Passing percentiles such as `interval=[5, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
+
++ <span class="badge text-bg-api-change">API Change</span> Removed support for percentiles in the `level` argument of the `predict_interval` method of the statistical estimators (<code>[Arima]</code>, <code>[Arar]</code>, <code>[Ets]</code>). Deprecated since 0.23.0, `level` must now be expressed as coverage proportions in the (0, 1] range (e.g. `level=[0.8, 0.95]`). Passing percentiles such as `level=[80, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
+
 
 **Added**
 
@@ -25,8 +29,11 @@ The main changes in this release are:
 
 + New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised the first time a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded. Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 
-
 **Changed**
+
++ Removed support for percentiles in the `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions. Deprecated since 0.23.0, `interval` must now be expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`). Passing percentiles such as `interval=[5, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
+
++ Removed support for percentiles in the `level` argument of the `predict_interval` method of the statistical estimators (<code>[Arima]</code>, <code>[Arar]</code>, <code>[Ets]</code>). Deprecated since 0.23.0, `level` must now be expressed as coverage proportions in the (0, 1] range (e.g. `level=[0.8, 0.95]`). Passing percentiles such as `level=[80, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
 
 
 **Fixed**
