@@ -10,6 +10,28 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-fix">Fix</span>                 | Bug fix                               |
 
 
+## 0.25.0 <small>In development</small> { id="0.25.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span> <code>[TimesFMAdapter]</code> now supports **TimesFM 3.0** in addition to TimesFM 2.5, dispatched automatically from the `model_id` prefix (`'google/timesfm-3.0'`). Unlike TimesFM 2.5, TimesFM 3.0 accepts past and known-future exogenous variables and adds new `device` and `predict_kwargs` parameters. [User guide](../user_guides/foundation-forecasting-models.ipynb)
+
++ <span class="badge text-bg-feature">Feature</span> New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised the first time a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded. Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
+
+
+**Added**
+
++ <code>[TimesFMAdapter]</code> now supports **TimesFM 3.0** in addition to TimesFM 2.5, dispatched automatically from the `model_id` prefix (`'google/timesfm-3.0'`). Unlike TimesFM 2.5, TimesFM 3.0 accepts past and known-future exogenous variables and adds new `device` and `predict_kwargs` parameters. [User guide](../user_guides/foundation-forecasting-models.ipynb)
+
++ New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised the first time a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded. Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
+
+
+**Changed**
+
+
+**Fixed**
+
+
 ## 0.24.0 <small>Aug 24, 2026</small> { id="0.24.0" }
 
 The main changes in this release are:
@@ -1742,6 +1764,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- exceptions -->
 [exceptions]: ../api/exceptions.md
 [IgnoredArgumentWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.IgnoredArgumentWarning
+[LicenseWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.LicenseWarning
 [MissingValuesWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.MissingValuesWarning
 
 <!-- OLD -->

@@ -83,7 +83,7 @@ skforecast/
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
 ├── foundation/              # FoundationModel, ForecasterFoundation
-│                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL)
+│                            # (zero-shot: Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL)
 ├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
@@ -118,7 +118,7 @@ skforecast/
 | ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
 | ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
 | ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
-| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL) |
+| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
 
@@ -512,7 +512,8 @@ Supported adapters (selected automatically from `model_id`):
 | Adapter | `model_id` prefix | Exog | Default `context_length` | Quantiles |
 |---------|-------------------|------|--------------------------|-----------|
 | ChronosAdapter (Amazon) | `autogluon/chronos` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
-| TimesFMAdapter (Google) | `google/timesfm` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
+| TimesFMAdapter (Google, v2.5) | `google/timesfm-2.5` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
+| TimesFMAdapter (Google, v3.0) | `google/timesfm-3.0` | Yes (past & known-future covariates) | 2048 | `[0.1, 0.2, ..., 0.9]` |
 | MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
 | TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (past & future covariates) | 4096 | Any in `(0, 1)` |
 | TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
@@ -526,6 +527,7 @@ Key points:
 - `predict(..., context=...)` lets you override the stored context (used internally by backtesting).
 - Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. It deep-copies `cv` and forces `refit=True`, `fixed_train_size=False`, so the context window expands with each fold up to `context_length`; no weights are ever trained.
 - Use `bayesian_search_foundation` (not `bayesian_search_forecaster`) to tune inference-time parameters such as `context_length`. Only `TimeSeriesFold` is supported.
+- Loading a model whose weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) raises a `LicenseWarning` naming the license and a link to the model card. Suppress it like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 
 ## Feature Selection
 
@@ -664,6 +666,7 @@ from skforecast.exceptions import ExogenousInterpretationWarning
 from skforecast.exceptions import FeatureOutOfRangeWarning
 from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.exceptions import InputTypeWarning
+from skforecast.exceptions import LicenseWarning
 from skforecast.exceptions import LongTrainingWarning
 from skforecast.exceptions import MissingExogWarning
 from skforecast.exceptions import MissingValuesWarning

@@ -15,7 +15,7 @@ model = FoundationModel(
 ## Contents
 
 - ChronosAdapter — Amazon Chronos-2
-- TimesFMAdapter — Google TimesFM 2.5
+- TimesFMAdapter — Google TimesFM 2.5 / 3.0
 - MoiraiAdapter — Salesforce Moirai-2
 - TabICLAdapter — Soda-INRIA TabICL
 - TabPFNAdapter — Prior Labs TabPFN-TS
@@ -41,21 +41,30 @@ model = FoundationModel(
 | `torch_dtype`    | object  | `None`   | Torch dtype for `from_pretrained` (e.g. `torch.bfloat16`).                     |
 | `cross_learning` | bool    | `False`  | If `True`, shares information across series in multi-series batches.           |
 
-## TimesFMAdapter — Google TimesFM 2.5
+## TimesFMAdapter — Google TimesFM 2.5 / 3.0
+
+Dispatches between two backend APIs based on `model_id`: TimesFM 2.5 (`google/timesfm-2.5-*`, no exog) and TimesFM 3.0 (`google/timesfm-3.0-*`, native exog support). Parameters marked "v2.5 only" or "v3.0 only" are ignored by the other backend.
 
 - **`model_id` prefix**: `google/timesfm`
-- **`allow_exog`**: `False`
-- **Supported quantiles**: `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`
+- **`allow_exog`**: `False` for v2.5, `True` for v3.0 (past-only and known-future covariates; must be numeric, encode categoricals as numbers)
+- **Supported quantiles**: `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]` on both backends
+- **Point forecast**: mean on v2.5, median (quantile `0.5`) on v3.0
 
 | Parameter                | Type | Default | Description                                                         |
 |--------------------------|------|---------|---------------------------------------------------------------------|
-| `model_id`               | str  | —       | HuggingFace model ID (e.g. `google/timesfm-2.5-200m-pytorch`).      |
-| `model`                  | obj  | `None`  | Pre-loaded & compiled TimesFM model. If `None`, loaded lazily.      |
-| `context_length`         | int  | `512`   | Max historical observations kept as context.                        |
-| `max_horizon`            | int  | `512`   | Max forecast horizon. `predict(steps=...)` must be ≤ this.          |
-| `forecast_config_kwargs` | dict | `None`  | Extra kwargs forwarded to `timesfm.ForecastConfig` at compile time. |
+| `model_id`               | str  | —       | HuggingFace model ID (e.g. `google/timesfm-2.5-200m-pytorch` or `google/timesfm-3.0-pytorch`). |
+| `model`                  | obj  | `None`  | Pre-loaded model. If `None`, loaded lazily. v2.5 expects an already-compiled model; v3.0 expects a `TimesFM3Forecaster`. |
+| `context_length`         | int  | `None`  | Max historical observations kept as context. Resolves to `512` on v2.5 or `2048` on v3.0 when left as `None`. |
+| `max_horizon`            | int  | `512`   | v2.5 only. Max forecast horizon. `predict(steps=...)` must be ≤ this. |
+| `forecast_config_kwargs` | dict | `None`  | v2.5 only. Extra kwargs forwarded to `timesfm.ForecastConfig` at compile time. |
+| `device`                 | str  | `'auto'` | v3.0 only. Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`. |
+| `predict_kwargs`         | dict | `None`  | v3.0 only. Extra kwargs forwarded to `predict_batch` (e.g. `use_znorm`, `make_positive`). |
 
-The model is compiled lazily for the exact requested `steps` (up to `max_horizon`) to avoid unnecessary decode iterations.
+The v2.5 model is compiled lazily for the exact requested `steps` (up to `max_horizon`) to avoid unnecessary decode iterations. The v3.0 backend has no compile step and no horizon ceiling.
+
+Covariate support is v3.0 only. Columns present in future `exog` become known-future covariates spanning `context + horizon`; columns present only in `context_exog` become past-only covariates. Covariates must be numeric; encode categoricals as numbers before passing them.
+
+**Non-commercial license**: TimesFM 3.0 weights are released under a non-commercial license; loading them raises a `LicenseWarning` naming the license and a link to the model card. TimesFM 2.5 has no such restriction.
 
 ## MoiraiAdapter — Salesforce Moirai-2
 
@@ -163,7 +172,7 @@ Being accepted is not the same as being worth searching. Most adapters expose ru
 | Adapter | Accepted by `set_params` (`get_params()` keys) | Worth searching | Changing these forces a model reload |
 |---------|-----------------------------------------------|-----------------|--------------------------------------|
 | ChronosAdapter | `model_id`, `cross_learning`, `context_length`, `device_map`, `torch_dtype`, `predict_kwargs` | `context_length`, `cross_learning`, (`predict_kwargs`) | `model_id`, `device_map`, `torch_dtype` |
-| TimesFMAdapter | `model_id`, `context_length`, `max_horizon`, `forecast_config_kwargs` | `context_length`, (`forecast_config_kwargs`) | **all of them** |
+| TimesFMAdapter | `model_id`, `context_length`, `max_horizon`, `forecast_config_kwargs`, `device`, `predict_kwargs` | `context_length`, (`forecast_config_kwargs`), (`predict_kwargs`) | **all of them** |
 | MoiraiAdapter | `model_id`, `context_length`, `device` | `context_length` | **all of them** |
 | TabICLAdapter | `model_id`, `context_length`, `point_estimate`, `tabicl_config`, `temporal_features`, `show_progress` | `context_length`, `point_estimate`, `temporal_features`, (`tabicl_config`) | all except `show_progress` |
 | TabPFNAdapter | `model_id`, `context_length`, `mode`, `point_estimate`, `tabpfn_model_config`, `temporal_features`, `show_progress` | `context_length`, `point_estimate`, `temporal_features`, (`tabpfn_model_config`) | all except `show_progress` |
@@ -175,8 +184,8 @@ Parameters in parentheses are backend passthrough dicts: they can hold quality-r
 
 Two consequences that matter when tuning:
 
-- **`context_length` is not uniformly cheap.** It reloads the model on TimesFM 2.5, Moirai-2, TabICL and TabPFN-TS; it is free on Chronos-2, T0, TS-ICL and Nori.
-- **Reset on presence vs on change.** `TabICLAdapter`, `TabPFNAdapter` and `NoriAdapter` compare the old and new values first, so re-sampling an identical value costs nothing. `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `T0Adapter` and `TSICLAdapter` reset whenever the key is passed, even if the value is unchanged, so on TimesFM 2.5 and Moirai-2 every single trial that samples `context_length` triggers a reload.
+- **`context_length` is not uniformly cheap.** It reloads the model on TimesFM (2.5 and 3.0), Moirai-2, TabICL and TabPFN-TS; it is free on Chronos-2, T0, TS-ICL and Nori.
+- **Reset on presence vs on change.** `TabICLAdapter`, `TabPFNAdapter` and `NoriAdapter` compare the old and new values first, so re-sampling an identical value costs nothing. `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `T0Adapter` and `TSICLAdapter` reset whenever the key is passed, even if the value is unchanged, so on TimesFM (2.5 and 3.0) and Moirai-2 every single trial that samples `context_length` triggers a reload.
 
 `model_id` forces a reload on every adapter except `TSICLAdapter`, where the checkpoint is selected by `checkpoint_version` instead.
 
