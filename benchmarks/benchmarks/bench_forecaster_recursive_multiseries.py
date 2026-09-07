@@ -370,7 +370,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir, run_id=None):
         encoding="ordinal"
     )
 
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=30, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__create_lags, 
             forecaster=forecaster, 
@@ -378,7 +378,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir, run_id=None):
             train_index=train_index
         )
     
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=10, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_no_exog,
             forecaster=forecaster,
@@ -441,6 +441,8 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir, run_id=None):
         encoding="ordinal"
     )
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=5 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_fit_series_is_dict_no_exog,
@@ -495,7 +497,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir, run_id=None):
         series=series_dict, exog=exog_dict, store_in_sample_residuals=True, suppress_warnings=True
     )
 
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=10, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_check_predict_inputs,
             forecaster=forecaster,
@@ -555,6 +557,8 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir, run_id=None):
         encoding="ordinal"
     )
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=5 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_backtesting_series_is_dict_no_exog,
@@ -596,7 +600,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir, run_id=None):
         series=series_dict, exog=exog_dict, store_in_sample_residuals=True, suppress_warnings=True
     )
 
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=10, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_predict_bootstrapping_exog_is_dict,
             forecaster=forecaster_boot,

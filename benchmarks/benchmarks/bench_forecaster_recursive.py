@@ -187,24 +187,26 @@ def run_benchmark_ForecasterRecursive(output_dir, run_id=None):
             n_boot=250
         )
 
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=30, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursive__create_lags, forecaster=forecaster, y=y_values)
     _ = runner.benchmark(ForecasterRecursive__create_train_X_y, forecaster=forecaster, y=y, exog=exog)
 
-    runner = BenchmarkRunner(repeat=10, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=10, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursive_fit, forecaster=forecaster, y=y, exog=exog)
 
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True, suppress_warnings=True)
-    runner = BenchmarkRunner(repeat=30, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=30, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursive_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive_predict, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive_predict_interval_conformal, forecaster=forecaster, exog=exog_pred)
 
+    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
+    # increase CI time, and repeat=5 is too low for the max-trim to apply anyway.
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursive_backtesting, forecaster=forecaster, y=y, exog=exog)
     _ = runner.benchmark(ForecasterRecursive_backtesting_conformal, forecaster=forecaster, y=y, exog=exog)
 
     forecaster_boot.fit(y=y, exog=exog, store_in_sample_residuals=True, suppress_warnings=True)
-    runner = BenchmarkRunner(repeat=15, output_dir=output_dir, run_id=run_id)
+    runner = BenchmarkRunner(repeat=15, warmup=3, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursive_predict_bootstrapping, forecaster=forecaster_boot, exog=exog_pred)

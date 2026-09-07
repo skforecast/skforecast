@@ -17,7 +17,6 @@ from .. import __version__
 from ..exceptions import IgnoredArgumentWarning
 from ._foundation_model import FoundationModel
 from ..utils import (
-    _normalize_interval_scale,
     check_interval,
     get_style_repr_html,
 )
@@ -819,7 +818,7 @@ class ForecasterFoundation:
 
             **Changed in version 0.23.0:** `interval` is now expressed as
             quantiles (0-1) instead of percentiles (0-100). Passing percentiles
-            is deprecated and emits a `FutureWarning`.
+            is not longer supported and will raise a `ValueError`.
         check_inputs : bool, default True
             If `True`, the `context` and `context_exog` inputs are validated
             and normalized. If `False`, `context` must already be a
@@ -860,7 +859,6 @@ class ForecasterFoundation:
             )
 
         if isinstance(interval, (list, tuple)):
-            interval = _normalize_interval_scale(interval)
             check_interval(interval=interval, ensure_symmetric_intervals=False)
         else:
             check_interval(alpha=interval, alpha_literal='interval')

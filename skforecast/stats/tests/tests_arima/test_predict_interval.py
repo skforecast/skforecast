@@ -525,24 +525,19 @@ def test_predict_interval_with_exog_dataframe():
 
 def test_predict_interval_level_as_single_value():
     """
-    Test predict_interval with level as single int or float (not tuple).
+    Test predict_interval with level as a single float (not tuple).
     """
     y = ar1_series(100, seed=42)
     model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
     model.fit(y)
-    
-    # Test with single int
-    result_int = model.predict_interval(steps=5, level=90)
-    assert 'lower_0.9' in result_int.columns
-    assert 'upper_0.9' in result_int.columns
-    assert len([c for c in result_int.columns if 'lower' in c]) == 1
-    
-    # Test with single float
-    result_float = model.predict_interval(steps=5, level=85.0)
-    assert 'lower_0.85' in result_float.columns
-    assert 'upper_0.85' in result_float.columns
-    
-    # Check exact values for level=90
+
+    result_85 = model.predict_interval(steps=5, level=0.85)
+    assert 'lower_0.85' in result_85.columns
+    assert 'upper_0.85' in result_85.columns
+    assert len([c for c in result_85.columns if 'lower' in c]) == 1
+
+    # Check exact values for level=0.9
+    result_90 = model.predict_interval(steps=5, level=0.9)
     expected_mean = np.array([
         -1.60969915, -1.11552107, -0.78835957, -0.57176833, -0.42837809
     ])
@@ -553,9 +548,9 @@ def test_predict_interval_level_as_single_value():
         -0.3430204 ,  0.47730986,  0.92799446,  1.19600576,  1.36147714
     ])
     
-    np.testing.assert_array_almost_equal(result_int['mean'].values, expected_mean, decimal=4)
-    np.testing.assert_array_almost_equal(result_int['lower_0.9'].values, expected_lower_90, decimal=4)
-    np.testing.assert_array_almost_equal(result_int['upper_0.9'].values, expected_upper_90, decimal=4)
+    np.testing.assert_array_almost_equal(result_90['mean'].values, expected_mean, decimal=4)
+    np.testing.assert_array_almost_equal(result_90['lower_0.9'].values, expected_lower_90, decimal=4)
+    np.testing.assert_array_almost_equal(result_90['upper_0.9'].values, expected_upper_90, decimal=4)
 
 
 def test_predict_interval_exog_errors():
