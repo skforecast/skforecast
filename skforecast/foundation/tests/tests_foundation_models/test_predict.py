@@ -4,7 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.exceptions import IgnoredArgumentWarning, MissingExogWarning
+from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.foundation._foundation_model import FoundationModel
 from .fixtures_adapters import (
     y, data, y_dict,
@@ -347,7 +347,10 @@ def test_predict_passes_future_exog_to_pipeline():
     """
     pipeline = FakePipeline()
     m = FoundationModel("autogluon/chronos-2-small", pipeline=pipeline)
-    m.fit(series=y)
+    exog_fit = pd.DataFrame(
+        {"feat_a": np.arange(len(y), dtype=float)}, index=y.index
+    )
+    m.fit(series=y, exog=exog_fit)
 
     future = pd.DataFrame(
         {"feat_a": np.arange(6, dtype=float)},
@@ -357,11 +360,11 @@ def test_predict_passes_future_exog_to_pipeline():
     assert "future_covariates" in pipeline.last_inputs[0]
 
 
-def test_predict_MissingExogWarning_when_exog_columns_diverge():
+def test_predict_ValueError_when_future_exog_column_has_no_history():
     """
-    Test predict emits MissingExogWarning through the user-facing path
-    (check_inputs=True) when the future exog columns diverge from the
-    historical context_exog columns.
+    Test predict raises ValueError through the user-facing path
+    (check_inputs=True) when a future exog column has no historical values
+    in the context_exog of the same series.
     """
     pipeline = FakePipeline()
     m = FoundationModel("autogluon/chronos-2-small", pipeline=pipeline)
@@ -374,10 +377,11 @@ def test_predict_MissingExogWarning_when_exog_columns_diverge():
         {"feat_b": np.arange(6, dtype=float)},
         index=pd.date_range("2024-03-01", periods=6, freq="ME"),
     )
-    warn_msg = re.escape(
-        "In future `exog` but absent from context: {'sales': ['feat_b']}"
+    err_msg = re.escape(
+        "`exog` contains columns with no historical values in the context "
+        "for series {'sales': ['feat_b']}."
     )
-    with pytest.warns(MissingExogWarning, match=warn_msg):
+    with pytest.raises(ValueError, match=err_msg):
         m.predict(steps=6, exog=future)
 
 

@@ -182,6 +182,7 @@ class FakeTimesFM3Forecaster:
         self.last_past_future_covariates = None
         self.last_padding_mode = None
         self.last_kwargs = None
+        self.calls = []
 
     @classmethod
     def from_pretrained(cls, model_id, device=None, **kwargs):
@@ -203,6 +204,14 @@ class FakeTimesFM3Forecaster:
         self.last_past_future_covariates = past_future_covariates
         self.last_padding_mode = padding_mode
         self.last_kwargs = kwargs
+        self.calls.append({
+            "contexts": contexts,
+            "horizon": horizon,
+            "past_only_covariates": past_only_covariates,
+            "past_future_covariates": past_future_covariates,
+            "padding_mode": padding_mode,
+            "kwargs": kwargs,
+        })
 
         # Replicate the real backend's covariate handling: `None` entries are
         # filled with a single zero covariate and all per-series arrays are

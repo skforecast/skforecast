@@ -17,7 +17,6 @@ from ._adapters import _resolve_adapter
 from ..exceptions import (
     IgnoredArgumentWarning,
     InputTypeWarning,
-    MissingExogWarning,
     MissingValuesWarning,
 )
 from ._utils import check_preprocess_series_foundation
@@ -150,6 +149,11 @@ class FoundationModel:
         `adapter.context_length`.
     allow_exog : bool
         Whether the underlying adapter supports exogenous variables.
+    supports_past_only_covariates : bool
+        Whether the underlying adapter uses historical exog columns that
+        have no future values as past-only covariates. If `False`, such
+        columns are ignored at predict time and an `IgnoredArgumentWarning`
+        is issued.
     index_type_ : type
         Type of index of the input used in training.
     index_freq_ : pandas DateOffset, int
@@ -347,6 +351,24 @@ class FoundationModel:
             are served by `TimesFMAdapter`.
         """
         return self.adapter.allow_exog
+
+    @property
+    def supports_past_only_covariates(self) -> bool:
+        """
+        Whether the underlying adapter uses historical exog columns without
+        future values as past-only covariates.
+
+        Returns
+        -------
+        supports_past_only_covariates : bool
+            `True` if a column present in the historical exog but absent
+            from the future `exog` is used as a past-only covariate
+            (Chronos-2, TS-ICL, TimesFM 3.0). `False` if the adapter only
+            uses covariates that also have future values, in which case
+            such columns are ignored and an `IgnoredArgumentWarning` is
+            issued at predict time (TabICL, TabPFN-TS, TFC-T0, Nori).
+        """
+        return self.adapter.supports_past_only_covariates
 
     @property
     def is_fitted(self) -> bool:
@@ -817,59 +839,91 @@ class FoundationModel:
 
         return exog_aligned
 
-    def _warn_covariate_column_divergence(
+    def _check_exog_columns(
         self,
         context_exog: dict[str, pd.DataFrame | None] | None,
         exog: dict[str, pd.DataFrame | None] | None,
         series_names_in: list[str],
     ) -> None:
         """
-        Warn when predict-time future `exog` columns diverge, per series, from
-        the historical `context_exog` columns.
+        Validate, per series, the future `exog` columns against the historical
+        `context_exog` columns.
 
-        Applies to every exog-supporting adapter (this method is only reached
-        when `allow_exog` is True). The warning is informational: the actual
-        effect of a divergent column depends on the adapter. Some treat a
-        one-sided column as a legitimate past-only or future-only covariate
-        (e.g. Chronos, TS-ICL); others reconcile by name and silently drop it
-        or NaN-fill it (e.g. TabICL, TabPFN, Nori, TimesFM 3.0, T0). Either
-        way, surfacing the divergence lets the user confirm it was intended.
+        Parameters
+        ----------
+        context_exog : dict, None
+            Per-series historical exogenous variables resolved for this
+            prediction (the stored `context_exog_` or the preprocessed
+            `context_exog` argument), already filtered by `levels`.
+        exog : dict, None
+            Per-series future exogenous variables as returned by
+            `_prepare_future_exog`.
+        series_names_in : list
+            Series to validate.
 
-        Self-contained: compares only predict-time inputs (never `fit`
-        metadata), so it also fires in zero-shot mode. Emitted only on the
-        user-facing path (`check_inputs=True`); never issued per-fold from the
-        internal backtesting path.
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        A `ValueError` is raised if any series has a future `exog` column
+        with no historical values in its `context_exog`: no adapter can use a
+        covariate without history. A column present in the history but absent
+        from the future `exog` is a past-only covariate; adapters with
+        `supports_past_only_covariates=False` ignore it, so an
+        `IgnoredArgumentWarning` is issued for them. Column names are
+        compared as sets, so order does not matter.
+
+        Only predict-time inputs are compared (never `fit` metadata), so the
+        check also applies in zero-shot mode. It runs only on the user-facing
+        path (`check_inputs=True`).
+
         """
 
-        def _cols(block: object) -> set:
-            if block is None:
+        def _extract_column_names(data: pd.DataFrame | pd.Series | None) -> set:
+            if data is None:
                 return set()
-            if isinstance(block, pd.Series):
-                return {block.name}
-            return set(block.columns)
+            if isinstance(data, pd.Series):
+                return {data.name}
+            return set(data.columns)
 
-        missing_future: dict[str, list] = {}
-        no_history: dict[str, list] = {}
+        missing_history_by_series: dict[str, list] = {}
+        ignored_past_cols_by_series: dict[str, list] = {}
         for name in series_names_in:
-            past = _cols(context_exog.get(name)) if context_exog is not None else set()
-            fut = _cols(exog.get(name)) if exog is not None else set()
-            if past - fut:
-                missing_future[name] = sorted(past - fut)
-            if fut - past:
-                no_history[name] = sorted(fut - past)
+            historical_cols = (
+                _extract_column_names(context_exog.get(name))
+                if context_exog is not None else set()
+            )
+            future_cols = (
+                _extract_column_names(exog.get(name))
+                if exog is not None else set()
+            )
+            # Future columns that do not exist in the historical context
+            future_without_history = future_cols - historical_cols
+            if future_without_history:
+                missing_history_by_series[name] = sorted(future_without_history)
 
-        if missing_future or no_history:
+            # Historical columns that do not exist in the future context
+            past_without_future = historical_cols - future_cols
+            if past_without_future and not self.adapter.supports_past_only_covariates:
+                ignored_past_cols_by_series[name] = sorted(past_without_future)
+
+        if missing_history_by_series:
+            raise ValueError(
+                f"`exog` contains columns with no historical values in the "
+                f"context for series {missing_history_by_series}. Every future `exog` column "
+                f"must also be present in the historical exog of the same "
+                f"series (pass matching `exog` to `fit`, or `context_exog` "
+                f"when using `context`)."
+            )
+
+        if ignored_past_cols_by_series:
             warnings.warn(
-                f"Predict-time `exog` columns differ from the historical "
-                f"`context_exog` columns for {type(self.adapter).__name__}. "
-                f"Depending on the adapter, a divergent column may be used as "
-                f"a past-only or future-only covariate, or silently dropped or "
-                f"NaN-filled. Check that this matches your intent.\n"
-                f"    In context but missing from future `exog`: "
-                f"{missing_future or None}\n"
-                f"    In future `exog` but absent from context: "
-                f"{no_history or None}",
-                MissingExogWarning,
+                f"{type(self.adapter).__name__} only uses covariates that "
+                f"also have future values. Historical exog columns without "
+                f"future values are ignored for series {ignored_past_cols_by_series}.",
+                IgnoredArgumentWarning,
                 stacklevel=3,
             )
 
@@ -954,8 +1008,16 @@ class FoundationModel:
         - **Not fitted, `context` provided (zero-shot mode)**: The model uses 
         `context` and `context_exog` (if provided) as context for prediction.
         - **Fitted, `context` provided**: Stored context is ignored, the 
-        provided `context` and `context_exog` (if provided) are used for 
+        provided `context` and `context_exog` (if provided) are used for
         prediction.
+
+        When the adapter supports exogenous variables, the columns of the
+        future `exog` are validated per series against the historical exog
+        used as context. A future column with no historical values raises a
+        `ValueError`. A historical column with no future values is a
+        past-only covariate: it is used as such when
+        `supports_past_only_covariates` is `True`, and ignored with an
+        `IgnoredArgumentWarning` otherwise.
 
         """
 
@@ -1043,11 +1105,15 @@ class FoundationModel:
                            exog            = exog,
                            series_names_in = series_names_in,
                        )
-                self._warn_covariate_column_divergence(
+                self._check_exog_columns(
                     context_exog    = context_exog,
                     exog            = exog,
                     series_names_in = series_names_in,
                 )
+            # With `check_inputs=False` (internal backtesting path) the
+            # column check is skipped: `_extract_data_folds_multiseries`
+            # slices `context_exog` and `exog` from the same per-series
+            # DataFrame, so their columns always match by construction.
 
         # Adapter returns dict[str, np.ndarray] with shape (steps, n_q)
         raw_predictions = self.adapter.predict(

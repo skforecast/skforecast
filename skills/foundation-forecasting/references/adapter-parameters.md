@@ -47,6 +47,7 @@ Dispatches between two backend APIs based on `model_id`: TimesFM 2.5 (`google/ti
 
 - **`model_id` prefix**: `google/timesfm`
 - **`allow_exog`**: `False` for v2.5, `True` for v3.0 (past-only and known-future covariates; must be numeric, encode categoricals as numbers)
+- **`supports_past_only_covariates`**: `False` for v2.5, `True` for v3.0
 - **Supported quantiles**: `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]` on both backends
 - **Point forecast**: mean on v2.5, median (quantile `0.5`) on v3.0
 
@@ -62,7 +63,7 @@ Dispatches between two backend APIs based on `model_id`: TimesFM 2.5 (`google/ti
 
 The v2.5 model is compiled lazily for the exact requested `steps` (up to `max_horizon`) to avoid unnecessary decode iterations. The v3.0 backend has no compile step and no horizon ceiling.
 
-Covariate support is v3.0 only. Columns present in future `exog` become known-future covariates spanning `context + horizon`; columns present only in `context_exog` become past-only covariates. Covariates must be numeric; encode categoricals as numbers before passing them.
+Covariate support is v3.0 only. For each series, columns present in its future `exog` become known-future covariates spanning `context + horizon`; columns present only in its `context_exog` become past-only covariates. Each series is forwarded with its own columns: series with the same set of past-only and known-future columns share one `predict_batch` call, series with different columns are forecast in separate calls, so a series' forecast never depends on the exog of the other series in the batch (`predict(levels=[x])` equals `predict()` filtered to `x`). Covariates must be numeric; encode categoricals as numbers before passing them.
 
 **Non-commercial license**: TimesFM 3.0 weights are released under a non-commercial license; loading them raises a `LicenseWarning` naming the license and a link to the model card. TimesFM 2.5 has no such restriction.
 
@@ -196,5 +197,16 @@ All adapters implement the same minimal interface:
 - `fit(series, exog=None)` — stores context and metadata; no training.
 - `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
+- `allow_exog` / `supports_past_only_covariates` — class attributes (instance attributes on `TimesFMAdapter`) read by `FoundationModel` to decide how exog is handled.
+
+### Exog column validation at predict time
+
+`FoundationModel.predict` (and therefore `ForecasterFoundation.predict`, `predict_interval`, `predict_quantiles`) validates, per series, the columns of the future `exog` against the historical exog used as context (the one stored by `fit`, or `context_exog` when `context` is given). The check is skipped on the internal backtesting path, where both come from the same DataFrame.
+
+| Situation (per series)                                  | Adapters with `supports_past_only_covariates=True` (Chronos-2, TS-ICL, TimesFM 3.0) | Adapters with `supports_past_only_covariates=False` (TabICL, TabPFN-TS, T0, Nori) |
+|---------------------------------------------------------|---------------------------------------------------------------|---------------------------------------------------------------|
+| Future `exog` column with no historical values          | `ValueError`                                                  | `ValueError`                                                  |
+| Historical column with no future values (`exog=None` or a subset of columns) | Used as a past-only covariate, no warning        | Ignored, `IgnoredArgumentWarning` listing the columns and series |
+| Same columns on both sides (any order)                  | OK                                                            | OK                                                            |
 
 Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.

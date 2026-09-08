@@ -14,9 +14,11 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> <code>[TimesFMAdapter]</code> now supports **TimesFM 3.0** in addition to TimesFM 2.5, dispatched automatically from the `model_id` prefix (`'google/timesfm-3.0'`). Unlike TimesFM 2.5, TimesFM 3.0 accepts past and known-future exogenous variables and adds new `device` and `predict_kwargs` parameters. [User guide](../user_guides/foundation-forecasting-models.ipynb)
++ <span class="badge text-bg-feature">Feature</span> <code>[TimesFMAdapter]</code> now supports **TimesFM 3.0** in addition to TimesFM 2.5, dispatched automatically from the `model_id` prefix (`'google/timesfm-3.0'`). Unlike TimesFM 2.5, TimesFM 3.0 accepts past-only and known-future exogenous variables and adds new `device` and `predict_kwargs` parameters. Every series is forecast with its own covariate columns: series that share the same exog columns are batched together, and series with different columns are forecast in separate backend calls, so the prediction of a series never depends on the exog of the other series. [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
 + <span class="badge text-bg-feature">Feature</span> New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised whenever a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded (deduplicated to once per session by Python's default warning filter). Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[FoundationModel]</code> and <code>[ForecasterFoundation]</code> now validate the columns of the future `exog` against the historical exog of each series at predict time. A future column with no historical values raises a `ValueError`. A historical column with no future values is used as a past-only covariate by the adapters that support it (Chronos-2, TS-ICL, TimesFM 3.0) and ignored with an `IgnoredArgumentWarning` by the rest (TabICL, TabPFN-TS, TFC-T0, Nori). The new read-only attribute `supports_past_only_covariates` exposes which behavior applies.
 
 + <span class="badge text-bg-api-change">API Change</span> Removed support for percentiles in the `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions. Deprecated since 0.23.0, `interval` must now be expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`). Passing percentiles such as `interval=[5, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
 
@@ -25,11 +27,13 @@ The main changes in this release are:
 
 **Added**
 
-+ <code>[TimesFMAdapter]</code> now supports **TimesFM 3.0** in addition to TimesFM 2.5, dispatched automatically from the `model_id` prefix (`'google/timesfm-3.0'`). Unlike TimesFM 2.5, TimesFM 3.0 accepts past and known-future exogenous variables and adds new `device` and `predict_kwargs` parameters. [User guide](../user_guides/foundation-forecasting-models.ipynb)
++ <code>[TimesFMAdapter]</code> now supports **TimesFM 3.0** in addition to TimesFM 2.5, dispatched automatically from the `model_id` prefix (`'google/timesfm-3.0'`). Unlike TimesFM 2.5, TimesFM 3.0 accepts past-only and known-future exogenous variables and adds new `device` and `predict_kwargs` parameters. Every series is forecast with its own covariate columns: series that share the same exog columns are batched together, and series with different columns are forecast in separate backend calls, so the prediction of a series never depends on the exog of the other series. [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
 + New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised whenever a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded (deduplicated to once per session by Python's default warning filter). Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 
 **Changed**
+
++ <code>[FoundationModel]</code> and <code>[ForecasterFoundation]</code> now validate the columns of the future `exog` against the historical exog of each series at predict time. A future column with no historical values raises a `ValueError`. A historical column with no future values is used as a past-only covariate by the adapters that support it (Chronos-2, TS-ICL, TimesFM 3.0) and ignored with an `IgnoredArgumentWarning` by the rest (TabICL, TabPFN-TS, TFC-T0, Nori). The new read-only attribute `supports_past_only_covariates` exposes which behavior applies.
 
 + Removed support for percentiles in the `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions. Deprecated since 0.23.0, `interval` must now be expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`). Passing percentiles such as `interval=[5, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
 

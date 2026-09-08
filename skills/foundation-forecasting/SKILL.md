@@ -115,7 +115,7 @@ model = FoundationModel(
 
 ## With Exogenous Variables (Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL)
 
-Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them.
+Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them. At predict time the future `exog` columns are validated per series against the historical exog: a future column with no history raises `ValueError`; a historical column with no future values is a past-only covariate, used by Chronos-2, TS-ICL and TimesFM 3.0 (`supports_past_only_covariates=True`) and ignored with an `IgnoredArgumentWarning` by TabICL, TabPFN-TS, TFC-T0 and Nori.
 
 ```python
 # Historical + future exog (must cover the forecast horizon)
@@ -245,6 +245,8 @@ automatically to the last `context_length` observations.
 6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`). Install only the one(s) you need.
 7. **Tuning a parameter that forces a model reload**: `model_id` and device/dtype arguments reload the model on every trial, and `context_length` does the same on TimesFM 2.5 (but **not** TimesFM 3.0), Moirai-2, TabICL and TabPFN-TS.
 8. **Assuming TimesFM 3.0 accepts categorical covariates**: it does not; encode categoricals as numeric (e.g. via `transformer_exog`) before passing them, same as Nori, T0, and TS-ICL.
+9. **Passing a future `exog` column that was not in the historical exog** (`fit` without that column, or `context` without `context_exog`): `ValueError` on every adapter. Pass the same columns to `fit` (or `context_exog`) and to `predict`.
+10. **Predicting without `exog` after fitting with exog on TabICL, TabPFN-TS, T0 or Nori**: the historical columns are ignored (`IgnoredArgumentWarning`) and the forecast uses no covariates. Only Chronos-2, TS-ICL and TimesFM 3.0 use them as past-only covariates.
 
 ## References
 

@@ -120,6 +120,7 @@ class ChronosAdapter:
     """
 
     allow_exog: bool = True
+    supports_past_only_covariates: bool = True
 
     def __init__(
         self,
@@ -596,6 +597,10 @@ class TimesFMAdapter:
     allow_exog : bool
         Whether this adapter instance accepts exogenous variables. `True`
         for the v3.0 backend, `False` for the v2.5 backend.
+    supports_past_only_covariates : bool
+        Whether historical exog columns without future values are used as
+        past-only covariates. `True` for the v3.0 backend, `False` for the
+        v2.5 backend.
     is_fitted : bool
         Whether the adapter has been fitted.
 
@@ -610,24 +615,21 @@ class TimesFMAdapter:
     checkpoint returns a value equal to quantile 0.5), while the v3.0 point
     forecast is the median (quantile 0.5).
 
-    Covariate support is v3.0 only. Columns present in the future `exog`
-    become known-future covariates spanning `context + horizon`, built by
-    concatenating the matching historical column from `context_exog` with
-    the future values. Columns present only in `context_exog` become
-    past-only covariates. Covariates must be numeric; encode categoricals
-    as numbers (e.g. via `transformer_exog`) before passing them. Covariate
-    columns are pooled across all series in a batch (first-seen order): a
-    series that does not provide a given column, or provides only the
-    historical or only the future half of a known-future column, has the
-    missing part filled with NaN. TimesFM 3.0's own `predict_batch`
-    unconditionally linearly interpolates NaN values in covariates
-    (extrapolating a constant from the nearest real value, or filling `0.0`
-    if a segment has no real value at all). A known-future column that has no
-    historical values in `context_exog` for *any* series in the batch (not
-    just some) is excluded from the request entirely.
-    NaN values inside the target series are
-    linearly interpolated by the backend, and leading NaNs in the target
-    trim the context and its covariates accordingly.
+    Covariate support is v3.0 only. For each series, columns present in its
+    future `exog` become known-future covariates spanning `context + horizon`,
+    built by concatenating the matching historical column from `context_exog`
+    with the future values; columns present only in its `context_exog` become
+    past-only covariates. A future column with no historical values in the
+    same series raises a `ValueError`. Every series is forwarded with its own
+    covariate columns only: series that share the same set of past-only and
+    known-future columns are forecast together in one `predict_batch` call,
+    and series with different columns are forecast in separate calls, so the
+    prediction of a series never depends on the covariates of the other
+    series in the batch. Covariates must be numeric; encode categoricals as
+    numbers (e.g. via `transformer_exog`) before passing them. NaN values
+    inside covariates and inside the target series are linearly interpolated
+    by the backend, and leading NaNs in the target trim the context and its
+    covariates accordingly.
 
     Compilation behavior (v2.5 only). The model is compiled lazily on the
     first `predict` call, sized for the exact number of `steps` requested
@@ -651,6 +653,7 @@ class TimesFMAdapter:
 
     SUPPORTED_QUANTILES: list[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     allow_exog: bool = False
+    supports_past_only_covariates: bool = False
 
     _V3_RESERVED_PREDICT_KWARGS: frozenset[str] = frozenset({
         "contexts", "horizon", "return_quantiles", "past_only_covariates",
@@ -708,6 +711,7 @@ class TimesFMAdapter:
 
         self._backend = _detect_timesfm_backend(model_id)
         self.allow_exog = self._backend == "v3"
+        self.supports_past_only_covariates = self._backend == "v3"
 
         if context_length is None:
             context_length = 2048 if self._backend == "v3" else 512
@@ -745,7 +749,8 @@ class TimesFMAdapter:
         Notes
         -----
         Adapters serialized before TimesFM 3.0 support lack `_backend`,
-        `device`, `predict_kwargs`, and the instance-level `allow_exog`. These
+        `device`, `predict_kwargs`, and the instance-level `allow_exog` and
+        `supports_past_only_covariates`. These
         are reconstructed from `model_id` (v2.5/v3.0 detection) and sensible
         defaults so that `predict` and `get_params` keep working after
         `load_forecaster` on an object saved by an earlier version.
@@ -757,6 +762,8 @@ class TimesFMAdapter:
             self._backend = _detect_timesfm_backend(self.model_id)
         if "allow_exog" not in self.__dict__:
             self.allow_exog = self._backend == "v3"
+        if "supports_past_only_covariates" not in self.__dict__:
+            self.supports_past_only_covariates = self._backend == "v3"
         if "device" not in self.__dict__:
             self.device = "auto"
         if "predict_kwargs" not in self.__dict__:
@@ -860,6 +867,7 @@ class TimesFMAdapter:
         def _reset_backend() -> None:
             self._backend = _detect_timesfm_backend(params["model_id"])
             self.allow_exog = self._backend == "v3"
+            self.supports_past_only_covariates = self._backend == "v3"
 
         if self._backend == "v3":
             reload_keys = {"model_id", "device"}
@@ -1067,12 +1075,12 @@ class TimesFMAdapter:
             `context_length`).
         context_exog : dict, None
             Per-series historical exogenous variables (already trimmed).
-            Columns not also present in `exog` are forwarded as past-only
-            covariates.
+            For each series, columns not also present in its `exog` are
+            forwarded as past-only covariates.
         exog : dict, None
             Per-series future exogenous variables for the forecast
-            horizon. Each column is forwarded as a known-future
-            covariate.
+            horizon. Each column is forwarded as a known-future covariate
+            of that series, concatenated with its historical values.
         quantiles : list of float, None
             Quantile levels, already validated against
             `SUPPORTED_QUANTILES`.
@@ -1080,11 +1088,21 @@ class TimesFMAdapter:
         Returns
         -------
         predictions : dict
-            Keys are series names. Each value is a 2-D array of shape
-            `(steps, n_quantiles)`.
+            Keys are series names, in the same order as `context`. Each
+            value is a 2-D array of shape `(steps, n_quantiles)`.
 
         Notes
         -----
+        Every series is forwarded with its own covariate columns only.
+        `predict_batch` requires all series in one call to share the same
+        covariate layout, so series are grouped by their covariate signature
+        (`_v3_covariate_signature`) and `predict_batch` is called once per
+        group. Series with identical exog columns therefore share a batch,
+        as before; series with different columns are forecast in separate
+        calls, so the prediction of one series never depends on the
+        covariates of another. A future `exog` column without historical
+        values in the same series raises a `ValueError`.
+
         With covariates present, `padding_mode="edge"` is passed to
         `predict_batch` (the default chosen here); with no covariates,
         `padding_mode="none"` is used. `predict_batch` internally rounds the
@@ -1102,58 +1120,45 @@ class TimesFMAdapter:
         self._load_model()
 
         names = list(context.keys())
-        contexts = [context[name].to_numpy() for name in names]
 
-        col_pairs = [
-            self._v3_covariate_columns(
+        # Group series by covariate signature: `predict_batch` stacks the
+        # covariate arrays of every series in a call, so each call must hold
+        # series with exactly the same past-only and known-future columns.
+        groups: dict[tuple[tuple, tuple], list[str]] = {}
+        for name in names:
+            signature = self._v3_covariate_signature(
                 context_exog = context_exog.get(name) if context_exog is not None else None,
                 exog         = exog.get(name) if exog is not None else None,
             )
-            for name in names
-        ]
-        ctx_cols_with_history = set(col for ccols, _ in col_pairs for col in ccols)
-        fut_cols_requested = tuple(dict.fromkeys(col for _, fcols in col_pairs for col in fcols))
-        fut_cols_no_history = [
-            col for col in fut_cols_requested if col not in ctx_cols_with_history
-        ]
-        if fut_cols_no_history:
-            warnings.warn(
-                f"Column(s) {fut_cols_no_history} in `exog` have no historical "
-                f"values in `context_exog` for any series in this batch. They are "
-                f"excluded.",
-                stacklevel=5,
-            )
-        fut_cols = tuple(col for col in fut_cols_requested if col in ctx_cols_with_history)
-        past_only_cols = tuple(dict.fromkeys(
-            col for ccols, _ in col_pairs for col in ccols if col not in fut_cols
-        ))
-        has_covariates = bool(fut_cols) or bool(past_only_cols)
+            groups.setdefault(signature, []).append(name)
 
-        past_only_list: list[np.ndarray | None] = []
-        past_future_list: list[np.ndarray | None] = []
-        for name in names:
-            past_only, past_future = self._build_v3_covariates(
-                context_exog   = context_exog.get(name) if context_exog is not None else None,
-                exog           = exog.get(name) if exog is not None else None,
-                context_len    = len(context[name]),
-                steps          = steps,
-                past_only_cols = past_only_cols,
-                fut_cols       = fut_cols,
-            )
-            past_only_list.append(past_only)
-            past_future_list.append(past_future)
+        outs: dict[str, Any] = {}
+        for (past_only_cols, fut_cols), members in groups.items():
+            has_covariates = bool(past_only_cols) or bool(fut_cols)
+            contexts = [context[name].to_numpy() for name in members]
 
-        outs = list(
-            self._model.predict_batch(
+            past_only_list: list[np.ndarray | None] = []
+            past_future_list: list[np.ndarray | None] = []
+            for name in members:
+                past_only, past_future = self._build_v3_covariates(
+                    context_exog   = context_exog.get(name) if context_exog is not None else None,
+                    exog           = exog.get(name) if exog is not None else None,
+                    past_only_cols = past_only_cols,
+                    fut_cols       = fut_cols,
+                )
+                past_only_list.append(past_only)
+                past_future_list.append(past_future)
+
+            results = self._model.predict_batch(
                 contexts               = contexts,
-                horizon                 = steps,
+                horizon                = steps,
                 past_only_covariates   = past_only_list if has_covariates else None,
                 past_future_covariates = past_future_list if has_covariates else None,
-                return_quantiles        = quantiles is not None,
-                padding_mode            = "edge" if has_covariates else "none",
+                return_quantiles       = quantiles is not None,
+                padding_mode           = "edge" if has_covariates else "none",
                 **self.predict_kwargs,
             )
-        )
+            outs.update(zip(members, results))
 
         if quantiles is not None:
             q_indices = self._match_quantile_indices(
@@ -1161,7 +1166,8 @@ class TimesFMAdapter:
             )
 
         predictions: dict[str, np.ndarray] = {}
-        for name, out in zip(names, outs):
+        for name in names:
+            out = outs[name]
             if quantiles is None:
                 predictions[name] = np.asarray(out.forecast).reshape(-1, 1)
             else:
@@ -1215,13 +1221,13 @@ class TimesFMAdapter:
         )
 
     @staticmethod
-    def _v3_covariate_columns(
+    def _v3_covariate_signature(
         context_exog: pd.DataFrame | pd.Series | None,
         exog: pd.DataFrame | pd.Series | None,
     ) -> tuple[tuple, tuple]:
         """
-        Return the raw `(context_columns, future_columns)` column names for
-        one series.
+        Return the covariate signature `(past_only_cols, fut_cols)` of one
+        series.
 
         Parameters
         ----------
@@ -1232,71 +1238,76 @@ class TimesFMAdapter:
 
         Returns
         -------
-        columns : tuple of (tuple, tuple)
-            A `(context_columns, future_columns)` pair, in column order.
-            `((), ())` means no covariates for this series.
+        signature : tuple of (tuple, tuple)
+            `past_only_cols` are the columns present only in `context_exog`;
+            `fut_cols` are the columns present in `exog` (and therefore also
+            in `context_exog`). Both are sorted tuples so that series with
+            the same columns produce the same, hashable signature and build
+            their covariate arrays in the same column order. `((), ())`
+            means no covariates for this series.
 
         Notes
         -----
-        `_predict_v3` pools these across every series in a batch (first-seen
-        order) to decide, per covariate, whether it is known-future (present
-        in at least one series' `exog`) or past-only, then builds every
-        series' arrays over that shared column set via
-        `_build_v3_covariates`, NaN-filling whatever a given series does not
-        provide.
+        A `ValueError` is raised if `exog` has a column absent from
+        `context_exog`: a known-future covariate needs its historical values
+        and there is nothing to fill them with. `FoundationModel.predict`
+        already enforces this on the user-facing path; the check here covers
+        direct adapter calls and the `check_inputs=False` path.
 
         """
 
         ctx_cols = (
-            list(context_exog.columns) if isinstance(context_exog, pd.DataFrame)
-            else [context_exog.name] if isinstance(context_exog, pd.Series)
-            else []
+            set(context_exog.columns) if isinstance(context_exog, pd.DataFrame)
+            else {context_exog.name} if isinstance(context_exog, pd.Series)
+            else set()
         )
         fut_cols = (
-            list(exog.columns) if isinstance(exog, pd.DataFrame)
-            else [exog.name] if isinstance(exog, pd.Series)
-            else []
+            set(exog.columns) if isinstance(exog, pd.DataFrame)
+            else {exog.name} if isinstance(exog, pd.Series)
+            else set()
         )
 
-        return (tuple(ctx_cols), tuple(fut_cols))
+        no_history = fut_cols - ctx_cols
+        if no_history:
+            raise ValueError(
+                f"`exog` contains columns with no historical values in "
+                f"`context_exog`: {sorted(no_history, key=str)}. TimesFM 3.0 "
+                f"requires the historical values of every known-future "
+                f"covariate."
+            )
+
+        return (
+            tuple(sorted(ctx_cols - fut_cols, key=str)),
+            tuple(sorted(fut_cols, key=str)),
+        )
 
     @classmethod
     def _build_v3_covariates(
         cls,
         context_exog: pd.DataFrame | pd.Series | None,
         exog: pd.DataFrame | pd.Series | None,
-        context_len: int,
-        steps: int,
-        past_only_cols: tuple[str, ...],
-        fut_cols: tuple[str, ...],
+        past_only_cols: tuple,
+        fut_cols: tuple,
     ) -> tuple[np.ndarray | None, np.ndarray | None]:
         """
         Build the past-only and known-future covariate arrays for one
-        series, aligned to the batch-wide column sets computed by
-        `_predict_v3`.
+        series from its own exogenous variables.
 
         Parameters
         ----------
         context_exog : pandas DataFrame, pandas Series, default None
             Historical exogenous variables aligned to the context for this
-            series.
+            series. Must contain every column in `past_only_cols` and
+            `fut_cols`.
         exog : pandas DataFrame, pandas Series, default None
             Future-known exogenous variables covering the forecast horizon
-            for this series.
-        context_len : int
-            Length of this series' context window. Used to size a
-            NaN-filled placeholder for any column in `past_only_cols` or
-            `fut_cols` that this series does not provide historically.
-        steps : int
-            Forecast horizon. Used to size a NaN-filled placeholder for the
-            future half of a column in `fut_cols` that this series does not
-            provide.
-        past_only_cols : tuple of str
-            Past-only covariate columns for the whole batch, pooled across
-            every series by `_predict_v3`.
-        fut_cols : tuple of str
-            Known-future covariate columns for the whole batch, pooled
-            across every series by `_predict_v3`.
+            for this series. Must contain every column in `fut_cols`.
+        past_only_cols : tuple
+            Past-only covariate columns of this series, as returned by
+            `_v3_covariate_signature`.
+        fut_cols : tuple
+            Known-future covariate columns of this series, as returned by
+            `_v3_covariate_signature`.
 
         Returns
         -------
@@ -1304,21 +1315,16 @@ class TimesFMAdapter:
             Array of shape `(len(past_only_cols), context_len)`, or `None`
             if `past_only_cols` is empty.
         past_future : numpy ndarray, None
-            Array of shape `(len(fut_cols), context_len + steps)`, or
-            `None` if `fut_cols` is empty.
+            Array of shape `(len(fut_cols), context_len + steps)`, one row
+            per column with the historical values followed by the future
+            values, or `None` if `fut_cols` is empty.
 
         Notes
         -----
-        A column in `past_only_cols` or `fut_cols` that this series does not
-        provide (or, for a known-future column, provides only the
-        historical or only the future half of) has the missing part filled
-        with NaN. TimesFM 3.0's own `predict_batch` unconditionally linearly
-        interpolates NaN values in covariates (extrapolating a constant from
-        the nearest real value, or filling `0.0` if a segment has no real
-        value at all); there is no parameter to disable this in the
-        installed backend. A covariate supplied for only some series in a
-        batch is therefore fabricated, not treated as missing, for the
-        others.
+        No placeholder values are ever generated: every row comes from the
+        series' own data. TimesFM 3.0's `predict_batch` linearly interpolates
+        NaN values inside covariates, so any NaN present in the user's exog
+        is filled by the backend, not by skforecast.
 
         """
 
@@ -1333,29 +1339,22 @@ class TimesFMAdapter:
             else exog
         )
 
-        past_future_rows = []
-        for col in fut_cols:
-            past_part = (
-                cls._to_covariate_array(ctx_df[col])
-                if ctx_df is not None and col in ctx_df.columns
-                else np.full(context_len, np.nan, dtype=np.float32)
-            )
-            future_part = (
-                cls._to_covariate_array(fut_df[col])
-                if fut_df is not None and col in fut_df.columns
-                else np.full(steps, np.nan, dtype=np.float32)
-            )
-            past_future_rows.append(np.concatenate([past_part, future_part]))
-
-        past_only_rows = [
-            cls._to_covariate_array(ctx_df[col])
-            if ctx_df is not None and col in ctx_df.columns
-            else np.full(context_len, np.nan, dtype=np.float32)
-            for col in past_only_cols
-        ]
-
-        past_only = np.stack(past_only_rows) if past_only_rows else None
-        past_future = np.stack(past_future_rows) if past_future_rows else None
+        past_only = (
+            np.stack([cls._to_covariate_array(ctx_df[col]) for col in past_only_cols])
+            if past_only_cols
+            else None
+        )
+        past_future = (
+            np.stack([
+                np.concatenate([
+                    cls._to_covariate_array(ctx_df[col]),
+                    cls._to_covariate_array(fut_df[col]),
+                ])
+                for col in fut_cols
+            ])
+            if fut_cols
+            else None
+        )
 
         return past_only, past_future
 
@@ -1672,6 +1671,7 @@ class MoiraiAdapter:
 
     SUPPORTED_QUANTILES: list[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     allow_exog: bool = False
+    supports_past_only_covariates: bool = False
 
     def __init__(
         self,
@@ -2071,6 +2071,7 @@ class TabICLAdapter:
     """
 
     allow_exog: bool = True
+    supports_past_only_covariates: bool = False
 
     def __init__(
         self,
@@ -2658,6 +2659,7 @@ class TabPFNAdapter:
     """
 
     allow_exog: bool = True
+    supports_past_only_covariates: bool = False
 
     def __init__(
         self,
@@ -3236,6 +3238,7 @@ class T0Adapter:
     """
 
     allow_exog: bool = True
+    supports_past_only_covariates: bool = False
 
     def __init__(
         self,
@@ -3695,6 +3698,7 @@ class TSICLAdapter:
     """
 
     allow_exog: bool = True
+    supports_past_only_covariates: bool = True
 
     def __init__(
         self,
@@ -4150,6 +4154,7 @@ class NoriAdapter:
     """
 
     allow_exog: bool = True
+    supports_past_only_covariates: bool = False
 
     def __init__(
         self,
