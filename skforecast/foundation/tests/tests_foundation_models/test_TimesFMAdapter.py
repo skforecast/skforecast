@@ -3,13 +3,16 @@
 import re
 import sys
 import types
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
 from skforecast.foundation._adapters import TimesFMAdapter
+from skforecast.exceptions import LicenseWarning
 from .fixtures_adapters import (
     y, y_wide, y_dict,
     FakeTimesFM25Model,
+    FakeTimesFM3Forecaster,
     prepare_fit_args, prepare_predict_args
 )
 
@@ -23,6 +26,19 @@ def make_adapter(**kwargs) -> TimesFMAdapter:
     defaults = dict(
         model_id="google/timesfm-2.5-200m-pytorch",
         model=FakeTimesFM25Model()
+    )
+    defaults.update(kwargs)
+    return TimesFMAdapter(**defaults)
+
+
+def make_v3_adapter(**kwargs) -> TimesFMAdapter:
+    """
+    Return a TimesFMAdapter (v3.0 backend) pre-loaded with
+    FakeTimesFM3Forecaster.
+    """
+    defaults = dict(
+        model_id="google/timesfm-3.0-pytorch",
+        model=FakeTimesFM3Forecaster()
     )
     defaults.update(kwargs)
     return TimesFMAdapter(**defaults)
@@ -55,7 +71,6 @@ def test_TimesFMAdapter_init_default_params():
     [
         ("context_length", 0),
         ("context_length", -1),
-        ("context_length", None),
         ("max_horizon", 0),
         ("max_horizon", -1),
         ("max_horizon", None),
@@ -65,11 +80,82 @@ def test_TimesFMAdapter_init_default_params():
 def test_TimesFMAdapter_init_ValueError_when_invalid_params(param, value):
     """
     Test that __init__ raises ValueError for non-positive-integer
-    context_length or max_horizon.
+    context_length or max_horizon. `context_length=None` is not included
+    since it is a valid sentinel that resolves to a backend-specific default.
     """
     with pytest.raises(ValueError, match=re.escape(f"`{param}` must be a positive integer")):
         TimesFMAdapter(
             model_id="google/timesfm-2.5-200m-pytorch", **{param: value}
+        )
+
+
+def test_TimesFMAdapter_init_context_length_none_resolves_to_backend_default():
+    """
+    Test that `context_length=None` resolves to 512 for the v2.5 backend and
+    2048 for the v3.0 backend.
+    """
+    adapter_v25 = TimesFMAdapter(
+        model_id="google/timesfm-2.5-200m-pytorch", context_length=None
+    )
+    adapter_v3 = TimesFMAdapter(
+        model_id="google/timesfm-3.0-pytorch", context_length=None
+    )
+    assert adapter_v25.context_length == 512
+    assert adapter_v3.context_length == 2048
+
+
+@pytest.mark.parametrize(
+    "model_id, expected_backend, expected_allow_exog",
+    [
+        ("google/timesfm-2.5-200m-pytorch", "v25", False),
+        ("google/timesfm-2.5-200m-flax", "v25", False),
+        ("google/timesfm-3.0-pytorch", "v3", True),
+    ],
+    ids=["v2.5-pytorch", "v2.5-flax", "v3.0"]
+)
+def test_TimesFMAdapter_init_backend_and_allow_exog_per_model_id(
+    model_id, expected_backend, expected_allow_exog
+):
+    """
+    Test that __init__ detects the correct backend and sets allow_exog and
+    supports_past_only_covariates accordingly: True for the v3.0 backend,
+    False for the v2.5 backend.
+    """
+    adapter = TimesFMAdapter(model_id=model_id)
+    assert adapter._backend == expected_backend
+    assert adapter.allow_exog is expected_allow_exog
+    assert adapter.supports_past_only_covariates is expected_allow_exog
+
+
+def test_TimesFMAdapter_init_ValueError_for_unrecognized_model_id():
+    """
+    Test that __init__ raises ValueError for a model_id that does not match
+    either the v2.5 or v3.0 pattern.
+    """
+    err_msg = re.escape(
+        "Could not determine the TimesFM backend for model_id "
+        "'google/timesfm-1.0-pytorch'."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        TimesFMAdapter(model_id="google/timesfm-1.0-pytorch")
+
+
+@pytest.mark.parametrize(
+    "reserved_key",
+    [
+        "contexts", "horizon", "return_quantiles", "past_only_covariates",
+        "past_future_covariates", "padding_mode", "ts_ids",
+    ],
+)
+def test_TimesFMAdapter_init_ValueError_when_predict_kwargs_has_reserved_key(reserved_key):
+    """
+    Test that __init__ raises ValueError when predict_kwargs includes a key
+    that the v3.0 backend manages internally.
+    """
+    with pytest.raises(ValueError, match=re.escape("`predict_kwargs` cannot include")):
+        TimesFMAdapter(
+            model_id="google/timesfm-3.0-pytorch",
+            predict_kwargs={reserved_key: "value"},
         )
 
 
@@ -93,26 +179,32 @@ def test_TimesFMAdapter_init_forecast_config_kwargs_stored_by_reference():
 def test_TimesFMAdapter_get_params_returns_expected_keys_and_values():
     """
     Test that get_params returns all expected keys with correct values, and
-    that forecast_config_kwargs is None when empty.
+    that forecast_config_kwargs and predict_kwargs are None when empty.
     """
     adapter = TimesFMAdapter(
         model_id="google/timesfm-2.5-200m-pytorch",
         context_length=256,
         max_horizon=128,
-        forecast_config_kwargs={"normalize_inputs": True}
+        forecast_config_kwargs={"normalize_inputs": True},
+        device="cpu",
+        predict_kwargs={"use_znorm": True},
     )
     params = adapter.get_params()
     assert set(params.keys()) == {
         "model_id", "context_length", "max_horizon", "forecast_config_kwargs",
+        "device", "predict_kwargs",
     }
     assert params["model_id"] == "google/timesfm-2.5-200m-pytorch"
     assert params["context_length"] == 256
     assert params["max_horizon"] == 128
     assert params["forecast_config_kwargs"] == {"normalize_inputs": True}
+    assert params["device"] == "cpu"
+    assert params["predict_kwargs"] == {"use_znorm": True}
 
     # Empty kwargs → None
     adapter2 = TimesFMAdapter(model_id="google/timesfm-2.5-200m-pytorch")
     assert adapter2.get_params()["forecast_config_kwargs"] is None
+    assert adapter2.get_params()["predict_kwargs"] is None
 
 
 @pytest.mark.parametrize(
@@ -171,6 +263,105 @@ def test_TimesFMAdapter_set_params_no_reset_when_value_unchanged():
     )
 
     assert adapter._model is not None  # not reset because values unchanged
+
+
+def test_TimesFMAdapter_set_params_model_id_change_updates_backend_and_allow_exog():
+    """
+    Test that changing model_id via set_params re-detects the backend,
+    allow_exog and supports_past_only_covariates, in addition to resetting
+    the cached model.
+    """
+    adapter = make_adapter()
+    assert adapter._backend == "v25"
+    assert adapter.allow_exog is False
+    assert adapter.supports_past_only_covariates is False
+
+    adapter.set_params(model_id="google/timesfm-3.0-pytorch")
+
+    assert adapter._backend == "v3"
+    assert adapter.allow_exog is True
+    assert adapter.supports_past_only_covariates is True
+    assert adapter._model is None
+
+
+def test_TimesFMAdapter_set_params_ValueError_when_predict_kwargs_has_reserved_key():
+    """
+    Test that set_params raises ValueError when predict_kwargs includes a
+    key that the v3.0 backend manages internally.
+    """
+    adapter = make_v3_adapter()
+    with pytest.raises(ValueError, match=re.escape("`predict_kwargs` cannot include")):
+        adapter.set_params(predict_kwargs={"padding_mode": "edge"})
+
+
+def test_TimesFMAdapter_set_params_predict_kwargs_does_not_reset_model():
+    """
+    Test that changing predict_kwargs via set_params does not reset the
+    cached model, unlike model_id/device (the only two reload triggers for
+    the v3.0 backend).
+    """
+    adapter = make_v3_adapter()
+    assert adapter._model is not None
+
+    adapter.set_params(predict_kwargs={"use_znorm": True})
+
+    assert adapter._model is not None
+    assert adapter.predict_kwargs == {"use_znorm": True}
+
+
+@pytest.mark.parametrize(
+    "param, value",
+    [
+        ("context_length", 4096),
+        ("max_horizon", 128),
+        ("forecast_config_kwargs", {"normalize_inputs": True}),
+    ],
+    ids=lambda x: str(x)
+)
+def test_TimesFMAdapter_set_params_v3_backend_no_reset_for_v25_only_params(param, value):
+    """
+    Test that, for the v3.0 backend, changing context_length, max_horizon,
+    or forecast_config_kwargs does not reset the cached model, since none
+    of these parameters are passed to TimesFM3Forecaster. The attribute is
+    still updated.
+    """
+    adapter = make_v3_adapter()
+    assert adapter._model is not None
+
+    adapter.set_params(**{param: value})
+
+    assert adapter._model is not None
+    assert getattr(adapter, param) == value
+
+
+def test_TimesFMAdapter_set_params_v3_backend_resets_on_device_change():
+    """
+    Test that, for the v3.0 backend, changing device does reset the cached
+    model, since device is forwarded to TimesFM3Forecaster.from_pretrained.
+    """
+    adapter = make_v3_adapter(device="cpu")
+    assert adapter._model is not None
+
+    adapter.set_params(device="cuda")
+
+    assert adapter._model is None
+    assert adapter.device == "cuda"
+
+
+def test_TimesFMAdapter_set_params_v25_backend_still_resets_for_all_trigger_keys():
+    """
+    Test that the v2.5 backend keeps resetting the cached model for
+    context_length, max_horizon, and forecast_config_kwargs (unlike v3.0),
+    confirming the reload trigger set is backend dependent, not globally
+    relaxed.
+    """
+    adapter = make_adapter()
+    assert adapter._backend == "v25"
+    assert adapter._model is not None
+
+    adapter.set_params(context_length=256)
+
+    assert adapter._model is None
 
 
 # ==============================================================================
@@ -243,6 +434,27 @@ def test_TimesFMAdapter_fit_exog_ignored_silently():
     ctx, ctx_exog = prepare_fit_args(y, exog=exog_df)
     adapter.fit(context=ctx, context_exog=ctx_exog)
     assert adapter.is_fitted is True
+
+
+@pytest.mark.parametrize(
+    "make",
+    [make_v3_adapter, make_adapter],
+    ids=["v3", "v25"],
+)
+def test_TimesFMAdapter_fit_stores_context_exog(make):
+    """
+    Test that fit stores context_exog_ (used by the v3.0 backend at predict
+    time) on both backends.
+    """
+    exog_df = pd.DataFrame({"feat": np.arange(50, dtype=float)}, index=y.index)
+    adapter = make()
+    ctx, ctx_exog = prepare_fit_args(y, exog=exog_df)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    assert adapter.context_exog_ is not None
+    pd.testing.assert_frame_equal(
+        adapter.context_exog_["sales"], ctx_exog["sales"]
+    )
 
 
 # ==============================================================================
@@ -521,3 +733,621 @@ def test_TimesFMAdapter_ensure_compiled_noop_when_already_compiled():
     adapter._ensure_compiled(steps=100)
 
     assert tracking_model.compile_calls == 0
+
+
+# ==============================================================================
+# Tests TimesFMAdapter.predict — v3.0 backend
+# ==============================================================================
+def test_TimesFMAdapter_v3_predict_point_forecast_single_series():
+    """
+    Test point forecast (quantiles=None) on a single series using the v3.0
+    backend: shape (steps, 1), values = 0.0 (FakeTimesFM3Forecaster zeros),
+    no covariates passed so padding_mode is 'none'.
+    """
+    fake_model = FakeTimesFM3Forecaster()
+    adapter = make_v3_adapter(model=fake_model)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=12)
+    raw = adapter.predict(
+        steps=12, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
+    )
+
+    assert list(raw.keys()) == ["sales"]
+    arr = raw["sales"]
+    assert arr.shape == (12, 1)
+    np.testing.assert_array_equal(arr[:, 0], np.zeros(12))
+    assert fake_model.last_padding_mode == "none"
+    assert fake_model.last_past_only_covariates is None
+    assert fake_model.last_past_future_covariates is None
+
+
+def test_TimesFMAdapter_v3_predict_quantile_forecast_single_series():
+    """
+    Test quantile forecast on a single series using the v3.0 backend:
+    shape (steps, n_quantiles), values matching FakeTimesFM3Forecaster
+    output (q_level at each quantile index).
+    """
+    quantiles = [0.1, 0.5, 0.9]
+    adapter = make_v3_adapter()
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=5)
+    raw = adapter.predict(
+        steps=5, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=quantiles
+    )
+
+    arr = raw["sales"]
+    assert arr.shape == (5, 3)
+    for i, q in enumerate(quantiles):
+        np.testing.assert_array_almost_equal(arr[:, i], np.full(5, q))
+
+
+def test_TimesFMAdapter_v3_predict_point_and_quantile_multi_series():
+    """
+    Test point and quantile forecasts on multi-series input using the v3.0
+    backend: one array per series with the correct shape and values.
+    """
+    adapter = make_v3_adapter()
+    ctx, ctx_exog = prepare_fit_args(y_dict)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=4)
+    raw_point = adapter.predict(
+        steps=4, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
+    )
+    raw_quantile = adapter.predict(
+        steps=4, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=[0.1, 0.5, 0.9]
+    )
+
+    assert set(raw_point.keys()) == {"s1", "s2"}
+    for name in ["s1", "s2"]:
+        assert raw_point[name].shape == (4, 1)
+        np.testing.assert_array_equal(raw_point[name][:, 0], np.zeros(4))
+        assert raw_quantile[name].shape == (4, 3)
+
+
+def test_TimesFMAdapter_v3_predict_ignores_max_horizon_ceiling():
+    """
+    Test that the v3.0 backend has no max_horizon ceiling: predict succeeds
+    even when steps far exceeds a small max_horizon, unlike the v2.5
+    backend.
+    """
+    adapter = make_v3_adapter(max_horizon=5)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=20)
+    raw = adapter.predict(
+        steps=20, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
+    )
+    assert raw["sales"].shape == (20, 1)
+
+
+# ==============================================================================
+# Tests TimesFMAdapter.predict — v3.0 covariate wiring
+# ==============================================================================
+def test_TimesFMAdapter_v3_predict_covariates_builds_past_only_and_past_future():
+    """
+    Test that predict builds past_only_covariates (columns only in
+    context_exog) and past_future_covariates (columns in exog, concatenated
+    with the matching historical column), with the correct shapes, and
+    switches padding_mode to 'edge'.
+    """
+    context_length = 20
+    steps = 5
+    idx = y.index[-context_length:]
+    context_exog_df = pd.DataFrame(
+        {
+            "known": np.arange(context_length, dtype=float),
+            "past_only": np.arange(context_length, dtype=float) * 2,
+        },
+        index=idx,
+    )
+    future_idx = pd.date_range(
+        idx[-1] + pd.DateOffset(months=1), periods=steps, freq="ME"
+    )
+    future_exog_df = pd.DataFrame(
+        {"known": np.arange(steps, dtype=float) + 100}, index=future_idx
+    )
+
+    fake_model = FakeTimesFM3Forecaster()
+    adapter = make_v3_adapter(model=fake_model, context_length=context_length)
+    ctx, ctx_exog = prepare_fit_args(
+        y, exog=context_exog_df, context_length=context_length
+    )
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(
+        adapter, steps=steps, exog=future_exog_df
+    )
+    adapter.predict(
+        steps=steps, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
+    )
+
+    assert fake_model.last_padding_mode == "edge"
+    past_only = fake_model.last_past_only_covariates[0]
+    past_future = fake_model.last_past_future_covariates[0]
+    assert past_only.shape == (1, context_length)
+    assert past_future.shape == (1, context_length + steps)
+    np.testing.assert_array_almost_equal(
+        past_only[0], context_exog_df["past_only"].to_numpy()
+    )
+    np.testing.assert_array_almost_equal(
+        past_future[0],
+        np.concatenate(
+            [context_exog_df["known"].to_numpy(), future_exog_df["known"].to_numpy()]
+        ),
+    )
+
+
+def test_TimesFMAdapter_v3_predict_non_numeric_covariate_raises_ValueError():
+    """
+    Test that predict raises ValueError naming the offending column when a
+    covariate is not numeric or boolean.
+    """
+    context_length = 10
+    idx = y.index[-context_length:]
+    context_exog_df = pd.DataFrame(
+        {"category": pd.Categorical(["a", "b"] * (context_length // 2))},
+        index=idx,
+    )
+
+    adapter = make_v3_adapter(context_length=context_length)
+    ctx, ctx_exog = prepare_fit_args(
+        y, exog=context_exog_df, context_length=context_length
+    )
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=3)
+    err_msg = re.escape(
+        "TimesFMAdapter supports only numeric covariates for the v3.0 backend. "
+        "Column 'category'"
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        adapter.predict(
+            steps=3, context=ctx_p, context_exog=ctx_exog_p,
+            exog=exog_p, quantiles=None
+        )
+
+
+def test_TimesFMAdapter_v3_build_covariates_per_series():
+    """
+    Test that _build_v3_covariates builds, from a single series' own exog,
+    one past-only row per column in `past_only_cols` (shape (n, ctx)) and
+    one known-future row per column in `fut_cols` concatenating history and
+    future (shape (n, ctx + steps)), and returns None for an empty group.
+    """
+    ctx_idx = pd.date_range("2023-01-31", periods=5, freq="ME")
+    future_idx = pd.date_range("2023-06-30", periods=3, freq="ME")
+    context_exog = pd.DataFrame(
+        {"known": np.arange(5, dtype=float), "past": np.arange(5, dtype=float) * 10},
+        index=ctx_idx,
+    )
+    exog_future = pd.DataFrame({"known": np.arange(100, 103, dtype=float)}, index=future_idx)
+
+    past_only, past_future = TimesFMAdapter._build_v3_covariates(
+        context_exog=context_exog, exog=exog_future,
+        past_only_cols=("past",), fut_cols=("known",),
+    )
+    assert past_only.shape == (1, 5)
+    assert past_future.shape == (1, 5 + 3)
+    np.testing.assert_array_almost_equal(past_only[0], context_exog["past"].to_numpy())
+    np.testing.assert_array_almost_equal(
+        past_future[0],
+        np.concatenate([context_exog["known"].to_numpy(), exog_future["known"].to_numpy()]),
+    )
+
+    past_only, past_future = TimesFMAdapter._build_v3_covariates(
+        context_exog=context_exog, exog=None, past_only_cols=(), fut_cols=(),
+    )
+    assert past_only is None
+    assert past_future is None
+
+
+@pytest.mark.parametrize(
+    "context_exog, exog, expected",
+    [
+        (None, None, ((), ())),
+        (pd.DataFrame({"b": [0.0], "a": [0.0]}), None, (("a", "b"), ())),
+        (pd.DataFrame({"b": [0.0], "a": [0.0]}), pd.DataFrame({"b": [1.0]}), (("a",), ("b",))),
+        (pd.Series([0.0], name="f"), pd.Series([1.0], name="f"), ((), ("f",))),
+    ],
+    ids=["no_exog", "past_only", "mixed", "series_blocks"],
+)
+def test_TimesFMAdapter_v3_covariate_signature(context_exog, exog, expected):
+    """
+    Test that _v3_covariate_signature returns sorted (past_only_cols,
+    fut_cols) tuples for one series, treating pandas Series blocks by name.
+    """
+    assert TimesFMAdapter._v3_covariate_signature(context_exog, exog) == expected
+
+
+def test_TimesFMAdapter_v3_predict_ValueError_when_future_column_without_history():
+    """
+    Test that the adapter itself (path without FoundationModel's check, as
+    in check_inputs=False or direct use) raises ValueError when a series'
+    future exog has a column absent from its context_exog.
+    """
+    context_length = 20
+    steps = 3
+    adapter = make_v3_adapter(context_length=context_length)
+    ctx, ctx_exog = prepare_fit_args(y, exog=None, context_length=context_length)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    idx = adapter.context_["sales"].index
+    future_idx = pd.date_range(idx[-1] + pd.DateOffset(months=1), periods=steps, freq="ME")
+    future_exog = pd.DataFrame({"e": np.arange(steps, dtype=float)}, index=future_idx)
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(
+        adapter, steps=steps, exog=future_exog
+    )
+
+    err_msg = re.escape(
+        "`exog` contains columns with no historical values in `context_exog`: ['e']."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        adapter.predict(
+            steps=steps, context=ctx_p, context_exog=ctx_exog_p,
+            exog=exog_p, quantiles=None
+        )
+
+
+def test_TimesFMAdapter_v3_predict_groups_series_by_covariate_signature():
+    """
+    Test that predict calls predict_batch once per distinct covariate
+    signature, forwarding to each call only the series of that signature
+    with their own covariate arrays (no placeholders), and that the output
+    keeps the original series order.
+    """
+    context_length = 20
+    steps = 5
+    idx = y.index[-context_length:]
+    future_idx = pd.date_range(idx[-1] + pd.DateOffset(months=1), periods=steps, freq="ME")
+    context = {
+        name: pd.Series(np.arange(context_length, dtype=float) * k, index=idx, name=name)
+        for k, name in enumerate(["full", "none", "past", "full2"], start=1)
+    }
+    p_values = np.arange(context_length, dtype=float)
+    context_exog = {
+        "full":  pd.DataFrame({"p": p_values, "k": p_values * 2}, index=idx),
+        "none":  None,
+        "past":  pd.DataFrame({"p": p_values * 3}, index=idx),
+        "full2": pd.DataFrame({"k": p_values * 4, "p": p_values * 5}, index=idx),
+    }
+    exog = {
+        "full":  pd.DataFrame({"k": np.arange(steps, dtype=float) + 100}, index=future_idx),
+        "none":  None,
+        "past":  None,
+        "full2": pd.DataFrame({"k": np.arange(steps, dtype=float) + 200}, index=future_idx),
+    }
+
+    fake_model = FakeTimesFM3Forecaster()
+    adapter = make_v3_adapter(context_length=context_length, model=fake_model)
+    adapter.fit(context=context, context_exog=context_exog)
+
+    raw = adapter.predict(
+        steps=steps, context=context, context_exog=context_exog,
+        exog=exog, quantiles=None
+    )
+
+    assert list(raw.keys()) == ["full", "none", "past", "full2"]
+    assert all(arr.shape == (steps, 1) for arr in raw.values())
+    assert len(fake_model.calls) == 3
+
+    # Group 1: 'full' and 'full2' share signature (past_only=('p',), fut=('k',))
+    call = fake_model.calls[0]
+    assert len(call["contexts"]) == 2
+    assert call["padding_mode"] == "edge"
+    np.testing.assert_array_almost_equal(call["past_only_covariates"][0][0], p_values)
+    np.testing.assert_array_almost_equal(call["past_only_covariates"][1][0], p_values * 5)
+    np.testing.assert_array_almost_equal(
+        call["past_future_covariates"][0][0],
+        np.concatenate([p_values * 2, np.arange(steps, dtype=float) + 100]),
+    )
+    np.testing.assert_array_almost_equal(
+        call["past_future_covariates"][1][0],
+        np.concatenate([p_values * 4, np.arange(steps, dtype=float) + 200]),
+    )
+
+    # Group 2: 'none' has no covariates
+    call = fake_model.calls[1]
+    assert len(call["contexts"]) == 1
+    assert call["padding_mode"] == "none"
+    assert call["past_only_covariates"] is None
+    assert call["past_future_covariates"] is None
+
+    # Group 3: 'past' has a single past-only covariate
+    call = fake_model.calls[2]
+    assert len(call["contexts"]) == 1
+    assert call["padding_mode"] == "edge"
+    assert call["past_only_covariates"][0].shape == (1, context_length)
+    np.testing.assert_array_almost_equal(call["past_only_covariates"][0][0], p_values * 3)
+    assert call["past_future_covariates"] == [None]
+
+    for call in fake_model.calls:
+        for cov in (call["past_only_covariates"], call["past_future_covariates"]):
+            if cov is not None:
+                assert not any(np.isnan(c).any() for c in cov if c is not None)
+
+
+def test_TimesFMAdapter_v3_predict_forwards_predict_kwargs():
+    """
+    Test that predict_kwargs are forwarded verbatim to predict_batch.
+    """
+    fake_model = FakeTimesFM3Forecaster()
+    adapter = make_v3_adapter(model=fake_model, predict_kwargs={"use_znorm": True})
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=3)
+    adapter.predict(
+        steps=3, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=None
+    )
+
+    assert fake_model.last_kwargs == {"use_znorm": True}
+
+
+def test_FoundationModel_v3_predict_levels_matches_batch_covariates():
+    """
+    Integration test through FoundationModel: with exog on only one series
+    of a multi-series batch, each series receives exactly the same
+    covariates whether it is predicted with the full batch or alone via
+    `levels`, so predictions never depend on the other series' exog.
+    """
+    from skforecast.foundation import FoundationModel
+
+    fake_model = FakeTimesFM3Forecaster()
+    model = FoundationModel(
+        model_id="google/timesfm-3.0-pytorch",
+        model=fake_model,
+    )
+    idx = y_wide.index
+    exog_s1 = pd.DataFrame({"feat": np.arange(len(idx), dtype=float)}, index=idx)
+    model.fit(series=y_wide, exog={"s1": exog_s1})
+
+    steps = 4
+    future_idx = pd.date_range(idx[-1] + idx.freq, periods=steps, freq=idx.freq)
+    exog_s1_fut = pd.DataFrame(
+        {"feat": np.arange(steps, dtype=float)}, index=future_idx
+    )
+
+    predictions = model.predict(steps=steps, exog={"s1": exog_s1_fut})
+    assert list(predictions["level"].unique()) == ["s1", "s2"]
+    assert len(fake_model.calls) == 2
+    call_s1, call_s2 = fake_model.calls
+    assert len(call_s1["contexts"]) == 1 and len(call_s2["contexts"]) == 1
+    assert call_s2["past_future_covariates"] is None
+    assert call_s2["past_only_covariates"] is None
+
+    model.predict(steps=steps, levels=["s1"], exog={"s1": exog_s1_fut})
+    model.predict(steps=steps, levels=["s2"], exog={"s1": exog_s1_fut})
+    call_s1_alone, call_s2_alone = fake_model.calls[2:]
+
+    np.testing.assert_array_equal(
+        call_s1["past_future_covariates"][0], call_s1_alone["past_future_covariates"][0]
+    )
+    np.testing.assert_array_equal(call_s1["contexts"][0], call_s1_alone["contexts"][0])
+    assert call_s2_alone["past_future_covariates"] is None
+    np.testing.assert_array_equal(call_s2["contexts"][0], call_s2_alone["contexts"][0])
+
+
+def test_TimesFMAdapter_setstate_fills_defaults_for_old_pickle():
+    """
+    Test that unpickling an adapter saved by an older skforecast version
+    (missing _backend, device, predict_kwargs, and instance-level
+    allow_exog) reconstructs those attributes so predict/get_params keep
+    working.
+    """
+    old_state = {
+        "model_id": "google/timesfm-2.5-200m-pytorch",
+        "_model": None,
+        "context_": None,
+        "context_exog_": None,
+        "context_length": 512,
+        "max_horizon": 512,
+        "forecast_config_kwargs": {},
+        "is_fitted": False,
+    }
+
+    adapter = TimesFMAdapter.__new__(TimesFMAdapter)
+    adapter.__setstate__(dict(old_state))
+    assert adapter._backend == "v25"
+    assert adapter.allow_exog is False
+    assert adapter.supports_past_only_covariates is False
+    assert adapter.device == "auto"
+    assert adapter.predict_kwargs == {}
+    assert adapter.get_params()["device"] == "auto"
+
+    adapter_v3 = TimesFMAdapter.__new__(TimesFMAdapter)
+    adapter_v3.__setstate__(dict(old_state, model_id="google/timesfm-3.0-pytorch"))
+    assert adapter_v3._backend == "v3"
+    assert adapter_v3.allow_exog is True
+    assert adapter_v3.supports_past_only_covariates is True
+
+
+# ==============================================================================
+# Tests TimesFMAdapter.predict — v3.0 quantile index mapping
+# ==============================================================================
+def test_TimesFMAdapter_v3_predict_quantile_index_mapping_uses_model_quantile_grid():
+    """
+    Test that quantile columns are selected by matching against the model's
+    own `config.quantiles` grid rather than a fixed formula: a model whose
+    quantile grid is reversed still returns the columns matching the
+    requested levels.
+    """
+    reversed_grid = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+    fake_model = FakeTimesFM3Forecaster(quantiles=reversed_grid)
+    adapter = make_v3_adapter(model=fake_model)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=3)
+    raw = adapter.predict(
+        steps=3, context=ctx_p, context_exog=ctx_exog_p,
+        exog=exog_p, quantiles=[0.1, 0.9]
+    )
+
+    # FakeTimesFM3Forecaster fills column i with reversed_grid[i], so
+    # matching by value (not by a fixed *10 formula) must select column 8
+    # for 0.1 and column 0 for 0.9.
+    np.testing.assert_array_almost_equal(raw["sales"][:, 0], np.full(3, 0.1))
+    np.testing.assert_array_almost_equal(raw["sales"][:, 1], np.full(3, 0.9))
+
+
+def test_TimesFMAdapter_v3_predict_ValueError_when_quantile_missing_from_model_grid():
+    """
+    Test that predict raises ValueError when a requested quantile (valid
+    against SUPPORTED_QUANTILES) has no match in the model's own quantile
+    grid within tolerance.
+    """
+    incomplete_grid = [0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9]  # missing 0.5
+    fake_model = FakeTimesFM3Forecaster(quantiles=incomplete_grid)
+    adapter = make_v3_adapter(model=fake_model)
+    ctx, ctx_exog = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=ctx_exog)
+
+    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(adapter, steps=3)
+    err_msg = re.escape("Quantile 0.5 not found in the model's quantile grid")
+    with pytest.raises(ValueError, match=err_msg):
+        adapter.predict(
+            steps=3, context=ctx_p, context_exog=ctx_exog_p,
+            exog=exog_p, quantiles=[0.5]
+        )
+
+
+# ==============================================================================
+# Tests TimesFMAdapter._load_model — version dispatch and LicenseWarning
+# ==============================================================================
+def test_TimesFMAdapter_load_model_v3_LicenseWarning_and_no_warning_for_v25():
+    """
+    Test that _load_model issues a LicenseWarning when loading the v3.0
+    backend (non-commercial license) but not when loading the v2.5 backend.
+    The real `timesfm` module is mocked so no network call happens.
+    """
+
+    class _FakeV25Base:
+        @classmethod
+        def from_pretrained(cls, *args, **kwargs):
+            return cls._from_pretrained(**kwargs)
+
+        @classmethod
+        def _from_pretrained(cls, **kwargs):
+            return cls()
+
+    mock_timesfm = types.ModuleType("timesfm")
+    mock_timesfm.TimesFM_2p5_200M_torch = _FakeV25Base
+    mock_timesfm.TimesFM3Forecaster = FakeTimesFM3Forecaster
+
+    original = sys.modules.get("timesfm")
+    sys.modules["timesfm"] = mock_timesfm
+    try:
+        adapter_v25 = TimesFMAdapter(model_id="google/timesfm-2.5-200m-pytorch")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            adapter_v25._load_model()
+        assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+        assert adapter_v25._model is not None
+
+        adapter_v3 = TimesFMAdapter(model_id="google/timesfm-3.0-pytorch")
+        with pytest.warns(LicenseWarning, match="TimesFM Non-Commercial License"):
+            adapter_v3._load_model()
+        assert isinstance(adapter_v3._model, FakeTimesFM3Forecaster)
+    finally:
+        if original is None:
+            del sys.modules["timesfm"]
+        else:
+            sys.modules["timesfm"] = original
+
+
+def test_TimesFMAdapter_load_model_v3_ImportError_when_timesfm_predates_3(monkeypatch):
+    """
+    Test that _load_model_v3 raises a clear ImportError with an upgrade hint
+    when the installed `timesfm` package predates 3.0 (no
+    TimesFM3Forecaster attribute and version < 3), and that no LicenseWarning
+    is issued since the weights are never loaded.
+    """
+    import importlib.metadata as ilm
+
+    monkeypatch.setattr(ilm, "version", lambda name: "2.5.0")
+    mock_timesfm = types.ModuleType("timesfm")  # no TimesFM3Forecaster
+
+    original = sys.modules.get("timesfm")
+    sys.modules["timesfm"] = mock_timesfm
+    try:
+        adapter = TimesFMAdapter(model_id="google/timesfm-3.0-pytorch")
+        err_msg = re.escape("TimesFM 3.0 requires `timesfm>=3.0`")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            with pytest.raises(ImportError, match=err_msg):
+                adapter._load_model()
+        assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+    finally:
+        if original is None:
+            del sys.modules["timesfm"]
+        else:
+            sys.modules["timesfm"] = original
+
+
+def test_TimesFMAdapter_load_model_v3_ImportError_when_torch_missing(monkeypatch):
+    """
+    Test that _load_model_v3 raises an ImportError pointing at the missing
+    torch backend (not a misleading "upgrade timesfm") when timesfm>=3 is
+    installed but `TimesFM3Forecaster` is absent because its backend
+    (`timesfm3`, which imports torch) could not be imported.
+    """
+    import importlib.metadata as ilm
+
+    monkeypatch.setattr(ilm, "version", lambda name: "3.0.1")
+    mock_timesfm = types.ModuleType("timesfm")  # no TimesFM3Forecaster
+
+    original = sys.modules.get("timesfm")
+    original_t3 = sys.modules.get("timesfm3")
+    sys.modules["timesfm"] = mock_timesfm
+    sys.modules["timesfm3"] = None  # forces `import timesfm3` to raise ImportError
+    try:
+        adapter = TimesFMAdapter(model_id="google/timesfm-3.0-pytorch")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            with pytest.raises(ImportError, match="torch is missing"):
+                adapter._load_model()
+        assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+    finally:
+        if original is None:
+            del sys.modules["timesfm"]
+        else:
+            sys.modules["timesfm"] = original
+        if original_t3 is None:
+            sys.modules.pop("timesfm3", None)
+        else:
+            sys.modules["timesfm3"] = original_t3
+
+
+def test_TimesFMAdapter_load_model_v3_ImportError_when_timesfm_not_installed_no_LicenseWarning():
+    """
+    Test that _load_model_v3 raises ImportError (with no LicenseWarning)
+    when `timesfm` itself is not installed, i.e. the failure happens before
+    the TimesFM3Forecaster attribute check.
+    """
+    original = sys.modules.get("timesfm")
+    sys.modules["timesfm"] = None  # forces `import timesfm` to raise ImportError
+    try:
+        adapter = TimesFMAdapter(model_id="google/timesfm-3.0-pytorch")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            with pytest.raises(ImportError, match="timesfm is required"):
+                adapter._load_model()
+        assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+    finally:
+        if original is None:
+            del sys.modules["timesfm"]
+        else:
+            sys.modules["timesfm"] = original

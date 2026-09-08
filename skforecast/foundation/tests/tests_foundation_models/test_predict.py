@@ -347,7 +347,10 @@ def test_predict_passes_future_exog_to_pipeline():
     """
     pipeline = FakePipeline()
     m = FoundationModel("autogluon/chronos-2-small", pipeline=pipeline)
-    m.fit(series=y)
+    exog_fit = pd.DataFrame(
+        {"feat_a": np.arange(len(y), dtype=float)}, index=y.index
+    )
+    m.fit(series=y, exog=exog_fit)
 
     future = pd.DataFrame(
         {"feat_a": np.arange(6, dtype=float)},
@@ -355,6 +358,31 @@ def test_predict_passes_future_exog_to_pipeline():
     )
     m.predict(steps=6, exog=future)
     assert "future_covariates" in pipeline.last_inputs[0]
+
+
+def test_predict_ValueError_when_future_exog_column_has_no_history():
+    """
+    Test predict raises ValueError through the user-facing path
+    (check_inputs=True) when a future exog column has no historical values
+    in the context_exog of the same series.
+    """
+    pipeline = FakePipeline()
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=pipeline)
+    exog_fit = pd.DataFrame(
+        {"feat_a": np.arange(len(y), dtype=float)}, index=y.index
+    )
+    m.fit(series=y, exog=exog_fit)
+
+    future = pd.DataFrame(
+        {"feat_b": np.arange(6, dtype=float)},
+        index=pd.date_range("2024-03-01", periods=6, freq="ME"),
+    )
+    err_msg = re.escape(
+        "`exog` contains columns with no historical values in the context "
+        "for series {'sales': ['feat_b']}."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        m.predict(steps=6, exog=future)
 
 
 def test_predict_cross_learning_forwarded_to_pipeline():

@@ -133,7 +133,7 @@ accuracy. `model_id` and `checkpoint_version` do, but they select a different
 pre-trained model — compare those with separate searches.
 
 Cost warning: `model_id` and device/dtype arguments force a full model reload,
-and `context_length` does too on TimesFM 2.5, Moirai-2, TabICL and TabPFN-TS.
+and `context_length` does too on TimesFM 2.5 (but not TimesFM 3.0), Moirai-2, TabICL and TabPFN-TS.
 Full matrix: the `foundation-forecasting` skill
 (`references/adapter-parameters.md`).
 

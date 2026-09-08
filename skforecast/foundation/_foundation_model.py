@@ -14,7 +14,11 @@ import pandas as pd
 
 from .. import __version__
 from ._adapters import _resolve_adapter
-from ..exceptions import IgnoredArgumentWarning, InputTypeWarning, MissingValuesWarning
+from ..exceptions import (
+    IgnoredArgumentWarning,
+    InputTypeWarning,
+    MissingValuesWarning,
+)
 from ._utils import check_preprocess_series_foundation
 from ..utils import (
     check_preprocess_exog_multiseries,
@@ -28,7 +32,7 @@ class FoundationModel:
     """
     Scikit-learn compatible interface for foundation time-series models.
 
-    Currently supports Amazon Chronos-2, Google TimesFM 2.5, Salesforce
+    Currently supports Amazon Chronos-2, Google TimesFM 2.5 and 3.0, Salesforce
     Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori and EDF Lab TS-ICL.
     For full skforecast ecosystem integration (backtesting, model selection, etc.)
     use `ForecasterFoundation` instead.
@@ -48,6 +52,10 @@ class FoundationModel:
         Google TimesFM 2.5 (does not support `exog`):
 
         - `'google/timesfm-2.5-200m-pytorch'`
+
+        Google TimesFM 3.0 (supports `exog`):
+
+        - `'google/timesfm-3.0-pytorch'`
 
         Salesforce Moirai-2 (does not support `exog`):
 
@@ -91,6 +99,9 @@ class FoundationModel:
         - **Google TimesFM 2.5** (`TimesFMAdapter`): `context_length` (int,
           default 512), `max_horizon` (int, default 512),
           `forecast_config_kwargs` (dict, default None).
+        - **Google TimesFM 3.0** (`TimesFMAdapter`): `context_length` (int,
+          default 2048), `device` (str, default `'auto'`), `predict_kwargs`
+          (dict, default None).
         - **Salesforce Moirai-2** (`MoiraiAdapter`): `context_length` (int,
           default 2048), `device` (str, default `'auto'`).
         - **TabICLv2** (`TabICLAdapter`): `context_length` (int, default
@@ -138,6 +149,11 @@ class FoundationModel:
         `adapter.context_length`.
     allow_exog : bool
         Whether the underlying adapter supports exogenous variables.
+    supports_past_only_covariates : bool
+        Whether the underlying adapter uses historical exog columns that
+        have no future values as past-only covariates. If `False`, such
+        columns are ignored at predict time and an `IgnoredArgumentWarning`
+        is issued.
     index_type_ : type
         Type of index of the input used in training.
     index_freq_ : pandas DateOffset, int
@@ -186,10 +202,10 @@ class FoundationModel:
     - `device_map` (plus `torch_dtype`), HuggingFace `from_pretrained`
       style: Chronos, T0.
     - `device` string, resolved internally to a concrete accelerator:
-      Moirai, TS-ICL.
+      Moirai, TS-ICL, TimesFM 3.0.
     - Through the backend configuration dict: TabICL (`tabicl_config`),
       TabPFN (`tabpfn_model_config`), Nori (`nori_config`).
-    - No device parameter: TimesFM, which relies on its backend's own
+    - No device parameter: TimesFM 2.5, which relies on its backend's own
       default device selection.
 
     References
@@ -330,9 +346,29 @@ class FoundationModel:
         -------
         allow_exog : bool
             `True` if the adapter accepts and uses `exog`; `False` if it
-            ignores covariates (e.g. TimesFM 2.5, Moirai-2).
+            ignores covariates (e.g. TimesFM 2.5, Moirai-2). TimesFM 3.0
+            accepts `exog` while TimesFM 2.5 does not, even though both
+            are served by `TimesFMAdapter`.
         """
         return self.adapter.allow_exog
+
+    @property
+    def supports_past_only_covariates(self) -> bool:
+        """
+        Whether the underlying adapter uses historical exog columns without
+        future values as past-only covariates.
+
+        Returns
+        -------
+        supports_past_only_covariates : bool
+            `True` if a column present in the historical exog but absent
+            from the future `exog` is used as a past-only covariate
+            (Chronos-2, TS-ICL, TimesFM 3.0). `False` if the adapter only
+            uses covariates that also have future values, in which case
+            such columns are ignored and an `IgnoredArgumentWarning` is
+            issued at predict time (TabICL, TabPFN-TS, TFC-T0, Nori).
+        """
+        return self.adapter.supports_past_only_covariates
 
     @property
     def is_fitted(self) -> bool:
@@ -803,6 +839,94 @@ class FoundationModel:
 
         return exog_aligned
 
+    def _check_exog_columns(
+        self,
+        context_exog: dict[str, pd.DataFrame | None] | None,
+        exog: dict[str, pd.DataFrame | None] | None,
+        series_names_in: list[str],
+    ) -> None:
+        """
+        Validate, per series, the future `exog` columns against the historical
+        `context_exog` columns.
+
+        Parameters
+        ----------
+        context_exog : dict, None
+            Per-series historical exogenous variables resolved for this
+            prediction (the stored `context_exog_` or the preprocessed
+            `context_exog` argument), already filtered by `levels`.
+        exog : dict, None
+            Per-series future exogenous variables as returned by
+            `_prepare_future_exog`.
+        series_names_in : list
+            Series to validate.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        A `ValueError` is raised if any series has a future `exog` column
+        with no historical values in its `context_exog`: no adapter can use a
+        covariate without history. A column present in the history but absent
+        from the future `exog` is a past-only covariate; adapters with
+        `supports_past_only_covariates=False` ignore it, so an
+        `IgnoredArgumentWarning` is issued for them. Column names are
+        compared as sets, so order does not matter.
+
+        Only predict-time inputs are compared (never `fit` metadata), so the
+        check also applies in zero-shot mode. It runs only on the user-facing
+        path (`check_inputs=True`).
+
+        """
+
+        def _extract_column_names(data: pd.DataFrame | pd.Series | None) -> set:
+            if data is None:
+                return set()
+            if isinstance(data, pd.Series):
+                return {data.name}
+            return set(data.columns)
+
+        missing_history_by_series: dict[str, list] = {}
+        ignored_past_cols_by_series: dict[str, list] = {}
+        for name in series_names_in:
+            historical_cols = (
+                _extract_column_names(context_exog.get(name))
+                if context_exog is not None else set()
+            )
+            future_cols = (
+                _extract_column_names(exog.get(name))
+                if exog is not None else set()
+            )
+            # Future columns that do not exist in the historical context
+            future_without_history = future_cols - historical_cols
+            if future_without_history:
+                missing_history_by_series[name] = sorted(future_without_history)
+
+            # Historical columns that do not exist in the future context
+            past_without_future = historical_cols - future_cols
+            if past_without_future and not self.adapter.supports_past_only_covariates:
+                ignored_past_cols_by_series[name] = sorted(past_without_future)
+
+        if missing_history_by_series:
+            raise ValueError(
+                f"`exog` contains columns with no historical values in the "
+                f"context for series {missing_history_by_series}. Every future `exog` column "
+                f"must also be present in the historical exog of the same "
+                f"series (pass matching `exog` to `fit`, or `context_exog` "
+                f"when using `context`)."
+            )
+
+        if ignored_past_cols_by_series:
+            warnings.warn(
+                f"{type(self.adapter).__name__} only uses covariates that "
+                f"also have future values. Historical exog columns without "
+                f"future values are ignored for series {ignored_past_cols_by_series}.",
+                IgnoredArgumentWarning,
+                stacklevel=3,
+            )
+
     def predict(
         self,
         steps: int,
@@ -884,8 +1008,16 @@ class FoundationModel:
         - **Not fitted, `context` provided (zero-shot mode)**: The model uses 
         `context` and `context_exog` (if provided) as context for prediction.
         - **Fitted, `context` provided**: Stored context is ignored, the 
-        provided `context` and `context_exog` (if provided) are used for 
+        provided `context` and `context_exog` (if provided) are used for
         prediction.
+
+        When the adapter supports exogenous variables, the columns of the
+        future `exog` are validated per series against the historical exog
+        used as context. A future column with no historical values raises a
+        `ValueError`. A historical column with no future values is a
+        past-only covariate: it is used as such when
+        `supports_past_only_covariates` is `True`, and ignored with an
+        `IgnoredArgumentWarning` otherwise.
 
         """
 
@@ -973,6 +1105,15 @@ class FoundationModel:
                            exog            = exog,
                            series_names_in = series_names_in,
                        )
+                self._check_exog_columns(
+                    context_exog    = context_exog,
+                    exog            = exog,
+                    series_names_in = series_names_in,
+                )
+            # With `check_inputs=False` (internal backtesting path) the
+            # column check is skipped: `_extract_data_folds_multiseries`
+            # slices `context_exog` and `exog` from the same per-series
+            # DataFrame, so their columns always match by construction.
 
         # Adapter returns dict[str, np.ndarray] with shape (steps, n_q)
         raw_predictions = self.adapter.predict(

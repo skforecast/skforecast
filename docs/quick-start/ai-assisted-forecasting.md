@@ -43,7 +43,7 @@ The AI context covers:
 - **Model selection** — `backtesting_forecaster`, `bayesian_search_forecaster` and other hyperparameter optimization methods, `TimeSeriesFold`, `OneStepAheadFold`, and their multi-series variants.
 - **Statistical models** — `Arima`, `Sarimax`, `Ets`, `Arar` wrapped by `ForecasterStats`.
 - **Deep learning** — `ForecasterRnn` with `create_and_compile_model`, LSTM/GRU architectures.
-- **Foundation models (zero-shot)** — `FoundationModel` + `ForecasterFoundation` with Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL backends.
+- **Foundation models (zero-shot)** — `FoundationModel` + `ForecasterFoundation` with Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL backends.
 - **Feature engineering** — `CalendarFeatures`, `RollingFeatures`, custom features, and exogenous variables (all built into skforecast, no extra dependency).
 - **Feature selection** — `RFECV`, `SelectFromModel` for lags, window features, and exogenous variables.
 - **Drift detection** — `RangeDriftDetector` and `PopulationDriftDetector` for production monitoring.
@@ -61,7 +61,7 @@ Skforecast includes 17 modular **skills** — self-contained guides that AI agen
 | `feature-engineering` | `CalendarFeatures`, `RollingFeatures`, custom features, exogenous variables |
 | `forecasting-single-series` | End-to-end forecasting with `ForecasterRecursive`: data prep, fit, predict, backtest, intervals |
 | `forecasting-multiple-series` | Global model with `ForecasterRecursiveMultiSeries`: encoding, dict input, multi-level predictions |
-| `foundation-forecasting` | Zero-shot forecasting with `ForecasterFoundation`: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL |
+| `foundation-forecasting` | Zero-shot forecasting with `ForecasterFoundation`: Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL |
 | `baseline-forecasting` | Simple baselines with `ForecasterEquivalentDate` (equivalent-date / seasonal-naive / moving-average) to benchmark ML models |
 | `metric-selection` | Choosing point, probabilistic, and multi-series aggregated metrics |
 | `backtesting-configuration` | `TimeSeriesFold` parameters: refit, gap, fold stride, initial train size |

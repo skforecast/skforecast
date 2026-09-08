@@ -15,7 +15,7 @@ model = FoundationModel(
 ## Contents
 
 - ChronosAdapter — Amazon Chronos-2
-- TimesFMAdapter — Google TimesFM 2.5
+- TimesFMAdapter — Google TimesFM 2.5 / 3.0
 - MoiraiAdapter — Salesforce Moirai-2
 - TabICLAdapter — Soda-INRIA TabICL
 - TabPFNAdapter — Prior Labs TabPFN-TS
@@ -41,21 +41,31 @@ model = FoundationModel(
 | `torch_dtype`    | object  | `None`   | Torch dtype for `from_pretrained` (e.g. `torch.bfloat16`).                     |
 | `cross_learning` | bool    | `False`  | If `True`, shares information across series in multi-series batches.           |
 
-## TimesFMAdapter — Google TimesFM 2.5
+## TimesFMAdapter — Google TimesFM 2.5 / 3.0
+
+Dispatches between two backend APIs based on `model_id`: TimesFM 2.5 (`google/timesfm-2.5-*`, no exog) and TimesFM 3.0 (`google/timesfm-3.0-*`, native exog support). Parameters marked "v2.5 only" or "v3.0 only" are ignored by the other backend.
 
 - **`model_id` prefix**: `google/timesfm`
-- **`allow_exog`**: `False`
-- **Supported quantiles**: `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`
+- **`allow_exog`**: `False` for v2.5, `True` for v3.0 (past-only and known-future covariates; must be numeric, encode categoricals as numbers)
+- **`supports_past_only_covariates`**: `False` for v2.5, `True` for v3.0
+- **Supported quantiles**: `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]` on both backends
+- **Point forecast**: mean on v2.5, median (quantile `0.5`) on v3.0
 
 | Parameter                | Type | Default | Description                                                         |
 |--------------------------|------|---------|---------------------------------------------------------------------|
-| `model_id`               | str  | —       | HuggingFace model ID (e.g. `google/timesfm-2.5-200m-pytorch`).      |
-| `model`                  | obj  | `None`  | Pre-loaded & compiled TimesFM model. If `None`, loaded lazily.      |
-| `context_length`         | int  | `512`   | Max historical observations kept as context.                        |
-| `max_horizon`            | int  | `512`   | Max forecast horizon. `predict(steps=...)` must be ≤ this.          |
-| `forecast_config_kwargs` | dict | `None`  | Extra kwargs forwarded to `timesfm.ForecastConfig` at compile time. |
+| `model_id`               | str  | —       | HuggingFace model ID (e.g. `google/timesfm-2.5-200m-pytorch` or `google/timesfm-3.0-pytorch`). |
+| `model`                  | obj  | `None`  | Pre-loaded model. If `None`, loaded lazily. v2.5 expects an already-compiled model; v3.0 expects a `TimesFM3Forecaster`. |
+| `context_length`         | int  | `None`  | Max historical observations kept as context. Resolves to `512` on v2.5 or `2048` on v3.0 when left as `None`. |
+| `max_horizon`            | int  | `512`   | v2.5 only. Max forecast horizon. `predict(steps=...)` must be ≤ this. |
+| `forecast_config_kwargs` | dict | `None`  | v2.5 only. Extra kwargs forwarded to `timesfm.ForecastConfig` at compile time. |
+| `device`                 | str  | `'auto'` | v3.0 only. Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`. |
+| `predict_kwargs`         | dict | `None`  | v3.0 only. Extra kwargs forwarded to `predict_batch` (e.g. `use_znorm`, `make_positive`). |
 
-The model is compiled lazily for the exact requested `steps` (up to `max_horizon`) to avoid unnecessary decode iterations.
+The v2.5 model is compiled lazily for the exact requested `steps` (up to `max_horizon`) to avoid unnecessary decode iterations. The v3.0 backend has no compile step and no horizon ceiling.
+
+Covariate support is v3.0 only. For each series, columns present in its future `exog` become known-future covariates spanning `context + horizon`; columns present only in its `context_exog` become past-only covariates. Each series is forwarded with its own columns: series with the same set of past-only and known-future columns share one `predict_batch` call, series with different columns are forecast in separate calls, so a series' forecast never depends on the exog of the other series in the batch (`predict(levels=[x])` equals `predict()` filtered to `x`). Covariates must be numeric; encode categoricals as numbers before passing them.
+
+**Non-commercial license**: TimesFM 3.0 weights are released under a non-commercial license; loading them raises a `LicenseWarning` naming the license and a link to the model card. TimesFM 2.5 has no such restriction.
 
 ## MoiraiAdapter — Salesforce Moirai-2
 
@@ -163,7 +173,7 @@ Being accepted is not the same as being worth searching. Most adapters expose ru
 | Adapter | Accepted by `set_params` (`get_params()` keys) | Worth searching | Changing these forces a model reload |
 |---------|-----------------------------------------------|-----------------|--------------------------------------|
 | ChronosAdapter | `model_id`, `cross_learning`, `context_length`, `device_map`, `torch_dtype`, `predict_kwargs` | `context_length`, `cross_learning`, (`predict_kwargs`) | `model_id`, `device_map`, `torch_dtype` |
-| TimesFMAdapter | `model_id`, `context_length`, `max_horizon`, `forecast_config_kwargs` | `context_length`, (`forecast_config_kwargs`) | **all of them** |
+| TimesFMAdapter | `model_id`, `context_length`, `max_horizon`, `forecast_config_kwargs`, `device`, `predict_kwargs` | `context_length`, (`forecast_config_kwargs`), (`predict_kwargs`) | v2.5: `model_id`, `context_length`, `max_horizon`, `forecast_config_kwargs`; v3.0: `model_id`, `device` |
 | MoiraiAdapter | `model_id`, `context_length`, `device` | `context_length` | **all of them** |
 | TabICLAdapter | `model_id`, `context_length`, `point_estimate`, `tabicl_config`, `temporal_features`, `show_progress` | `context_length`, `point_estimate`, `temporal_features`, (`tabicl_config`) | all except `show_progress` |
 | TabPFNAdapter | `model_id`, `context_length`, `mode`, `point_estimate`, `tabpfn_model_config`, `temporal_features`, `show_progress` | `context_length`, `point_estimate`, `temporal_features`, (`tabpfn_model_config`) | all except `show_progress` |
@@ -175,8 +185,8 @@ Parameters in parentheses are backend passthrough dicts: they can hold quality-r
 
 Two consequences that matter when tuning:
 
-- **`context_length` is not uniformly cheap.** It reloads the model on TimesFM 2.5, Moirai-2, TabICL and TabPFN-TS; it is free on Chronos-2, T0, TS-ICL and Nori.
-- **Reset on presence vs on change.** `TabICLAdapter`, `TabPFNAdapter` and `NoriAdapter` compare the old and new values first, so re-sampling an identical value costs nothing. `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `T0Adapter` and `TSICLAdapter` reset whenever the key is passed, even if the value is unchanged, so on TimesFM 2.5 and Moirai-2 every single trial that samples `context_length` triggers a reload.
+- **`context_length` is not uniformly cheap.** It reloads the model on TimesFM 2.5 (but **not** TimesFM 3.0), Moirai-2, TabICL and TabPFN-TS; it is free on Chronos-2, TimesFM 3.0, T0, TS-ICL and Nori.
+- **Reset only on change.** All foundation adapters compare the old and new values first (via the shared `set_params` helper), so re-sampling an identical value never triggers a reload. A reload happens only when a reload-triggering key is set to a genuinely new value, for example sampling a different `context_length` on TimesFM 2.5, Moirai-2, TabICL or TabPFN-TS.
 
 `model_id` forces a reload on every adapter except `TSICLAdapter`, where the checkpoint is selected by `checkpoint_version` instead.
 
@@ -187,5 +197,16 @@ All adapters implement the same minimal interface:
 - `fit(series, exog=None)` — stores context and metadata; no training.
 - `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
+- `allow_exog` / `supports_past_only_covariates` — class attributes (instance attributes on `TimesFMAdapter`) read by `FoundationModel` to decide how exog is handled.
+
+### Exog column validation at predict time
+
+`FoundationModel.predict` (and therefore `ForecasterFoundation.predict`, `predict_interval`, `predict_quantiles`) validates, per series, the columns of the future `exog` against the historical exog used as context (the one stored by `fit`, or `context_exog` when `context` is given). The check is skipped on the internal backtesting path, where both come from the same DataFrame.
+
+| Situation (per series)                                  | Adapters with `supports_past_only_covariates=True` (Chronos-2, TS-ICL, TimesFM 3.0) | Adapters with `supports_past_only_covariates=False` (TabICL, TabPFN-TS, T0, Nori) |
+|---------------------------------------------------------|---------------------------------------------------------------|---------------------------------------------------------------|
+| Future `exog` column with no historical values          | `ValueError`                                                  | `ValueError`                                                  |
+| Historical column with no future values (`exog=None` or a subset of columns) | Used as a past-only covariate, no warning        | Ignored, `IgnoredArgumentWarning` listing the columns and series |
+| Same columns on both sides (any order)                  | OK                                                            | OK                                                            |
 
 Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.
