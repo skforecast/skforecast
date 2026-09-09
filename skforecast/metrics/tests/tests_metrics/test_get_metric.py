@@ -61,7 +61,7 @@ def test_get_metric_ValueError_when_metric_not_in_metrics_allowed():
                           ('mean_squared_log_error', mean_squared_log_error),
                           ('median_absolute_error', median_absolute_error),
                           ('symmetric_mean_absolute_percentage_error', symmetric_mean_absolute_percentage_error)], 
-                         ids = lambda dt: f'mertic_str, metric_callable: {dt}')
+                         ids = lambda dt: f'metric_str, metric_callable: {getattr(dt, "__name__", dt)}')
 def test_get_metric_output_for_all_metrics(metric_str, metric_callable):
     """
     Test output for all metrics allowed.
@@ -81,7 +81,7 @@ def test_get_metric_output_for_all_metrics(metric_str, metric_callable):
                           ('f1_score', f1_score),
                           ('precision_score', precision_score),
                           ('recall_score', recall_score)], 
-                         ids = lambda dt: f'mertic_str, metric_callable: {dt}')
+                         ids = lambda dt: f'metric_str, metric_callable: {getattr(dt, "__name__", dt)}')
 def test_get_metric_output_for_all_metrics_classification(metric_str, metric_callable):
     """
     Test output for all metrics allowed.
@@ -98,7 +98,7 @@ def test_get_metric_output_for_all_metrics_classification(metric_str, metric_cal
 @pytest.mark.parametrize("metric_str, metric_callable", 
                          [('mean_absolute_scaled_error', mean_absolute_scaled_error),
                           ('root_mean_squared_scaled_error', root_mean_squared_scaled_error)], 
-                         ids = lambda dt: f'mertic_str, metric_callable: {dt}')
+                         ids = lambda dt: f'metric_str, metric_callable: {getattr(dt, "__name__", dt)}')
 def test_get_metric_output_for_all_metrics_y_train(metric_str, metric_callable):
     """
     Test output for all metrics allowed with y_train argument.

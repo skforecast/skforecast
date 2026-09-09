@@ -6,6 +6,9 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from skforecast.direct import ForecasterDirectMultiVariate
 
+# Fixtures
+from .fixtures_forecaster_direct_multivariate import series_intermittent
+
 
 def test_binning_in_sample_residuals_output():
     """
@@ -182,3 +185,26 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals():
         assert len(v) == 10_000
     for v in forecaster.in_sample_residuals_by_bin_['l1'].values():
         assert len(v) == max_residuals_per_bin
+
+
+def test_binning_in_sample_residuals_all_bins_have_residuals():
+    """
+    Test that every bin from 0 to n_bins_ - 1 has residuals, with no gaps in the
+    keys, when the predictions are so concentrated that the binner has to reduce
+    the number of bins.
+    """
+
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
+    )
+    forecaster.fit(series=series_intermittent, store_in_sample_residuals=True)
+
+    expected_keys = list(range(9))
+
+    assert forecaster.binner['l1'].n_bins_ == 9
+    assert sorted(forecaster.in_sample_residuals_by_bin_['l1']) == expected_keys
+    assert sorted(forecaster.binner_intervals_['l1']) == expected_keys
+    assert all(
+        len(forecaster.in_sample_residuals_by_bin_['l1'][k]) > 0
+        for k in expected_keys
+    )

@@ -5,6 +5,9 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from skforecast.recursive import ForecasterRecursive
 
+# Fixtures
+from .fixtures_forecaster_recursive import y_intermittent
+
 
 def test_binning_in_sample_residuals_stored():
     """
@@ -143,3 +146,25 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals():
     assert len(forecaster.in_sample_residuals_) == 10_000
     for v in forecaster.in_sample_residuals_by_bin_.values():
         assert len(v) == max_residuals_per_bin
+
+
+def test_binning_in_sample_residuals_all_bins_have_residuals():
+    """
+    Test that every bin from 0 to n_bins_ - 1 has residuals, with no gaps in the
+    keys, when the predictions are so concentrated that the binner has to reduce
+    the number of bins.
+    """
+
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=5)
+    forecaster.fit(y=y_intermittent, store_in_sample_residuals=True)
+
+    expected_keys = [0, 1, 2, 3, 4, 5]
+    expected_lengths = [8, 7, 37, 8, 7, 8]
+
+    assert forecaster.binner.n_bins_ == 6
+    assert sorted(forecaster.in_sample_residuals_by_bin_) == expected_keys
+    assert sorted(forecaster.binner_intervals_) == expected_keys
+    assert [
+        len(forecaster.in_sample_residuals_by_bin_[k]) for k in expected_keys
+    ] == expected_lengths
+

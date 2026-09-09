@@ -1457,8 +1457,6 @@ class ForecasterRecursive(ForecasterBase):
                 self.in_sample_residuals_by_bin_ = {}
                 for b in range(self.binner.n_bins_):
                     bin_residuals = residuals[bins == b]
-                    if len(bin_residuals) == 0:
-                        continue
                     if len(bin_residuals) > max_sample:
                         bin_residuals = bin_residuals[
                             rng.integers(low=0, high=len(bin_residuals), size=max_sample)
@@ -2189,7 +2187,7 @@ class ForecasterRecursive(ForecasterBase):
         rng = np.random.default_rng(seed=random_state)
         if use_binned_residuals:
             # Create 3D array with sampled residuals: (n_bins, steps, n_boot)
-            n_bins = len(residuals_by_bin)
+            # The position in the stack must match the bin id returned by the binner
             sampled_residuals = np.stack(
                 [
                     residuals_by_bin[k][
@@ -2197,7 +2195,7 @@ class ForecasterRecursive(ForecasterBase):
                             low=0, high=len(residuals_by_bin[k]), size=(steps, n_boot)
                         )
                     ]
-                    for k in range(n_bins)
+                    for k in range(self.binner.n_bins_)
                 ],
                 axis=0,
             )

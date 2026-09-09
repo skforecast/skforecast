@@ -1218,8 +1218,6 @@ class ForecasterRnn(ForecasterBase):
                 self.in_sample_residuals_by_bin_[level] = {}
                 for b in range(self.binner[level].n_bins_):
                     bin_residuals = residuals[bins == b]
-                    if len(bin_residuals) == 0:
-                        continue
                     if len(bin_residuals) > max_sample:
                         bin_residuals = bin_residuals[
                             rng.integers(low=0, high=len(bin_residuals), size=max_sample)

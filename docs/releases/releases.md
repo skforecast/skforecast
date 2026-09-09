@@ -10,6 +10,26 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-fix">Fix</span>                 | Bug fix                               |
 
 
+## 0.25.0 <small>In development</small> { id="0.25.0" }
+
+The main changes in this release are:
+
+
+**Added**
+
+
+**Changed**
+
+
+**Fixed**
+
++ Fixed an issue in <code>[QuantileBinner]</code> where quantile interpolation could create bins that no observation falls into, so the corresponding bin was missing from the residuals dictionary of the Forecasters. This caused a `KeyError`, or the use of the residuals of a different bin, in `predict_interval`, `predict_bootstrapping` and `predict_quantiles` when `use_binned_residuals=True`.
+
++ Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> where `predict_bootstrapping` used the requested number of bins instead of the number of bins actually learned by each series binner, raising a `KeyError` when any of them was reduced.
+
++ Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> where `set_out_sample_residuals` built the binned residuals of `'_unknown_level'` by joining the bins of the known series, although each series has its own binner. The residuals of all series are now binned with the binner of `'_unknown_level'`, so `predict_interval`, `predict_bootstrapping` and `predict_quantiles` no longer raise a `KeyError` for unknown levels when `use_in_sample_residuals=False` and `use_binned_residuals=True`, and the residuals stored in each bin correspond to that bin.
+
+
 ## 0.24.0 <small>Aug 24, 2026</small> { id="0.24.0" }
 
 The main changes in this release are:
