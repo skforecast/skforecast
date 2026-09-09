@@ -34,8 +34,7 @@ from ..utils import (
     align_series_and_exog_multiseries,
     manage_warnings,
     deepcopy_forecaster,
-    estimator_has_native_nan_support,
-    _normalize_interval_scale
+    estimator_has_native_nan_support
 )
 from ..foundation._utils import check_preprocess_series_foundation
 
@@ -703,7 +702,7 @@ def backtesting_forecaster(
 
         **Changed in version 0.23.0:** `interval` is now expressed as
         quantiles (0-1) instead of percentiles (0-100). Passing percentiles
-        is deprecated and emits a `FutureWarning`.
+        is not longer supported and will raise a `ValueError`.
     interval_method : str, default 'bootstrapping'
         Technique used to estimate prediction intervals. Available options:
 
@@ -805,10 +804,6 @@ def backtesting_forecaster(
             f"types of forecasters use the other functions available in the "
             f"`model_selection` module."
         )
-    
-    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
-    if isinstance(interval, (list, tuple)):
-        interval = _normalize_interval_scale(interval)
     
     check_backtesting_input(
         forecaster              = forecaster,
@@ -1519,7 +1514,7 @@ def backtesting_forecaster_multiseries(
 
         **Changed in version 0.23.0:** `interval` is now expressed as
         quantiles (0-1) instead of percentiles (0-100). Passing percentiles
-        is deprecated and emits a `FutureWarning`.
+        is not longer supported and will raise a `ValueError`.
     interval_method : str, default 'conformal'
         Technique used to estimate prediction intervals. Available options:
 
@@ -1636,10 +1631,6 @@ def backtesting_forecaster_multiseries(
                           exog              = exog,
                           exog_dict         = exog_dict
                       )
-    
-    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
-    if isinstance(interval, (list, tuple)):
-        interval = _normalize_interval_scale(interval)
 
     check_backtesting_input(
         forecaster              = forecaster,
@@ -2176,7 +2167,7 @@ def backtesting_stats(
 
         **Changed in version 0.23.0:** `interval` is now expressed as
         quantiles (0-1) instead of percentiles (0-100). Passing percentiles
-        is deprecated and emits a `FutureWarning`.
+        is not longer supported and will raise a `ValueError`.
     freeze_params : bool, default True
         Determines whether to freeze the model parameters after the first fit
         for estimators that perform automatic model selection.
@@ -2248,10 +2239,6 @@ def backtesting_stats(
             "`model_selection` module."
         )
     
-    # TODO: Remove in skforecast 0.25.0 when percentile support is removed.
-    if isinstance(interval, (list, tuple)):
-        interval = _normalize_interval_scale(interval)
-    
     check_backtesting_input(
         forecaster        = forecaster,
         cv                = cv,
@@ -2300,11 +2287,10 @@ def _backtesting_foundation(
     """
     Backtesting of ForecasterFoundation.
 
-    The original forecaster is used directly (no copy): refit is always
-    disabled for foundation models and every fold passes `context`
-    explicitly, so `self.context_` is never modified during the fold loop.
-    The only state change is the initial `fit` call that stores the training
-    context window.
+    The original forecaster is used directly (no copy) and is not modified:
+    refit is always disabled for foundation models, `fit` is never called,
+    and every fold passes `context` explicitly, so neither the fit state nor
+    `context_` change during the fold loop.
 
     Parameters
     ----------
@@ -2327,8 +2313,9 @@ def _backtesting_foundation(
         `y_train` (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
     levels : str, list, default None
-        Time series to be predicted and evaluated. Only used in multi-series
-        mode. If `None`, all series seen at fit time are used.
+        Time series to be predicted and evaluated. Must be a subset of the
+        names in `series`, otherwise a `ValueError` is raised. If `None`,
+        all series are used.
     add_aggregated_metric : bool, default True
         If `True`, and multiple series (`levels`) are predicted, the aggregated
         metrics (average, weighted average and pooled) are also returned.
@@ -2405,10 +2392,11 @@ def _backtesting_foundation(
     series_names = list(series.keys())
     is_multiseries = len(series_names) > 1
 
-    if levels is not None:
-        levels = [levels] if isinstance(levels, str) else list(levels)
-    else:
-        levels = series_names
+    levels = _initialize_levels_model_selection_multiseries(
+                 forecaster = forecaster,
+                 series     = series,
+                 levels     = levels
+             )
 
     cv.set_params({
         'window_size': forecaster.window_size,
@@ -2446,30 +2434,75 @@ def _backtesting_foundation(
     data_folds_tqdm = tqdm(data_folds, total=len(folds)) if show_progress else data_folds
     
     backtest_predictions = []
-    for context, _, levels_context, context_exog, exog_test, fold in data_folds_tqdm:
+    for context, _, _, context_exog, exog_test, fold in data_folds_tqdm:
 
         fold_number = fold[0]
         test_gap_start, test_gap_end = fold[3]
 
         steps_with_gap = test_gap_end - test_gap_start
+        train_loc_end = span_index[fold[1][1] - 1]
+        test_loc_start = span_index[fold[4][0]]
+        test_loc_end = span_index[fold[4][1] - 1]
+
+        # NOTE: `_extract_data_folds_multiseries` trims each series to its
+        # last valid value, but the context of a foundation model must end
+        # at the end of the train span so that the predictions start at the
+        # test start: the context is rebuilt from the first valid value up to
+        # the train end, trailing NaN included. A series is predicted in this
+        # fold only if it has an actual value in the test window and its
+        # context window is not entirely NaN (an all-NaN context is rejected
+        # on the user-facing path but would reach the adapter here because
+        # `check_inputs=False`).
         context = {
-            name: s.iloc[-forecaster.context_length :]
-            for name, s in context.items()
+            series_name: (
+                series[series_name]
+                .loc[level_series.index[0]:train_loc_end]
+                .iloc[-forecaster.context_length :]
+            )
+            for series_name, level_series in context.items()
+            if series[series_name].loc[test_loc_start:test_loc_end].notna().any()
         }
+        context = {
+            series_name: level_series
+            for series_name, level_series in context.items()
+            if level_series.notna().any()
+        }
+        levels_predict = [level for level in levels if level in context]
+        if not levels_predict:
+            # NOTE: Same behaviour as `_backtesting_forecaster_multiseries`: the
+            # fold is skipped with a warning and contributes an empty frame so
+            # that the output keeps its columns and the metrics are `None`.
+            warnings.warn(
+                f"Fold {fold_number} has been skipped because none of the levels "
+                f"to predict {levels} have observed values in both its context "
+                f"window and its test window. No predictions are generated for "
+                f"this fold.",
+                MissingValuesWarning
+            )
+            col_names = ["pred"] if quantiles is None else [f"q_{q}" for q in quantiles]
+            pred = pd.DataFrame(
+                {
+                    "level": pd.Series(dtype=object),
+                    **{col: pd.Series(dtype=float) for col in col_names},
+                },
+                index=span_index[:0],
+            )
+            pred.insert(1, 'fold', fold_number)
+            backtest_predictions.append(pred)
+            continue
 
         if exog is not None:
             context_exog = {
-                name: (
-                    e.iloc[-forecaster.context_length :]
-                    if e is not None
+                series_name: (
+                    series_exog.iloc[-forecaster.context_length :]
+                    if series_exog is not None
                     else None
                 )
-                for name, e in context_exog.items()
+                for series_name, series_exog in context_exog.items()
             }
         else:
             context_exog = None
 
-        levels_predict = [level for level in levels if level in levels_context]
         if quantiles is not None:
             pred = forecaster.predict_quantiles(
                        steps        = steps_with_gap,
@@ -2608,12 +2641,12 @@ def backtesting_foundation(
     """
     Backtesting of ForecasterFoundation.
 
-    The original forecaster is modified in-place (fitted on the initial
-    training slice) but its loaded model weights are preserved across the
-    entire backtesting run. Since foundation models are zero-shot, refit
-    is always disabled and per-fold predictions receive `last_window`
-    explicitly, so the stored context is not consulted or modified during
-    the fold loop.
+    The original forecaster is used directly (no copy) and is not modified:
+    its loaded model weights are reused across the entire backtesting run
+    and `fit` is never called. Since foundation models are zero-shot, refit
+    is always disabled and per-fold predictions receive `context`
+    explicitly, so neither the fit state nor the stored context change
+    during the fold loop.
 
     Parameters
     ----------
@@ -2639,8 +2672,9 @@ def backtesting_foundation(
         `y_train` (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
     levels : str, list, default None
-        Time series to be predicted and evaluated. Only used in multi-series
-        mode. If `None`, all series seen at fit time are used.
+        Time series to be predicted and evaluated. Must be a subset of the
+        names in `series`, otherwise a `ValueError` is raised. If `None`,
+        all series are used.
     add_aggregated_metric : bool, default True
         If `True`, and multiple series (`levels`) are predicted, the aggregated
         metrics (average, weighted average and pooled) are also returned.
@@ -2719,7 +2753,7 @@ def backtesting_foundation(
             series_names_in_  = series_names_in_,
             series_index_type = type(series_indexes[series_names_in_[0]]),
             exog              = exog,
-            exog_dict         = {name: None for name in series_names_in_},
+            exog_dict         = {series_name: None for series_name in series_names_in_},
         )
 
         # NOTE: As no trim is applied to the series, it is only needed to align exog.

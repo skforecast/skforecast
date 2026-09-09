@@ -22,7 +22,7 @@ from ._utils import (
     check_is_fitted, 
     check_memory_reduced, 
     FastLinearRegression,
-    _normalize_level
+    check_level
 )
 
 
@@ -454,10 +454,6 @@ class Arar(BaseEstimator, RegressorMixin):
         level : float, list or tuple of float, default (0.8, 0.95)
             Confidence levels expressed as coverage proportions in the (0, 1]
             range (e.g., 0.8 for 80% intervals).
-
-            **Changed in version 0.23.0:** `level` is now expressed as coverage
-            proportions (0-1) instead of percentiles (0-100). Passing percentiles
-            is deprecated and emits a `FutureWarning`.
         as_frame : bool, default True
             If True, return a tidy DataFrame with columns 'mean', 'lower_<L>',
             'upper_<L>' for each level L. If False, return a NumPy ndarray.
@@ -481,7 +477,7 @@ class Arar(BaseEstimator, RegressorMixin):
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
 
-        level = _normalize_level(level)
+        level = check_level(level)
         level_pct = [lv * 100 for lv in level]
         raw_preds = forecast(self.model_, h=steps, level=level_pct)
         

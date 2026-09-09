@@ -43,7 +43,7 @@ The AI context covers:
 - **Model selection** — `backtesting_forecaster`, `bayesian_search_forecaster` and other hyperparameter optimization methods, `TimeSeriesFold`, `OneStepAheadFold`, and their multi-series variants.
 - **Statistical models** — `Arima`, `Sarimax`, `Ets`, `Arar` wrapped by `ForecasterStats`.
 - **Deep learning** — `ForecasterRnn` with `create_and_compile_model`, LSTM/GRU architectures.
-- **Foundation models (zero-shot)** — `FoundationModel` + `ForecasterFoundation` with Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL backends.
+- **Foundation models (zero-shot)** — `FoundationModel` + `ForecasterFoundation` with Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL backends.
 - **Feature engineering** — `CalendarFeatures`, `RollingFeatures`, custom features, and exogenous variables (all built into skforecast, no extra dependency).
 - **Feature selection** — `RFECV`, `SelectFromModel` for lags, window features, and exogenous variables.
 - **Drift detection** — `RangeDriftDetector` and `PopulationDriftDetector` for production monitoring.
@@ -61,7 +61,7 @@ Skforecast includes 17 modular **skills** — self-contained guides that AI agen
 | `feature-engineering` | `CalendarFeatures`, `RollingFeatures`, custom features, exogenous variables |
 | `forecasting-single-series` | End-to-end forecasting with `ForecasterRecursive`: data prep, fit, predict, backtest, intervals |
 | `forecasting-multiple-series` | Global model with `ForecasterRecursiveMultiSeries`: encoding, dict input, multi-level predictions |
-| `foundation-forecasting` | Zero-shot forecasting with `ForecasterFoundation`: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL |
+| `foundation-forecasting` | Zero-shot forecasting with `ForecasterFoundation`: Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL |
 | `baseline-forecasting` | Simple baselines with `ForecasterEquivalentDate` (equivalent-date / seasonal-naive / moving-average) to benchmark ML models |
 | `metric-selection` | Choosing point, probabilistic, and multi-series aggregated metrics |
 | `backtesting-configuration` | `TimeSeriesFold` parameters: refit, gap, fold stride, initial train size |
@@ -95,5 +95,5 @@ The context files are **auto-generated** from maintained source files (`tools/ai
 
 1. **Always provide the context URL** — Without it, LLMs may hallucinate methods that don't exist or use outdated API names (e.g., `ForecasterAutoreg` instead of `ForecasterRecursive`).
 2. **Be specific about your forecaster** — Mention which forecaster you're using. Parameter names and defaults differ across forecasters.
-3. **Mention the version** — Say "skforecast 0.24.0" so the LLM doesn't mix advice from older versions.
+3. **Mention the version** — Say "skforecast 0.25.0" so the LLM doesn't mix advice from older versions.
 4. **Validate the output** — AI-generated code is a starting point. Use backtesting or an appropriate holdout evaluation to verify model performance.

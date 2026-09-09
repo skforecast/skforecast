@@ -14,14 +14,46 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
++ <span class="badge text-bg-feature">Feature</span> <code>[ForecasterFoundation]</code> and <code>[FoundationModel]</code> now accept heterogeneous multi-series input: series of different lengths, a different subset of exogenous columns per series, and NaN values in the target. Every series is forecast with its own exog columns only. For backends that require identical covariate columns in a batch (Chronos-2, TS-ICL, TabICL, TimesFM 3.0), the series are grouped by their exog columns and the backend is called once per group, so the prediction of a series never depends on the exog of the other series (Chronos-2 `cross_learning` applies within each group). The new read-only attributes `supports_heterogeneous_covariates` and `supports_nan_in_series` (on `FoundationModel` and `ForecasterFoundation`, together with `supports_past_only_covariates`) expose the backend constraints. [User guide](../user_guides/foundation-forecasting-models.ipynb)
+
++ <span class="badge text-bg-feature">Feature</span> <code>[TimesFMAdapter]</code> now supports **TimesFM 3.0** in addition to TimesFM 2.5, dispatched automatically from the `model_id` prefix (`'google/timesfm-3.0'`). Unlike TimesFM 2.5, TimesFM 3.0 accepts past-only and known-future exogenous variables and adds new `device` and `predict_kwargs` parameters. [User guide](../user_guides/foundation-forecasting-models.ipynb)
+
++ <span class="badge text-bg-feature">Feature</span> New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised whenever a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded (deduplicated to once per session by Python's default warning filter). Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[FoundationModel]</code> and <code>[ForecasterFoundation]</code> now validate the columns of the future `exog` against the historical exog of each series at predict time. A future column with no historical values raises a `ValueError`. A historical column with no future values is used as a past-only covariate by the adapters that support it (Chronos-2, TS-ICL, TimesFM 3.0) and ignored with an `IgnoredArgumentWarning` by the rest (TabICL, TabPFN-TS, TFC-T0, Nori). The new read-only attribute `supports_past_only_covariates` exposes which behavior applies.
+
++ <span class="badge text-bg-api-change">API Change</span> Removed support for percentiles in the `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions. Deprecated since 0.23.0, `interval` must now be expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`). Passing percentiles such as `interval=[5, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
+
++ <span class="badge text-bg-api-change">API Change</span> Removed support for percentiles in the `level` argument of the `predict_interval` method of the statistical estimators (<code>[Arima]</code>, <code>[Arar]</code>, <code>[Ets]</code>). Deprecated since 0.23.0, `level` must now be expressed as coverage proportions in the (0, 1] range (e.g. `level=[0.8, 0.95]`). Passing percentiles such as `level=[80, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
+
 
 **Added**
+
++ <code>[ForecasterFoundation]</code> and <code>[FoundationModel]</code> now accept heterogeneous multi-series input: series of different lengths, a different subset of exogenous columns per series, and NaN values in the target. Every series is forecast with its own exog columns only. For backends that require identical covariate columns in a batch (Chronos-2, TS-ICL, TabICL, TimesFM 3.0), the series are grouped by their exog columns and the backend is called once per group, so the prediction of a series never depends on the exog of the other series (Chronos-2 `cross_learning` applies within each group). The new read-only attributes `supports_heterogeneous_covariates` and `supports_nan_in_series` (on `FoundationModel` and `ForecasterFoundation`, together with `supports_past_only_covariates`) expose the backend constraints. [User guide](../user_guides/foundation-forecasting-models.ipynb)
+
++ <code>[TimesFMAdapter]</code> now supports **TimesFM 3.0** in addition to TimesFM 2.5, dispatched automatically from the `model_id` prefix (`'google/timesfm-3.0'`). Unlike TimesFM 2.5, TimesFM 3.0 accepts past-only and known-future exogenous variables and adds new `device` and `predict_kwargs` parameters. [User guide](../user_guides/foundation-forecasting-models.ipynb)
+
++ New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised whenever a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded (deduplicated to once per session by Python's default warning filter). Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
+
++ <code>[ForecasterFoundation]</code> exposes the read-only attribute `allow_exog` (delegates to `estimator.allow_exog`), so the four adapter capability flags (`allow_exog`, `supports_past_only_covariates`, `supports_heterogeneous_covariates`, `supports_nan_in_series`) can be inspected on the forecaster. [User guide](../user_guides/foundation-forecasting-with-heterogeneous-series.ipynb)
 
 
 **Changed**
 
++ <code>[FoundationModel]</code> and <code>[ForecasterFoundation]</code> now validate the columns of the future `exog` against the historical exog of each series at predict time. A future column with no historical values raises a `ValueError`. A historical column with no future values is used as a past-only covariate by the adapters that support it (Chronos-2, TS-ICL, TimesFM 3.0) and ignored with an `IgnoredArgumentWarning` by the rest (TabICL, TabPFN-TS, TFC-T0, Nori). The new read-only attribute `supports_past_only_covariates` exposes which behavior applies.
+
++ Removed support for percentiles in the `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions. Deprecated since 0.23.0, `interval` must now be expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`). Passing percentiles such as `interval=[5, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
+
++ Removed support for percentiles in the `level` argument of the `predict_interval` method of the statistical estimators (<code>[Arima]</code>, <code>[Arar]</code>, <code>[Ets]</code>). Deprecated since 0.23.0, `level` must now be expressed as coverage proportions in the (0, 1] range (e.g. `level=[0.8, 0.95]`). Passing percentiles such as `level=[80, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
+
 
 **Fixed**
+
++ <code>[backtesting_foundation]</code> failed or produced wrongly dated predictions when a series ended before the end of the span, contained trailing NaN inside a fold, or had exogenous variables that did not cover the whole forecast horizon (`KeyError` in the metrics or in the Chronos-2 and TS-ICL adapters, `all input arrays must have the same shape` in TimesFM 3.0). The context of every series now ends at the end of the train span of the fold, so predictions always fall inside the fold's test window; a series is predicted in a fold only if it has at least one observed value in that window and its context window is not entirely NaN (a fold where no level can be predicted is skipped with a `MissingValuesWarning`, as in `backtesting_forecaster_multiseries`); and the historical and future exog are aligned to the context and to the horizon on the backtesting path as they already were in `predict`.
+
++ <code>[NoriAdapter]</code> failed with `Input y contains NaN` when the context contained NaN. The rows whose target or covariates are NaN are now dropped before the in-context fit.
+
++ <code>[backtesting_foundation]</code> silently accepted a `levels` argument with names that are not in `series` (the unknown level received a `None` metric, or every fold was skipped with a misleading `MissingValuesWarning` when none of the levels existed). It now raises a `ValueError` naming the unknown levels, as `backtesting_forecaster_multiseries` and `bayesian_search_foundation` already did.
 
 + Fixed an issue in <code>[QuantileBinner]</code> where quantile interpolation could create bins that no observation falls into, so the corresponding bin was missing from the residuals dictionary of the Forecasters. This caused a `KeyError`, or the use of the residuals of a different bin, in `predict_interval`, `predict_bootstrapping` and `predict_quantiles` when `use_binned_residuals=True`.
 
@@ -1762,6 +1794,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- exceptions -->
 [exceptions]: ../api/exceptions.md
 [IgnoredArgumentWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.IgnoredArgumentWarning
+[LicenseWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.LicenseWarning
 [MissingValuesWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.MissingValuesWarning
 
 <!-- OLD -->

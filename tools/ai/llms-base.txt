@@ -2,13 +2,13 @@
 
 > Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
-This document is for skforecast v0.24.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.25.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.24.0
+- Version: 0.25.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -38,7 +38,7 @@ skforecast/
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
 ├── foundation/              # FoundationModel, ForecasterFoundation
-│                            # (zero-shot: Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL)
+│                            # (zero-shot: Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL)
 ├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
@@ -73,7 +73,7 @@ skforecast/
 | ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
 | ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
 | ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
-| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL) |
+| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
 
@@ -467,7 +467,8 @@ Supported adapters (selected automatically from `model_id`):
 | Adapter | `model_id` prefix | Exog | Default `context_length` | Quantiles |
 |---------|-------------------|------|--------------------------|-----------|
 | ChronosAdapter (Amazon) | `autogluon/chronos` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
-| TimesFMAdapter (Google) | `google/timesfm` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
+| TimesFMAdapter (Google, v2.5) | `google/timesfm-2.5` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
+| TimesFMAdapter (Google, v3.0) | `google/timesfm-3.0` | Yes (past & known-future covariates) | 2048 | `[0.1, 0.2, ..., 0.9]` |
 | MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
 | TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (past & future covariates) | 4096 | Any in `(0, 1)` |
 | TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
@@ -481,6 +482,10 @@ Key points:
 - `predict(..., context=...)` lets you override the stored context (used internally by backtesting).
 - Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. It deep-copies `cv` and forces `refit=True`, `fixed_train_size=False`, so the context window expands with each fold up to `context_length`; no weights are ever trained.
 - Use `bayesian_search_foundation` (not `bayesian_search_forecaster`) to tune inference-time parameters such as `context_length`. Only `TimeSeriesFold` is supported.
+- Loading a model whose weights are released under a known non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) raises a `LicenseWarning` naming the license and a link to the model card; review the link, since terms vary (e.g. TabPFN-TS permits commercial use under an enterprise license). Absence of the warning does not guarantee a model's license is unrestricted. Suppress it like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
+- At predict time, the columns of the future `exog` are validated per series against the historical exog (the one passed to `fit`, or `context_exog`). A future column with no historical values raises a `ValueError`. A historical column with no future values is a past-only covariate: used as such when `forecaster.supports_past_only_covariates` is `True` (Chronos-2, TS-ICL, TimesFM 3.0), ignored with an `IgnoredArgumentWarning` otherwise (TabICL, TabPFN-TS, TFC-T0, Nori).
+- Multi-series input may be heterogeneous: series can have different lengths, a different subset of exog columns each, and NaN values. Each series is forecast with its own exog columns only. When the backend needs identical covariate columns in a batch (`forecaster.supports_heterogeneous_covariates` is `False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0), the series are grouped by their exog columns and the backend is called once per group, so the forecast of a series never depends on the exog of the others. `forecaster.supports_nan_in_series` tells whether the backend accepts NaN in the context.
+- In `backtesting_foundation`, a series is predicted in a fold only if it has at least one observed value in that fold's test window and its context window (the last `context_length` observations up to the end of the train span) is not entirely NaN; the context keeps interior and trailing NaN, so every prediction is dated inside the fold.
 
 ## Feature Selection
 
@@ -619,6 +624,7 @@ from skforecast.exceptions import ExogenousInterpretationWarning
 from skforecast.exceptions import FeatureOutOfRangeWarning
 from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.exceptions import InputTypeWarning
+from skforecast.exceptions import LicenseWarning
 from skforecast.exceptions import LongTrainingWarning
 from skforecast.exceptions import MissingExogWarning
 from skforecast.exceptions import MissingValuesWarning
@@ -670,5 +676,5 @@ show_datasets_info()
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.24.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.25.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```

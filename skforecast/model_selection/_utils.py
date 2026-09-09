@@ -413,6 +413,15 @@ def check_backtesting_input(
                         f"be a float or a list/tuple defining a symmetric interval. "
                         f"Got {type(interval)}."
                     )
+                if isinstance(interval, (list, tuple)) and len(interval) != 2:
+                    raise ValueError(
+                        f"When `interval_method` is 'conformal', `interval` must be "
+                        f"a float or a list/tuple of exactly 2 values (lower and "
+                        f"upper quantile) defining a symmetric interval. Multiple "
+                        f"quantiles (e.g. `interval=[0.1, 0.5, 0.9]`) are only "
+                        f"supported when `interval_method='bootstrapping'`. "
+                        f"Got {interval}."
+                    )
             elif interval_method == 'bootstrapping':
                 if (
                     not isinstance(interval, (float, list, tuple, str))
@@ -1186,7 +1195,7 @@ def _calculate_metrics_backtesting_multiseries(
     )
     metrics_levels = []
     for level in levels:
-        if level in levels_in_predictions:
+        if level in levels_in_predictions and level in y_true_y_pred_grouped.groups:
             group = y_true_y_pred_grouped.get_group(level)
             y_true = group['y_true']
             y_pred = group['y_pred']

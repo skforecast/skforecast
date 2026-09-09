@@ -38,7 +38,6 @@ from ..utils import (
     check_predict_input,
     check_residuals_input,
     check_interval,
-    _normalize_interval_scale,
     check_extract_values_and_index,
     configure_estimator_categorical_features,
     cast_catboost_categorical_columns,
@@ -2431,7 +2430,7 @@ class ForecasterRecursive(ForecasterBase):
 
             **Changed in version 0.23.0:** `interval` is now expressed as
             quantiles (0-1) instead of percentiles (0-100). Passing percentiles
-            is deprecated and emits a `FutureWarning`.
+            is not longer supported and will raise a `ValueError`.
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
@@ -2474,7 +2473,6 @@ class ForecasterRecursive(ForecasterBase):
         if method == "bootstrapping":
             
             if isinstance(interval, (list, tuple)):
-                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=False)
                 interval = np.array(interval)
             else:
@@ -2507,7 +2505,6 @@ class ForecasterRecursive(ForecasterBase):
         elif method == 'conformal':
 
             if isinstance(interval, (list, tuple)):
-                interval = _normalize_interval_scale(interval)
                 check_interval(interval=interval, ensure_symmetric_intervals=True)
                 nominal_coverage = interval[1] - interval[0]
             else:

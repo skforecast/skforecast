@@ -73,7 +73,7 @@ class FakePipeline:
     Fake Chronos-2 pipeline for testing without torch/chronos.
 
     Returns quantile values equal to the quantile level itself for all steps.
-    Records last call arguments for inspection.
+    Records the last call arguments for inspection and every call in `calls`.
     """
 
     def __init__(self):
@@ -81,12 +81,19 @@ class FakePipeline:
         self.last_prediction_length = None
         self.last_quantile_levels = None
         self.last_kwargs = None
+        self.calls = []
 
     def predict_quantiles(self, inputs, prediction_length, quantile_levels, **kwargs):
         self.last_inputs = inputs
         self.last_prediction_length = prediction_length
         self.last_quantile_levels = quantile_levels
         self.last_kwargs = kwargs
+        self.calls.append({
+            "inputs": inputs,
+            "prediction_length": prediction_length,
+            "quantile_levels": quantile_levels,
+            "kwargs": kwargs,
+        })
 
         n_q = len(quantile_levels)
         q_values = np.array(quantile_levels, dtype=float)
@@ -133,6 +140,110 @@ class FakeTimesFM25Model:
             (n, horizon, 10),
         ).copy()
         return point_forecast, quantile_forecast
+
+
+# Fake TimesFM 3.0 forecaster
+# ==============================================================================
+class _FakeTimesFM3ForecastOutput:
+    """
+    Fake `timesfm3.ForecastOutput` returned by
+    `FakeTimesFM3Forecaster.predict_batch`.
+    """
+
+    def __init__(self, forecast, quantiles):
+        self.forecast = forecast
+        self.quantiles = quantiles
+
+
+class FakeTimesFM3Forecaster:
+    """
+    Fake TimesFM3Forecaster for testing without torch/timesfm.
+
+    `predict_batch()` returns, per series:
+
+    - `forecast`: zeros, shape `(horizon,)`.
+    - `quantiles` (only when `return_quantiles=True`): shape
+      `(horizon, len(config.quantiles))` where column `i` equals
+      `config.quantiles[i]` for every step, making quantile column-order
+      assertions trivial.
+
+    `config.quantiles` defaults to the standard 9-level TimesFM grid, but
+    can be overridden at construction time to test quantile-index mapping
+    against a non-default grid. Records the last call arguments for
+    inspection.
+    """
+
+    class _FakeModelConfig:
+        def __init__(self, quantiles=None):
+            self.quantiles = (
+                list(quantiles)
+                if quantiles is not None
+                else [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+            )
+
+    def __init__(self, quantiles=None):
+        self.config = self._FakeModelConfig(quantiles)
+        self.last_contexts = None
+        self.last_horizon = None
+        self.last_past_only_covariates = None
+        self.last_past_future_covariates = None
+        self.last_padding_mode = None
+        self.last_kwargs = None
+        self.calls = []
+
+    @classmethod
+    def from_pretrained(cls, model_id, device=None, **kwargs):
+        return cls()
+
+    def predict_batch(
+        self,
+        contexts,
+        horizon,
+        past_only_covariates=None,
+        past_future_covariates=None,
+        return_quantiles=False,
+        padding_mode="none",
+        **kwargs,
+    ):
+        self.last_contexts = contexts
+        self.last_horizon = horizon
+        self.last_past_only_covariates = past_only_covariates
+        self.last_past_future_covariates = past_future_covariates
+        self.last_padding_mode = padding_mode
+        self.last_kwargs = kwargs
+        self.calls.append({
+            "contexts": contexts,
+            "horizon": horizon,
+            "past_only_covariates": past_only_covariates,
+            "past_future_covariates": past_future_covariates,
+            "padding_mode": padding_mode,
+            "kwargs": kwargs,
+        })
+
+        # Replicate the real backend's covariate handling: every series is
+        # left-padded to the batch context length before stacking, so the
+        # per-series arrays only need the same number of covariate rows
+        # (`None` entries are filled with a single zero row). A batch with a
+        # different number of covariate columns per series fails.
+        for cov in (past_only_covariates, past_future_covariates):
+            if cov is not None:
+                n_rows = {(c.shape[0] if c is not None else 1) for c in cov}
+                if len(n_rows) > 1:
+                    raise ValueError("all input arrays must have the same shape")
+
+        q_values = np.array(self.config.quantiles, dtype=float)
+        outs = []
+        for _ in contexts:
+            forecast = np.zeros(horizon, dtype=float)
+            quantiles = (
+                np.broadcast_to(q_values, (horizon, len(q_values))).copy()
+                if return_quantiles
+                else None
+            )
+            outs.append(
+                _FakeTimesFM3ForecastOutput(forecast=forecast, quantiles=quantiles)
+            )
+        return iter(outs)
 
 
 # Fake Moirai-2 forecast
@@ -495,6 +606,7 @@ class FakeNoriRegressor:
     """
 
     def __init__(self, **kwargs):
+        self.init_kwargs = kwargs
         self.n_features_in_ = None
         self.y_ = None
         self.last_output_type = None
