@@ -217,8 +217,8 @@ def check_preprocess_series_foundation(
     """
 
     if isinstance(series, pd.Series):
-        name = series.name if series.name is not None else 'y'
-        series = {name: series.rename(name)}
+        series_name = series.name if series.name is not None else 'y'
+        series = {series_name: series.rename(series_name)}
 
     return check_preprocess_series(series)
 
@@ -321,12 +321,14 @@ def group_series_by_exog_signature(
     """
 
     groups: dict[tuple[tuple, tuple], list[str]] = {}
-    for name in series_names_in:
+    for series_name in series_names_in:
         signature = get_exog_signature(
-            context_exog = context_exog.get(name) if context_exog is not None else None,
-            exog         = exog.get(name) if exog is not None else None,
+            context_exog = (
+                context_exog.get(series_name) if context_exog is not None else None
+            ),
+            exog         = exog.get(series_name) if exog is not None else None,
         )
-        groups.setdefault(signature, []).append(name)
+        groups.setdefault(signature, []).append(series_name)
 
     return list(groups.values())
 
@@ -355,7 +357,7 @@ def align_context_exog(
     context_exog_aligned : dict
         Per-series dict with exactly the keys in `series_names_in`. Each
         non-None value is a pandas DataFrame with the same index as
-        `context[name]`. Series inputs are coerced to single-column
+        `context[series_name]`. Series inputs are coerced to single-column
         DataFrames.
 
     Notes
@@ -368,21 +370,21 @@ def align_context_exog(
 
     context_exog_aligned: dict[str, pd.DataFrame | None] = {}
     nan_filled_series = []
-    for name in series_names_in:
-        e = context_exog.get(name)
-        if e is None:
-            context_exog_aligned[name] = None
+    for series_name in series_names_in:
+        series_exog = context_exog.get(series_name)
+        if series_exog is None:
+            context_exog_aligned[series_name] = None
             continue
-        if isinstance(e, pd.Series):
-            e = e.to_frame()
-        ctx_index = context[name].index
-        if e.index.equals(ctx_index):
+        if isinstance(series_exog, pd.Series):
+            series_exog = series_exog.to_frame()
+        ctx_index = context[series_name].index
+        if series_exog.index.equals(ctx_index):
             # Fast path: exog already aligned, no reindex needed.
-            context_exog_aligned[name] = e
+            context_exog_aligned[series_name] = series_exog
             continue
-        if not ctx_index.isin(e.index).all():
-            nan_filled_series.append(name)
-        context_exog_aligned[name] = e.reindex(ctx_index)
+        if not ctx_index.isin(series_exog.index).all():
+            nan_filled_series.append(series_name)
+        context_exog_aligned[series_name] = series_exog.reindex(ctx_index)
 
     if nan_filled_series:
         warnings.warn(

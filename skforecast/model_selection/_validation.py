@@ -2454,11 +2454,19 @@ def _backtesting_foundation(
         # on the user-facing path but would reach the adapter here because
         # `check_inputs=False`).
         context = {
-            name: series[name].loc[s.index[0]:train_loc_end].iloc[-forecaster.context_length :]
-            for name, s in context.items()
-            if series[name].loc[test_loc_start:test_loc_end].notna().any()
+            series_name: (
+                series[series_name]
+                .loc[level_series.index[0]:train_loc_end]
+                .iloc[-forecaster.context_length :]
+            )
+            for series_name, level_series in context.items()
+            if series[series_name].loc[test_loc_start:test_loc_end].notna().any()
         }
-        context = {name: s for name, s in context.items() if s.notna().any()}
+        context = {
+            series_name: level_series
+            for series_name, level_series in context.items()
+            if level_series.notna().any()
+        }
         levels_predict = [level for level in levels if level in context]
         if not levels_predict:
             # NOTE: Same behaviour as `_backtesting_forecaster_multiseries`: the
@@ -2485,12 +2493,12 @@ def _backtesting_foundation(
 
         if exog is not None:
             context_exog = {
-                name: (
-                    e.iloc[-forecaster.context_length :]
-                    if e is not None
+                series_name: (
+                    series_exog.iloc[-forecaster.context_length :]
+                    if series_exog is not None
                     else None
                 )
-                for name, e in context_exog.items()
+                for series_name, series_exog in context_exog.items()
             }
         else:
             context_exog = None
@@ -2745,7 +2753,7 @@ def backtesting_foundation(
             series_names_in_  = series_names_in_,
             series_index_type = type(series_indexes[series_names_in_[0]]),
             exog              = exog,
-            exog_dict         = {name: None for name in series_names_in_},
+            exog_dict         = {series_name: None for series_name in series_names_in_},
         )
 
         # NOTE: As no trim is applied to the series, it is only needed to align exog.

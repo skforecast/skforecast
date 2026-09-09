@@ -239,12 +239,16 @@ class ChronosAdapter:
 
         """
 
-        def validate(p: dict) -> dict:
-            if "context_length" in p:
-                _validate_positive_int("context_length", p["context_length"])
-            if "predict_kwargs" in p:
-                p["predict_kwargs"] = p["predict_kwargs"] or {}
-            return p
+        def validate(candidate_params: dict) -> dict:
+            if "context_length" in candidate_params:
+                _validate_positive_int(
+                    "context_length", candidate_params["context_length"]
+                )
+            if "predict_kwargs" in candidate_params:
+                candidate_params["predict_kwargs"] = (
+                    candidate_params["predict_kwargs"] or {}
+                )
+            return candidate_params
 
         return _apply_set_params(
             self, params,
@@ -335,11 +339,13 @@ class ChronosAdapter:
 
         inputs_list = [
             self._build_chronos_input(
-                context      = context[name].to_numpy(),
-                context_exog = context_exog.get(name) if context_exog is not None else None,
-                exog         = exog.get(name) if exog is not None else None,
+                context      = context[series_name].to_numpy(),
+                context_exog = (
+                    context_exog.get(series_name) if context_exog is not None else None
+                ),
+                exog         = exog.get(series_name) if exog is not None else None,
             )
-            for name in series_names_in
+            for series_name in series_names_in
         ]
 
         quantile_preds, _ = self._pipeline.predict_quantiles(
@@ -351,9 +357,9 @@ class ChronosAdapter:
         )
 
         predictions: dict[str, np.ndarray] = {}
-        for i, name in enumerate(series_names_in):
+        for i, series_name in enumerate(series_names_in):
             q_arr = _tensor_to_numpy(quantile_preds[i].squeeze(0))
-            predictions[name] = q_arr
+            predictions[series_name] = q_arr
 
         return predictions
 
@@ -881,19 +887,25 @@ class TimesFMAdapter:
 
         """
 
-        def validate(p: dict) -> dict:
-            if "model_id" in p:
-                _detect_timesfm_backend(p["model_id"])
-            if "context_length" in p:
-                _validate_positive_int("context_length", p["context_length"])
-            if "max_horizon" in p:
-                _validate_positive_int("max_horizon", p["max_horizon"])
-            if "forecast_config_kwargs" in p:
-                p["forecast_config_kwargs"] = p["forecast_config_kwargs"] or {}
-            if "predict_kwargs" in p:
-                p["predict_kwargs"] = p["predict_kwargs"] or {}
-                self._validate_predict_kwargs(p["predict_kwargs"])
-            return p
+        def validate(candidate_params: dict) -> dict:
+            if "model_id" in candidate_params:
+                _detect_timesfm_backend(candidate_params["model_id"])
+            if "context_length" in candidate_params:
+                _validate_positive_int(
+                    "context_length", candidate_params["context_length"]
+                )
+            if "max_horizon" in candidate_params:
+                _validate_positive_int("max_horizon", candidate_params["max_horizon"])
+            if "forecast_config_kwargs" in candidate_params:
+                candidate_params["forecast_config_kwargs"] = (
+                    candidate_params["forecast_config_kwargs"] or {}
+                )
+            if "predict_kwargs" in candidate_params:
+                candidate_params["predict_kwargs"] = (
+                    candidate_params["predict_kwargs"] or {}
+                )
+                self._validate_predict_kwargs(candidate_params["predict_kwargs"])
+            return candidate_params
 
         def _reset_backend() -> None:
             self._backend = _detect_timesfm_backend(params["model_id"])
@@ -999,7 +1011,10 @@ class TimesFMAdapter:
         if quantiles is not None:
             quantile_list = list(quantiles)
             for q in quantile_list:
-                if not any(abs(q - sq) < 1e-9 for sq in self.SUPPORTED_QUANTILES):
+                if not any(
+                    abs(q - supported_quantile) < 1e-9
+                    for supported_quantile in self.SUPPORTED_QUANTILES
+                ):
                     raise ValueError(
                         f"TimesFM only supports quantile levels "
                         f"{self.SUPPORTED_QUANTILES}. Got {q!r}. "
@@ -1065,7 +1080,7 @@ class TimesFMAdapter:
 
         series_names_in = list(context.keys())
         inputs_list = [
-            context[name].to_numpy() for name in series_names_in
+            context[series_name].to_numpy() for series_name in series_names_in
         ]
 
         point_forecast, quantile_forecast = self._model.forecast(
@@ -1076,14 +1091,15 @@ class TimesFMAdapter:
         # quantile_forecast: (n_series, steps, 10)  — idx 0 = mean, 1-9 = q0.1-q0.9
 
         predictions: dict[str, np.ndarray] = {}
-        for i, name in enumerate(series_names_in):
+        for i, series_name in enumerate(series_names_in):
             if quantiles is None:
                 # Point forecast: shape (steps, 1)
-                predictions[name] = np.asarray(point_forecast[i]).reshape(-1, 1)
+                predictions[series_name] = np.asarray(point_forecast[i]).reshape(-1, 1)
             else:
-                q_indices = [round(q * 10) for q in quantiles]
+                quantile_indices = [round(q * 10) for q in quantiles]
                 qf = np.asarray(quantile_forecast[i])
-                predictions[name] = qf[:, q_indices]  # (steps, n_quantiles)
+                # (steps, n_quantiles)
+                predictions[series_name] = qf[:, quantile_indices]
 
         return predictions
 
@@ -1159,14 +1175,16 @@ class TimesFMAdapter:
             exog         = exog.get(names[0]) if exog is not None else None,
         )
         has_covariates = bool(past_only_cols) or bool(fut_cols)
-        contexts = [context[name].to_numpy() for name in names]
+        contexts = [context[series_name].to_numpy() for series_name in names]
 
         past_only_list: list[np.ndarray | None] = []
         past_future_list: list[np.ndarray | None] = []
-        for name in names:
+        for series_name in names:
             past_only, past_future = self._build_v3_covariates(
-                context_exog   = context_exog.get(name) if context_exog is not None else None,
-                exog           = exog.get(name) if exog is not None else None,
+                context_exog   = (
+                    context_exog.get(series_name) if context_exog is not None else None
+                ),
+                exog           = exog.get(series_name) if exog is not None else None,
                 past_only_cols = past_only_cols,
                 fut_cols       = fut_cols,
             )
@@ -1185,17 +1203,19 @@ class TimesFMAdapter:
         outs = dict(zip(names, results))
 
         if quantiles is not None:
-            q_indices = self._match_quantile_indices(
+            quantile_indices = self._match_quantile_indices(
                 list(self._model.config.quantiles), quantiles
             )
 
         predictions: dict[str, np.ndarray] = {}
-        for name in names:
-            out = outs[name]
+        for series_name in names:
+            out = outs[series_name]
             if quantiles is None:
-                predictions[name] = np.asarray(out.forecast).reshape(-1, 1)
+                predictions[series_name] = np.asarray(out.forecast).reshape(-1, 1)
             else:
-                predictions[name] = np.asarray(out.quantiles)[:, q_indices]
+                predictions[series_name] = (
+                    np.asarray(out.quantiles)[:, quantile_indices]
+                )
 
         return predictions
 
@@ -1718,10 +1738,12 @@ class MoiraiAdapter:
 
         """
 
-        def validate(p: dict) -> dict:
-            if "context_length" in p:
-                _validate_positive_int("context_length", p["context_length"])
-            return p
+        def validate(candidate_params: dict) -> dict:
+            if "context_length" in candidate_params:
+                _validate_positive_int(
+                    "context_length", candidate_params["context_length"]
+                )
+            return candidate_params
 
         def _reset_module() -> None:
             self._module = None
@@ -1810,7 +1832,10 @@ class MoiraiAdapter:
         if quantiles is not None:
             quantile_list = list(quantiles)
             for q in quantile_list:
-                if not any(abs(q - sq) < 1e-9 for sq in self.SUPPORTED_QUANTILES):
+                if not any(
+                    abs(q - supported_quantile) < 1e-9
+                    for supported_quantile in self.SUPPORTED_QUANTILES
+                ):
                     raise ValueError(
                         f"Moirai only supports quantile levels "
                         f"{self.SUPPORTED_QUANTILES}. Got {q!r}. "
@@ -1820,25 +1845,26 @@ class MoiraiAdapter:
             quantile_list = None
 
         quantile_levels = quantile_list if quantile_list is not None else [0.5]
-        q_indices = [
+        quantile_indices = [
             next(
-                i for i, sq in enumerate(self.SUPPORTED_QUANTILES)
-                if abs(q - sq) < 1e-9
+                i for i, supported_quantile in enumerate(self.SUPPORTED_QUANTILES)
+                if abs(q - supported_quantile) < 1e-9
             )
             for q in quantile_levels
         ]
 
         series_names_in = list(context.keys())
         inputs_list = [
-            context[name].to_numpy(dtype=np.float32).reshape(-1, 1)
-            for name in series_names_in
+            context[series_name].to_numpy(dtype=np.float32).reshape(-1, 1)
+            for series_name in series_names_in
         ]
 
         raw = self._run_inference(inputs_list, steps)
 
         predictions: dict[str, np.ndarray] = {}
-        for i, name in enumerate(series_names_in):
-            predictions[name] = raw[i][q_indices, :].T  # (steps, n_quantiles)
+        for i, series_name in enumerate(series_names_in):
+            # (steps, n_quantiles)
+            predictions[series_name] = raw[i][quantile_indices, :].T
 
         return predictions
 
@@ -2158,21 +2184,30 @@ class TabICLAdapter:
 
         """
 
-        def validate(p: dict) -> dict:
-            if "context_length" in p:
-                _validate_positive_int("context_length", p["context_length"])
-            if "point_estimate" in p and p["point_estimate"] not in ("mean", "median"):
+        def validate(candidate_params: dict) -> dict:
+            if "context_length" in candidate_params:
+                _validate_positive_int(
+                    "context_length", candidate_params["context_length"]
+                )
+            if "point_estimate" in candidate_params and candidate_params[
+                "point_estimate"
+            ] not in ("mean", "median"):
                 raise ValueError(
                     f"`point_estimate` must be 'mean' or 'median'. "
-                    f"Got {p['point_estimate']!r}."
+                    f"Got {candidate_params['point_estimate']!r}."
                 )
-            if "tabicl_config" in p:
-                p["tabicl_config"] = p["tabicl_config"] or {}
-            if "show_progress" in p and not isinstance(p["show_progress"], bool):
+            if "tabicl_config" in candidate_params:
+                candidate_params["tabicl_config"] = (
+                    candidate_params["tabicl_config"] or {}
+                )
+            if "show_progress" in candidate_params and not isinstance(
+                candidate_params["show_progress"], bool
+            ):
                 raise ValueError(
-                    f"`show_progress` must be a bool. Got {p['show_progress']!r}."
+                    f"`show_progress` must be a bool. "
+                    f"Got {candidate_params['show_progress']!r}."
                 )
-            return p
+            return candidate_params
 
         return _apply_set_params(
             self, params,
@@ -2313,12 +2348,12 @@ class TabICLAdapter:
         # result_df is a plain DataFrame with MultiIndex (item_id, timestamp).
         # columns: "target" (str) and quantile levels as float column names.
         predictions: dict[str, np.ndarray] = {}
-        for name in series_names_in:
-            group = result_df.loc[name]  # DataFrame indexed by timestamp
+        for series_name in series_names_in:
+            group = result_df.loc[series_name]  # DataFrame indexed by timestamp
             if quantile_list is None:
-                predictions[name] = group["target"].to_numpy().reshape(-1, 1)
+                predictions[series_name] = group["target"].to_numpy().reshape(-1, 1)
             else:
-                predictions[name] = group[quantile_list].to_numpy()
+                predictions[series_name] = group[quantile_list].to_numpy()
 
         return predictions
 
@@ -2462,16 +2497,16 @@ class TabICLAdapter:
         """
 
         context_df = []
-        for name in series_names:
-            series = context[name]
+        for series_name in series_names:
+            series = context[series_name]
             n = len(series)
             part = pd.DataFrame({
-                "item_id":   np.full(n, name),
+                "item_id":   np.full(n, series_name),
                 "timestamp": np.asarray(self._get_timestamps(series, is_datetime)),
                 "target":    series.to_numpy(dtype=float),
             })
             exog_entry = (
-                context_exog.get(name) if context_exog is not None else None
+                context_exog.get(series_name) if context_exog is not None else None
             )
             if exog_entry is not None:
                 part = pd.concat(
@@ -2520,15 +2555,15 @@ class TabICLAdapter:
         """
 
         future_df = []
-        for name in series_names:
-            series = context[name]
+        for series_name in series_names:
+            series = context[series_name]
             part = pd.DataFrame({
-                "item_id":   np.full(steps, name),
+                "item_id":   np.full(steps, series_name),
                 "timestamp": np.asarray(
                     self._get_future_timestamps(series, steps, is_datetime)
                 ),
             })
-            future_exog = exog.get(name) if exog is not None else None
+            future_exog = exog.get(series_name) if exog is not None else None
             if future_exog is not None:
                 part = pd.concat(
                     [part, future_exog.reset_index(drop=True)], axis=1
@@ -2766,25 +2801,37 @@ class TabPFNAdapter:
 
         """
 
-        def validate(p: dict) -> dict:
-            if "context_length" in p:
-                _validate_positive_int("context_length", p["context_length"])
-            if "mode" in p and p["mode"] not in ("local", "client"):
-                raise ValueError(
-                    f"`mode` must be 'local' or 'client'. Got {p['mode']!r}."
+        def validate(candidate_params: dict) -> dict:
+            if "context_length" in candidate_params:
+                _validate_positive_int(
+                    "context_length", candidate_params["context_length"]
                 )
-            if "point_estimate" in p and p["point_estimate"] not in ("mean", "median", "mode"):
+            if "mode" in candidate_params and candidate_params["mode"] not in (
+                "local", "client"
+            ):
+                raise ValueError(
+                    f"`mode` must be 'local' or 'client'. "
+                    f"Got {candidate_params['mode']!r}."
+                )
+            if "point_estimate" in candidate_params and candidate_params[
+                "point_estimate"
+            ] not in ("mean", "median", "mode"):
                 raise ValueError(
                     f"`point_estimate` must be 'mean', 'median' or 'mode'. "
-                    f"Got {p['point_estimate']!r}."
+                    f"Got {candidate_params['point_estimate']!r}."
                 )
-            if "tabpfn_model_config" in p:
-                p["tabpfn_model_config"] = p["tabpfn_model_config"] or {}
-            if "show_progress" in p and not isinstance(p["show_progress"], bool):
+            if "tabpfn_model_config" in candidate_params:
+                candidate_params["tabpfn_model_config"] = (
+                    candidate_params["tabpfn_model_config"] or {}
+                )
+            if "show_progress" in candidate_params and not isinstance(
+                candidate_params["show_progress"], bool
+            ):
                 raise ValueError(
-                    f"`show_progress` must be a bool. Got {p['show_progress']!r}."
+                    f"`show_progress` must be a bool. "
+                    f"Got {candidate_params['show_progress']!r}."
                 )
-            return p
+            return candidate_params
 
         return _apply_set_params(
             self, params,
@@ -2925,12 +2972,12 @@ class TabPFNAdapter:
         # result_df is a DataFrame with MultiIndex (item_id, timestamp).
         # columns: "target" (str) and quantile levels as float column names.
         predictions: dict[str, np.ndarray] = {}
-        for name in series_names_in:
-            group = result_df.loc[name]  # DataFrame indexed by timestamp
+        for series_name in series_names_in:
+            group = result_df.loc[series_name]  # DataFrame indexed by timestamp
             if quantile_list is None:
-                predictions[name] = group["target"].to_numpy().reshape(-1, 1)
+                predictions[series_name] = group["target"].to_numpy().reshape(-1, 1)
             else:
-                predictions[name] = group[quantile_list].to_numpy()
+                predictions[series_name] = group[quantile_list].to_numpy()
 
         return predictions
 
@@ -3084,16 +3131,16 @@ class TabPFNAdapter:
         """
 
         context_df = []
-        for name in series_names:
-            series = context[name]
+        for series_name in series_names:
+            series = context[series_name]
             n = len(series)
             part = pd.DataFrame({
-                "item_id":   np.full(n, name),
+                "item_id":   np.full(n, series_name),
                 "timestamp": np.asarray(self._get_timestamps(series, is_datetime)),
                 "target":    series.to_numpy(dtype=float),
             })
             exog_entry = (
-                context_exog.get(name) if context_exog is not None else None
+                context_exog.get(series_name) if context_exog is not None else None
             )
             if exog_entry is not None:
                 part = pd.concat(
@@ -3142,15 +3189,15 @@ class TabPFNAdapter:
         """
 
         future_df = []
-        for name in series_names:
-            series = context[name]
+        for series_name in series_names:
+            series = context[series_name]
             part = pd.DataFrame({
-                "item_id":   np.full(steps, name),
+                "item_id":   np.full(steps, series_name),
                 "timestamp": np.asarray(
                     self._get_future_timestamps(series, steps, is_datetime)
                 ),
             })
-            future_exog = exog.get(name) if exog is not None else None
+            future_exog = exog.get(series_name) if exog is not None else None
             if future_exog is not None:
                 part = pd.concat(
                     [part, future_exog.reset_index(drop=True)], axis=1
@@ -3322,10 +3369,12 @@ class T0Adapter:
 
         """
 
-        def validate(p: dict) -> dict:
-            if "context_length" in p:
-                _validate_positive_int("context_length", p["context_length"])
-            return p
+        def validate(candidate_params: dict) -> dict:
+            if "context_length" in candidate_params:
+                _validate_positive_int(
+                    "context_length", candidate_params["context_length"]
+                )
+            return candidate_params
 
         return _apply_set_params(
             self, params,
@@ -3416,7 +3465,10 @@ class T0Adapter:
         query_levels = sorted(set(requested))
 
         series_names = list(context.keys())
-        arrays = [np.asarray(context[name].to_numpy(), dtype=np.float32) for name in series_names]
+        arrays = [
+            np.asarray(context[series_name].to_numpy(), dtype=np.float32)
+            for series_name in series_names
+        ]
         lengths = [a.shape[0] for a in arrays]
         context_length = max(lengths)
 
@@ -3445,8 +3497,11 @@ class T0Adapter:
 
         q_arr = _tensor_to_numpy(forecast.quantiles)
 
-        column_for = [query_levels.index(q) for q in requested]
-        return {name: q_arr[i][:, column_for] for i, name in enumerate(series_names)}
+        quantile_column_indices = [query_levels.index(q) for q in requested]
+        return {
+            series_name: q_arr[i][:, quantile_column_indices]
+            for i, series_name in enumerate(series_names)
+        }
 
     def _load_model(self) -> None:
         """
@@ -3555,9 +3610,13 @@ class T0Adapter:
             return None
 
         future_frames = {
-            name: (e if isinstance(e, pd.DataFrame) else e.to_frame())
-            for name, e in exog.items()
-            if e is not None
+            series_name: (
+                series_exog
+                if isinstance(series_exog, pd.DataFrame)
+                else series_exog.to_frame()
+            )
+            for series_name, series_exog in exog.items()
+            if series_exog is not None
         }
         if not future_frames:
             return None
@@ -3573,13 +3632,13 @@ class T0Adapter:
             (len(series_names), len(columns), total_length), np.nan, dtype=np.float32
         )
         column_index = {col: j for j, col in enumerate(columns)}
-        for row, name in enumerate(series_names):
-            future_df = future_frames.get(name)
+        for row, series_name in enumerate(series_names):
+            future_df = future_frames.get(series_name)
             if future_df is None:
                 continue
             past_df = None
-            if context_exog is not None and context_exog.get(name) is not None:
-                ctx = context_exog[name]
+            if context_exog is not None and context_exog.get(series_name) is not None:
+                ctx = context_exog[series_name]
                 past_df = ctx if isinstance(ctx, pd.DataFrame) else ctx.to_frame()
             for col in future_df.columns:
                 j = column_index[col]
@@ -3800,10 +3859,12 @@ class TSICLAdapter:
 
         """
 
-        def validate(p: dict) -> dict:
-            if "context_length" in p:
-                _validate_positive_int("context_length", p["context_length"])
-            return p
+        def validate(candidate_params: dict) -> dict:
+            if "context_length" in candidate_params:
+                _validate_positive_int(
+                    "context_length", candidate_params["context_length"]
+                )
+            return candidate_params
 
         return _apply_set_params(
             self, params,
@@ -3898,11 +3959,13 @@ class TSICLAdapter:
         series_names_in = list(context.keys())
         inputs_list = [
             self._build_tsicl_input(
-                context      = context[name].to_numpy(),
-                context_exog = context_exog.get(name) if context_exog is not None else None,
-                exog         = exog.get(name) if exog is not None else None,
+                context      = context[series_name].to_numpy(),
+                context_exog = (
+                    context_exog.get(series_name) if context_exog is not None else None
+                ),
+                exog         = exog.get(series_name) if exog is not None else None,
             )
-            for name in series_names_in
+            for series_name in series_names_in
         ]
 
         if self._resolved_device is None:
@@ -3920,9 +3983,9 @@ class TSICLAdapter:
         )
 
         predictions: dict[str, np.ndarray] = {}
-        for i, name in enumerate(series_names_in):
+        for i, series_name in enumerate(series_names_in):
             q_arr = _tensor_to_numpy(quantile_preds[i])
-            predictions[name] = q_arr[0]  # drop the single-variate dim
+            predictions[series_name] = q_arr[0]  # drop the single-variate dim
 
         return predictions
 
@@ -4292,29 +4355,38 @@ class NoriAdapter:
 
         """
 
-        def validate(p: dict) -> dict:
-            if "context_length" in p:
-                _validate_positive_int("context_length", p["context_length"])
-            if "point_estimate" in p and p["point_estimate"] not in ("mean", "median", "mode"):
+        def validate(candidate_params: dict) -> dict:
+            if "context_length" in candidate_params:
+                _validate_positive_int(
+                    "context_length", candidate_params["context_length"]
+                )
+            if "point_estimate" in candidate_params and candidate_params[
+                "point_estimate"
+            ] not in ("mean", "median", "mode"):
                 raise ValueError(
                     f"`point_estimate` must be 'mean', 'median' or 'mode'. "
-                    f"Got {p['point_estimate']!r}."
+                    f"Got {candidate_params['point_estimate']!r}."
                 )
-            if "add_calendar_features" in p and not isinstance(p["add_calendar_features"], bool):
+            if "add_calendar_features" in candidate_params and not isinstance(
+                candidate_params["add_calendar_features"], bool
+            ):
                 raise ValueError(
                     f"`add_calendar_features` must be a bool. "
-                    f"Got {p['add_calendar_features']!r}."
+                    f"Got {candidate_params['add_calendar_features']!r}."
                 )
-            if "n_fourier_terms" in p and (
-                not isinstance(p["n_fourier_terms"], int) or p["n_fourier_terms"] < 0
+            if "n_fourier_terms" in candidate_params and (
+                not isinstance(candidate_params["n_fourier_terms"], int)
+                or candidate_params["n_fourier_terms"] < 0
             ):
                 raise ValueError(
                     f"`n_fourier_terms` must be a non-negative integer. "
-                    f"Got {p['n_fourier_terms']!r}."
+                    f"Got {candidate_params['n_fourier_terms']!r}."
                 )
-            if "nori_config" in p:
-                p["nori_config"] = p["nori_config"] or {}
-            return p
+            if "nori_config" in candidate_params:
+                candidate_params["nori_config"] = (
+                    candidate_params["nori_config"] or {}
+                )
+            return candidate_params
 
         return _apply_set_params(
             self, params,
@@ -4412,7 +4484,7 @@ class NoriAdapter:
         # columns back to the caller's order afterwards.
         if quantile_list is not None:
             query_levels = sorted(set(quantile_list))
-            column_for = [query_levels.index(q) for q in quantile_list]
+            quantile_column_indices = [query_levels.index(q) for q in quantile_list]
 
         self._load_model()
 
@@ -4428,9 +4500,11 @@ class NoriAdapter:
             )
 
         predictions: dict[str, np.ndarray] = {}
-        for name, series in context.items():
-            ctx_exog = context_exog.get(name) if context_exog is not None else None
-            fut_exog = exog.get(name) if exog is not None else None
+        for series_name, series in context.items():
+            ctx_exog = (
+                context_exog.get(series_name) if context_exog is not None else None
+            )
+            fut_exog = exog.get(series_name) if exog is not None else None
             exog_cols = self._known_future_columns(ctx_exog, fut_exog)
 
             X_ctx = self._featurize(
@@ -4448,7 +4522,7 @@ class NoriAdapter:
             valid_rows = ~np.isnan(y_ctx) & ~np.isnan(X_ctx).any(axis=1)
             if not valid_rows.any():
                 raise ValueError(
-                    f"Series '{name}' has no context rows without NaN in the "
+                    f"Series '{series_name}' has no context rows without NaN in the "
                     f"target and the covariates. NoriAdapter cannot predict it."
                 )
             X_ctx = X_ctx[valid_rows]
@@ -4460,7 +4534,7 @@ class NoriAdapter:
 
             if quantile_list is None:
                 y_hat = self._model.predict(X_fut, output_type=self.point_estimate)
-                predictions[name] = self._to_numpy(y_hat).reshape(-1, 1)
+                predictions[series_name] = self._to_numpy(y_hat).reshape(-1, 1)
             else:
                 q = self._to_numpy(
                     self._model.predict(
@@ -4470,7 +4544,7 @@ class NoriAdapter:
                 # Nori returns (n_quantiles, steps); skforecast expects
                 # (steps, n_quantiles). Reorder columns to the requested order.
                 q = q.reshape(len(query_levels), steps).T
-                predictions[name] = q[:, column_for]
+                predictions[series_name] = q[:, quantile_column_indices]
 
         return predictions
 

@@ -542,7 +542,8 @@ class ForecasterFoundation:
 
         if self.is_fitted:
             context_range_repr = {
-                k: v.to_list() for k, v in self.context_range_.items()
+                series_name: index_range.to_list()
+                for series_name, index_range in self.context_range_.items()
             }
         else:
             context_range_repr = None
@@ -596,8 +597,8 @@ class ForecasterFoundation:
 
         if self.is_fitted:
             context_range_parts = [
-                f"'{k}': {v.astype(str).to_list()}"
-                for k, v in self.context_range_.items()
+                f"'{series_name}': {index_range.astype(str).to_list()}"
+                for series_name, index_range in self.context_range_.items()
             ]
             if len(context_range_parts) > 10:
                 context_range_parts = (
@@ -608,9 +609,10 @@ class ForecasterFoundation:
             context_range_html = "Not fitted"
 
         params_html = "".join(
-            f"<li><strong>{html.escape(str(k))}:</strong> {html.escape(str(v))}</li>"
-            for k, v in self.estimator.adapter.get_params().items()
-            if k != "model_id"
+            f"<li><strong>{html.escape(str(param_name))}:</strong> "
+            f"{html.escape(str(param_value))}</li>"
+            for param_name, param_value in self.estimator.adapter.get_params().items()
+            if param_name != "model_id"
         )
 
         content = f"""
