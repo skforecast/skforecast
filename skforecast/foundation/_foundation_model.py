@@ -23,6 +23,7 @@ from ._utils import (
     check_preprocess_series_foundation,
     group_series_by_exog_signature,
     align_context_exog,
+    _extract_exog_columns,
 )
 from ..utils import (
     check_preprocess_exog_multiseries,
@@ -930,22 +931,15 @@ class FoundationModel:
 
         """
 
-        def _extract_column_names(data: pd.DataFrame | pd.Series | None) -> set:
-            if data is None:
-                return set()
-            if isinstance(data, pd.Series):
-                return {data.name}
-            return set(data.columns)
-
         missing_history_by_series: dict[str, list] = {}
         ignored_past_cols_by_series: dict[str, list] = {}
         for name in series_names_in:
             historical_cols = (
-                _extract_column_names(context_exog.get(name))
+                _extract_exog_columns(context_exog.get(name))
                 if context_exog is not None else set()
             )
             future_cols = (
-                _extract_column_names(exog.get(name))
+                _extract_exog_columns(exog.get(name))
                 if exog is not None else set()
             )
             # Future columns that do not exist in the historical context

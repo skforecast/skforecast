@@ -36,6 +36,7 @@ nav:
       - Deep learning Recurrent Neural Networks: user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
     - Foundation Models:
       - Forecasting with foundation models: user_guides/foundation-forecasting-models.ipynb
+      - Series with different lengths and different exogenous variables: user_guides/heterogeneous-multi-series-for-foundation-models.ipynb
     - Statistical Models:
       - ForecasterStats: user_guides/forecasting-statistical-models.ipynb
       - ARIMA, SARIMAX, AutoARIMA: user_guides/forecasting-sarimax-arima.ipynb

@@ -2287,11 +2287,10 @@ def _backtesting_foundation(
     """
     Backtesting of ForecasterFoundation.
 
-    The original forecaster is used directly (no copy): refit is always
-    disabled for foundation models and every fold passes `context`
-    explicitly, so `self.context_` is never modified during the fold loop.
-    The only state change is the initial `fit` call that stores the training
-    context window.
+    The original forecaster is used directly (no copy) and is not modified:
+    refit is always disabled for foundation models, `fit` is never called,
+    and every fold passes `context` explicitly, so neither the fit state nor
+    `context_` change during the fold loop.
 
     Parameters
     ----------
@@ -2314,8 +2313,9 @@ def _backtesting_foundation(
         `y_train` (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
     levels : str, list, default None
-        Time series to be predicted and evaluated. Only used in multi-series
-        mode. If `None`, all series seen at fit time are used.
+        Time series to be predicted and evaluated. Must be a subset of the
+        names in `series`, otherwise a `ValueError` is raised. If `None`,
+        all series are used.
     add_aggregated_metric : bool, default True
         If `True`, and multiple series (`levels`) are predicted, the aggregated
         metrics (average, weighted average and pooled) are also returned.
@@ -2392,10 +2392,11 @@ def _backtesting_foundation(
     series_names = list(series.keys())
     is_multiseries = len(series_names) > 1
 
-    if levels is not None:
-        levels = [levels] if isinstance(levels, str) else list(levels)
-    else:
-        levels = series_names
+    levels = _initialize_levels_model_selection_multiseries(
+                 forecaster = forecaster,
+                 series     = series,
+                 levels     = levels
+             )
 
     cv.set_params({
         'window_size': forecaster.window_size,
@@ -2447,13 +2448,17 @@ def _backtesting_foundation(
         # last valid value, but the context of a foundation model must end
         # at the end of the train span so that the predictions start at the
         # test start: the context is rebuilt from the first valid value up to
-        # the train end, trailing NaN included. Series without any actual
-        # value in the test window are not predicted in this fold.
+        # the train end, trailing NaN included. A series is predicted in this
+        # fold only if it has an actual value in the test window and its
+        # context window is not entirely NaN (an all-NaN context is rejected
+        # on the user-facing path but would reach the adapter here because
+        # `check_inputs=False`).
         context = {
             name: series[name].loc[s.index[0]:train_loc_end].iloc[-forecaster.context_length :]
             for name, s in context.items()
             if series[name].loc[test_loc_start:test_loc_end].notna().any()
         }
+        context = {name: s for name, s in context.items() if s.notna().any()}
         levels_predict = [level for level in levels if level in context]
         if not levels_predict:
             # NOTE: Same behaviour as `_backtesting_forecaster_multiseries`: the
@@ -2461,8 +2466,9 @@ def _backtesting_foundation(
             # that the output keeps its columns and the metrics are `None`.
             warnings.warn(
                 f"Fold {fold_number} has been skipped because none of the levels "
-                f"to predict {levels} have observed values in its test window. "
-                f"No predictions are generated for this fold.",
+                f"to predict {levels} have observed values in both its context "
+                f"window and its test window. No predictions are generated for "
+                f"this fold.",
                 MissingValuesWarning
             )
             col_names = ["pred"] if quantiles is None else [f"q_{q}" for q in quantiles]
@@ -2627,12 +2633,12 @@ def backtesting_foundation(
     """
     Backtesting of ForecasterFoundation.
 
-    The original forecaster is modified in-place (fitted on the initial
-    training slice) but its loaded model weights are preserved across the
-    entire backtesting run. Since foundation models are zero-shot, refit
-    is always disabled and per-fold predictions receive `last_window`
-    explicitly, so the stored context is not consulted or modified during
-    the fold loop.
+    The original forecaster is used directly (no copy) and is not modified:
+    its loaded model weights are reused across the entire backtesting run
+    and `fit` is never called. Since foundation models are zero-shot, refit
+    is always disabled and per-fold predictions receive `context`
+    explicitly, so neither the fit state nor the stored context change
+    during the fold loop.
 
     Parameters
     ----------
@@ -2658,8 +2664,9 @@ def backtesting_foundation(
         `y_train` (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
     levels : str, list, default None
-        Time series to be predicted and evaluated. Only used in multi-series
-        mode. If `None`, all series seen at fit time are used.
+        Time series to be predicted and evaluated. Must be a subset of the
+        names in `series`, otherwise a `ValueError` is raised. If `None`,
+        all series are used.
     add_aggregated_metric : bool, default True
         If `True`, and multiple series (`levels`) are predicted, the aggregated
         metrics (average, weighted average and pooled) are also returned.

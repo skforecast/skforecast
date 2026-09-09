@@ -46,9 +46,11 @@ The main changes in this release are:
 
 **Fixed**
 
-+ <code>[backtesting_foundation]</code> failed or produced wrongly dated predictions when a series ended before the end of the span, contained trailing NaN inside a fold, or had exogenous variables that did not cover the whole forecast horizon (`KeyError` in the metrics or in the Chronos-2 and TS-ICL adapters, `all input arrays must have the same shape` in TimesFM 3.0). The context of every series now ends at the end of the train span of the fold, so predictions always fall inside the fold's test window; a series is predicted in a fold only if it has at least one observed value in that window (a fold where no level can be predicted is skipped with a `MissingValuesWarning`, as in `backtesting_forecaster_multiseries`); and the historical and future exog are aligned to the context and to the horizon on the backtesting path as they already were in `predict`.
++ <code>[backtesting_foundation]</code> failed or produced wrongly dated predictions when a series ended before the end of the span, contained trailing NaN inside a fold, or had exogenous variables that did not cover the whole forecast horizon (`KeyError` in the metrics or in the Chronos-2 and TS-ICL adapters, `all input arrays must have the same shape` in TimesFM 3.0). The context of every series now ends at the end of the train span of the fold, so predictions always fall inside the fold's test window; a series is predicted in a fold only if it has at least one observed value in that window and its context window is not entirely NaN (a fold where no level can be predicted is skipped with a `MissingValuesWarning`, as in `backtesting_forecaster_multiseries`); and the historical and future exog are aligned to the context and to the horizon on the backtesting path as they already were in `predict`.
 
 + <code>[NoriAdapter]</code> failed with `Input y contains NaN` when the context contained NaN. The rows whose target or covariates are NaN are now dropped before the in-context fit.
+
++ <code>[backtesting_foundation]</code> silently accepted a `levels` argument with names that are not in `series` (the unknown level received a `None` metric, or every fold was skipped with a misleading `MissingValuesWarning` when none of the levels existed). It now raises a `ValueError` naming the unknown levels, as `backtesting_forecaster_multiseries` and `bayesian_search_foundation` already did.
 
 
 ## 0.24.0 <small>Aug 24, 2026</small> { id="0.24.0" }
