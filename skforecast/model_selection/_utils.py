@@ -1195,7 +1195,7 @@ def _calculate_metrics_backtesting_multiseries(
     )
     metrics_levels = []
     for level in levels:
-        if level in levels_in_predictions:
+        if level in levels_in_predictions and level in y_true_y_pred_grouped.groups:
             group = y_true_y_pred_grouped.get_group(level)
             y_true = group['y_true']
             y_pred = group['y_pred']

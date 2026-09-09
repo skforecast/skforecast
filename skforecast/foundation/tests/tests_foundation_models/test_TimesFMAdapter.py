@@ -953,80 +953,31 @@ def test_TimesFMAdapter_v3_build_covariates_per_series():
     assert past_future is None
 
 
-@pytest.mark.parametrize(
-    "context_exog, exog, expected",
-    [
-        (None, None, ((), ())),
-        (pd.DataFrame({"b": [0.0], "a": [0.0]}), None, (("a", "b"), ())),
-        (pd.DataFrame({"b": [0.0], "a": [0.0]}), pd.DataFrame({"b": [1.0]}), (("a",), ("b",))),
-        (pd.Series([0.0], name="f"), pd.Series([1.0], name="f"), ((), ("f",))),
-    ],
-    ids=["no_exog", "past_only", "mixed", "series_blocks"],
-)
-def test_TimesFMAdapter_v3_covariate_signature(context_exog, exog, expected):
+def test_TimesFMAdapter_v3_predict_single_call_per_homogeneous_batch():
     """
-    Test that _v3_covariate_signature returns sorted (past_only_cols,
-    fut_cols) tuples for one series, treating pandas Series blocks by name.
-    """
-    assert TimesFMAdapter._v3_covariate_signature(context_exog, exog) == expected
-
-
-def test_TimesFMAdapter_v3_predict_ValueError_when_future_column_without_history():
-    """
-    Test that the adapter itself (path without FoundationModel's check, as
-    in check_inputs=False or direct use) raises ValueError when a series'
-    future exog has a column absent from its context_exog.
-    """
-    context_length = 20
-    steps = 3
-    adapter = make_v3_adapter(context_length=context_length)
-    ctx, ctx_exog = prepare_fit_args(y, exog=None, context_length=context_length)
-    adapter.fit(context=ctx, context_exog=ctx_exog)
-
-    idx = adapter.context_["sales"].index
-    future_idx = pd.date_range(idx[-1] + pd.DateOffset(months=1), periods=steps, freq="ME")
-    future_exog = pd.DataFrame({"e": np.arange(steps, dtype=float)}, index=future_idx)
-    ctx_p, ctx_exog_p, exog_p = prepare_predict_args(
-        adapter, steps=steps, exog=future_exog
-    )
-
-    err_msg = re.escape(
-        "`exog` contains columns with no historical values in `context_exog`: ['e']."
-    )
-    with pytest.raises(ValueError, match=err_msg):
-        adapter.predict(
-            steps=steps, context=ctx_p, context_exog=ctx_exog_p,
-            exog=exog_p, quantiles=None
-        )
-
-
-def test_TimesFMAdapter_v3_predict_groups_series_by_covariate_signature():
-    """
-    Test that predict calls predict_batch once per distinct covariate
-    signature, forwarding to each call only the series of that signature
-    with their own covariate arrays (no placeholders), and that the output
-    keeps the original series order.
+    Test that predict makes exactly one predict_batch call for a batch of
+    series sharing the same covariate columns (as guaranteed by
+    FoundationModel), building each series' covariate arrays from its own
+    exog in the sorted column order of the signature even when the series
+    list their columns in a different order or have different lengths, and
+    that the output keeps the original series order.
     """
     context_length = 20
     steps = 5
     idx = y.index[-context_length:]
     future_idx = pd.date_range(idx[-1] + pd.DateOffset(months=1), periods=steps, freq="ME")
-    context = {
-        name: pd.Series(np.arange(context_length, dtype=float) * k, index=idx, name=name)
-        for k, name in enumerate(["full", "none", "past", "full2"], start=1)
-    }
     p_values = np.arange(context_length, dtype=float)
+    context = {
+        "full":  pd.Series(p_values, index=idx, name="full"),
+        "short": pd.Series(p_values[-8:] * 2, index=idx[-8:], name="short"),
+    }
     context_exog = {
         "full":  pd.DataFrame({"p": p_values, "k": p_values * 2}, index=idx),
-        "none":  None,
-        "past":  pd.DataFrame({"p": p_values * 3}, index=idx),
-        "full2": pd.DataFrame({"k": p_values * 4, "p": p_values * 5}, index=idx),
+        "short": pd.DataFrame({"k": p_values[-8:] * 4, "p": p_values[-8:] * 5}, index=idx[-8:]),
     }
     exog = {
         "full":  pd.DataFrame({"k": np.arange(steps, dtype=float) + 100}, index=future_idx),
-        "none":  None,
-        "past":  None,
-        "full2": pd.DataFrame({"k": np.arange(steps, dtype=float) + 200}, index=future_idx),
+        "short": pd.DataFrame({"k": np.arange(steps, dtype=float) + 200}, index=future_idx),
     }
 
     fake_model = FakeTimesFM3Forecaster()
@@ -1038,45 +989,23 @@ def test_TimesFMAdapter_v3_predict_groups_series_by_covariate_signature():
         exog=exog, quantiles=None
     )
 
-    assert list(raw.keys()) == ["full", "none", "past", "full2"]
+    assert list(raw.keys()) == ["full", "short"]
     assert all(arr.shape == (steps, 1) for arr in raw.values())
-    assert len(fake_model.calls) == 3
+    assert len(fake_model.calls) == 1
 
-    # Group 1: 'full' and 'full2' share signature (past_only=('p',), fut=('k',))
     call = fake_model.calls[0]
     assert len(call["contexts"]) == 2
     assert call["padding_mode"] == "edge"
     np.testing.assert_array_almost_equal(call["past_only_covariates"][0][0], p_values)
-    np.testing.assert_array_almost_equal(call["past_only_covariates"][1][0], p_values * 5)
+    np.testing.assert_array_almost_equal(call["past_only_covariates"][1][0], p_values[-8:] * 5)
     np.testing.assert_array_almost_equal(
         call["past_future_covariates"][0][0],
         np.concatenate([p_values * 2, np.arange(steps, dtype=float) + 100]),
     )
     np.testing.assert_array_almost_equal(
         call["past_future_covariates"][1][0],
-        np.concatenate([p_values * 4, np.arange(steps, dtype=float) + 200]),
+        np.concatenate([p_values[-8:] * 4, np.arange(steps, dtype=float) + 200]),
     )
-
-    # Group 2: 'none' has no covariates
-    call = fake_model.calls[1]
-    assert len(call["contexts"]) == 1
-    assert call["padding_mode"] == "none"
-    assert call["past_only_covariates"] is None
-    assert call["past_future_covariates"] is None
-
-    # Group 3: 'past' has a single past-only covariate
-    call = fake_model.calls[2]
-    assert len(call["contexts"]) == 1
-    assert call["padding_mode"] == "edge"
-    assert call["past_only_covariates"][0].shape == (1, context_length)
-    np.testing.assert_array_almost_equal(call["past_only_covariates"][0][0], p_values * 3)
-    assert call["past_future_covariates"] == [None]
-
-    for call in fake_model.calls:
-        for cov in (call["past_only_covariates"], call["past_future_covariates"]):
-            if cov is not None:
-                assert not any(np.isnan(c).any() for c in cov if c is not None)
-
 
 def test_TimesFMAdapter_v3_predict_forwards_predict_kwargs():
     """

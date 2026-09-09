@@ -89,35 +89,27 @@ for k in series_dict.keys():
         print("\tNo exogenous variables")
 
 
-# Fit forecaster
+# Fit and Predict forecaster
 # ==============================================================================
-model_id = "google/timesfm-3.0-pytorch"
-model_id="autogluon/chronos-2-small"
+model_ids = [
+    "autogluon/chronos-2-small",
+    "google/timesfm-3.0-pytorch",
+    "google/timesfm-2.5-200m-pytorch",
+    "soda-inria/tabicl",
+    "priorlabs/tabpfn-ts",
+    "theforecastingcompany/t0-alpha",
+    "Synthefy/Nori",
+    "taharnbl/TS-ICL"
+]
 
-estimator = FoundationModel(model_id=model_id, context_length=500)
-forecaster = ForecasterFoundation(estimator=estimator)
-forecaster.fit(series=series_dict_train, exog=exog_dict_train)
 
-# Predict
-# ==============================================================================
-predictions = forecaster.predict(steps=5, exog=exog_dict_test)
-predictions.head(9)
-
-
-# Backtesting
-# ==============================================================================
-cv = TimeSeriesFold(
-         steps              = 24,
-         initial_train_size = "2016-07-31 23:59:00",
-     )
-
-metrics_levels, backtest_predictions = backtesting_foundation(
-    forecaster            = forecaster,
-    series                = series_dict,
-    exog                  = exog_dict,
-    cv                    = cv,
-    levels                = None,
-    metric                = "mean_absolute_error",
-    add_aggregated_metric = True,
-    suppress_warnings     = True
-)
+for model_id in model_ids:
+    try:
+        estimator = FoundationModel(model_id=model_id, context_length=500)
+        forecaster = ForecasterFoundation(estimator=estimator)
+        forecaster.fit(series=series_dict_train, exog=exog_dict_train)
+        predictions = forecaster.predict(steps=5, exog=exog_dict_test)
+        print(predictions.head(9))
+    except Exception as e:
+        # Now you will know exactly which model threw the error
+        print(f"FAILED - Error with {model_id}: {e}")

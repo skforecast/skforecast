@@ -4,11 +4,11 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.exceptions import IgnoredArgumentWarning
+from skforecast.exceptions import IgnoredArgumentWarning, MissingValuesWarning
 from skforecast.foundation._foundation_model import FoundationModel
 from .fixtures_adapters import (
     y, data, y_dict,
-    FakePipeline, FakeTimesFM25Model,
+    FakePipeline, FakeTimesFM25Model, FakeTimesFM3Forecaster,
 )
 
 
@@ -512,3 +512,179 @@ def test_predict_levels_ValueError_when_unknown_level():
     err_msg = re.escape("`levels` ['foo'] not found in available series")
     with pytest.raises(ValueError, match=err_msg):
         m.predict(steps=3, levels=["s1", "foo"])
+
+
+# Tests predict: heterogeneous exog across series
+# ==============================================================================
+_HETERO_INDEX = pd.date_range("2020-01-31", periods=12, freq="ME")
+_HETERO_FUTURE_INDEX = pd.date_range("2021-01-31", periods=3, freq="ME")
+_p = np.arange(12, dtype=float)
+
+
+def _make_heterogeneous_inputs():
+    """
+    Four series with different exog columns: 'full' and 'full2' share the
+    same (past-only, future) columns, 'past' has only a past-only column and
+    'none' has no exog.
+    """
+    context = {
+        name: pd.Series(_p * k, index=_HETERO_INDEX, name=name)
+        for k, name in enumerate(["full", "none", "past", "full2"], start=1)
+    }
+    context_exog = {
+        "full":  pd.DataFrame({"p": _p, "k": _p * 2}, index=_HETERO_INDEX),
+        "none":  None,
+        "past":  pd.DataFrame({"p": _p * 3}, index=_HETERO_INDEX),
+        "full2": pd.DataFrame({"k": _p * 4, "p": _p * 5}, index=_HETERO_INDEX),
+    }
+    exog = {
+        "full":  pd.DataFrame({"k": np.arange(3, dtype=float)}, index=_HETERO_FUTURE_INDEX),
+        "full2": pd.DataFrame({"k": np.arange(3, dtype=float)}, index=_HETERO_FUTURE_INDEX),
+    }
+    return context, context_exog, exog
+
+
+def test_predict_groups_series_by_exog_signature_when_adapter_requires_it():
+    """
+    Test that, for an adapter with supports_heterogeneous_covariates=False
+    (Chronos), predict calls the backend once per distinct set of exog
+    columns, every call receives homogeneous covariate keys, and the output
+    contains every series in the input order.
+    """
+    context, context_exog, exog = _make_heterogeneous_inputs()
+    pipeline = FakePipeline()
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=pipeline)
+    m.fit(series=context, exog=context_exog)
+
+    predictions = m.predict(steps=3, exog=exog)
+
+    assert len(pipeline.calls) == 3
+    calls_keys = [
+        [
+            (sorted(d.get("past_covariates", {})), sorted(d.get("future_covariates", {})))
+            for d in call["inputs"]
+        ]
+        for call in pipeline.calls
+    ]
+    assert calls_keys == [
+        [(["k", "p"], ["k"]), (["k", "p"], ["k"])],
+        [([], [])],
+        [(["p"], [])],
+    ]
+    assert list(predictions["level"].unique()) == ["full", "none", "past", "full2"]
+    assert predictions.shape == (12, 2)
+    np.testing.assert_array_almost_equal(predictions["pred"].to_numpy(), np.full(12, 0.5))
+
+
+def test_predict_single_call_when_adapter_supports_heterogeneous_covariates(monkeypatch):
+    """
+    Test that an adapter with supports_heterogeneous_covariates=True receives
+    every series in a single backend call regardless of their exog columns.
+    """
+    context, context_exog, exog = _make_heterogeneous_inputs()
+    pipeline = FakePipeline()
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=pipeline)
+    monkeypatch.setattr(m.adapter, "supports_heterogeneous_covariates", True)
+    m.fit(series=context, exog=context_exog)
+
+    predictions = m.predict(steps=3, exog=exog)
+
+    assert len(pipeline.calls) == 1
+    assert len(pipeline.calls[0]["inputs"]) == 4
+    assert list(predictions["level"].unique()) == ["full", "none", "past", "full2"]
+
+
+def test_predict_timesfm_v3_one_predict_batch_call_per_exog_signature():
+    """
+    Test that TimesFM 3.0, whose predict_batch stacks the covariate arrays
+    of the batch, receives one predict_batch call per distinct set of exog
+    columns and that the output keeps the input series order.
+    """
+    context, context_exog, exog = _make_heterogeneous_inputs()
+    fake_model = FakeTimesFM3Forecaster()
+    m = FoundationModel("google/timesfm-3.0-pytorch", model=fake_model)
+    m.fit(series=context, exog=context_exog)
+
+    predictions = m.predict(steps=3, exog=exog)
+
+    assert len(fake_model.calls) == 3
+    assert [len(call["contexts"]) for call in fake_model.calls] == [2, 1, 1]
+    assert [call["padding_mode"] for call in fake_model.calls] == ["edge", "none", "edge"]
+    assert list(predictions["level"].unique()) == ["full", "none", "past", "full2"]
+    assert predictions.shape == (12, 2)
+
+
+def test_predict_aligns_context_exog_and_exog_when_check_inputs_False():
+    """
+    Test that, with check_inputs=False (internal backtesting path), the
+    historical exog is aligned to the context index, the future exog is
+    reindexed to the forecast horizon with NaN for missing timestamps (with
+    a MissingValuesWarning), and a series without a key in exog is
+    forwarded without future covariates.
+    """
+    long_index = pd.date_range("2019-07-31", periods=18, freq="ME")
+    context = {
+        "s1": pd.Series(_p, index=_HETERO_INDEX, name="s1"),
+        "s2": pd.Series(_p, index=_HETERO_INDEX, name="s2"),
+    }
+    context_exog = {
+        "s1": pd.DataFrame({"a": np.arange(18, dtype=float)}, index=long_index),
+        "s2": pd.DataFrame({"a": np.arange(18, dtype=float)}, index=long_index),
+    }
+    exog = {
+        "s1": pd.DataFrame({"a": [1.0]}, index=_HETERO_FUTURE_INDEX[:1]),
+    }
+    pipeline = FakePipeline()
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=pipeline)
+
+    warn_msg = re.escape(
+        "`exog` for series ['s1'] has been reindexed to match the expected "
+        "forecast horizon. Missing timestamps were filled with NaN."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        predictions = m.predict(
+            steps        = 3,
+            context      = context,
+            context_exog = context_exog,
+            exog         = exog,
+            check_inputs = False,
+        )
+
+    assert len(pipeline.calls) == 2
+    input_s1 = pipeline.calls[0]["inputs"][0]
+    input_s2 = pipeline.calls[1]["inputs"][0]
+    np.testing.assert_array_almost_equal(
+        input_s1["past_covariates"]["a"], np.arange(6, 18, dtype=float)
+    )
+    np.testing.assert_array_almost_equal(
+        input_s1["future_covariates"]["a"], np.array([1.0, np.nan, np.nan])
+    )
+    np.testing.assert_array_almost_equal(
+        input_s2["past_covariates"]["a"], np.arange(6, 18, dtype=float)
+    )
+    assert "future_covariates" not in input_s2
+    assert predictions.shape == (6, 2)
+
+
+def test_predict_ValueError_when_context_has_nan_and_adapter_does_not_support_it(
+    monkeypatch
+):
+    """
+    Test that predict raises ValueError naming the series with NaN when the
+    adapter declares supports_nan_in_series=False.
+    """
+    context = {
+        "s1": pd.Series(_p, index=_HETERO_INDEX, name="s1"),
+        "s2": pd.Series(np.where(_p > 5, np.nan, _p), index=_HETERO_INDEX, name="s2"),
+    }
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    monkeypatch.setattr(m.adapter, "supports_nan_in_series", False)
+    m.fit(series=context)
+
+    err_msg = re.escape(
+        "ChronosAdapter does not accept NaN values in the series used as "
+        "context. Series with NaN: ['s2']. Impute or drop them before "
+        "predicting."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        m.predict(steps=3)

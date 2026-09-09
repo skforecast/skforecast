@@ -696,3 +696,23 @@ def test_ChronosAdapter_to_covariate_array_non_pandas_inputs(
     """
     arr = ChronosAdapter._to_covariate_array(col_data)
     assert arr.dtype.kind in expected_dtype_kind
+
+
+def test_ChronosAdapter_predict_series_without_exog_key_has_no_covariates():
+    """
+    Test that a series missing from the context_exog and exog dicts (as in
+    the backtesting path) is forwarded without covariate keys instead of
+    raising KeyError.
+    """
+    pipeline = FakePipeline()
+    adapter = ChronosAdapter(
+        model_id="autogluon/chronos-2-small", pipeline=pipeline
+    )
+    ctx, _ = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=None)
+
+    adapter.predict(
+        steps=3, context=ctx, context_exog={}, exog={}, quantiles=None
+    )
+    assert "past_covariates" not in pipeline.last_inputs[0]
+    assert "future_covariates" not in pipeline.last_inputs[0]
