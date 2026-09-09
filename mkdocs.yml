@@ -166,7 +166,7 @@ plugins:
           options:
             docstring_style: numpy
             docstring_section_style: table
-            filters: ["!__"] # exclude all members starting with __
+            filters: ["!^_"] # exclude private members and dunders (^ anchors to start)
             members_order: source
             merge_init_into_class: true
             separate_signature: true

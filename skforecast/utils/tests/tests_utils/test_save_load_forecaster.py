@@ -185,7 +185,7 @@ def test_save_forecaster_save_custom_functions(weight_func, monkeypatch):
                          [custom_weights,
                           {'serie_1': custom_weights,
                            'serie_2': custom_weights2}],
-                         ids = lambda func: f'func: {func}')
+                         ids = ['func: function', 'func: dict of functions'])
 def test_save_forecaster_warning_dont_save_custom_functions(weight_func, monkeypatch):
     """
     Test SaveLoadSkforecastWarning when '__main__' custom functions are not saved.

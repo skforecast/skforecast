@@ -7,11 +7,13 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from skforecast.direct import ForecasterDirect
+from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
 from .fixtures_forecaster_direct import y
 from .fixtures_forecaster_direct import exog
 from .fixtures_forecaster_direct import exog_predict
+from .fixtures_forecaster_direct import y_intermittent
 
 
 def test_check_interval_ValueError_when_method_is_not_valid_method():
@@ -243,3 +245,72 @@ def test_predict_interval_conformal_output_when_binned_residuals(interval):
                )
     
     pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_interval_bootstrapping_binned_residuals_when_binner_reduces_n_bins():
+    """
+    Test predict_interval with method 'bootstrapping' and binned residuals when
+    the predictions are so concentrated that the binner has to reduce the number
+    of bins. Every bin id returned by the binner must have residuals associated
+    with it.
+    """
+    forecaster = ForecasterDirect(estimator=LinearRegression(), lags=5, steps=3)
+    warn_msg = re.escape(
+        "The number of bins has been reduced from 10 to 9 due to empty bins. "
+        "This happens when "
+        "the values used to compute the edges of the bins are highly "
+        "concentrated or contain many repeated values.",
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        forecaster.fit(y=y_intermittent, store_in_sample_residuals=True)
+    results = forecaster.predict_interval(
+        steps=3, method='bootstrapping', interval=0.8, use_binned_residuals=True
+    )
+
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [ 0.56717387, -0.32346175,  3.06027443],
+                              [-2.39178993, -3.28242556,  0.10131063],
+                              [ 9.61191402,  2.46656439, 23.2188022 ]]),
+                   index = pd.date_range(start='2020-03-21', periods=3, freq='D'),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+
+    assert forecaster.binner.n_bins_ == 9
+    assert sorted(forecaster.in_sample_residuals_by_bin_) == list(range(9))
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_interval_conformal_binned_residuals_when_binner_reduces_n_bins():
+    """
+    Test predict_interval with method 'conformal' and binned residuals when the
+    predictions are so concentrated that the binner has to reduce the number of
+    bins. Every bin id returned by the binner must have residuals associated
+    with it.
+    """
+    forecaster = ForecasterDirect(estimator=LinearRegression(), lags=5, steps=3)
+    warn_msg = re.escape(
+        "The number of bins has been reduced from 10 to 9 due to empty bins. "
+        "This happens when "
+        "the values used to compute the edges of the bins are highly "
+        "concentrated or contain many repeated values.",
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        forecaster.fit(y=y_intermittent, store_in_sample_residuals=True)
+    results = forecaster.predict_interval(
+        steps=3, method='conformal', interval=0.8, use_binned_residuals=True
+    )
+
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [ 0.56717387, -0.96324417,  2.09759192],
+                              [-2.39178993, -3.92220797, -0.86137189],
+                              [ 9.61191402,  0.44226262, 18.78156542]]),
+                   index = pd.date_range(start='2020-03-21', periods=3, freq='D'),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+
+    assert forecaster.binner.n_bins_ == 9
+    assert sorted(forecaster.in_sample_residuals_by_bin_) == list(range(9))
+    pd.testing.assert_frame_equal(results, expected)
+

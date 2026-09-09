@@ -37,6 +37,7 @@ The main changes in this release are:
 
 + <code>[ForecasterFoundation]</code> exposes the read-only attribute `allow_exog` (delegates to `estimator.allow_exog`), so the four adapter capability flags (`allow_exog`, `supports_past_only_covariates`, `supports_heterogeneous_covariates`, `supports_nan_in_series`) can be inspected on the forecaster. [User guide](../user_guides/foundation-forecasting-with-heterogeneous-series.ipynb)
 
+
 **Changed**
 
 + <code>[FoundationModel]</code> and <code>[ForecasterFoundation]</code> now validate the columns of the future `exog` against the historical exog of each series at predict time. A future column with no historical values raises a `ValueError`. A historical column with no future values is used as a past-only covariate by the adapters that support it (Chronos-2, TS-ICL, TimesFM 3.0) and ignored with an `IgnoredArgumentWarning` by the rest (TabICL, TabPFN-TS, TFC-T0, Nori). The new read-only attribute `supports_past_only_covariates` exposes which behavior applies.
@@ -53,6 +54,12 @@ The main changes in this release are:
 + <code>[NoriAdapter]</code> failed with `Input y contains NaN` when the context contained NaN. The rows whose target or covariates are NaN are now dropped before the in-context fit.
 
 + <code>[backtesting_foundation]</code> silently accepted a `levels` argument with names that are not in `series` (the unknown level received a `None` metric, or every fold was skipped with a misleading `MissingValuesWarning` when none of the levels existed). It now raises a `ValueError` naming the unknown levels, as `backtesting_forecaster_multiseries` and `bayesian_search_foundation` already did.
+
++ Fixed an issue in <code>[QuantileBinner]</code> where quantile interpolation could create bins that no observation falls into, so the corresponding bin was missing from the residuals dictionary of the Forecasters. This caused a `KeyError`, or the use of the residuals of a different bin, in `predict_interval`, `predict_bootstrapping` and `predict_quantiles` when `use_binned_residuals=True`.
+
++ Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> where `predict_bootstrapping` used the requested number of bins instead of the number of bins actually learned by each series binner, raising a `KeyError` when any of them was reduced.
+
++ Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> where `set_out_sample_residuals` built the binned residuals of `'_unknown_level'` by joining the bins of the known series, although each series has its own binner. The residuals of all series are now binned with the binner of `'_unknown_level'`, so `predict_interval`, `predict_bootstrapping` and `predict_quantiles` no longer raise a `KeyError` for unknown levels when `use_in_sample_residuals=False` and `use_binned_residuals=True`, and the residuals stored in each bin correspond to that bin.
 
 
 ## 0.24.0 <small>Aug 24, 2026</small> { id="0.24.0" }
