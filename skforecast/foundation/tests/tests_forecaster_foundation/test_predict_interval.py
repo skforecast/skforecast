@@ -5,7 +5,6 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.foundation import ForecasterFoundation
 
 # Fixtures
 from .fixtures_forecaster_foundation import (

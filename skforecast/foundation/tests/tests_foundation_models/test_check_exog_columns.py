@@ -8,7 +8,8 @@ from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.foundation._foundation_model import FoundationModel
 from skforecast.foundation._adapters import (
     ChronosAdapter,
-    TimesFMAdapter,
+    TimesFM25Adapter,
+    TimesFM3Adapter,
     MoiraiAdapter,
     TabICLAdapter,
     TabPFNAdapter,
@@ -75,7 +76,8 @@ def _make_model(model_id="autogluon/chronos-2-small"):
         (T0Adapter, False),
         (NoriAdapter, False),
         (MoiraiAdapter, False),
-        (TimesFMAdapter, False),
+        (TimesFM25Adapter, False),
+        (TimesFM3Adapter, True),
     ],
     ids=lambda x: f"{getattr(x, '__name__', x)}",
 )
@@ -83,8 +85,7 @@ def test_adapters_declare_supports_past_only_covariates(adapter_cls, expected):
     """
     Test that every adapter class declares supports_past_only_covariates:
     True for adapters that use historical columns without future values as
-    past-only covariates, False for those that drop them. TimesFMAdapter
-    overrides it per instance (True only for the v3.0 backend).
+    past-only covariates, False for those that drop them.
     """
     assert adapter_cls.supports_past_only_covariates is expected
 
@@ -92,7 +93,7 @@ def test_adapters_declare_supports_past_only_covariates(adapter_cls, expected):
 def test_FoundationModel_supports_past_only_covariates_mirrors_adapter():
     """
     Test that FoundationModel.supports_past_only_covariates delegates to the
-    adapter, including the per-instance value of TimesFMAdapter.
+    adapter.
     """
     assert _make_model("autogluon/chronos-2-small").supports_past_only_covariates is True
     assert _make_model("soda-inria/tabicl").supports_past_only_covariates is False

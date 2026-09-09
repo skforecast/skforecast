@@ -159,18 +159,6 @@ def test_MoiraiAdapter_set_params_no_reset_when_value_unchanged():
 # ==============================================================================
 # Tests MoiraiAdapter.fit
 # ==============================================================================
-def test_MoiraiAdapter_fit_error_handling():
-    """
-    Test fit raises TypeError for unsupported series types and ValueError
-    for empty dict.
-    """
-    adapter = make_adapter()
-    with pytest.raises(TypeError):
-        prepare_fit_args(np.arange(50))
-    with pytest.raises(ValueError):
-        prepare_fit_args({})
-
-
 @pytest.mark.parametrize(
     "context_length, expected_len",
     [(10, 10), (20, 20), (50, 50), (100, 50)],

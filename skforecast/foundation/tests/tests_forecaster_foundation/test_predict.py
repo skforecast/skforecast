@@ -5,7 +5,6 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.foundation import ForecasterFoundation
 
 # Fixtures
 from .fixtures_forecaster_foundation import (
@@ -16,10 +15,7 @@ from .fixtures_forecaster_foundation import (
     exog_lw,
     exog_predict,
     exog_predict_lw,
-    df_exog,
-    df_exog_predict,
     series_df,
-    series_dict,
     lw_df,
     lw_dict,
 )

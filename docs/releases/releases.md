@@ -16,11 +16,15 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> <code>[ForecasterFoundation]</code> and <code>[FoundationModel]</code> now accept heterogeneous multi-series input: series of different lengths, a different subset of exogenous columns per series, and NaN values in the target. Every series is forecast with its own exog columns only. For backends that require identical covariate columns in a batch (Chronos-2, TS-ICL, TabICL, TimesFM 3.0), the series are grouped by their exog columns and the backend is called once per group, so the prediction of a series never depends on the exog of the other series (Chronos-2 `cross_learning` applies within each group). The new read-only attributes `supports_heterogeneous_covariates` and `supports_nan_in_series` (on `FoundationModel` and `ForecasterFoundation`, together with `supports_past_only_covariates`) expose the backend constraints. [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
-+ <span class="badge text-bg-feature">Feature</span> <code>[TimesFMAdapter]</code> now supports **TimesFM 3.0** in addition to TimesFM 2.5, dispatched automatically from the `model_id` prefix (`'google/timesfm-3.0'`). Unlike TimesFM 2.5, TimesFM 3.0 accepts past-only and known-future exogenous variables and adds new `device` and `predict_kwargs` parameters. [User guide](../user_guides/foundation-forecasting-models.ipynb)
++ <span class="badge text-bg-feature">Feature</span> New <code>[TimesFM3Adapter]</code> adds support for **Google TimesFM 3.0** (`'google/timesfm-3.0-*'` ids), resolved automatically from `model_id`. Unlike TimesFM 2.5, it accepts past-only and known-future exogenous variables and exposes `device` and `predict_kwargs`. [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
 + <span class="badge text-bg-feature">Feature</span> New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised whenever a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded (deduplicated to once per session by Python's default warning filter). Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 
 + <span class="badge text-bg-api-change">API Change</span> <code>[FoundationModel]</code> and <code>[ForecasterFoundation]</code> now validate the columns of the future `exog` against the historical exog of each series at predict time. A future column with no historical values raises a `ValueError`. A historical column with no future values is used as a past-only covariate by the adapters that support it (Chronos-2, TS-ICL, TimesFM 3.0) and ignored with an `IgnoredArgumentWarning` by the rest (TabICL, TabPFN-TS, TFC-T0, Nori). The new read-only attribute `supports_past_only_covariates` exposes which behavior applies.
+
++ <span class="badge text-bg-api-change">API Change</span> `TimesFMAdapter` renamed to <code>[TimesFM25Adapter]</code> (`'google/timesfm-2.5-*'` ids). The adapter is reached through <code>[FoundationModel]</code>, so user code is unaffected, but forecasters pickled by earlier versions with a `TimesFMAdapter` cannot be loaded.
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[FoundationModel]</code> `set_params` now raises a `ValueError` when the new `model_id` is served by a different adapter than the one selected at construction (or by none). Previously the id was accepted and the failure surfaced only when the weights were loaded. Create a new <code>[FoundationModel]</code> to switch model family.
 
 + <span class="badge text-bg-api-change">API Change</span> Removed support for percentiles in the `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions. Deprecated since 0.23.0, `interval` must now be expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`). Passing percentiles such as `interval=[5, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
 
@@ -31,7 +35,7 @@ The main changes in this release are:
 
 + <code>[ForecasterFoundation]</code> and <code>[FoundationModel]</code> now accept heterogeneous multi-series input: series of different lengths, a different subset of exogenous columns per series, and NaN values in the target. Every series is forecast with its own exog columns only. For backends that require identical covariate columns in a batch (Chronos-2, TS-ICL, TabICL, TimesFM 3.0), the series are grouped by their exog columns and the backend is called once per group, so the prediction of a series never depends on the exog of the other series (Chronos-2 `cross_learning` applies within each group). The new read-only attributes `supports_heterogeneous_covariates` and `supports_nan_in_series` (on `FoundationModel` and `ForecasterFoundation`, together with `supports_past_only_covariates`) expose the backend constraints. [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
-+ <code>[TimesFMAdapter]</code> now supports **TimesFM 3.0** in addition to TimesFM 2.5, dispatched automatically from the `model_id` prefix (`'google/timesfm-3.0'`). Unlike TimesFM 2.5, TimesFM 3.0 accepts past-only and known-future exogenous variables and adds new `device` and `predict_kwargs` parameters. [User guide](../user_guides/foundation-forecasting-models.ipynb)
++ New <code>[TimesFM3Adapter]</code> adds support for **Google TimesFM 3.0** (`'google/timesfm-3.0-*'` ids), resolved automatically from `model_id`. Unlike TimesFM 2.5, it accepts past-only and known-future exogenous variables and exposes `device` and `predict_kwargs`. [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
 + New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised whenever a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded (deduplicated to once per session by Python's default warning filter). Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 
@@ -41,6 +45,10 @@ The main changes in this release are:
 **Changed**
 
 + <code>[FoundationModel]</code> and <code>[ForecasterFoundation]</code> now validate the columns of the future `exog` against the historical exog of each series at predict time. A future column with no historical values raises a `ValueError`. A historical column with no future values is used as a past-only covariate by the adapters that support it (Chronos-2, TS-ICL, TimesFM 3.0) and ignored with an `IgnoredArgumentWarning` by the rest (TabICL, TabPFN-TS, TFC-T0, Nori). The new read-only attribute `supports_past_only_covariates` exposes which behavior applies.
+
++ `TimesFMAdapter` renamed to <code>[TimesFM25Adapter]</code> (`'google/timesfm-2.5-*'` ids). The adapter is reached through <code>[FoundationModel]</code>, so user code is unaffected, but forecasters pickled by earlier versions with a `TimesFMAdapter` cannot be loaded.
+
++ <code>[FoundationModel]</code> `set_params` now raises a `ValueError` when the new `model_id` is served by a different adapter than the one selected at construction (or by none). Previously the id was accepted and the failure surfaced only when the weights were loaded. Create a new <code>[FoundationModel]</code> to switch model family.
 
 + Removed support for percentiles in the `interval` argument of the `predict_interval` method of the Forecasters and of the backtesting functions. Deprecated since 0.23.0, `interval` must now be expressed as quantiles in the 0-1 range (e.g. `interval=[0.05, 0.95]`). Passing percentiles such as `interval=[5, 95]` no longer emits a `FutureWarning` and raises a `ValueError` instead.
 
@@ -1685,7 +1693,8 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- foundation -->
 [FoundationModel]: ../api/FoundationModel.md#skforecast.foundation._foundation_model.FoundationModel
 [ChronosAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.ChronosAdapter
-[TimesFMAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TimesFMAdapter
+[TimesFM25Adapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TimesFM25Adapter
+[TimesFM3Adapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TimesFM3Adapter
 [MoiraiAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.MoiraiAdapter
 [TabICLAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TabICLAdapter
 [TabPFNAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TabPFNAdapter

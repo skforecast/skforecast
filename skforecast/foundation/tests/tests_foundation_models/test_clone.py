@@ -12,6 +12,7 @@ from skforecast.foundation._foundation_model import FoundationModel
     [
         "autogluon/chronos-2-small",
         "google/timesfm-2.5-200m-pytorch",
+        "google/timesfm-3.0-pytorch",
         "Salesforce/moirai-2.0-R-small",
         "soda-inria/tabicl",
         "priorlabs/tabpfn-ts",
@@ -19,7 +20,7 @@ from skforecast.foundation._foundation_model import FoundationModel
         "taharnbl/TS-ICL",
         "Synthefy/Nori",
     ],
-    ids=["chronos", "timesfm", "moirai", "tabicl", "tabpfn", "t0", "tsicl", "nori"],
+    ids=["chronos", "timesfm", "timesfm3", "moirai", "tabicl", "tabpfn", "t0", "tsicl", "nori"],
 )
 def test_clone_round_trip_every_adapter_default_params(model_id):
     """
@@ -41,11 +42,12 @@ def test_clone_round_trip_every_adapter_default_params(model_id):
     [
         ("autogluon/chronos-2-small",       {"predict_kwargs": {"num_samples": 20}}),
         ("google/timesfm-2.5-200m-pytorch", {"forecast_config_kwargs": {"normalize_inputs": True}}),
+        ("google/timesfm-3.0-pytorch",      {"predict_kwargs": {"use_znorm": True}}),
         ("soda-inria/tabicl",               {"tabicl_config": {"n_estimators": 4}}),
         ("priorlabs/tabpfn-ts",             {"tabpfn_model_config": {"device": "cpu"}}),
         ("Synthefy/Nori",                   {"nori_config": {"model_path": "dummy"}}),
     ],
-    ids=["chronos", "timesfm", "tabicl", "tabpfn", "nori"],
+    ids=["chronos", "timesfm", "timesfm3", "tabicl", "tabpfn", "nori"],
 )
 def test_clone_round_trip_with_non_empty_config_dict(model_id, config_kwargs):
     """

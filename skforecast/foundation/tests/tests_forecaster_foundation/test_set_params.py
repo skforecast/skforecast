@@ -2,12 +2,10 @@
 # ==============================================================================
 import re
 import pytest
-import numpy as np
-import pandas as pd
 from skforecast.foundation import ForecasterFoundation, FoundationModel
 
 # Fixtures
-from .fixtures_forecaster_foundation import make_forecaster, FakePipeline, y
+from .fixtures_forecaster_foundation import make_forecaster, y
 
 
 # Tests set_params — errors

@@ -1,10 +1,8 @@
 # Unit test _resolve_torch_device and adapter device handling
 # ==============================================================================
-import re
 from unittest.mock import patch, MagicMock
 import pytest
 import numpy as np
-import pandas as pd
 from skforecast.foundation._adapters import (
     _resolve_torch_device,
     ChronosAdapter,

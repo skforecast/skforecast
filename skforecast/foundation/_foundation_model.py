@@ -101,10 +101,10 @@ class FoundationModel:
           default 8192), `device_map` (str, default `'auto'`),
           `torch_dtype` (object, default None), `predict_kwargs` (dict,
           default None), `cross_learning` (bool, default False).
-        - **Google TimesFM 2.5** (`TimesFMAdapter`): `context_length` (int,
+        - **Google TimesFM 2.5** (`TimesFM25Adapter`): `context_length` (int,
           default 512), `max_horizon` (int, default 512),
           `forecast_config_kwargs` (dict, default None).
-        - **Google TimesFM 3.0** (`TimesFMAdapter`): `context_length` (int,
+        - **Google TimesFM 3.0** (`TimesFM3Adapter`): `context_length` (int,
           default 2048), `device` (str, default `'auto'`), `predict_kwargs`
           (dict, default None).
         - **Salesforce Moirai-2** (`MoiraiAdapter`): `context_length` (int,
@@ -136,7 +136,7 @@ class FoundationModel:
     ----------
     adapter : object
         The underlying adapter instance, instantiated automatically based on
-        the `model_id` prefix. The concrete type depends on the model — e.g.
+        the `model_id` prefix. The concrete type depends on the model, e.g.
         `ChronosAdapter` for `autogluon/chronos-*` models.
     model_id : str
         HuggingFace model ID. Mirrors `adapter.model_id`.
@@ -360,9 +360,7 @@ class FoundationModel:
         -------
         allow_exog : bool
             `True` if the adapter accepts and uses `exog`; `False` if it
-            ignores covariates (e.g. TimesFM 2.5, Moirai-2). TimesFM 3.0
-            accepts `exog` while TimesFM 2.5 does not, even though both
-            are served by `TimesFMAdapter`.
+            ignores covariates (e.g. TimesFM 2.5, Moirai-2).
         """
         return self.adapter.allow_exog
 
@@ -772,7 +770,7 @@ class FoundationModel:
         gaps). For other index types a length check and optional
         `RangeIndex` start verification are applied.
 
-        This function is self-contained — it does not depend on any
+        This function is self-contained: it does not depend on any
         metadata stored at `fit` time. Alignment is driven entirely by the
         context that will be used for prediction.
 
@@ -807,15 +805,13 @@ class FoundationModel:
             aligned to the forecast horizon. Series inputs are coerced to
             single-column DataFrames.
 
-        Raises
-        ------
-        TypeError
-            If `exog` is a long-format DataFrame whose second MultiIndex
-            level is not a `DatetimeIndex`, or if `exog` is an unsupported
-            type.
-        ValueError
-            If a non-DatetimeIndex exog has fewer than `steps` rows, or if
-            a `RangeIndex` exog does not start at the expected position.
+        Notes
+        -----
+        A `TypeError` is raised if `exog` is a long-format DataFrame whose
+        second MultiIndex level is not a `DatetimeIndex`, or if `exog` is an
+        unsupported type. A `ValueError` is raised if a non-DatetimeIndex
+        exog has fewer than `steps` rows, or if a `RangeIndex` exog does not
+        start at the expected position.
 
         """
 
@@ -1273,7 +1269,7 @@ class FoundationModel:
         col_names = ["pred"] if quantiles is None else [f"q_{q}" for q in quantiles]
         n_cols = len(col_names)
         # Pre-allocate (steps, n_series, n_cols), fill per series, then reshape
-        # to step-major (steps*n_series, n_cols) — one allocation instead of one
+        # to step-major (steps*n_series, n_cols), one allocation instead of one
         # per quantile, and the ravel order matches level_col / long_index.
         pred_matrix = np.empty((steps, n_series, n_cols), dtype=np.float64)
         for i, series_name in enumerate(series_names_in):
@@ -1325,8 +1321,10 @@ class FoundationModel:
         ----------
         **params :
             Estimator parameters forwarded to the underlying adapter's
-            `set_params`. Use `model_id` to change the model ID. All
-            other keys are adapter-specific.
+            `set_params`. Use `model_id` to change the model ID; the adapter
+            class is fixed at construction, so a `model_id` served by a
+            different adapter (or by none) raises a `ValueError`. All other
+            keys are adapter-specific.
 
         Returns
         -------
@@ -1334,6 +1332,17 @@ class FoundationModel:
             The same object with updated parameters.
 
         """
+
+        if "model_id" in params:
+            new_adapter_cls = _resolve_adapter(params["model_id"])
+            if new_adapter_cls is not type(self.adapter):
+                raise ValueError(
+                    f"`model_id` {params['model_id']!r} is served by "
+                    f"{new_adapter_cls.__name__}, but this FoundationModel uses "
+                    f"{type(self.adapter).__name__}. The adapter is fixed at "
+                    f"construction: create a new FoundationModel to switch "
+                    f"model family."
+                )
 
         try:
             self.adapter.set_params(**params)

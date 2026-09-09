@@ -35,6 +35,80 @@ def _validate_positive_int(name: str, value: Any) -> None:
         raise ValueError(f"`{name}` must be a positive integer. Got {value!r}.")
 
 
+def _validate_model_id_prefix(model_id: str, prefix: str, adapter_name: str) -> None:
+    """
+    Validate that `model_id` starts with the prefix served by an adapter.
+
+    Parameters
+    ----------
+    model_id : str
+        HuggingFace model ID to validate.
+    prefix : str
+        Prefix the adapter serves, e.g. `"google/timesfm-2.5"`.
+    adapter_name : str
+        Adapter class name, used in the raised error message.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if not isinstance(model_id, str) or not model_id.startswith(prefix):
+        raise ValueError(
+            f"`model_id` must start with {prefix!r} for {adapter_name}. "
+            f"Got {model_id!r}."
+        )
+
+
+def _validate_supported_quantiles(
+    quantiles: list[float] | tuple[float] | None,
+    supported_quantiles: list[float],
+    model_name: str,
+    tol: float = 1e-9,
+) -> list[float] | None:
+    """
+    Validate that every requested quantile level is one of the fixed levels
+    supported by a backend.
+
+    Parameters
+    ----------
+    quantiles : list, tuple, None
+        Requested quantile levels. `None` means point forecast.
+    supported_quantiles : list
+        Fixed levels supported by the backend, e.g. the adapter's
+        `SUPPORTED_QUANTILES`.
+    model_name : str
+        Backend name used in the raised error message, e.g. `"TimesFM"`.
+    tol : float, default 1e-9
+        Maximum absolute difference for a requested level to be considered
+        equal to a supported one.
+
+    Returns
+    -------
+    quantile_list : list, None
+        `list(quantiles)`, or `None` if `quantiles` is `None`.
+
+    """
+
+    if quantiles is None:
+        return None
+
+    quantile_list = list(quantiles)
+    for q in quantile_list:
+        if not any(
+            abs(q - supported_quantile) < tol
+            for supported_quantile in supported_quantiles
+        ):
+            raise ValueError(
+                f"{model_name} only supports quantile levels "
+                f"{supported_quantiles}. Got {q!r}. "
+                f"Quantile interpolation is not supported."
+            )
+
+    return quantile_list
+
+
 def _apply_set_params(
     instance: Any,
     params: dict[str, Any],
