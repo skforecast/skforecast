@@ -72,6 +72,19 @@ class ForecasterFoundation:
     window_size : int
         Desired number of historical observations used as context by the
         model. Always equals `context_length`.
+    supports_past_only_covariates : bool
+        Whether the underlying adapter uses historical exog columns that
+        have no future values as past-only covariates. Delegates to
+        `estimator.supports_past_only_covariates`.
+    supports_heterogeneous_covariates : bool
+        Whether the underlying adapter can forecast series with different
+        exog columns in the same backend call. If `False`, series are
+        grouped by their exog columns at predict time and the adapter is
+        called once per group. Delegates to
+        `estimator.supports_heterogeneous_covariates`.
+    supports_nan_in_series : bool
+        Whether the underlying adapter accepts NaN values in the series used
+        as context. Delegates to `estimator.supports_nan_in_series`.
     index_type_ : type
         Type of index of the input used in training. Delegates to
         `estimator.index_type_`.
@@ -219,6 +232,48 @@ class ForecasterFoundation:
             Context window size. Delegates to `estimator.context_length`.
         """
         return self.estimator.context_length
+
+    @property
+    def supports_past_only_covariates(self) -> bool:
+        """
+        Whether the underlying adapter uses historical exog columns that have
+        no future values as past-only covariates.
+
+        Returns
+        -------
+        supports_past_only_covariates : bool
+            Delegates to `estimator.supports_past_only_covariates`.
+        """
+        return self.estimator.supports_past_only_covariates
+
+    @property
+    def supports_heterogeneous_covariates(self) -> bool:
+        """
+        Whether the underlying adapter can forecast series with different
+        exog columns in the same backend call.
+
+        Returns
+        -------
+        supports_heterogeneous_covariates : bool
+            Delegates to `estimator.supports_heterogeneous_covariates`. If
+            `False`, `predict` groups the series by their exog columns and
+            calls the adapter once per group.
+        """
+        return self.estimator.supports_heterogeneous_covariates
+
+    @property
+    def supports_nan_in_series(self) -> bool:
+        """
+        Whether the underlying adapter accepts NaN values in the series used
+        as context.
+
+        Returns
+        -------
+        supports_nan_in_series : bool
+            Delegates to `estimator.supports_nan_in_series`. If `False`, a
+            context with NaN raises a `ValueError` at predict time.
+        """
+        return self.estimator.supports_nan_in_series
 
     @property
     def context_(self) -> dict[str, pd.Series] | None:

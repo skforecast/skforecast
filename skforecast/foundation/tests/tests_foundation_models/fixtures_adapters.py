@@ -73,7 +73,7 @@ class FakePipeline:
     Fake Chronos-2 pipeline for testing without torch/chronos.
 
     Returns quantile values equal to the quantile level itself for all steps.
-    Records last call arguments for inspection.
+    Records the last call arguments for inspection and every call in `calls`.
     """
 
     def __init__(self):
@@ -81,12 +81,19 @@ class FakePipeline:
         self.last_prediction_length = None
         self.last_quantile_levels = None
         self.last_kwargs = None
+        self.calls = []
 
     def predict_quantiles(self, inputs, prediction_length, quantile_levels, **kwargs):
         self.last_inputs = inputs
         self.last_prediction_length = prediction_length
         self.last_quantile_levels = quantile_levels
         self.last_kwargs = kwargs
+        self.calls.append({
+            "inputs": inputs,
+            "prediction_length": prediction_length,
+            "quantile_levels": quantile_levels,
+            "kwargs": kwargs,
+        })
 
         n_q = len(quantile_levels)
         q_values = np.array(quantile_levels, dtype=float)
@@ -213,17 +220,15 @@ class FakeTimesFM3Forecaster:
             "kwargs": kwargs,
         })
 
-        # Replicate the real backend's covariate handling: `None` entries are
-        # filled with a single zero covariate and all per-series arrays are
-        # stacked, which fails when their shapes differ (heterogeneous
-        # covariates across the batch).
+        # Replicate the real backend's covariate handling: every series is
+        # left-padded to the batch context length before stacking, so the
+        # per-series arrays only need the same number of covariate rows
+        # (`None` entries are filled with a single zero row). A batch with a
+        # different number of covariate columns per series fails.
         for cov in (past_only_covariates, past_future_covariates):
             if cov is not None:
-                shapes = {
-                    (c.shape if c is not None else (1, len(contexts[j])))
-                    for j, c in enumerate(cov)
-                }
-                if len(shapes) > 1:
+                n_rows = {(c.shape[0] if c is not None else 1) for c in cov}
+                if len(n_rows) > 1:
                     raise ValueError("all input arrays must have the same shape")
 
         q_values = np.array(self.config.quantiles, dtype=float)

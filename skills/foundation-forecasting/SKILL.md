@@ -115,7 +115,7 @@ model = FoundationModel(
 
 ## With Exogenous Variables (Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL)
 
-Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them. At predict time the future `exog` columns are validated per series against the historical exog: a future column with no history raises `ValueError`; a historical column with no future values is a past-only covariate, used by Chronos-2, TS-ICL and TimesFM 3.0 (`supports_past_only_covariates=True`) and ignored with an `IgnoredArgumentWarning` by TabICL, TabPFN-TS, TFC-T0 and Nori.
+Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them. At predict time the future `exog` columns are validated per series against the historical exog: a future column with no history raises `ValueError`; a historical column with no future values is a past-only covariate, used by Chronos-2, TS-ICL and TimesFM 3.0 (`supports_past_only_covariates=True`) and ignored with an `IgnoredArgumentWarning` by TabICL, TabPFN-TS, TFC-T0 and Nori. Series in a multi-series input may differ in length and in their exog columns: each series is forecast with its own columns, and adapters whose backend needs identical columns per batch (`supports_heterogeneous_covariates=False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0) are called once per group of series sharing the same columns.
 
 ```python
 # Historical + future exog (must cover the forecast horizon)

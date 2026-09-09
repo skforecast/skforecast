@@ -92,7 +92,7 @@ for k in series_dict.keys():
 # Fit forecaster
 # ==============================================================================
 model_id = "google/timesfm-3.0-pytorch"
-model_id="autogluon/chronos-2-small"
+model_id = "autogluon/chronos-2-small"
 
 estimator = FoundationModel(model_id=model_id, context_length=500)
 forecaster = ForecasterFoundation(estimator=estimator)

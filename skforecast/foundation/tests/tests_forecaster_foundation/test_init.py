@@ -184,3 +184,22 @@ def test_init_metadata_and_tags_correctly_stored():
     assert tags["supports_lags"] is False
     assert tags["supports_probabilistic"] is True
     assert "quantile_native" in tags["probabilistic_methods"]
+
+
+def test_init_adapter_capability_properties_delegate_to_estimator():
+    """
+    Test that the adapter capability flags are exposed by the forecaster,
+    delegate to the estimator and are available before fitting.
+    """
+    forecaster = make_forecaster()
+
+    assert forecaster.is_fitted is False
+    for attr in (
+        "supports_past_only_covariates",
+        "supports_heterogeneous_covariates",
+        "supports_nan_in_series",
+    ):
+        assert getattr(forecaster, attr) == getattr(forecaster.estimator, attr)
+    assert forecaster.supports_past_only_covariates is True
+    assert forecaster.supports_heterogeneous_covariates is False
+    assert forecaster.supports_nan_in_series is True

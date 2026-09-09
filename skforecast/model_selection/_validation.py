@@ -2433,16 +2433,49 @@ def _backtesting_foundation(
     data_folds_tqdm = tqdm(data_folds, total=len(folds)) if show_progress else data_folds
     
     backtest_predictions = []
-    for context, _, levels_context, context_exog, exog_test, fold in data_folds_tqdm:
+    for context, _, _, context_exog, exog_test, fold in data_folds_tqdm:
 
         fold_number = fold[0]
         test_gap_start, test_gap_end = fold[3]
 
         steps_with_gap = test_gap_end - test_gap_start
+        train_loc_end = span_index[fold[1][1] - 1]
+        test_loc_start = span_index[fold[4][0]]
+        test_loc_end = span_index[fold[4][1] - 1]
+
+        # NOTE: `_extract_data_folds_multiseries` trims each series to its
+        # last valid value, but the context of a foundation model must end
+        # at the end of the train span so that the predictions start at the
+        # test start: the context is rebuilt from the first valid value up to
+        # the train end, trailing NaN included. Series without any actual
+        # value in the test window are not predicted in this fold.
         context = {
-            name: s.iloc[-forecaster.context_length :]
+            name: series[name].loc[s.index[0]:train_loc_end].iloc[-forecaster.context_length :]
             for name, s in context.items()
+            if series[name].loc[test_loc_start:test_loc_end].notna().any()
         }
+        levels_predict = [level for level in levels if level in context]
+        if not levels_predict:
+            # NOTE: Same behaviour as `_backtesting_forecaster_multiseries`: the
+            # fold is skipped with a warning and contributes an empty frame so
+            # that the output keeps its columns and the metrics are `None`.
+            warnings.warn(
+                f"Fold {fold_number} has been skipped because none of the levels "
+                f"to predict {levels} have observed values in its test window. "
+                f"No predictions are generated for this fold.",
+                MissingValuesWarning
+            )
+            col_names = ["pred"] if quantiles is None else [f"q_{q}" for q in quantiles]
+            pred = pd.DataFrame(
+                {
+                    "level": pd.Series(dtype=object),
+                    **{col: pd.Series(dtype=float) for col in col_names},
+                },
+                index=span_index[:0],
+            )
+            pred.insert(1, 'fold', fold_number)
+            backtest_predictions.append(pred)
+            continue
 
         if exog is not None:
             context_exog = {
@@ -2456,7 +2489,6 @@ def _backtesting_foundation(
         else:
             context_exog = None
 
-        levels_predict = [level for level in levels if level in levels_context]
         if quantiles is not None:
             pred = forecaster.predict_quantiles(
                        steps        = steps_with_gap,

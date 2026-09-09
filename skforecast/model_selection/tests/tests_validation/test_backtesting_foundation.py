@@ -11,7 +11,7 @@ from sklearn.linear_model import Ridge
 from skforecast.recursive import ForecasterRecursive
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection import backtesting_foundation
-from skforecast.exceptions import IgnoredArgumentWarning
+from skforecast.exceptions import IgnoredArgumentWarning, MissingValuesWarning
 
 # Fixtures — reuse FakePipeline and series fixtures from foundation tests
 from ....foundation.tests.tests_forecaster_foundation.fixtures_forecaster_foundation import (
@@ -1058,3 +1058,185 @@ def test_backtesting_foundation_warns_IgnoredArgumentWarning_when_refit_True():
                 show_progress=False,
             )
 
+
+
+# ===========================================================================
+# Multi-series, heterogeneous series (different lengths, NaN, short exog)
+# ===========================================================================
+
+# Four monthly series over a 50-period span: `s1` is complete, `s2` has a NaN
+# block at positions 40..43 (inside the test windows of folds 0 and 1 and at
+# the end of the train span of fold 2), `s3` ends at position 41 and its exog
+# ends with it, `s4` ends at position 29 (before the first test window).
+_hetero_index = pd.date_range("2020-01-31", periods=50, freq="ME")
+_s2_values = np.arange(50, 100, dtype=float)
+_s2_values[40:44] = np.nan
+series_dict_hetero = {
+    "s1": pd.Series(np.arange(50, dtype=float), index=_hetero_index, name="s1"),
+    "s2": pd.Series(_s2_values, index=_hetero_index, name="s2"),
+    "s3": pd.Series(np.arange(100, 142, dtype=float), index=_hetero_index[:42], name="s3"),
+    "s4": pd.Series(np.arange(200, 230, dtype=float), index=_hetero_index[:30], name="s4"),
+}
+exog_dict_hetero = {
+    name: pd.DataFrame({"feat_a": np.arange(len(s), dtype=float)}, index=s.index)
+    for name, s in series_dict_hetero.items()
+}
+
+
+def test_output_backtesting_foundation_multiseries_heterogeneous_series():
+    """
+    Test backtesting with series of different lengths, a NaN block and an
+    exog that ends before the horizon. Every prediction is dated inside its
+    fold, a series is predicted in a fold only if it has an actual value in
+    the test window (`s2` is skipped in fold 1, `s3` after fold 1, `s4`
+    always), the exog ending early is reindexed with a MissingValuesWarning,
+    and the metric of a never predicted series is NaN.
+    """
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(
+        steps=3,
+        initial_train_size=38,
+        refit=False,
+        verbose=False,
+    )
+    warn_msg = re.escape(
+        "`exog` for series ['s3'] has been reindexed to match the expected "
+        "forecast horizon. Missing timestamps were filled with NaN."
+    )
+    with patch(
+        "skforecast.model_selection._validation.deepcopy_forecaster",
+        side_effect=deepcopy,
+    ), pytest.warns(MissingValuesWarning, match=warn_msg):
+        metric, backtest_predictions = backtesting_foundation(
+            forecaster=forecaster,
+            series=series_dict_hetero,
+            exog=exog_dict_hetero,
+            cv=cv,
+            metric="mean_absolute_error",
+            add_aggregated_metric=False,
+            verbose=False,
+            show_progress=False,
+        )
+
+    expected_metric = pd.DataFrame(
+        {
+            "levels": ["s1", "s2", "s3", "s4"],
+            "mean_absolute_error": [43.0, 94.0, 139.0, np.nan],
+        }
+    )
+    expected_index = pd.DatetimeIndex(
+        ["2023-03-31"] * 3 + ["2023-04-30"] * 3 + ["2023-05-31"] * 3
+        + ["2023-06-30"] * 2 + ["2023-07-31"] * 2 + ["2023-08-31"] * 2
+        + ["2023-09-30"] * 2 + ["2023-10-31"] * 2 + ["2023-11-30"] * 2
+        + ["2023-12-31"] * 2 + ["2024-01-31"] * 2 + ["2024-02-29"] * 2
+    )
+    expected_predictions = pd.DataFrame(
+        {
+            "level": (
+                ["s1", "s2", "s3"] * 3 + ["s1", "s3"] * 3 + ["s1", "s2"] * 6
+            ),
+            "fold": [0] * 9 + [1] * 6 + [2] * 6 + [3] * 6,
+            "pred": [
+                0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, np.nan, 0.5,
+                0.5, 0.5, 0.5, np.nan, 0.5, np.nan,
+                0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+                0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            ],
+        },
+        index=expected_index,
+    )
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)
+
+
+def test_output_backtesting_foundation_fold_skipped_when_no_levels_to_predict():
+    """
+    Test that a fold where none of the requested levels has an observed value
+    in the test window is skipped with a MissingValuesWarning and contributes
+    no rows, while the other folds are predicted and the metric is computed
+    (`s2` has a NaN block covering the whole test window of fold 1).
+    """
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(
+        steps=3,
+        initial_train_size=38,
+        refit=False,
+        verbose=False,
+    )
+    warn_msg = re.escape(
+        "Fold 1 has been skipped because none of the levels to predict ['s2'] "
+        "have observed values in its test window. No predictions are generated "
+        "for this fold."
+    )
+    with patch(
+        "skforecast.model_selection._validation.deepcopy_forecaster",
+        side_effect=deepcopy,
+    ), pytest.warns(MissingValuesWarning, match=warn_msg):
+        metric, backtest_predictions = backtesting_foundation(
+            forecaster=forecaster,
+            series=series_dict_hetero,
+            cv=cv,
+            levels="s2",
+            metric="mean_absolute_error",
+            add_aggregated_metric=False,
+            verbose=False,
+            show_progress=False,
+        )
+
+    expected_metric = pd.DataFrame(
+        {"levels": ["s2"], "mean_absolute_error": [94.0]}
+    )
+    expected_predictions = pd.DataFrame(
+        {
+            "level": ["s2"] * 9,
+            "fold": [0, 0, 0, 2, 2, 2, 3, 3, 3],
+            "pred": [0.5, 0.5, np.nan, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+        },
+        index=pd.DatetimeIndex(
+            ["2023-03-31", "2023-04-30", "2023-05-31",
+             "2023-09-30", "2023-10-31", "2023-11-30",
+             "2023-12-31", "2024-01-31", "2024-02-29"]
+        ),
+    )
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)
+
+
+def test_output_backtesting_foundation_all_folds_skipped():
+    """
+    Test that, when the requested level ends before every test window, every
+    fold is skipped with a MissingValuesWarning, the predictions DataFrame is
+    empty but keeps its columns and the metric is None, as in
+    backtesting_forecaster_multiseries.
+    """
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(
+        steps=3,
+        initial_train_size=38,
+        refit=False,
+        verbose=False,
+    )
+    with patch(
+        "skforecast.model_selection._validation.deepcopy_forecaster",
+        side_effect=deepcopy,
+    ), pytest.warns(MissingValuesWarning, match="Fold 0 has been skipped"):
+        metric, backtest_predictions = backtesting_foundation(
+            forecaster=forecaster,
+            series=series_dict_hetero,
+            cv=cv,
+            levels="s4",
+            metric="mean_absolute_error",
+            add_aggregated_metric=False,
+            verbose=False,
+            show_progress=False,
+        )
+
+    expected_metric = pd.DataFrame(
+        {"levels": ["s4"], "mean_absolute_error": [None]}
+    )
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    assert backtest_predictions.empty
+    assert list(backtest_predictions.columns) == ["level", "fold", "pred"]

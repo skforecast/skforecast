@@ -758,3 +758,21 @@ def test_TSICLAdapter_load_model_LicenseWarning_on_successful_load():
             del sys.modules["tsicl"]
         else:
             sys.modules["tsicl"] = original
+
+
+def test_TSICLAdapter_predict_series_without_exog_key_has_no_covariates():
+    """
+    Test that a series missing from the context_exog and exog dicts (as in
+    the backtesting path) is forwarded without covariate keys instead of
+    raising KeyError.
+    """
+    model = FakeTSICL()
+    adapter = TSICLAdapter(model_id="taharnbl/TS-ICL", model=model)
+    ctx, _ = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=None)
+
+    adapter.predict(
+        steps=3, context=ctx, context_exog={}, exog={}, quantiles=None
+    )
+    assert "past_covariates" not in model.last_inputs[0]
+    assert "future_covariates" not in model.last_inputs[0]

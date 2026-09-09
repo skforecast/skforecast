@@ -8,6 +8,9 @@ import pandas as pd
 
 from skforecast.foundation._utils import (
     check_preprocess_series_foundation,
+    get_exog_signature,
+    group_series_by_exog_signature,
+    align_context_exog,
     _warn_if_non_commercial,
     _NON_COMMERCIAL_LICENSES,
 )
@@ -15,6 +18,7 @@ from skforecast.exceptions import (
     IgnoredArgumentWarning,
     InputTypeWarning,
     LicenseWarning,
+    MissingValuesWarning,
 )
 
 
@@ -242,3 +246,125 @@ def test_warn_if_non_commercial_suppressible_via_simplefilter():
         warnings.simplefilter("ignore", category=LicenseWarning)
         _warn_if_non_commercial("google/timesfm-3.0-pytorch")
     assert len(caught) == 0
+
+
+# ===========================================================================
+# get_exog_signature
+# ===========================================================================
+
+@pytest.mark.parametrize(
+    "context_exog, exog, expected",
+    [
+        (None, None, ((), ())),
+        (pd.DataFrame({"b": [0.0], "a": [0.0]}), None, (("a", "b"), ())),
+        (pd.DataFrame({"b": [0.0], "a": [0.0]}), pd.DataFrame({"b": [1.0]}), (("a",), ("b",))),
+        (pd.Series([0.0], name="f"), pd.Series([1.0], name="f"), ((), ("f",))),
+        (None, pd.DataFrame({"b": [1.0]}), ((), ("b",))),
+    ],
+    ids=["no_exog", "past_only", "mixed", "series_blocks", "future_without_history"],
+)
+def test_get_exog_signature_output(context_exog, exog, expected):
+    """
+    Test that get_exog_signature returns sorted (past_only_cols, fut_cols)
+    tuples for one series, treating pandas Series blocks by name and never
+    raising for a future column without history.
+    """
+    assert get_exog_signature(context_exog, exog) == expected
+
+
+# ===========================================================================
+# group_series_by_exog_signature
+# ===========================================================================
+
+def test_group_series_by_exog_signature_output():
+    """
+    Test that series are grouped by their (past-only, future) exog columns,
+    that groups keep the first-seen order and input order within a group,
+    and that missing keys, None values and None dicts mean no exog.
+    """
+    p = np.arange(3, dtype=float)
+    context_exog = {
+        "full":  pd.DataFrame({"p": p, "k": p}),
+        "none":  None,
+        "past":  pd.DataFrame({"p": p}),
+        "full2": pd.DataFrame({"k": p, "p": p}),
+    }
+    exog = {
+        "full":  pd.DataFrame({"k": p}),
+        "past":  None,
+        "full2": pd.DataFrame({"k": p}),
+    }
+    series_names_in = ["full", "none", "past", "full2", "missing"]
+
+    results = group_series_by_exog_signature(series_names_in, context_exog, exog)
+    assert results == [["full", "full2"], ["none", "missing"], ["past"]]
+
+    results = group_series_by_exog_signature(series_names_in, None, None)
+    assert results == [series_names_in]
+
+
+# ===========================================================================
+# align_context_exog
+# ===========================================================================
+
+def test_align_context_exog_output():
+    """
+    Test that align_context_exog reindexes each series' historical exog to
+    the index of its context: aligned exog is returned unchanged, extra rows
+    are dropped, a Series is coerced to a DataFrame, missing keys or None
+    values stay None, and only the requested series are returned.
+    """
+    ctx_idx = pd.date_range("2020-01-31", periods=4, freq="ME")
+    long_idx = pd.date_range("2019-11-30", periods=8, freq="ME")
+    context = {
+        "s1": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+        "s2": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+        "s3": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+        "s4": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+        "s5": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+    }
+    context_exog = {
+        "s1": pd.DataFrame({"a": np.arange(4, dtype=float)}, index=ctx_idx),
+        "s2": pd.DataFrame({"a": np.arange(8, dtype=float)}, index=long_idx),
+        "s3": pd.Series(np.arange(4, dtype=float), index=ctx_idx, name="a"),
+        "s4": None,
+    }
+
+    results = align_context_exog(context, context_exog, ["s1", "s2", "s3", "s4", "s5"])
+
+    expected_s2 = pd.DataFrame({"a": np.arange(2, 6, dtype=float)}, index=ctx_idx)
+    assert list(results.keys()) == ["s1", "s2", "s3", "s4", "s5"]
+    pd.testing.assert_frame_equal(results["s1"], context_exog["s1"])
+    pd.testing.assert_frame_equal(results["s2"], expected_s2)
+    pd.testing.assert_frame_equal(results["s3"], context_exog["s3"].to_frame())
+    assert results["s4"] is None
+    assert results["s5"] is None
+
+
+def test_align_context_exog_MissingValuesWarning_when_exog_shorter_than_context():
+    """
+    Test that context timestamps missing from the historical exog are added
+    as NaN rows and reported once with a MissingValuesWarning naming the
+    affected series.
+    """
+    ctx_idx = pd.date_range("2020-01-31", periods=4, freq="ME")
+    context = {
+        "s1": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+        "s2": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+    }
+    context_exog = {
+        "s1": pd.DataFrame({"a": np.arange(2, dtype=float)}, index=ctx_idx[:2]),
+        "s2": pd.DataFrame({"a": np.arange(3, dtype=float)}, index=ctx_idx[1:]),
+    }
+
+    warn_msg = re.escape(
+        "`context_exog` for series ['s1', 's2'] has been reindexed to match "
+        "the index of `context`. Missing timestamps were filled with NaN."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = align_context_exog(context, context_exog, ["s1", "s2"])
+
+    expected_s1 = pd.DataFrame({"a": [0.0, 1.0, np.nan, np.nan]}, index=ctx_idx)
+    expected_s2 = pd.DataFrame({"a": [np.nan, 0.0, 1.0, 2.0]}, index=ctx_idx)
+    pd.testing.assert_frame_equal(results["s1"], expected_s1)
+    pd.testing.assert_frame_equal(results["s2"], expected_s2)

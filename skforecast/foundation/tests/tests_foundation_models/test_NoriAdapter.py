@@ -493,3 +493,49 @@ def test_NoriAdapter_load_model_nori_config_overrides_model_id(
 
     assert adapter._model.init_kwargs == expected
     assert adapter.nori_config == original_config
+
+
+def test_NoriAdapter_predict_drops_nan_rows_before_fit():
+    """
+    Test that context rows whose target is NaN are dropped before the
+    in-context fit, so the regressor receives only the valid rows, and that
+    the forecast horizon is predicted in full.
+    """
+    fake = FakeNoriRegressor()
+    adapter = NoriAdapter(model_id="Synthefy/Nori", model=fake)
+    y_nan = y.copy()
+    y_nan.iloc[[3, 10, 11]] = np.nan
+    context, context_exog = prepare_fit_args(y_nan)
+    adapter.fit(context, context_exog)
+
+    preds = adapter.predict(
+        steps=4,
+        context=adapter.context_,
+        context_exog=adapter.context_exog_,
+        exog=None,
+        quantiles=None,
+    )
+    expected_y = y.drop(y.index[[3, 10, 11]]).to_numpy(dtype=float)
+    np.testing.assert_array_almost_equal(fake.y_, expected_y)
+    assert preds["sales"].shape == (4, 1)
+
+
+def test_NoriAdapter_predict_ValueError_when_all_context_rows_are_nan():
+    """
+    Test that predict raises ValueError naming the series when no context
+    row is free of NaN.
+    """
+    fake = FakeNoriRegressor()
+    adapter = NoriAdapter(model_id="Synthefy/Nori", model=fake)
+    context = {
+        "sales": pd.Series(np.full(len(y), np.nan), index=y.index, name="sales")
+    }
+
+    err_msg = re.escape(
+        "Series 'sales' has no context rows without NaN in the target and "
+        "the covariates. NoriAdapter cannot predict it."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        adapter.predict(
+            steps=4, context=context, context_exog=None, exog=None, quantiles=None
+        )

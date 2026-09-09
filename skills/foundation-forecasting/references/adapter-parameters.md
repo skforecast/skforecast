@@ -48,6 +48,7 @@ Dispatches between two backend APIs based on `model_id`: TimesFM 2.5 (`google/ti
 - **`model_id` prefix**: `google/timesfm`
 - **`allow_exog`**: `False` for v2.5, `True` for v3.0 (past-only and known-future covariates; must be numeric, encode categoricals as numbers)
 - **`supports_past_only_covariates`**: `False` for v2.5, `True` for v3.0
+- **`supports_heterogeneous_covariates`**: `True` for v2.5 (exog ignored), `False` for v3.0 (`predict_batch` stacks the covariate arrays of the batch, so `FoundationModel` calls it once per group of series with the same exog columns)
 - **Supported quantiles**: `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]` on both backends
 - **Point forecast**: mean on v2.5, median (quantile `0.5`) on v3.0
 
@@ -197,11 +198,11 @@ All adapters implement the same minimal interface:
 - `fit(series, exog=None)` — stores context and metadata; no training.
 - `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
-- `allow_exog` / `supports_past_only_covariates` — class attributes (instance attributes on `TimesFMAdapter`) read by `FoundationModel` to decide how exog is handled.
+- `allow_exog` / `supports_past_only_covariates` / `supports_heterogeneous_covariates` / `supports_nan_in_series` — class attributes (instance attributes on `TimesFMAdapter`) read by `FoundationModel` to decide how exog and NaN are handled. When `supports_heterogeneous_covariates` is `False` (Chronos-2, TS-ICL, TabICL, TimesFM 3.0), `FoundationModel.predict` groups the series by their (past-only, future) exog columns and calls `adapter.predict` once per group; adapters never receive a batch with mixed covariate columns. When `supports_nan_in_series` is `False`, a context with NaN raises `ValueError` before the adapter is called (all current adapters accept NaN; Nori drops the NaN rows itself).
 
 ### Exog column validation at predict time
 
-`FoundationModel.predict` (and therefore `ForecasterFoundation.predict`, `predict_interval`, `predict_quantiles`) validates, per series, the columns of the future `exog` against the historical exog used as context (the one stored by `fit`, or `context_exog` when `context` is given). The check is skipped on the internal backtesting path, where both come from the same DataFrame.
+`FoundationModel.predict` (and therefore `ForecasterFoundation.predict`, `predict_interval`, `predict_quantiles`) validates, per series, the columns of the future `exog` against the historical exog used as context (the one stored by `fit`, or `context_exog` when `context` is given). The check is skipped on the internal backtesting path, where both come from the same DataFrame. On every path, before the adapter is called, the historical exog of each series is reindexed to the index of its context and the future `exog` to the forecast horizon; missing timestamps are filled with NaN and reported with a `MissingValuesWarning`. No columns are ever added: a series only carries its own exog columns.
 
 | Situation (per series)                                  | Adapters with `supports_past_only_covariates=True` (Chronos-2, TS-ICL, TimesFM 3.0) | Adapters with `supports_past_only_covariates=False` (TabICL, TabPFN-TS, T0, Nori) |
 |---------------------------------------------------------|---------------------------------------------------------------|---------------------------------------------------------------|

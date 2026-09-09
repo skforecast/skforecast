@@ -488,6 +488,8 @@ Key points:
 - Use `bayesian_search_foundation` (not `bayesian_search_forecaster`) to tune inference-time parameters such as `context_length`. Only `TimeSeriesFold` is supported.
 - Loading a model whose weights are released under a known non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) raises a `LicenseWarning` naming the license and a link to the model card; review the link, since terms vary (e.g. TabPFN-TS permits commercial use under an enterprise license). Absence of the warning does not guarantee a model's license is unrestricted. Suppress it like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 - At predict time, the columns of the future `exog` are validated per series against the historical exog (the one passed to `fit`, or `context_exog`). A future column with no historical values raises a `ValueError`. A historical column with no future values is a past-only covariate: used as such when `forecaster.supports_past_only_covariates` is `True` (Chronos-2, TS-ICL, TimesFM 3.0), ignored with an `IgnoredArgumentWarning` otherwise (TabICL, TabPFN-TS, TFC-T0, Nori).
+- Multi-series input may be heterogeneous: series can have different lengths, a different subset of exog columns each, and NaN values. Each series is forecast with its own exog columns only. When the backend needs identical covariate columns in a batch (`forecaster.supports_heterogeneous_covariates` is `False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0), the series are grouped by their exog columns and the backend is called once per group, so the forecast of a series never depends on the exog of the others. `forecaster.supports_nan_in_series` tells whether the backend accepts NaN in the context.
+- In `backtesting_foundation`, a series is predicted in a fold only if it has at least one observed value in that fold's test window; its context is the series up to the end of the train span, NaN included, so every prediction is dated inside the fold.
 
 ## Feature Selection
 
@@ -2386,7 +2388,7 @@ model = FoundationModel(
 
 ## With Exogenous Variables (Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL)
 
-Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them. At predict time the future `exog` columns are validated per series against the historical exog: a future column with no history raises `ValueError`; a historical column with no future values is a past-only covariate, used by Chronos-2, TS-ICL and TimesFM 3.0 (`supports_past_only_covariates=True`) and ignored with an `IgnoredArgumentWarning` by TabICL, TabPFN-TS, TFC-T0 and Nori.
+Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them. At predict time the future `exog` columns are validated per series against the historical exog: a future column with no history raises `ValueError`; a historical column with no future values is a past-only covariate, used by Chronos-2, TS-ICL and TimesFM 3.0 (`supports_past_only_covariates=True`) and ignored with an `IgnoredArgumentWarning` by TabICL, TabPFN-TS, TFC-T0 and Nori. Series in a multi-series input may differ in length and in their exog columns: each series is forecast with its own columns, and adapters whose backend needs identical columns per batch (`supports_heterogeneous_covariates=False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0) are called once per group of series sharing the same columns.
 
 ```python
 # Historical + future exog (must cover the forecast horizon)
@@ -2576,6 +2578,7 @@ Dispatches between two backend APIs based on `model_id`: TimesFM 2.5 (`google/ti
 - **`model_id` prefix**: `google/timesfm`
 - **`allow_exog`**: `False` for v2.5, `True` for v3.0 (past-only and known-future covariates; must be numeric, encode categoricals as numbers)
 - **`supports_past_only_covariates`**: `False` for v2.5, `True` for v3.0
+- **`supports_heterogeneous_covariates`**: `True` for v2.5 (exog ignored), `False` for v3.0 (`predict_batch` stacks the covariate arrays of the batch, so `FoundationModel` calls it once per group of series with the same exog columns)
 - **Supported quantiles**: `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]` on both backends
 - **Point forecast**: mean on v2.5, median (quantile `0.5`) on v3.0
 
@@ -2725,11 +2728,11 @@ All adapters implement the same minimal interface:
 - `fit(series, exog=None)` — stores context and metadata; no training.
 - `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
-- `allow_exog` / `supports_past_only_covariates` — class attributes (instance attributes on `TimesFMAdapter`) read by `FoundationModel` to decide how exog is handled.
+- `allow_exog` / `supports_past_only_covariates` / `supports_heterogeneous_covariates` / `supports_nan_in_series` — class attributes (instance attributes on `TimesFMAdapter`) read by `FoundationModel` to decide how exog and NaN are handled. When `supports_heterogeneous_covariates` is `False` (Chronos-2, TS-ICL, TabICL, TimesFM 3.0), `FoundationModel.predict` groups the series by their (past-only, future) exog columns and calls `adapter.predict` once per group; adapters never receive a batch with mixed covariate columns. When `supports_nan_in_series` is `False`, a context with NaN raises `ValueError` before the adapter is called (all current adapters accept NaN; Nori drops the NaN rows itself).
 
 ### Exog column validation at predict time
 
-`FoundationModel.predict` (and therefore `ForecasterFoundation.predict`, `predict_interval`, `predict_quantiles`) validates, per series, the columns of the future `exog` against the historical exog used as context (the one stored by `fit`, or `context_exog` when `context` is given). The check is skipped on the internal backtesting path, where both come from the same DataFrame.
+`FoundationModel.predict` (and therefore `ForecasterFoundation.predict`, `predict_interval`, `predict_quantiles`) validates, per series, the columns of the future `exog` against the historical exog used as context (the one stored by `fit`, or `context_exog` when `context` is given). The check is skipped on the internal backtesting path, where both come from the same DataFrame. On every path, before the adapter is called, the historical exog of each series is reindexed to the index of its context and the future `exog` to the forecast horizon; missing timestamps are filled with NaN and reported with a `MissingValuesWarning`. No columns are ever added: a series only carries its own exog columns.
 
 | Situation (per series)                                  | Adapters with `supports_past_only_covariates=True` (Chronos-2, TS-ICL, TimesFM 3.0) | Adapters with `supports_past_only_covariates=False` (TabICL, TabPFN-TS, T0, Nori) |
 |---------------------------------------------------------|---------------------------------------------------------------|---------------------------------------------------------------|
