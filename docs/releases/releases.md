@@ -35,6 +35,8 @@ The main changes in this release are:
 
 + New <code>[LicenseWarning]</code> in the <code>[exceptions]</code> module, raised whenever a foundation model whose pre-trained weights are released under a non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) is loaded (deduplicated to once per session by Python's default warning filter). Suppressible like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 
++ <code>[ForecasterFoundation]</code> exposes the read-only attribute `allow_exog` (delegates to `estimator.allow_exog`), so the four adapter capability flags (`allow_exog`, `supports_past_only_covariates`, `supports_heterogeneous_covariates`, `supports_nan_in_series`) can be inspected on the forecaster. [User guide](../user_guides/foundation-forecasting-with-heterogeneous-series.ipynb)
+
 **Changed**
 
 + <code>[FoundationModel]</code> and <code>[ForecasterFoundation]</code> now validate the columns of the future `exog` against the historical exog of each series at predict time. A future column with no historical values raises a `ValueError`. A historical column with no future values is used as a past-only covariate by the adapters that support it (Chronos-2, TS-ICL, TimesFM 3.0) and ignored with an `IgnoredArgumentWarning` by the rest (TabICL, TabPFN-TS, TFC-T0, Nori). The new read-only attribute `supports_past_only_covariates` exposes which behavior applies.

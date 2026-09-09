@@ -1047,19 +1047,15 @@ def test_output_backtesting_foundation_multiseries_gap():
         allow_incomplete_fold=True,
         verbose=False,
     )
-    with patch(
-        "skforecast.model_selection._validation.deepcopy_forecaster",
-        side_effect=deepcopy,
-    ):
-        metric, backtest_predictions = backtesting_foundation(
-            forecaster=forecaster,
-            series=series_dict_tail_nan,
-            cv=cv,
-            metric="mean_absolute_error",
-            add_aggregated_metric=False,
-            verbose=False,
-            show_progress=False,
-        )
+    metric, backtest_predictions = backtesting_foundation(
+        forecaster=forecaster,
+        series=series_dict_tail_nan,
+        cv=cv,
+        metric="mean_absolute_error",
+        add_aggregated_metric=False,
+        verbose=False,
+        show_progress=False,
+    )
 
     expected_metric = pd.DataFrame(
         {"levels": ["series_1", "series_2"], "mean_absolute_error": [44.0, 92.0]}
@@ -1100,19 +1096,15 @@ def test_output_backtesting_foundation_multiseries_fold_stride():
         allow_incomplete_fold=True,
         verbose=False,
     )
-    with patch(
-        "skforecast.model_selection._validation.deepcopy_forecaster",
-        side_effect=deepcopy,
-    ):
-        metric, backtest_predictions = backtesting_foundation(
-            forecaster=forecaster,
-            series=series_dict_tail_nan,
-            cv=cv,
-            metric="mean_absolute_error",
-            add_aggregated_metric=False,
-            verbose=False,
-            show_progress=False,
-        )
+    metric, backtest_predictions = backtesting_foundation(
+        forecaster=forecaster,
+        series=series_dict_tail_nan,
+        cv=cv,
+        metric="mean_absolute_error",
+        add_aggregated_metric=False,
+        verbose=False,
+        show_progress=False,
+    )
 
     expected_metric = pd.DataFrame(
         {"levels": ["series_1", "series_2"], "mean_absolute_error": [43.0, 91.0]}
@@ -1420,19 +1412,15 @@ def test_output_backtesting_foundation_series_skipped_when_context_window_all_na
         refit=False,
         verbose=False,
     )
-    with patch(
-        "skforecast.model_selection._validation.deepcopy_forecaster",
-        side_effect=deepcopy,
-    ):
-        metric, backtest_predictions = backtesting_foundation(
-            forecaster=forecaster,
-            series=series_dict_nan_context,
-            cv=cv,
-            metric="mean_absolute_error",
-            add_aggregated_metric=False,
-            verbose=False,
-            show_progress=False,
-        )
+    metric, backtest_predictions = backtesting_foundation(
+        forecaster=forecaster,
+        series=series_dict_nan_context,
+        cv=cv,
+        metric="mean_absolute_error",
+        add_aggregated_metric=False,
+        verbose=False,
+        show_progress=False,
+    )
 
     expected_metric = pd.DataFrame(
         {"levels": ["s1", "s5"], "mean_absolute_error": [43.0, 144.5]}
@@ -1460,10 +1448,7 @@ def test_output_backtesting_foundation_series_skipped_when_context_window_all_na
         "have observed values in both its context window and its test window. "
         "No predictions are generated for this fold."
     )
-    with patch(
-        "skforecast.model_selection._validation.deepcopy_forecaster",
-        side_effect=deepcopy,
-    ), pytest.warns(MissingValuesWarning, match=warn_msg):
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
         backtesting_foundation(
             forecaster=forecaster,
             series=series_dict_nan_context,

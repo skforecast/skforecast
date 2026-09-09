@@ -195,11 +195,13 @@ def test_init_adapter_capability_properties_delegate_to_estimator():
 
     assert forecaster.is_fitted is False
     for attr in (
+        "allow_exog",
         "supports_past_only_covariates",
         "supports_heterogeneous_covariates",
         "supports_nan_in_series",
     ):
         assert getattr(forecaster, attr) == getattr(forecaster.estimator, attr)
+    assert forecaster.allow_exog is True
     assert forecaster.supports_past_only_covariates is True
     assert forecaster.supports_heterogeneous_covariates is False
     assert forecaster.supports_nan_in_series is True

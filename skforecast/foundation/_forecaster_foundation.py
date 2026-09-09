@@ -72,6 +72,10 @@ class ForecasterFoundation:
     window_size : int
         Desired number of historical observations used as context by the
         model. Always equals `context_length`.
+    allow_exog : bool
+        Whether the underlying adapter uses exogenous variables at all. If
+        `False`, `exog` is ignored with an `IgnoredArgumentWarning`. Delegates
+        to `estimator.allow_exog`.
     supports_past_only_covariates : bool
         Whether the underlying adapter uses historical exog columns that
         have no future values as past-only covariates. Delegates to
@@ -232,6 +236,19 @@ class ForecasterFoundation:
             Context window size. Delegates to `estimator.context_length`.
         """
         return self.estimator.context_length
+
+    @property
+    def allow_exog(self) -> bool:
+        """
+        Whether the underlying adapter uses exogenous variables at all.
+
+        Returns
+        -------
+        allow_exog : bool
+            Delegates to `estimator.allow_exog`. If `False`, `exog` is ignored
+            with an `IgnoredArgumentWarning`.
+        """
+        return self.estimator.allow_exog
 
     @property
     def supports_past_only_covariates(self) -> bool:

@@ -20,7 +20,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 <span style="font-size: 1.3em;">Foundation Models</span>
 
 - [Forecasting with foundation models](../user_guides/foundation-forecasting-models.ipynb)
-- [Series with different lengths and different exogenous variables](../user_guides/heterogeneous-multi-series-for-foundation-models.ipynb)
+- [Series with different lengths and different exogenous variables](../user_guides/foundation-forecasting-with-heterogeneous-series.ipynb)
 
 <span style="font-size: 1.3em;">Statistical Models</span>
 
