@@ -112,3 +112,29 @@ def test_set_params_resets_fitted_state_and_metadata():
     assert m.exog_type_in_ is None
     assert m.context_ is None
     assert m.context_exog_ is None
+
+
+@pytest.mark.parametrize(
+    "model_id, match",
+    [
+        ("google/timesfm-3.0-pytorch", "is served by TimesFM3Adapter"),
+        ("Salesforce/moirai-2.0-R-small", "is served by MoiraiAdapter"),
+        ("unknown/my-model", "No adapter found for model"),
+    ],
+    ids=["other_adapter", "another_adapter", "unknown_prefix"],
+)
+def test_set_params_ValueError_when_model_id_served_by_other_adapter(model_id, match):
+    """
+    Test that set_params rejects a model_id served by a different adapter
+    than the one fixed at construction, or by no adapter at all, and leaves
+    the model untouched (pipeline kept, fitted state not reset).
+    """
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    m.fit(series=y)
+
+    with pytest.raises(ValueError, match=re.escape(match)):
+        m.set_params(model_id=model_id)
+
+    assert m.model_id == "autogluon/chronos-2-small"
+    assert m.adapter._pipeline is not None
+    assert m.is_fitted is True

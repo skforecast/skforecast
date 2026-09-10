@@ -250,4 +250,4 @@ automatically to the last `context_length` observations.
 
 ## References
 
-See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, and `TSICLAdapter`.
+See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFM25Adapter`, `TimesFM3Adapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, and `TSICLAdapter`.

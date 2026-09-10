@@ -168,25 +168,6 @@ def test_TSICLAdapter_set_params_no_reset_when_value_unchanged():
 # ==============================================================================
 # Tests TSICLAdapter.fit
 # ==============================================================================
-def test_TSICLAdapter_fit_error_handling():
-    """
-    Test fit raises TypeError for unsupported series types, ValueError for
-    empty dict, and TypeError for non-Series dict values.
-    """
-    adapter = TSICLAdapter(model_id="taharnbl/TS-ICL")
-
-    with pytest.raises(TypeError):
-        context, context_exog = prepare_fit_args(np.array([1, 2, 3]))
-
-    with pytest.raises(ValueError):
-        context, context_exog = prepare_fit_args({})
-
-    with pytest.raises(TypeError, match=re.escape("all series must be a named pandas Series")):
-        context, context_exog = prepare_fit_args(
-            {"s1": np.array([1.0, 2.0, 3.0])}
-        )
-
-
 @pytest.mark.parametrize(
     "context_length, expected_len",
     [(10, 10), (25, 25), (50, 50), (100, 50)],

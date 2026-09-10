@@ -27,7 +27,7 @@ class ForecasterFoundation:
     Forecaster that wraps a `FoundationModel` [1]_ for full skforecast ecosystem
     compatibility: backtesting, model selection, etc.
 
-    Unlike ML-based forecasters, there is no training step — the underlying
+    Unlike ML-based forecasters, there is no training step: the underlying
     foundation models are zero-shot. `fit` only stores the context
     (recent observations) and records index metadata. Predictions are generated 
     directly by the model's `predict_quantiles` pipeline.
@@ -862,7 +862,7 @@ class ForecasterFoundation:
         Predict n steps ahead with prediction intervals.
 
         Prediction intervals are derived directly from the underlying
-        foundation model's native quantile output — no bootstrapping or
+        foundation model's native quantile output; no bootstrapping or
         residual estimation is used.
 
         Parameters

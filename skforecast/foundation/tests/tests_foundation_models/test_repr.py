@@ -1,12 +1,9 @@
 # Unit test __repr__, _repr_html_ FoundationModel
 # ==============================================================================
-import pytest
-import numpy as np
-import pandas as pd
 from skforecast.foundation._foundation_model import FoundationModel
 
 # Fixtures
-from .fixtures_adapters import FakePipeline, y, exog
+from .fixtures_adapters import FakePipeline, y
 
 
 def _make_model(**kwargs):

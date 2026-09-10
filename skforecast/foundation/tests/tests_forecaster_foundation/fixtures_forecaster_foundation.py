@@ -2,7 +2,7 @@
 # ==============================================================================
 import numpy as np
 import pandas as pd
-from skforecast.foundation._adapters import ChronosAdapter
+from skforecast.foundation import ForecasterFoundation
 from skforecast.foundation._foundation_model import FoundationModel
 
 
@@ -193,7 +193,7 @@ class FakePipeline:
         return [arr] * len(inputs), [mean_arr] * len(inputs)
 
 
-def make_forecaster(context_length: int = 2048, **kwargs) -> "ForecasterFoundation":
+def make_forecaster(context_length: int = 2048, **kwargs) -> ForecasterFoundation:
     """
     Return a ``ForecasterFoundation`` backed by a ``FakePipeline``.
 
@@ -202,8 +202,6 @@ def make_forecaster(context_length: int = 2048, **kwargs) -> "ForecasterFoundati
     `FoundationModel` it receives and a pipeline passed to the constructor
     would not survive that clone.
     """
-    from skforecast.foundation import ForecasterFoundation
-
     estimator = FoundationModel(
         "autogluon/chronos-2-small",
         context_length=context_length,

@@ -1,6 +1,5 @@
 # Unit test get_params FoundationModel
 # ==============================================================================
-import pytest
 from skforecast.foundation._foundation_model import FoundationModel
 
 

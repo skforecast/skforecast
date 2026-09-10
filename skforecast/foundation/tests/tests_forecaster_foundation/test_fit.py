@@ -5,7 +5,6 @@ import pytest
 import warnings
 import numpy as np
 import pandas as pd
-from skforecast.foundation import ForecasterFoundation
 from skforecast.exceptions import (
     InputTypeWarning,
     IgnoredArgumentWarning,
@@ -20,7 +19,6 @@ from .fixtures_forecaster_foundation import (
     y_range,
     exog,
     df_exog,
-    series_wide,
     series_wide_range,
     series_long,
     exog_long,
@@ -246,7 +244,7 @@ def test_fit_multiseries_exog_dict_stores_metadata():
     forecaster.fit(series=series_df, exog=exog_dict)
     assert forecaster.exog_in_ is True
     assert forecaster.exog_names_in_ == ["feat_a"]
-    assert forecaster.exog_type_in_ == dict
+    assert forecaster.exog_type_in_ is dict
 
 
 def test_fit_multiseries_broadcast_exog_stores_metadata():

@@ -13,6 +13,8 @@ from skforecast.foundation._utils import (
     align_context_exog,
     _warn_if_non_commercial,
     _NON_COMMERCIAL_LICENSES,
+    _validate_model_id_prefix,
+    _validate_supported_quantiles,
 )
 from skforecast.exceptions import (
     IgnoredArgumentWarning,
@@ -133,12 +135,25 @@ def test_check_preprocess_series_foundation_long_format_non_datetime_second_leve
         check_preprocess_series_foundation(df_bad)
 
 
-def test_check_preprocess_series_foundation_invalid_type_raises_TypeError():
+@pytest.mark.parametrize(
+    "series, error, match",
+    [
+        ([1.0, 2.0, 3.0], TypeError, "must be a pandas DataFrame or a dict"),
+        (np.array([1.0, 2.0, 3.0]), TypeError, "must be a pandas DataFrame or a dict"),
+        ({}, ValueError, "all series must have a Pandas RangeIndex or DatetimeIndex"),
+        ({"s1": np.array([1.0, 2.0, 3.0])}, TypeError, "all series must be a named pandas Series"),
+    ],
+    ids=["list", "ndarray", "empty_dict", "dict_of_ndarray"],
+)
+def test_check_preprocess_series_foundation_invalid_input_raises(series, error, match):
     """
-    An unsupported type (e.g., list) should raise TypeError.
+    Test that check_preprocess_series_foundation propagates the errors of
+    check_preprocess_series for every non-Series input it forwards: TypeError
+    for unsupported types (list, ndarray) and for dict values that are not
+    named pandas Series, ValueError for an empty dict.
     """
-    with pytest.raises(TypeError):
-        check_preprocess_series_foundation([1.0, 2.0, 3.0])
+    with pytest.raises(error, match=re.escape(match)):
+        check_preprocess_series_foundation(series)
 
 
 # ===========================================================================
@@ -246,6 +261,83 @@ def test_warn_if_non_commercial_suppressible_via_simplefilter():
         warnings.simplefilter("ignore", category=LicenseWarning)
         _warn_if_non_commercial("google/timesfm-3.0-pytorch")
     assert len(caught) == 0
+
+
+# ===========================================================================
+# _validate_model_id_prefix
+# ===========================================================================
+
+def test_validate_model_id_prefix_no_error_when_prefix_matches():
+    """
+    Test that _validate_model_id_prefix returns None for a model_id that
+    starts with the expected prefix.
+    """
+    assert _validate_model_id_prefix(
+        "google/timesfm-2.5-200m-pytorch", "google/timesfm-2.5", "TimesFM25Adapter"
+    ) is None
+
+
+@pytest.mark.parametrize(
+    "model_id",
+    ["google/timesfm-3.0-pytorch", "autogluon/chronos-2-small", None, 5],
+    ids=["other_version", "other_family", "None", "int"],
+)
+def test_validate_model_id_prefix_ValueError_when_prefix_does_not_match(model_id):
+    """
+    Test that _validate_model_id_prefix raises ValueError naming the expected
+    prefix and the adapter when model_id does not start with the prefix or is
+    not a string.
+    """
+    err_msg = re.escape(
+        f"`model_id` must start with 'google/timesfm-2.5' for TimesFM25Adapter. "
+        f"Got {model_id!r}."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        _validate_model_id_prefix(model_id, "google/timesfm-2.5", "TimesFM25Adapter")
+
+
+# ===========================================================================
+# _validate_supported_quantiles
+# ===========================================================================
+
+@pytest.mark.parametrize(
+    "quantiles, expected",
+    [
+        (None, None),
+        ([0.1, 0.5], [0.1, 0.5]),
+        ((0.9, 0.1), [0.9, 0.1]),
+        ([0.1 + 1e-12], [0.1 + 1e-12]),
+    ],
+    ids=["None", "list", "tuple_to_list", "within_tolerance"],
+)
+def test_validate_supported_quantiles_output(quantiles, expected):
+    """
+    Test that _validate_supported_quantiles returns None for None, a list for
+    any sequence, and accepts levels within the tolerance.
+    """
+    supported = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    result = _validate_supported_quantiles(quantiles, supported, "Moirai")
+    assert result == expected
+    assert result is None or isinstance(result, list)
+
+
+@pytest.mark.parametrize(
+    "bad_quantile",
+    [0.15, 0.05, 1.1, -0.1],
+    ids=lambda x: f"q={x}"
+)
+def test_validate_supported_quantiles_ValueError_when_level_not_supported(bad_quantile):
+    """
+    Test that _validate_supported_quantiles raises ValueError naming the
+    backend, the supported levels and the offending level.
+    """
+    supported = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    err_msg = re.escape(
+        f"Moirai only supports quantile levels {supported}. Got {bad_quantile!r}. "
+        f"Quantile interpolation is not supported."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        _validate_supported_quantiles([0.5, bad_quantile], supported, "Moirai")
 
 
 # ===========================================================================

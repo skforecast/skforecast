@@ -1,4 +1,4 @@
-# Fixtures for adapter tests (Chronos2, TimesFM25, Moirai)
+# Fixtures for adapter tests (Chronos2, TimesFM 2.5, TimesFM 3.0, Moirai)
 # ==============================================================================
 import numpy as np
 import pandas as pd

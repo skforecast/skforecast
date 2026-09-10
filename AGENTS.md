@@ -108,7 +108,7 @@ skforecast/
 - **Forecasters inheriting from `ForecasterBase`**: ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterRecursiveClassifier, ForecasterDirect, ForecasterDirectMultiVariate, ForecasterRnn
 - **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate, ForecasterFoundation
 - Statistical models in `stats/` are wrapped by `ForecasterStats` (in `recursive/`)
-- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFMAdapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, `TSICLAdapter`) resolved from the HuggingFace `model_id`
+- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFM25Adapter`, `TimesFM3Adapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, `TSICLAdapter`) resolved from the HuggingFace `model_id`
 - `model_selection/` functions work with all forecaster types
 - `preprocessing/` classes can be passed to forecasters via `transformer_y`, `transformer_exog`, `window_features`
 
@@ -516,8 +516,8 @@ Supported adapters (selected automatically from `model_id`):
 | Adapter | `model_id` prefix | Exog | Default `context_length` | Quantiles |
 |---------|-------------------|------|--------------------------|-----------|
 | ChronosAdapter (Amazon) | `autogluon/chronos` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
-| TimesFMAdapter (Google, v2.5) | `google/timesfm-2.5` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
-| TimesFMAdapter (Google, v3.0) | `google/timesfm-3.0` | Yes (past & known-future covariates) | 2048 | `[0.1, 0.2, ..., 0.9]` |
+| TimesFM25Adapter (Google, v2.5) | `google/timesfm-2.5` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
+| TimesFM3Adapter (Google, v3.0) | `google/timesfm-3.0` | Yes (past & known-future covariates) | 2048 | `[0.1, 0.2, ..., 0.9]` |
 | MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
 | TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (past & future covariates) | 4096 | Any in `(0, 1)` |
 | TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
