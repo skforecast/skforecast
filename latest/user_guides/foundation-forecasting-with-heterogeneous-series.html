@@ -7055,13 +7055,35 @@ supports_nan_in_series            : True
 <li><p><strong>The future exog is aligned to the horizon of its series.</strong> The horizon of each series starts right after its own last observation, so series that end on different dates get different horizons. The future exog is reindexed to exactly <code>steps</code> rows; missing timestamps are filled with NaN and reported with a <code>MissingValuesWarning</code>.</p>
 </li>
 <li><p><strong>The exog columns are validated series by series.</strong> The columns of the future <code>exog</code> are compared with the historical exog of the same series (the one passed to <code>fit</code>, or <code>context_exog</code> when <code>context</code> is given). Column names are compared as sets, so the order does not matter.</p>
-<p>| Situation for one series | Result |
-|:-------------------------|:-------|
-| A future column has no historical values | <code>ValueError</code>. No backend can use a covariate without its history. |
-| A historical column has no future values | Past-only covariate. Used as such if <code>supports_past_only_covariates</code> is <code>True</code>, otherwise ignored with an <code>IgnoredArgumentWarning</code>. |
-| Same columns in both | Known-future covariate. |
-| No exog at all for this series | The series is forecast without covariates, even if other series have them. |</p>
 </li>
+</ol>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Situation for one series</th>
+<th style="text-align:left">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">A future column has no historical values</td>
+<td style="text-align:left"><code>ValueError</code>. No backend can use a covariate without its history.</td>
+</tr>
+<tr>
+<td style="text-align:left">A historical column has no future values</td>
+<td style="text-align:left">Past-only covariate. Used as such if <code>supports_past_only_covariates</code> is <code>True</code>, otherwise ignored with an <code>IgnoredArgumentWarning</code>.</td>
+</tr>
+<tr>
+<td style="text-align:left">Same columns in both</td>
+<td style="text-align:left">Known-future covariate.</td>
+</tr>
+<tr>
+<td style="text-align:left">No exog at all for this series</td>
+<td style="text-align:left">The series is forecast without covariates, even if other series have them.</td>
+</tr>
+</tbody>
+</table>
+<ol start="4">
 <li><p><strong>Series are grouped by their exog columns when the backend needs it.</strong> If <code>supports_heterogeneous_covariates</code> is <code>False</code>, the series are grouped by their pair <code>(past-only columns, future columns)</code> and the backend is called once per group, which is the minimum number of calls the backend allows. In the example above, Chronos-2 receives <code>id_1000</code> alone (two columns), <code>id_1003</code> alone (three columns) and <code>id_1001</code>, <code>id_1002</code> and <code>id_1004</code> together (four columns). The merged output keeps the order of the input series, and a dataset where every series has the same exog columns still makes a single call. For Chronos-2, <code>cross_learning=True</code> shares information among the series of the same group only, since the backend cannot see series from other groups.</p>
 </li>
 <li><p><strong>NaN in the context is checked.</strong> If <code>supports_nan_in_series</code> is <code>False</code>, a context with NaN raises a <code>ValueError</code> naming the series before the backend is called.</p>
