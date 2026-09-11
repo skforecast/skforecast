@@ -2213,7 +2213,8 @@ class QuantileBinner:
         The random seed to use for generating a random subset of the data.
     n_bins_ : int
         The number of bins learned during fitting. This may be less than `n_bins` 
-        if there are duplicate bin edges due to repeated predicted values.
+        if repeated values in the data produce duplicated bin edges or bins with
+        no observations.
     bin_edges_ : numpy ndarray
         The edges of the bins learned during fitting.
     internal_edges_ : numpy ndarray
@@ -2310,6 +2311,13 @@ class QuantileBinner:
         Returns
         -------
         None
+
+        Notes
+        -----
+        Every learned bin is guaranteed to contain at least one observation of `X`.
+        Bin edges that are duplicated, or that delimit a bin with no observations,
+        are removed, so `n_bins_` may be smaller than `n_bins`. Bins are always
+        numbered from 0 to `n_bins_ - 1` with no gaps.
         
         """
 
@@ -2327,20 +2335,38 @@ class QuantileBinner:
 
         # Remove duplicate edges (can happen when data has many repeated values)
         # to ensure bins are always numbered 0 to n_bins_-1
-        self.bin_edges_ = np.unique(bin_edges)
-        
+        bin_edges = np.unique(bin_edges)
+
         # Ensure at least 1 bin when all values are identical
-        if len(self.bin_edges_) == 1:
+        if len(bin_edges) == 1:
             # Create artificial edges around the single value
-            self.bin_edges_ = np.array([self.bin_edges_.item(), self.bin_edges_.item()])
-        
+            bin_edges = np.array([bin_edges.item(), bin_edges.item()])
+
+        n_bins_deduplicated = len(bin_edges) - 1
+
+        # Quantile interpolation can place two consecutive edges between the same
+        # pair of observations, producing bins that no value can fall into. Dropping
+        # the upper edge of an empty bin merges it into the next one, guaranteeing
+        # that every bin holds at least one observation of the data used in `fit`.
+        bin_ids = np.searchsorted(bin_edges[1:-1], X, side='right')
+        counts = np.bincount(np.ravel(bin_ids), minlength=len(bin_edges) - 1)
+        if not counts.all():
+            bin_edges = np.concatenate([bin_edges[:1], bin_edges[1:][counts > 0]])
+
+        self.bin_edges_ = bin_edges
         self.n_bins_ = len(self.bin_edges_) - 1
-        
+
         if self.n_bins_ != self.n_bins:
+            reasons = []
+            if n_bins_deduplicated != self.n_bins:
+                reasons.append("duplicated edges")
+            if self.n_bins_ != n_bins_deduplicated:
+                reasons.append("empty bins")
             warnings.warn(
                 f"The number of bins has been reduced from {self.n_bins} to "
-                f"{self.n_bins_} due to duplicated edges caused by repeated predicted "
-                f"values.",
+                f"{self.n_bins_} due to {' and '.join(reasons)}. This happens when "
+                f"the values used to compute the edges of the bins are highly "
+                f"concentrated or contain many repeated values.",
                 IgnoredArgumentWarning
             )
         

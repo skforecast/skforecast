@@ -1,6 +1,7 @@
 # Unit test predict_interval ForecasterRecursiveMultiSeries
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ from sklearn.linear_model import LinearRegression
 from lightgbm import LGBMRegressor
 
 from ....recursive import ForecasterRecursiveMultiSeries
+from ....exceptions import IgnoredArgumentWarning
 
 # Fixtures
 from .fixtures_forecaster_recursive_multiseries import (
@@ -22,6 +24,8 @@ from .fixtures_forecaster_recursive_multiseries import (
     series_dict_nans_train,
     exog_dict_nans_train,
     exog_dict_nans_test,
+    series_wide_dt_intermittent,
+    series_wide_dt_intermittent_all,
     expected_df_to_long_format
 )
 
@@ -1159,4 +1163,153 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict(interval):
         ),
     )
 
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_interval_bootstrapping_binned_residuals_when_levels_have_different_n_bins():
+    """
+    Test predict_interval with method 'bootstrapping' and binned residuals when
+    the binner of each level ends up with a different number of bins. The
+    residuals sampled for a level must be indexed with the bin ids of that same
+    level.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=LinearRegression(), lags=5)
+    warn_msg = re.escape(
+        "The number of bins has been reduced from 10 to 6 due to duplicated edges "
+        "and empty bins. This happens when "
+        "the values used to compute the edges of the bins are highly "
+        "concentrated or contain many repeated values.",
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        forecaster.fit(series=series_wide_dt_intermittent, store_in_sample_residuals=True)
+    results = forecaster.predict_interval(
+        steps=3, method='bootstrapping', interval=0.8, use_binned_residuals=True
+    )
+
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [-0.39501015, -1.87600725,  1.37926736],
+                              [ 9.85175785,  5.84880571, 13.49833153],
+                              [ 2.75913236, -0.16387514,  0.44308598],
+                              [ 9.65621276,  7.55231878, 12.22077711],
+                              [ 3.71145373, -0.18763886, 21.31191825],
+                              [10.57416764,  8.34294824, 12.36372611]]),
+                   index = pd.DatetimeIndex(
+                       ['2020-03-21', '2020-03-21', '2020-03-22',
+                        '2020-03-22', '2020-03-23', '2020-03-23']
+                   ),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+    expected.insert(0, 'level', np.tile(['l1', 'l2'], 3))
+
+    assert {k: v.n_bins_ for k, v in forecaster.binner.items()} == {
+        'l1': 6, 'l2': 10, '_unknown_level': 8
+    }
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_interval_conformal_binned_residuals_when_levels_have_different_n_bins():
+    """
+    Test predict_interval with method 'conformal' and binned residuals when the
+    binner of each level ends up with a different number of bins. The correction
+    factor of a level must be indexed with the bin ids of that same level.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=LinearRegression(), lags=5)
+    warn_msg = re.escape(
+        "The number of bins has been reduced from 10 to 6 due to duplicated edges "
+        "and empty bins. This happens when "
+        "the values used to compute the edges of the bins are highly "
+        "concentrated or contain many repeated values.",
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        forecaster.fit(series=series_wide_dt_intermittent, store_in_sample_residuals=True)
+    results = forecaster.predict_interval(
+        steps=3, method='conformal', interval=0.8, use_binned_residuals=True
+    )
+
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [-0.39501015, -2.17266328,  1.38264298],
+                              [ 9.85175785,  6.21022789, 13.49328781],
+                              [ 2.75913236, -0.07038147,  5.58864619],
+                              [ 9.65621276,  7.24654939, 12.06587612],
+                              [ 3.71145373, -0.43063501,  7.85354247],
+                              [10.57416764,  8.06614909, 13.08218619]]),
+                   index = pd.DatetimeIndex(
+                       ['2020-03-21', '2020-03-21', '2020-03-22',
+                        '2020-03-22', '2020-03-23', '2020-03-23']
+                   ),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+    expected.insert(0, 'level', np.tile(['l1', 'l2'], 3))
+
+    assert {k: v.n_bins_ for k, v in forecaster.binner.items()} == {
+        'l1': 6, 'l2': 10, '_unknown_level': 8
+    }
+    pd.testing.assert_frame_equal(results, expected)
+
+
+@pytest.mark.parametrize(
+    "method, expected",
+    [
+        ("bootstrapping", np.array([
+            [-0.12326394, -0.27166314,  0.        ],
+            [ 0.1483992 ,  0.        ,  0.27166314],
+            [ 0.14369098, -0.00470822,  0.26695491]])),
+        ("conformal", np.array([
+            [-0.12326394, -0.26977985,  0.02325197],
+            [ 0.1483992 ,  0.00188329,  0.29491511],
+            [ 0.14369098, -0.00282493,  0.29020688]])),
+    ],
+    ids=lambda x: f"method: {x}" if isinstance(x, str) else "expected"
+)
+def test_predict_interval_output_when_unknown_level_and_out_sample_binned_residuals(method, expected):
+    """
+    Test predict_interval output for an unknown level with out-of-sample binned
+    residuals when the binner of '_unknown_level' learns more bins than the
+    binner of any known level. The out-of-sample residuals of '_unknown_level'
+    must cover every bin of its binner.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator = LGBMRegressor(
+            n_estimators=20, min_child_samples=2, random_state=123, verbose=-1
+        ),
+        lags = 5
+    )
+    forecaster.fit(
+        series=series_wide_dt_intermittent_all.iloc[:40], store_in_sample_residuals=True
+    )
+    predictions = forecaster.predict(steps=10)
+    y_true = {
+        level: series_wide_dt_intermittent_all[level].iloc[40:] for level in ['l1', 'l2']
+    }
+    y_pred = {
+        level: predictions.loc[predictions['level'] == level, 'pred'].set_axis(
+            y_true[level].index
+        )
+        for level in ['l1', 'l2']
+    }
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+    last_window = pd.DataFrame(
+        {'l3': series_wide_dt_intermittent_all['l1'].iloc[35:40]}
+    )
+    results = forecaster.predict_interval(
+        steps=3, levels=['l3'], last_window=last_window, method=method,
+        interval=0.8, use_in_sample_residuals=False, use_binned_residuals=True,
+        suppress_warnings=True
+    )
+
+    expected = pd.DataFrame(
+                   data    = expected,
+                   index   = pd.DatetimeIndex(['2020-02-10', '2020-02-11', '2020-02-12']),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+    expected.insert(0, 'level', 'l3')
+
+    assert {k: v.n_bins_ for k, v in forecaster.binner.items()} == {
+        'l1': 7, 'l2': 7, '_unknown_level': 8
+    }
     pd.testing.assert_frame_equal(results, expected)

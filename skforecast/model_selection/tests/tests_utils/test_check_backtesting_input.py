@@ -862,6 +862,19 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(**kwargs)
 
+    kwargs['interval'] = [0.1, 0.5, 0.9]
+    kwargs['interval_method'] = 'conformal'
+    err_msg = re.escape(
+        "When `interval_method` is 'conformal', `interval` must be "
+        "a float or a list/tuple of exactly 2 values (lower and "
+        "upper quantile) defining a symmetric interval. Multiple "
+        "quantiles (e.g. `interval=[0.1, 0.5, 0.9]`) are only "
+        "supported when `interval_method='bootstrapping'`. "
+        "Got [0.1, 0.5, 0.9]."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
     kwargs['interval'] = {'10': 0.1, '90': 0.9}
     kwargs['interval_method'] = 'bootstrapping'
     err_msg = re.escape(

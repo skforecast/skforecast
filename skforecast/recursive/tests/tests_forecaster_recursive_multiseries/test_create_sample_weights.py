@@ -234,8 +234,11 @@ X_train_ordinal_category_diferent_length["_level_skforecast"] = (
 
 
 def _short_id(dt):  # pragma: no cover
-    """Short identifier for parametrize ids."""
-    s = str(dt)
+    """
+    Short identifier for parametrize ids. Memory addresses are removed so that
+    the ids are identical in every process (required by pytest-xdist).
+    """
+    s = re.sub(r" at 0x[0-9a-fA-F]+", "", str(dt))
     if len(s) <= 100:
         return s
     if hasattr(dt, 'shape'):

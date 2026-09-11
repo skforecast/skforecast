@@ -88,7 +88,7 @@ def test_backtesting_forecaster_multiseries_TypeError_when_forecaster_not_a_fore
                           (ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), 
                                                           lags=2, transformer_series=None,
                                                           encoding='onehot'), 'auto')], 
-                         ids=lambda fc: f'forecaster, n_jobs: {fc}')
+                         ids=['n_jobs: -1', 'n_jobs: 1', 'n_jobs: auto'])
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_not_refit(forecaster, n_jobs):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
@@ -198,7 +198,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                           (ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), 
                                                         lags=2, transformer_series=None,
                                                         encoding='onehot'), 'auto')], 
-                         ids=lambda fc: f'forecaster, n_jobs: {fc}')
+                         ids=['n_jobs: -1', 'n_jobs: 1', 'n_jobs: auto'])
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_fixed_train_size_with_mocked(forecaster, n_jobs):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
@@ -251,7 +251,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                           (ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), 
                                                         lags=2, transformer_series=None,
                                                         encoding='onehot'), 'auto')], 
-                         ids=lambda fc: f'forecaster, n_jobs: {fc}')
+                         ids=['n_jobs: -1', 'n_jobs: 1', 'n_jobs: auto'])
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_with_mocked(forecaster, n_jobs):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
@@ -2119,10 +2119,10 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_interval_percentiles():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_interval_quantiles():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
-    when series and exog are dictionaries, encoding='ordinal', and interval as percentiles.
+    when series and exog are dictionaries, encoding='ordinal', and interval as quantiles.
     (mocked done in Skforecast v0.15.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -4361,10 +4361,10 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_no_refit_exog_interval_percentiles_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_no_refit_exog_interval_quantiles_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
-    with no refit and gap with mocked using exog and intervals as percentiles
+    with no refit and gap with mocked using exog and intervals as quantiles
     (mocked done in Skforecast v0.15.0).
     """
     forecaster = ForecasterDirectMultiVariate(

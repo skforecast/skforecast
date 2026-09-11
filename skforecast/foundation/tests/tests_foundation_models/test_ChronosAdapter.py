@@ -170,25 +170,6 @@ def test_ChronosAdapter_set_params_no_reset_when_value_unchanged():
 # ==============================================================================
 # Tests ChronosAdapter.fit
 # ==============================================================================
-def test_ChronosAdapter_fit_error_handling():
-    """
-    Test fit raises TypeError for unsupported series types, ValueError for
-    empty dict, and TypeError for non-Series dict values.
-    """
-    adapter = ChronosAdapter(model_id="autogluon/chronos-2-small")
-
-    with pytest.raises(TypeError):
-        context, context_exog = prepare_fit_args(np.array([1, 2, 3]))
-
-    with pytest.raises(ValueError):
-        context, context_exog = prepare_fit_args({})
-
-    with pytest.raises(TypeError, match=re.escape("all series must be a named pandas Series")):
-        context, context_exog = prepare_fit_args(
-            {"s1": np.array([1.0, 2.0, 3.0])}
-        )
-
-
 @pytest.mark.parametrize(
     "context_length, expected_len",
     [(10, 10), (25, 25), (50, 50), (100, 50)],
@@ -696,3 +677,23 @@ def test_ChronosAdapter_to_covariate_array_non_pandas_inputs(
     """
     arr = ChronosAdapter._to_covariate_array(col_data)
     assert arr.dtype.kind in expected_dtype_kind
+
+
+def test_ChronosAdapter_predict_series_without_exog_key_has_no_covariates():
+    """
+    Test that a series missing from the context_exog and exog dicts (as in
+    the backtesting path) is forwarded without covariate keys instead of
+    raising KeyError.
+    """
+    pipeline = FakePipeline()
+    adapter = ChronosAdapter(
+        model_id="autogluon/chronos-2-small", pipeline=pipeline
+    )
+    ctx, _ = prepare_fit_args(y)
+    adapter.fit(context=ctx, context_exog=None)
+
+    adapter.predict(
+        steps=3, context=ctx, context_exog={}, exog={}, quantiles=None
+    )
+    assert "past_covariates" not in pipeline.last_inputs[0]
+    assert "future_covariates" not in pipeline.last_inputs[0]

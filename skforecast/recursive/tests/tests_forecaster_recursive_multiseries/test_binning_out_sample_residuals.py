@@ -48,8 +48,11 @@ def test_binning_out_sample_residuals_when_residuals_length_is_less_than_10000_a
 
     forecaster.out_sample_residuals_ = {}
     forecaster.out_sample_residuals_by_bin_ = {}
-    results = forecaster._binning_out_sample_residuals(
+    y_pred_l1, residuals_l1 = forecaster._transform_out_sample_residuals(
         level="l1", y_true=y_true["l1"], y_pred=y_pred["l1"]
+    )
+    results = forecaster._binning_out_sample_residuals(
+        level="l1", y_pred=y_pred_l1, residuals=residuals_l1
     )
 
     expected_out_sample = np.array(
@@ -101,8 +104,11 @@ def test_binning_out_sample_residuals_when_residuals_length_is_less_than_10000_a
 
     forecaster.out_sample_residuals_ = {}
     forecaster.out_sample_residuals_by_bin_ = {}
-    results = forecaster._binning_out_sample_residuals(
+    y_pred_unknown, residuals_unknown = forecaster._transform_out_sample_residuals(
         level="_unknown_level", y_true=y_true["_unknown_level"], y_pred=y_pred["_unknown_level"]
+    )
+    results = forecaster._binning_out_sample_residuals(
+        level="_unknown_level", y_pred=y_pred_unknown, residuals=residuals_unknown
     )
 
     expected_out_sample = np.array(
@@ -157,16 +163,22 @@ def test_binning_out_sample_residuals_when_residuals_length_is_less_than_10000_a
         f"Empty bins will be filled with a random sample of residuals."
     )
     with pytest.warns(ResidualsUsageWarning, match=warn_msg):
-        residuals = forecaster._binning_out_sample_residuals(
+        y_pred_l1, residuals_l1 = forecaster._transform_out_sample_residuals(
             level="l1", y_true=y_true["l1"], y_pred=y_pred["l1"]
+        )
+        residuals = forecaster._binning_out_sample_residuals(
+            level="l1", y_pred=y_pred_l1, residuals=residuals_l1
         )
     forecaster.out_sample_residuals_ = {"l1": residuals[0]}
     forecaster.out_sample_residuals_by_bin_ = {"l1": residuals[1]}
 
     y_true = {'l1': np.array([2, 3, 4, 5, 6]), 'l2': np.array([2, 3, 4, 5, 6])}
     y_pred = {'l1': np.array([0, 1, 2, 3, 4]), 'l2': np.array([0, 1, 2, 3, 4])}
+    y_pred_l1, residuals_l1 = forecaster._transform_out_sample_residuals(
+        level="l1", y_true=y_true["l1"], y_pred=y_pred["l1"]
+    )
     results = forecaster._binning_out_sample_residuals(
-        level="l1", y_true=y_true["l1"], y_pred=y_pred["l1"], append=True
+        level="l1", y_pred=y_pred_l1, residuals=residuals_l1, append=True
     )
 
     expected_out_sample = np.array([1, 1, 1, 1, 1, 2, 2, 2, 2, 2])
@@ -201,8 +213,11 @@ def test_binning_out_sample_residuals_when_residuals_length_is_greater_than_1000
     
     forecaster.out_sample_residuals_ = {}
     forecaster.out_sample_residuals_by_bin_ = {}
-    results = forecaster._binning_out_sample_residuals(
+    y_pred_l1, residuals_l1 = forecaster._transform_out_sample_residuals(
         level="l1", y_true=y_true["l1"], y_pred=y_pred["l1"]
+    )
+    results = forecaster._binning_out_sample_residuals(
+        level="l1", y_pred=y_pred_l1, residuals=residuals_l1
     )
 
     assert len(results[0]) == 10_000
@@ -224,8 +239,11 @@ def test_binning_out_sample_residuals_when_residuals_length_is_greater_than_1000
     
     forecaster.out_sample_residuals_ = {}
     forecaster.out_sample_residuals_by_bin_ = {}
-    results = forecaster._binning_out_sample_residuals(
+    y_pred_unknown, residuals_unknown = forecaster._transform_out_sample_residuals(
         level="_unknown_level", y_true=y_true["_unknown_level"], y_pred=y_pred["_unknown_level"]
+    )
+    results = forecaster._binning_out_sample_residuals(
+        level="_unknown_level", y_pred=y_pred_unknown, residuals=residuals_unknown
     )
 
     assert len(results[0]) == 10_000
@@ -247,14 +265,20 @@ def test_binning_out_sample_residuals_when_residuals_length_is_greater_than_1000
 
     forecaster.out_sample_residuals_ = {}
     forecaster.out_sample_residuals_by_bin_ = {}
-    results = forecaster._binning_out_sample_residuals(
+    y_pred_l1, residuals_l1 = forecaster._transform_out_sample_residuals(
         level="l1", y_true=y_true["l1"], y_pred=y_pred["l1"]
+    )
+    results = forecaster._binning_out_sample_residuals(
+        level="l1", y_pred=y_pred_l1, residuals=residuals_l1
     )
     
     y_true = {'l1': np.ones(20_000)}
     y_pred = {'l1': np.concatenate([np.ones(10_000) + 1, np.ones(10_000) + 2])}
+    y_pred_l1, residuals_l1 = forecaster._transform_out_sample_residuals(
+        level="l1", y_true=y_true["l1"], y_pred=y_pred["l1"]
+    )
     results = forecaster._binning_out_sample_residuals(
-        level="l1", y_true=y_true["l1"], y_pred=y_pred["l1"], append=True
+        level="l1", y_pred=y_pred_l1, residuals=residuals_l1, append=True
     )
 
     assert len(results[0]) == 10_000
@@ -305,8 +329,11 @@ def test_forecaster_binning_out_sample_residuals_when_transformer_series_and_dif
     forecaster.fit(series=series_train)
     forecaster.out_sample_residuals_ = {}
     forecaster.out_sample_residuals_by_bin_ = {}
+    y_pred_l1, residuals_l1 = forecaster._transform_out_sample_residuals(
+        level="l1", y_true=y_true["l1"], y_pred=y_pred["l1"]
+    )
     results = forecaster._binning_out_sample_residuals(
-        level="l1", y_true = y_true['l1'], y_pred = y_pred['l1']
+        level="l1", y_pred=y_pred_l1, residuals=residuals_l1
     )
 
     y_true['l1'] = forecaster.transformer_series_['l1'].transform(y_true['l1'].reshape(-1, 1)).flatten()

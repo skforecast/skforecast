@@ -221,7 +221,9 @@ def test_QuantileBinner_fit_with_duplicate_edges_raises_warning():
     
     warn_msg = re.escape(
         "The number of bins has been reduced from 10 to 2 due to duplicated "
-        "edges caused by repeated predicted values."
+        "edges. This happens when "
+        "the values used to compute the edges of the bins are highly "
+        "concentrated or contain many repeated values.",
     )
     with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
         binner.fit(X)
@@ -247,7 +249,9 @@ def test_QuantileBinner_fit_with_identical_values():
     
     warn_msg = re.escape(
         "The number of bins has been reduced from 10 to 1 due to duplicated "
-        "edges caused by repeated predicted values."
+        "edges. This happens when "
+        "the values used to compute the edges of the bins are highly "
+        "concentrated or contain many repeated values.",
     )
     with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
         binner.fit(X)
@@ -282,6 +286,159 @@ def test_QuantileBinner_fit_no_warning_when_bins_not_reduced():
         binner.fit(X)
     
     assert binner.n_bins_ == binner.n_bins
+
+
+def test_QuantileBinner_fit_removes_empty_bins():
+    """
+    Test that QuantileBinner removes bins that contain no observations. Quantile
+    interpolation can place two consecutive edges between the same pair of
+    observations, creating a bin no value can fall into.
+    """
+
+    # Edges are [0, 1/30, 0.1, 0.5], all distinct, but no value falls in [1/30, 0.1)
+    X = np.array([0.0, 0.0, 0.1, 0.1, 0.5])
+    binner = QuantileBinner(
+        n_bins=3,
+        method='linear',
+        dtype=np.float64,
+        random_state=789654,
+    )
+
+    warn_msg = re.escape(
+        "The number of bins has been reduced from 3 to 2 due to empty bins. This happens when "
+        "the values used to compute the edges of the bins are highly "
+        "concentrated or contain many repeated values.",
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        binner.fit(X)
+
+    assert binner.n_bins_ == 2
+    np.testing.assert_array_almost_equal(
+        binner.bin_edges_, np.array([0.0, 1 / 30, 0.5])
+    )
+    assert sorted(binner.intervals_) == [0, 1]
+
+    # Every remaining bin holds at least one observation
+    counts = np.bincount(binner.transform(X).astype(int), minlength=binner.n_bins_)
+    np.testing.assert_array_equal(counts, np.array([2, 3]))
+
+
+def test_QuantileBinner_fit_removes_duplicated_edges_and_empty_bins():
+    """
+    Test that QuantileBinner reports both causes when the number of bins is
+    reduced by duplicated edges and by empty bins at the same time.
+    """
+
+    X = np.array([0.0, 0.0, 1.0, 10.0])
+    binner = QuantileBinner(
+        n_bins=5,
+        method='linear',
+        dtype=np.float64,
+        random_state=789654,
+    )
+
+    warn_msg = re.escape(
+        "The number of bins has been reduced from 5 to 3 due to duplicated edges "
+        "and empty bins. This happens when "
+        "the values used to compute the edges of the bins are highly "
+        "concentrated or contain many repeated values.",
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        binner.fit(X)
+
+    assert binner.n_bins_ == 3
+    np.testing.assert_array_almost_equal(
+        binner.bin_edges_, np.array([0.0, 0.2, 4.6, 10.0])
+    )
+
+    counts = np.bincount(binner.transform(X).astype(int), minlength=binner.n_bins_)
+    np.testing.assert_array_equal(counts, np.array([2, 1, 1]))
+
+
+@pytest.mark.parametrize(
+    "X",
+    [
+        np.array([0.0, 0.0, 0.1, 0.1, 0.5]),
+        np.array([0.0, 0.0, 1.0, 10.0]),
+        np.array([1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0]),
+        np.array([5.0, 5.0, 5.0, 5.0, 5.0]),
+        np.concatenate([np.zeros(50), np.array([1.0, 3.0, 20.0, 100.0])]),
+        np.arange(100).astype(float),
+    ],
+    ids=lambda X: f"X: len={len(X)} n_unique={len(np.unique(X))}",
+)
+@pytest.mark.parametrize("n_bins", [2, 3, 5, 10, 20], ids=lambda n: f"n_bins: {n}")
+def test_QuantileBinner_fit_every_bin_is_not_empty(X, n_bins):
+    """
+    Test that after fitting, every bin from 0 to n_bins_ - 1 contains at least
+    one observation of the data used to fit the binner.
+    """
+
+    binner = QuantileBinner(
+        n_bins=n_bins,
+        method='linear',
+        dtype=np.float64,
+        random_state=789654,
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", IgnoredArgumentWarning)
+        binner.fit(X)
+
+    counts = np.bincount(binner.transform(X).astype(int), minlength=binner.n_bins_)
+
+    assert binner.n_bins_ >= 1
+    assert len(counts) == binner.n_bins_
+    assert (counts > 0).all()
+    assert sorted(binner.intervals_) == list(range(binner.n_bins_))
+
+
+def test_QuantileBinner_fit_every_bin_is_not_empty_when_subsampling():
+    """
+    Test that the non empty bin guarantee also holds when `fit` subsamples the
+    input data, as the subsample is a subset of the values of `X`.
+    """
+
+    rng = np.random.default_rng(789654)
+    X = np.where(rng.random(5_000) < 0.85, 0.0, rng.exponential(20, 5_000))
+    binner = QuantileBinner(
+        n_bins=10,
+        method='linear',
+        subsample=500,
+        dtype=np.float64,
+        random_state=789654,
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", IgnoredArgumentWarning)
+        binner.fit(X)
+
+    counts = np.bincount(binner.transform(X).astype(int), minlength=binner.n_bins_)
+
+    assert (counts > 0).all()
+
+
+def test_QuantileBinner_fit_every_bin_is_not_empty_with_2d_input():
+    """
+    Test that the non empty bin guarantee holds when `X` is a 2D array.
+    """
+
+    X = np.array([0.0, 0.0, 0.1, 0.1, 0.5]).reshape(-1, 1)
+    binner = QuantileBinner(
+        n_bins=3,
+        method='linear',
+        dtype=np.float64,
+        random_state=789654,
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", IgnoredArgumentWarning)
+        binner.fit(X)
+
+    assert binner.n_bins_ == 2
+    np.testing.assert_array_almost_equal(
+        binner.bin_edges_, np.array([0.0, 1 / 30, 0.5])
+    )
 
 
 def test_QuantileBinner_transform_with_reduced_bins():

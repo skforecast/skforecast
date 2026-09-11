@@ -17,7 +17,6 @@ from .. import __version__
 from ..exceptions import IgnoredArgumentWarning
 from ._foundation_model import FoundationModel
 from ..utils import (
-    _normalize_interval_scale,
     check_interval,
     get_style_repr_html,
 )
@@ -28,7 +27,7 @@ class ForecasterFoundation:
     Forecaster that wraps a `FoundationModel` [1]_ for full skforecast ecosystem
     compatibility: backtesting, model selection, etc.
 
-    Unlike ML-based forecasters, there is no training step — the underlying
+    Unlike ML-based forecasters, there is no training step: the underlying
     foundation models are zero-shot. `fit` only stores the context
     (recent observations) and records index metadata. Predictions are generated 
     directly by the model's `predict_quantiles` pipeline.
@@ -73,6 +72,23 @@ class ForecasterFoundation:
     window_size : int
         Desired number of historical observations used as context by the
         model. Always equals `context_length`.
+    allow_exog : bool
+        Whether the underlying adapter uses exogenous variables at all. If
+        `False`, `exog` is ignored with an `IgnoredArgumentWarning`. Delegates
+        to `estimator.allow_exog`.
+    supports_past_only_covariates : bool
+        Whether the underlying adapter uses historical exog columns that
+        have no future values as past-only covariates. Delegates to
+        `estimator.supports_past_only_covariates`.
+    supports_heterogeneous_covariates : bool
+        Whether the underlying adapter can forecast series with different
+        exog columns in the same backend call. If `False`, series are
+        grouped by their exog columns at predict time and the adapter is
+        called once per group. Delegates to
+        `estimator.supports_heterogeneous_covariates`.
+    supports_nan_in_series : bool
+        Whether the underlying adapter accepts NaN values in the series used
+        as context. Delegates to `estimator.supports_nan_in_series`.
     index_type_ : type
         Type of index of the input used in training. Delegates to
         `estimator.index_type_`.
@@ -220,6 +236,61 @@ class ForecasterFoundation:
             Context window size. Delegates to `estimator.context_length`.
         """
         return self.estimator.context_length
+
+    @property
+    def allow_exog(self) -> bool:
+        """
+        Whether the underlying adapter uses exogenous variables at all.
+
+        Returns
+        -------
+        allow_exog : bool
+            Delegates to `estimator.allow_exog`. If `False`, `exog` is ignored
+            with an `IgnoredArgumentWarning`.
+        """
+        return self.estimator.allow_exog
+
+    @property
+    def supports_past_only_covariates(self) -> bool:
+        """
+        Whether the underlying adapter uses historical exog columns that have
+        no future values as past-only covariates.
+
+        Returns
+        -------
+        supports_past_only_covariates : bool
+            Delegates to `estimator.supports_past_only_covariates`.
+        """
+        return self.estimator.supports_past_only_covariates
+
+    @property
+    def supports_heterogeneous_covariates(self) -> bool:
+        """
+        Whether the underlying adapter can forecast series with different
+        exog columns in the same backend call.
+
+        Returns
+        -------
+        supports_heterogeneous_covariates : bool
+            Delegates to `estimator.supports_heterogeneous_covariates`. If
+            `False`, `predict` groups the series by their exog columns and
+            calls the adapter once per group.
+        """
+        return self.estimator.supports_heterogeneous_covariates
+
+    @property
+    def supports_nan_in_series(self) -> bool:
+        """
+        Whether the underlying adapter accepts NaN values in the series used
+        as context.
+
+        Returns
+        -------
+        supports_nan_in_series : bool
+            Delegates to `estimator.supports_nan_in_series`. If `False`, a
+            context with NaN raises a `ValueError` at predict time.
+        """
+        return self.estimator.supports_nan_in_series
 
     @property
     def context_(self) -> dict[str, pd.Series] | None:
@@ -488,7 +559,8 @@ class ForecasterFoundation:
 
         if self.is_fitted:
             context_range_repr = {
-                k: v.to_list() for k, v in self.context_range_.items()
+                series_name: index_range.to_list()
+                for series_name, index_range in self.context_range_.items()
             }
         else:
             context_range_repr = None
@@ -542,8 +614,8 @@ class ForecasterFoundation:
 
         if self.is_fitted:
             context_range_parts = [
-                f"'{k}': {v.astype(str).to_list()}"
-                for k, v in self.context_range_.items()
+                f"'{series_name}': {index_range.astype(str).to_list()}"
+                for series_name, index_range in self.context_range_.items()
             ]
             if len(context_range_parts) > 10:
                 context_range_parts = (
@@ -554,9 +626,10 @@ class ForecasterFoundation:
             context_range_html = "Not fitted"
 
         params_html = "".join(
-            f"<li><strong>{html.escape(str(k))}:</strong> {html.escape(str(v))}</li>"
-            for k, v in self.estimator.adapter.get_params().items()
-            if k != "model_id"
+            f"<li><strong>{html.escape(str(param_name))}:</strong> "
+            f"{html.escape(str(param_value))}</li>"
+            for param_name, param_value in self.estimator.adapter.get_params().items()
+            if param_name != "model_id"
         )
 
         content = f"""
@@ -789,7 +862,7 @@ class ForecasterFoundation:
         Predict n steps ahead with prediction intervals.
 
         Prediction intervals are derived directly from the underlying
-        foundation model's native quantile output — no bootstrapping or
+        foundation model's native quantile output; no bootstrapping or
         residual estimation is used.
 
         Parameters
@@ -819,7 +892,7 @@ class ForecasterFoundation:
 
             **Changed in version 0.23.0:** `interval` is now expressed as
             quantiles (0-1) instead of percentiles (0-100). Passing percentiles
-            is deprecated and emits a `FutureWarning`.
+            is not longer supported and will raise a `ValueError`.
         check_inputs : bool, default True
             If `True`, the `context` and `context_exog` inputs are validated
             and normalized. If `False`, `context` must already be a
@@ -860,7 +933,6 @@ class ForecasterFoundation:
             )
 
         if isinstance(interval, (list, tuple)):
-            interval = _normalize_interval_scale(interval)
             check_interval(interval=interval, ensure_symmetric_intervals=False)
         else:
             check_interval(alpha=interval, alpha_literal='interval')

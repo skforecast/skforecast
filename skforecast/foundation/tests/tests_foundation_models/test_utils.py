@@ -8,10 +8,19 @@ import pandas as pd
 
 from skforecast.foundation._utils import (
     check_preprocess_series_foundation,
+    get_exog_signature,
+    group_series_by_exog_signature,
+    align_context_exog,
+    _warn_if_non_commercial,
+    _NON_COMMERCIAL_LICENSES,
+    _validate_model_id_prefix,
+    _validate_supported_quantiles,
 )
 from skforecast.exceptions import (
     IgnoredArgumentWarning,
     InputTypeWarning,
+    LicenseWarning,
+    MissingValuesWarning,
 )
 
 
@@ -126,9 +135,328 @@ def test_check_preprocess_series_foundation_long_format_non_datetime_second_leve
         check_preprocess_series_foundation(df_bad)
 
 
-def test_check_preprocess_series_foundation_invalid_type_raises_TypeError():
+@pytest.mark.parametrize(
+    "series, error, match",
+    [
+        ([1.0, 2.0, 3.0], TypeError, "must be a pandas DataFrame or a dict"),
+        (np.array([1.0, 2.0, 3.0]), TypeError, "must be a pandas DataFrame or a dict"),
+        ({}, ValueError, "all series must have a Pandas RangeIndex or DatetimeIndex"),
+        ({"s1": np.array([1.0, 2.0, 3.0])}, TypeError, "all series must be a named pandas Series"),
+    ],
+    ids=["list", "ndarray", "empty_dict", "dict_of_ndarray"],
+)
+def test_check_preprocess_series_foundation_invalid_input_raises(series, error, match):
     """
-    An unsupported type (e.g., list) should raise TypeError.
+    Test that check_preprocess_series_foundation propagates the errors of
+    check_preprocess_series for every non-Series input it forwards: TypeError
+    for unsupported types (list, ndarray) and for dict values that are not
+    named pandas Series, ValueError for an empty dict.
     """
-    with pytest.raises(TypeError):
-        check_preprocess_series_foundation([1.0, 2.0, 3.0])
+    with pytest.raises(error, match=re.escape(match)):
+        check_preprocess_series_foundation(series)
+
+
+# ===========================================================================
+# _warn_if_non_commercial
+# ===========================================================================
+
+@pytest.mark.parametrize(
+    "model_id",
+    [
+        "google/timesfm-3.0-pytorch",
+        "Salesforce/moirai-2.0-R-small",
+        "priorlabs/tabpfn-ts",
+        "taharnbl/TS-ICL",
+    ],
+    ids=["timesfm-3.0", "moirai", "tabpfn-ts", "tsicl"],
+)
+def test_warn_if_non_commercial_warns_for_registered_prefixes(model_id):
+    """
+    _warn_if_non_commercial should raise a LicenseWarning naming the
+    model_id and its license for every registered non-commercial prefix.
+    """
+    license_name, license_url = next(
+        info for prefix, info in _NON_COMMERCIAL_LICENSES.items()
+        if model_id.startswith(prefix)
+    )
+    warn_msg = re.escape(
+        f"The weights for '{model_id}' are released under {license_name}"
+    )
+    with pytest.warns(LicenseWarning, match=warn_msg) as record:
+        _warn_if_non_commercial(model_id)
+    assert license_url in str(record[0].message)
+
+
+@pytest.mark.parametrize(
+    "model_id",
+    [
+        "autogluon/chronos-2-small",
+        "amazon/chronos-2",
+        "google/timesfm-2.5-200m-pytorch",
+        "soda-inria/tabicl",
+        "theforecastingcompany/t0-alpha",
+        "Synthefy/Nori",
+        "unknown/some-model",
+    ],
+    ids=["chronos-autogluon", "chronos-amazon", "timesfm-2.5", "tabicl", "t0", "nori", "unknown"],
+)
+def test_warn_if_non_commercial_no_warning_for_unmatched_prefixes(model_id):
+    """
+    _warn_if_non_commercial should be a no-op (no warning) for model ids
+    that are not registered as non-commercial.
+    """
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        _warn_if_non_commercial(model_id)
+    assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+
+
+def test_warn_if_non_commercial_uses_longest_prefix_match(monkeypatch):
+    """
+    _warn_if_non_commercial should resolve the most specific (longest)
+    matching prefix when several registered prefixes share a root, so a more
+    specific prefix is not shadowed by a shorter one. Two overlapping
+    prefixes are injected into the registry to actually exercise the
+    tie-break (the shipped registry has none that overlap).
+    """
+    monkeypatch.setitem(
+        _NON_COMMERCIAL_LICENSES, "vendor/model",
+        ("Short License", "https://example.com/short"),
+    )
+    monkeypatch.setitem(
+        _NON_COMMERCIAL_LICENSES, "vendor/model-pro",
+        ("Long License", "https://example.com/long"),
+    )
+
+    # A model_id matching both prefixes must resolve to the longer one.
+    with pytest.warns(LicenseWarning, match=re.escape("Long License")):
+        _warn_if_non_commercial("vendor/model-pro-v1")
+
+    # A model_id matching only the shorter prefix resolves to it.
+    with pytest.warns(LicenseWarning, match=re.escape("Short License")):
+        _warn_if_non_commercial("vendor/model-basic")
+
+
+def test_warn_if_non_commercial_matches_registered_and_skips_unregistered():
+    """
+    A registered non-commercial prefix (TimesFM 3.0) warns, while an
+    unregistered id (TimesFM 2.5) does not.
+    """
+    with pytest.warns(LicenseWarning, match=re.escape("google/timesfm-3.0-pytorch")):
+        _warn_if_non_commercial("google/timesfm-3.0-pytorch")
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        _warn_if_non_commercial("google/timesfm-2.5-200m-pytorch")
+    assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+
+
+def test_warn_if_non_commercial_suppressible_via_simplefilter():
+    """
+    The LicenseWarning issued by _warn_if_non_commercial should be
+    suppressible through the standard warnings.simplefilter mechanism, the
+    same one used by the `suppress_warnings` argument across skforecast.
+    """
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("ignore", category=LicenseWarning)
+        _warn_if_non_commercial("google/timesfm-3.0-pytorch")
+    assert len(caught) == 0
+
+
+# ===========================================================================
+# _validate_model_id_prefix
+# ===========================================================================
+
+def test_validate_model_id_prefix_no_error_when_prefix_matches():
+    """
+    Test that _validate_model_id_prefix returns None for a model_id that
+    starts with the expected prefix.
+    """
+    assert _validate_model_id_prefix(
+        "google/timesfm-2.5-200m-pytorch", "google/timesfm-2.5", "TimesFM25Adapter"
+    ) is None
+
+
+@pytest.mark.parametrize(
+    "model_id",
+    ["google/timesfm-3.0-pytorch", "autogluon/chronos-2-small", None, 5],
+    ids=["other_version", "other_family", "None", "int"],
+)
+def test_validate_model_id_prefix_ValueError_when_prefix_does_not_match(model_id):
+    """
+    Test that _validate_model_id_prefix raises ValueError naming the expected
+    prefix and the adapter when model_id does not start with the prefix or is
+    not a string.
+    """
+    err_msg = re.escape(
+        f"`model_id` must start with 'google/timesfm-2.5' for TimesFM25Adapter. "
+        f"Got {model_id!r}."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        _validate_model_id_prefix(model_id, "google/timesfm-2.5", "TimesFM25Adapter")
+
+
+# ===========================================================================
+# _validate_supported_quantiles
+# ===========================================================================
+
+@pytest.mark.parametrize(
+    "quantiles, expected",
+    [
+        (None, None),
+        ([0.1, 0.5], [0.1, 0.5]),
+        ((0.9, 0.1), [0.9, 0.1]),
+        ([0.1 + 1e-12], [0.1 + 1e-12]),
+    ],
+    ids=["None", "list", "tuple_to_list", "within_tolerance"],
+)
+def test_validate_supported_quantiles_output(quantiles, expected):
+    """
+    Test that _validate_supported_quantiles returns None for None, a list for
+    any sequence, and accepts levels within the tolerance.
+    """
+    supported = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    result = _validate_supported_quantiles(quantiles, supported, "Moirai")
+    assert result == expected
+    assert result is None or isinstance(result, list)
+
+
+@pytest.mark.parametrize(
+    "bad_quantile",
+    [0.15, 0.05, 1.1, -0.1],
+    ids=lambda x: f"q={x}"
+)
+def test_validate_supported_quantiles_ValueError_when_level_not_supported(bad_quantile):
+    """
+    Test that _validate_supported_quantiles raises ValueError naming the
+    backend, the supported levels and the offending level.
+    """
+    supported = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    err_msg = re.escape(
+        f"Moirai only supports quantile levels {supported}. Got {bad_quantile!r}. "
+        f"Quantile interpolation is not supported."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        _validate_supported_quantiles([0.5, bad_quantile], supported, "Moirai")
+
+
+# ===========================================================================
+# get_exog_signature
+# ===========================================================================
+
+@pytest.mark.parametrize(
+    "context_exog, exog, expected",
+    [
+        (None, None, ((), ())),
+        (pd.DataFrame({"b": [0.0], "a": [0.0]}), None, (("a", "b"), ())),
+        (pd.DataFrame({"b": [0.0], "a": [0.0]}), pd.DataFrame({"b": [1.0]}), (("a",), ("b",))),
+        (pd.Series([0.0], name="f"), pd.Series([1.0], name="f"), ((), ("f",))),
+        (None, pd.DataFrame({"b": [1.0]}), ((), ("b",))),
+    ],
+    ids=["no_exog", "past_only", "mixed", "series_blocks", "future_without_history"],
+)
+def test_get_exog_signature_output(context_exog, exog, expected):
+    """
+    Test that get_exog_signature returns sorted (past_only_cols, fut_cols)
+    tuples for one series, treating pandas Series blocks by name and never
+    raising for a future column without history.
+    """
+    assert get_exog_signature(context_exog, exog) == expected
+
+
+# ===========================================================================
+# group_series_by_exog_signature
+# ===========================================================================
+
+def test_group_series_by_exog_signature_output():
+    """
+    Test that series are grouped by their (past-only, future) exog columns,
+    that groups keep the first-seen order and input order within a group,
+    and that missing keys, None values and None dicts mean no exog.
+    """
+    p = np.arange(3, dtype=float)
+    context_exog = {
+        "full":  pd.DataFrame({"p": p, "k": p}),
+        "none":  None,
+        "past":  pd.DataFrame({"p": p}),
+        "full2": pd.DataFrame({"k": p, "p": p}),
+    }
+    exog = {
+        "full":  pd.DataFrame({"k": p}),
+        "past":  None,
+        "full2": pd.DataFrame({"k": p}),
+    }
+    series_names_in = ["full", "none", "past", "full2", "missing"]
+
+    results = group_series_by_exog_signature(series_names_in, context_exog, exog)
+    assert results == [["full", "full2"], ["none", "missing"], ["past"]]
+
+    results = group_series_by_exog_signature(series_names_in, None, None)
+    assert results == [series_names_in]
+
+
+# ===========================================================================
+# align_context_exog
+# ===========================================================================
+
+def test_align_context_exog_output():
+    """
+    Test that align_context_exog reindexes each series' historical exog to
+    the index of its context: aligned exog is returned unchanged, extra rows
+    are dropped, a Series is coerced to a DataFrame, missing keys or None
+    values stay None, and only the requested series are returned.
+    """
+    ctx_idx = pd.date_range("2020-01-31", periods=4, freq="ME")
+    long_idx = pd.date_range("2019-11-30", periods=8, freq="ME")
+    context = {
+        "s1": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+        "s2": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+        "s3": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+        "s4": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+        "s5": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+    }
+    context_exog = {
+        "s1": pd.DataFrame({"a": np.arange(4, dtype=float)}, index=ctx_idx),
+        "s2": pd.DataFrame({"a": np.arange(8, dtype=float)}, index=long_idx),
+        "s3": pd.Series(np.arange(4, dtype=float), index=ctx_idx, name="a"),
+        "s4": None,
+    }
+
+    results = align_context_exog(context, context_exog, ["s1", "s2", "s3", "s4", "s5"])
+
+    expected_s2 = pd.DataFrame({"a": np.arange(2, 6, dtype=float)}, index=ctx_idx)
+    assert list(results.keys()) == ["s1", "s2", "s3", "s4", "s5"]
+    pd.testing.assert_frame_equal(results["s1"], context_exog["s1"])
+    pd.testing.assert_frame_equal(results["s2"], expected_s2)
+    pd.testing.assert_frame_equal(results["s3"], context_exog["s3"].to_frame())
+    assert results["s4"] is None
+    assert results["s5"] is None
+
+
+def test_align_context_exog_MissingValuesWarning_when_exog_shorter_than_context():
+    """
+    Test that context timestamps missing from the historical exog are added
+    as NaN rows and reported once with a MissingValuesWarning naming the
+    affected series.
+    """
+    ctx_idx = pd.date_range("2020-01-31", periods=4, freq="ME")
+    context = {
+        "s1": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+        "s2": pd.Series(np.arange(4, dtype=float), index=ctx_idx),
+    }
+    context_exog = {
+        "s1": pd.DataFrame({"a": np.arange(2, dtype=float)}, index=ctx_idx[:2]),
+        "s2": pd.DataFrame({"a": np.arange(3, dtype=float)}, index=ctx_idx[1:]),
+    }
+
+    warn_msg = re.escape(
+        "`context_exog` for series ['s1', 's2'] has been reindexed to match "
+        "the index of `context`. Missing timestamps were filled with NaN."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = align_context_exog(context, context_exog, ["s1", "s2"])
+
+    expected_s1 = pd.DataFrame({"a": [0.0, 1.0, np.nan, np.nan]}, index=ctx_idx)
+    expected_s2 = pd.DataFrame({"a": [np.nan, 0.0, 1.0, 2.0]}, index=ctx_idx)
+    pd.testing.assert_frame_equal(results["s1"], expected_s1)
+    pd.testing.assert_frame_equal(results["s2"], expected_s2)

@@ -7,6 +7,7 @@
 ::: skforecast.exceptions.exceptions.FeatureOutOfRangeWarning
 ::: skforecast.exceptions.exceptions.IgnoredArgumentWarning
 ::: skforecast.exceptions.exceptions.InputTypeWarning
+::: skforecast.exceptions.exceptions.LicenseWarning
 ::: skforecast.exceptions.exceptions.LongTrainingWarning
 ::: skforecast.exceptions.exceptions.MissingExogWarning
 ::: skforecast.exceptions.exceptions.MissingValuesWarning

@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from skforecast.recursive import ForecasterRecursive
+from skforecast.exceptions import IgnoredArgumentWarning
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
@@ -12,6 +13,7 @@ from sklearn.linear_model import LinearRegression
 
 # Fixtures
 from .fixtures_forecaster_recursive import y
+from .fixtures_forecaster_recursive import y_intermittent
 
 
 def test_check_interval_ValueError_when_method_is_not_valid_method():
@@ -27,29 +29,6 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_interval(steps=1, method=method)
-
-
-# TODO: Remove in skforecast 0.25.0 when percentile support is removed.
-@pytest.mark.parametrize("method", 
-                         ['bootstrapping', 'conformal'], 
-                         ids = lambda value: f'method: {value}')
-def test_predict_interval_percentile_and_quantile_scales_are_equivalent(method):
-    """
-    Check that the legacy percentile scale [5, 95] produces the same output as
-    the new quantile scale [0.05, 0.95].
-    """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
-
-    with pytest.warns(FutureWarning):
-        results_percentile = forecaster.predict_interval(
-            steps=3, method=method, interval=[5, 95], use_binned_residuals=False
-        )
-    results_quantile = forecaster.predict_interval(
-        steps=3, method=method, interval=[0.05, 0.95], use_binned_residuals=False
-    )
-
-    pd.testing.assert_frame_equal(results_percentile, results_quantile)
 
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_in_sample_residuals_is_True():
@@ -350,4 +329,82 @@ def test_predict_interval_conformal_output_when_binned_residuals(interval):
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
     
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_interval_bootstrapping_binned_residuals_when_binner_reduces_n_bins():
+    """
+    Test predict_interval with method 'bootstrapping' and binned residuals when
+    the predictions are so concentrated that the binner has to reduce the number
+    of bins. Every bin id returned by the binner must have residuals associated
+    with it.
+    """
+
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=5)
+    
+    warn_msg = re.escape(
+        "The number of bins has been reduced from 10 to 6 due to duplicated edges "
+        "and empty bins. This happens when "
+        "the values used to compute the edges of the bins are highly "
+        "concentrated or contain many repeated values.",
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        forecaster.fit(y=y_intermittent, store_in_sample_residuals=True)
+    
+    results = forecaster.predict_interval(
+        steps=5, method='bootstrapping', interval=0.8, use_binned_residuals=True
+    )
+
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [-0.49081327, -1.93324881,  1.40287625],
+                              [ 2.52355946, -0.17119115,  6.64923453],
+                              [ 3.73577761, -0.19013469, 21.33347631],
+                              [ 8.07285565,  0.69979688, 23.85823152],
+                              [ 0.87710962, -1.04482261,  4.48772651]]),
+                   index = pd.date_range(start='2020-03-21', periods=5, freq='D'),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+
+    assert forecaster.binner.n_bins_ == 6
+    assert sorted(forecaster.in_sample_residuals_by_bin_) == [0, 1, 2, 3, 4, 5]
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_interval_conformal_binned_residuals_when_binner_reduces_n_bins():
+    """
+    Test predict_interval with method 'conformal' and binned residuals when the
+    predictions are so concentrated that the binner has to reduce the number of
+    bins. Every bin id returned by the binner must have residuals associated
+    with it.
+    """
+
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=5)
+
+    warn_msg = re.escape(
+        "The number of bins has been reduced from 10 to 6 due to duplicated edges "
+        "and empty bins. This happens when "
+        "the values used to compute the edges of the bins are highly "
+        "concentrated or contain many repeated values.",
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        forecaster.fit(y=y_intermittent, store_in_sample_residuals=True)
+
+    results = forecaster.predict_interval(
+        steps=5, method='conformal', interval=0.8, use_binned_residuals=True
+    )
+
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [-0.49081328, -2.31272489,  1.33109834],
+                              [ 2.52355946, -0.29777054,  5.34488946],
+                              [ 3.73577761, -0.45395299,  7.92550822],
+                              [ 8.07285565,  0.46742382, 15.67828748],
+                              [ 0.87710962, -0.94480199,  2.69902124]]),
+                   index = pd.date_range(start='2020-03-21', periods=5, freq='D'),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+
+    assert forecaster.binner.n_bins_ == 6
+    assert sorted(forecaster.in_sample_residuals_by_bin_) == [0, 1, 2, 3, 4, 5]
     pd.testing.assert_frame_equal(results, expected)

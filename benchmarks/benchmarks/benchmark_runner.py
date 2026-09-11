@@ -23,15 +23,36 @@ class BenchmarkRunner:
     """"
     Class to run benchmarks on skforecast forecasters and save the results.
     """
-    def __init__(self, output_dir="./benchmarks", repeat=10, run_id=None):
+    def __init__(self, output_dir="./benchmarks", repeat=10, warmup=0, run_id=None):
 
         self.results_filename = "benchmark.joblib"
         self.output_dir = output_dir
         self.repeat = repeat
+        self.warmup = warmup
         self.run_id = run_id
         self._system_info_cache = None
 
         os.makedirs(self.output_dir, exist_ok=True)
+
+    @staticmethod
+    def get_cpu_model():
+        """
+        Best-effort CPU model name. On Linux, `platform.processor()` only
+        reports the architecture (e.g. 'x86_64'), which is identical across
+        GitHub-hosted runners regardless of the underlying physical host.
+        Reading `/proc/cpuinfo` exposes the actual CPU model, which does vary
+        host-to-host, useful to confirm benchmark repetitions landed on
+        different machines. Falls back to `platform.processor()` elsewhere.
+        """
+        if platform.system() == 'Linux':
+            try:
+                with open('/proc/cpuinfo') as f:
+                    for line in f:
+                        if line.startswith('model name'):
+                            return line.split(':', 1)[1].strip()
+            except OSError:
+                pass
+        return platform.processor()
 
     def get_system_info(self):
         """
@@ -47,6 +68,7 @@ class BenchmarkRunner:
                 'lightgbm_version': lightgbm.__version__,
                 'platform': platform.platform(),
                 'processor': platform.processor(),
+                'cpu_model': BenchmarkRunner.get_cpu_model(),
                 'cpu_count': psutil.cpu_count(logical=True),
                 'memory_gb': round(psutil.virtual_memory().total / 1e9, 2),
             }
@@ -65,28 +87,49 @@ class BenchmarkRunner:
     def time_function(self, func, *args, **kwargs):
         """
         Measure execution time of a function over multiple runs.
+
+        To reduce measurement noise on shared/virtualized CI runners:
+        - ``warmup`` calls are executed first and their time is discarded. This
+          removes the systematic cost of the cold first call (memory allocator,
+          numpy SIMD dispatch, cache warm-up).
+        - Before computing the statistics, the maximum observation is trimmed to
+          drop the sporadic spike caused by a noisy neighbor. Only the maximum is
+          removed because measurement noise on shared runners is one-sided (it can
+          only make a call slower), so the minimum is the cleanest sample and must
+          be kept. Trimming is only applied when at least 10 timings are available,
+          so low-repeat benchmarks keep all their samples.
         """
         times = []
         try:
+            for _ in range(self.warmup):
+                func(*args, **kwargs)
+
             for _ in range(self.repeat):
                 start = time.perf_counter()
                 func(*args, **kwargs)
                 end = time.perf_counter()
                 times.append(end - start)
 
+            # Trim the single maximum to reduce the impact of one-sided outliers,
+            # only when there are enough samples for the trim to be safe.
+            if len(times) >= 10:
+                times = sorted(times)[:-1]
+
             return {
-                'avg_time': np.mean(times), 
+                'avg_time': np.mean(times),
                 'median_time': np.median(times),
                 'p95_time': np.percentile(times, 95),
-                'std_time': np.std(times)
+                'std_time': np.std(times),
+                'n_repeats': len(times)
             }
         except Exception as e:
             print(f"::warning::Benchmark FAILED - {func.__name__}: {e}")
             return {
-                'avg_time': np.nan, 
-                'median_time': np.nan, 
-                'p95_time': np.nan, 
-                'std_time': np.nan
+                'avg_time': np.nan,
+                'median_time': np.nan,
+                'p95_time': np.nan,
+                'std_time': np.nan,
+                'n_repeats': np.nan
             }
 
     def benchmark(self, func, forecaster=None, allow_repeated_execution=True, *args, **kwargs):
@@ -121,7 +164,7 @@ class BenchmarkRunner:
             'run_time_median': timing['median_time'],
             'run_time_p95': timing['p95_time'],
             'run_time_std': timing['std_time'],
-            'n_repeats': self.repeat,
+            'n_repeats': timing['n_repeats'],
             **system_info
         }
 

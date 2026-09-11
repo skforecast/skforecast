@@ -2,7 +2,6 @@
 # ==============================================================================
 import re
 import pytest
-import pandas as pd
 from skforecast.foundation._adapters import ChronosAdapter
 from skforecast.foundation._foundation_model import FoundationModel
 

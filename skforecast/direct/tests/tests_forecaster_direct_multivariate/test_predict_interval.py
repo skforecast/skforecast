@@ -9,11 +9,13 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from skforecast.direct import ForecasterDirectMultiVariate
+from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
 from .fixtures_forecaster_direct_multivariate import series
 from .fixtures_forecaster_direct_multivariate import exog
 from .fixtures_forecaster_direct_multivariate import exog_predict
+from .fixtures_forecaster_direct_multivariate import series_intermittent
 
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),
@@ -191,7 +193,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.95, (2.5, 97.5)], 
+                         [0.95, (0.025, 0.975)], 
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_conformal_output_when_estimator_is_LinearRegression(interval):
     """
@@ -225,7 +227,7 @@ def test_predict_interval_conformal_output_when_estimator_is_LinearRegression(in
 
 
 @pytest.mark.parametrize("interval", 
-                         [0.95, (2.5, 97.5)], 
+                         [0.95, (0.025, 0.975)], 
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_conformal_output_when_binned_residuals(interval):
     """
@@ -255,4 +257,92 @@ def test_predict_interval_conformal_output_when_binned_residuals(interval):
                )
     expected.insert(0, 'level', np.tile(['l1'], forecaster.max_step))
     
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_interval_bootstrapping_binned_residuals_when_binner_reduces_n_bins():
+    """
+    Test predict_interval with method 'bootstrapping' and binned residuals when
+    the predictions are so concentrated that the binner has to reduce the number
+    of bins. Every bin id returned by the binner must have residuals associated
+    with it.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), lags=3, steps=3, level='l1'
+    )
+    warn_msg = re.escape(
+        "The number of bins has been reduced from 10 to 9 due to empty bins. "
+        "This happens when "
+        "the values used to compute the edges of the bins are highly "
+        "concentrated or contain many repeated values.",
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        forecaster.fit(series=series_intermittent, store_in_sample_residuals=True)
+    # NOTE: The last window of `series_intermittent` is all zeros, the same
+    # window that appears many times in the training set. Its scaled prediction
+    # therefore coincides exactly with a bin edge, and the bin it falls into
+    # depends on floating point noise that varies between machines. A last
+    # window with a non zero value keeps the predictions away from any edge.
+    last_window = series_intermittent.iloc[-5:-2]
+    results = forecaster.predict_interval(
+        steps=3, last_window=last_window, method='bootstrapping',
+        interval=0.8, use_binned_residuals=True
+    )
+
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [-2.4748361 , -1.61054424,  3.1273761 ],
+                              [15.8793251 ,  4.23219054, 60.87783227],
+                              [-2.14747949, -1.32301949,  3.45473271]]),
+                   index = pd.date_range(start='2020-03-19', periods=3, freq='D'),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+    expected.insert(0, 'level', np.tile(['l1'], forecaster.max_step))
+
+    assert forecaster.binner['l1'].n_bins_ == 9
+    assert sorted(forecaster.in_sample_residuals_by_bin_['l1']) == list(range(9))
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_interval_conformal_binned_residuals_when_binner_reduces_n_bins():
+    """
+    Test predict_interval with method 'conformal' and binned residuals when the
+    predictions are so concentrated that the binner has to reduce the number of
+    bins. Every bin id returned by the binner must have residuals associated
+    with it.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), lags=3, steps=3, level='l1'
+    )
+    warn_msg = re.escape(
+        "The number of bins has been reduced from 10 to 9 due to empty bins. "
+        "This happens when "
+        "the values used to compute the edges of the bins are highly "
+        "concentrated or contain many repeated values.",
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        forecaster.fit(series=series_intermittent, store_in_sample_residuals=True)
+    # NOTE: The last window of `series_intermittent` is all zeros, the same
+    # window that appears many times in the training set. Its scaled prediction
+    # therefore coincides exactly with a bin edge, and the bin it falls into
+    # depends on floating point noise that varies between machines. A last
+    # window with a non zero value keeps the predictions away from any edge.
+    last_window = series_intermittent.iloc[-5:-2]
+    results = forecaster.predict_interval(
+        steps=3, last_window=last_window, method='conformal',
+        interval=0.8, use_binned_residuals=True
+    )
+
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [-2.4748361 , -7.4929334 ,  2.5432612 ],
+                              [15.8793251 ,  2.973606  , 28.78504421],
+                              [-2.14747949, -7.16557679,  2.8706178 ]]),
+                   index = pd.date_range(start='2020-03-19', periods=3, freq='D'),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+    expected.insert(0, 'level', np.tile(['l1'], forecaster.max_step))
+
+    assert forecaster.binner['l1'].n_bins_ == 9
+    assert sorted(forecaster.in_sample_residuals_by_bin_['l1']) == list(range(9))
     pd.testing.assert_frame_equal(results, expected)

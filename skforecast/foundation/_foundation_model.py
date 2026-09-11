@@ -14,8 +14,17 @@ import pandas as pd
 
 from .. import __version__
 from ._adapters import _resolve_adapter
-from ..exceptions import IgnoredArgumentWarning, InputTypeWarning, MissingValuesWarning
-from ._utils import check_preprocess_series_foundation
+from ..exceptions import (
+    IgnoredArgumentWarning,
+    InputTypeWarning,
+    MissingValuesWarning,
+)
+from ._utils import (
+    check_preprocess_series_foundation,
+    group_series_by_exog_signature,
+    align_context_exog,
+    _extract_exog_columns,
+)
 from ..utils import (
     check_preprocess_exog_multiseries,
     align_series_and_exog_multiseries,
@@ -28,7 +37,7 @@ class FoundationModel:
     """
     Scikit-learn compatible interface for foundation time-series models.
 
-    Currently supports Amazon Chronos-2, Google TimesFM 2.5, Salesforce
+    Currently supports Amazon Chronos-2, Google TimesFM 2.5 and 3.0, Salesforce
     Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori and EDF Lab TS-ICL.
     For full skforecast ecosystem integration (backtesting, model selection, etc.)
     use `ForecasterFoundation` instead.
@@ -49,6 +58,10 @@ class FoundationModel:
 
         - `'google/timesfm-2.5-200m-pytorch'`
 
+        Google TimesFM 3.0 (supports `exog`):
+
+        - `'google/timesfm-3.0-pytorch'`
+
         Salesforce Moirai-2 (does not support `exog`):
 
         - `'Salesforce/moirai-2.0-R-small'`
@@ -68,6 +81,8 @@ class FoundationModel:
         Synthefy Nori (supports `exog`):
 
         - `'Synthefy/Nori'`
+        - `'Synthefy/Nori-30M'`
+        - `'Synthefy/Nori-100M'`
 
         EDF Lab TS-ICL (supports `exog`):
 
@@ -86,9 +101,12 @@ class FoundationModel:
           default 8192), `device_map` (str, default `'auto'`),
           `torch_dtype` (object, default None), `predict_kwargs` (dict,
           default None), `cross_learning` (bool, default False).
-        - **Google TimesFM 2.5** (`TimesFMAdapter`): `context_length` (int,
+        - **Google TimesFM 2.5** (`TimesFM25Adapter`): `context_length` (int,
           default 512), `max_horizon` (int, default 512),
           `forecast_config_kwargs` (dict, default None).
+        - **Google TimesFM 3.0** (`TimesFM3Adapter`): `context_length` (int,
+          default 2048), `device` (str, default `'auto'`), `predict_kwargs`
+          (dict, default None).
         - **Salesforce Moirai-2** (`MoiraiAdapter`): `context_length` (int,
           default 2048), `device` (str, default `'auto'`).
         - **TabICLv2** (`TabICLAdapter`): `context_length` (int, default
@@ -118,7 +136,7 @@ class FoundationModel:
     ----------
     adapter : object
         The underlying adapter instance, instantiated automatically based on
-        the `model_id` prefix. The concrete type depends on the model — e.g.
+        the `model_id` prefix. The concrete type depends on the model, e.g.
         `ChronosAdapter` for `autogluon/chronos-*` models.
     model_id : str
         HuggingFace model ID. Mirrors `adapter.model_id`.
@@ -136,6 +154,20 @@ class FoundationModel:
         `adapter.context_length`.
     allow_exog : bool
         Whether the underlying adapter supports exogenous variables.
+    supports_past_only_covariates : bool
+        Whether the underlying adapter uses historical exog columns that
+        have no future values as past-only covariates. If `False`, such
+        columns are ignored at predict time and an `IgnoredArgumentWarning`
+        is issued.
+    supports_heterogeneous_covariates : bool
+        Whether the underlying adapter can forecast series with different
+        exog columns in the same backend call. If `False`, series are
+        grouped by their exog columns at predict time and the adapter is
+        called once per group.
+    supports_nan_in_series : bool
+        Whether the underlying adapter accepts NaN values in the series used
+        as context. If `False`, a context with NaN raises a `ValueError` at
+        predict time.
     index_type_ : type
         Type of index of the input used in training.
     index_freq_ : pandas DateOffset, int
@@ -184,10 +216,10 @@ class FoundationModel:
     - `device_map` (plus `torch_dtype`), HuggingFace `from_pretrained`
       style: Chronos, T0.
     - `device` string, resolved internally to a concrete accelerator:
-      Moirai, TS-ICL.
+      Moirai, TS-ICL, TimesFM 3.0.
     - Through the backend configuration dict: TabICL (`tabicl_config`),
       TabPFN (`tabpfn_model_config`), Nori (`nori_config`).
-    - No device parameter: TimesFM, which relies on its backend's own
+    - No device parameter: TimesFM 2.5, which relies on its backend's own
       default device selection.
 
     References
@@ -333,6 +365,57 @@ class FoundationModel:
         return self.adapter.allow_exog
 
     @property
+    def supports_past_only_covariates(self) -> bool:
+        """
+        Whether the underlying adapter uses historical exog columns without
+        future values as past-only covariates.
+
+        Returns
+        -------
+        supports_past_only_covariates : bool
+            `True` if a column present in the historical exog but absent
+            from the future `exog` is used as a past-only covariate
+            (Chronos-2, TS-ICL, TimesFM 3.0). `False` if the adapter only
+            uses covariates that also have future values, in which case
+            such columns are ignored and an `IgnoredArgumentWarning` is
+            issued at predict time (TabICL, TabPFN-TS, TFC-T0, Nori).
+        """
+        return self.adapter.supports_past_only_covariates
+
+    @property
+    def supports_heterogeneous_covariates(self) -> bool:
+        """
+        Whether the underlying adapter can forecast series with different
+        exog columns in the same backend call.
+
+        Returns
+        -------
+        supports_heterogeneous_covariates : bool
+            `True` if the backend accepts, in one call, series whose exog
+            columns differ (TFC-T0, TabPFN-TS, Nori, and the adapters that
+            ignore exog). `False` if every series in a call must have the
+            same columns (Chronos-2, TS-ICL, TabICL, TimesFM 3.0); in that
+            case `predict` groups the series by their exog columns and calls
+            the adapter once per group.
+        """
+        return self.adapter.supports_heterogeneous_covariates
+
+    @property
+    def supports_nan_in_series(self) -> bool:
+        """
+        Whether the underlying adapter accepts NaN values in the series used
+        as context.
+
+        Returns
+        -------
+        supports_nan_in_series : bool
+            `True` if a context with NaN values can be forwarded to the
+            backend. `False` if `predict` must raise a `ValueError` when any
+            series of the context contains NaN.
+        """
+        return self.adapter.supports_nan_in_series
+
+    @property
     def is_fitted(self) -> bool:
         """
         Whether the model has been fitted.
@@ -351,8 +434,9 @@ class FoundationModel:
         """
 
         params = {
-            k: v for k, v in self.adapter.get_params().items()
-            if k != "model_id"
+            param_name: param_value
+            for param_name, param_value in self.adapter.get_params().items()
+            if param_name != "model_id"
         }
 
         info = (
@@ -379,9 +463,10 @@ class FoundationModel:
         style, unique_id = get_style_repr_html(self.is_fitted)
 
         params_html = "".join(
-            f"<li><strong>{html.escape(str(k))}:</strong> {html.escape(str(v))}</li>"
-            for k, v in self.adapter.get_params().items()
-            if k != "model_id"
+            f"<li><strong>{html.escape(str(param_name))}:</strong> "
+            f"{html.escape(str(param_value))}</li>"
+            for param_name, param_value in self.adapter.get_params().items()
+            if param_name != "model_id"
         )
 
         content = f"""
@@ -470,10 +555,12 @@ class FoundationModel:
                 series_names_in_  = series_names_in_,
                 series_index_type = type(series_indexes[series_names_in_[0]]),
                 exog              = exog,
-                exog_dict         = {name: None for name in series_names_in_},
+                exog_dict         = {
+                    series_name: None for series_name in series_names_in_
+                },
             )
 
-            # NOTE: As no trim is applied to the series, it is only needed to 
+            # NOTE: As no trim is applied to the series, it is only needed to
             # align exog.
             series_dict, exog_dict = align_series_and_exog_multiseries(
                                          series_dict      = series_dict,
@@ -482,17 +569,17 @@ class FoundationModel:
                                      )
 
         context = {
-            name: s.iloc[-self.context_length :]
-            for name, s in series_dict.items()
+            series_name: series_values.iloc[-self.context_length :]
+            for series_name, series_values in series_dict.items()
         }
         if exog is not None:
             context_exog = {
-                name: (
-                    e.iloc[-self.context_length :]
-                    if e is not None
+                series_name: (
+                    series_exog.iloc[-self.context_length :]
+                    if series_exog is not None
                     else None
                 )
-                for name, e in exog_dict.items()
+                for series_name, series_exog in exog_dict.items()
             }
         else:
             context_exog = None
@@ -572,7 +659,10 @@ class FoundationModel:
             self.exog_type_in_ = type(exog)
 
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.context_range_ = {k: v[[0, -1]] for k, v in series_indexes.items()}
+        self.context_range_ = {
+            series_name: series_index[[0, -1]]
+            for series_name, series_index in series_indexes.items()
+        }
         self.index_type_ = type(series_indexes[series_names_in_[0]])
         if isinstance(series_indexes[series_names_in_[0]], pd.DatetimeIndex):
             self.index_freq_ = series_indexes[series_names_in_[0]].freq
@@ -613,13 +703,16 @@ class FoundationModel:
         """
 
         if isinstance(exog, dict):
-            return {name: exog.get(name, None) for name in series_names_in}
+            return {
+                series_name: exog.get(series_name, None)
+                for series_name in series_names_in
+            }
 
         if isinstance(exog, pd.Series):
             if isinstance(exog.index, pd.MultiIndex):
                 exog = exog.to_frame()
             else:
-                return {name: exog for name in series_names_in}
+                return {series_name: exog for series_name in series_names_in}
 
         # At this point exog is always a DataFrame (original or coerced)
         if isinstance(exog.index, pd.MultiIndex):
@@ -641,9 +734,12 @@ class FoundationModel:
                 InputTypeWarning,
                 stacklevel=5,
             )
-            return {name: per_series.get(name, None) for name in series_names_in}
+            return {
+                series_name: per_series.get(series_name, None)
+                for series_name in series_names_in
+            }
 
-        return {name: exog for name in series_names_in}
+        return {series_name: exog for series_name in series_names_in}
 
     def _prepare_future_exog(
         self,
@@ -674,7 +770,7 @@ class FoundationModel:
         gaps). For other index types a length check and optional
         `RangeIndex` start verification are applied.
 
-        This function is self-contained — it does not depend on any
+        This function is self-contained: it does not depend on any
         metadata stored at `fit` time. Alignment is driven entirely by the
         context that will be used for prediction.
 
@@ -709,21 +805,19 @@ class FoundationModel:
             aligned to the forecast horizon. Series inputs are coerced to
             single-column DataFrames.
 
-        Raises
-        ------
-        TypeError
-            If `exog` is a long-format DataFrame whose second MultiIndex
-            level is not a `DatetimeIndex`, or if `exog` is an unsupported
-            type.
-        ValueError
-            If a non-DatetimeIndex exog has fewer than `steps` rows, or if
-            a `RangeIndex` exog does not start at the expected position.
+        Notes
+        -----
+        A `TypeError` is raised if `exog` is a long-format DataFrame whose
+        second MultiIndex level is not a `DatetimeIndex`, or if `exog` is an
+        unsupported type. A `ValueError` is raised if a non-DatetimeIndex
+        exog has fewer than `steps` rows, or if a `RangeIndex` exog does not
+        start at the expected position.
 
         """
 
         # Early return: no exog provided
         if exog is None:
-            return {name: None for name in series_names_in}
+            return {series_name: None for series_name in series_names_in}
 
         # Type guard
         if not isinstance(exog, (pd.Series, pd.DataFrame, dict)):
@@ -746,48 +840,53 @@ class FoundationModel:
         # Align each series' exog to its forecast horizon
         exog_aligned = {}
         nan_filled_series = []
-        for name in series_names_in:
-            e = exog_dict.get(name)
-            if e is None:
-                exog_aligned[name] = None
+        for series_name in series_names_in:
+            series_exog = exog_dict.get(series_name)
+            if series_exog is None:
+                exog_aligned[series_name] = None
                 continue
 
-            if isinstance(e, pd.Series):
-                e = e.to_frame()
+            if isinstance(series_exog, pd.Series):
+                series_exog = series_exog.to_frame()
 
-            ctx = context[name]
+            ctx = context[series_name]
             ref_end = ctx.index[-1]
-            label = f"`exog` for series '{name}'"
+            label = f"`exog` for series '{series_name}'"
 
             # DatetimeIndex: reindex to the exact expected date range,
             # filling gaps with NaN.
-            if is_datetime_ctx and isinstance(e.index, pd.DatetimeIndex):
+            if is_datetime_ctx and isinstance(series_exog.index, pd.DatetimeIndex):
                 expected_idx = pd.date_range(
                     start=ref_end + freq, periods=steps, freq=freq
                 )
-                e_aligned = e.reindex(expected_idx)
-                if e_aligned.isnull().any(axis=None):
-                    nan_filled_series.append(name)
-                exog_aligned[name] = e_aligned
+                # Fast path: exog already aligned, no reindex needed.
+                series_exog_aligned = (
+                    series_exog
+                    if series_exog.index.equals(expected_idx)
+                    else series_exog.reindex(expected_idx)
+                )
+                if series_exog_aligned.isnull().any(axis=None):
+                    nan_filled_series.append(series_name)
+                exog_aligned[series_name] = series_exog_aligned
             else:
                 # RangeIndex / other: length check + optional start validation,
                 # then truncate to the forecast horizon.
-                if len(e) < steps:
+                if len(series_exog) < steps:
                     raise ValueError(
                         f"{label} must have at least {steps} values. "
-                        f"Got {len(e)}."
+                        f"Got {len(series_exog)}."
                     )
-                if isinstance(e.index, pd.RangeIndex):
+                if isinstance(series_exog.index, pd.RangeIndex):
                     expected_start = ref_end + freq
-                    if e.index[0] != expected_start:
+                    if series_exog.index[0] != expected_start:
                         raise ValueError(
                             f"To make predictions {label} must start one step "
                             f"ahead of `context`.\n"
                             f"    `context` ends at: {ref_end}.\n"
-                            f"    {label} starts at: {e.index[0]}.\n"
+                            f"    {label} starts at: {series_exog.index[0]}.\n"
                             f"    Expected index: {expected_start}."
                         )
-                exog_aligned[name] = e.iloc[:steps]
+                exog_aligned[series_name] = series_exog.iloc[:steps]
 
         # Batch warning for all series whose exog had missing timestamps
         if nan_filled_series:
@@ -800,6 +899,89 @@ class FoundationModel:
             )
 
         return exog_aligned
+
+    def _check_exog_columns(
+        self,
+        context_exog: dict[str, pd.DataFrame | None] | None,
+        exog: dict[str, pd.DataFrame | None] | None,
+        series_names_in: list[str],
+    ) -> None:
+        """
+        Validate, per series, the future `exog` columns against the historical
+        `context_exog` columns.
+
+        Parameters
+        ----------
+        context_exog : dict, None
+            Per-series historical exogenous variables resolved for this
+            prediction (the stored `context_exog_` or the preprocessed
+            `context_exog` argument), already filtered by `levels`.
+        exog : dict, None
+            Per-series future exogenous variables as returned by
+            `_prepare_future_exog`.
+        series_names_in : list
+            Series to validate.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        A `ValueError` is raised if any series has a future `exog` column
+        with no historical values in its `context_exog`: no adapter can use a
+        covariate without history. A column present in the history but absent
+        from the future `exog` is a past-only covariate; adapters with
+        `supports_past_only_covariates=False` ignore it, so an
+        `IgnoredArgumentWarning` is issued for them. Column names are
+        compared as sets, so order does not matter.
+
+        Only predict-time inputs are compared (never `fit` metadata), so the
+        check also applies in zero-shot mode. It runs only on the user-facing
+        path (`check_inputs=True`).
+
+        """
+
+        missing_history_by_series: dict[str, list] = {}
+        ignored_past_cols_by_series: dict[str, list] = {}
+        for series_name in series_names_in:
+            historical_cols = (
+                _extract_exog_columns(context_exog.get(series_name))
+                if context_exog is not None else set()
+            )
+            future_cols = (
+                _extract_exog_columns(exog.get(series_name))
+                if exog is not None else set()
+            )
+            # Future columns that do not exist in the historical context
+            future_without_history = future_cols - historical_cols
+            if future_without_history:
+                missing_history_by_series[series_name] = sorted(
+                    future_without_history
+                )
+
+            # Historical columns that do not exist in the future context
+            past_without_future = historical_cols - future_cols
+            if past_without_future and not self.adapter.supports_past_only_covariates:
+                ignored_past_cols_by_series[series_name] = sorted(past_without_future)
+
+        if missing_history_by_series:
+            raise ValueError(
+                f"`exog` contains columns with no historical values in the "
+                f"context for series {missing_history_by_series}. Every future `exog` column "
+                f"must also be present in the historical exog of the same "
+                f"series (pass matching `exog` to `fit`, or `context_exog` "
+                f"when using `context`)."
+            )
+
+        if ignored_past_cols_by_series:
+            warnings.warn(
+                f"{type(self.adapter).__name__} only uses covariates that "
+                f"also have future values. Historical exog columns without "
+                f"future values are ignored for series {ignored_past_cols_by_series}.",
+                IgnoredArgumentWarning,
+                stacklevel=3,
+            )
 
     def predict(
         self,
@@ -850,11 +1032,13 @@ class FoundationModel:
             returns a point forecast (median).
         check_inputs : bool, default True
             If `True`, the `context` and `context_exog` inputs are validated
-            and normalized via `_check_preprocess_context`. If `False`,
+            and normalized via `_check_preprocess_context` and the columns
+            of `exog` are validated against `context_exog`. If `False`,
             `context` must already be a `dict[str, pandas Series]` and
             `context_exog` must be a `dict[str, pandas DataFrame | None]`
-            or `None`. This argument is created for internal use and is not
-            recommended to be changed.
+            or `None`; `context_exog` and `exog` are still aligned to the
+            context and to the forecast horizon. This argument is created
+            for internal use and is not recommended to be changed.
 
         Returns
         -------
@@ -882,8 +1066,25 @@ class FoundationModel:
         - **Not fitted, `context` provided (zero-shot mode)**: The model uses 
         `context` and `context_exog` (if provided) as context for prediction.
         - **Fitted, `context` provided**: Stored context is ignored, the 
-        provided `context` and `context_exog` (if provided) are used for 
+        provided `context` and `context_exog` (if provided) are used for
         prediction.
+
+        When the adapter supports exogenous variables, the columns of the
+        future `exog` are validated per series against the historical exog
+        used as context. A future column with no historical values raises a
+        `ValueError`. A historical column with no future values is a
+        past-only covariate: it is used as such when
+        `supports_past_only_covariates` is `True`, and ignored with an
+        `IgnoredArgumentWarning` otherwise.
+
+        Before calling the adapter, the historical exog of each series is
+        aligned to the index of its context and the future `exog` to its
+        forecast horizon (missing timestamps are filled with NaN and reported
+        with a `MissingValuesWarning`). Each series keeps its own exog
+        columns. When `supports_heterogeneous_covariates` is `False`, the
+        series are grouped by their exog columns (past-only and future) and
+        the adapter is called once per group, so the prediction of a series
+        never depends on the exog columns of the other series.
 
         """
 
@@ -944,10 +1145,13 @@ class FoundationModel:
                     f"{list(series_names_in)}."
                 )
             series_names_in = requested_levels
-            context = {name: context[name] for name in requested_levels}
+            context = {
+                series_name: context[series_name] for series_name in requested_levels
+            }
             if context_exog is not None:
                 context_exog = {
-                    name: context_exog.get(name) for name in requested_levels
+                    series_name: context_exog.get(series_name)
+                    for series_name in requested_levels
                 }
 
         # Future exog
@@ -964,28 +1168,89 @@ class FoundationModel:
                 exog = None
                 context_exog = None
         else:
+            # Alignment runs on every path: adapters rely on `context_exog`
+            # sharing the index of `context` and on `exog` covering exactly
+            # `steps` rows. With `check_inputs=False` (internal backtesting
+            # path) only the column check is skipped:
+            # `_extract_data_folds_multiseries` slices `context_exog` and
+            # `exog` from the same per-series DataFrame, so their columns
+            # always match by construction.
+            if context_exog is not None:
+                context_exog = align_context_exog(
+                                   context         = context,
+                                   context_exog    = context_exog,
+                                   series_names_in = series_names_in,
+                               )
+            exog = self._prepare_future_exog(
+                       steps           = steps,
+                       context         = context,
+                       exog            = exog,
+                       series_names_in = series_names_in,
+                   )
             if check_inputs:
-                exog = self._prepare_future_exog(
-                           steps           = steps,
-                           context         = context,
-                           exog            = exog,
-                           series_names_in = series_names_in,
-                       )
+                self._check_exog_columns(
+                    context_exog    = context_exog,
+                    exog            = exog,
+                    series_names_in = series_names_in,
+                )
+
+        if not self.adapter.supports_nan_in_series:
+            series_with_nan = [
+                series_name
+                for series_name in series_names_in
+                if context[series_name].isna().any()
+            ]
+            if series_with_nan:
+                raise ValueError(
+                    f"{type(self.adapter).__name__} does not accept NaN values "
+                    f"in the series used as context. Series with NaN: "
+                    f"{series_with_nan}. Impute or drop them before predicting."
+                )
+
+        # Adapters whose backend requires identical covariate columns in a
+        # batch are called once per group of series sharing the same columns.
+        if self.adapter.supports_heterogeneous_covariates:
+            series_groups = [series_names_in]
+        else:
+            series_groups = group_series_by_exog_signature(
+                                series_names_in = series_names_in,
+                                context_exog    = context_exog,
+                                exog            = exog,
+                            )
 
         # Adapter returns dict[str, np.ndarray] with shape (steps, n_q)
-        raw_predictions = self.adapter.predict(
-                              steps        = steps,
-                              context      = context,
-                              context_exog = context_exog,
-                              exog         = exog,
-                              quantiles    = quantiles,
-                          )
+        raw_predictions: dict[str, np.ndarray] = {}
+        for series_names_group in series_groups:
+            raw_predictions.update(
+                self.adapter.predict(
+                    steps        = steps,
+                    context      = {
+                        series_name: context[series_name]
+                        for series_name in series_names_group
+                    },
+                    context_exog = (
+                        {
+                            series_name: context_exog[series_name]
+                            for series_name in series_names_group
+                        }
+                        if context_exog is not None else None
+                    ),
+                    exog         = (
+                        {
+                            series_name: exog[series_name]
+                            for series_name in series_names_group
+                        }
+                        if exog is not None else None
+                    ),
+                    quantiles    = quantiles,
+                )
+            )
 
         # Build long-format DataFrame from raw predictions
         n_series = len(series_names_in)
         per_series_indices = [
-            expand_index(context[name].index, steps=steps)
-            for name in series_names_in
+            expand_index(context[series_name].index, steps=steps)
+            for series_name in series_names_in
         ]
 
         if n_series == 1:
@@ -1004,11 +1269,11 @@ class FoundationModel:
         col_names = ["pred"] if quantiles is None else [f"q_{q}" for q in quantiles]
         n_cols = len(col_names)
         # Pre-allocate (steps, n_series, n_cols), fill per series, then reshape
-        # to step-major (steps*n_series, n_cols) — one allocation instead of one
+        # to step-major (steps*n_series, n_cols), one allocation instead of one
         # per quantile, and the ravel order matches level_col / long_index.
         pred_matrix = np.empty((steps, n_series, n_cols), dtype=np.float64)
-        for i, name in enumerate(series_names_in):
-            pred_matrix[:, i, :] = raw_predictions[name]
+        for i, series_name in enumerate(series_names_in):
+            pred_matrix[:, i, :] = raw_predictions[series_name]
         pred_matrix = pred_matrix.reshape(steps * n_series, n_cols)
         predictions: dict[str, np.ndarray] = {"level": level_col}
         for j, col in enumerate(col_names):
@@ -1056,8 +1321,10 @@ class FoundationModel:
         ----------
         **params :
             Estimator parameters forwarded to the underlying adapter's
-            `set_params`. Use `model_id` to change the model ID. All
-            other keys are adapter-specific.
+            `set_params`. Use `model_id` to change the model ID; the adapter
+            class is fixed at construction, so a `model_id` served by a
+            different adapter (or by none) raises a `ValueError`. All other
+            keys are adapter-specific.
 
         Returns
         -------
@@ -1065,6 +1332,17 @@ class FoundationModel:
             The same object with updated parameters.
 
         """
+
+        if "model_id" in params:
+            new_adapter_cls = _resolve_adapter(params["model_id"])
+            if new_adapter_cls is not type(self.adapter):
+                raise ValueError(
+                    f"`model_id` {params['model_id']!r} is served by "
+                    f"{new_adapter_cls.__name__}, but this FoundationModel uses "
+                    f"{type(self.adapter).__name__}. The adapter is fixed at "
+                    f"construction: create a new FoundationModel to switch "
+                    f"model family."
+                )
 
         try:
             self.adapter.set_params(**params)

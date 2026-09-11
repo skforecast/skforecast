@@ -1,15 +1,96 @@
 name: Benchmarks
 
 on:
-  workflow_dispatch: {}   # manual execution only from GitHub
+  workflow_dispatch:      # manual execution only from GitHub
+    inputs:
+      n_runs:
+        description: "Number of benchmark repetitions to run, each on its own runner (between 1 and 5)"
+        required: false
+        default: "5"
+        type: string
+      skforecast_version:
+        description: "Optional: specific PyPI-published skforecast version to benchmark (e.g. '0.23.0'). Leave blank (or equal to this branch's own version) to benchmark this branch's checked-out code instead."
+        required: false
+        default: ""
+        type: string
+
+# Serialize benchmark workflow runs. Repetitions append a row to the binary
+# benchmarks/benchmark.joblib and push it; concurrent workflow runs would race on
+# the push (non-fast-forward) and lose data, since a binary joblib cannot be
+# auto-merged. Queue runs instead of cancelling them.
+concurrency:
+  group: benchmarks
+  cancel-in-progress: false
 
 permissions:
   contents: write  # necessary to push changes
 
 jobs:
+  set-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      indices: ${{ steps.build.outputs.indices }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Validate n_runs and build matrix indices
+        id: build
+        shell: bash
+        env:
+          N_RUNS: ${{ inputs.n_runs }}
+        run: |
+          set -e
+
+          # Validate n_runs: must be a positive integer, capped at 5 to bound the
+          # total number of sequential runner jobs this workflow spins up.
+          if ! [[ "$N_RUNS" =~ ^[0-9]+$ ]] || [ "$N_RUNS" -lt 1 ] || [ "$N_RUNS" -gt 5 ]; then
+            echo "::error::Invalid n_runs='$N_RUNS'. It must be an integer between 1 and 5."
+            exit 1
+          fi
+
+          indices=$(seq 1 "$N_RUNS" | jq -R . | jq -s -c .)
+          echo ">> Matrix indices: $indices"
+          echo "indices=$indices" >> "$GITHUB_OUTPUT"
+
+      - name: Validate skforecast_version
+        shell: bash
+        env:
+          SKFORECAST_VERSION: ${{ inputs.skforecast_version }}
+        run: |
+          set -e
+
+          # Blank, or equal to this branch's own version, means "benchmark the
+          # local checkout" - no PyPI lookup needed. Anything else must be a
+          # version actually published on PyPI, checked here so a typo fails
+          # fast instead of after spinning up the whole matrix.
+          LOCAL_VERSION=$(grep -m1 '^version = ' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
+          echo ">> This branch's own version: $LOCAL_VERSION"
+
+          if [ -z "$SKFORECAST_VERSION" ] || [ "$SKFORECAST_VERSION" = "$LOCAL_VERSION" ]; then
+            echo ">> skforecast_version is blank or matches this branch ($LOCAL_VERSION): will use the local checkout, no PyPI lookup needed."
+          else
+            echo ">> Checking that skforecast==$SKFORECAST_VERSION exists on PyPI..."
+            status=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/skforecast/$SKFORECAST_VERSION/json")
+            if [ "$status" != "200" ]; then
+              echo "::error::skforecast version '$SKFORECAST_VERSION' was not found on PyPI (HTTP $status). Leave the field blank to benchmark this branch, or use a published version."
+              exit 1
+            fi
+            echo ">> Found skforecast==$SKFORECAST_VERSION on PyPI."
+          fi
+
   run-benchmarks:
+    needs: set-matrix
     runs-on: ubuntu-latest
     timeout-minutes: 60
+
+    strategy:
+      max-parallel: 1    # one repetition at a time, each on a fresh runner
+      fail-fast: false   # a failed repetition does not cancel the remaining ones
+      matrix:
+        run_index: ${{ fromJSON(needs.set-matrix.outputs.indices) }}
 
     env:
       OMP_NUM_THREADS: "1"         # Force OpenMP-based libraries to run single-threaded (e.g., NumPy, scikit-learn, LightGBM) to reduce variance and avoid oversubscription.
@@ -19,6 +100,9 @@ jobs:
       VECLIB_MAXIMUM_THREADS: "1"  # Cap Apple's Accelerate/vecLib threads to 1; no effect on Linux, harmless to keep for portability.
       PYTHONWARNINGS: "ignore"     # Silence Python warnings so benchmark logs are clean; switch to "default" if you want to see warnings.
       KERAS_BACKEND: torch         # Use PyTorch as the backend for Keras.
+      RUN_INDEX: ${{ matrix.run_index }}
+      TOTAL_RUNS: ${{ inputs.n_runs }}
+      SKFORECAST_VERSION: ${{ inputs.skforecast_version }}
 
     steps:
       - name: Checkout code
@@ -30,6 +114,7 @@ jobs:
       - name: Show runner context (verbose)
         shell: bash
         run: |
+          echo ">> Repetition: $RUN_INDEX / $TOTAL_RUNS"
           echo ">> Repository: $GITHUB_REPOSITORY"
           echo ">> Default branch: $GITHUB_REF_NAME"
           echo ">> Commit SHA: ${GITHUB_SHA}"
@@ -55,9 +140,15 @@ jobs:
           python -m pip install --upgrade pip
           echo ">> Installing benchmark requirements..."
           pip install -r benchmarks/requirements_benchmarks.txt
-          echo ">> Installing project..."
-          pip install .
 
+          LOCAL_VERSION=$(grep -m1 '^version = ' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
+          if [ -z "$SKFORECAST_VERSION" ] || [ "$SKFORECAST_VERSION" = "$LOCAL_VERSION" ]; then
+            echo ">> Installing project (local checkout, version $LOCAL_VERSION)..."
+            pip install .
+          else
+            echo ">> Installing skforecast==$SKFORECAST_VERSION from PyPI..."
+            pip install "skforecast==$SKFORECAST_VERSION"
+          fi
 
       - name: Show environment info
         shell: bash
@@ -65,7 +156,7 @@ jobs:
           echo ">> Python environment summary:"
           python --version
           python -m pip list | sed -n '1,120p'  # Truncate long lists for readability
-          
+
       - name: Sanity check paths (verbose)
         shell: bash
         run: |
@@ -74,15 +165,29 @@ jobs:
           echo ">> Listing benchmarks directory (if present):"
           ls -la benchmarks || echo "No 'benchmarks' directory yet."
           echo ">> Expected output file: benchmarks/benchmark.joblib"
-        
+
+      - name: Sync latest results from origin
+        shell: bash
+        run: |
+          set -e
+          # Fast-forward onto whatever earlier repetitions in this matrix have
+          # already pushed, before this repetition reads/appends to the joblib.
+          # Must happen BEFORE running the benchmark script: the script loads the
+          # existing file and rewrites it combined with its own row, so if this
+          # checkout were stale, the previous repetition's row would be silently
+          # dropped when this repetition's version overwrites the binary file.
+          echo ">> Pulling latest changes for $GITHUB_REF_NAME (fast-forward only)..."
+          git pull --ff-only origin "$GITHUB_REF_NAME"
+
       - name: Run benchmarks
         shell: bash
         run: |
           set -e
-          echo ">> Running benchmark script..."
-          # Ensure your script writes to benchmarks/benchmark.joblib
+
+          echo ">> Running benchmark script (repetition $RUN_INDEX / $TOTAL_RUNS)..."
           python benchmarks/run_benchmarks.py
-          echo ">> Benchmark script finished with exit code $?"
+
+          echo ">> Benchmark repetition finished."
           echo ">> Listing benchmarks directory after run:"
           ls -lh benchmarks || true
           if [ -f benchmarks/benchmark.joblib ]; then
@@ -90,7 +195,7 @@ jobs:
           else
             echo "!! No output file produced at benchmarks/benchmark.joblib"
           fi
-    
+
       - name: Commit & push updated joblib
         if: success()  # Only commit if all benchmarks completed successfully
         shell: bash
@@ -117,7 +222,11 @@ jobs:
             echo ">> No changes detected in benchmarks/benchmark.joblib. Skipping commit."
           else
             echo ">> Changes detected. Committing..."
-            git commit -m "benchmarks: update benchmark.joblib (run ${GITHUB_RUN_NUMBER} @ ${GITHUB_SHA::7})"
+            VERSION_SUFFIX=""
+            if [ -n "$SKFORECAST_VERSION" ]; then
+              VERSION_SUFFIX=", skforecast==$SKFORECAST_VERSION"
+            fi
+            git commit -m "benchmarks: update benchmark.joblib (run ${GITHUB_RUN_NUMBER}.${RUN_INDEX} @ ${GITHUB_SHA::7}${VERSION_SUFFIX})"
             echo ">> Pushing commit..."
             git push
             echo ">> Push completed."
@@ -133,8 +242,10 @@ jobs:
           {
             echo "## Benchmarks workflow summary"
             echo ""
+            echo "- **Repetition:** \`${RUN_INDEX} / ${TOTAL_RUNS}\`"
             echo "- **Repo:** \`${GITHUB_REPOSITORY}\`"
             echo "- **Branch/Ref:** \`${GITHUB_REF_NAME}\`"
+            echo "- **skforecast version benchmarked:** \`${SKFORECAST_VERSION:-<local checkout>}\`"
             echo "- **Commit:** \`${GITHUB_SHA}\`"
             echo "- **Run number:** \`${GITHUB_RUN_NUMBER}\`"
             echo ""

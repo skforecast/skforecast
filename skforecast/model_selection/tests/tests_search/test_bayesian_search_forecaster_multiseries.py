@@ -2,7 +2,6 @@
 # ==============================================================================
 import os
 import re
-import sys
 import platform
 import pytest
 from pytest import approx
@@ -897,6 +896,9 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_creat
     """
     Test output of bayesian_search_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     when `kwargs_create_study` with mocked (mocked done in skforecast v0.12.0).
+    All trials are startup trials of the sampler (`n_startup_trials=10`), so the
+    results only depend on the seed and not on the internals of TPE, which
+    change between optuna versions.
     """
     forecaster = ForecasterRecursiveMultiSeries(
                      estimator = Ridge(random_state=123),
@@ -921,7 +923,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_creat
         return search_space
 
     kwargs_create_study = {
-        "sampler": TPESampler(seed=123, n_startup_trials=5, n_ei_candidates=18)
+        "sampler": TPESampler(seed=123, n_startup_trials=10, n_ei_candidates=18)
     }
     results = bayesian_search_forecaster_multiseries(
                   forecaster          = forecaster,
@@ -941,24 +943,9 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_creat
         np.array([
             [['l1', 'l2'],
                 np.array([1, 2, 3, 4]),
-                {'alpha': 0.02606916422285757},
-                0.20879216116245272,
-                0.02606916422285757],
-            [['l1', 'l2'],
-                np.array([1, 2, 3, 4]),
-                {'alpha': 0.15657933520743628},
-                0.20879874851987612,
-                0.15657933520743628],
-            [['l1', 'l2'],
-                np.array([1, 2, 3, 4]),
-                {'alpha': 0.20993845445446546},
-                0.20880142966052798,
-                0.20993845445446546],
-            [['l1', 'l2'],
-                np.array([1, 2, 3, 4]),
-                {'alpha': 0.24221225923738599},
-                0.208803047935072,
-                0.24221225923738599],
+                {'alpha': 0.47196119714033213},
+                0.20881449475639347,
+                0.47196119714033213],
             [['l1', 'l2'],
                 np.array([1, 2, 3, 4]),
                 {'alpha': 0.796392686024418},
@@ -971,9 +958,14 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_creat
                 0.8883730444656563],
             [['l1', 'l2'],
                 np.array([1, 2, 3, 4]),
-                {'alpha': 1.9749436463605192},
-                0.2088863448875554,
-                1.9749436463605192],
+                {'alpha': 1.07247172020684},
+                0.2088438203726152,
+                1.07247172020684],
+            [['l1', 'l2'],
+                np.array([1, 2, 3, 4]),
+                {'alpha': 1.4504378974890386},
+                0.20886185085049824,
+                1.4504378974890386],
             [['l1', 'l2'],
                 np.array([1, 2]),
                 {'alpha': 1.1116032427841247},
@@ -984,6 +976,16 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_creat
                 {'alpha': 1.3990089874837661},
                 0.20915713939422753,
                 1.3990089874837661],
+            [['l1', 'l2'],
+                np.array([1, 2]),
+                {'alpha': 1.4812309033494306},
+                0.2091592392813534,
+                1.4812309033494306],
+            [['l1', 'l2'],
+                np.array([1, 2]),
+                {'alpha': 1.7018749522740233},
+                0.20916485106998076,
+                1.7018749522740233],
             [['l1', 'l2'],
                 np.array([1, 2]),
                 {'alpha': 1.9619131128015386},
@@ -2820,8 +2822,6 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirect
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
-
-
 
 
 def test_bayesian_search_forecaster_multiseries_xgboost_categorical_no_ValueError_on_cache_hit():

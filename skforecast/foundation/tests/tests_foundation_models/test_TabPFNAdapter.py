@@ -1,10 +1,15 @@
 # Unit test TabPFNAdapter
 # ==============================================================================
 import re
+import sys
+import types
+import builtins
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
 from skforecast.foundation._adapters import TabPFNAdapter
+from skforecast.exceptions import LicenseWarning
 from .fixtures_adapters import (
     y, exog, y_wide, y_dict, exog_shared,
     FakeTabPFNTSPipeline,
@@ -744,6 +749,72 @@ def test_TabPFNAdapter_predict_ImportError_when_tabpfn_time_series_not_installed
             exog=future_exog,
             quantiles=None,
         )
+
+
+def test_TabPFNAdapter_load_model_ImportError_no_LicenseWarning(monkeypatch):
+    """
+    Test that _load_model raises ImportError when tabpfn_time_series is not
+    installed, and that no LicenseWarning is issued in that case, since the
+    warning is only relevant once the pipeline is actually about to be
+    instantiated.
+    """
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name.startswith("tabpfn_time_series"):
+            raise ImportError("No module named 'tabpfn_time_series'")
+        return real_import(name, *args, **kwargs)
+
+    adapter = TabPFNAdapter(model_id="priorlabs/tabpfn-ts")
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with pytest.raises(ImportError, match="tabpfn-time-series"):
+            adapter._load_model()
+    assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+
+
+def test_TabPFNAdapter_load_model_LicenseWarning_on_successful_load():
+    """
+    Test that _load_model issues a LicenseWarning (TabPFN weights are
+    non-commercial without an enterprise license) once tabpfn_time_series is
+    available and the pipeline is about to be instantiated, and that the
+    warning is suppressible via warnings.simplefilter, the mechanism used by
+    the `suppress_warnings` argument across skforecast. The real
+    `tabpfn_time_series` package is mocked so no network call happens.
+    """
+
+    class _FakeTabPFNMode:
+        LOCAL = "local"
+        CLIENT = "client"
+
+    class _FakeTabPFNTSPipeline:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    mock_module = types.ModuleType("tabpfn_time_series")
+    mock_module.TabPFNMode = _FakeTabPFNMode
+    mock_module.TabPFNTSPipeline = _FakeTabPFNTSPipeline
+
+    original = sys.modules.get("tabpfn_time_series")
+    sys.modules["tabpfn_time_series"] = mock_module
+    try:
+        adapter = TabPFNAdapter(model_id="priorlabs/tabpfn-ts")
+        with pytest.warns(LicenseWarning, match="non-commercial"):
+            adapter._load_model()
+        assert isinstance(adapter._model, _FakeTabPFNTSPipeline)
+
+        adapter2 = TabPFNAdapter(model_id="priorlabs/tabpfn-ts")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("ignore", category=LicenseWarning)
+            adapter2._load_model()
+        assert not any(issubclass(w.category, LicenseWarning) for w in caught)
+    finally:
+        if original is None:
+            del sys.modules["tabpfn_time_series"]
+        else:
+            sys.modules["tabpfn_time_series"] = original
 
 
 # ==============================================================================

@@ -90,3 +90,31 @@ data = pd.Series(
     name = 'y',
     index = pd.date_range(start='1991-07-01', periods=204, freq='MS')
 )
+
+# Intermittent series, most values are zero. The predictions of a forecaster
+# fitted on it are highly concentrated, so the quantile bin edges of the binner
+# are duplicated or delimit bins with no observations.
+# rng = np.random.default_rng(0)
+# y_intermittent = np.where(rng.random(80) < 0.85, 0.0, rng.exponential(20, 80))
+y_intermittent = pd.Series(
+    data = np.array(
+               [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+                10.43864286,  0.        ,  0.        ,  0.        , 27.40647468,
+                 0.        ,  0.        ,  0.26680122,  0.        ,  0.        ,
+                 0.        ,  0.91588931,  0.        ,  0.        ,  0.        ,
+                 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+                 0.        , 16.76662594, 17.28941582,  0.        ,  0.        ,
+                 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+                 0.        ,  0.        ,  3.0940871 , 19.95477705,  0.        ,
+                 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+                 6.10469471,  0.        ,  0.        ,  0.        ,  0.        ,
+                 0.        ,  0.        ,  5.72600564,  0.        ,  0.        ,
+                 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+                 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+                 0.        ,  0.        , 44.27127041,  0.        ,  0.        ,
+                 0.        , 18.52726555,  0.        , 20.10910536,  0.        ,
+                 0.        ,  0.        ,  3.24984984, 44.79494162,  0.
+           ]),
+    name = 'y',
+    index = pd.date_range(start='2020-01-01', periods=80, freq='D')
+)
