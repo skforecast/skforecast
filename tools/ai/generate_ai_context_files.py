@@ -40,6 +40,11 @@ PYPROJECT_LLM_CONTEXT_RE = re.compile(
     r'^"LLM Context"\s*=\s*"([^"]+)"', re.MULTILINE
 )
 ALLOWED_REDIRECT_PREFIXES = ("https://doi.org/",)
+# Pages under this prefix are deployed with mike at release time. A page added
+# during a release cycle returns 404 until the next deploy, but its source is
+# already in docs/, which lets the URL check tell it apart from a broken link.
+DOCS_SITE_PREFIX = "https://skforecast.org/latest/"
+DOCS_DIR = ROOT / "docs"
 URL_CHECK_TIMEOUT = 20
 URL_CHECK_ATTEMPTS = 3
 URL_CHECK_RETRY_DELAY = 3
@@ -416,6 +421,30 @@ def check_url(url: str, label: str) -> list[str]:
     return []
 
 
+def local_docs_source(url: str) -> Path | None:
+    """Return the docs/ source of a skforecast.org page, or None if there is none.
+
+    Maps ``https://skforecast.org/latest/<path>.html`` to ``docs/<path>.ipynb``,
+    ``docs/<path>.md`` or ``docs/<path>/index.md``. Only pages under
+    ``DOCS_SITE_PREFIX`` are mapped.
+    """
+    if not url.startswith(DOCS_SITE_PREFIX):
+        return None
+    rel = url[len(DOCS_SITE_PREFIX):].split("#", 1)[0].split("?", 1)[0].strip("/")
+    if rel.endswith(".html"):
+        rel = rel[: -len(".html")]
+    if not rel:
+        return None
+    for candidate in (
+        DOCS_DIR / f"{rel}.ipynb",
+        DOCS_DIR / f"{rel}.md",
+        DOCS_DIR / rel / "index.md",
+    ):
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def validate_urls_in_file(
     path: Path,
     label: str,
@@ -437,11 +466,26 @@ def validate_urls_in_file(
         return [f"  {label}: no URLs found"]
 
     print(f"  Checking {len(urls)} URLs in {label} ...")
+    pending = 0
     for url in urls:
-        errors.extend(check_url(url, label))
+        url_errors = check_url(url, label)
+        if url_errors and all("HTTP 404" in e for e in url_errors):
+            source = local_docs_source(url)
+            if source is not None:
+                # Not yet deployed, but the page exists in docs/: it will be
+                # published with the next release, so it is not a broken link.
+                pending += 1
+                print(
+                    f"  {label}: HTTP 404 - {url} (pending publication, "
+                    f"source found at {source.relative_to(ROOT)})"
+                )
+                continue
+        errors.extend(url_errors)
 
     if not errors:
-        print(f"  All {len(urls)} URLs in {label} are reachable.")
+        reachable = len(urls) - pending
+        suffix = f" ({pending} pending publication)" if pending else ""
+        print(f"  All {reachable} URLs in {label} are reachable{suffix}.")
 
     return errors
 

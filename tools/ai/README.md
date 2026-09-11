@@ -191,6 +191,13 @@ URL validation requests each link with `HEAD`, falls back to `GET` when the serv
 rejects or stalls on `HEAD`, and retries transient failures (timeouts, connection
 errors, HTTP 408/425/429/5xx) up to 3 times with an increasing delay.
 
+A `https://skforecast.org/latest/...` page that returns 404 is reported as
+"pending publication" instead of an error when its source exists in `docs/`
+(`<path>.ipynb`, `<path>.md` or `<path>/index.md`). The documentation site is
+deployed at release time, so a user guide added during a release cycle is not
+reachable until then. A 404 with no local source (a typo, or a page that was
+removed) still fails the check.
+
 ### What `--check` validates
 
 | Check | What it verifies |

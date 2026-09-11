@@ -278,16 +278,23 @@ def test_predict_interval_bootstrapping_binned_residuals_when_binner_reduces_n_b
     )
     with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
         forecaster.fit(series=series_intermittent, store_in_sample_residuals=True)
+    # NOTE: The last window of `series_intermittent` is all zeros, the same
+    # window that appears many times in the training set. Its scaled prediction
+    # therefore coincides exactly with a bin edge, and the bin it falls into
+    # depends on floating point noise that varies between machines. A last
+    # window with a non zero value keeps the predictions away from any edge.
+    last_window = series_intermittent.iloc[-5:-2]
     results = forecaster.predict_interval(
-        steps=3, method='bootstrapping', interval=0.8, use_binned_residuals=True
+        steps=3, last_window=last_window, method='bootstrapping',
+        interval=0.8, use_binned_residuals=True
     )
 
     expected = pd.DataFrame(
                    data = np.array([
-                              [2.3063347 ,  0.        ,  5.69693295],
-                              [3.0539961 , -1.25665609,  0.        ],
-                              [2.36006269, -0.23495656, 14.62210845]]),
-                   index = pd.date_range(start='2020-03-21', periods=3, freq='D'),
+                              [-2.4748361 , -1.61054424,  3.1273761 ],
+                              [15.8793251 ,  4.23219054, 60.87783227],
+                              [-2.14747949, -1.32301949,  3.45473271]]),
+                   index = pd.date_range(start='2020-03-19', periods=3, freq='D'),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
     expected.insert(0, 'level', np.tile(['l1'], forecaster.max_step))
@@ -315,16 +322,23 @@ def test_predict_interval_conformal_binned_residuals_when_binner_reduces_n_bins(
     )
     with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
         forecaster.fit(series=series_intermittent, store_in_sample_residuals=True)
+    # NOTE: The last window of `series_intermittent` is all zeros, the same
+    # window that appears many times in the training set. Its scaled prediction
+    # therefore coincides exactly with a bin edge, and the bin it falls into
+    # depends on floating point noise that varies between machines. A last
+    # window with a non zero value keeps the predictions away from any edge.
+    last_window = series_intermittent.iloc[-5:-2]
     results = forecaster.predict_interval(
-        steps=3, method='conformal', interval=0.8, use_binned_residuals=True
+        steps=3, last_window=last_window, method='conformal',
+        interval=0.8, use_binned_residuals=True
     )
 
     expected = pd.DataFrame(
                    data = np.array([
-                              [2.3063347 ,  0.        , 4.6126694 ],
-                              [3.0539961 , -1.23189438, 7.33988659],
-                              [2.36006269, -0.35205799, 5.07218338]]),
-                   index = pd.date_range(start='2020-03-21', periods=3, freq='D'),
+                              [-2.4748361 , -7.4929334 ,  2.5432612 ],
+                              [15.8793251 ,  2.973606  , 28.78504421],
+                              [-2.14747949, -7.16557679,  2.8706178 ]]),
+                   index = pd.date_range(start='2020-03-19', periods=3, freq='D'),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
     expected.insert(0, 'level', np.tile(['l1'], forecaster.max_step))
