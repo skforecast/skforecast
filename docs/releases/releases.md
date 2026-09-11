@@ -8,13 +8,16 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-enhancement">Enhancement</span> | Improvement in existing functionality |
 | <span class="badge text-bg-api-change">API Change</span>   | Changes in the API                    |
 | <span class="badge text-bg-fix">Fix</span>                 | Bug fix                               |
+| <span class="badge text-bg-docs">Docs</span>               | Documentation improvement             |
 
 
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> <code>[ForecasterFoundation]</code> and <code>[FoundationModel]</code> now accept heterogeneous multi-series input: series of different lengths, a different subset of exogenous columns per series, and NaN values in the target. [User guide](../user_guides/foundation-forecasting-models.ipynb)
++ <span class="badge text-bg-docs">Docs</span> New user guide about foundation forecasting with heterogeneous series: different lengths, exogenous variables and missing values. [User guide](../user_guides/foundation-forecasting-with-heterogeneous-series.ipynb)
+
++ <span class="badge text-bg-feature">Feature</span> <code>[ForecasterFoundation]</code> and <code>[FoundationModel]</code> now accept heterogeneous multi-series input: series of different lengths, a different subset of exogenous columns per series, and NaN values in the target.
 
 + <span class="badge text-bg-feature">Feature</span> New <code>[TimesFM3Adapter]</code> adds support for **Google TimesFM 3.0** (`'google/timesfm-3.0-*'` ids), resolved automatically from `model_id`. Unlike TimesFM 2.5, it accepts past-only and known-future exogenous variables and exposes `device` and `predict_kwargs`. [User guide](../user_guides/foundation-forecasting-models.ipynb)
 
