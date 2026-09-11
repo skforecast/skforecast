@@ -5385,13 +5385,20 @@
 <td style="text-align: left;"><span class="badge text-bg-fix">Fix</span></td>
 <td style="text-align: left;">Bug fix</td>
 </tr>
+<tr>
+<td style="text-align: left;"><span class="badge text-bg-docs">Docs</span></td>
+<td style="text-align: left;">Documentation improvement</td>
+</tr>
 </tbody>
 </table>
 <h2 id="0.25.0">0.25.0 <small>Sep 11, 2026</small><a class="headerlink" href="#0.25.0" title="Permanent link">&para;</a></h2>
 <p>The main changes in this release are:</p>
 <ul>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> <code><a href="../api/ForecasterFoundation.html">ForecasterFoundation</a></code> and <code><a href="../api/FoundationModel.html#skforecast.foundation._foundation_model.FoundationModel">FoundationModel</a></code> now accept heterogeneous multi-series input: series of different lengths, a different subset of exogenous columns per series, and NaN values in the target. <a href="../user_guides/foundation-forecasting-models.html">User guide</a></p>
+<p><span class="badge text-bg-docs">Docs</span> New user guide about foundation forecasting with heterogeneous series: different lengths, exogenous variables and missing values. <a href="../user_guides/foundation-forecasting-with-heterogeneous-series.html">User guide</a></p>
+</li>
+<li>
+<p><span class="badge text-bg-feature">Feature</span> <code><a href="../api/ForecasterFoundation.html">ForecasterFoundation</a></code> and <code><a href="../api/FoundationModel.html#skforecast.foundation._foundation_model.FoundationModel">FoundationModel</a></code> now accept heterogeneous multi-series input: series of different lengths, a different subset of exogenous columns per series, and NaN values in the target.</p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> New <code><a href="../api/FoundationModel.html#skforecast.foundation._adapters.TimesFM3Adapter">TimesFM3Adapter</a></code> adds support for <strong>Google TimesFM 3.0</strong> (<code>'google/timesfm-3.0-*'</code> ids), resolved automatically from <code>model_id</code>. Unlike TimesFM 2.5, it accepts past-only and known-future exogenous variables and exposes <code>device</code> and <code>predict_kwargs</code>. <a href="../user_guides/foundation-forecasting-models.html">User guide</a></p>
