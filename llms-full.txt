@@ -490,6 +490,7 @@ Key points:
 - At predict time, the columns of the future `exog` are validated per series against the historical exog (the one passed to `fit`, or `context_exog`). A future column with no historical values raises a `ValueError`. A historical column with no future values is a past-only covariate: used as such when `forecaster.supports_past_only_covariates` is `True` (Chronos-2, TS-ICL, TimesFM 3.0), ignored with an `IgnoredArgumentWarning` otherwise (TabICL, TabPFN-TS, TFC-T0, Nori).
 - Multi-series input may be heterogeneous: series can have different lengths, a different subset of exog columns each, and NaN values. Each series is forecast with its own exog columns only. When the backend needs identical covariate columns in a batch (`forecaster.supports_heterogeneous_covariates` is `False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0), the series are grouped by their exog columns and the backend is called once per group, so the forecast of a series never depends on the exog of the others. `forecaster.supports_nan_in_series` tells whether the backend accepts NaN in the context.
 - In `backtesting_foundation`, a series is predicted in a fold only if it has at least one observed value in that fold's test window and its context window (the last `context_length` observations up to the end of the train span) is not entirely NaN; the context keeps interior and trailing NaN, so every prediction is dated inside the fold.
+- User guide for heterogeneous multi-series input (different lengths, exog columns and NaN): https://skforecast.org/latest/user_guides/foundation-forecasting-with-heterogeneous-series.html
 
 ## Feature Selection
 
@@ -2365,6 +2366,13 @@ predictions = forecaster.predict(steps=24)
 Pass a wide `DataFrame`, a long-format `DataFrame` (MultiIndex), or a
 `dict[str, pd.Series]` to `fit`.
 
+The series do not need to be aligned: they can have different lengths and
+time spans, a different subset of exog columns each, and NaN values. Each series
+is forecast from its own context and horizon, so no padding or imputation is
+required before `fit`. See the user guide
+[Foundation models with heterogeneous series](https://skforecast.org/latest/user_guides/foundation-forecasting-with-heterogeneous-series.html)
+for the per-backend rules.
+
 ```python
 # series: wide DataFrame — each column is one series
 forecaster.fit(series=series)
@@ -2388,7 +2396,7 @@ model = FoundationModel(
 
 ## With Exogenous Variables (Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL)
 
-Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them. At predict time the future `exog` columns are validated per series against the historical exog: a future column with no history raises `ValueError`; a historical column with no future values is a past-only covariate, used by Chronos-2, TS-ICL and TimesFM 3.0 (`supports_past_only_covariates=True`) and ignored with an `IgnoredArgumentWarning` by TabICL, TabPFN-TS, TFC-T0 and Nori. Series in a multi-series input may differ in length and in their exog columns: each series is forecast with its own columns, and adapters whose backend needs identical columns per batch (`supports_heterogeneous_covariates=False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0) are called once per group of series sharing the same columns.
+Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them. At predict time the future `exog` columns are validated per series against the historical exog: a future column with no history raises `ValueError`; a historical column with no future values is a past-only covariate, used by Chronos-2, TS-ICL and TimesFM 3.0 (`supports_past_only_covariates=True`) and ignored with an `IgnoredArgumentWarning` by TabICL, TabPFN-TS, TFC-T0 and Nori. Series in a multi-series input may differ in length and in their exog columns: each series is forecast with its own columns, and adapters whose backend needs identical columns per batch (`supports_heterogeneous_covariates=False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0) are called once per group of series sharing the same columns, so the forecast of a series never depends on the exog of the others.
 
 ```python
 # Historical + future exog (must cover the forecast horizon)
@@ -2524,6 +2532,8 @@ automatically to the last `context_length` observations.
 ## References
 
 See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFM25Adapter`, `TimesFM3Adapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, and `TSICLAdapter`.
+
+See the user guide [Foundation models with heterogeneous series](https://skforecast.org/latest/user_guides/foundation-forecasting-with-heterogeneous-series.html) for a worked example with series of different lengths, different exog columns and NaN, and for the table of what each backend requires and tolerates.
 
 ---
 ### Reference: adapter-parameters

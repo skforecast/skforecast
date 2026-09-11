@@ -48,7 +48,7 @@ Related gotchas:
 ## Documentation
 
 - Sources live in [docs/](docs/) as Markdown and Jupyter notebooks, wired together by [mkdocs.yml](mkdocs.yml).
-- Notebooks are committed with their outputs. Re-execute them with `python tools/execute_docs/execute_docs_notebooks.py [subdir_or_notebook]`, which runs papermill and writes warning logs to `tools/execute_docs/logs/`.
+- Notebooks are committed with their outputs. Re-execute them with `python tools/execute_docs/execute_docs_notebooks.py [subdir_or_notebook]`, which runs papermill and writes warning logs to `tools/execute_docs/logs/`. Notebooks listed in `SLOW_NOTEBOOKS` inside that script are skipped unless `--include-slow` is passed or the notebook is given explicitly.
 - Executing the whole `docs/` tree is slow, so pass the specific subdirectory or notebook that changed.
 
 ## Files NOT to use as context

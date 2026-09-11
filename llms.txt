@@ -62,6 +62,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 ## Foundation Models
 
 - [Forecasting with foundation models](https://skforecast.org/latest/user_guides/foundation-forecasting-models.html): Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL). Evaluate with `backtesting_foundation` and tune inference-time parameters such as `context_length` with `bayesian_search_foundation`
+- [Foundation models with heterogeneous series](https://skforecast.org/latest/user_guides/foundation-forecasting-with-heterogeneous-series.html): Series with different lengths, different exogenous variables and missing values in a single ForecasterFoundation: per-series alignment, grouping by exog columns and the predict and backtesting rules of each backend
 
 ## Deep Learning
 
