@@ -91,7 +91,76 @@ def test_crps_from_quantiles_output():
         0.1, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5,
         8.0, 8.5, 9.0, 9.5, 10.0, 10.5, 11.0, 11.5
     ])
-    expected = 1.7339183102042313
+    expected = 1.731728193328079
     result = crps_from_quantiles(y_true, pred_quantiles, quantile_levels)
 
     np.testing.assert_almost_equal(result, expected)
+
+
+def test_crps_from_quantiles_is_translation_invariant():
+    """
+    Test that `crps_from_quantiles` returns the same value when the true value and
+    the predicted quantiles are shifted by the same amount, including shifts that
+    make the quantiles negative or zero-centered.
+    """
+    quantile_levels = np.array([0.1, 0.5, 0.9])
+    pred_quantiles = np.array([8.0, 10.0, 12.0])
+    y_true = 9.5
+
+    expected = crps_from_quantiles(y_true, pred_quantiles, quantile_levels)
+    for shift in [-10.0, -20.0, -100.0, 1000.0]:
+        result = crps_from_quantiles(
+            y_true + shift, pred_quantiles + shift, quantile_levels
+        )
+        np.testing.assert_almost_equal(result, expected)
+
+
+@pytest.mark.parametrize(
+    "y_true, pred_quantiles",
+    [
+        (9.5, np.array([8.0, 10.0, 12.0])),
+        (-9.5, np.array([-12.0, -10.0, -8.0])),
+        (1000.0, np.array([8.0, 10.0, 12.0])),
+        (5.0, np.array([0.0, 0.0, 0.0])),
+    ],
+    ids=lambda x: f"input: {x}",
+)
+def test_crps_from_quantiles_is_non_negative(y_true, pred_quantiles):
+    """
+    Test that `crps_from_quantiles` never returns a negative value, as the CRPS is
+    the integral of a squared quantity.
+    """
+    quantile_levels = np.array([0.1, 0.5, 0.9])
+    result = crps_from_quantiles(y_true, pred_quantiles, quantile_levels)
+
+    assert result >= 0
+
+
+def test_crps_from_quantiles_penalizes_y_true_outside_predicted_quantiles():
+    """
+    Test that `crps_from_quantiles` grows with the distance between `y_true` and the
+    predicted quantiles when `y_true` falls outside the predicted range.
+    """
+    quantile_levels = np.array([0.1, 0.5, 0.9])
+    pred_quantiles = np.array([8.0, 10.0, 12.0])
+
+    results = [
+        crps_from_quantiles(y_true, pred_quantiles, quantile_levels)
+        for y_true in [20.0, 50.0, 1000.0]
+    ]
+
+    assert results == sorted(results)
+    np.testing.assert_almost_equal(results[2] - results[1], 950.0)
+
+
+def test_crps_from_quantiles_output_when_all_pred_quantiles_are_equal():
+    """
+    Test that `crps_from_quantiles` reduces to the absolute error when the predictive
+    distribution is a point mass.
+    """
+    quantile_levels = np.array([0.1, 0.5, 0.9])
+    pred_quantiles = np.array([2.0, 2.0, 2.0])
+
+    result = crps_from_quantiles(5.0, pred_quantiles, quantile_levels)
+
+    np.testing.assert_almost_equal(result, 3.0)

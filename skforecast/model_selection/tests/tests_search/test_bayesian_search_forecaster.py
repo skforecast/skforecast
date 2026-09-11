@@ -406,6 +406,9 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
     """
     Test output of bayesian_search_forecaster in ForecasterRecursive with 
     kwargs_create_study with mocked (mocked done in Skforecast v0.4.3).
+    All trials are startup trials of the sampler (`n_startup_trials=10`), so the
+    results only depend on the seed and not on the internals of TPE, which
+    change between optuna versions.
     """
     forecaster = ForecasterRecursive(
                      estimator = Ridge(random_state=123),
@@ -435,7 +438,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
         return search_space
 
     kwargs_create_study = {
-        'sampler': TPESampler(seed=123, n_startup_trials=5, n_ei_candidates=18)
+        'sampler': TPESampler(seed=123, n_startup_trials=10, n_ei_candidates=18)
     }
     results = bayesian_search_forecaster(
                   forecaster          = forecaster,
@@ -453,21 +456,9 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
     expected_results = pd.DataFrame(
         np.array([
             [np.array([1, 2]),
-                {'alpha': 0.013034582111428786},
-                0.21182366076042425,
-                0.013034582111428786],
-            [np.array([1, 2]),
-                {'alpha': 0.07828966760371814},
-                0.21200904927858408,
-                0.07828966760371814],
-            [np.array([1, 2]),
-                {'alpha': 0.10496922722723273},
-                0.21207982895766356,
-                0.10496922722723273],
-            [np.array([1, 2]),
-                {'alpha': 0.12110612961869299},
-                0.2121213367300672,
-                0.12110612961869299],
+                {'alpha': 0.23598059857016607},
+                0.21239141697571848,
+                0.23598059857016607],
             [np.array([1, 2]),
                 {'alpha': 0.398196343012209},
                 0.21271021033387602,
@@ -477,13 +468,25 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
                 0.2127897499229874,
                 0.4441865222328282],
             [np.array([1, 2]),
-                {'alpha': 0.9874718231802596},
-                0.21348609947715802,
-                0.9874718231802596],
+                {'alpha': 0.53623586010342},
+                0.21293692257888708,
+                0.53623586010342],
+            [np.array([1, 2]),
+                {'alpha': 0.7252189487445193},
+                0.21319693043832985,
+                0.7252189487445193],
             [np.array([1, 2, 3, 4]),
                 {'alpha': 0.9809565564007693},
                 0.21539791166603497,
                 0.9809565564007693],
+            [np.array([1, 2, 3, 4]),
+                {'alpha': 0.8509374761370117},
+                0.21557690844753197,
+                0.8509374761370117],
+            [np.array([1, 2, 3, 4]),
+                {'alpha': 0.7406154516747153},
+                0.2157346392837304,
+                0.7406154516747153],
             [np.array([1, 2, 3, 4]),
                 {'alpha': 0.6995044937418831},
                 0.2157946021058521,
@@ -1449,8 +1452,6 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
-
-
 
 
 def test_bayesian_search_forecaster_xgboost_categorical_no_ValueError_on_cache_hit():
