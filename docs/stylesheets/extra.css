@@ -167,6 +167,12 @@ Badge Styles
   background-color: #dc3545;
 }
 
+/* Docs Badge: documentation-only changes (pages, guides, notebooks) */
+.text-bg-docs {
+  color: #fff;
+  background-color: #6f42c1;
+}
+
 
 /*
 ===============================
