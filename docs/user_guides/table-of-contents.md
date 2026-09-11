@@ -20,7 +20,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 <span style="font-size: 1.3em;">Foundation Models</span>
 
 - [Forecasting with foundation models](../user_guides/foundation-forecasting-models.ipynb)
-- [Heterogeneous series: different lengths, exogenous variables and missing values](../user_guides/foundation-forecasting-with-heterogeneous-series.ipynb)
+- [Heterogeneous series with different lengths, exogenous variables and missing values](../user_guides/foundation-forecasting-with-heterogeneous-series.ipynb)
 
 <span style="font-size: 1.3em;">Statistical Models</span>
 
@@ -35,8 +35,8 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Autocorrelation analysis and lag selection](../user_guides/autocorrelation-and-lag-selection.ipynb)
 - [Window and custom features](../user_guides/window-features-and-custom-features.ipynb)
 - [Categorical features](../user_guides/categorical-features.ipynb)
-- [Calendars features](../user_guides/calendar-features.ipynb)
-- [Data transformations](../user_guides/sklearn-transformers-and-pipeline.ipynb)
+- [Calendar features](../user_guides/calendar-features.ipynb)
+- [Data transformation](../user_guides/sklearn-transformers-and-pipeline.ipynb)
 - [Differentiation](../user_guides/time-series-differentiation.ipynb)
 - [Handling missing values](../user_guides/handling-missing-values.ipynb)
 - [Feature selection](../user_guides/feature-selection.ipynb)
