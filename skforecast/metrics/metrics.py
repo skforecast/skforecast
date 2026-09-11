@@ -397,7 +397,7 @@ def crps_from_quantiles(
     result = crps_from_quantiles(y_true, pred_quantiles, quantile_levels)
     print(result)
 
-    # 0.46387472397322227
+    # 0.4634331094524621
     ```
 
     """
@@ -430,21 +430,30 @@ def crps_from_quantiles(
     def crps_integrand(x):
         return (empirical_cdf(x) - (x >= y_true)) ** 2
 
-    # Integration bounds: Extend slightly beyond predicted quantiles
-    xmin = np.min(pred_quantiles) * 0.9
-    xmax = np.max(pred_quantiles) * 1.1
+    xmin = pred_quantiles[0]
+    xmax = pred_quantiles[-1]
 
-    # Create a fine grid of x values for integration
-    x_values = np.linspace(xmin, xmax, 1000)
+    # Outside the range of the predicted quantiles the integrand is exactly 0 or 1,
+    # so its contribution is computed analytically instead of numerically. This also
+    # keeps the score valid when `y_true` falls outside the predicted quantiles.
+    tail_area = max(0.0, xmin - y_true) + max(0.0, y_true - xmax)
 
-    # Compute the integrand values and integrate using the trapezoidal rule
-    integrand_values = crps_integrand(x_values)
-    if np.__version__ >= "2.0.0":
-        crps = np.trapezoid(integrand_values, x=x_values)
+    if xmax > xmin:
+        # Create a fine grid of x values for integration
+        x_values = np.linspace(xmin, xmax, 1000)
+
+        # Compute the integrand values and integrate using the trapezoidal rule
+        integrand_values = crps_integrand(x_values)
+        if hasattr(np, "trapezoid"):
+            crps = np.trapezoid(integrand_values, x=x_values)
+        else:
+            crps = np.trapz(integrand_values, x_values)
+        crps = crps + tail_area
     else:
-        crps = np.trapz(integrand_values, x_values)
+        # All predicted quantiles are identical, the forecast is a point mass
+        crps = tail_area
 
-    return crps
+    return float(crps)
 
 
 def calculate_coverage(
