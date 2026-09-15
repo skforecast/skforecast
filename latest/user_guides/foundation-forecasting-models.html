@@ -6116,15 +6116,20 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <style>
-  /* Contenedor principal */
+  /* Main container. Colours use mkdocs-material variables so the table follows
+     the light/dark (slate) colour scheme of the site. */
   .table-wrapper {
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
+    /* Create a stacking context so the z-index of the sticky first column
+       stays contained inside the table and never overlays the site header
+       (mkdocs-material uses z-index: 4) or the back-to-top button. */
+    isolation: isolate;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     font-family: system-ui, -apple-system, sans-serif;
-    background: #fff;
+    background: var(--md-default-bg-color);
   }
 
   .forecasting-table-premium {
@@ -6133,38 +6138,38 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     min-width: 1200px;
     text-align: left;
     font-size: 0.6875rem;
-    color: #334155;
+    color: var(--md-default-fg-color--light);
   }
 
   .forecasting-table-premium th,
   .forecasting-table-premium td {
     padding: 8px 10px;
-    border-bottom: 1px solid #e2e8f0;
-    vertical-align: middle; /* Centrado vertical para alinear con botones e iconos */
+    border-bottom: 1px solid var(--md-typeset-table-color);
+    vertical-align: middle; /* Align text with buttons and icons */
   }
 
-  /* Encabezados accesibles (scope="col") */
+  /* Column headers (scope="col") */
   .forecasting-table-premium thead th {
-    background-color: #f8fafc;
-    color: #334155;
+    background-color: var(--md-code-bg-color);
+    color: var(--md-default-fg-color);
     font-weight: 600;
-    border-bottom: 2px solid #cbd5e1;
+    border-bottom: 2px solid var(--md-typeset-table-color);
     white-space: nowrap;
   }
 
-  /* Primera columna fija (scope="row") */
+  /* Sticky first column (scope="row") */
   .forecasting-table-premium tbody th {
     position: sticky;
     left: 0;
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: var(--md-code-bg-color);
+    color: var(--md-default-fg-color);
     font-weight: 700;
     z-index: 5;
     box-shadow: 2px 0 4px -2px rgba(0,0,0,0.1);
     white-space: nowrap;
   }
 
-  /* Esquina superior izquierda */
+  /* Top-left corner cell */
   .forecasting-table-premium thead th:first-child {
     position: sticky;
     left: 0;
@@ -6172,15 +6177,21 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     box-shadow: 2px 0 4px -2px rgba(0,0,0,0.1);
   }
 
-  /* Hover */
-  .forecasting-table-premium tbody tr:hover td,
+  /* Row hover */
+  .forecasting-table-premium tbody tr:hover td {
+    background-color: var(--md-typeset-table-color--light);
+  }
+  /* The hover colour is translucent. The sticky first column needs an opaque
+     base underneath it, otherwise the cells scrolled behind it show through. */
   .forecasting-table-premium tbody tr:hover th {
-    background-color: #f1f5f9;
+    background:
+      linear-gradient(var(--md-typeset-table-color--light), var(--md-typeset-table-color--light)),
+      var(--md-code-bg-color);
   }
 
-  /* Enlaces Generales */
+  /* Links */
   .forecasting-table-premium a {
-    color: #2563eb;
+    color: var(--md-typeset-a-color);
     text-decoration: none;
     font-weight: 500;
   }
@@ -6188,25 +6199,33 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     text-decoration: underline;
   }
 
-  /* NUEVO: Enlaces estandarizados con Iconos */
+  /* Merged GitHub + Documentation cell */
+  .ffm-links {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  /* Links with icons */
   .forecasting-table-premium a.icon-link {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: #475569; /* Color más neutro para no competir visualmente */
+    color: var(--md-default-fg-color--light); /* Neutral colour so links do not compete visually */
     text-decoration: none;
     font-weight: 500;
     transition: color 0.2s ease;
   }
   .forecasting-table-premium a.icon-link:hover {
-    color: #0f172a;
+    color: var(--md-default-fg-color);
   }
   .forecasting-table-premium a.icon-link svg.external-icon {
     opacity: 0.5;
     margin-left: 2px;
   }
 
-  /* Badges (Etiquetas visuales) - scoped to this table to avoid colliding with the site-wide .badge class */
+  /* Badges - scoped to this table to avoid colliding with the site-wide .badge class */
   .ffm-badge {
     display: inline-flex;
     align-items: center;
@@ -6230,41 +6249,49 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     color: #854d0e;
   }
 
-  /* Bloque de código con botón de copiar */
+  /* Inline code (e.g. `steps`). The selector is more specific than
+     `.md-typeset code:not(.focus-visible)` in extra.css, which would otherwise
+     enlarge the code above the surrounding cell text. */
+  .forecasting-table-premium code {
+    font-size: 0.9em;
+  }
+
+  /* Code block with copy button */
   .code-block {
     display: inline-flex;
     align-items: center;
-    background-color: #f1f5f9;
+    background-color: var(--md-code-bg-color);
     border-radius: 6px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--md-typeset-table-color);
     overflow: hidden;
   }
-  .code-block code {
+  .forecasting-table-premium .code-block code {
     padding: 6px 12px;
-    background-color: #f1f5f9;
-    color: #0f172a;
+    background-color: var(--md-code-bg-color);
+    color: var(--md-code-fg-color);
     font-family: ui-monospace, monospace;
-    font-size: 0.6rem;
+    font-size: 0.9em;
     white-space: nowrap;
   }
   .ffm-copy-btn {
-    background-color: #e2e8f0;
+    background-color: var(--md-default-fg-color--lightest);
     border: none;
-    border-left: 1px solid #cbd5e1;
+    border-left: 1px solid var(--md-typeset-table-color);
     padding: 6px 10px;
     cursor: pointer;
-    color: #475569;
+    color: var(--md-default-fg-color--light);
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background-color 0.2s;
   }
   .ffm-copy-btn:hover {
-    background-color: #cbd5e1;
-    color: #0f172a;
+    background-color: var(--md-default-fg-color--lighter);
+    color: var(--md-default-fg-color);
   }
   .ffm-copy-btn:active {
-    background-color: #94a3b8;
+    background-color: var(--md-default-fg-color--light);
+    color: var(--md-default-bg-color);
   }
 </style>
 <div class="table-wrapper">
@@ -6273,306 +6300,304 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <tr>
 <th scope="col">Model</th>
 <th scope="col">Provider</th>
-<th scope="col">GitHub</th>
-<th scope="col">Documentation</th>
 <th scope="col">Available model IDs</th>
-<th scope="col">Backend</th>
+<th scope="col">Covariate support (exog)</th>
 <th scope="col">Default context length</th>
 <th scope="col">Max context length</th>
 <th scope="col">Max horizon</th>
 <th scope="col">Point forecast</th>
-<th scope="col">Covariate support (exog)</th>
 <th scope="col">Cross learning</th>
+<th scope="col">Backend</th>
 <th scope="col">Install command</th>
+<th scope="col">Links</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <th scope="row">Chronos</th>
 <td>Amazon</td>
-<td>
-<a class="icon-link" href="https://github.com/amazon-science/chronos-forecasting" target="_blank" title="Ver repositorio en GitHub">
-<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
-            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
-<td>
-<a class="icon-link" href="https://huggingface.co/collections/amazon/chronos-models-65f1791d630a8d57cb718444" target="_blank" title="Ver documentación">
-<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
 <td>amazon/chronos-2<br/>autogluon/chronos-2-small<br/>autogluon/chronos-2-synth</td>
-<td>PyTorch</td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td>8192</td>
 <td>8192</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Median (0.5 quantile)</td>
-<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td><span class="ffm-badge ffm-badge-warn"><svg fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> Multi-series only</span></td>
+<td>PyTorch</td>
 <td>
 <div class="code-block">
 <code>pip install chronos-forecasting</code>
-<button class="ffm-copy-btn" data-copy="pip install chronos-forecasting" title="Copy command">
+<button aria-label="Copy command: pip install chronos-forecasting" class="ffm-copy-btn" data-copy="pip install chronos-forecasting" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
+</div>
+</td>
+<td>
+<div class="ffm-links">
+<a class="icon-link" href="https://github.com/amazon-science/chronos-forecasting" target="_blank" title="View repository on GitHub">
+<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
+            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
+<a class="icon-link" href="https://huggingface.co/collections/amazon/chronos-models-65f1791d630a8d57cb718444" target="_blank" title="View documentation">
+<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
 </div>
 </td>
 </tr>
 <tr>
 <th scope="row">TimesFM 2.5</th>
 <td>Google</td>
-<td>
-<a class="icon-link" href="https://github.com/google-research/timesfm" target="_blank" title="Ver repositorio en GitHub">
-<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
-            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
-<td>
-<a class="icon-link" href="https://huggingface.co/collections/google/timesfm-release-66e4be5fdb56e960c1e482a6" target="_blank" title="Ver documentación">
-<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
 <td>google/timesfm-2.5-200m-pytorch</td>
-<td>PyTorch</td>
+<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
 <td>512</td>
 <td>16384</td>
 <td>512</td>
 <td>Mean (dedicated output)</td>
 <td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
-<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td>PyTorch</td>
 <td>
 <div class="code-block">
 <code>pip install timesfm[torch]</code>
-<button class="ffm-copy-btn" data-copy="pip install timesfm[torch]" title="Copy command">
+<button aria-label="Copy command: pip install timesfm[torch]" class="ffm-copy-btn" data-copy="pip install timesfm[torch]" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
+</div>
+</td>
+<td>
+<div class="ffm-links">
+<a class="icon-link" href="https://github.com/google-research/timesfm" target="_blank" title="View repository on GitHub">
+<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
+            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
+<a class="icon-link" href="https://huggingface.co/collections/google/timesfm-release-66e4be5fdb56e960c1e482a6" target="_blank" title="View documentation">
+<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
 </div>
 </td>
 </tr>
 <tr>
 <th scope="row">TimesFM 3.0</th>
 <td>Google</td>
-<td>
-<a class="icon-link" href="https://github.com/google-research/timesfm" target="_blank" title="Ver repositorio en GitHub">
-<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
-            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
-<td>
-<a class="icon-link" href="https://huggingface.co/google/timesfm-3.0-pytorch" target="_blank" title="Ver documentación">
-<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
 <td>google/timesfm-3.0-pytorch</td>
-<td>PyTorch</td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td>2048</td>
 <td>~15,360</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Median (0.5 quantile)</td>
-<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td>PyTorch</td>
 <td>
 <div class="code-block">
 <code>pip install timesfm[torch]</code>
-<button class="ffm-copy-btn" data-copy="pip install timesfm[torch]" title="Copy command">
+<button aria-label="Copy command: pip install timesfm[torch]" class="ffm-copy-btn" data-copy="pip install timesfm[torch]" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
+</div>
+</td>
+<td>
+<div class="ffm-links">
+<a class="icon-link" href="https://github.com/google-research/timesfm" target="_blank" title="View repository on GitHub">
+<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
+            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
+<a class="icon-link" href="https://huggingface.co/google/timesfm-3.0-pytorch" target="_blank" title="View documentation">
+<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
 </div>
 </td>
 </tr>
 <tr>
 <th scope="row">Moirai</th>
 <td>Salesforce</td>
-<td>
-<a class="icon-link" href="https://github.com/SalesforceAIResearch/uni2ts" target="_blank" title="Ver repositorio en GitHub">
-<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
-            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
-<td>
-<a class="icon-link" href="https://huggingface.co/collections/Salesforce/moirai-r-models-65c8d3a94c51428c300e0742" target="_blank" title="Ver documentación">
-<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
 <td>Salesforce/moirai-2.0-R-small</td>
-<td>PyTorch</td>
+<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
 <td>2048</td>
 <td>2048</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Median (0.5 quantile)</td>
 <td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
-<td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td>PyTorch</td>
 <td>
 <div class="code-block">
 <code>pip install uni2ts</code>
-<button class="ffm-copy-btn" data-copy="pip install uni2ts" title="Copy command">
+<button aria-label="Copy command: pip install uni2ts" class="ffm-copy-btn" data-copy="pip install uni2ts" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
+</div>
+</td>
+<td>
+<div class="ffm-links">
+<a class="icon-link" href="https://github.com/SalesforceAIResearch/uni2ts" target="_blank" title="View repository on GitHub">
+<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
+            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
+<a class="icon-link" href="https://huggingface.co/collections/Salesforce/moirai-r-models-65c8d3a94c51428c300e0742" target="_blank" title="View documentation">
+<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
 </div>
 </td>
 </tr>
 <tr>
 <th scope="row">TabICL</th>
 <td>Soda-Inria</td>
-<td>
-<a class="icon-link" href="https://github.com/soda-inria/tabicl" target="_blank" title="Ver repositorio en GitHub">
-<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
-            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
-<td>
-<a class="icon-link" href="https://tabicl.readthedocs.io/en/latest/" target="_blank" title="Ver documentación">
-<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
 <td>soda-inria/tabicl</td>
-<td>PyTorch</td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td>4096</td>
 <td>4096</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Mean (default)</td>
-<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td>PyTorch</td>
 <td>
 <div class="code-block">
 <code>pip install tabicl[forecast]</code>
-<button class="ffm-copy-btn" data-copy="pip install tabicl[forecast]" title="Copy command">
+<button aria-label="Copy command: pip install tabicl[forecast]" class="ffm-copy-btn" data-copy="pip install tabicl[forecast]" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
+</div>
+</td>
+<td>
+<div class="ffm-links">
+<a class="icon-link" href="https://github.com/soda-inria/tabicl" target="_blank" title="View repository on GitHub">
+<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
+            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
+<a class="icon-link" href="https://tabicl.readthedocs.io/en/latest/" target="_blank" title="View documentation">
+<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
 </div>
 </td>
 </tr>
 <tr>
 <th scope="row">TabPFN-TS</th>
 <td>Prior Labs</td>
-<td>
-<a class="icon-link" href="https://github.com/PriorLabs/tabpfn-time-series" target="_blank" title="Ver repositorio en GitHub">
-<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
-            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
-<td>
-<a class="icon-link" href="https://docs.priorlabs.ai/" target="_blank" title="Ver documentación">
-<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
 <td>priorlabs/tabpfn-ts</td>
-<td>PyTorch</td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td>32768</td>
 <td>No hard limit (~65536)</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Median (default)</td>
-<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td>PyTorch</td>
 <td>
 <div class="code-block">
 <code>pip install tabpfn-time-series</code>
-<button class="ffm-copy-btn" data-copy="pip install tabpfn-time-series" title="Copy command">
+<button aria-label="Copy command: pip install tabpfn-time-series" class="ffm-copy-btn" data-copy="pip install tabpfn-time-series" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
+</div>
+</td>
+<td>
+<div class="ffm-links">
+<a class="icon-link" href="https://github.com/PriorLabs/tabpfn-time-series" target="_blank" title="View repository on GitHub">
+<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
+            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
+<a class="icon-link" href="https://docs.priorlabs.ai/" target="_blank" title="View documentation">
+<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
 </div>
 </td>
 </tr>
 <tr>
 <th scope="row">T0</th>
 <td>The Forecasting Company</td>
-<td>
-<a class="icon-link" href="https://github.com/theforecastingcompany/tfc-t0" target="_blank" title="Ver repositorio en GitHub">
-<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
-            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
-<td>
-<a class="icon-link" href="https://huggingface.co/theforecastingcompany/t0-alpha" target="_blank" title="Ver documentación">
-<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
 <td>theforecastingcompany/t0-alpha</td>
-<td>PyTorch</td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td>8192</td>
 <td>No hard limit</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Median (0.5 quantile)</td>
-<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td>PyTorch</td>
 <td>
 <div class="code-block">
 <code>pip install tfc-t0</code>
-<button class="ffm-copy-btn" data-copy="pip install tfc-t0" title="Copy command">
+<button aria-label="Copy command: pip install tfc-t0" class="ffm-copy-btn" data-copy="pip install tfc-t0" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
+</div>
+</td>
+<td>
+<div class="ffm-links">
+<a class="icon-link" href="https://github.com/theforecastingcompany/tfc-t0" target="_blank" title="View repository on GitHub">
+<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
+            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
+<a class="icon-link" href="https://huggingface.co/theforecastingcompany/t0-alpha" target="_blank" title="View documentation">
+<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
 </div>
 </td>
 </tr>
 <tr>
 <th scope="row">Nori</th>
 <td>Synthefy</td>
-<td>
-<a class="icon-link" href="https://github.com/Synthefy/synthefy-nori" target="_blank" title="Ver repositorio en GitHub">
-<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
-            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
-<td>
-<a class="icon-link" href="https://docs.synthefy.com/forecasting-api/overview" target="_blank" title="Ver documentación">
-<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-</a>
-</td>
 <td>Synthefy/Nori</td>
-<td>PyTorch</td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td>4096</td>
 <td>No hard limit</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Mean (default)</td>
-<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td>PyTorch</td>
 <td>
 <div class="code-block">
 <code>pip install synthefy-nori</code>
-<button class="ffm-copy-btn" data-copy="pip install synthefy-nori" title="Copy command">
+<button aria-label="Copy command: pip install synthefy-nori" class="ffm-copy-btn" data-copy="pip install synthefy-nori" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
 </div>
 </td>
-</tr>
-<!-- NUEVA FILA: TS-ICL -->
-<tr>
-<th scope="row">TS-ICL</th>
-<td>EDF Lab</td>
 <td>
-<a class="icon-link" href="https://github.com/EDF-Lab/ts-icl" target="_blank" title="Ver repositorio en GitHub">
+<div class="ffm-links">
+<a class="icon-link" href="https://github.com/Synthefy/synthefy-nori" target="_blank" title="View repository on GitHub">
 <svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
             GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
 </a>
-</td>
-<td>
-<a class="icon-link" href="https://huggingface.co/taharnbl/TS-ICL" target="_blank" title="Ver documentación">
+<a class="icon-link" href="https://docs.synthefy.com/forecasting-api/overview" target="_blank" title="View documentation">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
 </a>
+</div>
 </td>
+</tr>
+<tr>
+<th scope="row">TS-ICL</th>
+<td>EDF Lab</td>
 <td>taharnbl/TS-ICL</td>
-<td>PyTorch</td>
+<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td>4096</td>
 <td>No hard limit</td>
 <td>No hard limit, set via <code>steps</code></td>
 <td>Median (0.5)</td>
-<td><span class="ffm-badge ffm-badge-yes"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M20 6L9 17l-5-5"></path></svg> Yes</span></td>
 <td><span class="ffm-badge ffm-badge-no"><svg fill="none" height="12" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" width="12"><path d="M6 18L18 6M6 6l12 12"></path></svg> No</span></td>
+<td>PyTorch</td>
 <td>
 <div class="code-block">
 <code>pip install tsicl</code>
-<button class="ffm-copy-btn" data-copy="pip install tsicl" title="Copy command">
+<button aria-label="Copy command: pip install tsicl" class="ffm-copy-btn" data-copy="pip install tsicl" title="Copy command">
 <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
 </button>
+</div>
+</td>
+<td>
+<div class="ffm-links">
+<a class="icon-link" href="https://github.com/EDF-Lab/ts-icl" target="_blank" title="View repository on GitHub">
+<svg fill="currentColor" height="16" viewbox="0 0 24 24" width="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"></path></svg>
+            GitHub <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
+<a class="icon-link" href="https://huggingface.co/taharnbl/TS-ICL" target="_blank" title="View documentation">
+<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Docs <svg class="external-icon" fill="none" height="12" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="12"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+</a>
 </div>
 </td>
 </tr>
