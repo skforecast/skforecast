@@ -26,7 +26,7 @@ jobs:
         persist-credentials: false
 
     - name: Set up uv and Python ${{ matrix.python-version }}
-      uses: astral-sh/setup-uv@v10
+      uses: astral-sh/setup-uv@v10.1.0
       with:
         python-version: ${{ matrix.python-version }}
         activate-environment: true  # creates .venv and puts it on PATH for the next steps

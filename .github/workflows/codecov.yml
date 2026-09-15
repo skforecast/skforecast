@@ -26,7 +26,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up uv and Python 3.14
-        uses: astral-sh/setup-uv@v10
+        uses: astral-sh/setup-uv@v10.1.0
         with:
           python-version: '3.14'
           activate-environment: true  # creates .venv and puts it on PATH for the next steps

@@ -129,7 +129,7 @@ jobs:
           git status --porcelain || true
 
       - name: Set up uv and Python
-        uses: astral-sh/setup-uv@v10
+        uses: astral-sh/setup-uv@v10.1.0
         with:
           python-version: "3.12"
           activate-environment: true  # creates .venv and puts it on PATH for the next steps
