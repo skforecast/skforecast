@@ -25,23 +25,28 @@ jobs:
       with:
         persist-credentials: false
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v7
+    - name: Set up uv and Python ${{ matrix.python-version }}
+      uses: astral-sh/setup-uv@v10.1.0
       with:
         python-version: ${{ matrix.python-version }}
+        activate-environment: true  # creates .venv and puts it on PATH for the next steps
+        enable-cache: true
+        cache-dependency-glob: "pyproject.toml"
+        prune-cache: true
 
     - name: Install package and force upgrade all dependencies
+      env:
+        UV_TORCH_BACKEND: cpu  # CPU-only torch build; the runner has no GPU
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install -e ".[test]"
-        python -m pip install --upgrade \
+        uv pip install -e ".[test]"
+        uv pip install --upgrade \
           numpy pandas scikit-learn scipy optuna joblib numba tqdm rich \
           statsmodels matplotlib lightgbm xgboost
 
     - name: Show environment info
       run: |
         python --version
-        python -m pip list
+        uv pip list
 
     - name: Run tests with pytest
       shell: bash

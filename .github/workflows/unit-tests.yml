@@ -29,11 +29,14 @@ jobs:
       with:
         persist-credentials: false
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v7
+    - name: Set up uv and Python ${{ matrix.python-version }}
+      uses: astral-sh/setup-uv@v10.1.0
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
+        activate-environment: true  # creates .venv and puts it on PATH for the next steps
+        enable-cache: true
+        cache-dependency-glob: "pyproject.toml"
+        prune-cache: true
 
     - name: Install system dependency libomp on macOS
       if: startsWith(matrix.platform, 'macos-')
@@ -44,14 +47,20 @@ jobs:
         brew install libomp
 
     - name: Install Python dependencies
+      shell: bash
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install -e ".[test]"
+        # On Linux, PyPI serves the CUDA build of torch together with the nvidia-*
+        # libraries (several GB). Runners have no GPU, so install the CPU-only
+        # build instead. On macOS and Windows PyPI already serves CPU-only wheels.
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          export UV_TORCH_BACKEND=cpu
+        fi
+        uv pip install -e ".[test]"
 
     - name: Show environment info
       run: |
         python --version
-        python -m pip list
+        uv pip list
         python -c "import sys; print('Python executable:', sys.executable)"
         echo "OS: ${{ runner.os }}"
         echo "Platform: ${{ matrix.platform }}"
@@ -61,7 +70,7 @@ jobs:
       env:
         KERAS_BACKEND: torch
       run: |
-        if [[ "${{ matrix.platform }}" == macos* ]]; then
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
           echo "Skipping deep_learning tests on macOS due to MPS issues"
           pytest --ignore=skforecast/deep_learning
         else
