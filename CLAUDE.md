@@ -42,7 +42,7 @@ Related gotchas:
 
 - Feature and fix branches target the current release branch (`X.Y.z`, currently `0.25.x`), not `main`. The release branch is merged into `main` at release time.
 - The default branch on GitHub is `main`. Older local clones may still resolve `origin/HEAD` to `origin/master`, which is stale.
-- Tests, coverage and the AI context check only run on pull requests targeting `main` (`unit-tests.yml`, `codecov.yml`, `ai-context-check.yml`), so run them locally while working on a release branch. `unit-tests-latest-deps.yml` is weekly and `benchmarks.yml` is manual.
+- Tests and coverage only run on pull requests targeting `main` (`unit-tests.yml`, `codecov.yml`), so run them locally while working on a release branch. The AI context check (`ai-context-check.yml`) also runs on pull requests targeting release branches (`*.x`). `unit-tests-latest-deps.yml` is weekly and `benchmarks.yml` is manual.
 - Update [changelog.md](changelog.md) for user facing changes.
 
 ## Documentation

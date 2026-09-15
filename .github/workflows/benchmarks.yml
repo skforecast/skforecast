@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write  # necessary to push changes
+  contents: read
 
 jobs:
   set-matrix:
@@ -85,6 +85,8 @@ jobs:
     needs: set-matrix
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: write  # necessary to push the updated benchmark.joblib
 
     strategy:
       max-parallel: 1    # one repetition at a time, each on a fresh runner
@@ -126,28 +128,31 @@ jobs:
           echo ">> Git status (before changes):"
           git status --porcelain || true
 
-      - name: Set up Python
-        uses: actions/setup-python@v7
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v10
         with:
           python-version: "3.12"
-          cache: 'pip'
+          activate-environment: true  # creates .venv and puts it on PATH for the next steps
+          enable-cache: true
+          cache-dependency-glob: |
+            benchmarks/requirements_benchmarks.txt
+            pyproject.toml
+          prune-cache: true
 
       - name: Install Python dependencies (verbose)
         shell: bash
         run: |
           set -e
-          echo ">> Upgrading pip..."
-          python -m pip install --upgrade pip
           echo ">> Installing benchmark requirements..."
-          pip install -r benchmarks/requirements_benchmarks.txt
+          uv pip install -r benchmarks/requirements_benchmarks.txt
 
           LOCAL_VERSION=$(grep -m1 '^version = ' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
           if [ -z "$SKFORECAST_VERSION" ] || [ "$SKFORECAST_VERSION" = "$LOCAL_VERSION" ]; then
             echo ">> Installing project (local checkout, version $LOCAL_VERSION)..."
-            pip install .
+            uv pip install .
           else
             echo ">> Installing skforecast==$SKFORECAST_VERSION from PyPI..."
-            pip install "skforecast==$SKFORECAST_VERSION"
+            uv pip install "skforecast==$SKFORECAST_VERSION"
           fi
 
       - name: Show environment info
@@ -155,7 +160,7 @@ jobs:
         run: |
           echo ">> Python environment summary:"
           python --version
-          python -m pip list | sed -n '1,120p'  # Truncate long lists for readability
+          uv pip list | sed -n '1,120p'  # Truncate long lists for readability
 
       - name: Sanity check paths (verbose)
         shell: bash
