@@ -24,8 +24,6 @@ updates:
       - dependency-name: "mkdocs-material"
       - dependency-name: "mkdocstrings"
       - dependency-name: "mkdocstrings-python"
-      - dependency-name: "notebook"
-      - dependency-name: "jupyter-contrib-nbextensions"
       - dependency-name: "black"
   
   - package-ecosystem: "github-actions" # Monitor GitHub Actions

@@ -2,7 +2,9 @@ name: AI Context Check
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - '*.x'  # release branches, where feature and fix branches are merged
 
 permissions:
   contents: read
@@ -10,8 +12,13 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # The generator only uses the standard library, so no dependency
+      # installation (and therefore no uv) is needed here.
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
