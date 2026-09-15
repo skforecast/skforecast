@@ -2,7 +2,7 @@ numpy==2.4.6
 pandas==2.3.3
 scikit-learn==1.9.0
 tqdm==4.68.3
-optuna==4.9.0
+optuna==5.0.0
 joblib==1.5.3
 numba==0.66.0
 rich==15.0.0
