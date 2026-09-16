@@ -11,6 +11,18 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-docs">Docs</span>               | Documentation improvement             |
 
 
+## 0.25.1 <small>In development</small> { id="0.25.1" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Faster import of the forecaster modules. `numba` is no longer imported when `skforecast.recursive`, `skforecast.direct`, `skforecast.preprocessing` or `skforecast.model_selection` are imported. It is loaded on the first use of <code>[RollingFeatures]</code> or <code>[RollingFeaturesClassification]</code>.
+
+
+**Changed**
+
++ `numba` is imported and the rolling statistics of <code>[RollingFeatures]</code> and <code>[RollingFeaturesClassification]</code> are JIT compiled on their first use instead of when `skforecast.preprocessing` is imported. This removes around 0.3 seconds from the import of every forecaster module (about 65% of the time spent by skforecast itself once numpy, pandas and scikit-learn are loaded). Behavior is unchanged.
+
+
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
 
 The main changes in this release are:
