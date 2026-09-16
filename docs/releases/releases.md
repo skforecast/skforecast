@@ -11,7 +11,7 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-docs">Docs</span>               | Documentation improvement             |
 
 
-## 0.25.1 <small>In development</small> { id="0.25.1" }
+## 0.26.0 <small>In development</small> { id="0.26.0" }
 
 The main changes in this release are:
 
