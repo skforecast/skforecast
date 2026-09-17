@@ -5612,7 +5612,7 @@
 
 
 <a href="#skforecast.exceptions.exceptions.set_warnings_style" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">set_warnings_style</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">'skforecast'</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">set_warnings_style</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;skforecast&#39;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
@@ -5675,7 +5675,7 @@
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+              <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">480</span>
 <span class="normal">481</span>
 <span class="normal">482</span>
@@ -5695,22 +5695,22 @@
 <span class="normal">496</span>
 <span class="normal">497</span>
 <span class="normal">498</span>
-<span class="normal">499</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_warnings_style</span><span class="p">(</span><span class="n">style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'skforecast'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="normal">499</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_warnings_style</span><span class="p">(</span><span class="n">style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;skforecast&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set the warning handler based on the provided style.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    style : str, default='skforecast'</span>
-<span class="sd">        The style of the warning handler. Either 'skforecast' or 'default'.</span>
+<span class="sd">    style : str, default=&#39;skforecast&#39;</span>
+<span class="sd">        The style of the warning handler. Either &#39;skforecast&#39; or &#39;default&#39;.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">style</span> <span class="o">==</span> <span class="s2">"skforecast"</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">warnings</span><span class="p">,</span> <span class="s2">"_original_showwarning"</span><span class="p">):</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">style</span> <span class="o">==</span> <span class="s2">&quot;skforecast&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">warnings</span><span class="p">,</span> <span class="s2">&quot;_original_showwarning&quot;</span><span class="p">):</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">_original_showwarning</span> <span class="o">=</span> <span class="n">warnings</span><span class="o">.</span><span class="n">showwarning</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">showwarning</span> <span class="o">=</span> <span class="n">rich_warning_handler</span>
     <span class="k">else</span><span class="p">:</span>
@@ -5785,7 +5785,7 @@ accept other data types, therefore the forecaster <code>fit</code> and <code>pre
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">108</span>
 <span class="normal">109</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -5897,7 +5897,7 @@ accept other data types, therefore the forecaster <code>fit</code> and <code>pre
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">123</span>
 <span class="normal">124</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -6010,7 +6010,7 @@ variables with models that use a two-step approach (e.g., regression + ARAR).</p
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">139</span>
 <span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -6122,7 +6122,7 @@ variables with models that use a two-step approach (e.g., regression + ARAR).</p
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">154</span>
 <span class="normal">155</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -6235,7 +6235,7 @@ or a function.</p>
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">170</span>
 <span class="normal">171</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -6348,7 +6348,7 @@ recommended for the forecaster.</p>
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">186</span>
 <span class="normal">187</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -6463,7 +6463,7 @@ before deploying.</p>
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">334</span>
 <span class="normal">335</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -6576,7 +6576,7 @@ the process may take a while to run.</p>
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">202</span>
 <span class="normal">203</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -6690,7 +6690,7 @@ Forecaster's <code>fit' and</code>predict' methods may fail.</p>
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">219</span>
 <span class="normal">220</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -6805,7 +6805,7 @@ missing values, so the Forecaster's <code>fit' and</code>predict' methods may fa
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">237</span>
 <span class="normal">238</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -6917,7 +6917,7 @@ missing values, so the Forecaster's <code>fit' and</code>predict' methods may fa
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">252</span>
 <span class="normal">253</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -7030,7 +7030,7 @@ probabilistic forecasting process.</p>
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">268</span>
 <span class="normal">269</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -7143,7 +7143,7 @@ training data.</p>
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">284</span>
 <span class="normal">285</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -7256,7 +7256,7 @@ a forecaster.</p>
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">300</span>
 <span class="normal">301</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -7369,7 +7369,7 @@ environment differs from the version used to initialize the forecaster.</p>
     </table>
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <summary>Source code in <code>skforecast\exceptions\exceptions.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">316</span>
 <span class="normal">317</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
@@ -7651,6 +7651,8 @@ environment differs from the version used to initialize the forecaster.</p>
       <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
+      
+        <script src="../javascripts/examples-filter.js"></script>
       
         <script src="../javascripts/mathjax.js"></script>
       

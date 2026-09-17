@@ -5678,15 +5678,15 @@
     <span class="n">steps</span><span class="p">,</span>
     <span class="n">levels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">recurrent_layer</span><span class="o">=</span><span class="s2">"LSTM"</span><span class="p">,</span>
+    <span class="n">recurrent_layer</span><span class="o">=</span><span class="s2">&quot;LSTM&quot;</span><span class="p">,</span>
     <span class="n">recurrent_units</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-    <span class="n">recurrent_layers_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"activation"</span><span class="p">:</span> <span class="s2">"tanh"</span><span class="p">},</span>
+    <span class="n">recurrent_layers_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;tanh&quot;</span><span class="p">},</span>
     <span class="n">dense_units</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
-    <span class="n">dense_layers_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"activation"</span><span class="p">:</span> <span class="s2">"relu"</span><span class="p">},</span>
-    <span class="n">output_dense_layer_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"activation"</span><span class="p">:</span> <span class="s2">"linear"</span><span class="p">},</span>
+    <span class="n">dense_layers_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;relu&quot;</span><span class="p">},</span>
+    <span class="n">output_dense_layer_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;linear&quot;</span><span class="p">},</span>
     <span class="n">compile_kwargs</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">"optimizer"</span><span class="p">:</span> <span class="n">Adam</span><span class="p">(),</span>
-        <span class="s2">"loss"</span><span class="p">:</span> <span class="n">MeanSquaredError</span><span class="p">(),</span>
+        <span class="s2">&quot;optimizer&quot;</span><span class="p">:</span> <span class="n">Adam</span><span class="p">(),</span>
+        <span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">MeanSquaredError</span><span class="p">(),</span>
     <span class="p">},</span>
     <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
@@ -5974,7 +5974,7 @@ and loss function. [5]_</p>
 </details>
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/deep_learning/utils.py</code></summary>
+              <summary>Source code in <code>skforecast\deep_learning\utils.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 50</span>
 <span class="normal"> 51</span>
 <span class="normal"> 52</span>
@@ -6116,16 +6116,16 @@ and loss function. [5]_</p>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">levels</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">exog</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">recurrent_layer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"LSTM"</span><span class="p">,</span>
+    <span class="n">recurrent_layer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;LSTM&quot;</span><span class="p">,</span>
     <span class="n">recurrent_units</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-    <span class="n">recurrent_layers_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"activation"</span><span class="p">:</span> <span class="s2">"tanh"</span><span class="p">},</span>
+    <span class="n">recurrent_layers_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;tanh&quot;</span><span class="p">},</span>
     <span class="n">dense_units</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
-    <span class="n">dense_layers_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"activation"</span><span class="p">:</span> <span class="s2">"relu"</span><span class="p">},</span>
-    <span class="n">output_dense_layer_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"activation"</span><span class="p">:</span> <span class="s2">"linear"</span><span class="p">},</span>
-    <span class="n">compile_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"optimizer"</span><span class="p">:</span> <span class="n">Adam</span><span class="p">(),</span> <span class="s2">"loss"</span><span class="p">:</span> <span class="n">MeanSquaredError</span><span class="p">()},</span>
+    <span class="n">dense_layers_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;relu&quot;</span><span class="p">},</span>
+    <span class="n">output_dense_layer_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;linear&quot;</span><span class="p">},</span>
+    <span class="n">compile_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;optimizer&quot;</span><span class="p">:</span> <span class="n">Adam</span><span class="p">(),</span> <span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">MeanSquaredError</span><span class="p">()},</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Build and compile a RNN-based Keras model for time series prediction, </span>
 <span class="sd">    supporting exogenous variables.</span>
 
@@ -6148,25 +6148,25 @@ and loss function. [5]_</p>
 <span class="sd">    exog : pandas Series, pandas DataFrame, default None</span>
 <span class="sd">        Exogenous variables to be included as input, should have the same number </span>
 <span class="sd">        of rows as `series`.</span>
-<span class="sd">    recurrent_layer : str, default 'LSTM'</span>
-<span class="sd">        Type of recurrent layer to be used, 'LSTM' [1]_, 'GRU' [2]_, or 'RNN' [3]_.</span>
+<span class="sd">    recurrent_layer : str, default &#39;LSTM&#39;</span>
+<span class="sd">        Type of recurrent layer to be used, &#39;LSTM&#39; [1]_, &#39;GRU&#39; [2]_, or &#39;RNN&#39; [3]_.</span>
 <span class="sd">    recurrent_units : int, list, default 100</span>
 <span class="sd">        Number of units in the recurrent layer(s). Can be an integer for single </span>
 <span class="sd">        recurrent layer, or a list of integers for multiple recurrent layers.</span>
-<span class="sd">    recurrent_layers_kwargs : dict, list, default {'activation': 'tanh'}</span>
+<span class="sd">    recurrent_layers_kwargs : dict, list, default {&#39;activation&#39;: &#39;tanh&#39;}</span>
 <span class="sd">        Additional keyword arguments for the recurrent layers [1]_, [2]_, [3]_. </span>
 <span class="sd">        Can be a single dictionary for all layers or a list of dictionaries </span>
 <span class="sd">        specifying different parameters for each recurrent layer.</span>
 <span class="sd">    dense_units : int, list, tuple, None, default 64</span>
 <span class="sd">        Number of units in the dense layer(s) [4]_. Can be an integer for single</span>
 <span class="sd">        dense layer, or a list of integers for multiple dense layers.</span>
-<span class="sd">    dense_layers_kwargs : dict, list, default {'activation': 'relu'}</span>
+<span class="sd">    dense_layers_kwargs : dict, list, default {&#39;activation&#39;: &#39;relu&#39;}</span>
 <span class="sd">        Additional keyword arguments for the dense layers [4]_. Can be a single</span>
 <span class="sd">        dictionary for all layers or a list of dictionaries specifying different</span>
 <span class="sd">        parameters for each dense layer.</span>
-<span class="sd">    output_dense_layer_kwargs : dict, default {'activation': 'linear'}</span>
+<span class="sd">    output_dense_layer_kwargs : dict, default {&#39;activation&#39;: &#39;linear&#39;}</span>
 <span class="sd">        Additional keyword arguments for the output dense layer.</span>
-<span class="sd">    compile_kwargs : dict, default {'optimizer': Adam(), 'loss': MeanSquaredError()}</span>
+<span class="sd">    compile_kwargs : dict, default {&#39;optimizer&#39;: Adam(), &#39;loss&#39;: MeanSquaredError()}</span>
 <span class="sd">        Additional keyword arguments for the model compilation, such as optimizer </span>
 <span class="sd">        and loss function. [5]_</span>
 <span class="sd">    model_name : str, default None</span>
@@ -6194,24 +6194,24 @@ and loss function. [5]_</p>
 <span class="sd">    .. [5] Model training APIs: compile method.</span>
 <span class="sd">           https://keras.io/api/models/model_training_apis/</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">keras_backend</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"keras version: </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using backend: </span><span class="si">{</span><span class="n">keras_backend</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">keras_backend</span> <span class="o">==</span> <span class="s2">"tensorflow"</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;keras version: </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using backend: </span><span class="si">{</span><span class="n">keras_backend</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">keras_backend</span> <span class="o">==</span> <span class="s2">&quot;tensorflow&quot;</span><span class="p">:</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"tensorflow version: </span><span class="si">{</span><span class="n">tensorflow</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">keras_backend</span> <span class="o">==</span> <span class="s2">"torch"</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;tensorflow version: </span><span class="si">{</span><span class="n">tensorflow</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">keras_backend</span> <span class="o">==</span> <span class="s2">&quot;torch&quot;</span><span class="p">:</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"torch version: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">keras_backend</span> <span class="o">==</span> <span class="s2">"jax"</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;torch version: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">keras_backend</span> <span class="o">==</span> <span class="s2">&quot;jax&quot;</span><span class="p">:</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"jax version: </span><span class="si">{</span><span class="n">jax</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;jax version: </span><span class="si">{</span><span class="n">jax</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"Backend not recognized"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Backend not recognized&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">exog</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">_create_and_compile_model_no_exog</span><span class="p">(</span>
@@ -7413,7 +7413,7 @@ some calculations during backtesting.</p>
 
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/deep_learning/_forecaster_rnn.py</code></summary>
+                    <summary>Source code in <code>skforecast\deep_learning\_forecaster_rnn.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">268</span>
 <span class="normal">269</span>
 <span class="normal">270</span>
@@ -7626,14 +7626,14 @@ some calculations during backtesting.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">in_sample_residuals_by_bin_</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_by_bin_</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S"</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">keras_backend_</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">skforecast_version</span> <span class="o">=</span> <span class="n">__version__</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">forecaster_id</span> <span class="o">=</span> <span class="n">forecaster_id</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_probabilistic_mode</span> <span class="o">=</span> <span class="s2">"binned"</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_probabilistic_mode</span> <span class="o">=</span> <span class="s2">&quot;binned&quot;</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">weight_func</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Ignored in this forecaster</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">source_code_weight_func</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Ignored in this forecaster</span>
@@ -7658,8 +7658,8 @@ some calculations during backtesting.</p>
     <span class="n">n_lags_estimator</span> <span class="o">=</span> <span class="n">layer_init</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lags</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_lags_estimator</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Number of lags (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lags</span><span class="p">)</span><span class="si">}</span><span class="s2">) does not match the number of "</span>
-            <span class="sa">f</span><span class="s2">"lags expected by the estimator architecture (</span><span class="si">{</span><span class="n">n_lags_estimator</span><span class="si">}</span><span class="s2">)."</span>
+            <span class="sa">f</span><span class="s2">&quot;Number of lags (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lags</span><span class="p">)</span><span class="si">}</span><span class="s2">) does not match the number of &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;lags expected by the estimator architecture (</span><span class="si">{</span><span class="n">n_lags_estimator</span><span class="si">}</span><span class="s2">).&quot;</span>
         <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_lag</span>
@@ -7673,14 +7673,14 @@ some calculations during backtesting.</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">levels</span> <span class="o">=</span> <span class="n">levels</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`levels` argument must be a string or list. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">levels</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`levels` argument must be a string or list. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">levels</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
-    <span class="bp">self</span><span class="o">.</span><span class="n">n_series_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="s1">'series_input'</span><span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">n_levels_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="s1">'output_dense_td_layer'</span><span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">exog_in_</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="s2">"exog_input"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers_names</span> <span class="k">else</span> <span class="kc">False</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">n_series_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="s1">&#39;series_input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">n_levels_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="s1">&#39;output_dense_td_layer&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">exog_in_</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="s2">&quot;exog_input&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers_names</span> <span class="k">else</span> <span class="kc">False</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exog_in_</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_exog_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="s1">'exog_input'</span><span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_exog_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="s1">&#39;exog_input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_exog_in</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1"># NOTE: This is needed because the Reshape layer changes the output </span>
@@ -7689,8 +7689,8 @@ some calculations during backtesting.</p>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">levels</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_levels_out</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Number of levels (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">levels</span><span class="p">)</span><span class="si">}</span><span class="s2">) does not match the number of "</span>
-            <span class="sa">f</span><span class="s2">"levels expected by the estimator architecture (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_levels_out</span><span class="si">}</span><span class="s2">)."</span>
+            <span class="sa">f</span><span class="s2">&quot;Number of levels (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">levels</span><span class="p">)</span><span class="si">}</span><span class="s2">) does not match the number of &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;levels expected by the estimator architecture (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_levels_out</span><span class="si">}</span><span class="s2">).&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">fit_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -7698,29 +7698,29 @@ some calculations during backtesting.</p>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">series_val</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">exog_val</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="s2">"series_val"</span> <span class="ow">in</span> <span class="n">fit_kwargs</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s2">"series_val"</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s2">&quot;series_val&quot;</span> <span class="ow">in</span> <span class="n">fit_kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s2">&quot;series_val&quot;</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"`series_val` must be a pandas DataFrame. "</span>
-                <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s1">'series_val'</span><span class="p">])</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;`series_val` must be a pandas DataFrame. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s1">&#39;series_val&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">series_val</span> <span class="o">=</span> <span class="n">fit_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"series_val"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">series_val</span> <span class="o">=</span> <span class="n">fit_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;series_val&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exog_in_</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s2">"exog_val"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fit_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s2">&quot;exog_val&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fit_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">"If `series_val` is provided, `exog_val` must also be "</span>
-                    <span class="s2">"provided using the `fit_kwargs` argument when the "</span>
-                    <span class="s2">"estimator has exogenous variables."</span>
+                    <span class="s2">&quot;If `series_val` is provided, `exog_val` must also be &quot;</span>
+                    <span class="s2">&quot;provided using the `fit_kwargs` argument when the &quot;</span>
+                    <span class="s2">&quot;estimator has exogenous variables.&quot;</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s2">"exog_val"</span><span class="p">],</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s2">&quot;exog_val&quot;</span><span class="p">],</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)):</span>
                     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"`exog_val` must be a pandas Series or DataFrame. "</span>
-                        <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s1">'exog_val'</span><span class="p">])</span><span class="si">}</span><span class="s2">."</span>
+                        <span class="sa">f</span><span class="s2">&quot;`exog_val` must be a pandas Series or DataFrame. &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s1">&#39;exog_val&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">.&quot;</span>
                     <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">exog_val</span> <span class="o">=</span> <span class="n">input_to_frame</span><span class="p">(</span>
-                    <span class="n">data</span><span class="o">=</span><span class="n">fit_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"exog_val"</span><span class="p">),</span> <span class="n">input_name</span><span class="o">=</span><span class="s1">'exog_val'</span>
+                    <span class="n">data</span><span class="o">=</span><span class="n">fit_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;exog_val&quot;</span><span class="p">),</span> <span class="n">input_name</span><span class="o">=</span><span class="s1">&#39;exog_val&#39;</span>
                 <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">fit_kwargs</span> <span class="o">=</span> <span class="n">check_select_fit_kwargs</span><span class="p">(</span>
@@ -7732,40 +7732,40 @@ some calculations during backtesting.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">binner_kwargs</span> <span class="o">=</span> <span class="n">binner_kwargs</span>
     <span class="k">if</span> <span class="n">binner_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binner_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">'n_bins'</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s1">'method'</span><span class="p">:</span> <span class="s1">'linear'</span><span class="p">,</span> <span class="s1">'subsample'</span><span class="p">:</span> <span class="mi">200000</span><span class="p">,</span>
-            <span class="s1">'random_state'</span><span class="p">:</span> <span class="mi">789654</span><span class="p">,</span> <span class="s1">'dtype'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+            <span class="s1">&#39;n_bins&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;method&#39;</span><span class="p">:</span> <span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="s1">&#39;subsample&#39;</span><span class="p">:</span> <span class="mi">200000</span><span class="p">,</span>
+            <span class="s1">&#39;random_state&#39;</span><span class="p">:</span> <span class="mi">789654</span><span class="p">,</span> <span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
         <span class="p">}</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">__skforecast_tags__</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">"library"</span><span class="p">:</span> <span class="s2">"skforecast"</span><span class="p">,</span>
-        <span class="s2">"forecaster_name"</span><span class="p">:</span> <span class="s2">"ForecasterRnn"</span><span class="p">,</span>
-        <span class="s2">"forecaster_task"</span><span class="p">:</span> <span class="s2">"regression"</span><span class="p">,</span>
-        <span class="s2">"forecasting_scope"</span><span class="p">:</span> <span class="s2">"global"</span><span class="p">,</span>  <span class="c1"># single-series | global</span>
-        <span class="s2">"forecasting_strategy"</span><span class="p">:</span> <span class="s2">"deep_learning"</span><span class="p">,</span>  <span class="c1"># recursive | direct | deep_learning | foundation</span>
-        <span class="s2">"multiple_estimators"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"index_types_supported"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"pandas.RangeIndex"</span><span class="p">,</span> <span class="s2">"pandas.DatetimeIndex"</span><span class="p">],</span>
-        <span class="s2">"requires_index_frequency"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="s2">&quot;skforecast&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecaster_name&quot;</span><span class="p">:</span> <span class="s2">&quot;ForecasterRnn&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecaster_task&quot;</span><span class="p">:</span> <span class="s2">&quot;regression&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecasting_scope&quot;</span><span class="p">:</span> <span class="s2">&quot;global&quot;</span><span class="p">,</span>  <span class="c1"># single-series | global</span>
+        <span class="s2">&quot;forecasting_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;deep_learning&quot;</span><span class="p">,</span>  <span class="c1"># recursive | direct | deep_learning | foundation</span>
+        <span class="s2">&quot;multiple_estimators&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;index_types_supported&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pandas.RangeIndex&quot;</span><span class="p">,</span> <span class="s2">&quot;pandas.DatetimeIndex&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;requires_index_frequency&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
 
-        <span class="s2">"allowed_input_types_series"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"pandas.DataFrame"</span><span class="p">],</span>
-        <span class="s2">"supports_exog"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"allowed_input_types_exog"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"pandas.Series"</span><span class="p">,</span> <span class="s2">"pandas.DataFrame"</span><span class="p">],</span>
-        <span class="s2">"handles_missing_values_series"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
-        <span class="s2">"handles_missing_values_exog"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
+        <span class="s2">&quot;allowed_input_types_series&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pandas.DataFrame&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;supports_exog&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;allowed_input_types_exog&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pandas.Series&quot;</span><span class="p">,</span> <span class="s2">&quot;pandas.DataFrame&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;handles_missing_values_series&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
+        <span class="s2">&quot;handles_missing_values_exog&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
 
-        <span class="s2">"supports_lags"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"supports_window_features"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_calendar_features"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_transformer_series"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"supports_transformer_exog"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"supports_categorical_features"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_weight_func"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_series_weights"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_differentiation"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_lags&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;supports_window_features&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_calendar_features&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_transformer_series&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;supports_transformer_exog&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;supports_categorical_features&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_weight_func&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_series_weights&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_differentiation&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
 
-        <span class="s2">"prediction_types"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"point"</span><span class="p">,</span> <span class="s2">"interval"</span><span class="p">],</span>
-        <span class="s2">"supports_probabilistic"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"probabilistic_methods"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"conformal"</span><span class="p">],</span>
-        <span class="s2">"handles_binned_residuals"</span><span class="p">:</span> <span class="kc">True</span>
+        <span class="s2">&quot;prediction_types&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="s2">&quot;interval&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;supports_probabilistic&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;probabilistic_methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;conformal&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;handles_binned_residuals&quot;</span><span class="p">:</span> <span class="kc">True</span>
     <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
                   </details>
@@ -8256,7 +8256,7 @@ some calculations during backtesting.</p>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.creation_date" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
-    <span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S"</span>
+    <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -8367,7 +8367,7 @@ some calculations during backtesting.</p>
   </span>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.python_version" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8705,7 +8705,7 @@ some calculations during backtesting.</p>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.n_series_in" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_series_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span>
-    <span class="s2">"series_input"</span>
+    <span class="s2">&quot;series_input&quot;</span>
 <span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 </code></pre></div>
 
@@ -8729,7 +8729,7 @@ some calculations during backtesting.</p>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.n_levels_out" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_levels_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span>
-    <span class="s2">"output_dense_td_layer"</span>
+    <span class="s2">&quot;output_dense_td_layer&quot;</span>
 <span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 </code></pre></div>
 
@@ -8753,7 +8753,7 @@ some calculations during backtesting.</p>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.exog_in_" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">exog_in_</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="kc">True</span> <span class="k">if</span> <span class="s2">"exog_input"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers_names</span> <span class="k">else</span> <span class="kc">False</span>
+    <span class="kc">True</span> <span class="k">if</span> <span class="s2">&quot;exog_input&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers_names</span> <span class="k">else</span> <span class="kc">False</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -8777,7 +8777,7 @@ some calculations during backtesting.</p>
 
 <a href="#skforecast.deep_learning._forecaster_rnn.ForecasterRnn.n_exog_in" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">n_exog_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span>
-    <span class="s2">"exog_input"</span>
+    <span class="s2">&quot;exog_input&quot;</span>
 <span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 </code></pre></div>
 
@@ -9065,7 +9065,7 @@ The resulting array has 3 dimensions: (n_observations, n_steps, n_levels)</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/deep_learning/_forecaster_rnn.py</code></summary>
+              <summary>Source code in <code>skforecast\deep_learning\_forecaster_rnn.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">913</span>
 <span class="normal">914</span>
 <span class="normal">915</span>
@@ -9118,7 +9118,7 @@ The resulting array has 3 dimensions: (n_observations, n_steps, n_levels)</p>
     <span class="n">exog</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create training matrices. The resulting multi-dimensional matrices contain</span>
 <span class="sd">    the target variable and predictors needed to train the model.</span>
 
@@ -9147,7 +9147,7 @@ The resulting array has 3 dimensions: (n_observations, n_steps, n_levels)</p>
 <span class="sd">    dimension_names : dict</span>
 <span class="sd">        Labels for the multi-dimensional arrays created internally for training.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_train_X_y</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="n">series</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="n">exog</span><span class="p">)</span>
 
@@ -9329,7 +9329,7 @@ information.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/deep_learning/_forecaster_rnn.py</code></summary>
+              <summary>Source code in <code>skforecast\deep_learning\_forecaster_rnn.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 960</span>
 <span class="normal"> 961</span>
 <span class="normal"> 962</span>
@@ -9537,7 +9537,7 @@ information.</p>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Training Forecaster.</span>
 
 <span class="sd">    Additional arguments to be passed to the `fit` method of the estimator</span>
@@ -9568,7 +9568,7 @@ information.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Reset values in case the forecaster has already been fitted.</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">last_window_</span> <span class="o">=</span> <span class="kc">None</span>
@@ -9606,18 +9606,18 @@ information.</p>
     <span class="c1"># NOTE: Need here to avoid refitting the transformer_series_ with the </span>
     <span class="c1"># validation data.</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">series_names_in_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">"X_train"</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">series_names_in_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">&quot;X_train&quot;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keras_backend_</span> <span class="o">==</span> <span class="s2">"torch"</span><span class="p">:</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keras_backend_</span> <span class="o">==</span> <span class="s2">&quot;torch&quot;</span><span class="p">:</span>
 
         <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
-            <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"cuda"</span><span class="p">)</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">mps</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
-            <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"mps"</span><span class="p">)</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;mps&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"cpu"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">keras_backend_</span><span class="si">}</span><span class="s2">' backend with device: </span><span class="si">{</span><span class="n">device</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">keras_backend_</span><span class="si">}</span><span class="s2">&#39; backend with device: </span><span class="si">{</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="n">torch_device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
         <span class="n">X_train</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch_device</span><span class="p">)</span>
@@ -9635,7 +9635,7 @@ information.</p>
         <span class="n">X_val</span><span class="p">,</span> <span class="n">exog_val</span><span class="p">,</span> <span class="n">y_val</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_train_X_y</span><span class="p">(</span>
             <span class="n">series</span><span class="o">=</span><span class="n">series_val</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="n">exog_val</span>
         <span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keras_backend_</span> <span class="o">==</span> <span class="s2">"torch"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keras_backend_</span> <span class="o">==</span> <span class="s2">&quot;torch&quot;</span><span class="p">:</span>
             <span class="n">X_val</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">X_val</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch_device</span><span class="p">)</span>
             <span class="n">y_val</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">y_val</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch_device</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">exog_val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -9668,7 +9668,7 @@ information.</p>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_probabilistic_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
 
         <span class="c1"># NOTE: Convert to numpy array if using torch backend</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keras_backend_</span> <span class="o">==</span> <span class="s2">"torch"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keras_backend_</span> <span class="o">==</span> <span class="s2">&quot;torch&quot;</span><span class="p">:</span>
             <span class="n">y_train</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
 
         <span class="n">y_pred_train</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
@@ -9698,11 +9698,11 @@ information.</p>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span> <span class="o">=</span> <span class="n">series_names_in_</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">X_train_series_names_in_</span> <span class="o">=</span> <span class="n">series_names_in_</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">X_train_dim_names_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">"X_train"</span><span class="p">]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">y_train_dim_names_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">"y_train"</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">X_train_dim_names_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">&quot;X_train&quot;</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">y_train_dim_names_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">&quot;y_train&quot;</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">history_</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">history</span>
 
-    <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S"</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">index</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">index_type_</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">):</span>
@@ -9717,11 +9717,11 @@ information.</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">exog_type_in_</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">exog</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exog_dtypes_in_</span> <span class="o">=</span> <span class="n">exog_dtypes_in_</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exog_dtypes_out_</span> <span class="o">=</span> <span class="n">exog_dtypes_out_</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">exog_train_dim_names_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">"exog_train"</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">X_train_exog_names_out_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">"exog_train"</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">"X_train"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">"exog_train"</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exog_train_dim_names_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">&quot;exog_train&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X_train_exog_names_out_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">&quot;exog_train&quot;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">&quot;X_train&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">&quot;exog_train&quot;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">"X_train"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">&quot;X_train&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">store_last_window</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_window_</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">max_lag</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -9917,7 +9917,7 @@ for internal use and is not recommended to be changed.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/deep_learning/_forecaster_rnn.py</code></summary>
+              <summary>Source code in <code>skforecast\deep_learning\_forecaster_rnn.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1421</span>
 <span class="normal">1422</span>
 <span class="normal">1423</span>
@@ -10026,7 +10026,7 @@ for internal use and is not recommended to be changed.</p>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">check_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create the predictors needed to predict `steps` ahead.</span>
 
 <span class="sd">    Parameters</span>
@@ -10068,7 +10068,7 @@ for internal use and is not recommended to be changed.</p>
 <span class="sd">    exog_predict : pandas DataFrame</span>
 <span class="sd">        Pandas DataFrame with the exogenous variables for each step.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="p">(</span>
         <span class="n">X</span><span class="p">,</span>
@@ -10084,16 +10084,16 @@ for internal use and is not recommended to be changed.</p>
 
     <span class="n">X_predict</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
                     <span class="n">data</span>    <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> 
-                    <span class="n">columns</span> <span class="o">=</span> <span class="n">X_predict_dimension_names</span><span class="p">[</span><span class="s1">'X_autoreg'</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span>
-                    <span class="n">index</span>   <span class="o">=</span> <span class="n">X_predict_dimension_names</span><span class="p">[</span><span class="s1">'X_autoreg'</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> 
+                    <span class="n">columns</span> <span class="o">=</span> <span class="n">X_predict_dimension_names</span><span class="p">[</span><span class="s1">&#39;X_autoreg&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">index</span>   <span class="o">=</span> <span class="n">X_predict_dimension_names</span><span class="p">[</span><span class="s1">&#39;X_autoreg&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> 
                 <span class="p">)</span>
 
     <span class="n">exog_predict</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exog_in_</span><span class="p">:</span>
         <span class="n">exog_predict</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
             <span class="n">data</span>    <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> 
-            <span class="n">columns</span> <span class="o">=</span> <span class="n">X_predict_dimension_names</span><span class="p">[</span><span class="s1">'exog_pred'</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span>
-            <span class="n">index</span>   <span class="o">=</span> <span class="n">X_predict_dimension_names</span><span class="p">[</span><span class="s1">'exog_pred'</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="n">X_predict_dimension_names</span><span class="p">[</span><span class="s1">&#39;exog_pred&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span>
+            <span class="n">index</span>   <span class="o">=</span> <span class="n">X_predict_dimension_names</span><span class="p">[</span><span class="s1">&#39;exog_pred&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
         <span class="p">)</span>
         <span class="c1"># NOTE: not needed in this forecaster</span>
         <span class="c1"># categorical_features = any(</span>
@@ -10105,12 +10105,12 @@ for internal use and is not recommended to be changed.</p>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_series</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">"The output matrix is in the transformed scale due to the "</span>
-            <span class="s2">"inclusion of transformations in the Forecaster. "</span>
-            <span class="s2">"As a result, any predictions generated using this matrix will also "</span>
-            <span class="s2">"be in the transformed scale. Please refer to the documentation "</span>
-            <span class="s2">"for more details: "</span>
-            <span class="s2">"https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html"</span><span class="p">,</span>
+            <span class="s2">&quot;The output matrix is in the transformed scale due to the &quot;</span>
+            <span class="s2">&quot;inclusion of transformations in the Forecaster. &quot;</span>
+            <span class="s2">&quot;As a result, any predictions generated using this matrix will also &quot;</span>
+            <span class="s2">&quot;be in the transformed scale. Please refer to the documentation &quot;</span>
+            <span class="s2">&quot;for more details: &quot;</span>
+            <span class="s2">&quot;https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html&quot;</span><span class="p">,</span>
             <span class="n">DataTransformationWarning</span>
         <span class="p">)</span>
 
@@ -10297,7 +10297,7 @@ for internal use and is not recommended to be changed.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/deep_learning/_forecaster_rnn.py</code></summary>
+              <summary>Source code in <code>skforecast\deep_learning\_forecaster_rnn.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1521</span>
 <span class="normal">1522</span>
 <span class="normal">1523</span>
@@ -10399,7 +10399,7 @@ for internal use and is not recommended to be changed.</p>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">check_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Predict n steps ahead</span>
 
 <span class="sd">    Parameters</span>
@@ -10439,7 +10439,7 @@ for internal use and is not recommended to be changed.</p>
 <span class="sd">    predictions : pandas DataFrame</span>
 <span class="sd">        Predicted values.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="p">(</span>
         <span class="n">X</span><span class="p">,</span>
@@ -10475,10 +10475,10 @@ for internal use and is not recommended to be changed.</p>
 
     <span class="n">n_steps</span><span class="p">,</span> <span class="n">n_levels</span> <span class="o">=</span> <span class="n">predictions</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-        <span class="p">{</span><span class="s2">"level"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">levels</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">),</span> <span class="s2">"pred"</span><span class="p">:</span> <span class="n">predictions</span><span class="o">.</span><span class="n">ravel</span><span class="p">()},</span>
+        <span class="p">{</span><span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">levels</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">),</span> <span class="s2">&quot;pred&quot;</span><span class="p">:</span> <span class="n">predictions</span><span class="o">.</span><span class="n">ravel</span><span class="p">()},</span>
         <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">prediction_index</span><span class="p">,</span> <span class="n">n_levels</span><span class="p">),</span>
     <span class="p">)</span>
-    <span class="n">predictions</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">predictions</span><span class="p">[</span><span class="s1">'level'</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">levels</span><span class="p">)]</span>
+    <span class="n">predictions</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">predictions</span><span class="p">[</span><span class="s1">&#39;level&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">levels</span><span class="p">)]</span>
 
     <span class="k">return</span> <span class="n">predictions</span>
 </code></pre></div></td></tr></table></div>
@@ -10500,7 +10500,7 @@ for internal use and is not recommended to be changed.</p>
     <span class="n">levels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">last_window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">method</span><span class="o">=</span><span class="s2">"conformal"</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;conformal&quot;</span><span class="p">,</span>
     <span class="n">interval</span><span class="o">=</span><span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">],</span>
     <span class="n">use_in_sample_residuals</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">use_binned_residuals</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -10775,7 +10775,7 @@ bounds of the estimated interval. The columns are <code>level</code>, <code>pred
 </details>
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/deep_learning/_forecaster_rnn.py</code></summary>
+              <summary>Source code in <code>skforecast\deep_learning\_forecaster_rnn.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1768</span>
 <span class="normal">1769</span>
 <span class="normal">1770</span>
@@ -10899,7 +10899,7 @@ bounds of the estimated interval. The columns are <code>level</code>, <code>pred
     <span class="n">levels</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">last_window</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">exog</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'conformal'</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;conformal&#39;</span><span class="p">,</span>
     <span class="n">interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">],</span>
     <span class="n">use_in_sample_residuals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">use_binned_residuals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -10907,7 +10907,7 @@ bounds of the estimated interval. The columns are <code>level</code>, <code>pred
     <span class="n">n_boot</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">random_state</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Predict n steps ahead and estimate prediction intervals using conformal </span>
 <span class="sd">    prediction method. Refer to the References section for additional details.</span>
 
@@ -10934,7 +10934,7 @@ bounds of the estimated interval. The columns are <code>level</code>, <code>pred
 <span class="sd">        right after training data.</span>
 <span class="sd">    exog : pandas Series, pandas DataFrame, dict, default None</span>
 <span class="sd">        Exogenous variable/s included as predictor/s.</span>
-<span class="sd">    method : str, default 'conformal'</span>
+<span class="sd">    method : str, default &#39;conformal&#39;</span>
 <span class="sd">        Employs the conformal prediction split method for interval estimation [1]_.</span>
 <span class="sd">    interval : float, list, tuple, default [0.05, 0.95]</span>
 <span class="sd">        Confidence level of the prediction interval. Interpretation depends </span>
@@ -10946,7 +10946,7 @@ bounds of the estimated interval. The columns are <code>level</code>, <code>pred
 <span class="sd">        - If `list` or `tuple`, defines the exact quantiles to compute, which </span>
 <span class="sd">        must be between 0 and 1 inclusive. For example, interval </span>
 <span class="sd">        of 95% should be as `interval = [0.025, 0.975]`.</span>
-<span class="sd">        - When using `method='conformal'`, the interval must be a float or </span>
+<span class="sd">        - When using `method=&#39;conformal&#39;`, the interval must be a float or </span>
 <span class="sd">        a list/tuple defining a symmetric interval.</span>
 
 <span class="sd">        **Changed in version 0.23.0:** `interval` is now expressed as</span>
@@ -10956,7 +10956,7 @@ bounds of the estimated interval. The columns are <code>level</code>, <code>pred
 <span class="sd">        If `True`, residuals from the training data are used as proxy of</span>
 <span class="sd">        prediction error to create predictions. </span>
 <span class="sd">        If `False`, out of sample residuals (calibration) are used. </span>
-<span class="sd">        Out-of-sample residuals must be precomputed using Forecaster's</span>
+<span class="sd">        Out-of-sample residuals must be precomputed using Forecaster&#39;s</span>
 <span class="sd">        `set_out_sample_residuals()` method.</span>
 <span class="sd">    use_binned_residuals : bool, default True</span>
 <span class="sd">        If `True`, residuals are selected based on the predicted values </span>
@@ -10983,15 +10983,15 @@ bounds of the estimated interval. The columns are <code>level</code>, <code>pred
 <span class="sd">    .. [1] MAPIE - Model Agnostic Prediction Interval Estimator.</span>
 <span class="sd">           https://mapie.readthedocs.io/en/stable/content/conformal-prediction/regression/#2-the-split-method</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"conformal"</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;conformal&quot;</span><span class="p">:</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
             <span class="n">check_interval</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span> <span class="n">ensure_symmetric_intervals</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">nominal_coverage</span> <span class="o">=</span> <span class="n">interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">interval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">check_interval</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span> <span class="n">alpha_literal</span><span class="o">=</span><span class="s1">'interval'</span><span class="p">)</span>
+            <span class="n">check_interval</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span> <span class="n">alpha_literal</span><span class="o">=</span><span class="s1">&#39;interval&#39;</span><span class="p">)</span>
             <span class="n">nominal_coverage</span> <span class="o">=</span> <span class="n">interval</span>
 
         <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_conformal</span><span class="p">(</span>
@@ -11005,7 +11005,7 @@ bounds of the estimated interval. The columns are <code>level</code>, <code>pred
                       <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Invalid `method` '</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">'. Only 'conformal' is available."</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid `method` &#39;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&#39;. Only &#39;conformal&#39; is available.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">predictions</span>
@@ -11122,7 +11122,7 @@ internally.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/deep_learning/_forecaster_rnn.py</code></summary>
+              <summary>Source code in <code>skforecast\deep_learning\_forecaster_rnn.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1886</span>
 <span class="normal">1887</span>
 <span class="normal">1888</span>
@@ -11205,7 +11205,7 @@ internally.</p>
     <span class="n">exclude_first_iteration</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">fig_kw</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plots the training and validation loss curves from the given history object stored</span>
 <span class="sd">    in the ForecasterRnn.</span>
 
@@ -11224,7 +11224,7 @@ internally.</p>
 <span class="sd">    fig: matplotlib.figure.Figure</span>
 <span class="sd">        Matplotlib Figure.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">fig_kw</span><span class="p">)</span>
@@ -11233,44 +11233,44 @@ internally.</p>
 
     <span class="c1"># Setting up the plot style</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"ForecasterRnn has not been fitted yet."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ForecasterRnn has not been fitted yet.&quot;</span><span class="p">)</span>
 
     <span class="c1"># Determine the range of epochs to plot, excluding the first one if specified</span>
-    <span class="n">epoch_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">epoch_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">exclude_first_iteration</span><span class="p">:</span>
-        <span class="n">epoch_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">epoch_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="c1"># Plotting training loss</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
         <span class="n">epoch_range</span><span class="p">,</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">history_</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">][</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">history_</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">][</span>
             <span class="n">exclude_first_iteration</span><span class="p">:</span>
         <span class="p">],</span>  <span class="c1"># Skip first element if specified</span>
-        <span class="n">color</span><span class="o">=</span><span class="s2">"b"</span><span class="p">,</span>
-        <span class="n">label</span><span class="o">=</span><span class="s2">"Training Loss"</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s2">&quot;b&quot;</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Training Loss&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Plotting validation loss</span>
-    <span class="k">if</span> <span class="s2">"val_loss"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">&quot;val_loss&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_</span><span class="p">:</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
             <span class="n">epoch_range</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">history_</span><span class="p">[</span><span class="s2">"val_loss"</span><span class="p">][</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">history_</span><span class="p">[</span><span class="s2">&quot;val_loss&quot;</span><span class="p">][</span>
                 <span class="n">exclude_first_iteration</span><span class="p">:</span>
             <span class="p">],</span>  <span class="c1"># Skip first element if specified</span>
-            <span class="n">color</span><span class="o">=</span><span class="s2">"r"</span><span class="p">,</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">"Validation Loss"</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Validation Loss&quot;</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="c1"># Labeling the axes and adding a title</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"Epochs"</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"Loss"</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Training and Validation Loss"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Epochs&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Loss&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Training and Validation Loss&quot;</span><span class="p">)</span>
 
     <span class="c1"># Adding a legend</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 
     <span class="c1"># Displaying grid for better readability</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
 
     <span class="c1"># Setting x-axis ticks to integers only</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">epoch_range</span><span class="p">)</span>
@@ -11357,7 +11357,7 @@ called before prediction.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/deep_learning/_forecaster_rnn.py</code></summary>
+              <summary>Source code in <code>skforecast\deep_learning\_forecaster_rnn.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1965</span>
 <span class="normal">1966</span>
 <span class="normal">1967</span>
@@ -11381,7 +11381,7 @@ called before prediction.</p>
 <span class="normal">1985</span>
 <span class="normal">1986</span>
 <span class="normal">1987</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set new values to the parameters of the scikit-learn model stored in the</span>
 <span class="sd">    forecaster. It is important to note that all models share the same</span>
 <span class="sd">    configuration of parameters and hyperparameters. After calling this method, </span>
@@ -11397,7 +11397,7 @@ called before prediction.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">reset_states</span><span class="p">()</span>
@@ -11481,7 +11481,7 @@ method of the estimator.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/deep_learning/_forecaster_rnn.py</code></summary>
+              <summary>Source code in <code>skforecast\deep_learning\_forecaster_rnn.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1989</span>
 <span class="normal">1990</span>
 <span class="normal">1991</span>
@@ -11528,46 +11528,46 @@ method of the estimator.</p>
 <span class="normal">2032</span>
 <span class="normal">2033</span>
 <span class="normal">2034</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_fit_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set new values for the additional keyword arguments passed to the `fit`</span>
 <span class="sd">    method of the estimator.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    fit_kwargs : dict</span>
-<span class="sd">        Dict of the form {"argument": new_value}.</span>
+<span class="sd">        Dict of the form {&quot;argument&quot;: new_value}.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">series_val</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">exog_val</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="s2">"series_val"</span> <span class="ow">in</span> <span class="n">fit_kwargs</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s2">"series_val"</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s2">&quot;series_val&quot;</span> <span class="ow">in</span> <span class="n">fit_kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s2">&quot;series_val&quot;</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"`series_val` must be a pandas DataFrame. "</span>
-                <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s1">'series_val'</span><span class="p">])</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;`series_val` must be a pandas DataFrame. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s1">&#39;series_val&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">series_val</span> <span class="o">=</span> <span class="n">fit_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"series_val"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">series_val</span> <span class="o">=</span> <span class="n">fit_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;series_val&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exog_in_</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s2">"exog_val"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fit_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s2">&quot;exog_val&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fit_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">"If `series_val` is provided, `exog_val` must also be "</span>
-                    <span class="s2">"provided using the `fit_kwargs` argument when the "</span>
-                    <span class="s2">"estimator has exogenous variables."</span>
+                    <span class="s2">&quot;If `series_val` is provided, `exog_val` must also be &quot;</span>
+                    <span class="s2">&quot;provided using the `fit_kwargs` argument when the &quot;</span>
+                    <span class="s2">&quot;estimator has exogenous variables.&quot;</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s2">"exog_val"</span><span class="p">],</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s2">&quot;exog_val&quot;</span><span class="p">],</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)):</span>
                     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"`exog_val` must be a pandas Series or DataFrame. "</span>
-                        <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s1">'exog_val'</span><span class="p">])</span><span class="si">}</span><span class="s2">."</span>
+                        <span class="sa">f</span><span class="s2">&quot;`exog_val` must be a pandas Series or DataFrame. &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">[</span><span class="s1">&#39;exog_val&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">.&quot;</span>
                     <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">exog_val</span> <span class="o">=</span> <span class="n">input_to_frame</span><span class="p">(</span>
-                    <span class="n">data</span><span class="o">=</span><span class="n">fit_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"exog_val"</span><span class="p">),</span> <span class="n">input_name</span><span class="o">=</span><span class="s1">'exog_val'</span>
+                    <span class="n">data</span><span class="o">=</span><span class="n">fit_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;exog_val&quot;</span><span class="p">),</span> <span class="n">input_name</span><span class="o">=</span><span class="s1">&#39;exog_val&#39;</span>
                 <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">fit_kwargs</span> <span class="o">=</span> <span class="n">check_select_fit_kwargs</span><span class="p">(</span>
@@ -11619,7 +11619,7 @@ method of the estimator.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/deep_learning/_forecaster_rnn.py</code></summary>
+              <summary>Source code in <code>skforecast\deep_learning\_forecaster_rnn.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2036</span>
 <span class="normal">2037</span>
 <span class="normal">2038</span>
@@ -11631,14 +11631,14 @@ method of the estimator.</p>
 <span class="normal">2044</span>
 <span class="normal">2045</span>
 <span class="normal">2046</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_lags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lags</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Not used, present here for API consistency by convention.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">pass</span>
 </code></pre></div></td></tr></table></div>
@@ -11791,7 +11791,7 @@ information.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/deep_learning/_forecaster_rnn.py</code></summary>
+              <summary>Source code in <code>skforecast\deep_learning\_forecaster_rnn.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2048</span>
 <span class="normal">2049</span>
 <span class="normal">2050</span>
@@ -11916,7 +11916,7 @@ information.</p>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set in-sample residuals in case they were not calculated during the</span>
 <span class="sd">    training process. </span>
 
@@ -11955,29 +11955,29 @@ information.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This forecaster is not fitted yet. Call `fit` with appropriate "</span>
-            <span class="s2">"arguments before using `set_in_sample_residuals()`."</span>
+            <span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
+            <span class="s2">&quot;arguments before using `set_in_sample_residuals()`.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`series` must be a pandas DataFrame. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">series</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`series` must be a pandas DataFrame. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">series</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">series_index_range</span> <span class="o">=</span> <span class="n">check_extract_values_and_index</span><span class="p">(</span>
-        <span class="n">data</span><span class="o">=</span><span class="n">series</span><span class="p">,</span> <span class="n">data_label</span><span class="o">=</span><span class="s1">'`series`'</span><span class="p">,</span> <span class="n">return_values</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">series</span><span class="p">,</span> <span class="n">data_label</span><span class="o">=</span><span class="s1">&#39;`series`&#39;</span><span class="p">,</span> <span class="n">return_values</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)[</span><span class="mi">1</span><span class="p">][[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">series_index_range</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"The index range of `series` does not match the range "</span>
-            <span class="sa">f</span><span class="s2">"used during training. Please ensure the index is aligned "</span>
-            <span class="sa">f</span><span class="s2">"with the training data.</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"    Expected : </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"    Received : </span><span class="si">{</span><span class="n">series_index_range</span><span class="si">}</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">&quot;The index range of `series` does not match the range &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;used during training. Please ensure the index is aligned &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;with the training data.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;    Expected : </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;    Received : </span><span class="si">{</span><span class="n">series_index_range</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
     <span class="p">(</span>
@@ -11989,18 +11989,18 @@ information.</p>
     <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_train_X_y</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="n">series</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="n">exog</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">exog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">X_train_features_names_out_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">"X_train"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">"exog_train"</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">X_train_features_names_out_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">&quot;X_train&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">&quot;exog_train&quot;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">X_train_features_names_out_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">"X_train"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">X_train_features_names_out_</span> <span class="o">=</span> <span class="n">dimension_names</span><span class="p">[</span><span class="s2">&quot;X_train&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">X_train_features_names_out_</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Feature mismatch detected after matrix creation. The features "</span>
-            <span class="sa">f</span><span class="s2">"generated from the provided data do not match those used during "</span>
-            <span class="sa">f</span><span class="s2">"the training process. To correctly set in-sample residuals, "</span>
-            <span class="sa">f</span><span class="s2">"ensure that the same data and preprocessing steps are applied.</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"    Expected output : </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"    Current output  : </span><span class="si">{</span><span class="n">X_train_features_names_out_</span><span class="si">}</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">&quot;Feature mismatch detected after matrix creation. The features &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;generated from the provided data do not match those used during &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;the training process. To correctly set in-sample residuals, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;ensure that the same data and preprocessing steps are applied.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;    Expected output : </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;    Current output  : </span><span class="si">{</span><span class="n">X_train_features_names_out_</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
     <span class="c1"># Binning in-sample residuals</span>
@@ -12166,7 +12166,7 @@ kept.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/deep_learning/_forecaster_rnn.py</code></summary>
+              <summary>Source code in <code>skforecast\deep_learning\_forecaster_rnn.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2166</span>
 <span class="normal">2167</span>
 <span class="normal">2168</span>
@@ -12372,7 +12372,7 @@ kept.</p>
     <span class="n">append</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set new values to the attribute `out_sample_residuals_`. Out of sample</span>
 <span class="sd">    residuals are meant to be calculated using observations that did not</span>
 <span class="sd">    participate in the training process. `y_true` and `y_pred` are expected</span>
@@ -12405,61 +12405,61 @@ kept.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This forecaster is not fitted yet. Call `fit` with appropriate "</span>
-            <span class="s2">"arguments before using `set_out_sample_residuals()`."</span>
+            <span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
+            <span class="s2">&quot;arguments before using `set_out_sample_residuals()`.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`y_true` must be a dictionary of numpy ndarrays or pandas Series. "</span>
-            <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_true</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`y_true` must be a dictionary of numpy ndarrays or pandas Series. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_true</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`y_pred` must be a dictionary of numpy ndarrays or pandas Series. "</span>
-            <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`y_pred` must be a dictionary of numpy ndarrays or pandas Series. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">y_true</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">y_pred</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"`y_true` and `y_pred` must have the same keys. "</span>
-            <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">y_true</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">y_pred</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">."</span>
+            <span class="sa">f</span><span class="s2">&quot;`y_true` and `y_pred` must have the same keys. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">y_true</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">y_pred</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">y_true</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Values of `y_true` must be numpy ndarrays or pandas Series. "</span>
-                <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="s2"> for series </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;Values of `y_true` must be numpy ndarrays or pandas Series. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="s2"> for series </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Values of `y_pred` must be numpy ndarrays or pandas Series. "</span>
-                <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="s2"> for series </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;Values of `y_pred` must be numpy ndarrays or pandas Series. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="s2"> for series </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"`y_true` and `y_pred` must have the same length. "</span>
-                <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="s2"> for series </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;`y_true` and `y_pred` must have the same length. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="s2"> for series </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">"When containing pandas Series, elements in `y_true` and "</span>
-                    <span class="sa">f</span><span class="s2">"`y_pred` must have the same index. Error in series </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">."</span>
+                    <span class="sa">f</span><span class="s2">&quot;When containing pandas Series, elements in `y_true` and &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;`y_pred` must have the same index. Error in series </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">.&quot;</span>
                 <span class="p">)</span>
 
     <span class="n">series_to_update</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">y_pred</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">levels</span><span class="p">))</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">series_to_update</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Provided keys in `y_pred` and `y_true` do not match any of the "</span>
-            <span class="sa">f</span><span class="s2">"target time series in the forecaster, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">levels</span><span class="si">}</span><span class="s2">. Residuals "</span>
-            <span class="sa">f</span><span class="s2">"cannot be updated."</span>
+            <span class="sa">f</span><span class="s2">&quot;Provided keys in `y_pred` and `y_true` do not match any of the &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;target time series in the forecaster, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">levels</span><span class="si">}</span><span class="s2">. Residuals &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;cannot be updated.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -12492,13 +12492,13 @@ kept.</p>
                            <span class="p">)</span>
 
         <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-            <span class="p">{</span><span class="s1">'prediction'</span><span class="p">:</span> <span class="n">y_pred_level</span><span class="p">,</span> <span class="s1">'residuals'</span><span class="p">:</span> <span class="n">y_true_level</span> <span class="o">-</span> <span class="n">y_pred_level</span><span class="p">}</span>
+            <span class="p">{</span><span class="s1">&#39;prediction&#39;</span><span class="p">:</span> <span class="n">y_pred_level</span><span class="p">,</span> <span class="s1">&#39;residuals&#39;</span><span class="p">:</span> <span class="n">y_true_level</span> <span class="o">-</span> <span class="n">y_pred_level</span><span class="p">}</span>
         <span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-        <span class="n">y_pred_level</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'prediction'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
-        <span class="n">residuals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'residuals'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="n">y_pred_level</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;prediction&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="n">residuals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;residuals&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
 
-        <span class="n">data</span><span class="p">[</span><span class="s1">'bin'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binner</span><span class="p">[</span><span class="n">level</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">y_pred_level</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-        <span class="n">residuals_by_bin</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">'bin'</span><span class="p">)[</span><span class="s1">'residuals'</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;bin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binner</span><span class="p">[</span><span class="n">level</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">y_pred_level</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">residuals_by_bin</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;bin&#39;</span><span class="p">)[</span><span class="s1">&#39;residuals&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
 
         <span class="n">out_sample_residuals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]))</span>
         <span class="n">out_sample_residuals</span> <span class="o">=</span> <span class="p">(</span>
@@ -12540,11 +12540,11 @@ kept.</p>
         <span class="p">]</span>
         <span class="k">if</span> <span class="n">empty_bins</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"The following bins of level '</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">' have no out of sample "</span>
-                <span class="sa">f</span><span class="s2">"residuals: </span><span class="si">{</span><span class="n">empty_bins</span><span class="si">}</span><span class="s2">. No predicted values fall in the "</span>
-                <span class="sa">f</span><span class="s2">"interval "</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">binner_intervals_</span><span class="p">[</span><span class="n">level</span><span class="p">][</span><span class="nb">bin</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nb">bin</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">empty_bins</span><span class="p">]</span><span class="si">}</span><span class="s2">. "</span>
-                <span class="sa">f</span><span class="s2">"Empty bins will be filled with a random sample of residuals."</span><span class="p">,</span> 
+                <span class="sa">f</span><span class="s2">&quot;The following bins of level &#39;</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">&#39; have no out of sample &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;residuals: </span><span class="si">{</span><span class="n">empty_bins</span><span class="si">}</span><span class="s2">. No predicted values fall in the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;interval &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">binner_intervals_</span><span class="p">[</span><span class="n">level</span><span class="p">][</span><span class="nb">bin</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nb">bin</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">empty_bins</span><span class="p">]</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Empty bins will be filled with a random sample of residuals.&quot;</span><span class="p">,</span> 
                 <span class="n">ResidualsUsageWarning</span>
             <span class="p">)</span>
             <span class="n">empty_bin_size</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_samples</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">out_sample_residuals</span><span class="p">))</span>
@@ -12810,6 +12810,8 @@ kept.</p>
       <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
+      
+        <script src="../javascripts/examples-filter.js"></script>
       
         <script src="../javascripts/mathjax.js"></script>
       

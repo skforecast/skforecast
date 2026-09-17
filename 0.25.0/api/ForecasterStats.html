@@ -6320,7 +6320,7 @@ some exogenous variables are transformed during the training process.</p>
 
 
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>skforecast/recursive/_forecaster_stats.py</code></summary>
+                    <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">182</span>
 <span class="normal">183</span>
 <span class="normal">184</span>
@@ -6490,33 +6490,33 @@ some exogenous variables are transformed during the training process.</p>
 
     <span class="c1"># Valid estimator types (class-level constant)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">valid_estimator_types</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s1">'skforecast.stats._arima.Arima'</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._arar.Arar'</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._ets.Ets'</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._sarimax.Sarimax'</span><span class="p">,</span>
-        <span class="s1">'aeon.forecasting.stats._arima.ARIMA'</span><span class="p">,</span>
-        <span class="s1">'aeon.forecasting.stats._ets.ETS'</span><span class="p">,</span>
-        <span class="s1">'sktime.forecasting.arima._pmdarima.ARIMA'</span>
+        <span class="s1">&#39;skforecast.stats._arima.Arima&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._arar.Arar&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._ets.Ets&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._sarimax.Sarimax&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;aeon.forecasting.stats._arima.ARIMA&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;aeon.forecasting.stats._ets.ETS&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;sktime.forecasting.arima._pmdarima.ARIMA&#39;</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">estimator</span> <span class="o">=</span> <span class="p">[</span><span class="n">estimator</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"`estimator` list cannot be empty."</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`estimator` list cannot be empty.&quot;</span><span class="p">)</span>
 
     <span class="c1"># Validate all estimators and collect types</span>
     <span class="n">estimator_types</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">est</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">estimator</span><span class="p">):</span>
-        <span class="n">est_type</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">est</span><span class="p">)</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">est</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">est_type</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">est</span><span class="p">)</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">est</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="n">est_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_estimator_types</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Estimator at index </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> must be an instance of type "</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_estimator_types</span><span class="si">}</span><span class="s2">. Got '</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">est</span><span class="p">)</span><span class="si">}</span><span class="s2">'."</span>
+                <span class="sa">f</span><span class="s2">&quot;Estimator at index </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> must be an instance of type &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_estimator_types</span><span class="si">}</span><span class="s2">. Got &#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">est</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
             <span class="p">)</span>
         <span class="n">estimator_types</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">est_type</span><span class="p">)</span>
 
-    <span class="c1"># TODO: Evaluate if include 'aggregate' parameter for multiple estimators, it</span>
+    <span class="c1"># TODO: Evaluate if include &#39;aggregate&#39; parameter for multiple estimators, it</span>
     <span class="c1"># aggregates predictions from all estimators.</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">estimators</span>              <span class="o">=</span> <span class="n">estimator</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">estimators_</span>             <span class="o">=</span> <span class="p">[</span><span class="n">clone</span><span class="p">(</span><span class="n">est</span><span class="p">)</span> <span class="k">for</span> <span class="n">est</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimators</span><span class="p">]</span>
@@ -6538,11 +6538,11 @@ some exogenous variables are transformed during the training process.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">exog_dtypes_in_</span>         <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">exog_dtypes_out_</span>        <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">X_train_exog_names_out_</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span>           <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span>           <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span>               <span class="o">=</span> <span class="kc">False</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span>                <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">skforecast_version</span>      <span class="o">=</span> <span class="n">__version__</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span>          <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span>          <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">forecaster_id</span>           <span class="o">=</span> <span class="n">forecaster_id</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span>             <span class="o">=</span> <span class="mi">1</span>     <span class="c1"># Ignored, present for API consistency</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">fit_kwargs</span>              <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Ignored, present for API consistency</span>
@@ -6553,90 +6553,90 @@ some exogenous variables are transformed during the training process.</p>
     <span class="p">}</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">estimators_support_last_window</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s1">'skforecast.stats._sarimax.Sarimax'</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._sarimax.Sarimax&#39;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">estimators_support_exog</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s1">'skforecast.stats._arima.Arima'</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._arar.Arar'</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._sarimax.Sarimax'</span><span class="p">,</span>
-        <span class="s1">'sktime.forecasting.arima._pmdarima.ARIMA'</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._arima.Arima&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._arar.Arar&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._sarimax.Sarimax&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;sktime.forecasting.arima._pmdarima.ARIMA&#39;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">estimators_support_interval</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s1">'skforecast.stats._arima.Arima'</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._arar.Arar'</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._ets.Ets'</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._sarimax.Sarimax'</span><span class="p">,</span>
-        <span class="s1">'sktime.forecasting.arima._pmdarima.ARIMA'</span>
+        <span class="s1">&#39;skforecast.stats._arima.Arima&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._arar.Arar&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._ets.Ets&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._sarimax.Sarimax&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;sktime.forecasting.arima._pmdarima.ARIMA&#39;</span>
     <span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">estimators_support_reduce_memory</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s1">'skforecast.stats._arima.Arima'</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._arar.Arar'</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._ets.Ets'</span>
+        <span class="s1">&#39;skforecast.stats._arima.Arima&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._arar.Arar&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._ets.Ets&#39;</span>
     <span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_predict_dispatch</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">'skforecast.stats._arima.Arima'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._arar.Arar'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._ets.Ets'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._sarimax.Sarimax'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_sarimax</span><span class="p">,</span>
-        <span class="s1">'aeon.forecasting.stats._arima.ARIMA'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_aeon</span><span class="p">,</span>
-        <span class="s1">'aeon.forecasting.stats._ets.ETS'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_aeon</span><span class="p">,</span>
-        <span class="s1">'sktime.forecasting.arima._pmdarima.ARIMA'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_sktime_arima</span>
+        <span class="s1">&#39;skforecast.stats._arima.Arima&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._arar.Arar&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._ets.Ets&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._sarimax.Sarimax&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_sarimax</span><span class="p">,</span>
+        <span class="s1">&#39;aeon.forecasting.stats._arima.ARIMA&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_aeon</span><span class="p">,</span>
+        <span class="s1">&#39;aeon.forecasting.stats._ets.ETS&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_aeon</span><span class="p">,</span>
+        <span class="s1">&#39;sktime.forecasting.arima._pmdarima.ARIMA&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_sktime_arima</span>
     <span class="p">}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_dispatch</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">'skforecast.stats._arima.Arima'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._arar.Arar'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._ets.Ets'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._sarimax.Sarimax'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_sarimax</span><span class="p">,</span>
-        <span class="s1">'sktime.forecasting.arima._pmdarima.ARIMA'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_sktime_arima</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._arima.Arima&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._arar.Arar&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._ets.Ets&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._sarimax.Sarimax&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_sarimax</span><span class="p">,</span>
+        <span class="s1">&#39;sktime.forecasting.arima._pmdarima.ARIMA&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_interval_sktime_arima</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_feature_importances_dispatch</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">'skforecast.stats._arima.Arima'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._arar.Arar'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._ets.Ets'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._sarimax.Sarimax'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'aeon.forecasting.stats._arima.ARIMA'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_aeon_arima</span><span class="p">,</span>
-        <span class="s1">'aeon.forecasting.stats._ets.ETS'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_aeon_ets</span><span class="p">,</span>
-        <span class="s1">'sktime.forecasting.arima._pmdarima.ARIMA'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_sktime_arima</span>
+        <span class="s1">&#39;skforecast.stats._arima.Arima&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._arar.Arar&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._ets.Ets&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._sarimax.Sarimax&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;aeon.forecasting.stats._arima.ARIMA&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_aeon_arima</span><span class="p">,</span>
+        <span class="s1">&#39;aeon.forecasting.stats._ets.ETS&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_aeon_ets</span><span class="p">,</span>
+        <span class="s1">&#39;sktime.forecasting.arima._pmdarima.ARIMA&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_importances_sktime_arima</span>
     <span class="p">}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_info_criteria_dispatch</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">'skforecast.stats._arima.Arima'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._arar.Arar'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._ets.Ets'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_skforecast_stats</span><span class="p">,</span>
-        <span class="s1">'skforecast.stats._sarimax.Sarimax'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_sarimax</span><span class="p">,</span>
-        <span class="s1">'aeon.forecasting.stats._arima.ARIMA'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_aeon</span><span class="p">,</span>
-        <span class="s1">'aeon.forecasting.stats._ets.ETS'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_aeon</span><span class="p">,</span>
-        <span class="s1">'sktime.forecasting.arima._pmdarima.ARIMA'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_sktime_arima</span>
+        <span class="s1">&#39;skforecast.stats._arima.Arima&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._arar.Arar&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._ets.Ets&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_skforecast_stats</span><span class="p">,</span>
+        <span class="s1">&#39;skforecast.stats._sarimax.Sarimax&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_sarimax</span><span class="p">,</span>
+        <span class="s1">&#39;aeon.forecasting.stats._arima.ARIMA&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_aeon</span><span class="p">,</span>
+        <span class="s1">&#39;aeon.forecasting.stats._ets.ETS&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_aeon</span><span class="p">,</span>
+        <span class="s1">&#39;sktime.forecasting.arima._pmdarima.ARIMA&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info_criteria_sktime_arima</span>
     <span class="p">}</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">__skforecast_tags__</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">"library"</span><span class="p">:</span> <span class="s2">"skforecast"</span><span class="p">,</span>
-        <span class="s2">"forecaster_name"</span><span class="p">:</span> <span class="s2">"ForecasterStats"</span><span class="p">,</span>
-        <span class="s2">"forecaster_task"</span><span class="p">:</span> <span class="s2">"regression"</span><span class="p">,</span>
-        <span class="s2">"forecasting_scope"</span><span class="p">:</span> <span class="s2">"single-series"</span><span class="p">,</span>  <span class="c1"># single-series | global</span>
-        <span class="s2">"forecasting_strategy"</span><span class="p">:</span> <span class="s2">"recursive"</span><span class="p">,</span>   <span class="c1"># recursive | direct | deep_learning | foundation</span>
-        <span class="s2">"multiple_estimators"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"index_types_supported"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"pandas.RangeIndex"</span><span class="p">,</span> <span class="s2">"pandas.DatetimeIndex"</span><span class="p">],</span>
-        <span class="s2">"requires_index_frequency"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="s2">&quot;skforecast&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecaster_name&quot;</span><span class="p">:</span> <span class="s2">&quot;ForecasterStats&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecaster_task&quot;</span><span class="p">:</span> <span class="s2">&quot;regression&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;forecasting_scope&quot;</span><span class="p">:</span> <span class="s2">&quot;single-series&quot;</span><span class="p">,</span>  <span class="c1"># single-series | global</span>
+        <span class="s2">&quot;forecasting_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;recursive&quot;</span><span class="p">,</span>   <span class="c1"># recursive | direct | deep_learning | foundation</span>
+        <span class="s2">&quot;multiple_estimators&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;index_types_supported&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pandas.RangeIndex&quot;</span><span class="p">,</span> <span class="s2">&quot;pandas.DatetimeIndex&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;requires_index_frequency&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
 
-        <span class="s2">"allowed_input_types_series"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"pandas.Series"</span><span class="p">],</span>
-        <span class="s2">"supports_exog"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"allowed_input_types_exog"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"pandas.Series"</span><span class="p">,</span> <span class="s2">"pandas.DataFrame"</span><span class="p">],</span>
-        <span class="s2">"handles_missing_values_series"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
-        <span class="s2">"handles_missing_values_exog"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
+        <span class="s2">&quot;allowed_input_types_series&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pandas.Series&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;supports_exog&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;allowed_input_types_exog&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pandas.Series&quot;</span><span class="p">,</span> <span class="s2">&quot;pandas.DataFrame&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;handles_missing_values_series&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
+        <span class="s2">&quot;handles_missing_values_exog&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
 
-        <span class="s2">"supports_lags"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_window_features"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_calendar_features"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_transformer_series"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"supports_transformer_exog"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"supports_categorical_features"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_weight_func"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"supports_differentiation"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_lags&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_window_features&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_calendar_features&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_transformer_series&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;supports_transformer_exog&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;supports_categorical_features&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_weight_func&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_differentiation&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
 
-        <span class="s2">"prediction_types"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"point"</span><span class="p">,</span> <span class="s2">"interval"</span><span class="p">],</span>
-        <span class="s2">"supports_probabilistic"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"probabilistic_methods"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"distribution"</span><span class="p">],</span>
-        <span class="s2">"handles_binned_residuals"</span><span class="p">:</span> <span class="kc">False</span>
+        <span class="s2">&quot;prediction_types&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="s2">&quot;interval&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;supports_probabilistic&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;probabilistic_methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;distribution&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;handles_binned_residuals&quot;</span><span class="p">:</span> <span class="kc">False</span>
     <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
                   </details>
@@ -6665,13 +6665,13 @@ some exogenous variables are transformed during the training process.</p>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.valid_estimator_types" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">valid_estimator_types</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">"skforecast.stats._arima.Arima"</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._arar.Arar"</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._ets.Ets"</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._sarimax.Sarimax"</span><span class="p">,</span>
-    <span class="s2">"aeon.forecasting.stats._arima.ARIMA"</span><span class="p">,</span>
-    <span class="s2">"aeon.forecasting.stats._ets.ETS"</span><span class="p">,</span>
-    <span class="s2">"sktime.forecasting.arima._pmdarima.ARIMA"</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._arima.Arima&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._arar.Arar&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._ets.Ets&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._sarimax.Sarimax&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;aeon.forecasting.stats._arima.ARIMA&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;aeon.forecasting.stats._ets.ETS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sktime.forecasting.arima._pmdarima.ARIMA&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -7135,7 +7135,7 @@ some exogenous variables are transformed during the training process.</p>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.creation_date" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">creation_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
-    <span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S"</span>
+    <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -7224,7 +7224,7 @@ some exogenous variables are transformed during the training process.</p>
   </span>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.python_version" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">python_version</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7340,7 +7340,7 @@ some exogenous variables are transformed during the training process.</p>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.estimators_support_last_window" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">estimators_support_last_window</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">"skforecast.stats._sarimax.Sarimax"</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._sarimax.Sarimax&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -7364,10 +7364,10 @@ some exogenous variables are transformed during the training process.</p>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.estimators_support_exog" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">estimators_support_exog</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">"skforecast.stats._arima.Arima"</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._arar.Arar"</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._sarimax.Sarimax"</span><span class="p">,</span>
-    <span class="s2">"sktime.forecasting.arima._pmdarima.ARIMA"</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._arima.Arima&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._arar.Arar&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._sarimax.Sarimax&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sktime.forecasting.arima._pmdarima.ARIMA&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -7391,11 +7391,11 @@ some exogenous variables are transformed during the training process.</p>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.estimators_support_interval" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">estimators_support_interval</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">"skforecast.stats._arima.Arima"</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._arar.Arar"</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._ets.Ets"</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._sarimax.Sarimax"</span><span class="p">,</span>
-    <span class="s2">"sktime.forecasting.arima._pmdarima.ARIMA"</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._arima.Arima&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._arar.Arar&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._ets.Ets&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._sarimax.Sarimax&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sktime.forecasting.arima._pmdarima.ARIMA&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -7419,9 +7419,9 @@ some exogenous variables are transformed during the training process.</p>
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.estimators_support_reduce_memory" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">estimators_support_reduce_memory</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">"skforecast.stats._arima.Arima"</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._arar.Arar"</span><span class="p">,</span>
-    <span class="s2">"skforecast.stats._ets.Ets"</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._arima.Arima&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._arar.Arar&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skforecast.stats._ets.Ets&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -7562,7 +7562,7 @@ that y[i] is regressed on exog[i].</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_stats.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">487</span>
 <span class="normal">488</span>
 <span class="normal">489</span>
@@ -7722,7 +7722,7 @@ that y[i] is regressed on exog[i].</p>
     <span class="n">store_last_window</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Training Forecaster.</span>
 
 <span class="sd">    Fits all estimators to the same time series. Each estimator is trained</span>
@@ -7745,7 +7745,7 @@ that y[i] is regressed on exog[i].</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">estimators_</span>             <span class="o">=</span> <span class="p">[</span><span class="n">clone</span><span class="p">(</span><span class="n">est</span><span class="p">)</span> <span class="k">for</span> <span class="n">est</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimators</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">estimator_names_</span>        <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimators</span><span class="p">)</span>
@@ -7774,8 +7774,8 @@ that y[i] is regressed on exog[i].</p>
         <span class="n">check_exog</span><span class="p">(</span><span class="n">exog</span><span class="o">=</span><span class="n">exog</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exog</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"`exog` must have same number of samples as `y`. "</span>
-                <span class="sa">f</span><span class="s2">"length `exog`: (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exog</span><span class="p">)</span><span class="si">}</span><span class="s2">), length `y`: (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span>
+                <span class="sa">f</span><span class="s2">&quot;`exog` must have same number of samples as `y`. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;length `exog`: (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exog</span><span class="p">)</span><span class="si">}</span><span class="s2">), length `y`: (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
             <span class="p">)</span>
 
         <span class="n">unsupported_exog</span> <span class="o">=</span> <span class="p">[</span>
@@ -7784,8 +7784,8 @@ that y[i] is regressed on exog[i].</p>
         <span class="p">]</span>
         <span class="k">if</span> <span class="n">unsupported_exog</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"The following estimators do not support exogenous variables and "</span>
-                <span class="sa">f</span><span class="s2">"will ignore them during fit: </span><span class="si">{</span><span class="n">unsupported_exog</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;The following estimators do not support exogenous variables and &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;will ignore them during fit: </span><span class="si">{</span><span class="n">unsupported_exog</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                 <span class="n">IgnoredArgumentWarning</span>
             <span class="p">)</span>
 
@@ -7823,7 +7823,7 @@ that y[i] is regressed on exog[i].</p>
 
     <span class="k">if</span> <span class="n">suppress_warnings</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">)</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">estimator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimators_</span><span class="p">:</span>
                 <span class="n">estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="n">exog</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -7834,17 +7834,17 @@ that y[i] is regressed on exog[i].</p>
 
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">estimator</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimators_</span><span class="p">):</span>
         <span class="c1"># Check if estimator has estimator_name_ attribute (skforecast models)</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="s1">'estimator_name_'</span><span class="p">)</span> <span class="ow">and</span> <span class="n">estimator</span><span class="o">.</span><span class="n">estimator_name_</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="s1">&#39;estimator_name_&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">estimator</span><span class="o">.</span><span class="n">estimator_name_</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">estimator_names_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">estimator_name_</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">estimator_names_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__module__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">estimator_names_</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__module__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">estimator_params_</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">est_id</span><span class="p">:</span> <span class="n">est</span><span class="o">.</span><span class="n">get_params</span><span class="p">()</span> 
         <span class="k">for</span> <span class="n">est_id</span><span class="p">,</span> <span class="n">est</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimators_</span><span class="p">)</span>
     <span class="p">}</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">series_name_in_</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">'y'</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">series_name_in_</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;y&#39;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">fit_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">training_range_</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">index_type_</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">):</span>
@@ -7859,7 +7859,7 @@ that y[i] is regressed on exog[i].</p>
     <span class="c1"># Set extended_index_ based on first SARIMAX estimator or default to y.index</span>
     <span class="n">first_sarimax</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
         <span class="p">(</span><span class="n">est</span> <span class="k">for</span> <span class="n">est</span><span class="p">,</span> <span class="n">est_type</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimators_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator_types</span><span class="p">)</span>
-         <span class="k">if</span> <span class="n">est_type</span> <span class="o">==</span> <span class="s1">'skforecast.stats._sarimax.Sarimax'</span><span class="p">),</span>
+         <span class="k">if</span> <span class="n">est_type</span> <span class="o">==</span> <span class="s1">&#39;skforecast.stats._sarimax.Sarimax&#39;</span><span class="p">),</span>
         <span class="kc">None</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">first_sarimax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -8034,7 +8034,7 @@ information.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_stats.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">845</span>
 <span class="normal">846</span>
 <span class="normal">847</span>
@@ -8152,7 +8152,7 @@ information.</p>
     <span class="n">exog</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Forecast future values.</span>
 
 <span class="sd">    Generate predictions (forecasts) n steps in the future using all </span>
@@ -8192,10 +8192,10 @@ information.</p>
 <span class="sd">        Predicted values from all estimators:</span>
 
 <span class="sd">        - For multiple estimators: long format DataFrame with columns </span>
-<span class="sd">        'estimator_id' (estimator id) and 'pred' (predicted value).</span>
+<span class="sd">        &#39;estimator_id&#39; (estimator id) and &#39;pred&#39; (predicted value).</span>
 <span class="sd">        - For a single estimator: pandas Series with predicted values.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">last_window</span><span class="p">,</span> <span class="n">last_window_exog</span><span class="p">,</span> <span class="n">exog</span><span class="p">,</span> <span class="n">prediction_index</span> <span class="o">=</span> <span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_create_predict_inputs</span><span class="p">(</span>
@@ -8243,11 +8243,11 @@ information.</p>
         <span class="n">predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
                           <span class="n">data</span>  <span class="o">=</span> <span class="n">predictions</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span>
                           <span class="n">index</span> <span class="o">=</span> <span class="n">prediction_index</span><span class="p">,</span>
-                          <span class="n">name</span>  <span class="o">=</span> <span class="s1">'pred'</span>
+                          <span class="n">name</span>  <span class="o">=</span> <span class="s1">&#39;pred&#39;</span>
                       <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-            <span class="p">{</span><span class="s2">"estimator_id"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">estimator_ids</span><span class="p">,</span> <span class="n">steps</span><span class="p">),</span> <span class="s2">"pred"</span><span class="p">:</span> <span class="n">predictions</span><span class="o">.</span><span class="n">ravel</span><span class="p">()},</span>
+            <span class="p">{</span><span class="s2">&quot;estimator_id&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">estimator_ids</span><span class="p">,</span> <span class="n">steps</span><span class="p">),</span> <span class="s2">&quot;pred&quot;</span><span class="p">:</span> <span class="n">predictions</span><span class="o">.</span><span class="n">ravel</span><span class="p">()},</span>
             <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">prediction_index</span><span class="p">,</span> <span class="n">n_estimators</span><span class="p">),</span>
         <span class="p">)</span>
 
@@ -8467,7 +8467,7 @@ estimated intervals:</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_stats.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 999</span>
 <span class="normal">1000</span>
 <span class="normal">1001</span>
@@ -8631,7 +8631,7 @@ estimated intervals:</p>
     <span class="n">interval</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Forecast future values and their confidence intervals.</span>
 
 <span class="sd">    Generate predictions (forecasts) n steps in the future with confidence</span>
@@ -8689,11 +8689,11 @@ estimated intervals:</p>
 <span class="sd">        estimated intervals:</span>
 
 <span class="sd">        - For multiple estimators: long format DataFrame with columns</span>
-<span class="sd">          'estimator_id', 'pred', 'lower_bound', 'upper_bound'.</span>
+<span class="sd">          &#39;estimator_id&#39;, &#39;pred&#39;, &#39;lower_bound&#39;, &#39;upper_bound&#39;.</span>
 <span class="sd">        - For a single estimator: DataFrame with columns</span>
-<span class="sd">          'pred', 'lower_bound', 'upper_bound'.</span>
+<span class="sd">          &#39;pred&#39;, &#39;lower_bound&#39;, &#39;upper_bound&#39;.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># If interval and alpha take alpha, if interval transform to alpha</span>
     <span class="k">if</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -8725,9 +8725,9 @@ estimated intervals:</p>
     <span class="p">]</span>
     <span class="k">if</span> <span class="n">unsupported_interval</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Interval prediction is not implemented for estimators: </span><span class="si">{</span><span class="n">unsupported_interval</span><span class="si">}</span><span class="s2">. "</span>
-            <span class="sa">f</span><span class="s2">"These estimators will be skipped. Available estimators for prediction "</span>
-            <span class="sa">f</span><span class="s2">"intervals are: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimators_support_interval</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Interval prediction is not implemented for estimators: </span><span class="si">{</span><span class="n">unsupported_interval</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;These estimators will be skipped. Available estimators for prediction &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;intervals are: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimators_support_interval</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
             <span class="n">IgnoredArgumentWarning</span>
         <span class="p">)</span>
 
@@ -8763,14 +8763,14 @@ estimated intervals:</p>
     <span class="n">predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
                       <span class="n">data</span>    <span class="o">=</span> <span class="n">predictions</span><span class="p">,</span>
                       <span class="n">index</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">prediction_index</span><span class="p">,</span> <span class="n">n_estimators</span><span class="p">),</span>
-                      <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'pred'</span><span class="p">,</span> <span class="s1">'lower_bound'</span><span class="p">,</span> <span class="s1">'upper_bound'</span><span class="p">]</span>
+                      <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;pred&#39;</span><span class="p">,</span> <span class="s1">&#39;lower_bound&#39;</span><span class="p">,</span> <span class="s1">&#39;upper_bound&#39;</span><span class="p">]</span>
                   <span class="p">)</span>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_estimators</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="c1"># This is done to restore the frequency</span>
         <span class="n">predictions</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">prediction_index</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">predictions</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'estimator_id'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">estimator_ids</span><span class="p">,</span> <span class="n">steps</span><span class="p">))</span>
+        <span class="n">predictions</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;estimator_id&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">estimator_ids</span><span class="p">,</span> <span class="n">steps</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">predictions</span>
 </code></pre></div></td></tr></table></div>
@@ -8860,7 +8860,7 @@ is a dictionary of parameters for that estimator.</li>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_stats.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1194</span>
 <span class="normal">1195</span>
 <span class="normal">1196</span>
@@ -8929,7 +8929,7 @@ is a dictionary of parameters for that estimator.</li>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set new values to the parameters of the model stored in the forecaster.</span>
 <span class="sd">    After calling this method, the forecaster is reset to an unfitted state. </span>
 <span class="sd">    The `fit` method must be called before prediction.</span>
@@ -8950,7 +8950,7 @@ is a dictionary of parameters for that estimator.</li>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_estimators</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="c1"># Single estimator: params is a simple dict of parameter values</span>
@@ -8960,7 +8960,7 @@ is a dictionary of parameters for that estimator.</li>
         <span class="c1"># Multiple estimators: params must be a dict of dicts keyed by estimator name</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"`params` must be a dictionary. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;`params` must be a dictionary. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
 
         <span class="n">provided_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
@@ -8968,14 +8968,14 @@ is a dictionary of parameters for that estimator.</li>
         <span class="n">invalid_ids</span> <span class="o">=</span> <span class="n">provided_ids</span> <span class="o">-</span> <span class="n">valid_ids</span>
         <span class="k">if</span> <span class="n">invalid_ids</span> <span class="o">==</span> <span class="n">provided_ids</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"None of the provided estimator ids </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">invalid_ids</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
-                <span class="sa">f</span><span class="s2">"match the available estimator ids: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator_ids</span><span class="si">}</span><span class="s2">."</span>
+                <span class="sa">f</span><span class="s2">&quot;None of the provided estimator ids </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">invalid_ids</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;match the available estimator ids: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator_ids</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">invalid_ids</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"The following estimator ids do not match any estimator "</span>
-                <span class="sa">f</span><span class="s2">"in the forecaster and will be ignored: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">invalid_ids</span><span class="p">)</span><span class="si">}</span><span class="s2">. "</span>
-                <span class="sa">f</span><span class="s2">"Available estimator ids are: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator_ids</span><span class="si">}</span><span class="s2">."</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;The following estimator ids do not match any estimator &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;in the forecaster and will be ignored: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">invalid_ids</span><span class="p">)</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Available estimator ids are: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator_ids</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
                 <span class="n">IgnoredArgumentWarning</span>
             <span class="p">)</span>
 
@@ -9069,7 +9069,7 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_stats.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1260</span>
 <span class="normal">1261</span>
 <span class="normal">1262</span>
@@ -9099,7 +9099,7 @@ model parameter <code>sm_fit_kwargs</code>.</p>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">fit_kwargs</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This method is a placeholder to maintain API consistency. When using </span>
 <span class="sd">    the skforecast Sarimax model, fit kwargs should be passed using the </span>
 <span class="sd">    model parameter `sm_fit_kwargs`.</span>
@@ -9113,12 +9113,12 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-        <span class="s2">"This method is a placeholder to maintain API consistency. When using "</span>
-        <span class="s2">"the skforecast Sarimax model, fit kwargs should be passed using the "</span>
-        <span class="s2">"model parameter `sm_fit_kwargs`."</span><span class="p">,</span>
+        <span class="s2">&quot;This method is a placeholder to maintain API consistency. When using &quot;</span>
+        <span class="s2">&quot;the skforecast Sarimax model, fit kwargs should be passed using the &quot;</span>
+        <span class="s2">&quot;model parameter `sm_fit_kwargs`.&quot;</span><span class="p">,</span>
         <span class="n">IgnoredArgumentWarning</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -9198,7 +9198,7 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_stats.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1287</span>
 <span class="normal">1288</span>
 <span class="normal">1289</span>
@@ -9249,7 +9249,7 @@ model parameter <code>sm_fit_kwargs</code>.</p>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">sort_importance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return feature importances of the estimator stored in the forecaster.</span>
 
 <span class="sd">    Parameters</span>
@@ -9262,12 +9262,12 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 <span class="sd">    feature_importances : pandas DataFrame</span>
 <span class="sd">        Feature importances associated with each predictor.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This forecaster is not fitted yet. Call `fit` with appropriate "</span>
-            <span class="s2">"arguments before using `get_feature_importances()`."</span>
+            <span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
+            <span class="s2">&quot;arguments before using `get_feature_importances()`.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">feature_importances</span> <span class="o">=</span> <span class="p">[]</span>
@@ -9277,19 +9277,19 @@ model parameter <code>sm_fit_kwargs</code>.</p>
         <span class="n">get_importances_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_feature_importances_dispatch</span><span class="p">[</span><span class="n">estimator_type</span><span class="p">]</span>
         <span class="n">importance</span> <span class="o">=</span> <span class="n">get_importances_func</span><span class="p">(</span><span class="n">estimator</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">importance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">importance</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'estimator_id'</span><span class="p">,</span> <span class="n">estimator_id</span><span class="p">)</span>
+            <span class="n">importance</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;estimator_id&#39;</span><span class="p">,</span> <span class="n">estimator_id</span><span class="p">)</span>
             <span class="n">feature_importances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">importance</span><span class="p">)</span>
 
     <span class="n">feature_importances</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">feature_importances</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">sort_importance</span><span class="p">:</span>
         <span class="n">feature_importances</span> <span class="o">=</span> <span class="n">feature_importances</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
-                                  <span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">'estimator_id'</span><span class="p">,</span> <span class="s1">'importance'</span><span class="p">],</span>
+                                  <span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;estimator_id&#39;</span><span class="p">,</span> <span class="s1">&#39;importance&#39;</span><span class="p">],</span>
                                   <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span>
                               <span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_estimators</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">feature_importances</span> <span class="o">=</span> <span class="n">feature_importances</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'estimator_id'</span><span class="p">])</span>
+        <span class="n">feature_importances</span> <span class="o">=</span> <span class="n">feature_importances</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;estimator_id&#39;</span><span class="p">])</span>
 
     <span class="k">return</span> <span class="n">feature_importances</span>
 </code></pre></div></td></tr></table></div>
@@ -9306,7 +9306,7 @@ model parameter <code>sm_fit_kwargs</code>.</p>
 
 
 <a href="#skforecast.recursive._forecaster_stats.ForecasterStats.get_info_criteria" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_info_criteria</span><span class="p">(</span><span class="n">criteria</span><span class="o">=</span><span class="s1">'aic'</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">'standard'</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_info_criteria</span><span class="p">(</span><span class="n">criteria</span><span class="o">=</span><span class="s1">&#39;aic&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;standard&#39;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -9390,7 +9390,7 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_stats.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1362</span>
 <span class="normal">1363</span>
 <span class="normal">1364</span>
@@ -9444,10 +9444,10 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 <span class="normal">1412</span>
 <span class="normal">1413</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_info_criteria</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
-    <span class="n">criteria</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'aic'</span><span class="p">,</span> 
-    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'standard'</span>
+    <span class="n">criteria</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;aic&#39;</span><span class="p">,</span> 
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;standard&#39;</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the selected information criteria.</span>
 
 <span class="sd">    Check https://www.statsmodels.org/dev/generated/statsmodels.tsa.statespace.sarimax.SARIMAXResults.info_criteria.html</span>
@@ -9455,12 +9455,12 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    criteria : str, default 'aic'</span>
-<span class="sd">        The information criteria to compute. Valid options are {'aic', 'bic',</span>
-<span class="sd">        'hqic'}.</span>
-<span class="sd">    method : str, default 'standard'</span>
-<span class="sd">        The method for information criteria computation. Default is 'standard'</span>
-<span class="sd">        method; 'lutkepohl' computes the information criteria as in Lütkepohl</span>
+<span class="sd">    criteria : str, default &#39;aic&#39;</span>
+<span class="sd">        The information criteria to compute. Valid options are {&#39;aic&#39;, &#39;bic&#39;,</span>
+<span class="sd">        &#39;hqic&#39;}.</span>
+<span class="sd">    method : str, default &#39;standard&#39;</span>
+<span class="sd">        The method for information criteria computation. Default is &#39;standard&#39;</span>
+<span class="sd">        method; &#39;lutkepohl&#39; computes the information criteria as in Lütkepohl</span>
 <span class="sd">        (2007).</span>
 
 <span class="sd">    Returns</span>
@@ -9468,12 +9468,12 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 <span class="sd">    metric : pandas DataFrame</span>
 <span class="sd">        The value of the selected information criteria.</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This forecaster is not fitted yet. Call `fit` with appropriate "</span>
-            <span class="s2">"arguments before using `get_info_criteria()`."</span>
+            <span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
+            <span class="s2">&quot;arguments before using `get_info_criteria()`.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">info_criteria</span> <span class="o">=</span> <span class="p">[]</span>
@@ -9484,13 +9484,13 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_estimators</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-            <span class="s1">'criteria'</span><span class="p">:</span> <span class="n">criteria</span><span class="p">,</span> <span class="s1">'value'</span><span class="p">:</span> <span class="n">info_criteria</span>
+            <span class="s1">&#39;criteria&#39;</span><span class="p">:</span> <span class="n">criteria</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">info_criteria</span>
         <span class="p">})</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-            <span class="s1">'estimator_id'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator_ids</span><span class="p">,</span>
-            <span class="s1">'criteria'</span><span class="p">:</span> <span class="n">criteria</span><span class="p">,</span>
-            <span class="s1">'value'</span><span class="p">:</span> <span class="n">info_criteria</span>
+            <span class="s1">&#39;estimator_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator_ids</span><span class="p">,</span>
+            <span class="s1">&#39;criteria&#39;</span><span class="p">:</span> <span class="n">criteria</span><span class="p">,</span>
+            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">info_criteria</span>
         <span class="p">})</span>
 
     <span class="k">return</span> <span class="n">results</span>
@@ -9540,7 +9540,7 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_stats.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1452</span>
 <span class="normal">1453</span>
 <span class="normal">1454</span>
@@ -9552,14 +9552,14 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 <span class="normal">1460</span>
 <span class="normal">1461</span>
 <span class="normal">1462</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Show forecaster information.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -9611,7 +9611,7 @@ The arrays removed depend on the specific estimator used.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>skforecast/recursive/_forecaster_stats.py</code></summary>
+              <summary>Source code in <code>skforecast\recursive\_forecaster_stats.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1464</span>
 <span class="normal">1465</span>
 <span class="normal">1466</span>
@@ -9646,7 +9646,7 @@ The arrays removed depend on the specific estimator used.</p>
 <span class="normal">1495</span>
 <span class="normal">1496</span>
 <span class="normal">1497</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">reduce_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Reduce memory usage by removing internal arrays of the estimator not</span>
 <span class="sd">    needed for prediction. This method only works for estimators that</span>
 <span class="sd">    expose the method `reduce_memory()`.</span>
@@ -9656,12 +9656,12 @@ The arrays removed depend on the specific estimator used.</p>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="s2">"This forecaster is not fitted yet. Call `fit` with appropriate "</span>
-            <span class="s2">"arguments before using `reduce_memory()`."</span>
+            <span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
+            <span class="s2">&quot;arguments before using `reduce_memory()`.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">unsupported_reduce_memory</span> <span class="o">=</span> <span class="p">[</span>
@@ -9670,9 +9670,9 @@ The arrays removed depend on the specific estimator used.</p>
     <span class="p">]</span>
     <span class="k">if</span> <span class="n">unsupported_reduce_memory</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Memory reduction is not implemented for estimators: </span><span class="si">{</span><span class="n">unsupported_reduce_memory</span><span class="si">}</span><span class="s2">. "</span>
-            <span class="sa">f</span><span class="s2">"These estimators will be skipped. Available estimators for memory "</span>
-            <span class="sa">f</span><span class="s2">"reduction are: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimators_support_reduce_memory</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Memory reduction is not implemented for estimators: </span><span class="si">{</span><span class="n">unsupported_reduce_memory</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;These estimators will be skipped. Available estimators for memory &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;reduction are: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimators_support_reduce_memory</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
             <span class="n">IgnoredArgumentWarning</span>
         <span class="p">)</span>
 
@@ -9925,6 +9925,8 @@ The arrays removed depend on the specific estimator used.</p>
       <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
+      
+        <script src="../javascripts/examples-filter.js"></script>
       
         <script src="../javascripts/mathjax.js"></script>
       

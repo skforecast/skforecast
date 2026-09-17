@@ -3386,10 +3386,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#getting-started" class="md-nav__link">
     <span class="md-ellipsis">
       
         入门指南：基础预测方法
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#case-studies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        真实场景与案例研究
       
     </span>
   </a>
@@ -4924,15 +4935,83 @@
   
 
 
-<script src="https://kit.fontawesome.com/d20edc211b.js" crossorigin="anonymous"></script>
-
 <h1 id="_1">示例与教程<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
 <p>这里提供了实用案例与详细教程，帮助你快速上手并掌握 <strong>skforecast</strong> 在时间序列预测中的应用。你也可以在 <a href="https://cienciadedatos.net/cn/forecasting-python"><strong>Python 时间序列预测</strong></a> 免费获取全部学习资料。</p>
-<h2 id="_2">入门指南：基础预测方法<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>本节面向时间序列预测初学者，涵盖最常用的模型与技术，帮助你打下扎实的理论与实践基础。  </p>
-<p><i class="fa-duotone fa-chart-line fa" style="font-size: 25px; color: #1DA1F2;"></i> <a href="https://cienciadedatos.net/documentos/py27-time-series-forecasting-python-scikitlearn-cn.html">Skforecast：用机器学习做时间序列预测</a> </p>
-<p><i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #E60023;"></i> <a href="https://www.cienciadedatos.net/documentos/py51-arima-sarimax-models-python-cn.html">ARIMA和SARIMAX模型</a></p>
-<p><i class="fa-solid fa-sitemap fa" style="font-size: 25px; color: #00cc99;"></i> <a href="https://www.cienciadedatos.net/documentos/py39-forecasting-time-series-with-skforecast-xgboost-lightgbm-catboost-cn.html">基于梯度提升的预测：XGBoost、LightGBM 与 CatBoost</a></p>
+<!-- The language switcher, filter bar and card grids below are generated at build
+     time from tools/docs_hooks/examples.yml by tools/docs_hooks/examples_grid.py.
+     To add or edit a tutorial, edit that YAML file, not this page. -->
+
+<p class="ex-langs"><a class="ex-lang" href="examples_english.html">English</a>
+<a class="ex-lang" href="examples_spanish.html">Español</a>
+<a aria-current="page" class="ex-lang ex-lang--active" href="examples_chinese.html">中文</a></p>
+<section class="ex-filter" id="ex-filter" hidden data-search-exclude>
+  <div class="ex-filter__search">
+    <label class="ex-visually-hidden" for="ex-q">搜索示例</label>
+    <input class="ex-filter__input" id="ex-q" type="search"
+           autocomplete="off" spellcheck="false"
+           placeholder="搜索示例...">
+  </div>
+  <div class="ex-chips" role="group" aria-label="难度">
+    <span class="ex-chips__label">难度</span>
+    <div class="ex-chips__list">
+    <button class="ex-chip" type="button" data-ex-group="level" data-ex-value="beginner" aria-pressed="false">入门</button>
+    <button class="ex-chip" type="button" data-ex-group="level" data-ex-value="intermediate" aria-pressed="false">进阶</button>
+    </div>
+  </div>
+  <div class="ex-chips" role="group" aria-label="主题">
+    <span class="ex-chips__label">主题</span>
+    <div class="ex-chips__list">
+    <button class="ex-chip" type="button" data-ex-group="topic" data-ex-value="single-series" aria-pressed="false">单序列</button>
+    <button class="ex-chip" type="button" data-ex-group="topic" data-ex-value="statistical" aria-pressed="false">统计模型</button>
+    <button class="ex-chip" type="button" data-ex-group="topic" data-ex-value="case-study" aria-pressed="false">实际案例</button>
+    </div>
+  </div>
+  <div class="ex-filter__footer">
+    <p class="ex-filter__count" data-ex-count aria-live="polite"
+       aria-atomic="true"
+       data-ex-count-all="显示全部 {total} 个示例"
+       data-ex-count-some="显示 {total} 个示例中的 {shown} 个">显示全部 4 个示例</p>
+    <button class="ex-chip ex-chip--reset" type="button" data-ex-reset hidden>清除筛选</button>
+  </div>
+</section>
+
+<div class="admonition info">
+<p>中文教程正在陆续翻译中，完整的示例列表请查看<a href="examples_english.html">英文页面</a>。</p>
+</div>
+<h2 data-ex-section="getting-started" id="getting-started">入门指南：基础预测方法<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
+<p class="ex-section-intro" data-ex-section="getting-started">本节面向时间序列预测初学者，涵盖最常用的模型与技术，帮助你打下扎实的理论与实践基础。</p>
+<div class="grid cards ex-grid" data-ex-section="getting-started">
+<ul>
+<li class="ex-card" data-ex-tags="beginner single-series">
+<p class="ex-card__title"><span class="twemoji ex-card__icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m16 11.78 4.24-7.33 1.73 1-5.23 9.05-6.51-3.75L5.46 19H22v2H2V3h2v14.54L9.5 8z"/></svg></span> <strong><a href="https://cienciadedatos.net/documentos/py27-time-series-forecasting-python-scikitlearn-cn.html">Skforecast：用机器学习做时间序列预测</a></strong></p>
+<p class="ex-card__summary">从滞后特征到回测，完整走通第一个机器学习预测模型。</p>
+<p class="ex-card__tags"><span class="ex-tag ex-tag--level ex-tag--beginner">入门</span><span class="ex-tag">单序列</span></p>
+</li>
+<li class="ex-card" data-ex-tags="beginner statistical">
+<p class="ex-card__title"><span class="twemoji ex-card__icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m16 6 2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg></span> <strong><a href="https://www.cienciadedatos.net/documentos/py51-arima-sarimax-models-python-cn.html">ARIMA 和 SARIMAX 模型</a></strong></p>
+<p class="ex-card__summary">拟合、调参并验证 ARIMA 与 SARIMAX 模型，包含阶数的自动选择。</p>
+<p class="ex-card__tags"><span class="ex-tag ex-tag--level ex-tag--beginner">入门</span><span class="ex-tag">统计模型</span></p>
+</li>
+<li class="ex-card" data-ex-tags="beginner single-series">
+<p class="ex-card__title"><span class="twemoji ex-card__icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 2v6h2v3H5c-1.11 0-2 .89-2 2v3H1v6h6v-6H5v-3h6v3H9v6h6v-6h-2v-3h6v3h-2v6h6v-6h-2v-3c0-1.11-.89-2-2-2h-6V8h2V2z"/></svg></span> <strong><a href="https://www.cienciadedatos.net/documentos/py39-forecasting-time-series-with-skforecast-xgboost-lightgbm-catboost-cn.html">基于梯度提升的预测：XGBoost、LightGBM 与 CatBoost</a></strong></p>
+<p class="ex-card__summary">在同一个预测问题上比较三大梯度提升库的表现。</p>
+<p class="ex-card__tags"><span class="ex-tag ex-tag--level ex-tag--beginner">入门</span><span class="ex-tag">单序列</span></p>
+</li>
+</ul>
+</div>
+<h2 data-ex-section="case-studies" id="case-studies">真实场景与案例研究<a class="headerlink" href="#case-studies" title="Permanent link">&para;</a></h2>
+<p class="ex-section-intro" data-ex-section="case-studies">本节展示时间序列预测在真实业务中的应用，例如电力需求预测、网站流量预测，甚至加密货币价格预测。</p>
+<div class="grid cards ex-grid" data-ex-section="case-studies">
+<ul>
+<li class="ex-card" data-ex-tags="intermediate case-study">
+<p class="ex-card__title"><span class="twemoji ex-card__icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 6a6 6 0 0 1 6 6c0 2.22-1.21 4.16-3 5.2V19a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-1.8c-1.79-1.04-3-2.98-3-5.2a6 6 0 0 1 6-6m2 15v1a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1zm6-10h3v2h-3zM1 11h3v2H1zM13 1v3h-2V1zM4.92 3.5l2.13 2.14-1.42 1.41L3.5 4.93zm12.03 2.13 2.12-2.13 1.43 1.43-2.13 2.12z"/></svg></span> <strong><a href="https://cienciadedatos.net/documentos/py29-forecasting-electricity-power-demand-python-cn">使用机器学习预测能源需求</a></strong></p>
+<p class="ex-card__summary">结合日历与天气外生变量，预测每小时的电力需求。</p>
+<p class="ex-card__tags"><span class="ex-tag ex-tag--level ex-tag--intermediate">进阶</span><span class="ex-tag">实际案例</span></p>
+</li>
+</ul>
+</div>
+<p class="ex-noresults" hidden data-search-exclude>没有符合筛选条件的示例。
+  <button class="ex-chip" type="button" data-ex-reset>清除筛选</button></p>
 
 
 
@@ -5166,6 +5245,8 @@
       <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
+      
+        <script src="../javascripts/examples-filter.js"></script>
       
         <script src="../javascripts/mathjax.js"></script>
       
